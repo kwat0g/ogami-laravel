@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: 37 99 235; /* #2563EB */
+  }
+
+  html {
+    @apply antialiased;
+  }
+
+  /* Use JetBrains Mono for all monetary / numeric cells */
+  .currency,
+  [data-currency] {
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

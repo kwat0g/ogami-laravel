@@ -1,0 +1,135 @@
+import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
+import { Lock } from 'lucide-react'
+import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
+import { changePasswordSchema, type ChangePasswordFormValues } from '@/schemas/auth'
+import { parseApiError } from '@/lib/errorHandler'
+import PageHeader from '@/components/ui/PageHeader'
+import FormField from '@/components/ui/FormField'
+
+export default function ChangePasswordPage() {
+  const navigate    = useNavigate()
+  const clearAuth   = useAuthStore((s) => s.clearAuth)
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+  })
+
+  const onSubmit = async (values: ChangePasswordFormValues) => {
+    try {
+      await api.post('/auth/change-password', {
+        current_password:      values.current_password,
+        password:              values.new_password,
+        password_confirmation: values.new_password_confirmation,
+      })
+
+      toast.success('Password changed. Please log in with your new password.')
+      clearAuth()
+      navigate('/login', { replace: true })
+    } catch (err) {
+      const { message, fieldErrors } = parseApiError(err)
+
+      // Map API field names back to form field names
+      if (fieldErrors.current_password?.length) {
+        setError('current_password', { message: fieldErrors.current_password[0] })
+      }
+      if (fieldErrors.password?.length) {
+        setError('new_password', { message: fieldErrors.password[0] })
+      }
+
+      if (!fieldErrors.current_password && !fieldErrors.password) {
+        toast.error(message)
+      }
+    }
+  }
+
+  const inputCls =
+    'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+
+  return (
+    <div className="max-w-md mx-auto mt-8">
+      <PageHeader
+        title="Change Password"
+        subtitle="Your new password must differ from the current one and meet the complexity requirements."
+      />
+
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+        {/* Current password */}
+        <FormField
+          label="Current Password"
+          required
+          error={errors.current_password?.message}
+          htmlFor="current_password"
+        >
+          <input
+            id="current_password"
+            type="password"
+            autoComplete="current-password"
+            className={inputCls}
+            {...register('current_password')}
+          />
+        </FormField>
+
+        {/* New password */}
+        <FormField
+          label="New Password"
+          required
+          error={errors.new_password?.message}
+          htmlFor="new_password"
+          hint="Minimum 8 characters — uppercase, lowercase, number, and special character."
+        >
+          <input
+            id="new_password"
+            type="password"
+            autoComplete="new-password"
+            className={inputCls}
+            {...register('new_password')}
+          />
+        </FormField>
+
+        {/* Confirm new password */}
+        <FormField
+          label="Confirm New Password"
+          required
+          error={errors.new_password_confirmation?.message}
+          htmlFor="new_password_confirmation"
+        >
+          <input
+            id="new_password_confirmation"
+            type="password"
+            autoComplete="new-password"
+            className={inputCls}
+            {...register('new_password_confirmation')}
+          />
+        </FormField>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+          >
+            <Lock className="h-4 w-4" />
+            {isSubmitting ? 'Saving…' : 'Update Password'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}

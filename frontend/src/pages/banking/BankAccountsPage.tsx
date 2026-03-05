@@ -1,0 +1,240 @@
+import { useState } from 'react'
+import {
+  useBankAccounts,
+  useCreateBankAccount,
+  useUpdateBankAccount,
+  useDeleteBankAccount,
+} from '@/hooks/useBanking'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import type { BankAccount, CreateBankAccountPayload } from '@/types/banking'
+
+// ---------------------------------------------------------------------------
+// Delete button — children-as-trigger pattern for ConfirmDestructiveDialog
+// ---------------------------------------------------------------------------
+
+function DeleteBankAccountButton({ account }: { account: BankAccount }) {
+  const { mutate: remove, isPending } = useDeleteBankAccount()
+  return (
+    <ConfirmDestructiveDialog
+      title="Delete Bank Account"
+      description={`Delete "${account.name}"? This cannot be undone if no reconciliations exist.`}
+      onConfirm={() => remove(account.id)}
+    >
+      <button
+        type="button"
+        className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-50"
+        disabled={isPending}
+      >
+        Delete
+      </button>
+    </ConfirmDestructiveDialog>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Create / Edit form modal
+// ---------------------------------------------------------------------------
+
+const EMPTY: CreateBankAccountPayload = {
+  name: '',
+  account_number: '',
+  bank_name: '',
+  account_type: 'checking',
+  account_id: 0,
+  opening_balance: 0,
+  is_active: true,
+}
+
+function BankAccountFormModal({
+  initial,
+  onClose,
+}: {
+  initial?: BankAccount
+  onClose: () => void
+}) {
+  const [form, setForm] = useState<CreateBankAccountPayload>(
+    initial
+      ? {
+          name: initial.name,
+          account_number: initial.account_number,
+          bank_name: initial.bank_name,
+          account_type: initial.account_type,
+          account_id: initial.account_id,
+          opening_balance: initial.opening_balance,
+          is_active: initial.is_active,
+        }
+      : EMPTY
+  )
+
+  const { mutate: create, isPending: creating } = useCreateBankAccount()
+  const { mutate: update, isPending: updating } = useUpdateBankAccount(initial?.id ?? 0)
+  const busy = creating || updating
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (initial) {
+      update(form, { onSuccess: onClose })
+    } else {
+      create(form, { onSuccess: onClose })
+    }
+  }
+
+  function field(label: string, children: React.ReactNode) {
+    return (
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-medium text-gray-600">{label}</label>
+        {children}
+      </div>
+    )
+  }
+
+  const inputCls = 'border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md space-y-4"
+      >
+        <h2 className="text-lg font-bold text-gray-900">
+          {initial ? 'Edit Bank Account' : 'New Bank Account'}
+        </h2>
+
+        {field('Name', (
+          <input className={inputCls} value={form.name}
+            onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+        ))}
+        {field('Account Number', (
+          <input className={inputCls} value={form.account_number}
+            onChange={e => setForm(f => ({ ...f, account_number: e.target.value }))} required />
+        ))}
+        {field('Bank Name', (
+          <input className={inputCls} value={form.bank_name}
+            onChange={e => setForm(f => ({ ...f, bank_name: e.target.value }))} required />
+        ))}
+        {field('Account Type', (
+          <select className={inputCls} value={form.account_type}
+            onChange={e => setForm(f => ({ ...f, account_type: e.target.value as 'checking' | 'savings' }))}>
+            <option value="checking">Checking</option>
+            <option value="savings">Savings</option>
+          </select>
+        ))}
+        {field('GL Account ID', (
+          <input type="number" min={1} className={inputCls} value={form.account_id || ''}
+            onChange={e => setForm(f => ({ ...f, account_id: parseInt(e.target.value) || 0 }))} required />
+        ))}
+        {field('Opening Balance', (
+          <input type="number" step="0.01" className={inputCls} value={form.opening_balance}
+            onChange={e => setForm(f => ({ ...f, opening_balance: parseFloat(e.target.value) || 0 }))} />
+        ))}
+        {field('Active', (
+          <input type="checkbox" className="rounded w-4 h-4" checked={form.is_active}
+            onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} />
+        ))}
+
+        <div className="flex gap-3 pt-2">
+          <button type="submit" disabled={busy}
+            className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+            {busy ? 'Saving…' : 'Save'}
+          </button>
+          <button type="button" onClick={onClose}
+            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default function BankAccountsPage() {
+  const { data, isLoading } = useBankAccounts()
+  const accounts = data ?? []
+  const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<BankAccount | undefined>()
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Bank Accounts</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Manage bank accounts linked to GL (GL-006)</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setEditing(undefined); setShowForm(true) }}
+          className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+        >
+          + New Account
+        </button>
+      </div>
+
+      {isLoading && <SkeletonLoader rows={5} />}
+
+      <div className="bg-white border border-gray-200 rounded-xl overflow-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th className="px-3 py-2.5 text-left">Name</th>
+              <th className="px-3 py-2.5 text-left">Account #</th>
+              <th className="px-3 py-2.5 text-left">Bank</th>
+              <th className="px-3 py-2.5 text-left">Type</th>
+              <th className="px-3 py-2.5 text-right">Opening Balance</th>
+              <th className="px-3 py-2.5 text-left">Status</th>
+              <th className="px-3 py-2.5 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.length === 0 && !isLoading && (
+              <tr>
+                <td colSpan={7} className="text-center px-3 py-8 text-gray-400 text-sm">
+                  No bank accounts yet.
+                </td>
+              </tr>
+            )}
+            {(accounts as BankAccount[]).map((acct: BankAccount) => (
+              <tr key={acct.id} className="border-b border-gray-100 even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
+                <td className="px-3 py-2 font-medium text-gray-900">{acct.name}</td>
+                <td className="px-3 py-2 font-mono text-xs text-gray-500">{acct.account_number}</td>
+                <td className="px-3 py-2 text-gray-700">{acct.bank_name}</td>
+                <td className="px-3 py-2 capitalize text-gray-600">{acct.account_type}</td>
+                <td className="px-3 py-2 text-right font-mono">₱{acct.opening_balance.toLocaleString()}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                    acct.is_active
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {acct.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
+                <td className="px-3 py-2 flex gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={() => { setEditing(acct); setShowForm(true) }}
+                    className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                  >
+                    Edit
+                  </button>
+                  <DeleteBankAccountButton account={acct} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showForm && (
+        <BankAccountFormModal
+          initial={editing}
+          onClose={() => { setShowForm(false); setEditing(undefined) }}
+        />
+      )}
+    </div>
+  )
+}

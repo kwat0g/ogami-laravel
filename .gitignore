@@ -1,0 +1,53 @@
+# ─── Laravel ───────────────────────────────────────────────────────────────────
+/vendor/
+/node_modules/
+/public/hot
+/public/storage
+/storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*.php
+/bootstrap/ssr/
+.env
+.env.backup
+.env.local
+.env.production
+!.env.example
+
+# ─── Frontend ──────────────────────────────────────────────────────────────────
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.vite/
+
+# ─── Docker ────────────────────────────────────────────────────────────────────
+docker/postgres/data/
+
+# ─── IDE / OS ──────────────────────────────────────────────────────────────────
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ─── Testing ───────────────────────────────────────────────────────────────────
+/.phpunit.cache/
+/.pest/
+/coverage/
+*.coverage
+
+# ─── Build artifacts ───────────────────────────────────────────────────────────
+*.log
+*.lock
+*.tsbuildinfo
+!composer.lock
+!package-lock.json
+
+
+# ─── Reports / internal ────────────────────────────────────────────────────────
+/reports/
+skills-lock.json
+/pnpm-lock.yaml

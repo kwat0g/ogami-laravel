@@ -1,0 +1,228 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Payroll\Services;
+
+use App\Domains\Accounting\Models\FiscalPeriod;
+use App\Domains\Accounting\Models\JournalEntry;
+use App\Domains\Payroll\Models\PayrollRun;
+use App\Shared\Contracts\ServiceContract;
+use App\Shared\Exceptions\DomainException;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Posts a locked/completed payroll run to the General Ledger.
+ *
+ * GL account mapping (account codes from chart_of_accounts):
+ *   DEBIT  5001 — Salaries and Wages Expense  (total gross pay)
+ *   CREDIT 2100 — SSS Contributions Payable   (employee SSS share)
+ *   CREDIT 2101 — PhilHealth Payable          (employee PhilHealth share)
+ *   CREDIT 2102 — PagIBIG Payable             (employee PagIBIG share)
+ *   CREDIT 2103 — Withholding Tax Payable     (income tax withheld)
+ *   CREDIT 2200 — Payroll Payable             (net pay to employees)
+ *
+ * All amounts stored in pesos (centavos ÷ 100, rounded to 4dp).
+ * source_type = 'payroll_run', source_id = $run->id.
+ * Idempotent: returns existing JE if the run was already posted.
+ */
+final class PayrollPostingService implements ServiceContract
+{
+    /**
+     * Post the given payroll run to the GL.
+     * Safe to call multiple times — returns the same JE on repeated calls.
+     */
+    public function postPayrollRun(PayrollRun $run): JournalEntry
+    {
+        // ── Idempotency guard ────────────────────────────────────────────────
+        $existing = JournalEntry::where('source_type', 'payroll')
+            ->where('source_id', $run->id)
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        // ── Aggregate payroll_details totals ─────────────────────────────────
+        $totals = DB::table('payroll_details')
+            ->where('payroll_run_id', $run->id)
+            ->selectRaw(implode(', ', [
+                'COALESCE(SUM(gross_pay_centavos), 0)          AS gross',
+                'COALESCE(SUM(sss_ee_centavos), 0)             AS sss_ee',
+                'COALESCE(SUM(philhealth_ee_centavos), 0)      AS philhealth_ee',
+                'COALESCE(SUM(pagibig_ee_centavos), 0)         AS pagibig_ee',
+                'COALESCE(SUM(withholding_tax_centavos), 0)    AS wht',
+                'COALESCE(SUM(loan_deductions_centavos), 0)    AS loan_ded',
+                'COALESCE(SUM(other_deductions_centavos), 0)   AS other_ded',
+                'COALESCE(SUM(net_pay_centavos), 0)            AS net',
+            ]))
+            ->first();
+
+        $gross = (int) $totals->gross;
+        $sssEe = (int) $totals->sss_ee;
+        $phEe = (int) $totals->philhealth_ee;
+        $pagEe = (int) $totals->pagibig_ee;
+        $wht = (int) $totals->wht;
+        $loanDed = (int) $totals->loan_ded;
+        $otherDed = (int) $totals->other_ded;
+        $net = (int) $totals->net;
+
+        if ($gross <= 0) {
+            // Diagnose why gross is zero — check for missing attendance records.
+            $employeeIds = DB::table('payroll_details')
+                ->where('payroll_run_id', $run->id)
+                ->pluck('employee_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $cutoffStart = date('Y-m-d', strtotime((string) $run->cutoff_start));
+            $cutoffEnd = date('Y-m-d', strtotime((string) $run->cutoff_end));
+
+            $attendanceCount = DB::table('attendance_logs')
+                ->whereIn('employee_id', $employeeIds)
+                ->whereBetween('work_date', [$cutoffStart, $cutoffEnd])
+                ->count();
+
+            if ($attendanceCount === 0) {
+                $employeeCount = count($employeeIds);
+                throw new DomainException(
+                    "Cannot disburse payroll run {$run->reference_no}: no attendance records were found "
+                    ."for {$employeeCount} employee(s) during the cutoff period "
+                    ."{$cutoffStart} to {$cutoffEnd}. "
+                    .'Please import or record attendance for this period, then recompute the payroll run before disbursing.',
+                    'GL_NO_ATTENDANCE_FOR_CUTOFF',
+                    422,
+                );
+            }
+
+            throw new DomainException(
+                "Cannot disburse payroll run {$run->reference_no}: gross pay is ₱0.00 despite attendance records existing. "
+                .'Please recompute the payroll run to recalculate employee pay before disbursing.',
+                'GL_ZERO_GROSS_PAY',
+                422,
+            );
+        }
+
+        // ── Resolve account IDs ───────────────────────────────────────────────
+        $acctId = fn (string $code): int => DB::table('chart_of_accounts')
+            ->where('code', $code)
+            ->whereNull('deleted_at')
+            ->value('id')
+            ?? throw new DomainException("Chart of account '{$code}' not found.", 'GL_ACCOUNT_NOT_FOUND', 422);
+
+        // ── Find fiscal period for the pay date ───────────────────────────────
+        $date = $run->pay_date ?? $run->cutoff_end;
+        $payDate = date('Y-m-d', strtotime((string) $date));
+
+        // Find the fiscal period that contains the pay date
+        $fiscalPeriod = FiscalPeriod::where('date_from', '<=', $payDate)
+            ->where('date_to', '>=', $payDate)
+            ->where('status', 'open')
+            ->first();
+
+        if (! $fiscalPeriod) {
+            throw new DomainException(
+                "No open fiscal period found for date: {$payDate}",
+                'GL_NO_OPEN_FISCAL_PERIOD',
+                422,
+            );
+        }
+
+        // ── Determine system user for created_by ──────────────────────────────
+        $systemUserId = \App\Models\User::where('email', 'system-test@ogami.test')->value('id')
+            ?? \App\Models\User::value('id')
+            ?? auth()->id()
+            ?? 1;
+
+        // ── Build lines (amounts in pesos, numeric(15,4)) ─────────────────────
+        $lines = [];
+
+        $lines[] = [
+            'account_id' => $acctId('5001'),
+            'debit' => round($gross / 100, 4),
+            'credit' => null,
+            'description' => 'Salaries and wages expense',
+        ];
+
+        if ($sssEe > 0) {
+            $lines[] = ['account_id' => $acctId('2100'), 'debit' => null, 'credit' => round($sssEe / 100, 4)];
+        }
+        if ($phEe > 0) {
+            $lines[] = ['account_id' => $acctId('2101'), 'debit' => null, 'credit' => round($phEe / 100, 4)];
+        }
+        if ($pagEe > 0) {
+            $lines[] = ['account_id' => $acctId('2102'), 'debit' => null, 'credit' => round($pagEe / 100, 4)];
+        }
+        if ($wht > 0) {
+            $lines[] = ['account_id' => $acctId('2103'), 'debit' => null, 'credit' => round($wht / 100, 4)];
+        }
+
+        // Loan deductions withheld from employees (repayments via payroll) → 2104
+        if ($loanDed > 0) {
+            $lines[] = [
+                'account_id' => $acctId('2104'),
+                'debit' => null,
+                'credit' => round($loanDed / 100, 4),
+                'description' => 'Loan deductions payable',
+            ];
+        }
+
+        // Voluntary / other deductions (adjustments) → 2001 Accounts Payable
+        if ($otherDed > 0) {
+            $lines[] = [
+                'account_id' => $acctId('2001'),
+                'debit' => null,
+                'credit' => round($otherDed / 100, 4),
+                'description' => 'Other payroll deductions payable',
+            ];
+        }
+
+        $lines[] = [
+            'account_id' => $acctId('2200'),
+            'debit' => null,
+            'credit' => round($net / 100, 4),
+            'description' => 'Net pay payable',
+        ];
+
+        // ── Assert balance before writing ─────────────────────────────────────
+        $creditSum = array_sum(array_column(array_filter($lines, fn ($l) => $l['credit'] !== null), 'credit'));
+        $debitSum = array_sum(array_column(array_filter($lines, fn ($l) => $l['debit'] !== null), 'debit'));
+
+        if (round($debitSum - $creditSum, 4) !== 0.0) {
+            throw new DomainException(
+                "Payroll GL post: JE is unbalanced. Debit={$debitSum}, Credit={$creditSum}.",
+                'GL_JE_UNBALANCED',
+                500,
+            );
+        }
+
+        // ── Persist ───────────────────────────────────────────────────────────
+        return DB::transaction(function () use ($run, $lines, $fiscalPeriod, $systemUserId, $date) {
+            $je = JournalEntry::create([
+                'date' => $date,
+                'description' => "Payroll Run {$run->reference_no} — auto-posted",
+                'source_type' => 'payroll',
+                'source_id' => $run->id,
+                'status' => 'draft',
+                'fiscal_period_id' => $fiscalPeriod->id,
+                'created_by' => $systemUserId,
+                'je_number' => null,
+            ]);
+
+            foreach ($lines as $line) {
+                $je->lines()->create($line);
+            }
+
+            $je->update([
+                'status' => 'posted',
+                'je_number' => "JE-{$run->reference_no}",
+                'posted_by' => null, // auto-post: no SoD enforced, nullable per constraint
+                'posted_at' => now(),
+            ]);
+
+            return $je->fresh(['lines']);
+        });
+    }
+}

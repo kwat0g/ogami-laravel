@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Development artifacts
+node_modules
+frontend/node_modules
+frontend/dist
+
+# Tests and load tests (not needed in production image)
+tests/
+phpunit.xml
+.phpunit.cache
+.phpunit.result.cache
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Docker (avoids recursive COPY of docker/ meta files)
+docker/postgres
+
+# Logs and storage uploads (mounted as volumes in production)
+storage/logs/*.log
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/backup-temp/
+
+# CI
+.github
+.travis.yml
+
+# Playwright E2E
+frontend/e2e/
+frontend/playwright-report/
+frontend/test-results/

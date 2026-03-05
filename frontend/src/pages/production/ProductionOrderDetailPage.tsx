@@ -1,0 +1,307 @@
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, Factory, AlertTriangle } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  useProductionOrder,
+  useReleaseOrder,
+  useStartOrder,
+  useCompleteOrder,
+  useCancelOrder,
+  useLogOutput,
+} from '@/hooks/useProduction'
+import { usePermission } from '@/hooks/usePermission'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import type { ProductionOrderStatus } from '@/types/production'
+
+const statusBadge: Record<ProductionOrderStatus, string> = {
+  draft:       'bg-gray-100 text-gray-600',
+  released:    'bg-blue-100 text-blue-700',
+  in_progress: 'bg-amber-100 text-amber-700',
+  completed:   'bg-green-100 text-green-700',
+  cancelled:   'bg-gray-100 text-gray-400',
+}
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-4 py-2 border-b border-gray-100 last:border-0">
+      <dt className="text-sm text-gray-500 w-36 flex-shrink-0">{label}</dt>
+      <dd className="text-sm text-gray-900 font-medium">{value ?? '—'}</dd>
+    </div>
+  )
+}
+
+export default function ProductionOrderDetailPage(): React.ReactElement {
+  const { ulid }  = useParams<{ ulid: string }>()
+  const navigate  = useNavigate()
+  const [showLogForm, setShowLogForm] = useState(false)
+  const [logData, setLogData]         = useState({
+    shift: 'A' as 'A' | 'B' | 'C',
+    log_date: new Date().toISOString().split('T')[0],
+    qty_produced: '',
+    qty_rejected: '0',
+    operator_id: '',
+    remarks: '',
+  })
+
+  const { data: order, isLoading, isError } = useProductionOrder(ulid ?? null)
+
+  const canRelease    = usePermission('production.orders.release')
+  const canComplete   = usePermission('production.orders.complete')
+  const canLogOutput  = usePermission('production.orders.log_output')
+
+  const releaseMut  = useReleaseOrder(ulid ?? '')
+  const startMut    = useStartOrder(ulid ?? '')
+  const completeMut = useCompleteOrder(ulid ?? '')
+  const cancelMut   = useCancelOrder(ulid ?? '')
+  const logMut      = useLogOutput(ulid ?? '')
+
+  const handleAction = async (action: 'release' | 'start' | 'complete' | 'cancel') => {
+    try {
+      const map = { release: releaseMut, start: startMut, complete: completeMut, cancel: cancelMut }
+      await map[action].mutateAsync()
+      toast.success(`Work order ${action}d.`)
+    } catch {
+      toast.error(`Failed to ${action} order.`)
+    }
+  }
+
+  const handleLogOutput = async () => {
+    try {
+      await logMut.mutateAsync({
+        shift:        logData.shift,
+        log_date:     logData.log_date,
+        qty_produced: parseFloat(logData.qty_produced),
+        qty_rejected: parseFloat(logData.qty_rejected || '0'),
+        operator_id:  parseInt(logData.operator_id),
+        remarks:      logData.remarks || undefined,
+      })
+      toast.success('Output logged.')
+      setShowLogForm(false)
+    } catch {
+      toast.error('Failed to log output.')
+    }
+  }
+
+  if (isLoading) return <SkeletonLoader rows={8} />
+  if (isError || !order) return (
+    <div className="flex items-center gap-2 text-red-600 text-sm">
+      <AlertTriangle className="w-4 h-4" /> Failed to load work order.
+    </div>
+  )
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => navigate('/production/orders')} className="p-2 hover:bg-gray-100 rounded-lg">
+          <ArrowLeft className="w-4 h-4 text-gray-500" />
+        </button>
+        <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
+          <Factory className="w-5 h-5 text-violet-600" />
+        </div>
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900 font-mono">{order.po_reference}</h1>
+            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusBadge[order.status]}`}>
+              {order.status.replace('_', ' ')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Work Order Details</h2>
+        <dl>
+          <InfoRow label="Product" value={`${order.product_item?.item_code} — ${order.product_item?.name}`} />
+          <InfoRow label="BOM Version" value={order.bom ? `v${order.bom.version}` : '—'} />
+          <InfoRow label="Qty Required" value={parseFloat(order.qty_required).toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
+          <InfoRow label="Qty Produced" value={
+            <div className="flex items-center gap-2">
+              <span>{parseFloat(order.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>
+              <div className="flex items-center gap-1">
+                <div className="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min(100, order.progress_pct)}%` }} />
+                </div>
+                <span className="text-xs text-gray-400">{order.progress_pct.toFixed(1)}%</span>
+              </div>
+            </div>
+          } />
+          <InfoRow label="Target Start" value={order.target_start_date} />
+          <InfoRow label="Target End"   value={order.target_end_date} />
+          {order.delivery_schedule && <InfoRow label="Delivery Schedule" value={order.delivery_schedule.ds_reference} />}
+          <InfoRow label="Created By" value={order.created_by?.name} />
+        </dl>
+      </div>
+
+      {/* BOM Components */}
+      {order.bom && (order.bom.components ?? []).length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">BOM Components</h2>
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                {['Component', 'Qty/Unit', 'UOM', 'Scrap %'].map((h) => (
+                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {order.bom.components?.map((comp) => (
+                <tr key={comp.id}>
+                  <td className="px-3 py-2">
+                    <div className="font-mono text-xs text-gray-400">{comp.component_item?.item_code}</div>
+                    <div className="text-sm">{comp.component_item?.name}</div>
+                  </td>
+                  <td className="px-3 py-2 tabular-nums">{parseFloat(comp.qty_per_unit).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                  <td className="px-3 py-2 text-gray-400">{comp.unit_of_measure}</td>
+                  <td className="px-3 py-2 text-gray-400">{comp.scrap_factor_pct}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Output Logs */}
+      {(order.output_logs ?? []).length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Output Logs</h2>
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                {['Date', 'Shift', 'Produced', 'Rejected', 'Operator', 'Recorded By'].map((h) => (
+                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {order.output_logs?.map((log) => (
+                <tr key={log.id}>
+                  <td className="px-3 py-2 text-gray-500 text-xs">{log.log_date}</td>
+                  <td className="px-3 py-2 font-semibold">{log.shift}</td>
+                  <td className="px-3 py-2 tabular-nums text-green-700 font-semibold">{parseFloat(log.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                  <td className="px-3 py-2 tabular-nums text-red-600">{parseFloat(log.qty_rejected).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                  <td className="px-3 py-2 text-gray-500">{log.operator?.name ?? '—'}</td>
+                  <td className="px-3 py-2 text-gray-400 text-xs">{log.recorded_by?.name ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Actions</h2>
+
+        {showLogForm && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Log Production Output</h3>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Shift</label>
+                <select
+                  value={logData.shift}
+                  onChange={(e) => setLogData((d) => ({ ...d, shift: e.target.value as 'A' | 'B' | 'C' }))}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                >
+                  <option value="A">Shift A</option>
+                  <option value="B">Shift B</option>
+                  <option value="C">Shift C</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={logData.log_date}
+                  onChange={(e) => setLogData((d) => ({ ...d, log_date: e.target.value }))}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Operator ID</label>
+                <input
+                  type="number"
+                  value={logData.operator_id}
+                  onChange={(e) => setLogData((d) => ({ ...d, operator_id: e.target.value }))}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="Employee ID"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Qty Produced</label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  value={logData.qty_produced}
+                  onChange={(e) => setLogData((d) => ({ ...d, qty_produced: e.target.value }))}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Qty Rejected</label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  value={logData.qty_rejected}
+                  onChange={(e) => setLogData((d) => ({ ...d, qty_rejected: e.target.value }))}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Remarks</label>
+                <input
+                  value={logData.remarks}
+                  onChange={(e) => setLogData((d) => ({ ...d, remarks: e.target.value }))}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleLogOutput}
+                disabled={logMut.isPending || !logData.qty_produced}
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg disabled:opacity-50"
+              >
+                Submit Log
+              </button>
+              <button onClick={() => setShowLogForm(false)} className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {order.status === 'draft' && canRelease && (
+            <button onClick={() => handleAction('release')} disabled={releaseMut.isPending} className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
+              Release
+            </button>
+          )}
+          {order.status === 'released' && canRelease && (
+            <button onClick={() => handleAction('start')} disabled={startMut.isPending} className="px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg disabled:opacity-50">
+              Start Production
+            </button>
+          )}
+          {order.status === 'in_progress' && canComplete && (
+            <button onClick={() => handleAction('complete')} disabled={completeMut.isPending} className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50">
+              Mark Complete
+            </button>
+          )}
+          {['released', 'in_progress'].includes(order.status) && canLogOutput && !showLogForm && (
+            <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-violet-300 text-violet-700 hover:bg-violet-50 rounded-lg">
+              Log Output
+            </button>
+          )}
+          {['draft', 'released'].includes(order.status) && (
+            <button onClick={() => handleAction('cancel')} disabled={cancelMut.isPending} className="px-4 py-2 text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg">
+              Cancel WO
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

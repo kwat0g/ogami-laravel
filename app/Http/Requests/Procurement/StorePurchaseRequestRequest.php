@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Procurement;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+final class StorePurchaseRequestRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true; // Policy checked in controller
+    }
+
+    /** @return array<string, mixed> */
+    public function rules(): array
+    {
+        return [
+            'department_id'                   => ['required', 'integer', 'exists:departments,id'],
+            'urgency'                          => ['sometimes', 'string', 'in:normal,urgent,critical'],
+            'justification'                    => ['required', 'string', 'min:20'],
+            'notes'                            => ['nullable', 'string'],
+
+            'items'                            => ['required', 'array', 'min:1'],
+            'items.*.item_description'         => ['required', 'string', 'max:255'],
+            'items.*.unit_of_measure'          => ['required', 'string', 'max:30'],
+            'items.*.quantity'                 => ['required', 'numeric', 'gt:0'],
+            'items.*.estimated_unit_cost'      => ['required', 'numeric', 'gt:0'],
+            'items.*.specifications'           => ['nullable', 'string'],
+        ];
+    }
+}

@@ -1,0 +1,1064 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 2
+			path: app/Console/Commands/FixAccountingManagerPermissions.php
+
+		-
+			message: '#^Method Spatie\\Permission\\Contracts\\Role\:\:hasPermissionTo\(\) invoked with 1 parameter, 2 required\.$#'
+			identifier: arguments.count
+			count: 2
+			path: app/Console/Commands/FixAccountingManagerPermissions.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Console/Commands/FixAccountingManagerPermissions.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 1
+			path: app/Console/Commands/VerifyBackupCommand.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ap_account_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/AP/Services/ApPaymentPostingService.php
+
+		-
+			message: '#^Instanceof between Illuminate\\Support\\Carbon and Carbon\\Carbon will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: app/Domains/AP/Services/ApPaymentPostingService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>ap_account_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/AP/Services/ApPaymentPostingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ewt_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/AP/Services/EwtService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$net_payable\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/AP/Services/EwtService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Domains\\AP\\Models\\EwtRate\>\:\:scopeEffectiveOn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/AP/Services/EwtService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Domains/AP/Services/VendorInvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rate\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/AP/Services/VendorInvoiceService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasTin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/AP/Services/VendorInvoiceService.php
+
+		-
+			message: '#^Property App\\Domains\\AP\\Services\\VendorInvoiceService\:\:\$fiscalPeriodService is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Domains/AP/Services/VendorInvoiceService.php
+
+		-
+			message: '#^Instantiated class App\\Exceptions\\DomainException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Domains/AR/Models/Customer.php
+
+		-
+			message: '#^Throwing object of an unknown class App\\Exceptions\\DomainException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Domains/AR/Models/Customer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Domains/AR/Services/CustomerInvoiceService.php
+
+		-
+			message: '''
+				#^PHPDoc tag @param has invalid value \(array\{
+				  fiscal_period_id\: int,
+				  ar_account_id\: int,
+				  revenue_account_id\: int,
+				  invoice_date\: string,
+				  due_date\: string,
+				  subtotal\: float,
+				  vat_amount\?\: float,
+				  vat_exemption_reason\?\: string,
+				  description\?\: string,
+				  bypass_credit_check\?\: bool,  AR\-002 flag — must be separately authorized
+				\} \$data\)\: Unexpected token "flag", expected '\}' at offset 349 on line 12$#
+			'''
+			identifier: phpDoc.parseError
+			count: 1
+			path: app/Domains/AR/Services/CustomerInvoiceService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Accounting\\Models\\ChartOfAccount\:\:\$is_system_account\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Accounting/Policies/ChartOfAccountPolicy.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Domains/Accounting/Services/ChartOfAccountService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between App\\Domains\\Accounting\\Models\\ChartOfAccount and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Domains/Accounting/Services/GeneralLedgerService.php
+
+		-
+			message: '#^Method App\\Domains\\Accounting\\Services\\IncomeStatementService\:\:fetchPeriodBalances\(\) should return array\<int, array\{id\: int, code\: string, name\: string, account_type\: string, normal_balance\: string, balance\: float\}\> but returns array\<array\{id\: mixed, code\: mixed, name\: mixed, account_type\: mixed, balance\: float\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Accounting/Services/IncomeStatementService.php
+
+		-
+			message: '#^Instanceof between string and Illuminate\\Support\\Carbon will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Domains/Accounting/Services/JournalEntryService.php
+
+		-
+			message: '#^Parameter \#1 \$date of method App\\Domains\\Accounting\\Services\\FiscalPeriodService\:\:resolveForDateOrFail\(\) expects Illuminate\\Support\\Carbon, Carbon\\Carbon given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Domains/Accounting/Services/PayrollAutoPostService.php
+
+		-
+			message: '#^Property App\\Domains\\Accounting\\Services\\PayrollAutoPostService\:\:\$jeService is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Domains/Accounting/Services/PayrollAutoPostService.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Domains/Attendance/Policies/AttendanceLogPolicy.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 8
+			path: app/Domains/Attendance/Policies/OvertimeRequestPolicy.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 2
+			path: app/Domains/Attendance/Services/OvertimeRequestService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Attendance/Services/OvertimeRequestService.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 5
+			path: app/Domains/Attendance/Services/OvertimeRequestService.php
+
+		-
+			message: '#^Method App\\Domains\\HR\\Models\\Employee\:\:supervisor\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Employee, App\\Domains\\HR\\Models\\Employee\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Employee, \$this\(App\\Domains\\HR\\Models\\Employee\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/HR/Models/Employee.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\HR\\Models\\Employee\:\:\$created_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/HR/Policies/EmployeePolicy.php
+
+		-
+			message: '#^Instanceof between Laravel\\Sanctum\\PersonalAccessToken and Laravel\\Sanctum\\PersonalAccessToken will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Domains/HR/Services/AuthService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Domains/HR/Services/AuthService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\HR\\Models\\Employee\:\:\$_fire_activated_event\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/HR/Services/EmployeeService.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Domains/Leave/Policies/LeaveBalancePolicy.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 6
+			path: app/Domains/Leave/Policies/LeaveRequestPolicy.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Domains/Leave/Services/LeaveRequestService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Leave/Services/LeaveRequestService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Payroll\\Models\\ThirteenthMonthAccrual\:\:\$final_amount_centavos\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollEdgeCaseHandler.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Attendance\\Models\\AttendanceLog\:\:\$count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollPreRunService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Attendance\\Models\\AttendanceLog\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollPreRunService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Attendance\\Models\\AttendanceLog\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollPreRunService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>gross" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>net" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>pagibig" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>philhealth" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sss" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>wtax" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>ytd_tax_withheld_centavos" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>ytd_taxable_income_centavos" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollQueryService.php
+
+		-
+			message: '#^Offset ''pay_period_id'' on array\{cutoff_start\: string, cutoff_end\: string, pay_date\: string, notes\?\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollRunService.php
+
+		-
+			message: '#^Offset ''run_type'' on array\{cutoff_start\: string, cutoff_end\: string, pay_date\: string, notes\?\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollRunService.php
+
+		-
+			message: '#^Property App\\Domains\\Payroll\\Models\\PayrollRun\:\:\$submitted_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollRunService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''regular'' and ''thirteenth_month'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollRunService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Payroll/Services/PayrollScopeService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Payroll/Services/PayrollScopeService.php
+
+		-
+			message: '#^Method App\\Domains\\Payroll\\Services\\PayrollScopeService\:\:scopePreview\(\) should return array\{total_in_scope\: int, excluded_inactive\: int, manually_excluded\: int, will_be_computed\: int, departments\: list\<array\{id\: int, name\: string, in_scope_count\: int\}\>\} but returns array\{total_eligible\: int\<0, max\>, manually_excluded\: int\<0, max\>, net_in_scope\: int\<0, max\>, by_department\: array\<int, array\{department_id\: int, department_name\: string, eligible\: int, excluded\: int, in_scope\: int\}\>, missing_bank_employees\: array\<int, array\{id\: int, full_name\: string, employee_code\: string, department_name\: mixed\}\>\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollScopeService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\HR\\Models\\Employee\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Domains/Payroll/Services/PayrollScopeService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Domains/Payroll/Services/PayrollScopeService.php
+
+		-
+			message: '#^Class App\\Shared\\Exceptions\\SodViolationException constructor invoked with 1 parameter, 2\-3 required\.$#'
+			identifier: arguments.count
+			count: 2
+			path: app/Domains/Payroll/Services/PayrollWorkflowService.php
+
+		-
+			message: '#^Offset ''checkboxes_checked'' on array\{checkboxes_checked\: array\<string\>, comments\?\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Domains/Payroll/Services/PayrollWorkflowService.php
+
+		-
+			message: '#^Property App\\Domains\\Payroll\\Models\\PayrollRun\:\:\$publish_scheduled_at \(Illuminate\\Support\\Carbon\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollWorkflowService.php
+
+		-
+			message: '#^Call to an undefined method App\\Domains\\Payroll\\Services\\TaxWithholdingService\:\:compute\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/Payroll/Services/ThirteenthMonthComputationService.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Domains/Payroll/Services/ThirteenthMonthComputationService.php
+
+		-
+			message: '#^Property App\\Domains\\Payroll\\Models\\PayrollRun\:\:\$posted_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
+			identifier: assign.propertyType
+			count: 2
+			path: app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php
+
+		-
+			message: '#^Instantiated class App\\Exceptions\\DomainException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Domains/Tax/Models/VatLedger.php
+
+		-
+			message: '#^Throwing object of an unknown class App\\Exceptions\\DomainException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Domains/Tax/Models/VatLedger.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Leave\\Models\\LeaveRequest\:\:\$days_applied\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Events/Leave/LeaveRequestDecided.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Events/Leave/LeaveRequestDecided.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Events/Leave/LeaveRequestDecided.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Leave\\Models\\LeaveRequest\:\:\$days_applied\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Events/Leave/LeaveRequestFiled.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Events/Leave/LeaveRequestFiled.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Events/Leave/LeaveRequestFiled.php
+
+		-
+			message: '#^Property App\\Exports\\AlphalistExport\:\:\$settings is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Exports/AlphalistExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>bank_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollBreakdownExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>employee_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollBreakdownExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>first_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollBreakdownExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>last_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollBreakdownExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollBreakdownExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>title" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollBreakdownExport.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Exports/PayrollRegisterExport.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Exports/PayrollRegisterExport.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 3
+			path: app/Exports/PayrollRegisterExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollRegisterExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>title" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/PayrollRegisterExport.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/AP/VendorInvoiceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$company_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/AP/VendorInvoiceController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/AP/VendorInvoiceController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 4
+			path: app/Http/Controllers/Admin/ChartOfAccountsController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 4
+			path: app/Http/Controllers/Admin/HolidayCalendarController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/LoanTypeController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/MinimumWageController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/PagibigContributionController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/PhilhealthContributionController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/SalaryGradeController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/SssContributionController.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\Audit\.$#'
+			identifier: class.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/TaxBracketController.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Leave\\Models\\LeaveBalance\:\:\$balance_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Employee/EmployeeSelfServiceController.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Leave\\Models\\LeaveBalance\:\:\$used_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Employee/EmployeeSelfServiceController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Employee/EmployeeSelfServiceController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Leave\\Models\\LeaveBalance\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Employee/EmployeeSelfServiceController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Http/Controllers/Employee/EmployeeSelfServiceController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\Leave\\Models\\LeaveType\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Employee/EmployeeSelfServiceController.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Leave\\Models\\LeaveRequest\:\:\$leave_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Leave\\Models\\LeaveRequest\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\HolidayCalendar\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Domains\\HR\\Models\\Employee\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\Leave\\Models\\LeaveType\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Leave/LeaveRequestController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Payroll/PayrollDetailController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Payroll/PayrollDetailController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Payroll/PayrollRunController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\Payroll\\Models\\PayrollDetail\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Payroll/PayrollRunController.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Payroll/PayrollRunController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Payroll/PayrollRunController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$form_2307_generated\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$form_2307_generated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reference_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$atc_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_by\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reference_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Resources/AR/CustomerInvoiceResource.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Resources/Accounting/FiscalPeriodResource.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/Accounting/JournalEntryResource.php
+
+		-
+			message: '#^PHPDoc tag @mixin contains non\-object type stdClass\.$#'
+			identifier: mixin.nonObject
+			count: 1
+			path: app/Http/Resources/Admin/SystemSettingResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Auth/UserPermissionsResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/Auth/UserPermissionsResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/HR/EmployeeListResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HR/EmployeeListResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HR/EmployeeListResource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getRoleNames\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/HR/EmployeeListResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/HR/EmployeeResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HR/EmployeeResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HR/EmployeeResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Loan/LoanResource.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/Loan/LoanResource.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 2
+			path: app/Http/Resources/Payroll/PayrollDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Payroll\\PayrollRunResource\:\:\$pre_run_checks_json\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Payroll/PayrollRunResource.php
+
+		-
+			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{id\: int, employee_id\: int, reason\: string, excluded_at\: string, employee\: array\{id\: int, employee_code\: string, first_name\: string, last_name\: string\}\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, employee_id\: int, reason\: string, excluded_at\: string, employee\: array\{id\: int, employee_code\: string, first_name\: string, last_name\: string\}\|null\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Resources/Payroll/PayrollRunResource.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/Payroll/PayrollRunResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/Payroll/PayrollRunResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Tax/VatLedgerResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Tax/VatLedgerResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Infrastructure/Observers/PayrollRunObserver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Jobs/AP/SendApDueDateAlertJob.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\AP\\Models\\VendorInvoice\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Jobs/AP/SendApDueDateAlertJob.php
+
+		-
+			message: '#^Method App\\Models\\User\:\:getEffectivePermissions\(\) should return Illuminate\\Support\\Collection\<int, string\> but returns Illuminate\\Support\\Collection\<int, TValue\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Notifications/LeaveDecidedNotification.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/LeaveDecidedNotification.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 2
+			path: app/Notifications/LeaveFiledNotification.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/LeaveFiledNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$employee\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/BankDisbursementService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$employee_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BankDisbursementService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$net_pay_centavos\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BankDisbursementService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/BankDisbursementService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>bank_account_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/BankDisbursementService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>bank_account_no" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/BankDisbursementService.php

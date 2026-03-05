@@ -1,0 +1,311 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Procurement\Services;
+
+use App\Domains\Procurement\Models\PurchaseRequest;
+use App\Domains\Procurement\Models\PurchaseRequestItem;
+use App\Models\User;
+use App\Notifications\Procurement\PurchaseRequestStatusNotification;
+use App\Shared\Contracts\ServiceContract;
+use App\Shared\Exceptions\DomainException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+
+final class PurchaseRequestService implements ServiceContract
+{
+    // ── Store (draft) ────────────────────────────────────────────────────────
+
+    /**
+     * Create a new PR draft with line items.
+     *
+     * @param  array<string, mixed>       $data
+     * @param  list<array<string, mixed>> $items
+     */
+    public function store(array $data, array $items, User $actor): PurchaseRequest
+    {
+        if (empty($items)) {
+            throw new DomainException(
+                message: 'A Purchase Request must have at least one line item before it can be saved.',
+                errorCode: 'PR_NO_ITEMS',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($data, $items, $actor): PurchaseRequest {
+            $reference = $this->generateReference();
+
+            $pr = PurchaseRequest::create([
+                'pr_reference'     => $reference,
+                'department_id'    => $data['department_id'],
+                'requested_by_id'  => $actor->id,
+                'urgency'          => $data['urgency'] ?? 'normal',
+                'justification'    => $data['justification'],
+                'notes'            => $data['notes'] ?? null,
+                'status'           => 'draft',
+                'total_estimated_cost' => 0,
+            ]);
+
+            $this->syncItems($pr, $items);
+
+            return $pr->refresh();
+        });
+    }
+
+    // ── Update ───────────────────────────────────────────────────────────────
+
+    /**
+     * @param  list<array<string, mixed>> $items
+     */
+    public function update(PurchaseRequest $pr, array $data, array $items): PurchaseRequest
+    {
+        if ($pr->status !== 'draft') {
+            throw new DomainException(
+                message: 'Only draft Purchase Requests can be edited.',
+                errorCode: 'PR_NOT_EDITABLE',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($pr, $data, $items): PurchaseRequest {
+            $pr->update([
+                'department_id' => $data['department_id'] ?? $pr->department_id,
+                'urgency'       => $data['urgency']       ?? $pr->urgency,
+                'justification' => $data['justification'] ?? $pr->justification,
+                'notes'         => $data['notes']         ?? $pr->notes,
+            ]);
+
+            if (!empty($items)) {
+                $this->syncItems($pr, $items);
+            }
+
+            return $pr->refresh();
+        });
+    }
+
+    // ── Submit ───────────────────────────────────────────────────────────────
+
+    public function submit(PurchaseRequest $pr, User $actor): PurchaseRequest
+    {
+        $this->assertStatus($pr, 'draft', 'PR_NOT_DRAFT');
+
+        if ($pr->items()->count() === 0) {
+            throw new DomainException(
+                message: 'Cannot submit — the Purchase Request has no line items.',
+                errorCode: 'PR_NO_ITEMS',
+                httpStatus: 422,
+            );
+        }
+
+        $pr->update([
+            'status'          => 'submitted',
+            'submitted_by_id' => $actor->id,
+            'submitted_at'    => now(),
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'submitted', $actor->name));
+        }
+
+        return $refreshed;
+    }
+
+    // ── Note (Head — SOD-011) ────────────────────────────────────────────────
+
+    public function note(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
+    {
+        $this->assertStatus($pr, 'submitted', 'PR_NOT_SUBMITTED');
+        $this->assertSod($actor->id, $pr->submitted_by_id ?? 0, 'SOD-011', 'Head cannot be the same person who submitted the PR.');
+
+        $pr->update([
+            'status'         => 'noted',
+            'noted_by_id'    => $actor->id,
+            'noted_at'       => now(),
+            'noted_comments' => $comments,
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'noted', $actor->name, $comments ?: null));
+        }
+
+        return $refreshed;
+    }
+
+    // ── Check (Manager — SOD-012) ────────────────────────────────────────────
+
+    public function check(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
+    {
+        $this->assertStatus($pr, 'noted', 'PR_NOT_NOTED');
+        $this->assertSod($actor->id, $pr->noted_by_id ?? 0, 'SOD-012', 'Manager cannot be the same person who noted the PR.');
+
+        $pr->update([
+            'status'           => 'checked',
+            'checked_by_id'    => $actor->id,
+            'checked_at'       => now(),
+            'checked_comments' => $comments,
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'checked', $actor->name, $comments ?: null));
+        }
+
+        return $refreshed;
+    }
+
+    // ── Review (Officer — SOD-013) ───────────────────────────────────────────
+
+    public function review(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
+    {
+        $this->assertStatus($pr, 'checked', 'PR_NOT_CHECKED');
+        $this->assertSod($actor->id, $pr->checked_by_id ?? 0, 'SOD-013', 'Officer cannot be the same person who checked the PR.');
+
+        $pr->update([
+            'status'            => 'reviewed',
+            'reviewed_by_id'    => $actor->id,
+            'reviewed_at'       => now(),
+            'reviewed_comments' => $comments,
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'reviewed', $actor->name, $comments ?: null));
+        }
+
+        return $refreshed;
+    }
+
+    // ── VP Approve (SOD-014) ─────────────────────────────────────────────────
+
+    public function vpApprove(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
+    {
+        $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
+        $this->assertSod($actor->id, $pr->reviewed_by_id ?? 0, 'SOD-014', 'VP cannot be the same person who reviewed the PR.');
+
+        $pr->update([
+            'status'            => 'approved',
+            'vp_approved_by_id' => $actor->id,
+            'vp_approved_at'    => now(),
+            'vp_comments'       => $comments,
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null));
+        }
+
+        return $refreshed;
+    }
+
+    // ── Reject ───────────────────────────────────────────────────────────────
+
+    public function reject(PurchaseRequest $pr, User $actor, string $reason, string $stage): PurchaseRequest
+    {
+        if (in_array($pr->status, ['approved', 'rejected', 'cancelled', 'converted_to_po'], true)) {
+            throw new DomainException(
+                message: "Cannot reject a PR in status '{$pr->status}'.",
+                errorCode: 'PR_CANNOT_REJECT',
+                httpStatus: 422,
+            );
+        }
+
+        $pr->update([
+            'status'           => 'rejected',
+            'rejected_by_id'   => $actor->id,
+            'rejected_at'      => now(),
+            'rejection_reason' => $reason,
+            'rejection_stage'  => $stage,
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'rejected', $actor->name, $reason));
+        }
+
+        return $refreshed;
+    }
+
+    // ── Cancel ───────────────────────────────────────────────────────────────
+
+    public function cancel(PurchaseRequest $pr, User $actor): PurchaseRequest
+    {
+        if (! in_array($pr->status, ['draft', 'submitted'], true)) {
+            throw new DomainException(
+                message: 'Only draft or submitted Purchase Requests can be cancelled.',
+                errorCode: 'PR_CANNOT_CANCEL',
+                httpStatus: 422,
+            );
+        }
+
+        $pr->update(['status' => 'cancelled']);
+
+        $refreshed = $pr->refresh();
+
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'cancelled', $actor->name));
+        }
+
+        return $refreshed;
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    /**
+     * @param  list<array<string, mixed>> $items
+     */
+    private function syncItems(PurchaseRequest $pr, array $items): void
+    {
+        $pr->items()->delete();
+
+        foreach ($items as $index => $item) {
+            PurchaseRequestItem::create([
+                'purchase_request_id' => $pr->id,
+                'item_description'    => $item['item_description'],
+                'unit_of_measure'     => $item['unit_of_measure'],
+                'quantity'            => $item['quantity'],
+                'estimated_unit_cost' => $item['estimated_unit_cost'],
+                'specifications'      => $item['specifications'] ?? null,
+                'line_order'          => $index + 1,
+            ]);
+        }
+    }
+
+    private function generateReference(): string
+    {
+        $seq = DB::selectOne('SELECT NEXTVAL(\'purchase_request_seq\') AS val');
+        $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
+
+        return 'PR-' . now()->format('Y-m') . '-' . $num;
+    }
+
+    private function assertStatus(PurchaseRequest $pr, string $expected, string $errorCode): void
+    {
+        if ($pr->status !== $expected) {
+            throw new DomainException(
+                message: "Purchase Request must be in '{$expected}' status (current: '{$pr->status}').",
+                errorCode: $errorCode,
+                httpStatus: 422,
+            );
+        }
+    }
+
+    private function assertSod(int $actorId, int $previousActorId, string $sodCode, string $message): void
+    {
+        if ($actorId === $previousActorId) {
+            throw new DomainException(
+                message: "{$sodCode}: {$message}",
+                errorCode: $sodCode,
+                httpStatus: 422,
+            );
+        }
+    }
+}

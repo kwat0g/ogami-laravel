@@ -1,0 +1,14 @@
+{
+    "private": true,
+    "packageManager": "pnpm@10.30.1",
+    "scripts": {
+        "dev": "bash dev.sh",
+        "dev:minimal": "bash dev.sh --minimal",
+        "dev:full": "bash dev.sh --with-reverb",
+        "frontend": "pnpm --filter ogami-erp-frontend",
+        "build": "pnpm --filter ogami-erp-frontend build",
+        "typecheck": "pnpm --filter ogami-erp-frontend typecheck",
+        "test": "pnpm --filter ogami-erp-frontend test",
+        "lint": "pnpm --filter ogami-erp-frontend lint"
+    }
+}

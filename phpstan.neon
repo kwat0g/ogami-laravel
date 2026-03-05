@@ -1,0 +1,32 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - app
+
+    # Exclude auto-generated/vendor service providers from analysis
+    excludePaths:
+        - app/Providers/HorizonServiceProvider.php
+
+    ignoreErrors:
+        # Eloquent IDE helper not installed; trait-based unused warning is expected
+        - message: '#Trait [A-Za-z\\]+ is used zero times and is not analysed#'
+          reportUnmatched: false
+
+        # Known Larastan false positive: BelongsTo/HasMany generic TDeclaringModel
+        # is non-covariant so PHPStan cannot reconcile model vs $this(model)
+        # even on final classes. Project-wide suppression for this framework limitation.
+        - message: '#Template type TDeclaringModel on class .* is not covariant#'
+          reportUnmatched: false
+
+        # Same for generics.lessTypes (single-param HasMany/HasOne annotations)
+        - message: '#Generic type .* does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations#'
+          reportUnmatched: false
+
+        # Larastan: BelongsTo $this(Model) covariance — return.type in procurement models
+        - identifier: return.type
+          path: app/Domains/Procurement/Models/*.php
+          reportUnmatched: false

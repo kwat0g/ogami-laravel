@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Procurement\Services;
+
+use App\Domains\Procurement\Models\GoodsReceipt;
+use App\Domains\Procurement\Models\PurchaseOrder;
+use App\Events\Procurement\ThreeWayMatchPassed;
+use App\Shared\Contracts\ServiceContract;
+use App\Shared\Exceptions\DomainException;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Three-Way Match Service.
+ *
+ * Validates that PR (approved) → PO (sent) → GR (confirmed) quantities reconcile.
+ * On success:
+ *   1. Updates PO item received quantities.
+ *   2. Transitions PO to partially_received or fully_received.
+ *   3. Fires ThreeWayMatchPassed event — a listener auto-creates the AP invoice draft.
+ *
+ * SOD-009 still applies when the Accounting Officer submits the auto-created invoice.
+ */
+final class ThreeWayMatchService implements ServiceContract
+{
+    public function runMatch(GoodsReceipt $gr): bool
+    {
+        $po = $gr->purchaseOrder()->with(['purchaseRequest', 'items'])->firstOrFail();
+        $pr = $po->purchaseRequest;
+
+        // Validate PR is approved
+        if ($pr->status !== 'approved') {
+            throw new DomainException(
+                message: "Three-way match failed: Purchase Request #{$pr->pr_reference} is not in approved status.",
+                errorCode: 'TWM_PR_NOT_APPROVED',
+                httpStatus: 422,
+            );
+        }
+
+        // Validate PO is sent
+        if (! in_array($po->status, ['sent', 'partially_received'], true)) {
+            throw new DomainException(
+                message: "Three-way match failed: Purchase Order #{$po->po_reference} is not in sent status.",
+                errorCode: 'TWM_PO_NOT_SENT',
+                httpStatus: 422,
+            );
+        }
+
+        DB::transaction(function () use ($gr, $po): void {
+            // Update PO item received quantities
+            foreach ($gr->items as $grItem) {
+                $poItem = $grItem->poItem;
+                $newReceived = (float) $poItem->quantity_received + (float) $grItem->quantity_received;
+
+                if ($newReceived > (float) $poItem->quantity_ordered) {
+                    throw new DomainException(
+                        message: "Three-way match: received quantity ({$newReceived}) would exceed ordered quantity ({$poItem->quantity_ordered}) for item '{$poItem->item_description}'.",
+                        errorCode: 'TWM_QTY_OVERFLOW',
+                        httpStatus: 422,
+                    );
+                }
+
+                $poItem->update(['quantity_received' => $newReceived]);
+            }
+
+            // Refresh PO items to get DB-computed quantity_pending
+            $po->load('items');
+
+            // Determine new PO status
+            $allReceived = $po->items->every(
+                fn ($item) => (float) $item->quantity_pending <= 0.0
+            );
+
+            $po->update(['status' => $allReceived ? 'fully_received' : 'partially_received']);
+
+            // Mark GR as matched
+            $gr->update(['three_way_match_passed' => true]);
+        });
+
+        // Fire event — listener will auto-create the AP invoice draft
+        event(new ThreeWayMatchPassed($gr->fresh()));
+
+        return true;
+    }
+}
