@@ -33,20 +33,140 @@ Run the scenarios **in order** — each one produces data used by the next.
 
 ---
 
-## Seeded Master Data Reference
+## What Is Seeded vs. What You Create Manually
 
-| Type | Code / Name | Notes |
-|------|-------------|-------|
-| Raw Material | `RAW-001` — PP Resin Natural | Primary production input |
-| Raw Material | `RAW-002` — HDPE Resin Black | Secondary resin |
-| Finished Good | `FGD-001` — Plastic Container 500ml | Saleable item |
-| Vendor | Chinatown Resins Inc. | Pre-accredited, Net-30 terms |
-| Customer | Ace Hardware Philippines | Active customer |
-| Equipment | Injection Moulding Machine #1 | Active |
-| Equipment | Hydraulic Press #3 | Active |
-| Mold | Container 500ml – Cavity 4 | **CRITICAL** — 91% shot life used |
-| Vehicle | TRUCK-001 — Delivery Truck 1 | Active |
-| Vehicle | VAN-001 — Mitsubishi L300 Van | Active |
+### Seeded automatically by `migrate:fresh --seed`
+
+| Category | What | Why seeded |
+|----------|------|------------|
+| **Chart of Accounts** | 16 accounts (1001 Cash, 2001 AP, 3001 AR, 4001 Revenue, 5001 Wages, 6001 Expense, etc.) | Account codes are **hardcoded** in every AP/AR/GL auto-posting service — creating them manually with different codes would break all automated journal entries |
+| **Fiscal Periods** | Nov 2025, Dec 2025, Jan 2026 *(closed)*, Feb 2026, Mar 2026 *(open)* | Calendar reference data; March 2026 is the period used throughout these scenarios |
+| **Rate Tables** | SSS, PhilHealth, Pag-IBIG, tax brackets, OT multipliers, holiday calendar | Government-mandated tables — not business data |
+| **RBAC + User Accounts** | Roles, permissions, 21 user accounts (admin, hr.manager, manufacturing roles, etc.) | Access control setup |
+| **Org Structure** | Departments (HR, PROD, QC, MOLD, WH, etc.), positions, salary grades | Reference data for employee linking |
+| **Fleet Vehicles** | TRUCK-001, TRUCK-002, VAN-001 — Mitsubishi L300 Van | Required for shipment creation |
+
+### Created manually in Scenario 0 (below)
+
+Everything else: bank account, vendor, customer, item category, item masters, warehouse location, bill of materials.
+
+---
+
+## Scenario 0 — Setup: Create All Business Master Data
+
+> **Run this once on a fresh database before any other scenario.** All steps below use the `superadmin` account.
+
+### 0.1 Create a Bank Account
+
+> Required for: recording AP payments (Scenario 3) and AR collections (Scenario 9).
+
+1. Go to **Banking → Bank Accounts → New**
+2. Fill in:
+   - **Name:** BDO
+   - **Account Number:** 0000-1234-5678
+   - **Bank Name:** Banco de Oro (BDO)
+   - **Account Type:** Checking
+   - **GL Account ID:** `1` *(this is the database ID for account `1001 — Cash in Bank`, which is seeded automatically — enter the number 1)*
+   - **Opening Balance:** 500000
+3. Click **Save**
+4. ✅ Bank account available for payment entries; GL account `1001 — Cash in Bank` is now linked
+
+### 0.2 Create a Vendor
+
+> Required for: creating a Purchase Order (Scenario 1) and AP invoices (Scenario 3).
+
+1. Go to **Accounting → AP Vendors → New**
+2. Fill in:
+   - **Name:** Chinatown Resins Inc.
+   - **TIN:** 000-123-456-000
+   - **Payment Terms:** NET30
+   - **Address:** 12 Resin Street, Tondo, Manila
+   - **Contact Person:** Juan Dela Cruz
+   - **Email:** sales@chinatownresins.test
+   - **Phone:** +63 2 8888 0001
+   - **Subject to EWT:** No
+3. Click **Save**
+4. ✅ Vendor available in PO and AP invoice dropdowns
+
+### 0.3 Create a Customer
+
+> Required for: delivery schedule (Scenario 4), delivery receipt (Scenario 8), AR invoice (Scenario 9).
+
+1. Go to **Accounting → AR Customers → New**
+2. Fill in:
+   - **Name:** Ace Hardware Philippines
+   - **TIN:** 000-987-654-000
+   - **Email:** procurement@acehw.test
+   - **Phone:** +63 2 8999 0002
+   - **Contact Person:** Maria Cruz
+   - **Address:** 1 Hardware Ave, Pasig, Metro Manila
+   - **Credit Limit:** ₱500,000.00
+3. Click **Save**
+4. ✅ Customer available in delivery schedule and AR invoice dropdowns
+
+### 0.4 Create an Item Category
+
+1. Go to **Inventory → Item Categories → New**
+2. Fill in:
+   - **Code:** `RAW-MAT`
+   - **Name:** Raw Materials
+   - **Description:** Plastic pellets and raw resin inputs
+3. Click **Save**
+4. ✅ Category `RAW-MAT` available for item master creation
+
+### 0.5 Create Item Masters
+
+Create the following three items. Go to **Inventory → Item Master → New Item** for each.
+
+**Item 1 — PP Resin Natural**
+- **Item Code:** `RAW-001` · **Name:** PP Resin Natural
+- **Category:** Raw Materials · **Type:** Raw Material
+- **UoM:** kg · **Reorder Point:** 500 · **Reorder Qty:** 2000
+- **Requires IQC:** ✅ Yes
+- Click **Save**
+
+**Item 2 — HDPE Resin Black**
+- **Item Code:** `RAW-002` · **Name:** HDPE Resin Black
+- **Category:** Raw Materials · **Type:** Raw Material
+- **UoM:** kg · **Reorder Point:** 300 · **Reorder Qty:** 1000
+- **Requires IQC:** ✅ Yes
+- Click **Save**
+
+**Item 3 — Plastic Container 500ml**
+- **Item Code:** `FGD-001` · **Name:** Plastic Container 500ml
+- **Category:** Raw Materials · **Type:** Finished Good
+- **UoM:** pcs · **Reorder Point:** 1000 · **Reorder Qty:** 5000
+- **Requires IQC:** ✅ Yes
+- Click **Save**
+
+✅ All three items visible in **Inventory → Item Master**
+
+### 0.6 Create a Warehouse Location
+
+1. Go to **Inventory → Warehouse Locations → New**
+2. Fill in:
+   - **Code:** `WH-A1` · **Name:** Warehouse A – Rack 1
+   - **Zone:** A · **Bin:** Rack-01
+3. Click **Save**
+4. ✅ Location `WH-A1` available for stock ledger entries
+
+### 0.7 Create a Bill of Materials for FGD-001
+
+> Required for: production order creation (Scenario 4). Items RAW-001, RAW-002, and FGD-001 must exist first (step 0.5).
+
+1. Go to **Production → Bill of Materials → New**
+2. Header:
+   - **Product Item:** FGD-001 Plastic Container 500ml *(dropdown)*
+   - **Version:** 1.0
+   - **Notes:** Injection-moulded 500ml PP container. 20g gross weight per unit.
+3. Add component — click **+ Add Component**:
+   - **Component:** RAW-001 PP Resin Natural
+   - **Qty per Unit:** 0.0192 · **UoM:** kg · **Scrap %:** 4
+4. Add second component:
+   - **Component:** RAW-002 HDPE Resin Black
+   - **Qty per Unit:** 0.0008 · **UoM:** kg · **Scrap %:** 2
+5. Click **Save** → **Activate**
+6. ✅ BOM for FGD-001 v1.0 active; components visible
 
 ---
 
@@ -242,7 +362,7 @@ Run the scenarios **in order** — each one produces data used by the next.
 5. ✅ GL entry per invoice:
    - DR Accounts Payable (invoice net)
    - CR EWT Payable (2% EWT)
-   - CR Cash / Bank (net − EWT)
+   - CR Cash / Bank (net − EWT)![alt text](image.png)
 6. Repeat for the second invoice
 7. Go to **Accounting → General Ledger** → filter by `2001 — Accounts Payable` → ✅ closing balance = ₱0
 
@@ -299,7 +419,29 @@ Run the scenarios **in order** — each one produces data used by the next.
 
 ## Scenario 5 — Maintenance: Corrective and Preventive Work Orders
 
-> **Story:** Injection Moulding Machine #1 breaks down during the production run (March 22). The corrective WO is raised, resolved, and then a preventive PM schedule review is done.
+> **Story:** Injection Moulding Machine #1 breaks down during the production run (March 22). First create the equipment records, then raise the corrective WO, resolve it, and add a preventive PM schedule.
+
+### 5.0 Create Equipment Records
+
+1. Go to **Maintenance → Equipment → New**
+2. Fill in:
+   - **Name:** Injection Moulding Machine #1
+   - **Category:** Production
+   - **Manufacturer:** Engel · **Model No:** ES200/50 · **Serial No:** EM-2018-00123
+   - **Location:** Production Floor A
+   - **Date Commissioned:** 2018-06-01
+   - **Status:** Operational
+3. Click **Save**
+4. ✅ Equipment record created
+5. Click **New** again — create a second machine:
+   - **Name:** Hydraulic Press #3
+   - **Category:** Production
+   - **Manufacturer:** Schuler · **Model No:** HP-320 · **Serial No:** HP-2015-00789
+   - **Location:** Production Floor B
+   - **Date Commissioned:** 2015-03-20
+   - **Status:** Operational
+6. Click **Save**
+7. ✅ Both equipment records available for WO assignment
 
 ### 5.1 Create a Corrective Work Order
 
@@ -321,25 +463,45 @@ Run the scenarios **in order** — each one produces data used by the next.
 4. ✅ Work order status: `completed`
 5. ✅ Equipment status: `operational`; last-serviced date updated
 
-### 5.3 Review Preventive Maintenance Schedule
+### 5.3 Create and Review a Preventive Maintenance Schedule
 
-1. Go to **Maintenance → Equipment**, open Injection Moulding Machine #1
-2. Check linked PM schedules
-3. ✅ `next_due` = `last_done_on + frequency_days`; any overdue PM schedule is flagged
-4. If PM is overdue, create a preventive WO: **Maintenance → Work Orders → New** with **Type: Preventive**
+1. Go to **Maintenance → Equipment**, open **Injection Moulding Machine #1**
+2. Click **Add PM Schedule** (or go to **Maintenance → PM Schedules → New**):
+   - **Equipment:** Injection Moulding Machine #1
+   - **Task Name:** Monthly Lubrication Service
+   - **Frequency (days):** 30
+   - **Last Done On:** 2026-03-22 *(today — set after completing the corrective WO)*
+3. Click **Save**
+4. ✅ PM Schedule created; **Next Due** = 2026-04-21 (`last_done_on + 30 days`)
+5. ✅ Schedule listed under the equipment's PM tab; no overdue flag since last done today
+6. To test an overdue scenario: change **Last Done On** to a past date (e.g., 2026-02-01) — the schedule should show as overdue
 
 ---
 
 ## Scenario 6 — Mold: Shot Log and Criticality Monitor
 
-> **Story:** The Container 500ml – Cavity 4 mold starts at 91% shot-life. After the production run, 10,050 new shots are logged. Confirm criticality escalates and a maintenance WO is auto-generated if threshold is crossed.
+> **Story:** Create the Container 500ml – Cavity 4 mold with a low max-shot ceiling so the production run in Scenario 4 (10,050 shots) pushes it over the limit. Confirm the criticality badge updates and a preventive maintenance WO is auto-generated.
+
+### 6.0 Create the Mold Record
+
+1. Go to **Mold → New**
+2. Fill in:
+   - **Name:** Container 500ml – Cavity 4
+   - **Description:** 4-cavity mould for 500ml PP container
+   - **Cavity Count:** 4
+   - **Material:** P20 Tool Steel
+   - **Location:** Mold Room Rack A
+   - **Max Shots:** 10,000 *(intentionally low for testing — this ensures logging 10,050 shots crosses the threshold and triggers the auto-WO)*
+   - **Status:** Active
+3. Click **Save**
+4. ✅ Mold record created; `current_shots` starts at 0; criticality badge: **0%**
 
 ### 6.1 View Current Mold Status
 
 1. Go to **Mold** (main list)
 2. Locate **Container 500ml – Cavity 4**
-3. ✅ Criticality badge: **CRITICAL** (≥90% utilization)
-4. Note the current `current_shots` and `max_shots` values
+3. ✅ `current_shots` = 0, `max_shots` = 10,000 — criticality at 0%
+4. Note these baseline values before logging shots
 
 ### 6.2 Log Production Shots
 
@@ -351,9 +513,9 @@ Run the scenarios **in order** — each one produces data used by the next.
    - **Operator:** *(optional)*
    - **Production Order:** *(optional — link to the WO from Scenario 4)*
 3. Click **Save**
-4. ✅ `current_shots` counter updates
-5. ✅ If `current_shots >= max_shots`, a **Preventive Maintenance Work Order is auto-created** (check **Maintenance → Work Orders** — a new record linked to this mold should appear)
-6. ✅ Criticality badge reflects the new percentage
+4. ✅ `current_shots` updates to 10,050 (exceeds `max_shots` of 10,000)
+5. ✅ Criticality badge: **>100%** — **CRITICAL** threshold exceeded
+6. ✅ A **Preventive Maintenance Work Order is auto-created** — go to **Maintenance → Work Orders** and confirm a new WO linked to this mold appears *(requires queue worker)*
 
 ---
 

@@ -29,7 +29,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
     with_archived: withArchived || undefined,
   })
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('production.delivery-schedule.create')
+  const canCreate = hasPermission('production.delivery-schedule.manage')
 
   return (
     <div>

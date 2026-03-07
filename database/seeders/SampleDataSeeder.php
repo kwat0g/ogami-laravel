@@ -35,8 +35,6 @@ class SampleDataSeeder extends Seeder
         $this->seedDemoEmployees();
         $this->seedUserAccounts();
         $this->seedEmployeeUserLinks();
-        $this->seedPayPeriods();
-        $this->seedAttendanceRecords();
         $this->seedShiftAssignments();
     }
     // ── Org chart employees (changes.md) ──────────────────────────────────────

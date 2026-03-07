@@ -120,11 +120,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Loan Approvals', href: '/accounting/loans', permission: 'loans.accounting_approve' },
       { label: 'VAT Ledger', href: '/accounting/vat-ledger', permission: 'reports.vat' },
       { label: 'Tax Summary', href: '/accounting/tax-summary', permission: 'reports.vat' },
-      { label: 'General Ledger', href: '/accounting/gl', permission: 'journal_entries.view' },
-      { label: 'Trial Balance', href: '/accounting/trial-balance', permission: 'journal_entries.view' },
-      { label: 'Balance Sheet', href: '/accounting/balance-sheet', permission: 'journal_entries.view' },
-      { label: 'Income Statement', href: '/accounting/income-statement', permission: 'journal_entries.view' },
-      { label: 'Cash Flow', href: '/accounting/cash-flow', permission: 'journal_entries.view' },
     ],
   },
   {

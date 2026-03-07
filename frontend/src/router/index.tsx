@@ -393,7 +393,7 @@ export const router = createBrowserRouter([
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
       { path: '/production/boms/new', element: withSuspense(guard('production.bom.create', <CreateBomPage />)) },
       { path: '/production/delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
-      { path: '/production/delivery-schedules/new', element: withSuspense(guard('production.delivery-schedule.create', <CreateDeliverySchedulePage />)) },
+      { path: '/production/delivery-schedules/new', element: withSuspense(guard('production.delivery-schedule.manage', <CreateDeliverySchedulePage />)) },
       { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
       { path: '/production/orders/new', element: withSuspense(guard('production.orders.create', <CreateProductionOrderPage />)) },
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
