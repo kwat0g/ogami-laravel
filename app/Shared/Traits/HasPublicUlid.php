@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
@@ -41,11 +42,18 @@ trait HasPublicUlid
      * Explicit resolver so the Sanctum / route-model-binding pipeline
      * always queries by `ulid` regardless of any $field override.
      *
+     * Soft-deleted (archived) records are included so that detail pages
+     * for archived records remain accessible (read-only).
+     *
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
     public function resolveRouteBindingQuery($query, $value, $field = null): Builder
     {
+        if (in_array(SoftDeletes::class, class_uses_recursive(static::class))) {
+            $query = $query->withTrashed();
+        }
+
         return $query->where('ulid', $value);
     }
 }

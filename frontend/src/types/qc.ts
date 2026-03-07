@@ -1,7 +1,7 @@
 // QC / QA types
 
 export type InspectionStage = 'iqc' | 'ipqc' | 'oqc'
-export type InspectionStatus = 'open' | 'passed' | 'failed' | 'on_hold'
+export type InspectionStatus = 'open' | 'passed' | 'failed' | 'on_hold' | 'voided'
 export type NcrSeverity = 'minor' | 'major' | 'critical'
 export type NcrStatus = 'open' | 'under_review' | 'capa_issued' | 'closed' | 'voided'
 export type CapaType = 'corrective' | 'preventive'
@@ -24,6 +24,7 @@ export interface InspectionTemplate {
   is_active: boolean
   items?: InspectionTemplateItem[]
   created_at: string
+  deleted_at?: string | null
 }
 
 export interface InspectionResult {
@@ -53,6 +54,7 @@ export interface Inspection {
   results?: InspectionResult[]
   ncrs?: NonConformanceReport[]
   created_at: string
+  deleted_at?: string | null
 }
 
 export interface CapaAction {
@@ -84,6 +86,7 @@ export interface NonConformanceReport {
   capa_actions?: CapaAction[]
   closed_at: string | null
   created_at: string
+  deleted_at?: string | null
 }
 
 // Payloads

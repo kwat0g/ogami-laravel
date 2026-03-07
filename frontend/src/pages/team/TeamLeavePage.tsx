@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore'
 import {
   useTeamLeaveRequests,
   useHeadApproveLeaveRequest,
-  useApproveLeaveRequest,
+  useManagerCheckLeaveRequest,
   useRejectLeaveRequest,
 } from '@/hooks/useLeave'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -16,16 +16,16 @@ const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
 export default function TeamLeavePage() {
   const { hasPermission } = useAuthStore()
-  const canSupervise = hasPermission('leaves.supervise')
-  const canApprove = hasPermission('leaves.approve')
+  const canHeadApprove = hasPermission('leaves.head_approve')
+  const canManagerCheck = hasPermission('leaves.manager_check')
 
   const [filters, setFilters] = useState<LeaveFilters>({ per_page: 25 })
   const [rejectId, setRejectId] = useState<number | null>(null)
   const [remarks, setRemarks] = useState('')
 
   const { data, isLoading, isError } = useTeamLeaveRequests(filters)
-  const supervise = useHeadApproveLeaveRequest()
-  const approve = useApproveLeaveRequest()
+  const headApprove = useHeadApproveLeaveRequest()
+  const managerCheck = useManagerCheckLeaveRequest()
   const reject = useRejectLeaveRequest()
 
   if (isLoading) return <SkeletonLoader rows={10} />
@@ -37,26 +37,26 @@ export default function TeamLeavePage() {
   const getActionButtons = (row: LeaveRequest) => {
     const buttons = []
 
-    // Supervisor endorsement (for staff requests)
-    if (canSupervise && row.status === 'submitted' && row.requester_role === 'staff') {
+    // Step 2: Dept Head approves submitted requests
+    if (canHeadApprove && row.status === 'submitted') {
       buttons.push(
         <button
-          key="endorse"
-          onClick={() => supervise.mutate({ id: row.id }, {
-            onSuccess: () => toast.success('Request endorsed.'),
+          key="head-approve"
+          onClick={() => headApprove.mutate({ id: row.id }, {
+            onSuccess: () => toast.success('Request approved by dept head.'),
             onError: (err) => toast.error(parseApiError(err).message),
           })}
-          disabled={supervise.isPending}
+          disabled={headApprove.isPending}
           className="px-2.5 py-1 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          Endorse
+          Approve
         </button>
       )
       buttons.push(
         <button
-          key="reject-super"
+          key="head-reject"
           onClick={() => setRejectId(row.id)}
-          disabled={supervise.isPending || reject.isPending}
+          disabled={headApprove.isPending || reject.isPending}
           className="px-2.5 py-1 text-xs font-medium border border-red-300 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 transition-colors"
         >
           Reject
@@ -64,33 +64,26 @@ export default function TeamLeavePage() {
       )
     }
 
-    // Manager approval
-    // - For staff requests: must be supervisor_approved first
-    // - For supervisor requests: can approve directly (submitted status)
-    const canManagerApprove = canApprove && (
-      (row.requester_role === 'staff' && row.status === 'supervisor_approved') ||
-      (row.requester_role === 'head' && row.status === 'submitted')
-    )
-
-    if (canManagerApprove) {
+    // Step 3: Plant Manager checks head-approved requests
+    if (canManagerCheck && row.status === 'head_approved') {
       buttons.push(
         <button
-          key="approve"
-          onClick={() => approve.mutate({ id: row.id }, {
-            onSuccess: () => toast.success('Leave request approved.'),
+          key="manager-check"
+          onClick={() => managerCheck.mutate({ id: row.id }, {
+            onSuccess: () => toast.success('Request checked by plant manager.'),
             onError: (err) => toast.error(parseApiError(err).message),
           })}
-          disabled={approve.isPending}
+          disabled={managerCheck.isPending}
           className="px-2.5 py-1 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
         >
-          Approve
+          Check
         </button>
       )
       buttons.push(
         <button
-          key="reject-mgr"
+          key="manager-reject"
           onClick={() => setRejectId(row.id)}
-          disabled={approve.isPending || reject.isPending}
+          disabled={managerCheck.isPending || reject.isPending}
           className="px-2.5 py-1 text-xs font-medium border border-red-300 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 transition-colors"
         >
           Reject
@@ -99,21 +92,6 @@ export default function TeamLeavePage() {
     }
 
     return buttons
-  }
-
-  // Get requester role badge
-  const getRequesterBadge = (role?: string) => {
-    const styles: Record<string, string> = {
-      staff: 'bg-gray-100 text-gray-700',
-      supervisor: 'bg-blue-100 text-blue-700',
-      manager: 'bg-purple-100 text-purple-700',
-    }
-    const style = role ? styles[role] : styles.staff
-    return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${style}`}>
-        {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Staff'}
-      </span>
-    )
   }
 
   return (
@@ -133,11 +111,12 @@ export default function TeamLeavePage() {
 
       {/* Workflow Info */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <h3 className="text-sm font-medium text-blue-900 mb-2">Approval Workflow</h3>
+        <h3 className="text-sm font-medium text-blue-900 mb-2">Approval Workflow (AD-084-00)</h3>
         <ul className="text-sm text-blue-700 space-y-1">
-          <li>• Staff requests: Supervisor endorses → Manager approves</li>
-          <li>• Supervisor requests: Manager approves directly</li>
-          <li>• Manager requests: Executive approval (separate page)</li>
+          <li>• Step 2: Dept Head approves submitted requests</li>
+          <li>• Step 3: Plant Manager checks head-approved requests</li>
+          <li>• Step 4: GA Officer processes manager-checked requests</li>
+          <li>• Step 5: VP notes GA-processed requests (final approval)</li>
         </ul>
       </div>
 
@@ -149,7 +128,7 @@ export default function TeamLeavePage() {
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
         >
           <option value="">All Statuses</option>
-          {['submitted', 'supervisor_approved', 'approved', 'rejected', 'cancelled'].map((s) => (
+          {['submitted', 'head_approved', 'manager_checked', 'ga_processed', 'approved', 'rejected', 'cancelled'].map((s) => (
             <option key={s} value={s}>{s.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</option>
           ))}
         </select>
@@ -169,19 +148,18 @@ export default function TeamLeavePage() {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              {['Employee', 'Requester', 'Leave Type', 'From', 'To', 'Days', 'Reason', 'Status', 'Actions'].map((h) => (
+              {['Employee', 'Leave Type', 'From', 'To', 'Days', 'Reason', 'Status', 'Actions'].map((h) => (
                 <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {rows.length === 0 && (
-              <tr><td colSpan={9} className="px-3 py-8 text-center text-gray-400">No leave requests found.</td></tr>
+              <tr><td colSpan={8} className="px-3 py-8 text-center text-gray-400">No leave requests found.</td></tr>
             )}
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-blue-50/60 transition-colors even:bg-slate-50">
                 <td className="px-3 py-2 font-medium text-gray-900">{row.employee?.full_name ?? `#${row.employee_id}`}</td>
-                  <td className="px-3 py-2">{getRequesterBadge(row.requester_role ?? undefined)}</td>
                   <td className="px-3 py-2 text-gray-600">{row.leave_type?.name ?? '—'}</td>
                   <td className="px-3 py-2 text-gray-600">{row.date_from}</td>
                   <td className="px-3 py-2 text-gray-600">{row.date_to}</td>

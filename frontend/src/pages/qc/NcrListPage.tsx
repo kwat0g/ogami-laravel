@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertOctagon, AlertTriangle } from 'lucide-react'
+import { AlertOctagon, AlertTriangle, Plus } from 'lucide-react'
 import { useNcrs } from '@/hooks/useQC'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { NcrSeverity, NcrStatus } from '@/types/qc'
 
@@ -23,24 +24,39 @@ export default function NcrListPage(): React.ReactElement {
   const [status, setStatus]     = useState('')
   const [severity, setSeverity] = useState('')
   const [page, setPage]         = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
 
   const { data, isLoading, isError } = useNcrs({
     status:   status || undefined,
     severity: severity || undefined,
     page,
     per_page: 20,
+    with_archived: withArchived || undefined,
   })
+  const { hasPermission } = useAuthStore()
+  const canCreate = hasPermission('qc.ncr.create')
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-          <AlertOctagon className="w-5 h-5 text-red-600" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+            <AlertOctagon className="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Non-Conformance Reports</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Track quality failures and corrective actions</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Non-Conformance Reports</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track quality failures and corrective actions</p>
-        </div>
+        {canCreate && (
+          <Link
+            to="/qc/ncrs/new"
+            className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New NCR
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-5">
@@ -64,6 +80,10 @@ export default function NcrListPage(): React.ReactElement {
           <option value="major">Major</option>
           <option value="critical">Critical</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
@@ -101,6 +121,7 @@ export default function NcrListPage(): React.ReactElement {
                       </span>
                     </td>
                     <td className="px-4 py-3">
+                      {ncr.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[ncr.status]}`}>
                         {ncr.status.replace('_', ' ')}
                       </span>

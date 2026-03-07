@@ -23,6 +23,7 @@ export type ApiResponse<T = unknown> = ApiSuccess<T> | ApiError
 
 export type AppRole =
   | 'admin'
+  | 'super_admin'
   | 'executive'
   | 'vice_president'
   | 'manager'

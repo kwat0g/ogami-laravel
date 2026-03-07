@@ -18,7 +18,7 @@ export const leaveRequestSchema = z
       .string()
       .min(1, 'End date is required')
       .refine((v) => !isNaN(Date.parse(v)), 'Enter a valid date'),
-    reason: z.string().trim().min(1, 'Reason is required').max(1000),
+    reason: z.string().trim().min(1, 'Reason is required').max(500),
     is_half_day: z.boolean().default(false),
     half_day_period: z.enum(['AM', 'PM']).optional(),
   })

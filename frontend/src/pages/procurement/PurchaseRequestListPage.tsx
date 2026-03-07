@@ -40,8 +40,9 @@ export default function PurchaseRequestListPage(): React.ReactElement {
   const canCreate = hasPermission('procurement.purchase-request.create')
 
   const [filters, setFilters] = useState<PurchaseRequestFilters>({ per_page: 25 })
+  const [withArchived, setWithArchived] = useState(false)
 
-  const { data, isLoading, isError } = usePurchaseRequests(filters)
+  const { data, isLoading, isError } = usePurchaseRequests({ ...filters, with_archived: withArchived || undefined })
 
   if (isLoading) return <SkeletonLoader rows={10} />
 
@@ -114,6 +115,10 @@ export default function PurchaseRequestListPage(): React.ReactElement {
             </option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-blue-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {/* Table */}
@@ -160,6 +165,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
                   ₱{Number(pr.total_estimated_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                 </td>
                 <td className="px-4 py-3">
+                  {pr.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusBadgeClass[pr.status]}`}
                   >

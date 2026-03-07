@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { useCreateCustomerInvoice } from '@/hooks/useAR'
 import { useCustomers } from '@/hooks/useAR'
+import { useFiscalPeriods, useChartOfAccounts } from '@/hooks/useAccounting'
 import type { CreateCustomerInvoicePayload } from '@/types/ar'
 
 // VAT rate will eventually come from system_settings via API.
@@ -53,6 +54,10 @@ export default function CustomerInvoiceFormPage() {
   const createMut = useCreateCustomerInvoice()
   const { data: customersData } = useCustomers({ is_active: true, per_page: 500 })
   const customers = customersData?.data ?? []
+  const { data: periodsData }  = useFiscalPeriods('open')
+  const { data: accountsData } = useChartOfAccounts({})
+  const periods  = periodsData?.data ?? []
+  const accounts = accountsData ?? []
 
   const [form, setForm] = useState<CreateCustomerInvoicePayload>({
     customer_id: 0,
@@ -75,6 +80,21 @@ export default function CustomerInvoiceFormPage() {
 
   const set = (k: keyof CreateCustomerInvoicePayload, v: unknown) =>
     setForm((prev) => ({ ...prev, [k]: v }))
+
+  const [touched, setTouched] = useState<Set<string>>(new Set())
+  const touch = (k: string) => setTouched(prev => new Set([...prev, k]))
+  const ve = useMemo(() => {
+    const e: Record<string, string | undefined> = {}
+    if (!form.customer_id) e.customer_id = 'Customer is required.'
+    if (!form.fiscal_period_id) e.fiscal_period_id = 'Fiscal period is required.'
+    if (!form.ar_account_id) e.ar_account_id = 'AR account is required.'
+    if (!form.revenue_account_id) e.revenue_account_id = 'Revenue account is required.'
+    if (!form.invoice_date) e.invoice_date = 'Invoice date is required.'
+    if (!form.due_date) e.due_date = 'Due date is required.'
+    if (!form.subtotal || form.subtotal <= 0) e.subtotal = 'Must be greater than 0.'
+    return e
+  }, [form])
+  const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
   // Auto-fill vat_amount when subtotal changes
   useEffect(() => {
@@ -106,9 +126,10 @@ export default function CustomerInvoiceFormPage() {
         <label className="block">
           <span className="text-sm font-medium text-gray-700">Customer *</span>
           <select
-            className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+            className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('customer_id') ? 'border-red-400' : ''}`}
             value={form.customer_id || ''}
             onChange={(e) => set('customer_id', parseInt(e.target.value))}
+            onBlur={() => touch('customer_id')}
             required
           >
             <option value="">Select customer…</option>
@@ -118,6 +139,7 @@ export default function CustomerInvoiceFormPage() {
               </option>
             ))}
           </select>
+          {fe('customer_id') && <p className="mt-1 text-xs text-red-600">{fe('customer_id')}</p>}
         </label>
 
         {/* AR-001: Real-time credit check preview */}
@@ -129,28 +151,90 @@ export default function CustomerInvoiceFormPage() {
           />
         )}
 
+        {/* Fiscal Period */}
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">Fiscal Period *</span>
+          <select
+            className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('fiscal_period_id') ? 'border-red-400' : ''}`}
+            value={form.fiscal_period_id || ''}
+            onChange={e => set('fiscal_period_id', parseInt(e.target.value))}
+            onBlur={() => touch('fiscal_period_id')}
+            required
+          >
+            <option value="">— Select Period —</option>
+            {periods.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          {fe('fiscal_period_id') && <p className="mt-1 text-xs text-red-600">{fe('fiscal_period_id')}</p>}
+        </label>
+
+        {/* GL Accounts */}
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="text-sm font-medium text-gray-700">AR Account *</span>
+            <select
+              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('ar_account_id') ? 'border-red-400' : ''}`}
+              value={form.ar_account_id || ''}
+              onChange={e => set('ar_account_id', parseInt(e.target.value))}
+              onBlur={() => touch('ar_account_id')}
+              required
+            >
+              <option value="">— Select Account —</option>
+              {accounts
+                .filter(a => a.is_active && a.account_type === 'ASSET')
+                .map(a => (
+                  <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+                ))}
+            </select>
+            {fe('ar_account_id') && <p className="mt-1 text-xs text-red-600">{fe('ar_account_id')}</p>}
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium text-gray-700">Revenue Account *</span>
+            <select
+              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('revenue_account_id') ? 'border-red-400' : ''}`}
+              value={form.revenue_account_id || ''}
+              onChange={e => set('revenue_account_id', parseInt(e.target.value))}
+              onBlur={() => touch('revenue_account_id')}
+              required
+            >
+              <option value="">— Select Account —</option>
+              {accounts
+                .filter(a => a.is_active && a.account_type === 'REVENUE')
+                .map(a => (
+                  <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+                ))}
+            </select>
+            {fe('revenue_account_id') && <p className="mt-1 text-xs text-red-600">{fe('revenue_account_id')}</p>}
+          </label>
+        </div>
+
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="text-sm font-medium text-gray-700">Invoice Date *</span>
             <input
               type="date"
-              className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('invoice_date') ? 'border-red-400' : ''}`}
               value={form.invoice_date}
               onChange={(e) => set('invoice_date', e.target.value)}
+              onBlur={() => touch('invoice_date')}
               required
             />
+            {fe('invoice_date') && <p className="mt-1 text-xs text-red-600">{fe('invoice_date')}</p>}
           </label>
           <label className="block">
             <span className="text-sm font-medium text-gray-700">Due Date *</span>
             <input
               type="date"
               min={form.invoice_date}
-              className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('due_date') ? 'border-red-400' : ''}`}
               value={form.due_date}
               onChange={(e) => set('due_date', e.target.value)}
+              onBlur={() => touch('due_date')}
               required
             />
+            {fe('due_date') && <p className="mt-1 text-xs text-red-600">{fe('due_date')}</p>}
           </label>
         </div>
 
@@ -162,11 +246,13 @@ export default function CustomerInvoiceFormPage() {
               type="number"
               min={0.01}
               step="0.01"
-              className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('subtotal') ? 'border-red-400' : ''}`}
               value={form.subtotal || ''}
               onChange={(e) => set('subtotal', parseFloat(e.target.value) || 0)}
+              onBlur={() => touch('subtotal')}
               required
             />
+            {fe('subtotal') && <p className="mt-1 text-xs text-red-600">{fe('subtotal')}</p>}
           </label>
           <label className="block">
             <span className="text-sm font-medium text-gray-700">

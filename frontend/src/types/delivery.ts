@@ -28,6 +28,7 @@ export interface DeliveryReceipt {
   shipments_count?: number;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface Shipment {
@@ -44,6 +45,7 @@ export interface Shipment {
   delivery_receipt?: { id: number; dr_reference: string } | null;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface CreateDeliveryReceiptPayload {

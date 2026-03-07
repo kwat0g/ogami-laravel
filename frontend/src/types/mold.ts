@@ -26,6 +26,7 @@ export interface MoldMaster {
   shot_logs?: MoldShotLog[];
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface CreateMoldPayload {

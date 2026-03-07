@@ -35,7 +35,7 @@ final class InspectionResource extends JsonResource
             ]),
             'inspector'              => $this->whenLoaded('inspector', fn () => [
                 'id'   => $this->inspector->id,
-                'name' => $this->inspector->name,
+                'name' => $this->inspector->full_name,
             ]),
             'template'               => $this->whenLoaded('template', fn () => new InspectionTemplateResource($this->template)),
             'results'                => $this->whenLoaded('results', fn () =>
@@ -49,6 +49,7 @@ final class InspectionResource extends JsonResource
                 ])
             ),
             'ncrs'                   => $this->whenLoaded('ncrs', fn () => NcrResource::collection($this->ncrs)),
+            'deleted_at'             => $this->deleted_at?->toIso8601String(),
             'created_at'             => $this->created_at?->toIso8601String(),
         ];
     }

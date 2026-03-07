@@ -23,6 +23,10 @@ final class PhilhealthContributionController extends Controller
         $query = PhilhealthPremiumTable::query()
             ->orderBy('effective_date', 'desc');
 
+        if ($request->boolean('with_archived')) {
+            $query->withTrashed();
+        }
+
         if ($request->has('effective_date')) {
             $query->forDate($request->input('effective_date'));
         }

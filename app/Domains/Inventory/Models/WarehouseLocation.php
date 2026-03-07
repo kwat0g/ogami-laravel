@@ -6,6 +6,7 @@ namespace App\Domains\Inventory\Models;
 
 use App\Domains\HR\Models\Department;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class WarehouseLocation extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'warehouse_locations';
 
     protected $fillable = ['code', 'name', 'zone', 'bin', 'department_id', 'is_active'];

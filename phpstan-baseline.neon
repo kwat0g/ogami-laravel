@@ -172,8 +172,14 @@ parameters:
 		-
 			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 8
+			count: 9
 			path: app/Domains/Attendance/Policies/OvertimeRequestPolicy.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Domains/Attendance/Services/OvertimeRequestService.php
 
 		-
 			message: '#^Negated boolean expression is always false\.$#'
@@ -190,7 +196,7 @@ parameters:
 		-
 			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 5
+			count: 7
 			path: app/Domains/Attendance/Services/OvertimeRequestService.php
 
 		-
@@ -224,6 +230,198 @@ parameters:
 			path: app/Domains/HR/Services/EmployeeService.php
 
 		-
+			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/ISO/Services/ISOService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\ControlledDocument\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Domains/ISO/Services/ISOService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\InternalAudit\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/ISO/Services/ISOService.php
+
+		-
+			message: '#^Class App\\Shared\\Exceptions\\DomainException constructor invoked with 1 parameter, 3\-5 required\.$#'
+			identifier: arguments.count
+			count: 2
+			path: app/Domains/ISO/Services/ISOService.php
+
+		-
+			message: '#^Method App\\Domains\\ISO\\Services\\ISOService\:\:storeFinding\(\) should return App\\Domains\\ISO\\Models\\AuditFinding but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/ISO/Services/ISOService.php
+
+		-
+			message: '#^Parameter \#1 \$finding of event class App\\Events\\ISO\\AuditFindingCreated constructor expects App\\Domains\\ISO\\Models\\AuditFinding in App\\Events\\ISO\\AuditFindingCreated\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Domains/ISO/Services/ISOService.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\ItemCategory\:\:items\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\ItemMaster, App\\Domains\\Inventory\\Models\\ItemCategory\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\ItemMaster, \$this\(App\\Domains\\Inventory\\Models\\ItemCategory\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/ItemCategory.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\ItemMaster\:\:category\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemCategory, App\\Domains\\Inventory\\Models\\ItemMaster\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemCategory, \$this\(App\\Domains\\Inventory\\Models\\ItemMaster\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/ItemMaster.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\ItemMaster\:\:lots\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\LotBatch, App\\Domains\\Inventory\\Models\\ItemMaster\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\LotBatch, \$this\(App\\Domains\\Inventory\\Models\\ItemMaster\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/ItemMaster.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\ItemMaster\:\:stockBalances\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\StockBalance, App\\Domains\\Inventory\\Models\\ItemMaster\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\StockBalance, \$this\(App\\Domains\\Inventory\\Models\\ItemMaster\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/ItemMaster.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\LotBatch\:\:item\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, App\\Domains\\Inventory\\Models\\LotBatch\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, \$this\(App\\Domains\\Inventory\\Models\\LotBatch\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/LotBatch.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:checkedBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:department\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Department, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Department, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:fulfilledBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:items\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\MaterialRequisitionItem, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\MaterialRequisitionItem, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:notedBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:rejectedBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:requestedBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:reviewedBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:vpApprovedBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisitionItem\:\:item\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, App\\Domains\\Inventory\\Models\\MaterialRequisitionItem\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisitionItem\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisitionItem.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisitionItem\:\:requisition\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\MaterialRequisition, App\\Domains\\Inventory\\Models\\MaterialRequisitionItem\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\MaterialRequisition, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisitionItem\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisitionItem.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\StockBalance\:\:item\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, App\\Domains\\Inventory\\Models\\StockBalance\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, \$this\(App\\Domains\\Inventory\\Models\\StockBalance\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/StockBalance.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\StockBalance\:\:location\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\WarehouseLocation, App\\Domains\\Inventory\\Models\\StockBalance\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\WarehouseLocation, \$this\(App\\Domains\\Inventory\\Models\\StockBalance\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/StockBalance.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\StockLedger\:\:createdBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\StockLedger\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\StockLedger\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/StockLedger.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\StockLedger\:\:item\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, App\\Domains\\Inventory\\Models\\StockLedger\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\ItemMaster, \$this\(App\\Domains\\Inventory\\Models\\StockLedger\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/StockLedger.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\StockLedger\:\:location\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\WarehouseLocation, App\\Domains\\Inventory\\Models\\StockLedger\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\WarehouseLocation, \$this\(App\\Domains\\Inventory\\Models\\StockLedger\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/StockLedger.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\StockLedger\:\:lotBatch\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\LotBatch, App\\Domains\\Inventory\\Models\\StockLedger\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Inventory\\Models\\LotBatch, \$this\(App\\Domains\\Inventory\\Models\\StockLedger\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/StockLedger.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\WarehouseLocation\:\:department\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Department, App\\Domains\\Inventory\\Models\\WarehouseLocation\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Department, \$this\(App\\Domains\\Inventory\\Models\\WarehouseLocation\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/WarehouseLocation.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\WarehouseLocation\:\:stockBalances\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\StockBalance, App\\Domains\\Inventory\\Models\\WarehouseLocation\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\StockBalance, \$this\(App\\Domains\\Inventory\\Models\\WarehouseLocation\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/WarehouseLocation.php
+
+		-
+			message: '#^Parameter \#3 \$second of method Illuminate\\Database\\Eloquent\\Builder\<App\\Domains\\Inventory\\Models\\ItemMaster\>\:\:whereColumn\(\) expects string\|null, Closure given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Domains/Inventory/Services/ItemMasterService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$payload$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Domains/Inventory/Services/StockService.php
+
+		-
 			message: '#^Using nullsafe property access on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -236,16 +434,64 @@ parameters:
 			path: app/Domains/Leave/Policies/LeaveRequestPolicy.php
 
 		-
-			message: '#^Negated boolean expression is always false\.$#'
-			identifier: booleanNot.alwaysFalse
-			count: 1
-			path: app/Domains/Leave/Services/LeaveRequestService.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type App\\Domains\\HR\\Models\\Employee\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Domains/Leave/Services/LeaveRequestService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Maintenance\\Models\\MaintenanceWorkOrder\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Maintenance/Services/MaintenanceService.php
+
+		-
+			message: '#^Class App\\Shared\\Exceptions\\DomainException constructor invoked with 1 parameter, 3\-5 required\.$#'
+			identifier: arguments.count
+			count: 2
+			path: app/Domains/Maintenance/Services/MaintenanceService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$current_shots\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Mold/Models/MoldMaster.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$max_shots\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Mold/Models/MoldMaster.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$current_shots\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Mold/Services/MoldService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$max_shots\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Mold/Services/MoldService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$mold_code\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/Mold/Services/MoldService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/Mold/Services/MoldService.php
+
+		-
+			message: '#^Instanceof between Illuminate\\Support\\Carbon and DateTimeInterface will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: app/Domains/Payroll/Pipeline/Step03AttendanceSummaryStep.php
 
 		-
 			message: '#^Access to an undefined property App\\Domains\\Payroll\\Models\\ThirteenthMonthAccrual\:\:\$final_amount_centavos\.$#'
@@ -408,6 +654,60 @@ parameters:
 			identifier: assign.propertyType
 			count: 2
 			path: app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$filters$#'
+			identifier: parameter.notFound
+			count: 1
+			path: app/Domains/Production/Services/BomService.php
+
+		-
+			message: '#^Method App\\Domains\\QC\\Models\\Inspection\:\:inspector\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\QC\\Models\\Inspection\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Employee, \$this\(App\\Domains\\QC\\Models\\Inspection\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/QC/Models/Inspection.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplate\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/QC/Services/InspectionTemplateService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplate\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/QC/Services/InspectionTemplateService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplate\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/QC/Services/InspectionTemplateService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplate\:\:\$stage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/QC/Services/InspectionTemplateService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Domains/QC/Services/NcrService.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\NonConformanceReport\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Domains/QC/Services/NcrService.php
+
+		-
+			message: '#^Class App\\Shared\\Exceptions\\DomainException constructor invoked with 1 parameter, 3\-5 required\.$#'
+			identifier: arguments.count
+			count: 3
+			path: app/Domains/QC/Services/NcrService.php
 
 		-
 			message: '#^Instantiated class App\\Exceptions\\DomainException not found\.$#'
@@ -884,6 +1184,174 @@ parameters:
 			path: app/Http/Resources/Auth/UserPermissionsResource.php
 
 		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$customer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$direction\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$dr_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$items\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$receipt_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$receivedBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$remarks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\DeliveryReceiptResource\:\:\$vendor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/DeliveryReceiptResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$actual_arrival\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$carrier\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$deliveryReceipt\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$estimated_arrival\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$impexDocuments\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$shipment_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$shipped_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$tracking_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Delivery\\ShipmentResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -926,6 +1394,228 @@ parameters:
 			path: app/Http/Resources/HR/EmployeeResource.php
 
 		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$current_version\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$doc_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$document_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$effective_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$owner\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$review_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$revisions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\ControlledDocumentResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/ControlledDocumentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$audit_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$audit_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$audit_scope\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$closed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$findings\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$leadAuditor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$standard\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$summary\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ISO\\InternalAuditResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ISO/InternalAuditResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Inventory\\ItemMasterResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Inventory/ItemMasterResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/Inventory/StockBalanceResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/Inventory/StockLedgerResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Loan\\Models\\Loan\:\:\$head_noted_remarks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Loan/LoanResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Loan\\Models\\Loan\:\:\$manager_checked_remarks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Loan/LoanResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Loan\\Models\\Loan\:\:\$officer_reviewed_remarks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Loan/LoanResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Loan\\Models\\Loan\:\:\$vp_approved_remarks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Loan/LoanResource.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 2
@@ -936,6 +1626,312 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Http/Resources/Loan/LoanResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$commissioned_on\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$equipment_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$manufacturer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$model_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$pmSchedules\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$serial_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\EquipmentResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/EquipmentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$assignedTo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$completion_notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$equipment\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$mwo_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$priority\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$reportedBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$scheduled_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$cavity_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$current_shots\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$last_maintenance_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$material\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$max_shots\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$mold_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$shotLogs\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Mold\\MoldMasterResource\:\:isCritical\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Mold/MoldMasterResource.php
 
 		-
 			message: '#^Ternary operator condition is always true\.$#'
@@ -968,6 +1964,528 @@ parameters:
 			path: app/Http/Resources/Payroll/PayrollRunResource.php
 
 		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomComponentResource\:\:\$component_item_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomComponentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomComponentResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomComponentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomComponentResource\:\:\$qty_per_unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomComponentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomComponentResource\:\:\$scrap_factor_pct\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomComponentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomComponentResource\:\:\$unit_of_measure\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomComponentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\BomResource\:\:\$version\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/BomResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$customer\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$ds_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$qty_ordered\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$target_delivery_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\DeliveryScheduleResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/DeliveryScheduleResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$createdBy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$deliverySchedule\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$po_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$qty_produced\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$qty_required\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$target_end_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$target_start_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$ulid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$log_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$operator\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$production_order_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$qty_produced\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$qty_rejected\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$recordedBy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$remarks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOutputLogResource\:\:\$shift\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Production/ProductionOutputLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Inventory\\Models\\LotBatch\:\:\$batch_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionResult\:\:\$actual_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionResult\:\:\$criterion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionResult\:\:\$inspection_template_item_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionResult\:\:\$is_conforming\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionResult\:\:\$remarks\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionResource\:\:\$inspection_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$full_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\QC\\Models\\InspectionResult\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/QC/InspectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplateItem\:\:\$acceptable_range\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplateItem\:\:\$criterion\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplateItem\:\:\$method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\InspectionTemplateItem\:\:\$sort_order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionTemplateResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionTemplateResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionTemplateResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionTemplateResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionTemplateResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\InspectionTemplateResource\:\:\$stage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\QC\\Models\\InspectionTemplateItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Resources/QC/InspectionTemplateResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$due_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\Inspection\:\:\$inspection_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$closed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$ncr_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$severity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{id\: int, ulid\: string, type\: mixed, description\: mixed, due_date\: mixed, status\: mixed, assigned_to\: array\{id\: int, name\: string\}\|null, completed_at\: mixed\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, ulid\: string, type\: mixed, description\: mixed, due_date\: mixed, status\: mixed, assigned_to\: array\{id\: int, name\: string\}\|null, completed_at\: mixed\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\QC\\Models\\CapaAction\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Resources/QC/NcrResource.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -998,6 +2516,60 @@ parameters:
 			path: app/Jobs/AP/SendApDueDateAlertJob.php
 
 		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Listeners/Attendance/RecordLeaveAttendanceCorrection.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: app/Listeners/Attendance/RecordLeaveAttendanceCorrection.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Illuminate\\Support\\Carbon and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Listeners/Attendance/RecordLeaveAttendanceCorrection.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/Delivery/CreateDeliveryReceiptOnProductionComplete.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Listeners/Inventory/LinkGoodsReceiptToInventory.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>item_description" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/Inventory/LinkGoodsReceiptToInventory.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/QC/CreateCapaOnAuditFinding.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$raised_by_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/QC/CreateCapaOnAuditFinding.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$severity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/QC/CreateCapaOnAuditFinding.php
+
+		-
 			message: '#^Method App\\Models\\User\:\:getEffectivePermissions\(\) should return Illuminate\\Support\\Collection\<int, string\> but returns Illuminate\\Support\\Collection\<int, TValue\>\.$#'
 			identifier: return.type
 			count: 1
@@ -1026,6 +2598,18 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Notifications/LeaveFiledNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Domains\\Procurement\\Models\\PurchaseOrder\:\:\$po_number\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Notifications/Procurement/PurchaseOrderSentNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/Procurement/PurchaseOrderSentNotification.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$employee\.$#'

@@ -51,6 +51,7 @@ final class GoodsReceiptResource extends JsonResource
                 $this->whenLoaded('items')
             ),
 
+            'deleted_at' => $gr->deleted_at?->toIso8601String(),
             'created_at' => $gr->created_at?->toIso8601String(),
             'updated_at' => $gr->updated_at?->toIso8601String(),
         ];

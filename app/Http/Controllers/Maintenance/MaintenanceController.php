@@ -27,7 +27,7 @@ final class MaintenanceController extends Controller
     {
         $this->authorize('viewAny', Equipment::class);
         return EquipmentResource::collection(
-            $this->service->paginateEquipment($request->only(['search', 'status', 'is_active', 'per_page']))
+            $this->service->paginateEquipment($request->only(['search', 'status', 'is_active', 'per_page', 'with_archived']))
         );
     }
 
@@ -56,7 +56,7 @@ final class MaintenanceController extends Controller
     {
         $this->authorize('viewAny', MaintenanceWorkOrder::class);
         return MaintenanceWorkOrderResource::collection(
-            $this->service->paginateWorkOrders($request->only(['status', 'type', 'priority', 'equipment_id', 'per_page']))
+            $this->service->paginateWorkOrders($request->only(['status', 'type', 'priority', 'equipment_id', 'per_page', 'with_archived']))
         );
     }
 

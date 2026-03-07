@@ -36,8 +36,8 @@ export function useSodCheck(initiatedById: number | null): SodCheckResult {
     return { isBlocked: false, reason: null }
   }
 
-  // Role-level bypass: only unconditional admins skip SoD
-  if (user.roles.some((r) => ['admin'].includes(r))) {
+  // Role-level bypass: admin and super_admin skip SoD (super_admin is testing superuser)
+  if (user.roles.some((r) => ['admin', 'super_admin'].includes(r))) {
     return { isBlocked: false, reason: null }
   }
 

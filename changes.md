@@ -108,9 +108,8 @@ Below are the key roles in the organization and their primary responsibilities.
 
 ### Department Heads
 
-| Position               | Responsibility                                                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Warehouse Head         | Manages warehouse operations, receiving deliveries, and distribution to customers.                                     |
+| Position               | Responsibility|                                                      ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Warehouse Head         | Manages warehouse operations, receiving deliveries, and distribution to customers.           |
 | PPC Head               | Responsible for production planning, delivery scheduling (local and export), inventory control, and material ordering. |
 | Maintenance Head       | Ensures proper maintenance of all machines and equipment.                                                              |
 | Production Head        | Oversees the production of products required by customers.                                                             |

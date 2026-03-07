@@ -44,6 +44,7 @@ export interface Paginated<T> {
 
 export interface EmployeeSummary {
   id:            number
+  ulid:          string
   employee_code: string
   full_name:     string
 }
@@ -190,7 +191,15 @@ export interface OvertimeFilters {
 
 // ── Leave ────────────────────────────────────────────────────────────────────
 
-export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
+export type LeaveStatus =
+  | 'draft'
+  | 'submitted'
+  | 'head_approved'
+  | 'manager_checked'
+  | 'ga_processed'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled'
 
 export interface LeaveTypeSummary {
   id:   number
@@ -211,13 +220,29 @@ export interface LeaveRequest {
   is_half_day:      boolean
   half_day_period:  'AM' | 'PM' | null
   reason:           string
-  requester_role:   'staff' | 'head' | 'manager' | 'officer' | 'vice_president' | null
   status:           LeaveStatus
-  reviewed_by:      number | null
-  reviewer_remarks: string | null
-  reviewed_at:      string | null
-  created_at:       string
-  updated_at:       string
+  // Step 2 — Department Head
+  head_id:              number | null
+  head_remarks:         string | null
+  head_approved_at:     string | null
+  // Step 3 — Plant Manager
+  manager_checked_by:      number | null
+  manager_check_remarks:   string | null
+  manager_checked_at:      string | null
+  // Step 4 — GA Officer
+  ga_processed_by:     number | null
+  ga_remarks:          string | null
+  ga_processed_at:     string | null
+  action_taken:        'approved_with_pay' | 'approved_without_pay' | 'disapproved' | null
+  beginning_balance:   number | null
+  applied_days:        number | null
+  ending_balance:      number | null
+  // Step 5 — Vice President
+  vp_id:               number | null
+  vp_remarks:          string | null
+  vp_noted_at:         string | null
+  created_at:          string
+  updated_at:          string
 }
 
 export interface LeaveBalance {
@@ -397,6 +422,9 @@ export interface EmployeeListItem {
   has_tin: boolean
   has_philhealth_no: boolean
   has_pagibig_no: boolean
+  /** Included by EmployeeListResource */
+  department?: { id: number; name: string } | null
+  position?:   { id: number; title: string } | null
 }
 
 export interface Employee {

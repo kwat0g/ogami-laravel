@@ -80,6 +80,7 @@ final class PurchaseRequestResource extends JsonResource
                 $this->whenLoaded('items')
             ),
 
+            'deleted_at'  => $pr->deleted_at?->toIso8601String(),
             'created_at'  => $pr->created_at?->toIso8601String(),
             'updated_at'  => $pr->updated_at?->toIso8601String(),
         ];

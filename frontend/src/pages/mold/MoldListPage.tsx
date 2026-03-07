@@ -12,7 +12,8 @@ const STATUS_COLORS: Record<MoldStatus, string> = {
 
 export default function MoldListPage() {
   const [status, setStatus] = useState('');
-  const { data, isLoading } = useMolds(status ? { status } : undefined);
+  const [withArchived, setWithArchived] = useState(false);
+  const { data, isLoading } = useMolds({ ...(status ? { status } : {}), ...(withArchived ? { with_archived: true } : {}) });
 
   return (
     <div className="space-y-4">
@@ -33,6 +34,10 @@ export default function MoldListPage() {
           <option value="under_maintenance">Under Maintenance</option>
           <option value="retired">Retired</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -85,6 +90,7 @@ export default function MoldListPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
+                      {m.deleted_at && <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[m.status]}`}>
                         {m.status.replace('_', ' ')}
                       </span>

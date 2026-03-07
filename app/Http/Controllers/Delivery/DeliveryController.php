@@ -25,8 +25,9 @@ final class DeliveryController extends Controller
     public function indexReceipts(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', DeliveryReceipt::class);
+
         return DeliveryReceiptResource::collection(
-            $this->service->paginateReceipts($request->only('direction', 'status'))
+            $this->service->paginateReceipts($request->only(['direction', 'status', 'with_archived']))
         );
     }
 
@@ -34,21 +35,24 @@ final class DeliveryController extends Controller
     {
         $this->authorize('create', DeliveryReceipt::class);
         $receipt = $this->service->storeReceipt($request->validated(), $request->user()->id);
+
         return (new DeliveryReceiptResource($receipt))->response()->setStatusCode(201);
     }
 
     public function showReceipt(DeliveryReceipt $deliveryReceipt): DeliveryReceiptResource
     {
         $this->authorize('view', $deliveryReceipt);
+
         return new DeliveryReceiptResource(
             $deliveryReceipt->loadMissing(['items.itemMaster', 'vendor', 'customer', 'receivedBy', 'shipments'])
         );
     }
 
-    public function confirmReceipt(DeliveryReceipt $deliveryReceipt): DeliveryReceiptResource
+    public function confirmReceipt(Request $request, DeliveryReceipt $deliveryReceipt): DeliveryReceiptResource
     {
         $this->authorize('confirm', $deliveryReceipt);
-        return new DeliveryReceiptResource($this->service->confirmReceipt($deliveryReceipt));
+
+        return new DeliveryReceiptResource($this->service->confirmReceipt($deliveryReceipt, $request->user()));
     }
 
     // ── Shipments ─────────────────────────────────────────────────────────
@@ -56,8 +60,9 @@ final class DeliveryController extends Controller
     public function indexShipments(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', DeliveryReceipt::class);
+
         return ShipmentResource::collection(
-            $this->service->paginateShipments($request->only('status'))
+            $this->service->paginateShipments($request->only(['status', 'with_archived']))
         );
     }
 
@@ -65,12 +70,14 @@ final class DeliveryController extends Controller
     {
         $this->authorize('create', DeliveryReceipt::class);
         $shipment = $this->service->storeShipment($request->validated(), $request->user()->id);
+
         return (new ShipmentResource($shipment))->response()->setStatusCode(201);
     }
 
     public function showShipment(Shipment $shipment): ShipmentResource
     {
         $this->authorize('view', DeliveryReceipt::class);
+
         return new ShipmentResource(
             $shipment->loadMissing(['deliveryReceipt', 'createdBy', 'impexDocuments'])
         );

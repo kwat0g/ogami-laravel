@@ -327,15 +327,14 @@ final class EmployeeService implements ServiceContract
     {
         $year = now()->year;
 
-        // LWOP, ML, and PL start at 0 on activation.
         // ML and PL are event-based (pregnancy/birth) and must be granted
         // explicitly via the "Grant Special Leave" function when the event occurs.
-        $eventBased = ['LWOP', 'ML', 'PL'];
+        $eventBased = ['ML', 'PL'];
 
-        // Only auto-create for standard leave types
-        // SPL and VAWCL require eligibility verification by HR
+        // OTH (Others) is discretionary — no fixed entitlement; no balance row needed.
+        // ML and PL start at 0 and are event-triggered by HR.
         LeaveType::where('is_active', true)
-            ->whereNotIn('code', ['SPL', 'VAWCL'])
+            ->whereNotIn('code', ['OTH'])
             ->each(function (LeaveType $type) use ($employee, $year, $eventBased): void {
                 // Grant the full annual entitlement as opening balance for
                 // standard leave types (SL, VL, SIL). Event-based and

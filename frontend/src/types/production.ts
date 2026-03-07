@@ -20,6 +20,7 @@ export interface Bom {
   components?: BomComponent[]
   created_at: string | null
   updated_at: string | null
+  deleted_at?: string | null
 }
 
 export type DeliveryScheduleStatus = 'open' | 'in_production' | 'ready' | 'dispatched' | 'delivered' | 'cancelled'
@@ -38,6 +39,7 @@ export interface DeliverySchedule {
   notes: string | null
   production_orders?: ProductionOrder[]
   created_at: string | null
+  deleted_at?: string | null
 }
 
 export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'completed' | 'cancelled'
@@ -60,6 +62,7 @@ export interface ProductionOrder {
   output_logs?: ProductionOutputLog[]
   created_at: string | null
   updated_at: string | null
+  deleted_at?: string | null
 }
 
 export interface ProductionOutputLog {

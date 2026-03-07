@@ -18,7 +18,7 @@ final class StoreGoodsReceiptRequest extends FormRequest
     {
         return [
             'purchase_order_id'              => ['required', 'integer', 'exists:purchase_orders,id'],
-            'received_date'                  => ['required', 'date', 'before_or_equal:today'],
+            'received_date'                  => ['nullable', 'date'],
             'delivery_note_number'           => ['nullable', 'string', 'max:100'],
             'condition_notes'               => ['nullable', 'string'],
 

@@ -99,9 +99,39 @@ final class VendorInvoiceController extends Controller
     {
         $this->authorize('approve', $apInvoice);
 
-        $updated = $this->service->approve($apInvoice, auth()->id());
+        $updated = $this->service->approve($apInvoice, auth()->user());
 
         return new VendorInvoiceResource($updated->load('vendor', 'fiscalPeriod', 'payments'));
+    }
+
+    /** Step 2: Head notes a submitted invoice (pending_approval → head_noted). */
+    public function headNote(VendorInvoice $apInvoice): VendorInvoiceResource
+    {
+        $this->authorize('approve', $apInvoice);
+
+        $updated = $this->service->headNote($apInvoice, auth()->user());
+
+        return new VendorInvoiceResource($updated->load('vendor', 'fiscalPeriod'));
+    }
+
+    /** Step 3: Manager checks a head-noted invoice (head_noted → manager_checked). */
+    public function managerCheck(VendorInvoice $apInvoice): VendorInvoiceResource
+    {
+        $this->authorize('approve', $apInvoice);
+
+        $updated = $this->service->managerCheck($apInvoice, auth()->user());
+
+        return new VendorInvoiceResource($updated->load('vendor', 'fiscalPeriod'));
+    }
+
+    /** Step 4: Officer reviews a manager-checked invoice (manager_checked → officer_reviewed). */
+    public function officerReview(VendorInvoice $apInvoice): VendorInvoiceResource
+    {
+        $this->authorize('approve', $apInvoice);
+
+        $updated = $this->service->officerReview($apInvoice, auth()->user());
+
+        return new VendorInvoiceResource($updated->load('vendor', 'fiscalPeriod'));
     }
 
     /** Reject a pending invoice back to draft. */
@@ -113,7 +143,7 @@ final class VendorInvoiceController extends Controller
             'rejection_note' => ['required', 'string', 'min:5', 'max:500'],
         ]);
 
-        $updated = $this->service->reject($apInvoice, auth()->id(), $validated['rejection_note']);
+        $updated = $this->service->reject($apInvoice, auth()->user(), $validated['rejection_note']);
 
         return new VendorInvoiceResource($updated->load('vendor', 'fiscalPeriod'));
     }

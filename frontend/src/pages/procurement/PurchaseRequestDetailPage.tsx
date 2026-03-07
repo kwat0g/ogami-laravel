@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, CheckCircle2, XCircle, ShoppingCart } from 'lucide-react'
 import {
   usePurchaseRequest,
   useSubmitPurchaseRequest,
@@ -214,6 +214,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
   const canCheck   = hasPermission('procurement.purchase-request.check')  && pr.status === 'noted'
   const canReview  = hasPermission('procurement.purchase-request.review') && pr.status === 'checked'
   const canVpApprove = hasPermission('approvals.vp.approve')              && pr.status === 'reviewed'
+  const canCreatePo  = hasPermission('procurement.purchase-order.create') && pr.status === 'approved'
   const isOwner    = user?.id === pr.requested_by_id
   const canCancel  = isOwner && pr.isCancellable
 
@@ -313,6 +314,16 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
               >
                 {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
               </button>
+            )}
+
+            {canCreatePo && (
+              <Link
+                to={`/procurement/purchase-orders/new?pr_id=${pr.id}`}
+                className="inline-flex items-center gap-1.5 text-sm px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Create PO
+              </Link>
             )}
 
             {canNote && (

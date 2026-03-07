@@ -33,6 +33,7 @@ final class EquipmentResource extends JsonResource
                 'next_due_on'    => $s->next_due_on?->toDateString(),
             ])),
             'work_orders_count' => $this->whenCounted('workOrders'),
+            'deleted_at'     => $this->deleted_at?->toISOString(),
             'created_at'     => $this->created_at?->toISOString(),
             'updated_at'     => $this->updated_at?->toISOString(),
         ];

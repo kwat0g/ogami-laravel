@@ -125,6 +125,8 @@ export default function JournalEntryFormPage() {
   const [description, setDescription] = useState('')
   const [lines, setLines] = useState<LineState[]>([newLine(), newLine()])
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [touchedDate, setTouchedDate] = useState(false)
+  const entryDateError = touchedDate && !entryDate ? 'Entry date is required.' : undefined
 
   const { data: rawAccounts = [], isLoading: accountsLoading } = useChartOfAccounts({ tree: true })
   const { isLoading: periodsLoading } = useFiscalPeriods()
@@ -220,9 +222,11 @@ export default function JournalEntryFormPage() {
                 type="date"
                 value={entryDate}
                 onChange={(e) => setEntryDate(e.target.value)}
+                onBlur={() => setTouchedDate(true)}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none ${entryDateError ? 'border-red-400' : 'border-gray-300'}`}
               />
+              {entryDateError && <p className="mt-1 text-xs text-red-600">{entryDateError}</p>}
             </div>
           </div>
           <div>

@@ -17,6 +17,7 @@ final class NcrService implements ServiceContract
     public function paginate(array $params = []): LengthAwarePaginator
     {
         return NonConformanceReport::query()
+            ->when($params['with_archived'] ?? false, fn ($q) => $q->withTrashed())
             ->when($params['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($params['severity'] ?? null, fn ($q, $v) => $q->where('severity', $v))
             ->with(['inspection.itemMaster', 'raisedBy', 'capaActions'])

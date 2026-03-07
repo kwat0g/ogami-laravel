@@ -221,6 +221,45 @@ export function useRejectAPInvoice(id: string) {
   })
 }
 
+export function useHeadNoteAPInvoice(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.patch<{ data: VendorInvoice }>(`/accounting/ap/invoices/${id}/head-note`)
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
+export function useManagerCheckAPInvoice(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.patch<{ data: VendorInvoice }>(`/accounting/ap/invoices/${id}/manager-check`)
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
+export function useOfficerReviewAPInvoice(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.patch<{ data: VendorInvoice }>(`/accounting/ap/invoices/${id}/officer-review`)
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
 export function useRecordPayment(invoiceId: string) {
   const qc = useQueryClient()
   return useMutation({

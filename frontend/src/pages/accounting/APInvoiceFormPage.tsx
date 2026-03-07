@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useVendors, useCreateAPInvoice } from '@/hooks/useAP'
@@ -63,6 +63,20 @@ export default function APInvoiceFormPage() {
   // ── Mutation ──────────────────────────────────────────────────────────────
   const createMut = useCreateAPInvoice()
   const [error, setError] = useState<string | null>(null)
+  const [touched, setTouched] = useState<Set<string>>(new Set())
+  const touch = (k: string) => setTouched(prev => new Set([...prev, k]))
+  const ve = useMemo(() => {
+    const e: Record<string, string | undefined> = {}
+    if (!selectedVendorId) e.vendor_id = 'Vendor is required.'
+    if (!form.fiscal_period_id) e.fiscal_period_id = 'Fiscal period is required.'
+    if (!form.ap_account_id) e.ap_account_id = 'AP account is required.'
+    if (!form.expense_account_id) e.expense_account_id = 'Expense account is required.'
+    if (!form.invoice_date) e.invoice_date = 'Invoice date is required.'
+    if (!form.due_date) e.due_date = 'Due date is required.'
+    if (!form.net_amount || form.net_amount <= 0) e.net_amount = 'Must be greater than 0.'
+    return e
+  }, [selectedVendorId, form])
+  const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -106,9 +120,10 @@ export default function APInvoiceFormPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Vendor *</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('vendor_id') ? 'border-red-400' : 'border-gray-300'}`}
             value={selectedVendorId ?? ''}
             onChange={e => setSelectedVendorId(Number(e.target.value) || null)}
+            onBlur={() => touch('vendor_id')}
             required
           >
             <option value="">Select vendor…</option>
@@ -116,6 +131,7 @@ export default function APInvoiceFormPage() {
               <option key={v.id} value={v.id}>{v.name}{v.tin ? ` (${v.tin})` : ''}</option>
             ))}
           </select>
+          {fe('vendor_id') && <p className="mt-1 text-xs text-red-600">{fe('vendor_id')}</p>}
           {selectedVendor?.is_ewt_subject && (
             <p className="mt-1 text-xs text-purple-600">
               EWT Subject — ATC: {selectedVendor.atc_code ?? 'N/A'} | Rate: {selectedVendor.ewt_rate ? `${(selectedVendor.ewt_rate.rate * 100).toFixed(2)}%` : 'N/A'}
@@ -127,9 +143,10 @@ export default function APInvoiceFormPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Fiscal Period *</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('fiscal_period_id') ? 'border-red-400' : 'border-gray-300'}`}
             value={form.fiscal_period_id || ''}
             onChange={e => setForm(f => ({ ...f, fiscal_period_id: Number(e.target.value) }))}
+            onBlur={() => touch('fiscal_period_id')}
             required
           >
             <option value="">Select period…</option>
@@ -137,6 +154,7 @@ export default function APInvoiceFormPage() {
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          {fe('fiscal_period_id') && <p className="mt-1 text-xs text-red-600">{fe('fiscal_period_id')}</p>}
         </div>
 
         {/* GL Accounts */}
@@ -144,9 +162,10 @@ export default function APInvoiceFormPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">AP Account *</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('ap_account_id') ? 'border-red-400' : 'border-gray-300'}`}
               value={form.ap_account_id || ''}
               onChange={e => setForm(f => ({ ...f, ap_account_id: Number(e.target.value) }))}
+              onBlur={() => touch('ap_account_id')}
               required
             >
               <option value="">Select account…</option>
@@ -156,13 +175,15 @@ export default function APInvoiceFormPage() {
                   <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
                 ))}
             </select>
+            {fe('ap_account_id') && <p className="mt-1 text-xs text-red-600">{fe('ap_account_id')}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Expense Account *</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('expense_account_id') ? 'border-red-400' : 'border-gray-300'}`}
               value={form.expense_account_id || ''}
               onChange={e => setForm(f => ({ ...f, expense_account_id: Number(e.target.value) }))}
+              onBlur={() => touch('expense_account_id')}
               required
             >
               <option value="">Select account…</option>
@@ -172,6 +193,7 @@ export default function APInvoiceFormPage() {
                   <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
                 ))}
             </select>
+            {fe('expense_account_id') && <p className="mt-1 text-xs text-red-600">{fe('expense_account_id')}</p>}
           </div>
         </div>
 
@@ -181,22 +203,26 @@ export default function APInvoiceFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date *</label>
             <input
               type="date"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('invoice_date') ? 'border-red-400' : 'border-gray-300'}`}
               value={form.invoice_date}
               onChange={e => setForm(f => ({ ...f, invoice_date: e.target.value }))}
+              onBlur={() => touch('invoice_date')}
               required
             />
+            {fe('invoice_date') && <p className="mt-1 text-xs text-red-600">{fe('invoice_date')}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Due Date * (AP-001)</label>
             <input
               type="date"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('due_date') ? 'border-red-400' : 'border-gray-300'}`}
               value={form.due_date}
               min={form.invoice_date || undefined}
               onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
+              onBlur={() => touch('due_date')}
               required
             />
+            {fe('due_date') && <p className="mt-1 text-xs text-red-600">{fe('due_date')}</p>}
           </div>
         </div>
 
@@ -208,11 +234,13 @@ export default function APInvoiceFormPage() {
               type="number"
               step="0.01"
               min="0.01"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('net_amount') ? 'border-red-400' : 'border-gray-300'}`}
               value={form.net_amount || ''}
               onChange={e => setForm(f => ({ ...f, net_amount: parseFloat(e.target.value) || 0 }))}
+              onBlur={() => touch('net_amount')}
               required
             />
+            {fe('net_amount') && <p className="mt-1 text-xs text-red-600">{fe('net_amount')}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">VAT Amount (12%)</label>

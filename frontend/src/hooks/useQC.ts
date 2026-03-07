@@ -20,7 +20,7 @@ const KEYS = {
 
 // ── Inspection Templates ────────────────────────────────────────────────────
 
-type TemplateParams = { stage?: string; is_active?: boolean; per_page?: number }
+type TemplateParams = { stage?: string; is_active?: boolean; per_page?: number; with_archived?: boolean }
 
 export function useInspectionTemplates(params?: TemplateParams) {
   return useQuery({
@@ -45,7 +45,7 @@ export function useCreateInspectionTemplate() {
 
 // ── Inspections ─────────────────────────────────────────────────────────────
 
-type InspectionParams = { stage?: string; status?: string; item_master_id?: number; per_page?: number; page?: number }
+type InspectionParams = { stage?: string; status?: string; item_master_id?: number; per_page?: number; page?: number; with_archived?: boolean }
 
 export function useInspections(params?: InspectionParams) {
   return useQuery({
@@ -82,6 +82,26 @@ export function useRecordResults(ulid: string) {
   return useMutation({
     mutationFn: (payload: RecordResultsPayload) =>
       api.patch<{ data: Inspection }>(`/qc/inspections/${ulid}/results`, payload).then((r) => r.data.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [...KEYS.inspections, ulid] })
+      qc.invalidateQueries({ queryKey: KEYS.inspections })
+    },
+  })
+}
+
+export function useDeleteInspection() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ulid: string) => api.delete(`/qc/inspections/${ulid}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.inspections }),
+  })
+}
+
+export function useCancelResults(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (reason: string) =>
+      api.patch<{ data: Inspection }>(`/qc/inspections/${ulid}/cancel-results`, { reason }).then((r) => r.data.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEYS.inspections, ulid] })
       qc.invalidateQueries({ queryKey: KEYS.inspections })

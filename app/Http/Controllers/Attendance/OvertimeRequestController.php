@@ -222,4 +222,48 @@ final class OvertimeRequestController extends Controller
 
         return OvertimeRequestResource::collection($requests);
     }
+
+    /**
+     * PATCH /api/v1/attendance/overtime-requests/{overtimeRequest}/officer-review
+     * HR Officer review — step 4 of the 5-step OT approval flow.
+     */
+    public function officerReview(Request $request, OvertimeRequest $overtimeRequest): OvertimeRequestResource
+    {
+        $this->authorize('review', $overtimeRequest);
+
+        $request->validate([
+            'remarks' => ['sometimes', 'nullable', 'string', 'max:500'],
+        ]);
+
+        $updated = $this->service->officerReview(
+            $overtimeRequest,
+            (int) $request->user()->id,
+            $request->input('remarks', ''),
+        );
+
+        return new OvertimeRequestResource($updated->load('employee'));
+    }
+
+    /**
+     * PATCH /api/v1/attendance/overtime-requests/{overtimeRequest}/vp-approve
+     * VP final approval — step 5 of the 5-step OT approval flow.
+     */
+    public function vpApprove(Request $request, OvertimeRequest $overtimeRequest): OvertimeRequestResource
+    {
+        $this->authorize('vpApprove', $overtimeRequest);
+
+        $request->validate([
+            'approved_minutes' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:480'],
+            'remarks' => ['sometimes', 'nullable', 'string', 'max:500'],
+        ]);
+
+        $updated = $this->service->vpApprove(
+            $overtimeRequest,
+            (int) $request->user()->id,
+            $request->integer('approved_minutes') ?: null,
+            $request->input('remarks', ''),
+        );
+
+        return new OvertimeRequestResource($updated->load('employee'));
+    }
 }

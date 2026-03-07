@@ -22,7 +22,7 @@ final class DeliveryScheduleController extends Controller
 
         return DeliveryScheduleResource::collection(
             $this->service->paginate($request->only([
-                'customer_id', 'status', 'type', 'date_from', 'date_to', 'per_page',
+                'customer_id', 'status', 'type', 'date_from', 'date_to', 'per_page', 'with_archived',
             ]))
         );
     }

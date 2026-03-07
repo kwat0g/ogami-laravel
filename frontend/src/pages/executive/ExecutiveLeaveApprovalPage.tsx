@@ -1,29 +1,33 @@
 import { useState } from 'react'
 import {
-  usePendingExecutiveLeaveRequests,
-  useExecutiveApproveLeaveRequest,
-  useExecutiveRejectLeaveRequest,
+  useTeamLeaveRequests,
+  useGaProcessLeaveRequest,
+  useRejectLeaveRequest,
 } from '@/hooks/useLeave'
+import type { GaProcessPayload } from '@/hooks/useLeave'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-
+import StatusBadge from '@/components/ui/StatusBadge'
+import { parseApiError } from '@/lib/errorHandler'
+import { toast } from 'sonner'
 import type { LeaveFilters } from '@/types/hr'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
 export default function ExecutiveLeaveApprovalPage() {
-  const [filters, setFilters] = useState<LeaveFilters>({ per_page: 25 })
-  const [rejectId, setRejectId] = useState<number | null>(null)
+  const [filters, setFilters] = useState<LeaveFilters>({ per_page: 25, status: 'manager_checked' })
+  const [processId, setProcessId] = useState<number | null>(null)
+  const [actionTaken, setActionTaken] = useState<GaProcessPayload['action_taken']>('approved_with_pay')
   const [remarks, setRemarks] = useState('')
 
-  const { data, isLoading, isError } = usePendingExecutiveLeaveRequests(filters)
-  const approve = useExecutiveApproveLeaveRequest()
-  const reject = useExecutiveRejectLeaveRequest()
+  const { data, isLoading, isError } = useTeamLeaveRequests(filters)
+  const gaProcess = useGaProcessLeaveRequest()
+  const reject = useRejectLeaveRequest()
 
   if (isLoading) return <SkeletonLoader rows={10} />
   if (isError) {
     return (
       <div className="text-red-600 text-sm mt-4">
-        Failed to load pending executive approvals.
+        Failed to load leave requests for GA processing.
       </div>
     )
   }
@@ -35,27 +39,43 @@ export default function ExecutiveLeaveApprovalPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Executive Approval</h1>
+          <h1 className="text-2xl font-bold text-gray-900">GA Leave Processing</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {data?.meta?.total ?? 0} manager requests pending approval
-            <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
-              Executive Only
+            {data?.meta?.total ?? 0} requests pending GA processing
+            <span className="ml-2 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+              GA Officer
             </span>
           </p>
         </div>
       </div>
 
       {/* Info Card */}
-      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6">
-        <h3 className="text-sm font-medium text-purple-900 mb-1">Approval Workflow</h3>
-        <p className="text-sm text-purple-700">
-          These are leave requests filed by Department Managers that require Executive approval.
-          Staff and Supervisor requests are handled in Team Management.
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
+        <h3 className="text-sm font-medium text-indigo-900 mb-1">GA Processing (Step 4 — AD-084-00)</h3>
+        <p className="text-sm text-indigo-700">
+          Review leave requests that have been checked by the Plant Manager. Set the action taken
+          (approved with pay, without pay, or disapproved) before forwarding to VP for final notation.
         </p>
       </div>
 
       {/* Filters */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+        <select
+          value={filters.status ?? 'manager_checked'}
+          onChange={(e) =>
+            setFilters((f) => ({
+              ...f,
+              status: (e.target.value || 'manager_checked') as LeaveFilters['status'],
+              page: 1,
+            }))
+          }
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+        >
+          <option value="manager_checked">Pending GA Process</option>
+          <option value="ga_processed">Pending VP Notation</option>
+          <option value="">All</option>
+        </select>
+
         <select
           value={filters.year ?? ''}
           onChange={(e) =>
@@ -65,7 +85,7 @@ export default function ExecutiveLeaveApprovalPage() {
               page: 1,
             }))
           }
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
         >
           <option value="">All Years</option>
           {YEARS.map((y) => (
@@ -88,7 +108,7 @@ export default function ExecutiveLeaveApprovalPage() {
                 'From',
                 'To',
                 'Days',
-                'Requester Role',
+                'Status',
                 'Actions',
               ].map((h) => (
                 <th
@@ -104,7 +124,7 @@ export default function ExecutiveLeaveApprovalPage() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
-                  No manager requests pending executive approval.
+                  No leave requests pending GA processing.
                 </td>
               </tr>
             )}
@@ -123,25 +143,35 @@ export default function ExecutiveLeaveApprovalPage() {
                 <td className="px-4 py-3 text-gray-600">{row.date_to}</td>
                 <td className="px-4 py-3 text-gray-600">{row.total_days}</td>
                 <td className="px-4 py-3">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Manager
-                  </span>
+                  <StatusBadge label={row.status} />
                 </td>
                 <td className="px-4 py-3 flex gap-2">
-                  <button
-                    onClick={() => approve.mutate({ id: row.id })}
-                    disabled={approve.isPending}
-                    className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => setRejectId(row.id)}
-                    disabled={approve.isPending || reject.isPending}
-                    className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                  >
-                    Reject
-                  </button>
+                  {row.status === 'manager_checked' && (
+                    <>
+                      <button
+                        onClick={() => setProcessId(row.id)}
+                        disabled={gaProcess.isPending}
+                        className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        Process
+                      </button>
+                      <button
+                        onClick={() => {
+                          reject.mutate(
+                            { id: row.id, remarks: '' },
+                            {
+                              onSuccess: () => toast.success('Request rejected.'),
+                              onError: (err) => toast.error(parseApiError(err).message),
+                            }
+                          )
+                        }}
+                        disabled={reject.isPending}
+                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
@@ -178,25 +208,44 @@ export default function ExecutiveLeaveApprovalPage() {
         </div>
       )}
 
-      {/* Reject Modal */}
-      {rejectId && (
+      {/* GA Process Modal */}
+      {processId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Reject Leave Request
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Process Leave Request (GA Officer)
             </h3>
-            <textarea
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Enter rejection reason..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none mb-4"
-              rows={3}
-            />
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
+              <select
+                value={actionTaken}
+                onChange={(e) => setActionTaken(e.target.value as GaProcessPayload['action_taken'])}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              >
+                <option value="approved_with_pay">Approved With Pay</option>
+                <option value="approved_without_pay">Approved Without Pay</option>
+                <option value="disapproved">Disapproved</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Remarks (optional)</label>
+              <textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Enter remarks..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                rows={3}
+              />
+            </div>
+
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
-                  setRejectId(null)
+                  setProcessId(null)
                   setRemarks('')
+                  setActionTaken('approved_with_pay')
                 }}
                 className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
               >
@@ -204,16 +253,24 @@ export default function ExecutiveLeaveApprovalPage() {
               </button>
               <button
                 onClick={() => {
-                  if (!rejectId) return
-                  reject.mutate(
-                    { id: rejectId, remarks },
-                    { onSuccess: () => { setRejectId(null); setRemarks('') } },
+                  if (!processId) return
+                  gaProcess.mutate(
+                    { id: processId, action_taken: actionTaken, remarks },
+                    {
+                      onSuccess: () => {
+                        toast.success('Leave request processed.')
+                        setProcessId(null)
+                        setRemarks('')
+                        setActionTaken('approved_with_pay')
+                      },
+                      onError: (err) => toast.error(parseApiError(err).message),
+                    }
                   )
                 }}
-                disabled={!remarks || reject.isPending}
-                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                disabled={gaProcess.isPending}
+                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
               >
-                Reject
+                {gaProcess.isPending ? 'Processing…' : 'Submit'}
               </button>
             </div>
           </div>
@@ -222,3 +279,4 @@ export default function ExecutiveLeaveApprovalPage() {
     </div>
   )
 }
+

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMold, useLogShots } from '@/hooks/useMold';
-import { useForm } from 'react-hook-form';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useProductionOrders } from '@/hooks/useProduction';
+import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { LogShotsPayload } from '@/types/mold';
 
@@ -10,8 +12,12 @@ export default function MoldDetailPage() {
   const { data, isLoading } = useMold(ulid ?? '');
   const logShots = useLogShots(ulid ?? '');
   const [showForm, setShowForm] = useState(false);
+  const { data: employeesData } = useEmployees({ per_page: 200, is_active: true })
+  const employees = employeesData?.data ?? []
+  const { data: ordersData } = useProductionOrders({ status: 'in_progress' })
+  const productionOrders = ordersData?.data ?? []
 
-  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm<LogShotsPayload>({
+  const { register, handleSubmit, reset, control, formState: { isSubmitting } } = useForm<LogShotsPayload>({
     defaultValues: { log_date: new Date().toISOString().split('T')[0] },
   });
 
@@ -112,6 +118,46 @@ export default function MoldDetailPage() {
                 {...register('remarks')}
                 className="mt-1 block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600">Operator</label>
+                <Controller
+                  control={control}
+                  name="operator_id"
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      onChange={e => field.onChange(Number(e.target.value) || null)}
+                      className="mt-1 block w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white"
+                    >
+                      <option value="">— Select Operator —</option>
+                      {employees.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                      ))}
+                    </select>
+                  )}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600">Production Order (optional)</label>
+                <Controller
+                  control={control}
+                  name="production_order_id"
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      onChange={e => field.onChange(Number(e.target.value) || null)}
+                      className="mt-1 block w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white"
+                    >
+                      <option value="">— None —</option>
+                      {productionOrders.map(po => (
+                        <option key={po.id} value={po.id}>{po.po_reference}</option>
+                      ))}
+                    </select>
+                  )}
+                />
+              </div>
             </div>
             <div className="flex gap-2 justify-end">
               <button type="button" onClick={() => setShowForm(false)} className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100">Cancel</button>

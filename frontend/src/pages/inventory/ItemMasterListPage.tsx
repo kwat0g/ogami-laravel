@@ -28,6 +28,7 @@ export default function ItemMasterListPage(): React.ReactElement {
   const [catFilter,  setCat]      = useState<number | ''>('')
   const [activeOnly, setActive]   = useState(true)
   const [page, setPage]           = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.items.create')
 
@@ -39,6 +40,7 @@ export default function ItemMasterListPage(): React.ReactElement {
     is_active: activeOnly || undefined,
     page,
     per_page: 20,
+    with_archived: withArchived || undefined,
   })
 
   return (
@@ -101,6 +103,10 @@ export default function ItemMasterListPage(): React.ReactElement {
           />
           Active only
         </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-teal-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
@@ -145,6 +151,7 @@ export default function ItemMasterListPage(): React.ReactElement {
                         : <span className="text-gray-400 text-xs">No</span>}
                     </td>
                     <td className="px-4 py-3">
+                      {item.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       {item.is_active
                         ? <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>
                         : <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Inactive</span>}

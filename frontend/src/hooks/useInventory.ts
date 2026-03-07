@@ -44,6 +44,7 @@ export function useItems(params: {
   is_active?: boolean
   page?: number
   per_page?: number
+  with_archived?: boolean
 } = {}) {
   return useQuery({
     queryKey: ['items', params],
@@ -210,6 +211,7 @@ export function useMaterialRequisitions(params: {
   search?: string
   page?: number
   per_page?: number
+  with_archived?: boolean
 } = {}) {
   return useQuery({
     queryKey: ['material-requisitions', params],
@@ -307,5 +309,10 @@ export function useCancelMRQ(ulid: string) {
 
 export function useFulfillMRQ(ulid: string) {
   const qc = useQueryClient()
-  return useMutation({ mutationFn: () => mrqWorkflowMutation(ulid, 'fulfill', qc)() })
+  return useMutation({
+    mutationFn: (payload: { location_id: number }) =>
+      api.patch(`/inventory/requisitions/${ulid}/fulfill`, payload).then(() => {
+        qc.invalidateQueries({ queryKey: ['material-requisitions'] })
+      }),
+  })
 }

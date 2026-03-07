@@ -30,6 +30,7 @@ final class PurchaseOrderController extends Controller
         $this->authorize('viewAny', PurchaseOrder::class);
 
         $query = PurchaseOrder::with(['vendor', 'purchaseRequest', 'createdBy'])
+            ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
             ->when(
                 $request->filled('status'),
                 fn ($q) => $q->where('status', $request->input('status')),

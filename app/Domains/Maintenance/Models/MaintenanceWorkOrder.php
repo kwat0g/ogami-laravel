@@ -7,17 +7,19 @@ namespace App\Domains\Maintenance\Models;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 final class MaintenanceWorkOrder extends Model implements AuditableContract
 {
-    use HasPublicUlid, Auditable;
+    use HasPublicUlid, Auditable, SoftDeletes;
 
     protected $table = 'maintenance_work_orders';
 
     protected $fillable = [
         'equipment_id',
+        'mold_master_id',
         'type',
         'priority',
         'status',

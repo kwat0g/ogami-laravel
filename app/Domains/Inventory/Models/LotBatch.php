@@ -7,6 +7,7 @@ namespace App\Domains\Inventory\Models;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int    $id
@@ -21,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class LotBatch extends Model implements \OwenIt\Auditing\Contracts\Auditable
 {
-    use \OwenIt\Auditing\Auditable, HasPublicUlid;
+    use \OwenIt\Auditing\Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'lot_batches';
 

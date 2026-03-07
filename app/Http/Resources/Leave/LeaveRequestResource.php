@@ -34,16 +34,32 @@ final class LeaveRequestResource extends JsonResource
             'is_half_day' => $lr->is_half_day,
             'half_day_period' => $lr->half_day_period,
             'reason' => $lr->reason,
-            'requester_role' => $lr->requester_role,
             'status' => $lr->status,
             'employee' => $this->whenLoaded('employee', fn () => [
                 'id' => $lr->employee->id,
                 'employee_code' => $lr->employee->employee_code,
                 'full_name' => $lr->employee->full_name,
             ]),
-            'reviewed_by' => $lr->reviewed_by,
-            'reviewer_remarks' => $lr->review_remarks,
-            'reviewed_at' => $lr->reviewed_at?->toIso8601String(),
+            // Step 2 — Department Head
+            'head_id' => $lr->head_id,
+            'head_remarks' => $lr->head_remarks,
+            'head_approved_at' => $lr->head_approved_at?->toIso8601String(),
+            // Step 3 — Plant Manager
+            'manager_checked_by' => $lr->manager_checked_by,
+            'manager_check_remarks' => $lr->manager_check_remarks,
+            'manager_checked_at' => $lr->manager_checked_at?->toIso8601String(),
+            // Step 4 — GA Officer
+            'ga_processed_by' => $lr->ga_processed_by,
+            'ga_remarks' => $lr->ga_remarks,
+            'ga_processed_at' => $lr->ga_processed_at?->toIso8601String(),
+            'action_taken' => $lr->action_taken,
+            'beginning_balance' => $lr->beginning_balance,
+            'applied_days' => $lr->applied_days,
+            'ending_balance' => $lr->ending_balance,
+            // Step 5 — Vice President
+            'vp_id' => $lr->vp_id,
+            'vp_remarks' => $lr->vp_remarks,
+            'vp_noted_at' => $lr->vp_noted_at?->toIso8601String(),
             'created_at' => $lr->created_at->toIso8601String(),
             'updated_at' => $lr->updated_at->toIso8601String(),
         ];

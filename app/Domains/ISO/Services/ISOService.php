@@ -7,6 +7,7 @@ namespace App\Domains\ISO\Services;
 use App\Domains\ISO\Models\AuditFinding;
 use App\Domains\ISO\Models\ControlledDocument;
 use App\Domains\ISO\Models\InternalAudit;
+use App\Events\ISO\AuditFindingCreated;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -18,6 +19,7 @@ final class ISOService implements ServiceContract
     public function paginateDocuments(array $filters = []): LengthAwarePaginator
     {
         return ControlledDocument::query()
+            ->when($filters['with_archived'] ?? false, fn ($q) => $q->withTrashed())
             ->with(['owner'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['document_type'] ?? null, fn ($q, $v) => $q->where('document_type', $v))
@@ -52,6 +54,7 @@ final class ISOService implements ServiceContract
     public function paginateAudits(array $filters = []): LengthAwarePaginator
     {
         return InternalAudit::query()
+            ->when($filters['with_archived'] ?? false, fn ($q) => $q->withTrashed())
             ->with(['leadAuditor'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->orderByDesc('audit_date')
@@ -92,7 +95,7 @@ final class ISOService implements ServiceContract
 
     public function storeFinding(InternalAudit $audit, array $data, int $userId): AuditFinding
     {
-        return $audit->findings()->create([
+        $finding = $audit->findings()->create([
             'finding_type' => $data['finding_type'] ?? 'observation',
             'clause_ref'   => $data['clause_ref'] ?? null,
             'description'  => $data['description'],
@@ -100,5 +103,48 @@ final class ISOService implements ServiceContract
             'status'       => 'open',
             'raised_by_id' => $userId,
         ]);
+
+        // ISO-QC-001: Notify QC domain to create a CAPA for major/minor findings.
+        AuditFindingCreated::dispatch($finding);
+
+        return $finding;
+    }
+
+    // ── Document Workflow ────────────────────────────────────────────────────
+
+    public function submitForReview(ControlledDocument $doc): ControlledDocument
+    {
+        if ($doc->status !== 'draft') {
+            throw new DomainException('Document must be in draft to submit for review.', 'ISO_DOC_NOT_DRAFT', 422);
+        }
+        $doc->update(['status' => 'under_review']);
+        return $doc;
+    }
+
+    public function approveDocument(ControlledDocument $doc): ControlledDocument
+    {
+        if ($doc->status !== 'under_review') {
+            throw new DomainException('Document must be under review to approve.', 'ISO_DOC_NOT_UNDER_REVIEW', 422);
+        }
+        $doc->update(['status' => 'approved']);
+        return $doc;
+    }
+
+    public function obsoleteDocument(ControlledDocument $doc): ControlledDocument
+    {
+        if (!in_array($doc->status, ['approved', 'under_review'], true)) {
+            throw new DomainException('Only approved or under-review documents can be obsoleted.', 'ISO_DOC_CANNOT_OBSOLETE', 422);
+        }
+        $doc->update(['status' => 'obsolete', 'is_active' => false]);
+        return $doc;
+    }
+
+    public function closeFinding(AuditFinding $finding): AuditFinding
+    {
+        if ($finding->status === 'closed') {
+            throw new DomainException('Finding is already closed.', 'ISO_FINDING_ALREADY_CLOSED', 422);
+        }
+        $finding->update(['status' => 'closed']);
+        return $finding;
     }
 }

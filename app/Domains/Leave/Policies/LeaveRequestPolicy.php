@@ -10,12 +10,15 @@ use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 /**
- * Leave Request Policy — matrix § HR Leave Management
+ * Leave Request Policy — 4-step approval chain (form AD-084-00).
  *
- * SOD-002: approver cannot approve their own leave request.
- * RDAC: hr_manager and ops_manager can only approve within their departments.
- * Approve right: hr_manager (DEPT), ops_manager (DEPT).
- * File-on-behalf: hr_manager (DEPT), hr_supervisor (DEPT).
+ * SOD-002: each approver must not be the employee whose leave it is.
+ *
+ * Step permissions:
+ *   Step 2 — leaves.head_approve    (head role)
+ *   Step 3 — leaves.manager_check   (plant_manager, manager)
+ *   Step 4 — leaves.ga_process      (ga_officer)
+ *   Step 5 — leaves.vp_note         (vice_president)
  */
 final class LeaveRequestPolicy
 {
@@ -42,94 +45,132 @@ final class LeaveRequestPolicy
 
     public function view(User $user, LeaveRequest $leaveRequest): bool
     {
-        // HR and Ops managers/supervisors: team scope
-        if ($user->hasAnyPermission(['leaves.view_team'])) {
+        if ($user->hasAnyPermission(['leaves.view_team', 'leaves.view'])) {
             $deptId = $leaveRequest->employee?->department_id;
 
             return $deptId === null || $user->hasDepartmentAccess((int) $deptId);
         }
 
-        // Own leave only
         return $this->isOwnLeave($user, $leaveRequest);
     }
 
     public function create(User $user, Employee $employee): bool
     {
-        // Filing for self
         if ($employee->user_id === $user->id) {
             return $user->hasAnyPermission(['leaves.file_own', 'leaves.create']);
         }
 
-        // Filing on behalf of another employee (HR roles only, DEPT-scoped)
         return $user->hasPermissionTo('leaves.file_on_behalf')
             && $user->hasDepartmentAccess((int) $employee->department_id);
     }
 
+    // ── Step 2 — Department Head approves ────────────────────────────────────
+
     /**
-     * Supervisor first-level approval.
-     * Supervisor can approve requests from their direct reports.
+     * Department Head first-level approval.
+     * Requires: leaves.head_approve, status = submitted, not own leave.
      */
-    public function supervise(User $user, LeaveRequest $leaveRequest): bool
+    public function headApprove(User $user, LeaveRequest $leaveRequest): bool
     {
-        if (! $user->hasPermissionTo('leaves.supervise')) {
+        if (! $user->hasPermissionTo('leaves.head_approve')) {
             return false;
         }
 
-        $deptId = $leaveRequest->employee?->department_id;
-        if ($deptId !== null && ! $user->hasDepartmentAccess((int) $deptId)) {
-            return false;
-        }
-
-        // Must be pending (submitted) status
         if ($leaveRequest->status !== 'submitted') {
             return false;
         }
 
-        // SOD-002: cannot approve own leave
+        // SOD-002
         $employeeUserId = $leaveRequest->employee?->user_id;
 
         return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
     }
 
+    // ── Step 3 — Plant Manager checks ────────────────────────────────────────
+
     /**
-     * Approve — SOD-002: approver must not be the employee whose leave it is.
-     * Manager final approval (after supervisor approval).
-     * Supervisors can also reject at the submitted stage.
+     * Plant Manager check.
+     * Requires: leaves.manager_check, status = head_approved, not own leave.
+     */
+    public function managerCheck(User $user, LeaveRequest $leaveRequest): bool
+    {
+        if (! $user->hasPermissionTo('leaves.manager_check')) {
+            return false;
+        }
+
+        if ($leaveRequest->status !== 'head_approved') {
+            return false;
+        }
+
+        $employeeUserId = $leaveRequest->employee?->user_id;
+
+        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+    }
+
+    // ── Step 4 — GA Officer processes ────────────────────────────────────────
+
+    /**
+     * GA Officer processing.
+     * Requires: leaves.ga_process, status = manager_checked, not own leave.
+     */
+    public function gaProcess(User $user, LeaveRequest $leaveRequest): bool
+    {
+        if (! $user->hasPermissionTo('leaves.ga_process')) {
+            return false;
+        }
+
+        if ($leaveRequest->status !== 'manager_checked') {
+            return false;
+        }
+
+        $employeeUserId = $leaveRequest->employee?->user_id;
+
+        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+    }
+
+    // ── Step 5 — VP notes ────────────────────────────────────────────────────
+
+    /**
+     * Vice President final note.
+     * Requires: leaves.vp_note, status = ga_processed, not own leave.
+     */
+    public function vpNote(User $user, LeaveRequest $leaveRequest): bool
+    {
+        if (! $user->hasPermissionTo('leaves.vp_note')) {
+            return false;
+        }
+
+        if ($leaveRequest->status !== 'ga_processed') {
+            return false;
+        }
+
+        $employeeUserId = $leaveRequest->employee?->user_id;
+
+        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+    }
+
+    // ── Reject (any approver at their step) ──────────────────────────────────
+
+    /**
+     * Any current-step approver can reject.
+     * Mapped to the review gate used by the reject controller action.
      */
     public function review(User $user, LeaveRequest $leaveRequest): bool
     {
-        $hasManagerPerm = $user->hasAnyPermission(['leaves.approve', 'leaves.reject']);
-        $hasSupervisePerm = $user->hasPermissionTo('leaves.supervise');
-
-        // Supervisor can only reject/review at 'submitted' stage
-        if (! $hasManagerPerm && $hasSupervisePerm && $leaveRequest->status !== 'submitted') {
-            return false;
-        }
-
-        if (! $hasManagerPerm && ! $hasSupervisePerm) {
-            return false;
-        }
-
-        $deptId = $leaveRequest->employee?->department_id;
-        if ($deptId !== null && ! $user->hasDepartmentAccess((int) $deptId)) {
-            return false;
-        }
-
-        // Must be supervisor_approved or submitted (for backward compatibility)
-        if (! in_array($leaveRequest->status, ['supervisor_approved', 'submitted'], true)) {
-            return false;
-        }
-
-        // SOD-002: cannot approve own leave
-        $employeeUserId = $leaveRequest->employee?->user_id;
-
-        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+        return match ($leaveRequest->status) {
+            'submitted'       => $this->headApprove($user, $leaveRequest),
+            'head_approved'   => $this->managerCheck($user, $leaveRequest),
+            'manager_checked' => $this->gaProcess($user, $leaveRequest),
+            'ga_processed'    => $this->vpNote($user, $leaveRequest),
+            default           => false,
+        };
     }
+
+    // ── Cancel ───────────────────────────────────────────────────────────────
 
     public function cancel(User $user, LeaveRequest $leaveRequest): bool
     {
         if ($user->hasPermissionTo('leaves.cancel')) {
-            // HR role: can cancel any in their dept
             $deptId = $leaveRequest->employee?->department_id;
             if ($deptId !== null) {
                 return $user->hasDepartmentAccess((int) $deptId);
@@ -138,45 +179,15 @@ final class LeaveRequestPolicy
             return true;
         }
 
-        // Staff: own pending requests only
         return $this->isOwnLeave($user, $leaveRequest)
-            && in_array($leaveRequest->status, ['draft', 'submitted'], true);
+            && $leaveRequest->isCancellable();
     }
 
-    /**
-     * Executive approval for manager-filed requests.
-     * Only executives can approve/reject manager requests.
-     */
-    public function executiveApprove(User $user, LeaveRequest $leaveRequest): bool
-    {
-        if (! $user->hasPermissionTo('leaves.executive_approve')) {
-            return false;
-        }
-
-        // Must be a manager-level request pending executive approval
-        if (! in_array($leaveRequest->requester_role, ['manager'], true)) {
-            return false;
-        }
-
-        if ($leaveRequest->status !== 'pending_executive') {
-            return false;
-        }
-
-        // SOD-002: cannot approve own request
-        return (int) $user->id !== (int) $leaveRequest->submitted_by;
-    }
-
-    /**
-     * View executive approval queue.
-     */
-    public function viewExecutiveQueue(User $user): bool
-    {
-        return $user->hasPermissionTo('leaves.executive_approve');
-    }
+    // ── Helper ───────────────────────────────────────────────────────────────
 
     private function isOwnLeave(User $user, LeaveRequest $leaveRequest): bool
     {
-        $employeeId = \App\Domains\HR\Models\Employee::where('user_id', $user->id)->value('id');
+        $employeeId = Employee::where('user_id', $user->id)->value('id');
 
         return $employeeId !== null && (int) $leaveRequest->employee_id === (int) $employeeId;
     }

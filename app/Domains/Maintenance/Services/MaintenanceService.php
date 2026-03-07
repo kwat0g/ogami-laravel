@@ -18,6 +18,7 @@ final class MaintenanceService implements ServiceContract
     public function paginateEquipment(array $params = []): LengthAwarePaginator
     {
         return Equipment::query()
+            ->when($params['with_archived'] ?? false, fn ($q) => $q->withTrashed())
             ->when($params['search'] ?? null, fn ($q, $v) => $q->where('name', 'ilike', "%{$v}%")->orWhere('equipment_code', 'ilike', "%{$v}%"))
             ->when($params['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when(isset($params['is_active']), fn ($q) => $q->where('is_active', filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN)))
@@ -43,6 +44,7 @@ final class MaintenanceService implements ServiceContract
     public function paginateWorkOrders(array $params = []): LengthAwarePaginator
     {
         return MaintenanceWorkOrder::query()
+            ->when($params['with_archived'] ?? false, fn ($q) => $q->withTrashed())
             ->when($params['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($params['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
             ->when($params['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))

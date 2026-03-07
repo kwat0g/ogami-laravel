@@ -110,6 +110,7 @@ export interface PurchaseRequest {
 
   created_at: string
   updated_at: string
+  deleted_at?: string | null
 }
 
 export interface PurchaseOrderItem {
@@ -151,6 +152,7 @@ export interface PurchaseOrder {
 
   created_at: string
   updated_at: string
+  deleted_at?: string | null
 }
 
 export interface GoodsReceiptItem {
@@ -186,6 +188,7 @@ export interface GoodsReceipt {
 
   created_at: string
   updated_at: string
+  deleted_at?: string | null
 }
 
 // ── Payloads ─────────────────────────────────────────────────────────────────
@@ -262,6 +265,7 @@ export interface PurchaseRequestFilters {
   department_id?: number
   page?: number
   per_page?: number
+  with_archived?: boolean
 }
 
 export interface PurchaseOrderFilters {
@@ -269,6 +273,7 @@ export interface PurchaseOrderFilters {
   vendor_id?: number
   page?: number
   per_page?: number
+  with_archived?: boolean
 }
 
 export interface GoodsReceiptFilters {
@@ -276,4 +281,5 @@ export interface GoodsReceiptFilters {
   purchase_order_id?: number
   page?: number
   per_page?: number
+  with_archived?: boolean
 }

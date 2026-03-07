@@ -22,6 +22,7 @@ final class ItemMasterController extends Controller
         $this->authorize('viewAny', ItemMaster::class);
 
         $query = ItemMaster::with('category')
+            ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
             ->when($request->input('category_id'), fn ($q, $v) => $q->where('category_id', $v))
             ->when($request->input('type'), fn ($q, $v) => $q->where('type', $v))
             ->when($request->boolean('active_only', true), fn ($q) => $q->where('is_active', true))

@@ -7,10 +7,11 @@ namespace App\Domains\Maintenance\Models;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class PmSchedule extends Model
 {
-    use HasPublicUlid;
+    use HasPublicUlid, SoftDeletes;
 
     protected $table = 'pm_schedules';
 

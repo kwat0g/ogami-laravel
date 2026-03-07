@@ -160,11 +160,26 @@ final class ApPaymentPostingService implements ServiceContract
 
     private function ensureFiscalPeriod(string $date): FiscalPeriod
     {
-        $year = (int) date('Y', strtotime($date));
+        // Look up the fiscal period that covers the given date.
+        $period = FiscalPeriod::whereDate('date_from', '<=', $date)
+            ->whereDate('date_to', '>=', $date)
+            ->orderBy('date_from', 'desc')
+            ->first();
+
+        if ($period !== null) {
+            return $period;
+        }
+
+        // Fallback: create a monthly period for the given date so payments
+        // are never blocked by a missing fiscal period setup.
+        $carbon = \Carbon\Carbon::parse($date);
+        $name   = $carbon->format('M Y');           // e.g. "Mar 2026"
+        $from   = $carbon->startOfMonth()->toDateString();
+        $to     = $carbon->endOfMonth()->toDateString();
 
         return FiscalPeriod::firstOrCreate(
-            ['name' => "FY{$year}"],
-            ['date_from' => "{$year}-01-01", 'date_to' => "{$year}-12-31", 'status' => 'open']
+            ['name' => $name],
+            ['date_from' => $from, 'date_to' => $to, 'status' => 'open'],
         );
     }
 

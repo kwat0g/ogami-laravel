@@ -13,7 +13,8 @@ const STATUS_COLORS: Record<AuditStatus, string> = {
 
 export default function AuditListPage() {
   const [status, setStatus] = useState('');
-  const { data, isLoading } = useAudits(status ? { status } : undefined);
+  const [withArchived, setWithArchived] = useState(false);
+  const { data, isLoading } = useAudits({ ...(status ? { status } : {}), ...(withArchived ? { with_archived: true } : {}) });
 
   return (
     <div className="space-y-4">
@@ -35,6 +36,10 @@ export default function AuditListPage() {
           <option value="completed">Completed</option>
           <option value="closed">Closed</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -70,6 +75,7 @@ export default function AuditListPage() {
                   <td className="px-4 py-3 text-gray-500">{a.lead_auditor?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500">{a.audit_date}</td>
                   <td className="px-4 py-3">
+                    {a.deleted_at && <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[a.status]}`}>
                       {a.status.replace('_', ' ')}
                     </span>

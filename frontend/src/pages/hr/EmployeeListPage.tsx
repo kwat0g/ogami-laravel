@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
-import { useEmployees, useTeamEmployees } from '@/hooks/useEmployees'
+import { useEmployees, useTeamEmployees, useDepartments } from '@/hooks/useEmployees'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -31,6 +31,9 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
   const employeesQuery = useEmployees(filters)
   const teamEmployeesQuery = useTeamEmployees(filters)
   const { data, isLoading, isError } = isTeamView ? teamEmployeesQuery : employeesQuery
+
+  const { data: deptsData } = useDepartments()
+  const departments = deptsData?.data ?? []
 
   const handleSearch = () => {
     setFilters((f) => ({ ...f, search: searchValue || undefined, page: 1 }))
@@ -113,6 +116,24 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
           ))}
         </select>
 
+        {/* Department */}
+        {!isTeamView && (
+          <select
+            value={filters.department_id ?? ''}
+            onChange={(e) => setFilters((f) => ({
+              ...f,
+              department_id: e.target.value ? Number(e.target.value) : undefined,
+              page: 1,
+            }))}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="">All Departments</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        )}
+
         {/* Employment Type */}
         <select
           value={filters.employment_type ?? ''}
@@ -140,6 +161,8 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
               <tr>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Position</th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Grade</th>
@@ -151,7 +174,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
             <tbody className="divide-y divide-gray-100">
               {(data?.data ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={10} className="px-3 py-10 text-center text-gray-400 text-sm">
                     No employees found.
                   </td>
                 </tr>
@@ -181,6 +204,12 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-3 py-2 text-gray-600">
+                      {emp.department?.name ?? <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className="px-3 py-2 text-gray-600">
+                      {emp.position?.title ?? <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-3 py-2 text-gray-600 capitalize">
                       {emp.employment_type.replace('_', ' ')}

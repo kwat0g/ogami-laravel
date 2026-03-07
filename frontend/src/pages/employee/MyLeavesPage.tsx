@@ -75,7 +75,7 @@ export default function MyLeavesPage() {
       {balLoading ? <SkeletonLoader rows={1} /> : (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-6">
           {myBalances
-            .filter((b) => b.leave_type_code !== 'LWOP')
+            .filter((b) => b.leave_type_code !== 'OTH')
             .map((b) => {
               const total = b.opening_balance + b.accrued + b.adjusted
               const usedPct = total > 0 ? Math.min(100, (b.used / total) * 100) : 0

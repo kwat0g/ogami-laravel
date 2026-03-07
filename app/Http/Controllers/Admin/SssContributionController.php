@@ -24,6 +24,10 @@ final class SssContributionController extends Controller
             ->orderBy('effective_date', 'desc')
             ->orderBy('salary_range_from');
 
+        if ($request->boolean('with_archived')) {
+            $query->withTrashed();
+        }
+
         if ($request->has('effective_date')) {
             $query->forDate($request->input('effective_date'));
         }

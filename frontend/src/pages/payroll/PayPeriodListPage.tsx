@@ -105,6 +105,7 @@ export default function PayPeriodListPage() {
     formState: { errors, isSubmitting },
   } = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
+    mode: 'onBlur',
     defaultValues: { frequency: 'semi_monthly' },
   })
 

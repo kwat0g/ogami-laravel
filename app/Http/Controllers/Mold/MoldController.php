@@ -22,7 +22,7 @@ final class MoldController extends Controller
     {
         $this->authorize('viewAny', MoldMaster::class);
         return MoldMasterResource::collection(
-            $this->service->paginate($request->only(['search', 'status', 'per_page']))
+            $this->service->paginate($request->only(['search', 'status', 'per_page', 'with_archived']))
         );
     }
 

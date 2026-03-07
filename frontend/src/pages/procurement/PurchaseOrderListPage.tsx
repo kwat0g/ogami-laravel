@@ -18,12 +18,14 @@ const statusBadge: Record<PurchaseOrderStatus, string> = {
 export default function PurchaseOrderListPage(): React.ReactElement {
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | ''>('')
   const [page, setPage] = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('procurement.purchase-order.create')
 
   const { data, isLoading, isError } = usePurchaseOrders({
     ...(statusFilter ? { status: statusFilter } : {}),
     page,
+    with_archived: withArchived || undefined,
   })
 
   return (
@@ -62,6 +64,10 @@ export default function PurchaseOrderListPage(): React.ReactElement {
             <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())}</option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-purple-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {/* Table */}
@@ -101,6 +107,7 @@ export default function PurchaseOrderListPage(): React.ReactElement {
                     ₱{Number(po.total_po_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-4 py-3">
+                    {po.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge[po.status] ?? 'bg-gray-100 text-gray-600'}`}>
                       {po.status}
                     </span>

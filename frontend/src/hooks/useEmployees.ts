@@ -250,6 +250,7 @@ import { useState, useEffect } from 'react'
 
 export interface EmployeeSearchItem {
   id: number
+  ulid: string
   employee_code: string
   full_name: string
   department?: { id: number; name: string }
@@ -282,6 +283,7 @@ export function useEmployeeSearch(query: string, enabled: boolean = true) {
       // Note: EmployeeListResource returns full_name and nested department/position objects
       return res.data.data.map(emp => ({
         id: emp.id,
+        ulid: emp.ulid,
         employee_code: emp.employee_code,
         full_name: emp.full_name,
         department: emp.department,    // { id, name }

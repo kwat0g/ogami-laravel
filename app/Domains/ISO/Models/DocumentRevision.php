@@ -7,10 +7,11 @@ namespace App\Domains\ISO\Models;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class DocumentRevision extends Model implements \OwenIt\Auditing\Contracts\Auditable
 {
-    use \OwenIt\Auditing\Auditable, HasPublicUlid;
+    use \OwenIt\Auditing\Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'document_revisions';
 

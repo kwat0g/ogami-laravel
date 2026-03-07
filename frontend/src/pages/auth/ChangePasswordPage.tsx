@@ -21,6 +21,7 @@ export default function ChangePasswordPage() {
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
+    mode: 'onBlur',
   })
 
   const onSubmit = async (values: ChangePasswordFormValues) => {

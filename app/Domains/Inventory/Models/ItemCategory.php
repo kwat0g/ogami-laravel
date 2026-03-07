@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Inventory\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class ItemCategory extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'item_categories';
 
     protected $fillable = ['code', 'name', 'description', 'is_active'];

@@ -143,6 +143,7 @@ class DepartmentPositionSeeder extends Seeder
             ['IT-SUPP',   'IT Support',             'IT',    'SG-06'],
             // Accounting
             ['ACCT-MGR',  'Accounting Manager',     'ACCTG', 'SG-11'],
+            ['ACCT-OFF',  'Accounting Officer',     'ACCTG', 'SG-10'],
             ['ACCT-CLK',  'Accounting Clerk',       'ACCTG', 'SG-06'],
             ['ACCT-ANL',  'Financial Analyst',      'ACCTG', 'SG-08'],
             // Production

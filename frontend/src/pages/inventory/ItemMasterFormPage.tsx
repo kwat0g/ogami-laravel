@@ -48,6 +48,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
 
   const { register, handleSubmit, control, reset, formState: { errors, isDirty } } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    mode: 'onBlur',
     defaultValues: { requires_iqc: false, reorder_point: 0, reorder_qty: 0 },
   })
 

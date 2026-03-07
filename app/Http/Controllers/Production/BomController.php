@@ -22,7 +22,7 @@ final class BomController extends Controller
         $this->authorize('viewAny', BillOfMaterials::class);
 
         $page = $this->service->paginate($request->only([
-            'product_item_id', 'is_active', 'per_page',
+            'product_item_id', 'is_active', 'per_page', 'with_archived',
         ]));
 
         return BomResource::collection($page);

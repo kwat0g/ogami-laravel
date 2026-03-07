@@ -29,6 +29,7 @@ final class InspectionTemplateResource extends JsonResource
                     'sort_order'       => $item->sort_order,
                 ])
             ),
+            'deleted_at'  => $this->deleted_at?->toIso8601String(),
             'created_at'  => $this->created_at?->toIso8601String(),
         ];
     }

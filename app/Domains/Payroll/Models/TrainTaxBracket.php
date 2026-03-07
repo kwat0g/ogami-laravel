@@ -6,6 +6,7 @@ namespace App\Domains\Payroll\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * TRAIN Law (RA 10963) income tax brackets — effective-date versioned.
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class TrainTaxBracket extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'train_tax_brackets';
 

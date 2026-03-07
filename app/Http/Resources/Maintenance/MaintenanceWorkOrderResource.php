@@ -37,6 +37,7 @@ final class MaintenanceWorkOrderResource extends JsonResource
                 'id'   => $this->reportedBy->id,
                 'name' => $this->reportedBy->name,
             ] : null),
+            'deleted_at'       => $this->deleted_at?->toISOString(),
             'created_at'       => $this->created_at?->toISOString(),
             'updated_at'       => $this->updated_at?->toISOString(),
         ];

@@ -232,6 +232,10 @@ function RequestRow({
     rejected: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
     cancelled: { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
     supervisor_approved: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    submitted: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+    head_approved: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    manager_checked: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
+    ga_processed: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
   }
   
   const colors = statusColors[status] || statusColors.pending

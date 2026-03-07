@@ -34,7 +34,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $vat_exemption_reason
  * @property string|null $atc_code
  * @property float|null $ewt_rate Snapshot of rate at invoice creation
- * @property string $status draft|pending_approval|approved|partially_paid|paid|deleted
+ * @property string $status draft|pending_approval|head_noted|manager_checked|officer_reviewed|approved|partially_paid|paid|deleted
  * @property string|null $rejection_note
  * @property string|null $description
  * @property int|null $journal_entry_id
@@ -82,6 +82,12 @@ final class VendorInvoice extends Model implements Auditable
         'approved_by',
         'submitted_at',
         'approved_at',
+        'head_noted_by',
+        'head_noted_at',
+        'manager_checked_by',
+        'manager_checked_at',
+        'officer_reviewed_by',
+        'officer_reviewed_at',
     ];
 
     protected $casts = [
@@ -166,6 +172,21 @@ final class VendorInvoice extends Model implements Auditable
     public function isPendingApproval(): bool
     {
         return $this->status === 'pending_approval';
+    }
+
+    public function isHeadNoted(): bool
+    {
+        return $this->status === 'head_noted';
+    }
+
+    public function isManagerChecked(): bool
+    {
+        return $this->status === 'manager_checked';
+    }
+
+    public function isOfficerReviewed(): bool
+    {
+        return $this->status === 'officer_reviewed';
     }
 
     public function isApproved(): bool

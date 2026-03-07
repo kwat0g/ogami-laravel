@@ -18,6 +18,10 @@ final class DeliveryScheduleService implements ServiceContract
         $query = DeliverySchedule::with('customer', 'productItem')
             ->orderBy('target_delivery_date');
 
+        if ($filters['with_archived'] ?? false) {
+            $query->withTrashed();
+        }
+
         if (isset($filters['customer_id'])) {
             $query->where('customer_id', $filters['customer_id']);
         }

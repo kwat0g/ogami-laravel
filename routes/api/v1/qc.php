@@ -25,8 +25,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('inspections',                          [InspectionController::class, 'index']);
     Route::post('inspections',                         [InspectionController::class, 'store']);
     Route::get('inspections/{inspection}',             [InspectionController::class, 'show']);
-    Route::patch('inspections/{inspection}/results',   [InspectionController::class, 'recordResults'])
+    Route::delete('inspections/{inspection}',           [InspectionController::class, 'destroy'])
+        ->middleware('throttle:10,1');
+    Route::patch('inspections/{inspection}/results',        [InspectionController::class, 'recordResults'])
         ->middleware('throttle:30,1');
+    Route::patch('inspections/{inspection}/cancel-results', [InspectionController::class, 'cancelResults'])
+        ->middleware('throttle:10,1');
 
     // NCRs
     Route::get('ncrs',                                 [NcrController::class, 'index']);

@@ -104,5 +104,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])
             ->middleware('throttle:api-action')
             ->name('confirm');
+
+        Route::delete('/{goodsReceipt}', [GoodsReceiptController::class, 'destroy'])
+            ->middleware('throttle:api-action')
+            ->name('destroy');
     });
 });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * HolidayCalendar — Philippines public & special holiday reference.
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class HolidayCalendar extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'holiday_calendars';
 
     public $timestamps = false;

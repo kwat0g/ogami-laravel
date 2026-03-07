@@ -21,8 +21,8 @@ final class StoreInspectionRequest extends FormRequest
             'item_master_id'         => 'nullable|exists:item_masters,id',
             'lot_batch_id'           => 'nullable|exists:lot_batches,id',
             'qty_inspected'          => 'required|numeric|min:0.0001',
-            'inspection_date'        => 'required|date|before_or_equal:today',
-            'inspector_id'           => 'nullable|exists:users,id',
+            'inspection_date'        => 'required|date',
+            'inspector_id'           => 'nullable|exists:employees,id',
             'remarks'                => 'nullable|string',
         ];
     }

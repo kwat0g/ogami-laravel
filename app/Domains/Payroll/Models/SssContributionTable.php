@@ -6,6 +6,7 @@ namespace App\Domains\Payroll\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * SSS contribution table — Monthly Salary Credit (MSC) brackets, effective-date versioned.
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class SssContributionTable extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'sss_contribution_tables';
 

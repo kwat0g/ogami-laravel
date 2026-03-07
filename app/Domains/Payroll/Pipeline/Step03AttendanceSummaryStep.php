@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Payroll\Pipeline;
 
 use App\Domains\Attendance\Models\AttendanceLog;
+use App\Domains\Attendance\Models\OvertimeRequest;
 use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Payroll\Services\PayrollComputationContext;
 use Closure;
@@ -28,6 +29,9 @@ final class Step03AttendanceSummaryStep
 
         $ctx->attendanceLogs = $logs;
 
+        /** @var array<string, int> Map work_date → overtime_minutes from attendance logs */
+        $logOtByDate = [];
+
         foreach ($logs as $log) {
             if ($log->is_present) {
                 $ctx->daysWorked++;
@@ -35,6 +39,11 @@ final class Step03AttendanceSummaryStep
                 $ctx->undertimeMinutes += $log->undertime_minutes ?? 0;
                 $ctx->overtimeRegularMinutes += $log->overtime_minutes ?? 0;
                 $ctx->nightDiffMinutes += $log->night_diff_minutes ?? 0;
+
+                $dateKey = $log->work_date instanceof \DateTimeInterface
+                    ? $log->work_date->format('Y-m-d')
+                    : (string) $log->work_date;
+                $logOtByDate[$dateKey] = (int) ($log->overtime_minutes ?? 0);
 
                 $holidayType = $log->holiday_type ?? null;
                 if ($holidayType === 'regular') {
@@ -44,6 +53,28 @@ final class Step03AttendanceSummaryStep
                 }
             } else {
                 $ctx->daysAbsent++;
+            }
+        }
+
+        // ATT-OT-001: Overlay with approved OvertimeRequests so that employees
+        // with a fully-approved OT request are guaranteed their OT pay even when
+        // the biometric import did not capture overtime_minutes on the attendance log.
+        $approvedOtRequests = OvertimeRequest::where('employee_id', $ctx->employee->id)
+            ->where('status', 'approved')
+            ->whereBetween('work_date', [$ctx->run->cutoff_start, $ctx->run->cutoff_end])
+            ->whereNotNull('approved_minutes')
+            ->get();
+
+        foreach ($approvedOtRequests as $otReq) {
+            $dateKey = $otReq->work_date instanceof \DateTimeInterface
+                ? $otReq->work_date->format('Y-m-d')
+                : (string) $otReq->work_date;
+            $logOt = $logOtByDate[$dateKey] ?? 0;
+            $approvedOt = (int) $otReq->approved_minutes;
+
+            if ($approvedOt > $logOt) {
+                $ctx->overtimeRegularMinutes += ($approvedOt - $logOt);
+                $logOtByDate[$dateKey] = $approvedOt; // prevent double-counting on subsequent requests for same date
             }
         }
 

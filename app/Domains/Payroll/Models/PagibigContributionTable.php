@@ -6,6 +6,7 @@ namespace App\Domains\Payroll\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Pag-IBIG (HDMF) contribution table — effective-date versioned.
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class PagibigContributionTable extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'pagibig_contribution_tables';
 

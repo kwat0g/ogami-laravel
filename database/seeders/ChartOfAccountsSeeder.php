@@ -13,13 +13,18 @@ use Illuminate\Database\Seeder;
  * Account codes used:
  *  1001 — Cash in Bank                (asset,     debit  normal)
  *  1200 — Loans Receivable - Employee (asset,     debit  normal)
+ *  1300 — Input VAT Recoverable        (asset,     debit  normal)
  *  2001 — Accounts Payable            (liability, credit normal)
  *  2100 — SSS Contributions Payable   (liability, credit normal)
  *  2101 — PhilHealth Payable          (liability, credit normal)
  *  2102 — PagIBIG Payable             (liability, credit normal)
  *  2103 — Withholding Tax Payable     (liability, credit normal)
  *  2104 — Loans Payable - Employee    (liability, credit normal) — pending disbursement
+ *  2105 — Output VAT Payable          (liability, credit normal)
+ *  2106 — BIR VAT Remittable          (liability, credit normal)
  *  2200 — Payroll Payable             (liability, credit normal)
+ *  3001 — Accounts Receivable         (asset,     debit  normal)
+ *  4001 — Revenue                     (revenue,   credit normal)
  *  5001 — Salaries and Wages Expense  (expense,   debit  normal)
  *  6001 — Utilities Expense           (expense,   debit  normal)
  */
@@ -30,13 +35,18 @@ class ChartOfAccountsSeeder extends Seeder
         $accounts = [
             ['code' => '1001', 'name' => 'Cash in Bank',                'account_type' => 'ASSET',     'normal_balance' => 'DEBIT'],
             ['code' => '1200', 'name' => 'Loans Receivable - Employee', 'account_type' => 'ASSET',     'normal_balance' => 'DEBIT'],
+            ['code' => '1300', 'name' => 'Input VAT Recoverable',        'account_type' => 'ASSET',     'normal_balance' => 'DEBIT'],
             ['code' => '2001', 'name' => 'Accounts Payable',            'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
             ['code' => '2100', 'name' => 'SSS Contributions Payable',   'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
             ['code' => '2101', 'name' => 'PhilHealth Payable',          'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
             ['code' => '2102', 'name' => 'PagIBIG Payable',             'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
             ['code' => '2103', 'name' => 'Withholding Tax Payable',     'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
             ['code' => '2104', 'name' => 'Loans Payable - Employee',    'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
+            ['code' => '2105', 'name' => 'Output VAT Payable',          'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
+            ['code' => '2106', 'name' => 'BIR VAT Remittable',          'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
             ['code' => '2200', 'name' => 'Payroll Payable',             'account_type' => 'LIABILITY', 'normal_balance' => 'CREDIT'],
+            ['code' => '3001', 'name' => 'Accounts Receivable',         'account_type' => 'ASSET',     'normal_balance' => 'DEBIT'],
+            ['code' => '4001', 'name' => 'Revenue',                     'account_type' => 'REVENUE',   'normal_balance' => 'CREDIT'],
             ['code' => '5001', 'name' => 'Salaries and Wages Expense',  'account_type' => 'OPEX',      'normal_balance' => 'DEBIT'],
             ['code' => '6001', 'name' => 'Utilities Expense',           'account_type' => 'OPEX',      'normal_balance' => 'DEBIT'],
         ];

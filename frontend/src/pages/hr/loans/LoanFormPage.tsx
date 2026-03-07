@@ -20,6 +20,7 @@ export default function LoanFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoanApplicationFormValues>({
     resolver: zodResolver(loanApplicationSchema),
+    mode: 'onBlur',
   })
 
   const employees = employeesData?.data ?? []

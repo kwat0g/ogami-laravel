@@ -19,13 +19,11 @@ use Illuminate\Support\Str;
  *
  * Demo accounts:
  *
- * | Email                       | Password             | Role       | Dept  |
- * |-----------------------------|----------------------|------------|-------|
- * | admin@ogamierp.local        | Admin@1234567890!    | admin      | IT    |
- * | hr.manager@ogamierp.local   | HrManager@1234!      | manager    | HR    |
- * | acctg.officer@ogamierp.local| AcctgManager@1234!   | officer    | ACCTG |
- * | hr.supervisor@ogamierp.local| HrSupervisor@1234!   | head       | HR    |
- * | hr.staff@ogamierp.local     | HrStaff@1234!        | staff      | HR    |
+ * | Email                        | Password             | Role    | Dept  |
+ * |------------------------------|----------------------|---------|-------|
+ * | admin@ogamierp.local         | Admin@1234567890!    | admin   | —     |
+ * | hr.manager@ogamierp.local    | HrManager@1234!      | manager | HR    |
+ * | acctg.officer@ogamierp.local | AcctgManager@1234!   | officer | ACCTG |
  *
  * Depends on: DepartmentPositionSeeder, SalaryGradeSeeder, LeaveTypeSeeder,
  *             FiscalPeriodSeeder, RolePermissionSeeder
@@ -41,6 +39,9 @@ class SampleDataSeeder extends Seeder
         $this->seedAttendanceRecords();
         $this->seedShiftAssignments();
     }
+    // ── Org chart employees (changes.md) ──────────────────────────────────────
+    //  EMP-2026-0001  Maria Santos         HR Manager       hr.manager@ogamierp.local
+    //  EMP-2026-0003  Anna Marie Lim       Accounting Officer  acctg.officer@ogamierp.local
 
     // ── 1. Demo Employees ─────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ class SampleDataSeeder extends Seeder
     {
         // 4 employees: HR Manager, IT Admin (system administrator), Accounting Manager, HR Staff.
         $employees = [
+            // HR Manager — changes.md: HR Department
             [
                 'code' => 'EMP-2026-0001',
                 'first_name' => 'Maria',
@@ -62,7 +64,7 @@ class SampleDataSeeder extends Seeder
                 'address' => '123 Sampaguita St., Brgy. San Antonio, Quezon City',
                 'dept' => 'HR',
                 'pos' => 'HR-MGR',
-                'sg' => 'SG-05',  // ₱40,001–₱50,000 covers ₱45,000
+                'sg' => 'SG-05',
                 'hired' => '2020-01-06',
                 'salary' => 4500000, // ₱45,000
                 'sss' => '03-1234567-8',
@@ -72,30 +74,7 @@ class SampleDataSeeder extends Seeder
                 'bank_name' => 'BDO',
                 'bank_account_no' => '00001234567890',
             ],
-            [
-                'code' => 'EMP-2026-0002',
-                'first_name' => 'Juan Carlos',
-                'last_name' => 'Dela Cruz',
-                'dob' => '1985-06-01',
-                'gender' => 'male',
-                'civil_status' => 'SINGLE',
-                'dependents' => 0,
-                'bir_status' => 'S',
-                'email' => 'juan.delacruz@email.com',
-                'phone' => '09189876543',
-                'address' => '456 Dahlia St., Brgy. Pinyahan, Quezon City',
-                'dept' => 'IT',
-                'pos' => 'IT-ADMIN',
-                'sg' => 'SG-06',  // ₱50,001–₱63,000 covers ₱52,000
-                'hired' => '2020-01-06',
-                'salary' => 5200000, // ₱52,000
-                'sss' => '03-9876543-2',
-                'tin' => '234-567-890-001',
-                'philhealth' => '01-987654321-0',
-                'pagibig' => '9876-5432-1098',
-                'bank_name' => 'BPI',
-                'bank_account_no' => '1234567890',
-            ],
+            // Accounting Officer — changes.md: Officers section
             [
                 'code' => 'EMP-2026-0003',
                 'first_name' => 'Anna Marie',
@@ -109,8 +88,8 @@ class SampleDataSeeder extends Seeder
                 'phone' => '09171234571',
                 'address' => '147 Escolta St., Binondo, Manila',
                 'dept' => 'ACCTG',
-                'pos' => 'ACCT-MGR',
-                'sg' => 'SG-06',  // ₱50,001–₱63,000 covers ₱55,000
+                'pos' => 'ACCT-OFF',
+                'sg' => 'SG-06',
                 'hired' => '2018-05-20',
                 'salary' => 5500000, // ₱55,000
                 'sss' => '03-4444444-4',
@@ -119,54 +98,6 @@ class SampleDataSeeder extends Seeder
                 'pagibig' => '4444-5555-6666',
                 'bank_name' => 'UnionBank',
                 'bank_account_no' => '109212345678',
-            ],
-            [
-                'code' => 'EMP-2026-0004',
-                'first_name' => 'Francisco',
-                'last_name' => 'Ramos',
-                'dob' => '1996-07-14',
-                'gender' => 'male',
-                'civil_status' => 'SINGLE',
-                'dependents' => 0,
-                'bir_status' => 'S',
-                'email' => 'francisco.ramos@email.com',
-                'phone' => '09171234568',
-                'address' => '789 Mabini St., Brgy. Maligaya, Caloocan City',
-                'dept' => 'HR',
-                'pos' => 'HR-ASST',
-                'sg' => 'SG-01',  // ₱18,000–₱22,000 covers ₱22,000
-                'hired' => '2022-03-01',
-                'salary' => 2200000, // ₱22,000
-                'sss' => '03-5555555-5',
-                'tin' => '456-789-012-003',
-                'philhealth' => '01-555555555-5',
-                'pagibig' => '5555-6666-7777',
-                'bank_name' => 'Metrobank',
-                'bank_account_no' => '09876543210',
-            ],
-            [
-                'code' => 'EMP-2026-0005',
-                'first_name' => 'Pedro',
-                'last_name' => 'Cruz',
-                'dob' => '1993-11-08',
-                'gender' => 'male',
-                'civil_status' => 'MARRIED',
-                'dependents' => 1,
-                'bir_status' => 'ME1',
-                'email' => 'pedro.cruz@email.com',
-                'phone' => '09178881234',
-                'address' => '22 Rosal St., Brgy. Pinagsama, Taguig City',
-                'dept' => 'HR',
-                'pos' => 'HR-SUP',
-                'sg' => 'SG-03',  // ₱27,001–₱33,000 covers ₱30,000
-                'hired' => '2021-06-15',
-                'salary' => 3000000, // ₱30,000
-                'sss' => '03-6666666-7',
-                'tin' => '567-890-123-004',
-                'philhealth' => '01-666666666-6',
-                'pagibig' => '6666-7777-8888',
-                'bank_name' => 'UnionBank',
-                'bank_account_no' => '109299887766',
             ],
         ];
 
@@ -229,35 +160,18 @@ class SampleDataSeeder extends Seeder
             $count++;
         }
 
-        // Establish reporting lines: HR Supervisor → HR Manager, HR Staff → HR Supervisor
-        $hrManagerId = DB::table('employees')->where('employee_code', 'EMP-2026-0001')->value('id');
-        $hrSupervisorId = DB::table('employees')->where('employee_code', 'EMP-2026-0005')->value('id');
-        $hrStaffId = DB::table('employees')->where('employee_code', 'EMP-2026-0004')->value('id');
-        if ($hrManagerId && $hrSupervisorId) {
-            DB::table('employees')
-                ->where('id', $hrSupervisorId)
-                ->whereNull('reports_to')
-                ->update(['reports_to' => $hrManagerId]);
-        }
-        if ($hrSupervisorId && $hrStaffId) {
-            DB::table('employees')
-                ->where('id', $hrStaffId)
-                ->whereNull('reports_to')
-                ->update(['reports_to' => $hrSupervisorId]);
-        }
-
-        $this->command->info("✓ {$count} demo employees seeded (with complete gov IDs and bank details).");
+        $this->command->info("✓ {$count} demo employees seeded (HR Manager + Accounting Officer).");
     }
 
     // ── 2. User Accounts ──────────────────────────────────────────────────────
 
     private function seedUserAccounts(): void
     {
-        // Admin — already bootstrapped by RolePermissionSeeder; firstOrCreate is safe.
+        // Admin — system account only (no employee record)
         $adminUser = User::firstOrCreate(
             ['email' => 'admin@ogamierp.local'],
             [
-                'name' => 'Juan Carlos Dela Cruz',
+                'name' => 'System Administrator',
                 'password' => 'Admin@1234567890!',
                 'email_verified_at' => now(),
                 'password_changed_at' => now(),
@@ -265,7 +179,7 @@ class SampleDataSeeder extends Seeder
         );
         $adminUser->syncRoles(['admin']);
 
-        // HR Manager
+        // HR Manager (changes.md: HR Manager → manages HR & admin functions)
         $hrUser = User::firstOrCreate(
             ['email' => 'hr.manager@ogamierp.local'],
             [
@@ -277,7 +191,7 @@ class SampleDataSeeder extends Seeder
         );
         $hrUser->syncRoles(['manager']);
 
-        // Accounting Officer
+        // Accounting Officer (changes.md: Accounting Officer → handles financial management)
         $acctgUser = User::firstOrCreate(
             ['email' => 'acctg.officer@ogamierp.local'],
             [
@@ -289,36 +203,10 @@ class SampleDataSeeder extends Seeder
         );
         $acctgUser->syncRoles(['officer']);
 
-        // HR Supervisor (test account for the supervisor-endorse workflow)
-        $supervisorUser = User::firstOrCreate(
-            ['email' => 'hr.supervisor@ogamierp.local'],
-            [
-                'name' => 'Pedro Cruz',
-                'password' => 'HrSupervisor@1234!',
-                'email_verified_at' => now(),
-                'password_changed_at' => now(),
-            ]
-        );
-        $supervisorUser->syncRoles(['head']);
-
-        // HR Staff
-        $staffUser = User::firstOrCreate(
-            ['email' => 'hr.staff@ogamierp.local'],
-            [
-                'name' => 'Francisco Ramos',
-                'password' => 'HrStaff@1234!',
-                'email_verified_at' => now(),
-                'password_changed_at' => now(),
-            ]
-        );
-        $staffUser->syncRoles(['staff']);
-
         $this->command->info('✓ User accounts ready:');
-        $this->command->info('  admin      admin@ogamierp.local          Admin@1234567890!');
-        $this->command->info('  hr_manager hr.manager@ogamierp.local     HrManager@1234!');
-        $this->command->info('  officer    acctg.officer@ogamierp.local  AcctgManager@1234!');
-        $this->command->info('  supervisor hr.supervisor@ogamierp.local  HrSupervisor@1234!');
-        $this->command->info('  staff      hr.staff@ogamierp.local       HrStaff@1234!');
+        $this->command->info('  admin   admin@ogamierp.local          Admin@1234567890!');
+        $this->command->info('  manager hr.manager@ogamierp.local     HrManager@1234!');
+        $this->command->info('  officer acctg.officer@ogamierp.local  AcctgManager@1234!');
     }
 
     // ── 3. User ↔ Employee Links ──────────────────────────────────────────────
@@ -326,11 +214,8 @@ class SampleDataSeeder extends Seeder
     private function seedEmployeeUserLinks(): void
     {
         $links = [
-            ['user' => 'hr.manager@ogamierp.local',    'employee' => 'EMP-2026-0001'],
-            ['user' => 'admin@ogamierp.local',          'employee' => 'EMP-2026-0002'],
-            ['user' => 'acctg.officer@ogamierp.local',  'employee' => 'EMP-2026-0003'],
-            ['user' => 'hr.staff@ogamierp.local',       'employee' => 'EMP-2026-0004'],
-            ['user' => 'hr.supervisor@ogamierp.local',  'employee' => 'EMP-2026-0005'],
+            ['user' => 'hr.manager@ogamierp.local',   'employee' => 'EMP-2026-0001'],
+            ['user' => 'acctg.officer@ogamierp.local', 'employee' => 'EMP-2026-0003'],
         ];
 
         foreach ($links as $link) {
@@ -416,7 +301,7 @@ class SampleDataSeeder extends Seeder
 
     private function seedAttendanceRecords(): void
     {
-        $employeeCodes = ['EMP-2026-0001', 'EMP-2026-0002', 'EMP-2026-0003', 'EMP-2026-0004', 'EMP-2026-0005'];
+        $employeeCodes = ['EMP-2026-0001', 'EMP-2026-0003'];
 
         // All Mon–Fri working days for Jan, Feb, Mar, Apr, Jun 2026.
         // Jan 1 (New Year) excluded. Weekends excluded. May skipped per business schedule.
@@ -504,7 +389,7 @@ class SampleDataSeeder extends Seeder
         }
 
         $count = count($workDays);
-        $this->command->info("✓ Attendance seeded ({$totalInserted} records — {$count} days × 5 employees).");
+        $this->command->info("✓ Attendance seeded ({$totalInserted} records — {$count} days × 2 employees).");
         $this->command->info('  Months covered: Jan (21d), Feb (20d), Mar (22d), Apr (22d), Jun (22d) — May skipped.');
     }
 
@@ -526,10 +411,7 @@ class SampleDataSeeder extends Seeder
         // Use the admin user as the assigner
         $assignedBy = DB::table('users')->first()?->id ?? 1;
 
-        $employeeCodes = [
-            'EMP-2026-0001', 'EMP-2026-0002', 'EMP-2026-0003',
-            'EMP-2026-0004', 'EMP-2026-0005',
-        ];
+        $employeeCodes = ['EMP-2026-0001', 'EMP-2026-0003'];
 
         $inserted = 0;
         foreach ($employeeCodes as $code) {

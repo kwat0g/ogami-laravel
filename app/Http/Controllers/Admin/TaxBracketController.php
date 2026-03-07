@@ -25,6 +25,10 @@ final class TaxBracketController extends Controller
             ->orderBy('effective_date', 'desc')
             ->orderBy('income_from');
 
+        if ($request->boolean('with_archived')) {
+            $query->withTrashed();
+        }
+
         if ($request->has('effective_date')) {
             $query->forDate($request->input('effective_date'));
         }

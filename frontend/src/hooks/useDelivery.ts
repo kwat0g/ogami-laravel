@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { DeliveryReceipt, CreateDeliveryReceiptPayload, Shipment } from '@/types/delivery';
 
-export function useDeliveryReceipts(params?: Record<string, string>) {
+export function useDeliveryReceipts(params?: Record<string, string | boolean>) {
   return useQuery<{ data: DeliveryReceipt[]; meta: unknown }>({
     queryKey: ['delivery-receipts', params],
     queryFn: () => api.get('/delivery/receipts', { params }).then(r => r.data),
@@ -35,7 +35,7 @@ export function useConfirmDeliveryReceipt() {
   });
 }
 
-export function useShipments(params?: Record<string, string>) {
+export function useShipments(params?: Record<string, string | boolean>) {
   return useQuery<{ data: Shipment[]; meta: unknown }>({
     queryKey: ['shipments', params],
     queryFn: () => api.get('/delivery/shipments', { params }).then(r => r.data),

@@ -6,6 +6,7 @@ namespace App\Domains\Procurement\Models;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class GoodsReceiptItem extends Model
 {
+    use SoftDeletes;
+
     public $timestamps = false;
     protected $table   = 'goods_receipt_items';
 

@@ -71,7 +71,7 @@ final class EmployeePolicy
         }
 
         // Manager + Supervisor: DEPT-scoped access
-        if ($user->hasAnyRole(['manager', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager', 'officer', 'head'])) {
+        if ($user->hasAnyRole(['manager', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager', 'officer', 'ga_officer', 'purchasing_officer', 'impex_officer', 'head'])) {
             return $user->hasDepartmentAccess((int) $employee->department_id);
         }
 

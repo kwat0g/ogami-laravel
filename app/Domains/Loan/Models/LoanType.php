@@ -7,6 +7,7 @@ namespace App\Domains\Loan\Models;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -28,7 +29,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class LoanType extends Model implements Auditable
 {
-    use AuditableTrait;
+    use AuditableTrait, SoftDeletes;
 
     protected $table = 'loan_types';
 

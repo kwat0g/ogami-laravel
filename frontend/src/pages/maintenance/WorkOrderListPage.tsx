@@ -22,11 +22,13 @@ export default function WorkOrderListPage() {
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [priority, setPriority] = useState('');
+  const [withArchived, setWithArchived] = useState(false);
 
-  const params: Record<string, string> = {};
+  const params: Record<string, string | boolean> = {};
   if (status) params.status = status;
   if (type) params.type = type;
   if (priority) params.priority = priority;
+  if (withArchived) params.with_archived = true;
 
   const { data, isLoading } = useWorkOrders(Object.keys(params).length ? params : undefined);
 
@@ -62,6 +64,10 @@ export default function WorkOrderListPage() {
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -100,6 +106,7 @@ export default function WorkOrderListPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
+                    {wo.deleted_at && <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[wo.status]}`}>
                       {wo.status.replace('_', ' ')}
                     </span>

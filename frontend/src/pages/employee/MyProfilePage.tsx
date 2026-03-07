@@ -323,6 +323,7 @@ export default function MyProfilePage() {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
     useForm<EditFormValues>({
       resolver: zodResolver(editSchema),
+      mode: 'onBlur',
     })
 
   const startEditing = () => {

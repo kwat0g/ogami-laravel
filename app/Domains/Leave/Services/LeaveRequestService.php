@@ -20,261 +20,282 @@ use App\Shared\Exceptions\InsufficientLeaveBalanceException;
 use App\Shared\Exceptions\SodViolationException;
 use Illuminate\Support\Facades\DB;
 
+// NOTICE: This file has been rewritten to implement the 4-step approval chain
+// matching physical form AD-084-00 (Leave of Absence Request Form).
+// Old methods (supervisorApprove, approve, executiveApprove, executiveReject)
+// are replaced by headApprove, managerCheck, gaProcess, vpNote.
+
 /**
- * Leave request lifecycle service.
+ * Leave request lifecycle service — 4-step approval chain (form AD-084-00).
  *
  * Business rules:
- *  LV-001: Cannot approve a request if balance would go negative
- *  LV-004: Approver must differ from submitter (Segregation of Duties)
+ *  LV-001: Cannot approve_with_pay if balance would go negative
+ *  LV-004: Each approver must differ from submitted_by (SoD)
  *  LV-005: Rejected/cancelled requests do not deduct balance
- *  LV-006: LWOP always approved (no balance check), but deducts absent flag for payroll
+ *  LV-006: LWOP always approved_without_pay; no balance check
  *  LV-008: Half-day requests count as 0.5 days
+ *
+ * Workflow:
+ *   submitted → head_approved → manager_checked → ga_processed → approved
+ *                                              ↘ rejected  (action_taken = disapproved)
  */
 final class LeaveRequestService implements ServiceContract
 {
+    // ── Step 1 — Employee submits ─────────────────────────────────────────────
+
     /**
-     * Submit a leave request for review.
-     *
-     * Workflow routing:
-     * - Staff → Supervisor endorsement → Manager approval
-     * - Supervisor → Manager approval
-     * - Manager → Executive approval
+     * Submit a leave request for approval.
+     * All employees (regardless of role) go to status 'submitted'.
+     * Balance check is deferred to the GA Officer step.
      *
      * @param  array<string, mixed>  $data
-     * @param  string  $requesterRole  staff|head|officer|manager
      *
-     * @throws DomainException|InsufficientLeaveBalanceException
+     * @throws DomainException
      */
     public function submit(
         Employee $employee,
         array $data,
-        int $submittedByUserId,
-        string $requesterRole = 'staff'
+        int $submittedByUserId
     ): LeaveRequest {
-        $request = DB::transaction(function () use ($employee, $data, $submittedByUserId, $requesterRole): LeaveRequest {
+        $request = DB::transaction(function () use ($employee, $data, $submittedByUserId): LeaveRequest {
             $leaveType = LeaveType::findOrFail($data['leave_type_id']);
-            $year = date('Y', strtotime($data['date_from']));
 
-            $totalDays = isset($data['is_half_day']) && $data['is_half_day'] ? 0.5 : $data['total_days'];
+            $isHalfDay = isset($data['is_half_day']) && $data['is_half_day'];
 
-            // LV-006: LWOP skips balance check
-            if ($leaveType->code !== 'LWOP') {
-                $balance = LeaveBalance::firstOrCreate(
-                    ['employee_id' => $employee->id, 'leave_type_id' => $leaveType->id, 'year' => $year],
-                    ['opening_balance' => 0, 'accrued' => 0, 'adjusted' => 0, 'used' => 0, 'monetized' => 0],
-                );
-
-                if (! $balance->hasSufficientBalance($totalDays)) {
-                    throw new InsufficientLeaveBalanceException(
-                        $leaveType->name,
-                        $totalDays,          // requested
-                        $balance->balance,   // available
-                    );
-                }
+            if ($isHalfDay) {
+                $totalDays = 0.5;
+            } elseif (isset($data['total_days']) && $data['total_days'] > 0) {
+                $totalDays = (float) $data['total_days'];
+            } else {
+                // Compute inclusive calendar days from date range
+                $from = new \Carbon\Carbon($data['date_from']);
+                $to   = new \Carbon\Carbon($data['date_to']);
+                $totalDays = (float) ($from->diffInDays($to) + 1);
             }
 
-            // Determine initial status based on requester role
-            // Manager-level requests go to 'pending_executive' status
-            $isManagerRole = in_array($requesterRole, ['manager'], true);
-            $initialStatus = $isManagerRole ? 'pending_executive' : 'submitted';
-
             return LeaveRequest::create([
-                'employee_id' => $employee->id,
-                'leave_type_id' => $leaveType->id,
-                'submitted_by' => $submittedByUserId,
-                'requester_role' => $requesterRole,
-                'date_from' => $data['date_from'],
-                'date_to' => $data['date_to'],
-                'total_days' => $totalDays,
-                'is_half_day' => $data['is_half_day'] ?? false,
-                'half_day_period' => $data['half_day_period'] ?? null,
-                'reason' => $data['reason'],
-                'status' => $initialStatus,
+                'employee_id'     => $employee->id,
+                'leave_type_id'   => $leaveType->id,
+                'submitted_by'    => $submittedByUserId,
+                'date_from'       => $data['date_from'],
+                'date_to'         => $data['date_to'],
+                'total_days'      => $totalDays,
+                'is_half_day'     => $isHalfDay,
+                'half_day_period' => isset($data['half_day_period']) ? strtolower($data['half_day_period']) : null,
+                'reason'          => $data['reason'],
+                'status'          => 'submitted',
             ]);
         });
 
-        // Notify based on workflow
-        if (in_array($requesterRole, ['manager'], true)) {
-            $this->notifyExecutiveOfManagerRequest($request, $employee);
-        } else {
-            $this->notifyManagerOfFiledRequest($request, $employee);
-        }
+        // Notify department heads in the employee's department
+        $this->notifyHeadsOfFiledRequest($request, $employee);
 
         return $request;
     }
 
+    // ── Step 2 — Department Head approves ────────────────────────────────────
+
     /**
-     * Supervisor first-level approval.
-     * Moves request from 'submitted' to 'supervisor_approved'.
+     * Department Head approves the request.
+     * Moves: submitted → head_approved.
      *
-     * @throws SodViolationException
+     * @throws SodViolationException|DomainException
      */
-    public function supervisorApprove(LeaveRequest $request, int $supervisorUserId, ?string $remarks = null): LeaveRequest
+    public function headApprove(LeaveRequest $request, int $headUserId, ?string $remarks = null): LeaveRequest
     {
-        // LV-004: SoD check
-        if ($request->submitted_by === $supervisorUserId) {
-            throw new SodViolationException('leave_request', 'supervisor_approve', 'Supervisor must differ from submitter (LV-004).');
+        if ($request->submitted_by === $headUserId) {
+            throw new SodViolationException('leave_request', 'head_approve', 'Head must differ from submitter (LV-004).');
         }
 
         if ($request->status !== 'submitted') {
-            throw new DomainException('Only submitted requests can be supervisor-approved.', 'LV_NOT_SUBMITTED', 422);
+            throw new DomainException('Only submitted requests can be head-approved.', 'LV_NOT_SUBMITTED', 422);
         }
 
-        $request->status = 'supervisor_approved';
-        $request->supervisor_id = $supervisorUserId;
-        $request->supervisor_remarks = $remarks;
-        $request->supervisor_reviewed_at = now();
+        $request->status           = 'head_approved';
+        $request->head_id          = $headUserId;
+        $request->head_remarks     = $remarks;
+        $request->head_approved_at = now();
         $request->save();
 
-        // Notify manager that supervisor has approved
-        $this->notifyManagerOfSupervisorApproval($request);
+        $this->notifyManagerOfHeadApproval($request);
 
         return $request;
     }
 
+    // ── Step 3 — Plant Manager checks ────────────────────────────────────────
+
     /**
-     * Manager final approval - deducts from balance.
+     * Plant Manager checks the request.
+     * Moves: head_approved → manager_checked.
      *
-     * Workflow:
-     * - Staff requests: must be supervisor_approved first
-     * - Supervisor requests: can be approved directly (no supervisor endorsement needed)
-     *
-     * @throws SodViolationException|InsufficientLeaveBalanceException
+     * @throws SodViolationException|DomainException
      */
-    public function approve(LeaveRequest $request, int $reviewedByUserId, ?string $remarks = null): LeaveRequest
+    public function managerCheck(LeaveRequest $request, int $managerUserId, ?string $remarks = null): LeaveRequest
     {
-        // LV-004: SoD check
-        if ($request->submitted_by === $reviewedByUserId) {
-            throw new SodViolationException('leave_request', 'approve', 'Leave request approver must differ from submitter (LV-004).');
+        if ($request->submitted_by === $managerUserId) {
+            throw new SodViolationException('leave_request', 'manager_check', 'Manager must differ from submitter (LV-004).');
         }
 
-        // Manager cannot approve their own requests through this method
-        // Manager requests must go through executive approval
-        if (in_array($request->requester_role, ['manager'], true)) {
-            throw new DomainException(
-                'Manager requests must be approved by executive. Use executiveApprove method.',
-                'LV_USE_EXECUTIVE_APPROVAL',
-                422
-            );
+        if ($request->status !== 'head_approved') {
+            throw new DomainException('Only head-approved requests can be manager-checked.', 'LV_NOT_HEAD_APPROVED', 422);
         }
 
-        // Supervisor requests can be approved directly
-        // Staff requests must be supervisor_approved first
-        if ($request->requester_role === 'staff' && ! in_array($request->status, ['supervisor_approved'], true)) {
-            throw new DomainException('Staff requests must be supervisor-endorsed first.', 'LV_NOT_SUPERVISOR_APPROVED', 422);
-        }
+        $request->status               = 'manager_checked';
+        $request->manager_checked_by   = $managerUserId;
+        $request->manager_check_remarks = $remarks;
+        $request->manager_checked_at   = now();
+        $request->save();
 
-        // For backward compatibility: allow 'submitted' status for supervisor requests
-        if (! in_array($request->status, ['supervisor_approved', 'submitted'], true)) {
-            throw new DomainException('Request must be supervisor-approved first.', 'LV_NOT_SUPERVISOR_APPROVED', 422);
-        }
-
-        $request = DB::transaction(function () use ($request, $reviewedByUserId, $remarks): LeaveRequest {
-            $leaveType = $request->leaveType;
-            $year = $request->date_from->year;
-
-            // LV-006: LWOP does not deduct balance
-            if ($leaveType->code !== 'LWOP') {
-                $balance = LeaveBalance::where([
-                    'employee_id' => $request->employee_id,
-                    'leave_type_id' => $request->leave_type_id,
-                    'year' => $year,
-                ])->lockForUpdate()->firstOrFail();
-
-                if (! $balance->hasSufficientBalance($request->total_days)) {
-                    throw new InsufficientLeaveBalanceException(
-                        $leaveType->name,
-                        $request->total_days, // requested
-                        $balance->balance,    // available
-                    );
-                }
-
-                $balance->used += $request->total_days;
-                $balance->save();
-            }
-
-            $request->status = 'approved';
-            $request->reviewed_by = $reviewedByUserId;
-            $request->review_remarks = $remarks;
-            $request->reviewed_at = now();
-            $request->save();
-
-            return $request;
-        });
-
-        $this->notifyEmployeeOfDecision($request, 'approved', $remarks);
+        $this->notifyGaOfficerOfManagerCheck($request);
 
         return $request;
     }
 
+    // ── Step 4 — GA Officer processes ────────────────────────────────────────
+
     /**
-     * Executive approval for manager-filed requests.
-     * Only executives can approve manager requests.
+     * GA Officer receives and classifies the request.
      *
-     * @throws SodViolationException|InsufficientLeaveBalanceException
+     * Sets action_taken:
+     *  - 'approved_with_pay'    → captures balance snapshot → moves to ga_processed → VP notes
+     *  - 'approved_without_pay' → marks as LWOP; no balance deduction → moves to ga_processed → VP notes
+     *  - 'disapproved'          → immediately rejected; VP step skipped
+     *
+     * @throws SodViolationException|DomainException|InsufficientLeaveBalanceException
      */
-    public function executiveApprove(
+    public function gaProcess(
         LeaveRequest $request,
-        int $executiveUserId,
+        int $gaUserId,
+        string $actionTaken,
         ?string $remarks = null
     ): LeaveRequest {
-        // Only manager requests can be executive-approved
-        if (! in_array($request->requester_role, ['manager'], true)) {
-            throw new DomainException(
-                'Executive approval is only for manager-filed requests.',
-                'LV_NOT_MANAGER_REQUEST',
-                422
-            );
+        if ($request->submitted_by === $gaUserId) {
+            throw new SodViolationException('leave_request', 'ga_process', 'GA Officer must differ from submitter (LV-004).');
         }
 
-        if ($request->status !== 'pending_executive') {
-            throw new DomainException(
-                'Request must be pending executive approval.',
-                'LV_NOT_PENDING_EXECUTIVE',
-                422
-            );
+        if ($request->status !== 'manager_checked') {
+            throw new DomainException('Only manager-checked requests can be GA-processed.', 'LV_NOT_MANAGER_CHECKED', 422);
         }
 
-        // LV-004: SoD check - executive must differ from submitter
-        if ($request->submitted_by === $executiveUserId) {
-            throw new SodViolationException(
-                'leave_request',
-                'executive_approve',
-                'Executive must differ from submitter (LV-004).'
-            );
+        if (! in_array($actionTaken, ['approved_with_pay', 'approved_without_pay', 'disapproved'], true)) {
+            throw new DomainException('Invalid action_taken value.', 'LV_INVALID_ACTION_TAKEN', 422);
         }
 
-        $request = DB::transaction(function () use ($request, $executiveUserId, $remarks): LeaveRequest {
+        $request = DB::transaction(function () use ($request, $gaUserId, $actionTaken, $remarks): LeaveRequest {
             $leaveType = $request->leaveType;
-            $year = $request->date_from->year;
+            $year      = $request->date_from->year;
 
-            // LV-006: LWOP does not deduct balance
-            if ($leaveType->code !== 'LWOP') {
-                $balance = LeaveBalance::where([
-                    'employee_id' => $request->employee_id,
-                    'leave_type_id' => $request->leave_type_id,
-                    'year' => $year,
-                ])->lockForUpdate()->firstOrFail();
+            $request->ga_processed_by = $gaUserId;
+            $request->ga_remarks      = $remarks;
+            $request->ga_processed_at = now();
+            $request->action_taken    = $actionTaken;
 
-                if (! $balance->hasSufficientBalance($request->total_days)) {
-                    throw new InsufficientLeaveBalanceException(
-                        $leaveType->name,
-                        $request->total_days,
-                        $balance->balance,
-                    );
+            if ($actionTaken === 'disapproved') {
+                // Immediate rejection — VP step is skipped
+                $request->status = 'rejected';
+            } else {
+                // Capture balance snapshot — LV-001 check at this step
+                if ($actionTaken === 'approved_with_pay') {
+                    // LV-006: OTH is discretionary — no balance record; skip balance check
+                    if ($leaveType->code === 'OTH') {
+                        $request->beginning_balance = null;
+                        $request->applied_days      = 0;
+                        $request->ending_balance    = null;
+                    } else {
+                        $balance = LeaveBalance::where([
+                            'employee_id'   => $request->employee_id,
+                            'leave_type_id' => $request->leave_type_id,
+                            'year'          => $year,
+                        ])->lockForUpdate()->first();
+
+                        // @phpstan-ignore nullsafe.neverNull
+                        $currentBalance = $balance?->balance ?? 0.0;
+
+                        if ($currentBalance < $request->total_days) {
+                            throw new InsufficientLeaveBalanceException(
+                                $leaveType->name,
+                                $request->total_days,
+                                $currentBalance,
+                            );
+                        }
+
+                        $request->beginning_balance = $currentBalance;
+                        $request->applied_days      = $request->total_days;
+                        $request->ending_balance    = $currentBalance - $request->total_days;
+                    }
+                } else {
+                    // approved_without_pay — snapshot zeros
+                    $request->beginning_balance = null;
+                    $request->applied_days      = 0;
+                    $request->ending_balance    = null;
                 }
 
-                $balance->used += $request->total_days;
-                $balance->save();
+                $request->status = 'ga_processed';
             }
 
-            $request->status = 'approved';
-            $request->executive_id = $executiveUserId;
-            $request->executive_remarks = $remarks;
-            $request->executive_reviewed_at = now();
-            $request->reviewed_by = $executiveUserId; // Also set as final reviewer
-            $request->review_remarks = $remarks;
-            $request->reviewed_at = now();
+            $request->save();
+
+            return $request;
+        });
+
+        if ($request->status === 'rejected') {
+            $this->notifyEmployeeOfDecision($request, 'rejected', $remarks);
+        } else {
+            $this->notifyVpOfGaApproval($request);
+        }
+
+        return $request;
+    }
+
+    // ── Step 5 — VP notes ─────────────────────────────────────────────────────
+
+    /**
+     * Vice President notes the request (final step).
+     * Moves: ga_processed → approved.
+     * Deducts balance only when action_taken = 'approved_with_pay'.
+     *
+     * @throws SodViolationException|DomainException|InsufficientLeaveBalanceException
+     */
+    public function vpNote(LeaveRequest $request, int $vpUserId, ?string $remarks = null): LeaveRequest
+    {
+        if ($request->submitted_by === $vpUserId) {
+            throw new SodViolationException('leave_request', 'vp_note', 'VP must differ from submitter (LV-004).');
+        }
+
+        if ($request->status !== 'ga_processed') {
+            throw new DomainException('Only GA-processed requests can be VP-noted.', 'LV_NOT_GA_PROCESSED', 422);
+        }
+
+        $request = DB::transaction(function () use ($request, $vpUserId, $remarks): LeaveRequest {
+            // Deduct balance only for approved_with_pay
+            if ($request->action_taken === 'approved_with_pay') {
+                $year = $request->date_from->year;
+
+                $balance = LeaveBalance::where([
+                    'employee_id'   => $request->employee_id,
+                    'leave_type_id' => $request->leave_type_id,
+                    'year'          => $year,
+                ])->lockForUpdate()->first();
+
+                if ($balance !== null) {
+                    // Re-validate balance hasn't changed since GA snapshot
+                    if ($balance->balance < $request->total_days) {
+                        throw new InsufficientLeaveBalanceException(
+                            $request->leaveType->name,
+                            $request->total_days,
+                            $balance->balance,
+                        );
+                    }
+
+                    $balance->used += $request->total_days;
+                    $balance->save();
+                }
+            }
+
+            $request->status      = 'approved';
+            $request->vp_id       = $vpUserId;
+            $request->vp_remarks  = $remarks;
+            $request->vp_noted_at = now();
             $request->save();
 
             return $request;
@@ -285,83 +306,51 @@ final class LeaveRequestService implements ServiceContract
         return $request;
     }
 
-    /**
-     * Executive rejection for manager-filed requests.
-     *
-     * @throws SodViolationException
-     */
-    public function executiveReject(
-        LeaveRequest $request,
-        int $executiveUserId,
-        string $remarks
-    ): LeaveRequest {
-        if (! in_array($request->requester_role, ['manager'], true)) {
-            throw new DomainException(
-                'Executive rejection is only for manager-filed requests.',
-                'LV_NOT_MANAGER_REQUEST',
-                422
-            );
-        }
-
-        if ($request->status !== 'pending_executive') {
-            throw new DomainException(
-                'Request must be pending executive approval.',
-                'LV_NOT_PENDING_EXECUTIVE',
-                422
-            );
-        }
-
-        // LV-004: SoD
-        if ($request->submitted_by === $executiveUserId) {
-            throw new SodViolationException(
-                'leave_request',
-                'executive_reject',
-                'Executive must differ from submitter (LV-004).'
-            );
-        }
-
-        $request->status = 'rejected';
-        $request->executive_id = $executiveUserId;
-        $request->executive_remarks = $remarks;
-        $request->executive_reviewed_at = now();
-        $request->reviewed_by = $executiveUserId;
-        $request->review_remarks = $remarks;
-        $request->reviewed_at = now();
-        $request->save();
-
-        $this->notifyEmployeeOfDecision($request, 'rejected', $remarks);
-
-        return $request;
-    }
+    // ── Reject at any pending step ─────────────────────────────────────────────
 
     /**
-     * Reject the leave request — balance is NOT deducted.
-     * Can be rejected by supervisor or manager.
+     * Reject a leave request — balance is NOT deducted.
+     * Any approver (head, manager, GA, VP) can reject at their step.
      *
-     * @throws SodViolationException
+     * @throws SodViolationException|DomainException
      */
-    public function reject(LeaveRequest $request, int $reviewedByUserId, string $remarks): LeaveRequest
+    public function reject(LeaveRequest $request, int $rejectedByUserId, string $remarks): LeaveRequest
     {
-        // LV-004: SoD
-        if ($request->submitted_by === $reviewedByUserId) {
-            throw new SodViolationException('leave_request', 'reject', 'Leave request rejector must differ from submitter (LV-004).');
+        if ($request->submitted_by === $rejectedByUserId) {
+            throw new SodViolationException('leave_request', 'reject', 'Rejector must differ from submitter (LV-004).');
         }
 
         if (! $request->isPending()) {
             throw new DomainException('Only pending requests can be rejected.', 'LV_NOT_PENDING', 422);
         }
 
-        // If supervisor rejects, record it as supervisor rejection
-        if ($request->status === 'submitted') {
-            $request->supervisor_id = $reviewedByUserId;
-            $request->supervisor_remarks = $remarks;
-            $request->supervisor_reviewed_at = now();
-        }
+        // Record who rejected at each possible step
+        match ($request->status) {
+            'submitted'       => $request->fill([
+                'head_id'         => $rejectedByUserId,
+                'head_remarks'    => $remarks,
+                'head_approved_at' => now(),
+            ]),
+            'head_approved'   => $request->fill([
+                'manager_checked_by'    => $rejectedByUserId,
+                'manager_check_remarks' => $remarks,
+                'manager_checked_at'    => now(),
+            ]),
+            'manager_checked' => $request->fill([
+                'ga_processed_by' => $rejectedByUserId,
+                'ga_remarks'      => $remarks,
+                'ga_processed_at' => now(),
+                'action_taken'    => 'disapproved',
+            ]),
+            'ga_processed' => $request->fill([
+                'vp_id'       => $rejectedByUserId,
+                'vp_remarks'  => $remarks,
+                'vp_noted_at' => now(),
+            ]),
+            default => null,
+        };
 
         $request->status = 'rejected';
-        $request->reviewed_by = $reviewedByUserId;
-        $request->review_remarks = $remarks;
-        $request->reviewed_at = now();
         $request->save();
 
         $this->notifyEmployeeOfDecision($request, 'rejected', $remarks);
@@ -369,9 +358,10 @@ final class LeaveRequestService implements ServiceContract
         return $request;
     }
 
+    // ── Cancel ─────────────────────────────────────────────────────────────────
+
     /**
-     * Cancel a leave request.
-     * If it was approved, the balance is restored.
+     * Cancel a leave request. Only possible while still in draft or submitted.
      *
      * @throws DomainException
      */
@@ -385,11 +375,9 @@ final class LeaveRequestService implements ServiceContract
             );
         }
 
-        $request = DB::transaction(function () use ($request): LeaveRequest {
+        DB::transaction(function () use ($request): void {
             $request->status = 'cancelled';
             $request->save();
-
-            return $request;
         });
 
         return $request;
@@ -398,104 +386,46 @@ final class LeaveRequestService implements ServiceContract
     // ── Private notification helpers ──────────────────────────────────────────
 
     /**
-     * Notify the employee's direct supervisor that a leave request has been filed.
-     *
-     * Workflow: Staff → Supervisor (endorse) → Department Manager (approve)
-     * The supervisor is resolved via employee.reports_to.
-     * If no supervisor is configured, fall back to the department manager.
+     * Step 1 → Step 2: Notify department heads that a request has been submitted.
      */
-    private function notifyManagerOfFiledRequest(LeaveRequest $request, Employee $employee): void
+    private function notifyHeadsOfFiledRequest(LeaveRequest $request, Employee $employee): void
     {
         try {
             $request->loadMissing('employee', 'leaveType');
 
-            // Primary: direct supervisor via reports_to
-            if ($employee->reports_to) {
-                $supervisorUserId = Employee::find($employee->reports_to)?->getAttribute('user_id');
-                if ($supervisorUserId) {
-                    $supervisorUser = User::find($supervisorUserId);
-                    if ($supervisorUser) {
-                        $supervisorUser->notify(new LeaveFiledNotification($request));
-                        LeaveRequestFiled::dispatch($request, $supervisorUser->id);
-
-                        return; // Supervisor found — do not skip ahead to manager
-                    }
-                }
-            }
-
-            // Fallback: notify the department manager when no supervisor is configured
-            if ($employee->department_id) {
-                $deptManager = User::role(['manager'])
-                    ->whereHas('departments', fn ($q) => $q->where('departments.id', $employee->department_id))
-                    ->whereHas('permissions', fn ($q) => $q->where('name', 'leaves.approve'))
-                    ->first();
-
-                if ($deptManager) {
-                    $deptManager->notify(new LeaveFiledNotification($request));
-                    LeaveRequestFiled::dispatch($request, $deptManager->id);
-                }
-            }
-        } catch (\Throwable) {
-            // Non-fatal — notification failure must not block the leave submission
-        }
-    }
-
-    /**
-     * Notify the Department Manager when the supervisor has endorsed the request.
-     *
-     * Workflow step 2: Supervisor endorsed → Department Manager notified for final approval.
-     * The department manager is scoped to the employee's own department (not HR).
-     */
-    private function notifyManagerOfSupervisorApproval(LeaveRequest $request): void
-    {
-        try {
-            $employee = $request->employee;
-            if (! $employee || ! $employee->department_id) {
-                return;
-            }
-
-            // Resolve the department manager of the employee's own department
-            $deptManager = User::role(['manager'])
+            $heads = User::permission('leaves.head_approve')
                 ->whereHas('departments', fn ($q) => $q->where('departments.id', $employee->department_id))
-                ->whereHas('permissions', fn ($q) => $q->where('name', 'leaves.approve'))
-                ->first();
+                ->get();
 
-            if (! $deptManager) {
-                return;
+            foreach ($heads as $head) {
+                $head->notify(new LeaveFiledNotification($request));
             }
 
-            $supervisorName = 'Supervisor';
-            if ($request->supervisor_id) {
-                $supervisorUser = User::find($request->supervisor_id);
-                $supervisorName = $supervisorUser ? $supervisorUser->name : 'Supervisor';
+            if ($heads->isNotEmpty()) {
+                LeaveRequestFiled::dispatch($request, $heads->first()->id);
             }
-
-            $deptManager->notify(new LeaveSupervisorEndorsedNotification(
-                $request->loadMissing('employee', 'leaveType'),
-                $supervisorName,
-                $request->supervisor_remarks ?? null,
-            ));
         } catch (\Throwable) {
             // Non-fatal
         }
     }
 
     /**
-     * Notify executives when a manager files a leave request.
+     * Step 2 → Step 3: Notify plant managers that head has approved.
      */
-    private function notifyExecutiveOfManagerRequest(LeaveRequest $request, Employee $employee): void
+    private function notifyManagerOfHeadApproval(LeaveRequest $request): void
     {
         try {
-            // Find executives (users with executive role)
-            $executives = User::role('executive')->get();
+            $headUser = User::find($request->head_id);
+            $headName = $headUser !== null ? $headUser->name : 'Department Head';
 
-            if ($executives->isEmpty()) {
-                // Fallback: notify admins if no executives
-                $executives = User::role('admin')->get();
-            }
+            $managers = User::permission('leaves.manager_check')->get();
 
-            foreach ($executives as $executive) {
-                $executive->notify(new LeaveFiledNotification($request->loadMissing('employee', 'leaveType')));
+            foreach ($managers as $manager) {
+                $manager->notify(new LeaveSupervisorEndorsedNotification(
+                    $request->loadMissing('employee', 'leaveType'),
+                    $headName,
+                    $request->head_remarks,
+                ));
             }
         } catch (\Throwable) {
             // Non-fatal
@@ -503,7 +433,53 @@ final class LeaveRequestService implements ServiceContract
     }
 
     /**
-     * Notify the leave-request's linked employee user of an approval/rejection decision.
+     * Step 3 → Step 4: Notify GA officers that manager has checked.
+     */
+    private function notifyGaOfficerOfManagerCheck(LeaveRequest $request): void
+    {
+        try {
+            $managerUser = User::find($request->manager_checked_by);
+            $managerName = $managerUser !== null ? $managerUser->name : 'Plant Manager';
+
+            $gaOfficers = User::permission('leaves.ga_process')->get();
+
+            foreach ($gaOfficers as $gaOfficer) {
+                $gaOfficer->notify(new LeaveSupervisorEndorsedNotification(
+                    $request->loadMissing('employee', 'leaveType'),
+                    $managerName,
+                    $request->manager_check_remarks,
+                ));
+            }
+        } catch (\Throwable) {
+            // Non-fatal
+        }
+    }
+
+    /**
+     * Step 4 → Step 5: Notify VP that GA has processed.
+     */
+    private function notifyVpOfGaApproval(LeaveRequest $request): void
+    {
+        try {
+            $gaUser = User::find($request->ga_processed_by);
+            $gaName = $gaUser !== null ? $gaUser->name : 'GA Officer';
+
+            $vps = User::permission('leaves.vp_note')->get();
+
+            foreach ($vps as $vp) {
+                $vp->notify(new LeaveSupervisorEndorsedNotification(
+                    $request->loadMissing('employee', 'leaveType'),
+                    $gaName,
+                    $request->ga_remarks,
+                ));
+            }
+        } catch (\Throwable) {
+            // Non-fatal
+        }
+    }
+
+    /**
+     * Step 5 or GA disapproval: Notify the employee of the final decision.
      */
     private function notifyEmployeeOfDecision(LeaveRequest $request, string $decision, ?string $remarks): void
     {

@@ -2,12 +2,16 @@ import { useState } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, CheckCircle, XCircle, FileText } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, FileText, CreditCard } from 'lucide-react'
 import {
   useAPInvoice,
   useSubmitAPInvoice,
   useApproveAPInvoice,
   useRejectAPInvoice,
+  useHeadNoteAPInvoice,
+  useManagerCheckAPInvoice,
+  useOfficerReviewAPInvoice,
+  useRecordPayment,
 } from '@/hooks/useAP'
 import { parseApiError } from '@/lib/errorHandler'
 import SodActionButton from '@/components/ui/SodActionButton'
@@ -24,12 +28,22 @@ export default function APInvoiceDetailPage() {
   const invoiceId = id ?? null
 
   const { data: invoice, isLoading, isError } = useAPInvoice(invoiceId)
-  const submit  = useSubmitAPInvoice(invoiceId ?? '')
-  const approve = useApproveAPInvoice(invoiceId ?? '')
-  const reject  = useRejectAPInvoice(invoiceId ?? '')
+  const submit         = useSubmitAPInvoice(invoiceId ?? '')
+  const approve        = useApproveAPInvoice(invoiceId ?? '')
+  const reject         = useRejectAPInvoice(invoiceId ?? '')
+  const headNote       = useHeadNoteAPInvoice(invoiceId ?? '')
+  const managerCheck   = useManagerCheckAPInvoice(invoiceId ?? '')
+  const officerReview  = useOfficerReviewAPInvoice(invoiceId ?? '')
+  const recordPayment  = useRecordPayment(invoiceId ?? '')
 
-  const [rejectNote, setRejectNote]       = useState('')
-  const [showRejectForm, setShowRejectForm] = useState(false)
+  const [rejectNote, setRejectNote]           = useState('')
+  const [showRejectForm, setShowRejectForm]   = useState(false)
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
+  const [payAmount, setPayAmount]             = useState('')
+  const [payAmountError, setPayAmountError]   = useState('')
+  const [payDate, setPayDate]                 = useState(new Date().toISOString().slice(0, 10))
+  const [payMethod, setPayMethod]             = useState<'bank_transfer' | 'check' | 'cash' | ''>('')
+  const [payRef, setPayRef]                   = useState('')
 
   if (isLoading) return <SkeletonLoader rows={8} />
   if (isError || !invoice) {
@@ -75,8 +89,75 @@ export default function APInvoiceDetailPage() {
     }
   }
 
-  const isDraft          = invoice.status === 'draft'
+  const handleHeadNote = async () => {
+    try {
+      await headNote.mutateAsync()
+      toast.success('Head note recorded.')
+    } catch (err) {
+      toast.error(parseApiError(err).message)
+    }
+  }
+
+  const handleManagerCheck = async () => {
+    try {
+      await managerCheck.mutateAsync()
+      toast.success('Manager check recorded.')
+    } catch (err) {
+      toast.error(parseApiError(err).message)
+    }
+  }
+
+  const handleOfficerReview = async () => {
+    try {
+      await officerReview.mutateAsync()
+      toast.success('Officer review recorded.')
+    } catch (err) {
+      toast.error(parseApiError(err).message)
+    }
+  }
+
+  const handleRecordPayment = async () => {
+    const amount = parseFloat(payAmount)
+    if (!payAmount || isNaN(amount) || amount <= 0) {
+      toast.error('Enter a valid payment amount.')
+      return
+    }
+    if (amount > invoice.balance_due) {
+      setPayAmountError(`Amount cannot exceed the balance due of ₱${invoice.balance_due.toLocaleString('en-PH', { minimumFractionDigits: 2 })}.`)
+      return
+    }
+    if (!payDate) {
+      toast.error('Payment date is required.')
+      return
+    }
+    try {
+      await recordPayment.mutateAsync({
+        amount,
+        payment_date: payDate,
+        payment_method: payMethod || null,
+        reference_number: payRef || null,
+      })
+      toast.success('Payment recorded.')
+      setShowPaymentForm(false)
+      setPayAmount('')
+      setPayAmountError('')
+      setPayRef('')
+      setPayMethod('')
+    } catch (err) {
+      toast.error(parseApiError(err).message)
+    }
+  }
+
+  const isDraft           = invoice.status === 'draft'
   const isPendingApproval = invoice.status === 'pending_approval'
+  const isHeadNoted       = invoice.status === 'head_noted'
+  const isManagerChecked  = invoice.status === 'manager_checked'
+  const isOfficerReviewed = invoice.status === 'officer_reviewed'
+  const isApproved        = invoice.status === 'approved'
+  const isPartiallyPaid   = invoice.status === 'partially_paid'
+  const canPay            = isApproved || isPartiallyPaid
+  // Reject is available at any in-progress step after submission
+  const isInProgress = isPendingApproval || isHeadNoted || isManagerChecked || isOfficerReviewed
 
   return (
     <div>
@@ -111,8 +192,47 @@ export default function APInvoiceDetailPage() {
               </PermissionGuard>
             )}
 
-            {/* Approve with SoD enforcement */}
+            {/* Head Note (step 2) */}
             {isPendingApproval && (
+              <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
+                <SodActionButton
+                  initiatedById={invoice.created_by}
+                  label="Head Note"
+                  onClick={handleHeadNote}
+                  isLoading={headNote.isPending}
+                  variant="primary"
+                />
+              </PermissionGuard>
+            )}
+
+            {/* Manager Check (step 3) */}
+            {isHeadNoted && (
+              <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
+                <SodActionButton
+                  initiatedById={invoice.created_by}
+                  label="Manager Check"
+                  onClick={handleManagerCheck}
+                  isLoading={managerCheck.isPending}
+                  variant="primary"
+                />
+              </PermissionGuard>
+            )}
+
+            {/* Officer Review (step 4) */}
+            {isManagerChecked && (
+              <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
+                <SodActionButton
+                  initiatedById={invoice.created_by}
+                  label="Officer Review"
+                  onClick={handleOfficerReview}
+                  isLoading={officerReview.isPending}
+                  variant="primary"
+                />
+              </PermissionGuard>
+            )}
+
+            {/* Approve (step 5 — only available after officer review) */}
+            {isOfficerReviewed && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
                 <SodActionButton
                   initiatedById={invoice.created_by}
@@ -124,8 +244,8 @@ export default function APInvoiceDetailPage() {
               </PermissionGuard>
             )}
 
-            {/* Reject */}
-            {isPendingApproval && (
+            {/* Reject — available at any in-progress step */}
+            {isInProgress && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
                 <button
                   type="button"
@@ -137,9 +257,103 @@ export default function APInvoiceDetailPage() {
                 </button>
               </PermissionGuard>
             )}
+
+            {/* Record Payment — available when approved or partially paid */}
+            {canPay && (
+              <PermissionGuard permission={PERMISSIONS.vendor_invoices.update}>
+                <button
+                  type="button"
+                  onClick={() => { setShowPaymentForm(!showPaymentForm); setPayAmountError('') }}
+                  className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-lg"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Record Payment
+                </button>
+              </PermissionGuard>
+            )}
           </div>
         }
       />
+
+      {/* Payment form */}
+      {showPaymentForm && (
+        <div className="mb-5 bg-teal-50 border border-teal-200 rounded-lg p-4 space-y-3">
+          <p className="text-sm font-medium text-teal-800">Record Payment</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-gray-600">Amount (₱) *</label>
+                <button
+                  type="button"
+                  onClick={() => { setPayAmount(String(invoice.balance_due)); setPayAmountError('') }}
+                  className="text-xs text-teal-600 hover:text-teal-800 font-medium underline underline-offset-2"
+                >
+                  Full amount
+                </button>
+              </div>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={payAmount}
+                onChange={(e) => { setPayAmount(e.target.value); setPayAmountError('') }}
+                placeholder={`Max: ${invoice.balance_due.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}
+                className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 ${payAmountError ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+              />
+              {payAmountError && <p className="mt-1 text-xs text-red-600">{payAmountError}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Payment Date *</label>
+              <input
+                type="date"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Payment Method</label>
+              <select
+                value={payMethod}
+                onChange={(e) => setPayMethod(e.target.value as 'bank_transfer' | 'check' | 'cash' | '')}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="">— Select —</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="check">Check</option>
+                <option value="cash">Cash</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Reference No.</label>
+              <input
+                type="text"
+                value={payRef}
+                onChange={(e) => setPayRef(e.target.value)}
+                placeholder="Check no., wire ref, etc."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleRecordPayment}
+              disabled={recordPayment.isPending}
+              className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg"
+            >
+              {recordPayment.isPending ? 'Saving…' : 'Save Payment'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowPaymentForm(false); setPayAmount(''); setPayAmountError(''); setPayRef(''); setPayMethod('') }}
+              className="border border-gray-300 text-gray-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Reject form */}
       {showRejectForm && (

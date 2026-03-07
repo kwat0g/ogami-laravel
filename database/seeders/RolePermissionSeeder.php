@@ -11,18 +11,22 @@ use Spatie\Permission\Models\Role;
 /**
  * Role & Permission seeder — implements ogami_role_permission_matrix.md v2.0
  *
- * ## Role hierarchy (8 roles)
- *   admin          — system custodian, zero business data access
- *   executive      — Chairman/President, read-only board observers
- *   vice_president — VP, final approver of all financial requests (SOD-011–014)
- *   manager        — HR Manager only: full HR, payroll, employee management
+ * ## Role hierarchy (11 roles)
+ *   admin               — system custodian, zero business data access
+ *   executive           — Chairman/President, read-only board observers
+ *   vice_president      — VP, final approver of all financial requests (SOD-011–014)
+ *   manager             — HR Manager only: full HR, payroll, employee management
  *   plant_manager       — Plant Manager only: oversees ALL plant operations (Production, QC, Maintenance, Mold, Delivery, ISO)
- *   production_manager   — Production Manager: supervises production activities only
- *   qc_manager           — QC/QA Manager: manages quality control and assurance only
- *   mold_manager         — Mold Manager: oversees mold department only
- *   officer        — Accounting/GA/Purchasing Officers, Step 4 approver (renamed from accounting_manager)
- *   head           — All Department Heads, Step 2 approver (renamed from supervisor)
- *   staff          — Rank-and-file, creates and submits requests
+ *   production_manager  — Production Manager: supervises production activities only
+ *   qc_manager          — QC/QA Manager: manages quality control and assurance only
+ *   mold_manager        — Mold Manager: oversees mold department only
+ *   officer             — Accounting Officer: full financial management (GL/AP/AR/Payroll/Banking)
+ *   ga_officer          — GA Officer: HR admin support (HR, attendance, leave) — NO financials
+ *   purchasing_officer  — Purchasing Officer: procurement + ordering management — NO financials
+ *   impex_officer       — ImpEx Officer: delivery/shipments + import-export — NO financials
+ *   head                — All Department Heads, Step 2 approver (renamed from supervisor)
+ *   staff               — Rank-and-file, creates and submits requests
+ *   super_admin         — Testing superuser: ALL permissions, bypasses Gate + SoD + dept-scope
  *
  * ## SoD rules encoded in permissions (enforced in Policies):
  *   SOD-001 → employees.activate
@@ -96,13 +100,18 @@ class RolePermissionSeeder extends Seeder
         'leaves.file_own',
         'leaves.file_on_behalf',
         'leaves.cancel',
-        'leaves.supervise',
-        'leaves.approve',
+        'leaves.head_approve',
+        'leaves.manager_check',
+        'leaves.ga_process',
+        'leaves.vp_note',
         'leaves.reject',
-        'leaves.executive_approve',
         'leaves.adjust_balance',
         'leaves.configure_types',
         'leaves.trigger_sil_monetization',
+        // (Legacy — kept for backward compat with older tests)
+        'leaves.supervise',
+        'leaves.approve',
+        'leaves.executive_approve',
         // Loans — v1 (legacy)
         'loans.view_own',
         'loans.view_department',
@@ -310,6 +319,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         $admin         = Role::findOrCreate('admin',          self::GUARD);
+        $superAdmin    = Role::findOrCreate('super_admin',    self::GUARD);
         $executive     = Role::findOrCreate('executive',      self::GUARD);
         $vicePresident = Role::findOrCreate('vice_president', self::GUARD);
         $manager       = Role::findOrCreate('manager',        self::GUARD);
@@ -318,6 +328,9 @@ class RolePermissionSeeder extends Seeder
         $qcManager          = Role::findOrCreate('qc_manager',          self::GUARD);
         $moldManager        = Role::findOrCreate('mold_manager',        self::GUARD);
         $officer            = Role::findOrCreate('officer',             self::GUARD);
+        $gaOfficer          = Role::findOrCreate('ga_officer',           self::GUARD);
+        $purchasingOfficer  = Role::findOrCreate('purchasing_officer',   self::GUARD);
+        $impexOfficer       = Role::findOrCreate('impex_officer',        self::GUARD);
         $head          = Role::findOrCreate('head',           self::GUARD);
         $staff         = Role::findOrCreate('staff',          self::GUARD);
 
@@ -338,7 +351,7 @@ class RolePermissionSeeder extends Seeder
         $executive->syncPermissions([
             'employees.view',
             'attendance.view_team', 'overtime.view', 'overtime.executive_approve',
-            'leaves.view_own', 'leaves.view_team', 'leaves.executive_approve',
+            'leaves.view_own', 'leaves.view_team',
             'loans.view_own', 'loans.view_department',
             'payroll.view_runs', 'payroll.view_own_payslip', 'payroll.download_own_payslip', 'payroll.view',
             'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
@@ -364,8 +377,8 @@ class RolePermissionSeeder extends Seeder
             'overtime.view', 'overtime.submit', 'overtime.approve', 'overtime.reject', 'overtime.supervise',
             // Leave
             'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.file_on_behalf',
-            'leaves.cancel', 'leaves.approve', 'leaves.reject', 'leaves.supervise',
-            'leaves.adjust_balance', 'leaves.configure_types', 'leaves.trigger_sil_monetization',
+            'leaves.cancel', 'leaves.head_approve', 'leaves.manager_check', 'leaves.ga_process', 'leaves.vp_note',
+            'leaves.reject', 'leaves.adjust_balance', 'leaves.configure_types', 'leaves.trigger_sil_monetization',
             'leave_balances.view', 'leave_balances.adjust', 'leave_balances.manage',
             // Loans (v1 + v2 Step 2 checker)
             'loans.view_own', 'loans.view_department', 'loans.apply',
@@ -451,7 +464,8 @@ class RolePermissionSeeder extends Seeder
             // Self-service only
             'attendance.view_own',
             'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
+            'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.cancel',
+            'leaves.manager_check',
             'loans.view_own', 'loans.apply',
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
@@ -510,7 +524,8 @@ class RolePermissionSeeder extends Seeder
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
         ]);
 
-        // ── Officer (renamed from Accounting Manager) — Accounting and Finance ─
+        // ── Officer (Accounting Officer) — Financial management only ────────────
+        // Responsibility: "Manages all accounting and financial operations of the company."
         $officer->syncPermissions([
             // GL & Journal Entries
             'journal_entries.view', 'journal_entries.create', 'journal_entries.update',
@@ -553,28 +568,85 @@ class RolePermissionSeeder extends Seeder
             'inventory.locations.view', 'inventory.locations.manage',
             'inventory.stock.view', 'inventory.adjustments.create',
             'inventory.mrq.view', 'inventory.mrq.review',
-            // Production / PPC (Officer: operational)
-            'production.bom.view', 'production.delivery-schedule.view',
-            'production.orders.view', 'production.orders.create',
-            'production.orders.release', 'production.orders.complete', 'production.orders.log_output',
-            // QC / QA (Officer: inspections + NCR create)
-            'qc.templates.view', 'qc.inspections.view', 'qc.inspections.create',
-            'qc.ncr.view', 'qc.ncr.create',
-            // Maintenance (Officer: view only)
-            'maintenance.view',
-            // Mold (Officer: view + log shots)
-            'mold.view', 'mold.log_shots',
-            // Delivery (Officer: view + manage)
-            'delivery.view', 'delivery.manage',
-            // ISO (Officer: view)
-            'iso.view',
             // Self-service
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            // Basic view permissions
+            // Basic employee/team view
+            'employees.view', 'employees.view_full_record',
+            'attendance.view_own',
+            'leaves.view_own',
+            'overtime.view', 'overtime.submit',
+        ]);
+
+        // ── GA Officer — General Affairs / HR Administrative Support ──────────
+        // Responsibility: "Supports HR and administrative operations of the company."
+        $gaOfficer->syncPermissions([
+            // HR — team visibility for admin support
             'employees.view', 'employees.view_team', 'employees.view_full_record',
-            'attendance.view_own', 'attendance.view_team',
-            'leaves.view_own', 'leaves.view_team',
-            'overtime.view',
+            'employees.upload_documents', 'employees.download_documents',
+            // Attendance management
+            'attendance.view_own', 'attendance.view_team', 'attendance.import_csv',
+            'attendance.view_anomalies', 'attendance.resolve_anomalies', 'attendance.manage_shifts',
+            // Overtime
+            'overtime.view', 'overtime.submit', 'overtime.supervise',
+            // Leave
+            'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.file_on_behalf',
+            'leaves.cancel', 'leaves.ga_process',
+            'leave_balances.view',
+            // Loans (own only)
+            'loans.view_own', 'loans.apply',
+            // Self-service
+            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
+            'payroll.view_own_payslip', 'payroll.download_own_payslip',
+        ]);
+
+        // ── Purchasing Officer — Procurement and Materials Ordering ───────────
+        // Responsibility: "Responsible for ordering all materials required by the company."
+        $purchasingOfficer->syncPermissions([
+            // Procurement (full cycle)
+            'procurement.purchase-request.view', 'procurement.purchase-request.create',
+            'procurement.purchase-request.review',
+            'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            // Vendors (manage + accredit)
+            'vendors.view', 'vendors.manage', 'vendors.accredit',
+            // Inventory (view for sourcing context)
+            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
+            'inventory.mrq.view', 'inventory.mrq.review',
+            // Delivery (view — inbound receipts)
+            'delivery.view',
+            // Loans
+            'loans.view_own', 'loans.apply', 'loans.officer_review',
+            // Employee view
+            'employees.view',
+            // Self-service
+            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
+            'attendance.view_own', 'overtime.view', 'overtime.submit',
+            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
+            'payroll.view_own_payslip', 'payroll.download_own_payslip',
+        ]);
+
+        // ── ImpEx Officer — Import / Export and Delivery Management ──────────
+        // Responsibility: "Manages import/export shipments and delivery documentation."
+        $impexOfficer->syncPermissions([
+            // Delivery (full — primary responsibility)
+            'delivery.view', 'delivery.manage',
+            // Procurement (view for shipment context)
+            'procurement.purchase-request.view',
+            'procurement.purchase-order.view',
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            // Vendors (view only)
+            'vendors.view',
+            // Inventory (view for shipment context)
+            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
+            // Loans
+            'loans.view_own', 'loans.apply', 'loans.officer_review',
+            // Employee view
+            'employees.view',
+            // Self-service
+            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
+            'attendance.view_own', 'overtime.view', 'overtime.submit',
+            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
+            'payroll.view_own_payslip', 'payroll.download_own_payslip',
         ]);
 
         // ── Head (renamed from Supervisor) — dept heads, Step 2 approver ───
@@ -588,7 +660,7 @@ class RolePermissionSeeder extends Seeder
             'overtime.view', 'overtime.submit', 'overtime.supervise',
             // Leave
             'leaves.view_own', 'leaves.view_team', 'leaves.file_own',
-            'leaves.file_on_behalf', 'leaves.cancel', 'leaves.supervise',
+            'leaves.file_on_behalf', 'leaves.cancel', 'leaves.head_approve',
             // Loans (v1 + v2)
             'loans.view_own', 'loans.apply', 'loans.supervisor_review', 'loans.head_note',
             // Procurement
@@ -613,16 +685,13 @@ class RolePermissionSeeder extends Seeder
             'iso.view', 'iso.audit',
             // Payroll
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            // GL (read + draft)
-            'journal_entries.view', 'journal_entries.create',
-            'journal_entries.update', 'journal_entries.submit',
+            // GL (view only — dept heads do not create accounting entries)
+            'journal_entries.view',
             'chart_of_accounts.view', 'fiscal_periods.view',
-            // AP (read + draft)
-            'vendors.view', 'vendor_invoices.view', 'vendor_invoices.create',
-            'vendor_invoices.update', 'vendor_invoices.export', 'vendor_payments.view',
-            // AR (read + draft)
-            'customers.view', 'customer_invoices.view', 'customer_invoices.create',
-            'customer_invoices.update', 'customer_invoices.export',
+            // AP (view only)
+            'vendors.view', 'vendor_invoices.view', 'vendor_invoices.export', 'vendor_payments.view',
+            // AR (view only)
+            'customers.view', 'customer_invoices.view', 'customer_invoices.export',
             // Reports (read)
             'reports.gl', 'reports.ap_aging',
             // Self-service
@@ -658,7 +727,7 @@ class RolePermissionSeeder extends Seeder
             'vendors.view', 'vendor_invoices.view', 'customers.view', 'customer_invoices.view',
             // Self-service
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
+            'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.cancel', 'leaves.vp_note',
             'attendance.view_own', 'overtime.view', 'overtime.submit',
         ]);
 
@@ -682,6 +751,9 @@ class RolePermissionSeeder extends Seeder
             'leave_balances.view', 'loans.view', 'attendance.view',
         ]);
 
+        // ── Super Admin — ALL permissions (for full-system testing) ──────────
+        $superAdmin->syncPermissions(Permission::all());
+
         // ── Bootstrap admin user (only system account; no employee record needed) ──
         $adminUser = \App\Models\User::firstOrCreate(
             ['email' => 'admin@ogamierp.local'],
@@ -694,7 +766,20 @@ class RolePermissionSeeder extends Seeder
         );
         $adminUser->syncRoles(['admin']);
 
+        // ── Bootstrap superadmin user (testing account — all modules) ─────────
+        $superAdminUser = \App\Models\User::firstOrCreate(
+            ['email' => 'superadmin@ogamierp.local'],
+            [
+                'name' => 'Super Admin',
+                'password' => 'SuperAdmin@12345!', // Auto-hashed by model cast
+                'email_verified_at' => now(),
+                'password_changed_at' => now(),
+            ]
+        );
+        $superAdminUser->syncRoles(['super_admin']);
+
         $this->command->info('✓ Roles and permissions seeded (v1.0 matrix).');
-        $this->command->info('  admin@ogamierp.local / Admin@1234567890!');
+        $this->command->info('  admin@ogamierp.local      / Admin@1234567890!');
+        $this->command->info('  superadmin@ogamierp.local / SuperAdmin@12345!  (all modules + SoD bypass)');
     }
 }

@@ -6,6 +6,7 @@ namespace App\Domains\AR\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -23,7 +24,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 class CustomerPayment extends Model implements Auditable
 {
-    use AuditableTrait;
+    use AuditableTrait, SoftDeletes;
 
     protected $fillable = [
         'customer_invoice_id',

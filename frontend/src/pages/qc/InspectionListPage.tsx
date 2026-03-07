@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardCheck, AlertTriangle } from 'lucide-react'
+import { ClipboardCheck, AlertTriangle, Plus } from 'lucide-react'
 import { useInspections } from '@/hooks/useQC'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { InspectionStage, InspectionStatus } from '@/types/qc'
 
@@ -16,30 +17,46 @@ const statusBadge: Record<InspectionStatus, string> = {
   passed:   'bg-green-100 text-green-700',
   failed:   'bg-red-100 text-red-700',
   on_hold:  'bg-yellow-100 text-yellow-700',
+  voided:   'bg-gray-200 text-gray-400',
 }
 
 export default function InspectionListPage(): React.ReactElement {
   const [stage, setStage]   = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
 
   const { data, isLoading, isError } = useInspections({
     stage:  stage || undefined,
     status: status || undefined,
     page,
     per_page: 20,
+    with_archived: withArchived || undefined,
   })
+  const { hasPermission } = useAuthStore()
+  const canCreate = hasPermission('qc.inspections.create')
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-          <ClipboardCheck className="w-5 h-5 text-teal-600" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
+            <ClipboardCheck className="w-5 h-5 text-teal-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Inspections</h1>
+            <p className="text-sm text-gray-500 mt-0.5">IQC, IPQC, and OQC inspection records</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inspections</h1>
-          <p className="text-sm text-gray-500 mt-0.5">IQC, IPQC, and OQC inspection records</p>
-        </div>
+        {canCreate && (
+          <Link
+            to="/qc/inspections/new"
+            className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Inspection
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-5">
@@ -64,6 +81,10 @@ export default function InspectionListPage(): React.ReactElement {
             <option key={s} value={s}>{s.replace('_', ' ')}</option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
@@ -108,6 +129,7 @@ export default function InspectionListPage(): React.ReactElement {
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{insp.inspection_date}</td>
                     <td className="px-4 py-3">
+                      {insp.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[insp.status]}`}>
                         {insp.status.replace('_', ' ')}
                       </span>

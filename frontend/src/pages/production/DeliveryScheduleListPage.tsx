@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Truck, AlertTriangle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Truck, AlertTriangle, Plus } from 'lucide-react'
 import { useDeliverySchedules } from '@/hooks/useProduction'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { DeliveryScheduleStatus } from '@/types/production'
 
@@ -17,13 +19,17 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
   const [status, setStatus] = useState('')
   const [type, setType]     = useState('')
   const [page, setPage]     = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
 
   const { data, isLoading, isError } = useDeliverySchedules({
     status: status || undefined,
     type: type || undefined,
     page,
     per_page: 20,
+    with_archived: withArchived || undefined,
   })
+  const { hasPermission } = useAuthStore()
+  const canCreate = hasPermission('production.delivery-schedule.create')
 
   return (
     <div>
@@ -37,6 +43,15 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
             <p className="text-sm text-gray-500 mt-0.5">Customer delivery commitments and targets</p>
           </div>
         </div>
+        {canCreate && (
+          <Link
+            to="/production/delivery-schedules/new"
+            className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Schedule
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-5">
@@ -59,6 +74,10 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
           <option value="local">Local</option>
           <option value="export">Export</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-violet-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
@@ -105,6 +124,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
                       </span>
                     </td>
                     <td className="px-4 py-3">
+                      {ds.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[ds.status]}`}>
                         {ds.status.replace('_', ' ')}
                       </span>

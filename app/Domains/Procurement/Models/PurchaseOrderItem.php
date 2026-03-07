@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -24,6 +25,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class PurchaseOrderItem extends Model
 {
+    use SoftDeletes;
+
     public $timestamps = true;
     protected $table   = 'purchase_order_items';
 

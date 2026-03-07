@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\AP\Services;
 
+use App\Domains\Accounting\Models\ChartOfAccount;
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Services\FiscalPeriodService;
 use App\Domains\Accounting\Services\JournalEntryService;
-use App\Domains\Accounting\Models\FiscalPeriod;
+use App\Domains\Tax\Services\VatLedgerService;
 use App\Domains\AP\Models\Vendor;
 use App\Domains\AP\Models\VendorInvoice;
 use App\Domains\AP\Models\VendorPayment;
@@ -42,6 +44,8 @@ final class VendorInvoiceService implements ServiceContract
         private readonly EwtService $ewtService,
         private readonly JournalEntryService $jeService,
         private readonly FiscalPeriodService $fiscalPeriodService,
+        private readonly ApPaymentPostingService $paymentPostingService,
+        private readonly VatLedgerService $vatLedgerService,
     ) {}
 
     // ── Create (draft) ────────────────────────────────────────────────────────
@@ -145,37 +149,127 @@ final class VendorInvoiceService implements ServiceContract
     // ── Approve ───────────────────────────────────────────────────────────────
 
     /**
-     * Approve a pending invoice and auto-post the corresponding JE.
-     * AP-010: approver must not be the same person who submitted.
+     * Step 2 of 5: Department Head notes a submitted invoice.
+     * pending_approval → head_noted
      */
-    public function approve(VendorInvoice $invoice, int $approverId): VendorInvoice
+    public function headNote(VendorInvoice $invoice, User $actor): VendorInvoice
     {
         if (! $invoice->isPendingApproval()) {
             throw new DomainException(
-                message: "Only pending-approval invoices can be approved. Current status: '{$invoice->status}'.",
+                message: "Only pending-approval invoices can be head-noted. Current status: '{$invoice->status}'.",
+                errorCode: 'AP_INVALID_STATUS_FOR_HEAD_NOTE',
+                httpStatus: 409,
+            );
+        }
+
+        if (! $actor->hasRole('super_admin') && $invoice->submitted_by === $actor->id) {
+            throw new SodViolationException(processName: 'AP Invoice', conflictingAction: 'head_note');
+        }
+
+        $invoice->update([
+            'status' => 'head_noted',
+            'head_noted_by' => $actor->id,
+            'head_noted_at' => now(),
+        ]);
+
+        return $invoice->fresh();
+    }
+
+    /**
+     * Step 3 of 5: Manager checks a head-noted invoice.
+     * head_noted → manager_checked
+     */
+    public function managerCheck(VendorInvoice $invoice, User $actor): VendorInvoice
+    {
+        if (! $invoice->isHeadNoted()) {
+            throw new DomainException(
+                message: "Only head-noted invoices can be manager-checked. Current status: '{$invoice->status}'.",
+                errorCode: 'AP_INVALID_STATUS_FOR_MANAGER_CHECK',
+                httpStatus: 409,
+            );
+        }
+
+        if (! $actor->hasRole('super_admin') && $invoice->head_noted_by === $actor->id) {
+            throw new SodViolationException(processName: 'AP Invoice', conflictingAction: 'manager_check');
+        }
+
+        $invoice->update([
+            'status' => 'manager_checked',
+            'manager_checked_by' => $actor->id,
+            'manager_checked_at' => now(),
+        ]);
+
+        return $invoice->fresh();
+    }
+
+    /**
+     * Step 4 of 5: Officer reviews a manager-checked invoice.
+     * manager_checked → officer_reviewed
+     */
+    public function officerReview(VendorInvoice $invoice, User $actor): VendorInvoice
+    {
+        if (! $invoice->isManagerChecked()) {
+            throw new DomainException(
+                message: "Only manager-checked invoices can be officer-reviewed. Current status: '{$invoice->status}'.",
+                errorCode: 'AP_INVALID_STATUS_FOR_OFFICER_REVIEW',
+                httpStatus: 409,
+            );
+        }
+
+        if (! $actor->hasRole('super_admin') && $invoice->manager_checked_by === $actor->id) {
+            throw new SodViolationException(processName: 'AP Invoice', conflictingAction: 'officer_review');
+        }
+
+        $invoice->update([
+            'status' => 'officer_reviewed',
+            'officer_reviewed_by' => $actor->id,
+            'officer_reviewed_at' => now(),
+        ]);
+
+        return $invoice->fresh();
+    }
+
+    /**
+     * Approve a pending invoice and auto-post the corresponding JE.
+     * AP-010: approver must not be the same person who submitted.
+     */
+    public function approve(VendorInvoice $invoice, User $actor): VendorInvoice
+    {
+        if (! $invoice->isOfficerReviewed()) {
+            throw new DomainException(
+                message: "Only officer-reviewed invoices can be approved (VP step 5). Current status: '{$invoice->status}'.",
                 errorCode: 'AP_INVALID_STATUS_FOR_APPROVE',
                 httpStatus: 409,
             );
         }
 
         // AP-010 SoD: approver ≠ submitter
-        if ($invoice->submitted_by === $approverId) {
+        if (! $actor->hasRole('super_admin') && $invoice->submitted_by === $actor->id) {
             throw new SodViolationException(
                 processName: 'AP Invoice',
                 conflictingAction: 'approve',
             );
         }
 
-        $invoice = DB::transaction(function () use ($invoice, $approverId) {
+        $invoice = DB::transaction(function () use ($invoice, $actor) {
             $invoice->update([
                 'status' => 'approved',
-                'approved_by' => $approverId,
+                'approved_by' => $actor->id,
                 'approved_at' => now(),
             ]);
 
             // Auto-post JE only once (idempotency guard)
             if (is_null($invoice->journal_entry_id)) {
                 $this->autoPostJournalEntry($invoice);
+            }
+
+            // TAX-INPUT-001: Accumulate input VAT so the VatLedger correctly
+            // reflects deductible input VAT for the period (net_vat = output - input).
+            if ((float) $invoice->vat_amount > 0) {
+                $this->vatLedgerService->accumulateInputVat(
+                    fiscalPeriodId: (int) $invoice->fiscal_period_id,
+                    amount: (float) $invoice->vat_amount,
+                );
             }
 
             return $invoice->fresh();
@@ -189,7 +283,7 @@ final class VendorInvoiceService implements ServiceContract
 
     // ── Reject ────────────────────────────────────────────────────────────────
 
-    public function reject(VendorInvoice $invoice, int $rejectorId, string $note): VendorInvoice
+    public function reject(VendorInvoice $invoice, User $actor, string $note): VendorInvoice
     {
         if (! $invoice->isPendingApproval()) {
             throw new DomainException(
@@ -199,7 +293,7 @@ final class VendorInvoiceService implements ServiceContract
             );
         }
 
-        if ($invoice->submitted_by === $rejectorId) {
+        if (! $actor->hasRole('super_admin') && $invoice->submitted_by === $actor->id) {
             throw new SodViolationException(
                 processName: 'AP Invoice',
                 conflictingAction: 'reject',
@@ -346,6 +440,9 @@ final class VendorInvoiceService implements ServiceContract
                 'status' => $isFullyPaid ? 'paid' : 'partially_paid',
             ]);
 
+            // Post GL entry: DR AP Payable / CR Cash
+            $this->paymentPostingService->postApPayment($payment);
+
             return $payment;
         });
     }
@@ -398,9 +495,9 @@ final class VendorInvoiceService implements ServiceContract
      *
      * @throws \RuntimeException when no open fiscal period exists
      */
-    public function createFromPo(GoodsReceipt $gr, int|null $actorId): VendorInvoice
+    public function createFromPo(GoodsReceipt $gr, ?int $actorId): VendorInvoice
     {
-        $po     = $gr->purchaseOrder()->with(['vendor', 'vendor.ewtRate'])->firstOrFail();
+        $po = $gr->purchaseOrder()->with(['vendor', 'vendor.ewtRate'])->firstOrFail();
         $vendor = $po->vendor;
 
         if ($vendor === null) {
@@ -408,7 +505,7 @@ final class VendorInvoiceService implements ServiceContract
         }
 
         /** @var FiscalPeriod|null $fiscalPeriod */
-        $fiscalPeriod = FiscalPeriod::open()->latest('start_date')->first();
+        $fiscalPeriod = FiscalPeriod::open()->latest('date_from')->first();
 
         if ($fiscalPeriod === null) {
             throw new \RuntimeException('No open fiscal period found — cannot auto-create AP invoice.');
@@ -424,8 +521,24 @@ final class VendorInvoiceService implements ServiceContract
         }
 
         $invoiceDate = now()->toDateString();
-        $dueDate     = now()->addDays($paymentDays)->toDateString();
-        $netAmount   = (float) $po->total_po_amount;
+        $dueDate = now()->addDays($paymentDays)->toDateString();
+
+        // Compute net amount from this GR's actual received quantities × agreed unit cost.
+        // Falls back to PO total only if no items are loaded (safety net).
+        $gr->loadMissing('items.poItem');
+        $netAmount = $gr->items->reduce(
+            fn (float $carry, \App\Domains\Procurement\Models\GoodsReceiptItem $item): float =>
+                $carry + ((float) $item->quantity_received * (float) ($item->poItem->agreed_unit_cost ?? 0)),
+            0.0,
+        );
+        if ($netAmount <= 0) {
+            $netAmount = (float) $po->total_po_amount;
+        }
+
+        // D2: Resolve default GL accounts so the invoice is immediately postable.
+        // AP Payable — CoA code 2001; Expense — check vendor's preferred account first.
+        $apAccount = ChartOfAccount::where('code', '2001')->first();
+        $expenseAccount = ChartOfAccount::where('code', '6001')->first();
 
         $ewtAmount = $vendor->is_ewt_subject
             ? $this->ewtService->computeForInvoice(
@@ -435,23 +548,28 @@ final class VendorInvoiceService implements ServiceContract
             )
             : 0.00;
 
-        return VendorInvoice::create([
-            'vendor_id'          => $vendor->id,
-            'fiscal_period_id'   => $fiscalPeriod->id,
-            'ap_account_id'      => null,
-            'expense_account_id' => null,
-            'invoice_date'       => $invoiceDate,
-            'due_date'           => $dueDate,
-            'net_amount'         => $netAmount,
-            'vat_amount'         => 0.00,
-            'ewt_amount'         => $ewtAmount,
-            'ewt_rate'           => $vendor->is_ewt_subject ? $vendor->ewtRate?->rate : null,
-            'atc_code'           => $vendor->is_ewt_subject ? $vendor->atc_code : null,
-            'description'        => "Auto-created from GR {$gr->gr_reference} / PO {$po->po_reference}",
-            'source'             => 'auto_procurement',
-            'purchase_order_id'  => $po->id,
-            'status'             => 'draft',
-            'created_by'         => $actorId ?? 1,
+        $invoice = VendorInvoice::create([
+            'vendor_id' => $vendor->id,
+            'fiscal_period_id' => $fiscalPeriod->id,
+            'ap_account_id' => $apAccount?->id,
+            'expense_account_id' => $expenseAccount?->id,
+            'invoice_date' => $invoiceDate,
+            'due_date' => $dueDate,
+            'net_amount' => $netAmount,
+            'vat_amount' => 0.00,
+            'ewt_amount' => $ewtAmount,
+            'ewt_rate' => $vendor->is_ewt_subject ? $vendor->ewtRate?->rate : null,
+            'atc_code' => $vendor->is_ewt_subject ? $vendor->atc_code : null,
+            'description' => "Auto-created from GR {$gr->gr_reference} / PO {$po->po_reference}",
+            'source' => 'auto_procurement',
+            'purchase_order_id' => $po->id,
+            'status' => 'draft',
+            'created_by' => $actorId ?? 1,
         ]);
+
+        // Mark the GR so we don't create a duplicate invoice on retry
+        $gr->update(['ap_invoice_created' => true]);
+
+        return $invoice;
     }
 }

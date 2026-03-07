@@ -5,7 +5,10 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Trash2, Plus } from 'lucide-react'
 import { useCreatePurchaseRequest } from '@/hooks/usePurchaseRequests'
+import { useDepartments } from '@/hooks/useEmployees'
 import type { PurchaseRequestUrgency } from '@/types/procurement'
+
+const UOM_OPTIONS = ['pcs', 'kg', 'g', 'L', 'mL', 'm', 'cm', 'box', 'roll', 'set', 'pair']
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
@@ -32,6 +35,8 @@ type FormValues = z.infer<typeof schema>
 export default function CreatePurchaseRequestPage(): React.ReactElement {
   const navigate = useNavigate()
   const createPR = useCreatePurchaseRequest()
+  const { data: deptData } = useDepartments()
+  const departments = deptData?.data ?? []
 
   const {
     register,
@@ -41,6 +46,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    mode: 'onBlur',
     defaultValues: {
       urgency: 'normal',
       items: [{ item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0 }],
@@ -92,11 +98,21 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Department <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
-                {...register('department_id')}
-                placeholder="Department ID"
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <Controller
+                control={control}
+                name="department_id"
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">— Select Department —</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                )}
               />
               {errors.department_id && (
                 <p className="text-xs text-red-600 mt-1">{errors.department_id.message}</p>
@@ -203,11 +219,13 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                   {/* UoM */}
                   <div className="col-span-1">
                     {index === 0 && <p className="text-xs text-gray-500 mb-1">UoM *</p>}
-                    <input
+                    <select
                       {...register(`items.${index}.unit_of_measure`)}
-                      placeholder="pcs"
-                      className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                      className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">—</option>
+                      {UOM_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
                   </div>
 
                   {/* Quantity */}
@@ -229,6 +247,15 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                       step="0.01"
                       {...register(`items.${index}.estimated_unit_cost`)}
                       className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Specifications */}
+                  <div className="col-span-12">
+                    <input
+                      {...register(`items.${index}.specifications`)}
+                      placeholder="Specifications (optional)"
+                      className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                     />
                   </div>
 

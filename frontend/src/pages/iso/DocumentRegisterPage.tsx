@@ -14,10 +14,12 @@ const STATUS_COLORS: Record<DocumentStatus, string> = {
 export default function DocumentRegisterPage() {
   const [status, setStatus] = useState('');
   const [docType, setDocType] = useState('');
+  const [withArchived, setWithArchived] = useState(false);
 
-  const params: Record<string, string> = {};
+  const params: Record<string, string | boolean> = {};
   if (status) params.status = status;
   if (docType) params.document_type = docType;
+  if (withArchived) params.with_archived = true;
 
   const { data, isLoading } = useDocuments(Object.keys(params).length ? params : undefined);
 
@@ -50,6 +52,10 @@ export default function DocumentRegisterPage() {
           <option value="approved">Approved</option>
           <option value="obsolete">Obsolete</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -82,6 +88,7 @@ export default function DocumentRegisterPage() {
                   <td className="px-4 py-3 capitalize text-gray-500">{doc.document_type.replace('_', ' ')}</td>
                   <td className="px-4 py-3 text-gray-600">{doc.current_version}</td>
                   <td className="px-4 py-3">
+                    {doc.deleted_at && <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[doc.status]}`}>
                       {doc.status.replace('_', ' ')}
                     </span>

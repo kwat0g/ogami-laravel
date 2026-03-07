@@ -11,6 +11,7 @@ import {
   useLogOutput,
 } from '@/hooks/useProduction'
 import { usePermission } from '@/hooks/usePermission'
+import { useEmployees } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { ProductionOrderStatus } from '@/types/production'
 
@@ -45,6 +46,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   })
 
   const { data: order, isLoading, isError } = useProductionOrder(ulid ?? null)
+  const { data: employeesData } = useEmployees({ per_page: 200, is_active: true })
+  const employees = employeesData?.data ?? []
 
   const canRelease    = usePermission('production.orders.release')
   const canComplete   = usePermission('production.orders.complete')
@@ -221,14 +224,17 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Operator ID</label>
-                <input
-                  type="number"
+                <label className="block text-xs font-medium text-gray-600 mb-1">Operator</label>
+                <select
                   value={logData.operator_id}
                   onChange={(e) => setLogData((d) => ({ ...d, operator_id: e.target.value }))}
                   className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  placeholder="Employee ID"
-                />
+                >
+                  <option value="">— Select Operator —</option>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Qty Produced</label>

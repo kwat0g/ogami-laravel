@@ -35,8 +35,10 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
     ? balances.find((b) => b.leave_type_id === parseInt(formData.leave_type_id))
     : undefined
 
-  const isLwop = selectedBalance?.leave_type_code === 'LWOP'
-  const hasInsufficientBalance = selectedBalance != null && !isLwop && selectedBalance.balance <= 0
+  // Detect OTH (Others) — discretionary, no fixed balance
+  const selectedLeaveType = (leaveTypes ?? []).find((t) => t.id === parseInt(formData.leave_type_id))
+  const isOth = selectedLeaveType?.code === 'OTH'
+  const hasInsufficientBalance = selectedBalance != null && !isOth && selectedBalance.balance <= 0
   
   if (!isOpen) return null
   
@@ -152,8 +154,20 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
               </div>
             )}
 
+            {/* OTH hint */}
+            {isOth && (
+              <div className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-700">
+                  Please <strong>specify the type of leave</strong> in the Reason field below
+                  (e.g., "Graduation Ceremony", "Court Appearance", "Emergency Travel").
+                  The GA Officer will determine if it is with or without pay.
+                </p>
+              </div>
+            )}
+
             {/* Show balance when selected and has credits */}
-            {selectedBalance && !isLwop && selectedBalance.balance > 0 && (
+            {selectedBalance && !isOth && selectedBalance.balance > 0 && (
               <p className="mt-1.5 text-xs text-green-700 font-medium">
                 ✓ {selectedBalance.balance} day{selectedBalance.balance !== 1 ? 's' : ''} available
               </p>
@@ -228,7 +242,9 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
             <textarea
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-              placeholder="Explain the reason for leave..."
+              placeholder={isOth
+                ? "Specify your leave type and reason (e.g., 'Graduation Ceremony — attending sibling's graduation')"
+                : "Explain the reason for leave..."}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
               rows={3}
               required

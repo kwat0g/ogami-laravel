@@ -58,6 +58,21 @@ export function useCreateGoodsReceipt() {
   })
 }
 
+// ── Delete (draft only) ─────────────────────────────────────────────────────
+
+export function useDeleteGoodsReceipt() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (ulid: string) => {
+      await api.delete(`/procurement/goods-receipts/${ulid}`)
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      void qc.invalidateQueries({ queryKey: ['purchase-orders'] })
+    },
+  })
+}
+
 // ── Confirm (triggers three-way match) ───────────────────────────────────────
 
 export function useConfirmGoodsReceipt() {

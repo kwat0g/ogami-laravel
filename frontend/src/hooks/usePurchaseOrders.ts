@@ -69,9 +69,10 @@ export function useSendPurchaseOrder() {
       )
       return res.data.data
     },
-    onSuccess: (po) => {
+    onSuccess: (po, ulid) => {
       void qc.invalidateQueries({ queryKey: ['purchase-orders'] })
-      qc.setQueryData(['purchase-orders', po.ulid], po)
+      void qc.invalidateQueries({ queryKey: ['purchase-orders', ulid] })
+      qc.setQueryData(['purchase-orders', ulid], po)
     },
   })
 }

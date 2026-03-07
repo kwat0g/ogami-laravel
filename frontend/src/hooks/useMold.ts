@@ -3,7 +3,7 @@ import api from '@/lib/api';
 import type { MoldMaster, CreateMoldPayload, LogShotsPayload } from '@/types/mold';
 import type { Paginated } from '@/types/production';
 
-export function useMolds(params?: Record<string, string | number>) {
+export function useMolds(params?: Record<string, string | number | boolean>) {
   return useQuery<Paginated<MoldMaster>>({
     queryKey: ['molds', params],
     queryFn: () => api.get('/mold/molds', { params }).then(r => r.data),

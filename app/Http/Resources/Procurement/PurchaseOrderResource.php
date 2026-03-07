@@ -54,6 +54,7 @@ final class PurchaseOrderResource extends JsonResource
                 $this->whenLoaded('items')
             ),
 
+            'deleted_at'        => $po->deleted_at?->toIso8601String(),
             'created_at'        => $po->created_at?->toIso8601String(),
             'updated_at'        => $po->updated_at?->toIso8601String(),
         ];

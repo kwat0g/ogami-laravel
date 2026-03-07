@@ -8,6 +8,7 @@ import {
   useRejectLoan,
   useAccountingApproveLoan,
   useDisburseLoan,
+  useHeadNoteLoan,
 } from '@/hooks/useLoans'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -25,6 +26,7 @@ export default function LoanDetailPage() {
   const canAccountingApprove = hasPermission('loans.accounting_approve')
   const canDisburse = hasPermission('loans.accounting_approve') || hasPermission('loans.hr_approve')
   const canReject = hasPermission('loans.reject') || hasPermission('loans.approve')
+  const canHeadNote = hasPermission('loans.head_note')
   const _ = canReject
   const loanId = id ?? null
   const { data: loan, isLoading, isError } = useLoan(loanId)
@@ -35,6 +37,7 @@ export default function LoanDetailPage() {
   const accountingApprove = useAccountingApproveLoan()
   const reject = useRejectLoan()
   const disburse = useDisburseLoan()
+  const headNote = useHeadNoteLoan()
 
   const computeFirstDeductionDate = (cutoff: '1st' | '2nd'): string => {
     const now = new Date()
@@ -51,6 +54,8 @@ export default function LoanDetailPage() {
   const [showAccountingModal, setShowAccountingModal] = useState(false)
   const [remarks, setRemarks] = useState('')
   const [accountingRemarks, setAccountingRemarks] = useState('')
+  const [showHeadNoteModal, setShowHeadNoteModal] = useState(false)
+  const [headNoteRemarks, setHeadNoteRemarks] = useState('')
 
   if (isLoading) return <SkeletonLoader rows={8} />
   if (isError || !loan) return <div className="text-red-600 text-sm mt-4">Failed to load loan details.</div>
@@ -213,7 +218,39 @@ export default function LoanDetailPage() {
         {/* Approval Timeline */}
         <div className="mt-6 pt-6 border-t border-gray-100">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Timeline</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Step 0: Department Head Note */}
+            {(() => {
+              const isNoted = !!loan.head_noted_by
+              const isPending = !isNoted && loan.status === 'pending'
+              return (
+                <div className={`p-4 rounded-lg border ${
+                  isNoted ? 'bg-amber-50 border-amber-200'
+                  : isPending ? 'bg-amber-50 border-amber-200'
+                  : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`w-3 h-3 rounded-full ${
+                      isNoted ? 'bg-amber-500'
+                      : isPending ? 'bg-amber-400 animate-pulse'
+                      : 'bg-gray-300'
+                    }`} />
+                    <span className="text-sm font-medium text-gray-900">0. Dept Head Note</span>
+                  </div>
+                  {isNoted ? (
+                    <>
+                      <p className="text-xs text-gray-600">Noted by User #{loan.head_noted_by}</p>
+                      <p className="text-xs text-gray-500">{loan.head_noted_at?.slice(0, 10)}</p>
+                      {loan.head_remarks && (
+                        <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{loan.head_remarks}&rdquo;</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-500">{isPending ? 'Awaiting Dept Head note' : 'Not required / skipped'}</p>
+                  )}
+                </div>
+              )
+            })()}
             {/* Step 1: HR Approval */}
             {(() => {
               const isRejected = loan.status === 'rejected' && !!loan.approved_by
@@ -339,6 +376,16 @@ export default function LoanDetailPage() {
 
         {/* Actions */}
         <div className="mt-6 flex flex-wrap gap-3">
+          {/* Department Head Actions */}
+          {canHeadNote && loan.status === 'pending' && (
+            <button
+              onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
+              disabled={headNote.isPending}
+              className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50 flex items-center gap-2">
+              <span>📋</span> Head Note
+            </button>
+          )}
+
           {/* HR Manager Actions */}
           {canApprove && loan.status === 'pending' && (
             <>
@@ -454,6 +501,41 @@ export default function LoanDetailPage() {
                 className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-40"
               >
                 {approve.isPending ? 'Approving…' : 'Confirm Approval'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Head Note Modal */}
+      {showHeadNoteModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Head Note — Loan Application</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Add your endorsement note before forwarding to HR Manager review.
+            </p>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Remarks (optional)</label>
+            <textarea
+              value={headNoteRemarks}
+              onChange={(e) => setHeadNoteRemarks(e.target.value)}
+              placeholder="Add remarks or recommendations..."
+              rows={3}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => setShowHeadNoteModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+                Cancel
+              </button>
+              <button
+                disabled={headNote.isPending}
+                onClick={() => headNote.mutate(
+                  { id: loan.ulid, remarks: headNoteRemarks || undefined },
+                  { onSuccess: () => setShowHeadNoteModal(false) }
+                )}
+                className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-40"
+              >
+                {headNote.isPending ? 'Submitting…' : 'Confirm Head Note'}
               </button>
             </div>
           </div>

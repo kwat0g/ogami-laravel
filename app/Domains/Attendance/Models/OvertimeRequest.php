@@ -7,6 +7,7 @@ namespace App\Domains\Attendance\Models;
 use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -28,7 +29,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $requested_minutes 1–480
  * @property int|null $approved_minutes
  * @property string $reason
- * @property string $status pending|supervisor_approved|pending_executive|approved|rejected|cancelled
+ * @property string $status pending|supervisor_approved|manager_checked|officer_reviewed|pending_executive|approved|rejected|cancelled
  * @property int|null $requested_by FK users.id — who filed the request
  * @property int|null $supervisor_id FK users.id — supervisor who endorsed (staff requests)
  * @property string|null $supervisor_remarks
@@ -39,13 +40,17 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $executive_id FK users.id — executive approval for manager requests
  * @property string|null $executive_remarks
  * @property \Illuminate\Support\Carbon|null $executive_approved_at
+ * @property int|null $officer_reviewed_by FK users.id — HR officer review step
+ * @property \Illuminate\Support\Carbon|null $officer_reviewed_at
+ * @property int|null $vp_approved_by FK users.id — VP final approval step
+ * @property \Illuminate\Support\Carbon|null $vp_approved_at
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  * @property-read Employee $employee
  */
 final class OvertimeRequest extends Model implements Auditable
 {
-    use AuditableTrait;
+    use AuditableTrait, SoftDeletes;
 
     protected $table = 'overtime_requests';
 
@@ -70,6 +75,10 @@ final class OvertimeRequest extends Model implements Auditable
         'executive_id',
         'executive_remarks',
         'executive_approved_at',
+        'officer_reviewed_by',
+        'officer_reviewed_at',
+        'vp_approved_by',
+        'vp_approved_at',
     ];
 
     /** @return array<string, string> */

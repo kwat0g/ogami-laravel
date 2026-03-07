@@ -22,7 +22,7 @@ final class InspectionController extends Controller
     {
         $this->authorize('viewAny', Inspection::class);
         return InspectionResource::collection(
-            $this->service->paginate($request->only(['stage', 'status', 'item_master_id', 'per_page']))
+            $this->service->paginate($request->only(['stage', 'status', 'item_master_id', 'per_page', 'with_archived']))
         );
     }
 
@@ -49,6 +49,23 @@ final class InspectionController extends Controller
             (int) $data['qty_passed'],
             (int) $data['qty_failed'],
         );
+        return new InspectionResource($updated);
+    }
+
+    public function destroy(Inspection $inspection): \Illuminate\Http\Response
+    {
+        $this->authorize('delete', $inspection);
+        $this->service->dismiss($inspection);
+        return response()->noContent();
+    }
+
+    public function cancelResults(Request $request, Inspection $inspection): InspectionResource
+    {
+        $this->authorize('cancelResults', $inspection);
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:500'],
+        ]);
+        $updated = $this->service->cancelResults($inspection, $validated['reason']);
         return new InspectionResource($updated);
     }
 }

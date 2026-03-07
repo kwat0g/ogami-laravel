@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useAttendanceLogs, useCreateAttendanceLog, useUpdateAttendanceLog } from '@/hooks/useAttendance'
+import { useAttendanceLogs, useCreateAttendanceLog, useUpdateAttendanceLog, useEmployeeShiftAssignments } from '@/hooks/useAttendance'
 import { useEmployeeSearch } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -49,6 +49,7 @@ function formatTimeInput(value: string): string {
 
 interface EmployeeOption {
   id: number
+  ulid: string
   employee_code: string
   full_name: string
   department_name?: string
@@ -98,8 +99,20 @@ export default function AttendanceListPage() {
 
   const { data, isLoading, isFetching, isError } = useAttendanceLogs(filters)
   const { data: empResults, isLoading: empLoading } = useEmployeeSearch(empQuery, showEmpDropdown)
+  const { data: shiftAssignments } = useEmployeeShiftAssignments(selectedEmp?.ulid ?? null)
   const createMutation = useCreateAttendanceLog()
   const updateMutation = useUpdateAttendanceLog()
+
+  // Derive the active shift for the selected employee on the chosen work date
+  const activeShift = (() => {
+    if (!shiftAssignments?.length) return null
+    const workDate = formData.work_date || new Date().toISOString().slice(0, 10)
+    return shiftAssignments.find(
+      (a) =>
+        a.effective_from <= workDate &&
+        (a.effective_to === null || a.effective_to >= workDate)
+    )?.shift_schedule ?? null
+  })()
 
   // Apply debounced search to filters
   // When user types in search box, clear employee_id (to avoid AND condition)
@@ -191,6 +204,7 @@ export default function AttendanceListPage() {
     })
     setSelectedEmp(log.employee ? {
       id: log.employee_id,
+      ulid: log.employee.ulid ?? '',
       employee_code: log.employee.employee_code || '',
       full_name: log.employee.full_name || `Employee #${log.employee_id}`,
     } : null)
@@ -563,6 +577,32 @@ export default function AttendanceListPage() {
               )}
 
               {/* Time In/Out */}
+              {/* Shift schedule badge — shows active shift for the selected employee + work date */}
+              {selectedEmp && (
+                <div>
+                  {activeShift ? (
+                    <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 text-sm">
+                      <Clock className="h-4 w-4 text-indigo-500 shrink-0" />
+                      <div>
+                        <span className="font-medium text-indigo-700">{activeShift.name}</span>
+                        <span className="text-indigo-500 ml-2">
+                          {activeShift.start_time.slice(0, 5)} – {activeShift.end_time.slice(0, 5)}
+                          {activeShift.grace_period_minutes > 0 && (
+                            <span className="ml-1 text-indigo-400">({activeShift.grace_period_minutes} min grace)</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">
+                      <Clock className="h-4 w-4 text-gray-400 shrink-0" />
+                      <span>No shift assigned for this date</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Time In / Time Out */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Time In</label>

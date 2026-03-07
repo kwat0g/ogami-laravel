@@ -36,6 +36,7 @@ final class MaterialRequisitionResource extends JsonResource
             'rejected_at'     => $mrq->rejected_at?->toIso8601String(),
             'rejection_reason' => $mrq->rejection_reason,
             'fulfilled_at'    => $mrq->fulfilled_at?->toIso8601String(),
+            'deleted_at'      => $mrq->deleted_at?->toIso8601String(),
             'created_at'      => $mrq->created_at?->toIso8601String(),
             // Relations
             'requested_by'    => $this->whenLoaded('requestedBy', fn () => ['id' => $mrq->requestedBy->id, 'name' => $mrq->requestedBy->name]),

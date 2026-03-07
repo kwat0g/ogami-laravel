@@ -10,7 +10,7 @@ import type {
 
 // ── Equipment ──────────────────────────────────────────────────────────────
 
-export function useEquipment(params?: Record<string, string | number>) {
+export function useEquipment(params?: Record<string, string | number | boolean>) {
   return useQuery<{ data: Equipment[]; meta: unknown }>({
     queryKey: ['equipment', params],
     queryFn: () => api.get('/maintenance/equipment', { params }).then(r => r.data),
@@ -48,7 +48,7 @@ export function useUpdateEquipment(ulid: string) {
 
 // ── Work Orders ────────────────────────────────────────────────────────────
 
-export function useWorkOrders(params?: Record<string, string | number>) {
+export function useWorkOrders(params?: Record<string, string | number | boolean>) {
   return useQuery<{ data: MaintenanceWorkOrder[]; meta: unknown }>({
     queryKey: ['work-orders', params],
     queryFn: () => api.get('/maintenance/work-orders', { params }).then(r => r.data),

@@ -10,6 +10,7 @@ use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Leave\Models\LeaveType;
 use App\Domains\Leave\Services\LeaveRequestService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Leave\ProcessLeaveRequestRequest;
 use App\Http\Requests\Leave\StoreLeaveRequestRequest;
 use App\Http\Resources\Leave\LeaveBalanceResource;
 use App\Http\Resources\Leave\LeaveRequestResource;
@@ -59,19 +60,10 @@ final class LeaveRequestController extends Controller
         $employee = Employee::findOrFail($request->validated('employee_id'));
         $this->authorize('create', [LeaveRequest::class, $employee]);
 
-        $user = $request->user();
-        $requesterRole = match (true) {
-            $user->hasAnyRole(['manager', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager']) => 'manager',
-            $user->hasRole('officer')                      => 'officer',
-            $user->hasRole('head')                         => 'head',
-            default                                        => 'staff',
-        };
-
         $leaveRequest = $this->service->submit(
             $employee,
             $request->validated(),
-            (int) $user->id,
-            $requesterRole,
+            (int) $request->user()->id,
         );
 
         return (new LeaveRequestResource($leaveRequest->load('leaveType')))
@@ -90,34 +82,69 @@ final class LeaveRequestController extends Controller
     }
 
     /**
-     * PATCH /api/v1/leave/requests/{leaveRequest}/supervisor-approve
-     * First-level approval by supervisor.
+     * PATCH /api/v1/leave/requests/{leaveRequest}/head-approve
+     * Step 2 — Department Head approval.
      */
-    public function supervisorApprove(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
+    public function headApprove(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
     {
-        $this->authorize('supervise', $leaveRequest);
+        $this->authorize('headApprove', $leaveRequest);
 
-        $updated = $this->service->supervisorApprove(
+        $updated = $this->service->headApprove(
             $leaveRequest,
             (int) $request->user()->id,
-            $request->input('remarks', ''),
+            $request->input('remarks'),
         );
 
         return new LeaveRequestResource($updated->load('leaveType'));
     }
 
     /**
-     * PATCH /api/v1/leave/requests/{leaveRequest}/approve
-     * Final approval by manager.
+     * PATCH /api/v1/leave/requests/{leaveRequest}/manager-check
+     * Step 3 — Plant Manager check.
      */
-    public function approve(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
+    public function managerCheck(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
     {
-        $this->authorize('review', $leaveRequest);
+        $this->authorize('managerCheck', $leaveRequest);
 
-        $updated = $this->service->approve(
+        $updated = $this->service->managerCheck(
             $leaveRequest,
             (int) $request->user()->id,
-            $request->input('remarks', ''),
+            $request->input('remarks'),
+        );
+
+        return new LeaveRequestResource($updated->load('leaveType'));
+    }
+
+    /**
+     * PATCH /api/v1/leave/requests/{leaveRequest}/ga-process
+     * Step 4 — GA Officer processes (sets action_taken + balance snapshot).
+     */
+    public function gaProcess(ProcessLeaveRequestRequest $request, LeaveRequest $leaveRequest): LeaveRequestResource
+    {
+        $this->authorize('gaProcess', $leaveRequest);
+
+        $updated = $this->service->gaProcess(
+            $leaveRequest,
+            (int) $request->user()->id,
+            $request->validated('action_taken'),
+            $request->input('remarks'),
+        );
+
+        return new LeaveRequestResource($updated->load('leaveType'));
+    }
+
+    /**
+     * PATCH /api/v1/leave/requests/{leaveRequest}/vp-note
+     * Step 5 — Vice President notes (deducts balance for approved_with_pay).
+     */
+    public function vpNote(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
+    {
+        $this->authorize('vpNote', $leaveRequest);
+
+        $updated = $this->service->vpNote(
+            $leaveRequest,
+            (int) $request->user()->id,
+            $request->input('remarks'),
         );
 
         return new LeaveRequestResource($updated->load('leaveType'));
@@ -125,46 +152,13 @@ final class LeaveRequestController extends Controller
 
     /**
      * PATCH /api/v1/leave/requests/{leaveRequest}/reject
+     * Any current-step approver can reject.
      */
     public function reject(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
     {
         $this->authorize('review', $leaveRequest);
 
         $updated = $this->service->reject(
-            $leaveRequest,
-            (int) $request->user()->id,
-            $request->input('remarks', ''),
-        );
-
-        return new LeaveRequestResource($updated->load('leaveType'));
-    }
-
-    /**
-     * PATCH /api/v1/leave/requests/{leaveRequest}/executive-approve
-     * Executive approval for manager-filed requests.
-     */
-    public function executiveApprove(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
-    {
-        $this->authorize('executiveApprove', $leaveRequest);
-
-        $updated = $this->service->executiveApprove(
-            $leaveRequest,
-            (int) $request->user()->id,
-            $request->input('remarks', ''),
-        );
-
-        return new LeaveRequestResource($updated->load('leaveType'));
-    }
-
-    /**
-     * PATCH /api/v1/leave/requests/{leaveRequest}/executive-reject
-     * Executive rejection for manager-filed requests.
-     */
-    public function executiveReject(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
-    {
-        $this->authorize('executiveApprove', $leaveRequest);
-
-        $updated = $this->service->executiveReject(
             $leaveRequest,
             (int) $request->user()->id,
             $request->input('remarks', ''),
@@ -351,22 +345,6 @@ final class LeaveRequestController extends Controller
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->when($request->query('year'), fn ($q, $y) => $q->whereYear('date_from', $y))
             ->whereHas('employee', fn ($q) => $q->whereIn('department_id', $departmentIds))
-            ->latest()
-            ->paginate((int) $request->query('per_page', '25'));
-
-        return LeaveRequestResource::collection($requests);
-    }
-
-    /**
-     * GET /api/v1/leave/requests/pending-executive
-     * Get all requests pending executive approval (for executives).
-     */
-    public function pendingExecutive(Request $request): AnonymousResourceCollection
-    {
-        $this->authorize('viewExecutiveQueue', LeaveRequest::class);
-
-        $requests = LeaveRequest::with(['leaveType', 'employee'])
-            ->where('status', 'pending_executive')
             ->latest()
             ->paginate((int) $request->query('per_page', '25'));
 

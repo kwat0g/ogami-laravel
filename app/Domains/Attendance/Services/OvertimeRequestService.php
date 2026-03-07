@@ -295,11 +295,100 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'approved';
+        $request->status = 'manager_checked';
         $request->approved_by = $approvedByUserId;
         $request->approved_minutes = $minutes;
         $request->approver_remarks = $remarks;
         $request->reviewed_at = now();
+        $request->save();
+
+        // Employee notification is deferred to vpApprove() — the final approval step.
+
+        return $request;
+    }
+
+    /**
+     * Officer review step (step 4 of 5).
+     * Moves a manager-checked request to officer_reviewed, awaiting VP final approval.
+     *
+     * @throws SodViolationException|DomainException
+     */
+    public function officerReview(
+        OvertimeRequest $request,
+        int $officerUserId,
+        string $remarks = '',
+    ): OvertimeRequest {
+        if ($request->status !== 'manager_checked') {
+            throw new DomainException(
+                'Overtime request must be manager-checked before officer review.',
+                'ATT_OT_NOT_MANAGER_CHECKED',
+                422,
+            );
+        }
+
+        if ($request->employee?->user_id === $officerUserId) {
+            throw new SodViolationException(
+                'overtime_request',
+                'officer_review',
+                'Reviewing officer must differ from the requesting employee (ATT-003).',
+            );
+        }
+
+        $request->status = 'officer_reviewed';
+        $request->officer_reviewed_by = $officerUserId;
+        $request->officer_reviewed_at = now();
+        if ($remarks !== '') {
+            $request->approver_remarks = $remarks;
+        }
+        $request->save();
+
+        return $request;
+    }
+
+    /**
+     * VP final approval step (step 5 of 5).
+     * Moves an officer-reviewed request to approved and notifies the employee.
+     *
+     * @throws SodViolationException|DomainException
+     */
+    public function vpApprove(
+        OvertimeRequest $request,
+        int $vpUserId,
+        ?int $approvedMinutes = null,
+        string $remarks = '',
+    ): OvertimeRequest {
+        if ($request->status !== 'officer_reviewed') {
+            throw new DomainException(
+                'Overtime request must be officer-reviewed before VP approval.',
+                'ATT_OT_NOT_OFFICER_REVIEWED',
+                422,
+            );
+        }
+
+        if ($request->employee?->user_id === $vpUserId) {
+            throw new SodViolationException(
+                'overtime_request',
+                'vp_approve',
+                'VP approver must differ from the requesting employee (ATT-003).',
+            );
+        }
+
+        $minutes = $approvedMinutes ?? (int) $request->approved_minutes ?? $request->requested_minutes;
+        if ($minutes > $request->requested_minutes) {
+            throw new DomainException(
+                'Approved minutes cannot exceed the requested minutes.',
+                'ATT_OT_APPROVED_EXCEEDS_REQUESTED',
+                422,
+            );
+        }
+
+        $request->status = 'approved';
+        $request->vp_approved_by = $vpUserId;
+        $request->vp_approved_at = now();
+        $request->approved_minutes = $minutes;
+        if ($remarks !== '') {
+            $request->approver_remarks = $remarks;
+        }
         $request->save();
 
         $this->notifyEmployeeOfOvertimeDecision($request, 'approved', $remarks ?: null);
@@ -512,7 +601,7 @@ final class OvertimeRequestService implements ServiceContract
             return 'staff';
         }
 
-        if ($user->hasAnyRole(['vice_president', 'officer', 'manager', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'])) {
+        if ($user->hasAnyRole(['vice_president', 'officer', 'ga_officer', 'purchasing_officer', 'impex_officer', 'manager', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'])) {
             return 'manager';
         }
 

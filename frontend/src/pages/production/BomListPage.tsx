@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { GitBranch, AlertTriangle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { GitBranch, AlertTriangle, Plus } from 'lucide-react'
 import { useBoms } from '@/hooks/useProduction'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 export default function BomListPage(): React.ReactElement {
   const [page, setPage] = useState(1)
-  const { data, isLoading, isError } = useBoms({ per_page: 20 })
+  const [withArchived, setWithArchived] = useState(false)
+  const { data, isLoading, isError } = useBoms({ per_page: 20, with_archived: withArchived || undefined })
+  const { hasPermission } = useAuthStore()
+  const canCreate = hasPermission('production.bom.create')
 
   return (
     <div>
@@ -19,6 +24,22 @@ export default function BomListPage(): React.ReactElement {
             <p className="text-sm text-gray-500 mt-0.5">Component recipes for manufactured items</p>
           </div>
         </div>
+        {canCreate && (
+          <Link
+            to="/production/boms/new"
+            className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New BOM
+          </Link>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-3 mb-5">
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-violet-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
@@ -54,6 +75,7 @@ export default function BomListPage(): React.ReactElement {
                     <td className="px-4 py-3 text-gray-500">v{bom.version}</td>
                     <td className="px-4 py-3 text-gray-500">{bom.components?.length ?? '—'} items</td>
                     <td className="px-4 py-3">
+                      {bom.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       {bom.is_active
                         ? <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>
                         : <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Inactive</span>}

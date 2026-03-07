@@ -15,6 +15,7 @@ final class InspectionTemplateService implements ServiceContract
     public function paginate(array $params = []): LengthAwarePaginator
     {
         return InspectionTemplate::query()
+            ->when($params['with_archived'] ?? false, fn ($q) => $q->withTrashed())
             ->when($params['stage'] ?? null, fn ($q, $v) => $q->where('stage', $v))
             ->when(isset($params['is_active']), fn ($q) => $q->where('is_active', filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN)))
             ->with('items')

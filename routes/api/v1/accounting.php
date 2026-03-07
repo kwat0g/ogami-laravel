@@ -122,6 +122,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('throttle:api-action')
         ->name('ap-invoices.submit');
 
+    Route::patch('ap/invoices/{apInvoice}/head-note', [VendorInvoiceController::class, 'headNote'])
+        ->middleware(['sod:vendor_invoices,approve', 'throttle:api-action'])
+        ->name('ap-invoices.head-note');
+
+    Route::patch('ap/invoices/{apInvoice}/manager-check', [VendorInvoiceController::class, 'managerCheck'])
+        ->middleware(['sod:vendor_invoices,approve', 'throttle:api-action'])
+        ->name('ap-invoices.manager-check');
+
+    Route::patch('ap/invoices/{apInvoice}/officer-review', [VendorInvoiceController::class, 'officerReview'])
+        ->middleware(['sod:vendor_invoices,approve', 'throttle:api-action'])
+        ->name('ap-invoices.officer-review');
+
     Route::patch('ap/invoices/{apInvoice}/approve', [VendorInvoiceController::class, 'approve'])
         ->middleware(['sod:vendor_invoices,approve', 'throttle:api-action'])
         ->name('ap-invoices.approve');

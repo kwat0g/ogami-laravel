@@ -10,6 +10,7 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -32,7 +33,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class ProductionOrder extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid;
+    use AuditableTrait, HasPublicUlid, SoftDeletes;
 
     protected $table = 'production_orders';
 
@@ -46,6 +47,7 @@ final class ProductionOrder extends Model implements Auditable
         'target_end_date',
         'status',
         'notes',
+        'hold_reason',
         'created_by_id',
     ];
 

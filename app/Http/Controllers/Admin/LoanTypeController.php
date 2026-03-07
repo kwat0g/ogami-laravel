@@ -22,6 +22,10 @@ final class LoanTypeController extends Controller
             ->orderBy('category')
             ->orderBy('name');
 
+        if ($request->boolean('with_archived')) {
+            $query->withTrashed();
+        }
+
         if ($request->has('category')) {
             $query->where('category', $request->input('category'));
         }

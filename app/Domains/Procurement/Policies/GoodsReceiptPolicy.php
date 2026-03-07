@@ -22,7 +22,7 @@ final class GoodsReceiptPolicy
 
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
             return true;
         }
 
@@ -47,6 +47,12 @@ final class GoodsReceiptPolicy
     public function confirm(User $user, GoodsReceipt $gr): bool
     {
         return $user->hasPermissionTo('procurement.goods-receipt.confirm')
+            && $gr->status === 'draft';
+    }
+
+    public function delete(User $user, GoodsReceipt $gr): bool
+    {
+        return $user->hasPermissionTo('procurement.goods-receipt.create')
             && $gr->status === 'draft';
     }
 }

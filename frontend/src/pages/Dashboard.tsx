@@ -12,6 +12,9 @@ const QcManagerDashboard         = lazy(() => import('@/pages/dashboard/QcManage
 const MoldManagerDashboard       = lazy(() => import('@/pages/dashboard/MoldManagerDashboard'))
 const HeadDashboard           = lazy(() => import('@/pages/dashboard/HeadDashboard'))
 const OfficerDashboard        = lazy(() => import('@/pages/dashboard/OfficerDashboard'))
+const GaOfficerDashboard      = lazy(() => import('@/pages/dashboard/GaOfficerDashboard'))
+const PurchasingOfficerDashboard = lazy(() => import('@/pages/dashboard/PurchasingOfficerDashboard'))
+const ImpexOfficerDashboard   = lazy(() => import('@/pages/dashboard/ImpexOfficerDashboard'))
 const VicePresidentDashboard  = lazy(() => import('@/pages/dashboard/VicePresidentDashboard'))
 const AdminDashboard          = lazy(() => import('@/pages/dashboard/AdminDashboard'))
 const ExecutiveDashboard      = lazy(() => import('@/pages/dashboard/ExecutiveDashboard'))
@@ -53,11 +56,38 @@ export default function Dashboard() {
     )
   }
 
-  // Officer — Accounting / Purchasing / ImpEx review dashboard
+  // Officer — Accounting Officer: full financial management dashboard
   if (hasRole('officer')) {
     return (
       <Suspense fallback={<SkeletonLoader rows={8} />}>
         <OfficerDashboard />
+      </Suspense>
+    )
+  }
+
+  // GA Officer — HR administrative support dashboard
+  if (hasRole('ga_officer')) {
+    return (
+      <Suspense fallback={<SkeletonLoader rows={8} />}>
+        <GaOfficerDashboard />
+      </Suspense>
+    )
+  }
+
+  // Purchasing Officer — procurement and ordering management dashboard
+  if (hasRole('purchasing_officer')) {
+    return (
+      <Suspense fallback={<SkeletonLoader rows={8} />}>
+        <PurchasingOfficerDashboard />
+      </Suspense>
+    )
+  }
+
+  // ImpEx Officer — import/export and delivery management dashboard
+  if (hasRole('impex_officer')) {
+    return (
+      <Suspense fallback={<SkeletonLoader rows={8} />}>
+        <ImpexOfficerDashboard />
       </Suspense>
     )
   }

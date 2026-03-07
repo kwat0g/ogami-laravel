@@ -14,12 +14,14 @@ const statusBadge: Record<GoodsReceiptStatus, string> = {
 export default function GoodsReceiptListPage(): React.ReactElement {
   const [statusFilter, setStatusFilter] = useState<GoodsReceiptStatus | ''>('')
   const [page, setPage] = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('procurement.goods-receipt.create')
 
   const { data, isLoading, isError } = useGoodsReceipts({
     ...(statusFilter ? { status: statusFilter } : {}),
     page,
+    with_archived: withArchived || undefined,
   })
 
   return (
@@ -58,6 +60,10 @@ export default function GoodsReceiptListPage(): React.ReactElement {
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-green-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {/* Table */}
@@ -96,6 +102,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
                     {gr.received_date ? new Date(gr.received_date).toLocaleDateString('en-PH') : '—'}
                   </td>
                   <td className="px-4 py-3">
+                    {gr.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge[gr.status]}`}>
                       {gr.status}
                     </span>

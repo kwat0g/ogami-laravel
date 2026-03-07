@@ -29,10 +29,11 @@ final class ThreeWayMatchService implements ServiceContract
         $po = $gr->purchaseOrder()->with(['purchaseRequest', 'items'])->firstOrFail();
         $pr = $po->purchaseRequest;
 
-        // Validate PR is approved
-        if ($pr->status !== 'approved') {
+        // Validate PR is approved (if PO was created from a PR)
+        // After PO creation the PR transitions to converted_to_po — both statuses are valid for 3WM
+        if ($pr !== null && ! in_array($pr->status, ['approved', 'converted_to_po'], true)) {
             throw new DomainException(
-                message: "Three-way match failed: Purchase Request #{$pr->pr_reference} is not in approved status.",
+                message: "Three-way match failed: Purchase Request #{$pr->pr_reference} is not in an approved status (current: {$pr->status}).",
                 errorCode: 'TWM_PR_NOT_APPROVED',
                 httpStatus: 422,
             );

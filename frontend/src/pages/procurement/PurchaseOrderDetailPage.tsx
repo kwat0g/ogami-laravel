@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, AlertTriangle, CheckCircle2, Send, XCircle } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, CheckCircle2, Send, XCircle, PackageCheck } from 'lucide-react'
 import {
   usePurchaseOrder,
   useSendPurchaseOrder,
@@ -133,8 +133,9 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
     )
   }
 
-  const canSend   = po.status === 'draft'
-  const canCancel = po.status === 'draft' || po.status === 'sent'
+  const canSend    = po.status === 'draft'
+  const canCancel  = po.status === 'draft' || po.status === 'sent'
+  const canReceive = po.status === 'sent' || po.status === 'partially_received'
 
   return (
     <>
@@ -367,13 +368,24 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
           </div>
         </div>
 
-        {/* ── Goods receipts link ────────────────────────────────────────────── */}
-        <Link
-          to={`/procurement/goods-receipts?purchase_order_id=${po.id}`}
-          className="block rounded-xl border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors text-sm text-indigo-600 font-medium"
-        >
-          View Goods Receipts for this PO →
-        </Link>
+        {/* ── Goods receipts ────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
+          <Link
+            to={`/procurement/goods-receipts?purchase_order_id=${po.id}`}
+            className="text-sm text-indigo-600 font-medium hover:text-indigo-800"
+          >
+            View Goods Receipts for this PO →
+          </Link>
+          {canReceive && (
+            <Link
+              to={`/procurement/goods-receipts/new?po_ulid=${po.ulid}`}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <PackageCheck className="w-4 h-4" />
+              Receive Goods
+            </Link>
+          )}
+        </div>
 
         {/* ── Actions ───────────────────────────────────────────────────────── */}
         {(canSend || canCancel) && (

@@ -148,6 +148,7 @@ export default function EmployeeFormPage() {
     formState: { errors, isSubmitting, isDirty },
   } = useForm<EmployeeFormData>({
     resolver: zodResolver(schema),
+    mode: 'onBlur',
     defaultValues: {
       first_name: '',
       last_name: '',

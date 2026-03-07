@@ -21,6 +21,10 @@ final class HolidayCalendarController extends Controller
         $query = HolidayCalendar::query()
             ->orderBy('holiday_date', 'desc');
 
+        if ($request->boolean('with_archived')) {
+            $query->withTrashed();
+        }
+
         if ($request->has('year')) {
             $query->where('year', $request->input('year'));
         }

@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Calendar,
   Clock,
-  Phone,
   UserCircle,
   BadgeCheck,
   AlertCircle,
@@ -241,7 +240,10 @@ export default function EmployeeProfileView({
   // The balances endpoint returns paginated EmployeeLeaveBalance rows; since we
   // filter by employee_id there will be at most one entry.
   const employeeLeaveData = leaveBalancesResponse?.data?.[0]
-  const leaveBalanceItems = employeeLeaveData?.balances ?? []
+  // Exclude OTH (Others) — discretionary type with no fixed balance row
+  const leaveBalanceItems = (employeeLeaveData?.balances ?? []).filter(
+    (b) => b.leave_type_code !== 'OTH'
+  )
   const { data: attendanceData } = useAttendanceLogs({ 
     employee_id: employee.id,
     date_from: firstDayOfMonth,
@@ -341,11 +343,15 @@ export default function EmployeeProfileView({
           {/* Quick Stats */}
           {showStats && (
             <div className="flex gap-3">
-              <div className="text-center px-4 py-2 bg-blue-50 rounded-xl">
+              <div className="text-center px-4 py-2 bg-blue-50 rounded-xl border border-blue-100">
                 <p className="text-2xl font-bold text-blue-600">{presentDays}</p>
                 <p className="text-xs text-blue-600/70">Present</p>
               </div>
-              <div className="text-center px-4 py-2 bg-green-50 rounded-xl">
+              <div className="text-center px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
+                <p className="text-2xl font-bold text-amber-600">{lateDays}</p>
+                <p className="text-xs text-amber-600/70">Late</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-green-50 rounded-xl border border-green-100">
                 <p className="text-2xl font-bold text-green-600">{totalLeaveBalance}</p>
                 <p className="text-xs text-green-600/70">Leave Days</p>
               </div>
@@ -683,26 +689,54 @@ export default function EmployeeProfileView({
           title="Leave Balances" 
           icon={Calendar}
           action={<span className="text-xs text-gray-500">{new Date().getFullYear()}</span>}
-          emptyState={{ message: 'No leave balances found' }}
+          emptyState={{ message: 'No leave balances found for this year' }}
         >
-          {leaveBalanceItems.some(b => b.has_balance) && (
-            <div className="space-y-2">
-              {leaveBalanceItems.filter(b => b.has_balance).map((balance) => (
-                <div key={balance.leave_type_id} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                  <span className="text-sm text-gray-600">{balance.leave_type_name}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${balance.balance > 5 ? 'bg-green-500' : balance.balance > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
-                        style={{ width: `${Math.min((balance.balance / (balance.opening_balance || 1)) * 100, 100)}%` }}
-                      />
+          {leaveBalanceItems.length > 0 && (
+            <div className="space-y-2.5">
+              {leaveBalanceItems.map((balance) => {
+                // Total entitlement = opening + accrued + adjusted
+                const totalEntitlement = balance.opening_balance + balance.accrued + balance.adjusted
+                const pct = totalEntitlement > 0
+                  ? Math.min((balance.balance / totalEntitlement) * 100, 100)
+                  : balance.balance > 0 ? 100 : 0
+                const isEmpty = balance.balance <= 0 && totalEntitlement > 0
+                const isEventBased = totalEntitlement === 0
+
+                return (
+                  <div key={balance.leave_type_id} className="py-2 border-b border-gray-50 last:border-0">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-sm text-gray-700">{balance.leave_type_name}</span>
+                      <div className="flex items-baseline gap-0.5">
+                        {isEventBased ? (
+                          <span className="text-xs text-gray-400 italic">Event-based</span>
+                        ) : (
+                          <>
+                            <span className={`text-sm font-semibold ${
+                              balance.balance > 3 ? 'text-green-600' :
+                              balance.balance > 0 ? 'text-amber-600' : 'text-red-600'
+                            }`}>{balance.balance}</span>
+                            <span className="text-xs text-gray-400">/{totalEntitlement} days</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <span className={`text-sm font-medium ${balance.balance > 5 ? 'text-green-600' : balance.balance > 0 ? 'text-amber-600' : 'text-red-600'}`}>
-                      {balance.balance} days
-                    </span>
+                    {!isEventBased && (
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            isEmpty ? 'bg-red-400' :
+                            pct < 30 ? 'bg-amber-400' : 'bg-green-400'
+                          }`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    )}
+                    {balance.used > 0 && (
+                      <p className="text-[11px] text-gray-400 mt-0.5">{balance.used} day{balance.used !== 1 ? 's' : ''} used</p>
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </InfoCard>
@@ -756,7 +790,7 @@ export default function EmployeeProfileView({
           title="Reporting Structure" 
           icon={Users}
           emptyState={{ 
-            message: 'Reporting structure not configured',
+            message: 'No supervisor assigned',
             action: !hasSupervisor && isHR && (
               <Link 
                 to={`/hr/employees/${employee.ulid}/edit`} 
@@ -768,56 +802,27 @@ export default function EmployeeProfileView({
             )
           }}
         >
-          <div className="space-y-1">
-            <InfoRow 
-              label="Immediate Supervisor" 
-              value={
-                employee.supervisor?.full_name ? (
+          {hasSupervisor && (
+            <div className="space-y-1">
+              <InfoRow 
+                label="Immediate Supervisor" 
+                value={
                   <Link 
-                    to={isHR ? `/hr/employees/${employee.supervisor.ulid}` : `/team/employees/${employee.supervisor.ulid}`}
+                    to={isHR ? `/hr/employees/${employee.supervisor!.ulid}` : `/team/employees/${employee.supervisor!.ulid}`}
                     className="text-blue-600 hover:underline flex items-center gap-1"
                   >
                     <UserCircle className="h-3.5 w-3.5" />
-                    {employee.supervisor.full_name}
+                    {employee.supervisor!.full_name}
                   </Link>
-                ) : 'Not Assigned'
-              } 
-              highlight 
-            />
-            <InfoRow 
-              label="Department Head" 
-              value="See HR for department head" 
-            />
-            <InfoRow 
-              label="HR Contact" 
-              value="HR Department" 
-            />
-          </div>
-        </InfoCard>
-
-        {/* Emergency Contact - Optional */}
-        <InfoCard 
-          title="Emergency Contact" 
-          icon={Phone}
-          emptyState={{ 
-            message: 'Emergency contact not set',
-            action: isHR && (
-              <Link 
-                to={`/hr/employees/${employee.ulid}/edit`} 
-                className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
-              >
-                <Plus className="h-4 w-4" />
-                Add Emergency Contact
-              </Link>
-            )
-          }}
-        >
-          <div className="space-y-1">
-            <InfoRow label="Contact Person" value={null} highlight />
-            <InfoRow label="Relationship" value={null} />
-            <InfoRow label="Phone" value={null} />
-            <InfoRow label="Address" value={null} />
-          </div>
+                } 
+                highlight 
+              />
+              <InfoRow 
+                label="Employee Code" 
+                value={employee.supervisor!.employee_code} 
+              />
+            </div>
+          )}
         </InfoCard>
       </div>
     </div>

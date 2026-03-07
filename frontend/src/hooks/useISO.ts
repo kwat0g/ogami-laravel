@@ -5,7 +5,7 @@ import type {
   CreateDocumentPayload, CreateAuditPayload, CreateFindingPayload,
 } from '@/types/iso';
 
-export function useDocuments(params?: Record<string, string>) {
+export function useDocuments(params?: Record<string, string | boolean>) {
   return useQuery<{ data: ControlledDocument[]; meta: unknown }>({
     queryKey: ['iso-documents', params],
     queryFn: () => api.get('/iso/documents', { params }).then(r => r.data),
@@ -29,7 +29,7 @@ export function useCreateDocument() {
   });
 }
 
-export function useAudits(params?: Record<string, string>) {
+export function useAudits(params?: Record<string, string | boolean>) {
   return useQuery<{ data: InternalAudit[]; meta: unknown }>({
     queryKey: ['iso-audits', params],
     queryFn: () => api.get('/iso/audits', { params }).then(r => r.data),

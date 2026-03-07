@@ -21,6 +21,10 @@ final class BomService implements ServiceContract
         $query = BillOfMaterials::with('productItem', 'components.componentItem')
             ->orderByDesc('id');
 
+        if ($filters['with_archived'] ?? false) {
+            $query->withTrashed();
+        }
+
         if (isset($filters['product_item_id'])) {
             $query->where('product_item_id', $filters['product_item_id']);
         }

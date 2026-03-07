@@ -20,8 +20,8 @@ final class PurchaseRequestService implements ServiceContract
     /**
      * Create a new PR draft with line items.
      *
-     * @param  array<string, mixed>       $data
-     * @param  list<array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  list<array<string, mixed>>  $items
      */
     public function store(array $data, array $items, User $actor): PurchaseRequest
     {
@@ -37,13 +37,13 @@ final class PurchaseRequestService implements ServiceContract
             $reference = $this->generateReference();
 
             $pr = PurchaseRequest::create([
-                'pr_reference'     => $reference,
-                'department_id'    => $data['department_id'],
-                'requested_by_id'  => $actor->id,
-                'urgency'          => $data['urgency'] ?? 'normal',
-                'justification'    => $data['justification'],
-                'notes'            => $data['notes'] ?? null,
-                'status'           => 'draft',
+                'pr_reference' => $reference,
+                'department_id' => $data['department_id'],
+                'requested_by_id' => $actor->id,
+                'urgency' => $data['urgency'] ?? 'normal',
+                'justification' => $data['justification'],
+                'notes' => $data['notes'] ?? null,
+                'status' => 'draft',
                 'total_estimated_cost' => 0,
             ]);
 
@@ -56,7 +56,7 @@ final class PurchaseRequestService implements ServiceContract
     // ── Update ───────────────────────────────────────────────────────────────
 
     /**
-     * @param  list<array<string, mixed>> $items
+     * @param  list<array<string, mixed>>  $items
      */
     public function update(PurchaseRequest $pr, array $data, array $items): PurchaseRequest
     {
@@ -71,12 +71,12 @@ final class PurchaseRequestService implements ServiceContract
         return DB::transaction(function () use ($pr, $data, $items): PurchaseRequest {
             $pr->update([
                 'department_id' => $data['department_id'] ?? $pr->department_id,
-                'urgency'       => $data['urgency']       ?? $pr->urgency,
+                'urgency' => $data['urgency'] ?? $pr->urgency,
                 'justification' => $data['justification'] ?? $pr->justification,
-                'notes'         => $data['notes']         ?? $pr->notes,
+                'notes' => $data['notes'] ?? $pr->notes,
             ]);
 
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $this->syncItems($pr, $items);
             }
 
@@ -99,9 +99,9 @@ final class PurchaseRequestService implements ServiceContract
         }
 
         $pr->update([
-            'status'          => 'submitted',
+            'status' => 'submitted',
             'submitted_by_id' => $actor->id,
-            'submitted_at'    => now(),
+            'submitted_at' => now(),
         ]);
 
         $refreshed = $pr->refresh();
@@ -118,12 +118,12 @@ final class PurchaseRequestService implements ServiceContract
     public function note(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'submitted', 'PR_NOT_SUBMITTED');
-        $this->assertSod($actor->id, $pr->submitted_by_id ?? 0, 'SOD-011', 'Head cannot be the same person who submitted the PR.');
+        $this->assertSod($actor, $pr->submitted_by_id ?? 0, 'SOD-011', 'Head cannot be the same person who submitted the PR.');
 
         $pr->update([
-            'status'         => 'noted',
-            'noted_by_id'    => $actor->id,
-            'noted_at'       => now(),
+            'status' => 'noted',
+            'noted_by_id' => $actor->id,
+            'noted_at' => now(),
             'noted_comments' => $comments,
         ]);
 
@@ -141,12 +141,12 @@ final class PurchaseRequestService implements ServiceContract
     public function check(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'noted', 'PR_NOT_NOTED');
-        $this->assertSod($actor->id, $pr->noted_by_id ?? 0, 'SOD-012', 'Manager cannot be the same person who noted the PR.');
+        $this->assertSod($actor, $pr->noted_by_id ?? 0, 'SOD-012', 'Manager cannot be the same person who noted the PR.');
 
         $pr->update([
-            'status'           => 'checked',
-            'checked_by_id'    => $actor->id,
-            'checked_at'       => now(),
+            'status' => 'checked',
+            'checked_by_id' => $actor->id,
+            'checked_at' => now(),
             'checked_comments' => $comments,
         ]);
 
@@ -164,12 +164,12 @@ final class PurchaseRequestService implements ServiceContract
     public function review(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'checked', 'PR_NOT_CHECKED');
-        $this->assertSod($actor->id, $pr->checked_by_id ?? 0, 'SOD-013', 'Officer cannot be the same person who checked the PR.');
+        $this->assertSod($actor, $pr->checked_by_id ?? 0, 'SOD-013', 'Officer cannot be the same person who checked the PR.');
 
         $pr->update([
-            'status'            => 'reviewed',
-            'reviewed_by_id'    => $actor->id,
-            'reviewed_at'       => now(),
+            'status' => 'reviewed',
+            'reviewed_by_id' => $actor->id,
+            'reviewed_at' => now(),
             'reviewed_comments' => $comments,
         ]);
 
@@ -187,13 +187,13 @@ final class PurchaseRequestService implements ServiceContract
     public function vpApprove(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
-        $this->assertSod($actor->id, $pr->reviewed_by_id ?? 0, 'SOD-014', 'VP cannot be the same person who reviewed the PR.');
+        $this->assertSod($actor, $pr->reviewed_by_id ?? 0, 'SOD-014', 'VP cannot be the same person who reviewed the PR.');
 
         $pr->update([
-            'status'            => 'approved',
+            'status' => 'approved',
             'vp_approved_by_id' => $actor->id,
-            'vp_approved_at'    => now(),
-            'vp_comments'       => $comments,
+            'vp_approved_at' => now(),
+            'vp_comments' => $comments,
         ]);
 
         $refreshed = $pr->refresh();
@@ -201,6 +201,13 @@ final class PurchaseRequestService implements ServiceContract
         if ($refreshed->requestedBy !== null) {
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null));
         }
+
+        // PR-008: Notify Purchasing Officers so they can raise the corresponding PO.
+        User::permission('procurement.purchase-order.create')
+            ->where('id', '!=', $actor->id)
+            ->each(fn (User $u) => $u->notify(
+                new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null)
+            ));
 
         return $refreshed;
     }
@@ -218,11 +225,11 @@ final class PurchaseRequestService implements ServiceContract
         }
 
         $pr->update([
-            'status'           => 'rejected',
-            'rejected_by_id'   => $actor->id,
-            'rejected_at'      => now(),
+            'status' => 'rejected',
+            'rejected_by_id' => $actor->id,
+            'rejected_at' => now(),
             'rejection_reason' => $reason,
-            'rejection_stage'  => $stage,
+            'rejection_stage' => $stage,
         ]);
 
         $refreshed = $pr->refresh();
@@ -260,7 +267,7 @@ final class PurchaseRequestService implements ServiceContract
     // ── Private helpers ──────────────────────────────────────────────────────
 
     /**
-     * @param  list<array<string, mixed>> $items
+     * @param  list<array<string, mixed>>  $items
      */
     private function syncItems(PurchaseRequest $pr, array $items): void
     {
@@ -269,12 +276,12 @@ final class PurchaseRequestService implements ServiceContract
         foreach ($items as $index => $item) {
             PurchaseRequestItem::create([
                 'purchase_request_id' => $pr->id,
-                'item_description'    => $item['item_description'],
-                'unit_of_measure'     => $item['unit_of_measure'],
-                'quantity'            => $item['quantity'],
+                'item_description' => $item['item_description'],
+                'unit_of_measure' => $item['unit_of_measure'],
+                'quantity' => $item['quantity'],
                 'estimated_unit_cost' => $item['estimated_unit_cost'],
-                'specifications'      => $item['specifications'] ?? null,
-                'line_order'          => $index + 1,
+                'specifications' => $item['specifications'] ?? null,
+                'line_order' => $index + 1,
             ]);
         }
     }
@@ -284,7 +291,7 @@ final class PurchaseRequestService implements ServiceContract
         $seq = DB::selectOne('SELECT NEXTVAL(\'purchase_request_seq\') AS val');
         $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
 
-        return 'PR-' . now()->format('Y-m') . '-' . $num;
+        return 'PR-'.now()->format('Y-m').'-'.$num;
     }
 
     private function assertStatus(PurchaseRequest $pr, string $expected, string $errorCode): void
@@ -298,9 +305,14 @@ final class PurchaseRequestService implements ServiceContract
         }
     }
 
-    private function assertSod(int $actorId, int $previousActorId, string $sodCode, string $message): void
+    private function assertSod(User $actor, int $previousActorId, string $sodCode, string $message): void
     {
-        if ($actorId === $previousActorId) {
+        // super_admin bypasses all SoD constraints (testing superuser)
+        if ($actor->hasRole('super_admin')) {
+            return;
+        }
+
+        if ($actor->id === $previousActorId) {
             throw new DomainException(
                 message: "{$sodCode}: {$message}",
                 errorCode: $sodCode,

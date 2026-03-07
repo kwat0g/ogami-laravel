@@ -31,6 +31,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    mode: 'onBlur',
   })
 
   const openCreate = () => {

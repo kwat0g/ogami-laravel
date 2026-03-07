@@ -21,7 +21,7 @@ final class InspectionTemplateController extends Controller
     {
         $this->authorize('viewAny', InspectionTemplate::class);
         return InspectionTemplateResource::collection(
-            $this->service->paginate($request->only(['stage', 'is_active', 'per_page']))
+            $this->service->paginate($request->only(['stage', 'is_active', 'per_page', 'with_archived']))
         );
     }
 

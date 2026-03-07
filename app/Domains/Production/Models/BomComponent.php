@@ -6,6 +6,7 @@ namespace App\Domains\Production\Models;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class BomComponent extends Model
 {
+    use SoftDeletes;
+
     public $timestamps = false;
 
     protected $table = 'bom_components';

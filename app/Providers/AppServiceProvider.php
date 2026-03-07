@@ -35,7 +35,17 @@ use App\Domains\Attendance\Policies\OvertimeRequestPolicy;
 use App\Domains\HR\Events\EmployeeActivated;
 use App\Domains\HR\Listeners\CreateLeaveBalances;
 use App\Events\Procurement\ThreeWayMatchPassed;
+use App\Events\ISO\AuditFindingCreated;
+use App\Events\Production\ProductionOrderCompleted;
+use App\Events\QC\InspectionFailed;
+use App\Events\QC\InspectionPassed;
 use App\Listeners\Procurement\CreateApInvoiceOnThreeWayMatch;
+use App\Listeners\Delivery\CreateDeliveryReceiptOnProductionComplete;
+use App\Listeners\Production\HoldProductionOrderOnInspectionFail;
+use App\Listeners\Production\ResumeProductionOrderOnInspectionPass;
+use App\Listeners\QC\CreateCapaOnAuditFinding;
+use App\Events\Leave\LeaveRequestDecided;
+use App\Listeners\Attendance\RecordLeaveAttendanceCorrection;
 use App\Domains\HR\Models\Employee;
 use App\Domains\HR\Policies\EmployeePolicy;
 use App\Domains\Leave\Models\LeaveBalance;
@@ -113,11 +123,24 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(EmployeeActivated::class, CreateLeaveBalances::class);
         Event::listen(ThreeWayMatchPassed::class, CreateApInvoiceOnThreeWayMatch::class);
         Event::listen(ThreeWayMatchPassed::class, \App\Listeners\Inventory\LinkGoodsReceiptToInventory::class);
+        Event::listen(AuditFindingCreated::class, CreateCapaOnAuditFinding::class);
+        Event::listen(ProductionOrderCompleted::class, CreateDeliveryReceiptOnProductionComplete::class);
+        Event::listen(InspectionFailed::class, HoldProductionOrderOnInspectionFail::class);
+        Event::listen(InspectionPassed::class, ResumeProductionOrderOnInspectionPass::class);
+        Event::listen(LeaveRequestDecided::class, RecordLeaveAttendanceCorrection::class);
+
+        // ── Super Admin — bypass ALL gate / policy checks for testing ────────
+        // Users with the 'super_admin' role skip every Gate::check(), authorize(),
+        // @can directive, and policy method.  SoD and dept-scope are handled
+        // separately in their respective middleware.
+        Gate::before(function ($user, string $ability) {
+            return $user->hasRole('super_admin') ? true : null;
+        });
 
         // ── Monitoring dashboards ────────────────────────────────────────────
         // Pulse dashboard: restricted to Admin role only (LAN server)
         Gate::define('viewPulse', function ($user) {
-            return $user->hasRole('admin');
+            return $user->hasRole('admin') || $user->hasRole('super_admin');
         });
 
         // ── API Rate Limiting ────────────────────────────────────────────────

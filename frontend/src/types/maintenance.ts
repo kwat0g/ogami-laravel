@@ -28,6 +28,7 @@ export interface Equipment {
   pm_schedules?: PmSchedule[];
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface MaintenanceWorkOrder {
@@ -47,6 +48,7 @@ export interface MaintenanceWorkOrder {
   reported_by?: { id: number; name: string } | null;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface CreateEquipmentPayload {

@@ -173,6 +173,7 @@ export default function CreatePayrollRunPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver:      zodResolver(schema),
+    mode:          'onBlur',
     defaultValues: {
       run_type:      (state.step1?.run_type     ?? 'regular') as PayrollRunType,
       pay_period_id: state.step1?.pay_period_id,

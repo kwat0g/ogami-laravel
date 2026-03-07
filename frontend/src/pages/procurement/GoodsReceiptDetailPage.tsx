@@ -1,9 +1,10 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, AlertTriangle, CheckCircle2, ClipboardCheck } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, CheckCircle2, ClipboardCheck, Trash2 } from 'lucide-react'
 import {
   useGoodsReceipt,
   useConfirmGoodsReceipt,
+  useDeleteGoodsReceipt,
 } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { GoodsReceiptStatus, GoodsReceiptCondition } from '@/types/procurement'
@@ -33,6 +34,19 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
 
   const { data: gr, isLoading, isError } = useGoodsReceipt(ulid ?? null)
   const confirmMutation = useConfirmGoodsReceipt()
+  const deleteMutation  = useDeleteGoodsReceipt()
+
+  function handleDelete(): void {
+    if (!gr) return
+    if (!window.confirm('Cancel this draft Goods Receipt? This cannot be undone.')) return
+    deleteMutation.mutate(gr.ulid, {
+      onSuccess: () => {
+        toast.success('Goods Receipt cancelled.')
+        navigate(-1)
+      },
+      onError: () => toast.error('Failed to cancel Goods Receipt.'),
+    })
+  }
 
   function handleConfirm(): void {
     if (!gr) return
@@ -237,11 +251,20 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={confirmMutation.isPending}
+            disabled={confirmMutation.isPending || deleteMutation.isPending}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
           >
             <ClipboardCheck className="w-4 h-4" />
             {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={confirmMutation.isPending || deleteMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            Cancel GR
           </button>
         </div>
       )}

@@ -83,7 +83,7 @@ final class CustomerInvoiceController extends Controller
     {
         $this->authorize('approve', $customerInvoice);
 
-        $invoice = $this->service->approve($customerInvoice, auth()->id());
+        $invoice = $this->service->approve($customerInvoice, auth()->user());
 
         return new CustomerInvoiceResource($invoice->load(['customer', 'payments']));
     }

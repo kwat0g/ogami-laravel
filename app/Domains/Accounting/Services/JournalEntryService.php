@@ -107,8 +107,8 @@ final class JournalEntryService implements ServiceContract
             );
         }
 
-        // SoD check (JE-010): poster cannot be the drafter
-        if ($je->source_type === 'manual' && auth()->id() === $je->created_by) {
+        // SoD check (JE-010): poster cannot be the drafter (super_admin bypasses)
+        if ($je->source_type === 'manual' && ! auth()->user()?->hasRole('super_admin') && auth()->id() === $je->created_by) {
             throw new SodViolationException(
                 processName: 'Journal Entry',
                 conflictingAction: 'post',

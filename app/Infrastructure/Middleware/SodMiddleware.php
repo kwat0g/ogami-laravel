@@ -49,7 +49,7 @@ class SodMiddleware
     {
         $user = $request->user();
 
-        if (! $user || $user->hasRole('admin')) {
+        if (! $user || $user->hasAnyRole(['admin', 'super_admin'])) {
             return $next($request);
         }
 

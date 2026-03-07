@@ -72,6 +72,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('overtime-requests/{overtimeRequest}/executive-reject', [OvertimeRequestController::class, 'executiveReject'])
         ->middleware(['permission:overtime.executive_approve', 'throttle:api-action'])
         ->name('overtime.executive-reject');
+    // Step 4: HR Officer review
+    Route::patch('overtime-requests/{overtimeRequest}/officer-review', [OvertimeRequestController::class, 'officerReview'])
+        ->middleware(['permission:overtime.supervise', 'throttle:api-action'])
+        ->name('overtime.officer-review');
+    // Step 5: VP final approval
+    Route::patch('overtime-requests/{overtimeRequest}/vp-approve', [OvertimeRequestController::class, 'vpApprove'])
+        ->middleware(['permission:overtime.executive_approve', 'throttle:api-action'])
+        ->name('overtime.vp-approve');
 
     // Shift schedules CRUD
     Route::get('shifts', function (Request $request) {

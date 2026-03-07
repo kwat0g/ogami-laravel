@@ -10,12 +10,32 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int $id
+ * @property string $stage
+ * @property string $status
+ * @property int|null $inspection_template_id
+ * @property int|null $goods_receipt_id
+ * @property int|null $production_order_id
+ * @property int|null $item_master_id
+ * @property int|null $lot_batch_id
+ * @property string $qty_inspected
+ * @property string $qty_passed
+ * @property string $qty_failed
+ * @property string|null $inspection_date
+ * @property int|null $inspector_id
+ * @property string|null $remarks
+ * @property int|null $created_by_id
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 final class Inspection extends Model implements AuditableContract
 {
-    use HasPublicUlid, Auditable;
+    use Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'inspections';
 
@@ -37,9 +57,9 @@ final class Inspection extends Model implements AuditableContract
     ];
 
     protected $casts = [
-        'qty_inspected'   => 'decimal:4',
-        'qty_passed'      => 'decimal:4',
-        'qty_failed'      => 'decimal:4',
+        'qty_inspected' => 'decimal:4',
+        'qty_passed' => 'decimal:4',
+        'qty_failed' => 'decimal:4',
         'inspection_date' => 'date',
     ];
 
@@ -64,7 +84,7 @@ final class Inspection extends Model implements AuditableContract
     /** @return BelongsTo<\App\Models\User, $this> */
     public function inspector(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'inspector_id');
+        return $this->belongsTo(\App\Domains\HR\Models\Employee::class, 'inspector_id');
     }
 
     /** @return BelongsTo<\App\Models\User, $this> */

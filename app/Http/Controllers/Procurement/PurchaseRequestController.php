@@ -32,6 +32,7 @@ final class PurchaseRequestController extends Controller
 
         $user  = auth()->user();
         $query = PurchaseRequest::with(['requestedBy', 'items'])
+            ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
             ->when(
                 $request->filled('status'),
                 fn ($q) => $q->where('status', $request->input('status')),

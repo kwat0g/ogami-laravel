@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ISO;
 
+use App\Domains\ISO\Models\AuditFinding;
 use App\Domains\ISO\Models\ControlledDocument;
 use App\Domains\ISO\Models\InternalAudit;
 use App\Domains\ISO\Services\ISOService;
@@ -27,7 +28,7 @@ final class ISOController extends Controller
     {
         $this->authorize('viewAny', ControlledDocument::class);
         return ControlledDocumentResource::collection(
-            $this->service->paginateDocuments($request->only('status', 'document_type'))
+            $this->service->paginateDocuments($request->only(['status', 'document_type', 'with_archived']))
         );
     }
 
@@ -60,7 +61,7 @@ final class ISOController extends Controller
     {
         $this->authorize('viewAny', InternalAudit::class);
         return InternalAuditResource::collection(
-            $this->service->paginateAudits($request->only('status'))
+            $this->service->paginateAudits($request->only(['status', 'with_archived']))
         );
     }
 

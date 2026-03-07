@@ -12,6 +12,7 @@ import {
   useRejectMRQ,
   useCancelMRQ,
   useFulfillMRQ,
+  useWarehouseLocations,
 } from '@/hooks/useInventory'
 import { usePermission } from '@/hooks/usePermission'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -44,6 +45,9 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
   const [comments, setComments]   = useState('')
   const [reason, setReason]       = useState('')
   const [activeAction, setAction] = useState<string | null>(null)
+  const [locationId, setLocationId] = useState<number | ''>('')
+
+  const { data: locationsData } = useWarehouseLocations({})
 
   const { data: mrq, isLoading, isError } = useMaterialRequisition(ulid ?? null)
 
@@ -72,7 +76,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
         case 'approve': await vpMut.mutateAsync({ comments });           break
         case 'reject':  await rejectMut.mutateAsync({ reason });         break
         case 'cancel':  await cancelMut.mutateAsync();                   break
-        case 'fulfill': await fulfillMut.mutateAsync();                  break
+        case 'fulfill': await fulfillMut.mutateAsync({ location_id: locationId as number }); break
       }
       toast.success(`Requisition ${action}d successfully.`)
       setAction(null)
@@ -189,6 +193,22 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           </div>
         )}
 
+        {activeAction === 'fulfill' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Issue From Location *</label>
+            <select
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value === '' ? '' : Number(e.target.value))}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="">Select warehouse location…</option>
+              {(locationsData ?? []).map((loc) => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           {status === 'draft' && (
             <button
@@ -232,11 +252,11 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           )}
           {status === 'approved' && canFulfill && (
             <button
-              onClick={() => handleAction('fulfill')}
-              disabled={fulfillMut.isPending}
+              onClick={() => activeAction === 'fulfill' ? handleAction('fulfill') : setAction('fulfill')}
+              disabled={fulfillMut.isPending || (activeAction === 'fulfill' && !locationId)}
               className="px-4 py-2 text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors disabled:opacity-50"
             >
-              Fulfill (Issue Stock)
+              {activeAction === 'fulfill' ? 'Confirm Fulfill' : 'Fulfill (Issue Stock)'}
             </button>
           )}
           {['submitted', 'noted', 'checked', 'reviewed'].includes(status) && (

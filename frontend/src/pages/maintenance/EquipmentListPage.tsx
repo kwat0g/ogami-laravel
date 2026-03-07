@@ -12,7 +12,8 @@ const STATUS_COLORS: Record<EquipmentStatus, string> = {
 
 export default function EquipmentListPage() {
   const [status, setStatus] = useState('');
-  const { data, isLoading } = useEquipment(status ? { status } : undefined);
+  const [withArchived, setWithArchived] = useState(false);
+  const { data, isLoading } = useEquipment({ ...(status ? { status } : {}), ...(withArchived ? { with_archived: true } : {}) });
 
   return (
     <div className="space-y-4">
@@ -37,6 +38,10 @@ export default function EquipmentListPage() {
           <option value="under_maintenance">Under Maintenance</option>
           <option value="decommissioned">Decommissioned</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -75,6 +80,7 @@ export default function EquipmentListPage() {
                   <td className="px-4 py-3 text-gray-500">{eq.category ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500">{eq.location ?? '—'}</td>
                   <td className="px-4 py-3">
+                    {eq.deleted_at && <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[eq.status]}`}>
                       {eq.status.replace('_', ' ')}
                     </span>

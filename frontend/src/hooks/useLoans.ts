@@ -94,6 +94,22 @@ export function useEmployeeLoanHistory(loanId: string | null) {
   })
 }
 
+// ── Head Note ────────────────────────────────────────────────────────────────
+
+export function useHeadNoteLoan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, remarks }: { id: string; remarks?: string }) => {
+      const res = await api.patch<{ data: Loan }>(`/loans/${id}/head-note`, { remarks })
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['loans'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-loans'] })
+    },
+  })
+}
+
 // ── Approve ───────────────────────────────────────────────────────────────────
 
 export function useApproveLoan() {

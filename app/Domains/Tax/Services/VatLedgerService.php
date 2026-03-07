@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\Tax\Services;
 
 use App\Domains\Tax\Models\VatLedger;
+use App\Domains\Accounting\Models\ChartOfAccount;
+use App\Domains\Accounting\Services\JournalEntryService;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class VatLedgerService implements ServiceContract
 {
+    public function __construct(
+        private readonly JournalEntryService $jeService,
+    ) {}
     // ── Read / Initialise ─────────────────────────────────────────────────────
 
     /** Retrieve or create the ledger row for a fiscal period. */
@@ -102,6 +107,13 @@ final class VatLedgerService implements ServiceContract
                 ]);
             }
 
+            // TAX-GL-001: Post a JE to reclassify net VAT payable to BIR Remittable.
+            // Requires accounts 2105 (Output VAT Payable) and 2106 (BIR VAT Remittable)
+            // to exist in the chart of accounts.
+            if ($vatPayable > 0) {
+                $this->postVatCloseJournalEntry($vatPayable, $userId);
+            }
+
             return $ledger->fresh();
         });
     }
@@ -130,5 +142,46 @@ final class VatLedgerService implements ServiceContract
                 422
             );
         }
+    }
+
+    /**
+     * TAX-GL-001: Reclassify net VAT payable to BIR Remittable in the GL.
+     *
+     * DR Output VAT Payable (2105) — clears the collected output VAT liability
+     * CR BIR VAT Remittable (2106) — records the net amount owed to BIR
+     *
+     * Silently skips posting if either account does not exist in the CoA
+     * (graceful degradation for deployments that have not yet run the full seeder).
+     */
+    private function postVatCloseJournalEntry(float $vatPayable, int $userId): void
+    {
+        $outputVatAccount = ChartOfAccount::where('code', '2105')->first();
+        $vatRemittableAccount = ChartOfAccount::where('code', '2106')->first();
+
+        if ($outputVatAccount === null || $vatRemittableAccount === null) {
+            return; // Accounts not yet seeded; skip GL posting
+        }
+
+        $vatPayableRounded = round($vatPayable, 2);
+
+        $je = $this->jeService->create([
+            'date' => now()->toDateString(),
+            'description' => 'VAT Period Close — reclassify output VAT to BIR Remittable',
+            'source_type' => 'tax',
+            'lines' => [
+                [
+                    'account_id' => $outputVatAccount->id,
+                    'debit' => $vatPayableRounded,
+                    'description' => 'Clear output VAT payable on period close',
+                ],
+                [
+                    'account_id' => $vatRemittableAccount->id,
+                    'credit' => $vatPayableRounded,
+                    'description' => 'Net VAT remittable to BIR',
+                ],
+            ],
+        ]);
+
+        $this->jeService->post($je);
     }
 }

@@ -13,6 +13,7 @@ use App\Domains\Tax\Services\VatLedgerService;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\SodViolationException;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -112,7 +113,7 @@ final class CustomerInvoiceService implements ServiceContract
      * Auto-posts JE: DR AR / CR Revenue (and CR VAT Payable if vat > 0).
      * VAT accumulation delegated to VatLedgerService.
      */
-    public function approve(CustomerInvoice $invoice, int $approverId): CustomerInvoice
+    public function approve(CustomerInvoice $invoice, User $actor): CustomerInvoice
     {
         if ($invoice->status !== 'draft') {
             throw new DomainException(
@@ -123,21 +124,21 @@ final class CustomerInvoiceService implements ServiceContract
         }
 
         // SoD: approver must not be creator
-        if ($invoice->created_by === $approverId) {
+        if (! $actor->hasRole('super_admin') && $invoice->created_by === $actor->id) {
             throw new SodViolationException(
                 processName: 'AR Invoice',
                 conflictingAction: 'approve',
             );
         }
 
-        return DB::transaction(function () use ($invoice, $approverId) {
+        return DB::transaction(function () use ($invoice, $actor) {
             // AR-003: generate invoice number
             $invoiceNumber = $this->generateInvoiceNumber($invoice->invoice_date);
 
             $invoice->update([
                 'status' => 'approved',
                 'invoice_number' => $invoiceNumber,
-                'approved_by' => $approverId,
+                'approved_by' => $actor->id,
                 'approved_at' => now(),
             ]);
 

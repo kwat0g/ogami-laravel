@@ -25,6 +25,7 @@ const ALL_STATUSES: MaterialRequisitionStatus[] = [
 export default function MaterialRequisitionListPage(): React.ReactElement {
   const [status, setStatus] = useState<MaterialRequisitionStatus | ''>('')
   const [page, setPage]     = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.mrq.create')
 
@@ -32,6 +33,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
     status: status || undefined,
     page,
     per_page: 20,
+    with_archived: withArchived || undefined,
   })
 
   return (
@@ -69,6 +71,10 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-teal-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
@@ -101,6 +107,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
                     <td className="px-4 py-3 text-gray-600">{mrq.department?.name ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{mrq.purpose}</td>
                     <td className="px-4 py-3">
+                      {mrq.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[mrq.status]}`}>
                         {mrq.status}
                       </span>

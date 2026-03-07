@@ -39,6 +39,7 @@ final class AttendanceLogResource extends JsonResource
             'holiday_type' => $log->holiday_type,
             'employee' => $this->whenLoaded('employee', fn () => [
                 'id' => $log->employee->id,
+                'ulid' => $log->employee->ulid,
                 'employee_code' => $log->employee->employee_code,
                 'full_name' => $log->employee->full_name,
             ]),

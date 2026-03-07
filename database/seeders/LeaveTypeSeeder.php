@@ -8,29 +8,15 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Standard Philippine labor-law leave types.
- * References: Labor Code (SL/VL), RA 11210 (ML), RA 8972 (Solo Parent),
- *             RA 9710 (Gynecological), RA 11058 (VAWC), RA 11642 (DL).
+ * Standard leave types matching the physical Leave of Absence Request Form (AD-084-00).
+ * Types: Vacation, Maternity, Birthday, Bereavement, Paternity, Others.
+ * References: RA 11210 (Maternity), Labor Code (Paternity/Vacation).
  */
 class LeaveTypeSeeder extends Seeder
 {
     public function run(): void
     {
         $types = [
-            [
-                'code' => 'SL',
-                'name' => 'Sick Leave',
-                'category' => 'sick',
-                'is_paid' => true,
-                'max_days_per_year' => 5,
-                'requires_approval' => true,
-                'requires_documentation' => false,
-                'monthly_accrual_days' => null,
-                'max_carry_over_days' => 0,
-                'can_be_monetized' => false,
-                'deducts_absent_on_lwop' => false,
-                'is_active' => true,
-            ],
             [
                 'code' => 'VL',
                 'name' => 'Vacation Leave',
@@ -46,25 +32,39 @@ class LeaveTypeSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'code' => 'SIL',
-                'name' => 'Service Incentive Leave',
-                'category' => 'service_incentive',
-                'is_paid' => true,
-                'max_days_per_year' => 5,
-                'requires_approval' => true,
-                'requires_documentation' => false,
-                'monthly_accrual_days' => null,
-                'max_carry_over_days' => 5,
-                'can_be_monetized' => true,   // LV-007 — convertible to cash
-                'deducts_absent_on_lwop' => false,
-                'is_active' => true,
-            ],
-            [
                 'code' => 'ML',
                 'name' => 'Maternity Leave',
                 'category' => 'maternity',
                 'is_paid' => true,
                 'max_days_per_year' => 105,    // RA 11210
+                'requires_approval' => true,
+                'requires_documentation' => true,
+                'monthly_accrual_days' => null,
+                'max_carry_over_days' => 0,
+                'can_be_monetized' => false,
+                'deducts_absent_on_lwop' => false,
+                'is_active' => true,
+            ],
+            [
+                'code' => 'BDAY',
+                'name' => 'Birthday Leave',
+                'category' => 'other',
+                'is_paid' => true,
+                'max_days_per_year' => 1,
+                'requires_approval' => true,
+                'requires_documentation' => false,
+                'monthly_accrual_days' => null,
+                'max_carry_over_days' => 0,
+                'can_be_monetized' => false,
+                'deducts_absent_on_lwop' => false,
+                'is_active' => true,
+            ],
+            [
+                'code' => 'BL',
+                'name' => 'Bereavement Leave',
+                'category' => 'bereavement',
+                'is_paid' => true,
+                'max_days_per_year' => 3,
                 'requires_approval' => true,
                 'requires_documentation' => true,
                 'monthly_accrual_days' => null,
@@ -88,45 +88,17 @@ class LeaveTypeSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'code' => 'SPL',
-                'name' => 'Solo Parent Leave',
-                'category' => 'solo_parent',
-                'is_paid' => true,
-                'max_days_per_year' => 7,      // RA 8972
-                'requires_approval' => true,
-                'requires_documentation' => true,
-                'monthly_accrual_days' => null,
-                'max_carry_over_days' => 0,
-                'can_be_monetized' => false,
-                'deducts_absent_on_lwop' => false,
-                'is_active' => true,
-            ],
-            [
-                'code' => 'VAWCL',
-                'name' => 'VAWC Leave',
-                'category' => 'vawc',
-                'is_paid' => true,
-                'max_days_per_year' => 10,     // RA 9262
-                'requires_approval' => true,
-                'requires_documentation' => true,
-                'monthly_accrual_days' => null,
-                'max_carry_over_days' => 0,
-                'can_be_monetized' => false,
-                'deducts_absent_on_lwop' => false,
-                'is_active' => true,
-            ],
-            [
-                'code' => 'LWOP',
-                'name' => 'Leave Without Pay',
-                'category' => 'lwop',
-                'is_paid' => false,
-                'max_days_per_year' => 30,
+                'code' => 'OTH',
+                'name' => 'Others',
+                'category' => 'other',
+                'is_paid' => false,   // GA Officer decides pay status (with/without pay)
+                'max_days_per_year' => 0,   // discretionary — no fixed entitlement
                 'requires_approval' => true,
                 'requires_documentation' => false,
                 'monthly_accrual_days' => null,
                 'max_carry_over_days' => 0,
                 'can_be_monetized' => false,
-                'deducts_absent_on_lwop' => true,   // LV-006
+                'deducts_absent_on_lwop' => false,
                 'is_active' => true,
             ],
         ];

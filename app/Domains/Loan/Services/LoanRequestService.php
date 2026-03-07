@@ -174,6 +174,15 @@ final class LoanRequestService implements ServiceContract
         ?string $remarks = null,
         ?string $firstDeductionDate = null,
     ): Loan {
+        // C4: Block v1 approval path for v2 workflow loans
+        if ($loan->workflow_version === 2) {
+            throw new DomainException(
+                'This loan uses the v2 workflow. Use headNote() → managerCheck() → officerReview() → vpApprove().',
+                'LN_WRONG_WORKFLOW_VERSION',
+                409,
+            );
+        }
+
         // LN-010: SoD check - cannot be requester
         if ($loan->requested_by === $approvedByUserId) {
             throw new SodViolationException(
@@ -378,6 +387,15 @@ final class LoanRequestService implements ServiceContract
         int $accountingManagerId,
         ?string $remarks = null,
     ): Loan {
+        // C4: Block v1 accounting approval path for v2 workflow loans
+        if ($loan->workflow_version === 2) {
+            throw new DomainException(
+                'This loan uses the v2 workflow. Use the v2 accounting approval method.',
+                'LN_WRONG_WORKFLOW_VERSION',
+                409,
+            );
+        }
+
         // LN-011: SoD check
         if ($loan->approved_by === $accountingManagerId) {
             throw new SodViolationException(

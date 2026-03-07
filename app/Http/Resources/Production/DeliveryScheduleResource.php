@@ -27,6 +27,7 @@ final class DeliveryScheduleResource extends JsonResource
             'status'               => $this->status,
             'notes'                => $this->notes,
             'production_orders'    => ProductionOrderResource::collection($this->whenLoaded('productionOrders')),
+            'deleted_at'           => $this->deleted_at?->toIso8601String(),
             'created_at'           => $this->created_at?->toIso8601String(),
         ];
     }

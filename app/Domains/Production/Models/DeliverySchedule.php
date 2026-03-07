@@ -10,6 +10,7 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -29,7 +30,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class DeliverySchedule extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid;
+    use AuditableTrait, HasPublicUlid, SoftDeletes;
 
     protected $table = 'delivery_schedules';
 

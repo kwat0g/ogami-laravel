@@ -24,6 +24,10 @@ final class MinimumWageController extends Controller
             ->orderBy('region')
             ->orderBy('effective_date', 'desc');
 
+        if ($request->boolean('with_archived')) {
+            $query->withTrashed();
+        }
+
         if ($request->has('region')) {
             $query->where('region', $request->input('region'));
         }

@@ -9,6 +9,7 @@ use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseOrderItem;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Models\User;
+use App\Notifications\Procurement\PurchaseOrderSentNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
@@ -81,6 +82,13 @@ final class PurchaseOrderService implements ServiceContract
                 ]);
             }
 
+            // Mark the PR as converted so it cannot spawn a second PO
+            $pr->update([
+                'status'            => 'converted_to_po',
+                'converted_to_po_id' => $po->id,
+                'converted_at'      => now(),
+            ]);
+
             return $po->refresh();
         });
     }
@@ -101,6 +109,13 @@ final class PurchaseOrderService implements ServiceContract
             'status'  => 'sent',
             'sent_at' => now(),
         ]);
+
+        // PROC-WH-001: Notify warehouse staff (procurement.goods-receipt.create) to
+        // prepare for incoming goods against this PO.
+        $po->loadMissing('vendor');
+        $notification = new PurchaseOrderSentNotification($po);
+        User::permission('procurement.goods-receipt.create')
+            ->each(fn (User $u) => $u->notify($notification));
 
         return $po->refresh();
     }

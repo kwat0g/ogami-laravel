@@ -166,7 +166,7 @@ export function useCreateLeaveRequest() {
   })
 }
 
-// ── Supervisor First Approval ─────────────────────────────────────────────────
+// ── Step 2 — Department Head Approval ────────────────────────────────────────
 
 export function useHeadApproveLeaveRequest() {
   const queryClient = useQueryClient()
@@ -177,7 +177,7 @@ export function useHeadApproveLeaveRequest() {
     },
     onSuccess: (_, { id }) => {
       queryClient.setQueryData(['leave-requests', id], (old: LeaveRequest | undefined) =>
-        old ? { ...old, status: 'supervisor_approved' as const } : old,
+        old ? { ...old, status: 'head_approved' as const } : old,
       )
       void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
@@ -186,13 +186,63 @@ export function useHeadApproveLeaveRequest() {
   })
 }
 
-// ── Manager Final Approval ────────────────────────────────────────────────────
+// ── Step 3 — Plant Manager Check ─────────────────────────────────────────────
 
-export function useApproveLeaveRequest() {
+export function useManagerCheckLeaveRequest() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, remarks }: { id: number; remarks?: string }) => {
-      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/approve`, { remarks })
+      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/manager-check`, { remarks })
+      return res.data.data
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.setQueryData(['leave-requests', id], (old: LeaveRequest | undefined) =>
+        old ? { ...old, status: 'manager_checked' as const } : old,
+      )
+      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+    },
+  })
+}
+
+// ── Step 4 — GA Officer Process ───────────────────────────────────────────────
+
+export interface GaProcessPayload {
+  id: number
+  action_taken: 'approved_with_pay' | 'approved_without_pay' | 'disapproved'
+  remarks?: string
+}
+
+export function useGaProcessLeaveRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, action_taken, remarks }: GaProcessPayload) => {
+      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/ga-process`, {
+        action_taken,
+        remarks,
+      })
+      return res.data.data
+    },
+    onSuccess: (data, { id }) => {
+      queryClient.setQueryData(['leave-requests', id], (old: LeaveRequest | undefined) =>
+        old ? { ...old, status: data.status, action_taken: data.action_taken } : old,
+      )
+      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['leave-balances'] })
+      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+    },
+  })
+}
+
+// ── Step 5 — VP Note ──────────────────────────────────────────────────────────
+
+export function useVpNoteLeaveRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, remarks }: { id: number; remarks?: string }) => {
+      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/vp-note`, { remarks })
       return res.data.data
     },
     onSuccess: (_, { id }) => {
@@ -236,56 +286,6 @@ export function useCancelLeaveRequest() {
       void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['leave-balances'] })
-      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
-    },
-  })
-}
-
-// ── Executive Approval (for manager-filed requests) ────────────────────────────
-
-export function usePendingExecutiveLeaveRequests(filters: LeaveFilters = {}) {
-  return useQuery({
-    queryKey: ['pending-executive-leave-requests', filters],
-    queryFn: async () => {
-      const res = await api.get<Paginated<LeaveRequest>>('/leave/requests/pending-executive', { params: filters })
-      return res.data
-    },
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-  })
-}
-
-export function useExecutiveApproveLeaveRequest() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, remarks }: { id: number; remarks?: string }) => {
-      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/executive-approve`, { remarks })
-      return res.data.data
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.setQueryData(['leave-requests', id], (old: LeaveRequest | undefined) =>
-        old ? { ...old, status: 'approved' as const } : old,
-      )
-      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
-      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
-      void queryClient.invalidateQueries({ queryKey: ['pending-executive-leave-requests'] })
-      void queryClient.invalidateQueries({ queryKey: ['leave-balances'] })
-      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
-    },
-  })
-}
-
-export function useExecutiveRejectLeaveRequest() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, remarks }: { id: number; remarks: string }) => {
-      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/executive-reject`, { remarks })
-      return res.data.data
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
-      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
-      void queryClient.invalidateQueries({ queryKey: ['pending-executive-leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
     },
   })

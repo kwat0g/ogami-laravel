@@ -1,14 +1,9 @@
 import { useState } from 'react'
 import { Plus, RefreshCw, ChevronRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  useAPInvoices,
-  useSubmitAPInvoice,
-  useApproveAPInvoice,
-  useRejectAPInvoice,
-} from '@/hooks/useAP'
+import { useAPInvoices } from '@/hooks/useAP'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import type { VendorInvoice, VendorInvoiceStatus } from '@/types/ap'
+import type { VendorInvoiceStatus } from '@/types/ap'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -46,84 +41,6 @@ function StatusBadge({ status }: { status: VendorInvoiceStatus }) {
 
 function formatCurrency(n: number) {
   return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-// ---------------------------------------------------------------------------
-// Action Buttons
-// ---------------------------------------------------------------------------
-
-function InvoiceActions({ invoice }: { invoice: VendorInvoice }) {
-  const submitMut   = useSubmitAPInvoice(invoice.id)
-  const approveMut  = useApproveAPInvoice(invoice.id)
-  const rejectMut   = useRejectAPInvoice(invoice.id)
-
-  const [rejecting, setRejecting] = useState(false)
-  const [rejectNote, setRejectNote] = useState('')
-
-  async function handleReject() {
-    if (!rejectNote.trim()) return
-    try {
-      await rejectMut.mutateAsync(rejectNote)
-      setRejecting(false)
-      setRejectNote('')
-    } catch {/* error handled below */}
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      {invoice.status === 'draft' && (
-        <button
-          onClick={() => submitMut.mutate()}
-          disabled={submitMut.isPending}
-          className="text-xs text-indigo-600 hover:underline disabled:opacity-50"
-        >
-          Submit
-        </button>
-      )}
-      {invoice.status === 'pending_approval' && (
-        <>
-          <button
-            onClick={() => approveMut.mutate()}
-            disabled={approveMut.isPending}
-            className="text-xs text-green-600 hover:underline disabled:opacity-50"
-          >
-            Approve
-          </button>
-          <button
-            onClick={() => setRejecting(true)}
-            disabled={approveMut.isPending || rejectMut.isPending}
-            className="text-xs text-red-500 hover:underline disabled:opacity-50"
-          >
-            Reject
-          </button>
-        </>
-      )}
-      {rejecting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4">
-            <h3 className="font-semibold text-gray-900">Reject Invoice</h3>
-            <textarea
-              rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              placeholder="Rejection note (required)…"
-              value={rejectNote}
-              onChange={e => setRejectNote(e.target.value)}
-            />
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setRejecting(false)} className="px-3 py-2 text-sm rounded-lg border border-gray-300">Cancel</button>
-              <button
-                onClick={handleReject}
-                disabled={rejectMut.isPending || !rejectNote.trim()}
-                className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                Confirm Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ---------------------------------------------------------------------------
@@ -224,17 +141,14 @@ export default function APInvoicesPage() {
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-gray-800">{formatCurrency(inv.net_payable)}</td>
                   <td className="px-3 py-2 text-right font-mono text-gray-600">{formatCurrency(inv.balance_due)}</td>
-                  <td className="px-3 py-2"><StatusBadge label={inv.status} /></td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center justify-end gap-2">
-                      <InvoiceActions invoice={inv} />
-                      <Link
-                        to={`/accounting/ap/invoices/${inv.ulid}`}
-                        className="text-gray-400 hover:text-gray-700"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
-                    </div>
+                  <td className="px-3 py-2"><StatusBadge status={inv.status} /></td>
+                  <td className="px-3 py-2 text-right">
+                    <Link
+                      to={`/accounting/ap/invoices/${inv.ulid}`}
+                      className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                    >
+                      View <ChevronRight className="w-3 h-3" />
+                    </Link>
                   </td>
                 </tr>
               ))}

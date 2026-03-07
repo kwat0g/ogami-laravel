@@ -23,6 +23,7 @@ export default function LoginPage() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    mode: 'onBlur',
   })
 
   const onSubmit = async (values: FormValues) => {

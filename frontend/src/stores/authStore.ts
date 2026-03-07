@@ -47,17 +47,17 @@ export const useAuthStore = create<AuthState>()(
     },
 
     hasRole: (role) =>
-      get().user?.roles.includes(role) ?? false,
+      get().user?.roles.includes(role as AppRole) ?? false,
 
     hasAnyRole: (roles) =>
-      roles.some((r) => get().user?.roles.includes(r)) ?? false,
+      roles.some((r) => get().user?.roles.includes(r as AppRole)) ?? false,
 
     // ---- RDAC -------------------------------------------------------
     /** True if the user has access to the given department (admin/executive bypass all). */
     hasDepartmentAccess: (departmentId) => {
       const user = get().user
       if (!user) return false
-      if (user.roles.some((r: AppRole) => ['admin', 'executive', 'vice_president'].includes(r))) return true
+      if (user.roles.some((r: AppRole) => ['admin', 'super_admin', 'executive', 'vice_president'].includes(r))) return true
       return (user.department_ids ?? []).includes(departmentId)
     },
 
@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>()(
     // ---- Role helpers ------------------------------------------------
     isManager: () => {
       const roles = get().user?.roles ?? []
-      return roles.some((r) => ['manager', 'officer', 'vice_president'].includes(r))
+      return roles.some((r) => ['super_admin', 'manager', 'officer', 'vice_president'].includes(r))
     },
     isHead:          () => get().user?.roles.includes('head')          ?? false,
     isOfficer:       () => get().user?.roles.includes('officer')       ?? false,

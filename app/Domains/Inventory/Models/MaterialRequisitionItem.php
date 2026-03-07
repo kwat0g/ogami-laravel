@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Inventory\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class MaterialRequisitionItem extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'material_requisition_items';
 
     public $timestamps = false;

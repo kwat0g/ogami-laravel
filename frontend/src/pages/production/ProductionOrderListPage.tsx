@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Factory, AlertTriangle } from 'lucide-react'
+import { Factory, AlertTriangle, Plus } from 'lucide-react'
 import { useProductionOrders } from '@/hooks/useProduction'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { ProductionOrderStatus } from '@/types/production'
 
@@ -16,12 +17,16 @@ const statusBadge: Record<ProductionOrderStatus, string> = {
 export default function ProductionOrderListPage(): React.ReactElement {
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
+  const [withArchived, setWithArchived] = useState(false)
 
   const { data, isLoading, isError } = useProductionOrders({
     status: status || undefined,
     page,
     per_page: 20,
+    with_archived: withArchived || undefined,
   })
+  const { hasPermission } = useAuthStore()
+  const canCreate = hasPermission('production.orders.create')
 
   return (
     <div>
@@ -35,6 +40,15 @@ export default function ProductionOrderListPage(): React.ReactElement {
             <p className="text-sm text-gray-500 mt-0.5">Production orders and manufacturing runs</p>
           </div>
         </div>
+        {canCreate && (
+          <Link
+            to="/production/orders/new"
+            className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Order
+          </Link>
+        )}
       </div>
 
       <div className="mb-5">
@@ -48,6 +62,10 @@ export default function ProductionOrderListPage(): React.ReactElement {
             <option key={s} value={s}>{s.replace('_', ' ')}</option>
           ))}
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-violet-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
@@ -100,6 +118,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
                     <td className="px-4 py-3 text-gray-500 text-xs">{order.target_start_date}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{order.target_end_date}</td>
                     <td className="px-4 py-3">
+                      {order.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[order.status]}`}>
                         {order.status.replace('_', ' ')}
                       </span>

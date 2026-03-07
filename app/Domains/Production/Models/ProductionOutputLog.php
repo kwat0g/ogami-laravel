@@ -7,6 +7,7 @@ namespace App\Domains\Production\Models;
 use App\Domains\HR\Models\Employee;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class ProductionOutputLog extends Model
 {
+    use SoftDeletes;
+
     public $timestamps = false;
 
     protected $table = 'production_output_logs';

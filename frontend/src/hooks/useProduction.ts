@@ -13,7 +13,7 @@ import type {
 
 // ── Bill of Materials ────────────────────────────────────────────────────────
 
-export function useBoms(params: { product_item_id?: number; is_active?: boolean; per_page?: number } = {}) {
+export function useBoms(params: { product_item_id?: number; is_active?: boolean; per_page?: number; with_archived?: boolean } = {}) {
   return useQuery({
     queryKey: ['boms', params],
     queryFn: async () => {
@@ -63,6 +63,7 @@ export function useDeliverySchedules(params: {
   date_to?: string
   per_page?: number
   page?: number
+  with_archived?: boolean
 } = {}) {
   return useQuery({
     queryKey: ['delivery-schedules', params],
@@ -111,6 +112,7 @@ export function useProductionOrders(params: {
   product_item_id?: number
   per_page?: number
   page?: number
+  with_archived?: boolean
 } = {}) {
   return useQuery({
     queryKey: ['production-orders', params],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Listeners\Inventory;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Events\Procurement\ThreeWayMatchPassed;
@@ -28,8 +29,8 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue
     {
         $gr = $event->goodsReceipt;
 
-        // Load items with item_master relationship (item may be linked via item_master_id or name)
-        $gr->load('items');
+        // Load items with poItem for fallback item_master_id resolution
+        $gr->load('items.poItem');
 
         // System actor for auto-receive
         $systemUser = User::where('email', 'admin@ogamierp.local')->first();
@@ -49,14 +50,35 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue
         }
 
         foreach ($gr->items as $grItem) {
-            // item_master_id must be set on the GR line (Warehouse Head configures this)
-            if (! isset($grItem->item_master_id) || $grItem->item_master_id === null) {
+            // Prefer item_master_id set on the GR item; fall back to resolving
+            // from the linked PO item description (e.g. "PP Resin Natural (RAW-001)")
+            $itemMasterId = $grItem->item_master_id;
+
+            if ($itemMasterId === null && $grItem->po_item_id !== null) {
+                $poItem = $grItem->poItem;
+                $desc   = $poItem?->item_description ?? '';
+
+                if (preg_match('/\(([A-Z0-9\-]+)\)/', $desc, $m)) {
+                    $itemMasterId = ItemMaster::where('item_code', $m[1])->value('id');
+                }
+
+                if ($itemMasterId === null) {
+                    $itemMasterId = ItemMaster::where('item_code', trim($desc))->value('id');
+                }
+
+                if ($itemMasterId === null) {
+                    $itemMasterId = ItemMaster::where('name', trim($desc))->value('id');
+                }
+            }
+
+            if ($itemMasterId === null) {
+                Log::info("LinkGoodsReceiptToInventory: skipping GR item #{$grItem->id} — no item_master_id resolved.");
                 continue;
             }
 
             try {
                 $this->stockService->receive(
-                    itemId: $grItem->item_master_id,
+                    itemId: $itemMasterId,
                     locationId: $defaultLocation->id,
                     quantity: (float) $grItem->quantity_received,
                     referenceType: 'goods_receipts',
@@ -68,7 +90,7 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue
                     remarks: 'Auto-received from GR #' . $gr->id,
                 );
             } catch (\Throwable $e) {
-                Log::error("LinkGoodsReceiptToInventory: failed for item {$grItem->item_master_id}", [
+                Log::error("LinkGoodsReceiptToInventory: failed for item {$itemMasterId}", [
                     'error' => $e->getMessage(),
                     'gr_id' => $gr->id,
                 ]);

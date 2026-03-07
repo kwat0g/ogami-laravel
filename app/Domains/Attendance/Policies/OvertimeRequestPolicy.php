@@ -182,4 +182,23 @@ final class OvertimeRequestPolicy
         return $overtimeRequest->employee?->user_id === $user->id
             || $user->hasAnyPermission(['overtime.submit', 'overtime.update']);
     }
+
+    /**
+     * VP final approval gate — step 5 of the 5-step OT approval flow.
+     * Requires overtime.executive_approve permission. SOD-003 applies.
+     */
+    public function vpApprove(User $user, OvertimeRequest $overtimeRequest): bool
+    {
+        if (! $user->hasPermissionTo('overtime.executive_approve')) {
+            return false;
+        }
+
+        if ($overtimeRequest->status !== 'officer_reviewed') {
+            return false;
+        }
+
+        $employeeUserId = $overtimeRequest->employee?->user_id;
+
+        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+    }
 }

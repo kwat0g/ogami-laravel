@@ -30,6 +30,7 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
 
   const { register, control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    mode: 'onBlur',
     defaultValues: { items: [{ item_id: 0, qty_requested: 1, remarks: '' }] },
   })
 

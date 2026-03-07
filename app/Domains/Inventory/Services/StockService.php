@@ -57,7 +57,7 @@ final class StockService implements ServiceContract
             $balance = $this->currentBalance($itemId, $locationId);
             $newBalance = $balance + $quantity;
 
-            return StockLedger::create([
+            $ledger = StockLedger::create([
                 'item_id'          => $itemId,
                 'location_id'      => $locationId,
                 'lot_batch_id'     => $lotBatchId,
@@ -69,6 +69,10 @@ final class StockService implements ServiceContract
                 'remarks'          => $remarks,
                 'created_by_id'    => $actor->id,
             ]);
+
+            $this->upsertBalance($itemId, $locationId, $newBalance);
+
+            return $ledger;
         });
     }
 
@@ -103,7 +107,7 @@ final class StockService implements ServiceContract
 
             $newBalance = $balance - $quantity;
 
-            return StockLedger::create([
+            $ledger = StockLedger::create([
                 'item_id'          => $itemId,
                 'location_id'      => $locationId,
                 'transaction_type' => 'issue',
@@ -114,6 +118,10 @@ final class StockService implements ServiceContract
                 'remarks'          => $remarks,
                 'created_by_id'    => $actor->id,
             ]);
+
+            $this->upsertBalance($itemId, $locationId, $newBalance);
+
+            return $ledger;
         });
     }
 
@@ -132,7 +140,7 @@ final class StockService implements ServiceContract
             $difference = $adjustedQty - $balance;
             $newBalance = $adjustedQty;
 
-            return StockLedger::create([
+            $ledger = StockLedger::create([
                 'item_id'          => $itemId,
                 'location_id'      => $locationId,
                 'transaction_type' => 'adjustment',
@@ -141,6 +149,10 @@ final class StockService implements ServiceContract
                 'remarks'          => $remarks,
                 'created_by_id'    => $actor->id,
             ]);
+
+            $this->upsertBalance($itemId, $locationId, $newBalance);
+
+            return $ledger;
         });
     }
 
@@ -151,5 +163,13 @@ final class StockService implements ServiceContract
             ->first();
 
         return $sb ? (float) $sb->quantity_on_hand : 0.0;
+    }
+
+    private function upsertBalance(int $itemId, int $locationId, float $newBalance): void
+    {
+        StockBalance::updateOrCreate(
+            ['item_id' => $itemId, 'location_id' => $locationId],
+            ['quantity_on_hand' => $newBalance]
+        );
     }
 }

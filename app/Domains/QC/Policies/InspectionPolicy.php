@@ -15,5 +15,11 @@ final class InspectionPolicy
     public function viewAny(User $user): bool   { return $user->can('qc.inspections.view'); }
     public function view(User $user): bool       { return $user->can('qc.inspections.view'); }
     public function create(User $user): bool     { return $user->can('qc.inspections.create'); }
-    public function recordResults(User $user): bool { return $user->can('qc.inspections.create'); }
+    public function recordResults(User $user): bool     { return $user->can('qc.inspections.create'); }
+    public function cancelResults(User $user, Inspection $inspection): bool {
+        return $user->can('qc.inspections.create') && $inspection->status !== 'open';
+    }
+    public function delete(User $user, Inspection $inspection): bool {
+        return $user->can('qc.inspections.create') && $inspection->status === 'open';
+    }
 }

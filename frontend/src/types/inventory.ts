@@ -25,6 +25,7 @@ export interface ItemMaster {
   stock_balances?: StockBalance[]
   created_at: string | null
   updated_at: string | null
+  deleted_at?: string | null
 }
 
 export interface WarehouseLocation {
@@ -127,6 +128,7 @@ export interface MaterialRequisition {
   rejection_reason: string | null
   fulfilled_at: string | null
   created_at: string | null
+  deleted_at?: string | null
   requested_by: { id: number; name: string } | null
   department: { id: number; name: string } | null
   noted_by: { id: number; name: string } | null

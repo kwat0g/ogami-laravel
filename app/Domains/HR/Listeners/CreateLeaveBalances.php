@@ -25,10 +25,10 @@ final class CreateLeaveBalances implements ShouldQueue
         $year = now()->year;
         $employee = $event->employee;
 
-        // Only auto-create for standard leave types
-        // SPL and VAWCL require eligibility verification by HR (Option A)
+        // Only auto-create for standard leave types.
+        // OTH (Others) is discretionary — no fixed entitlement; skip balance row.
         LeaveType::where('is_active', true)
-            ->whereNotIn('code', ['SPL', 'VAWCL'])
+            ->whereNotIn('code', ['OTH'])
             ->each(function (LeaveType $type) use ($employee, $year) {
                 LeaveBalance::firstOrCreate(
                     [

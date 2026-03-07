@@ -21,6 +21,7 @@ export default function LeaveFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<LeaveRequestFormValues>({
     resolver: zodResolver(leaveRequestSchema),
+    mode: 'onBlur',
     defaultValues: { is_half_day: false },
   })
 

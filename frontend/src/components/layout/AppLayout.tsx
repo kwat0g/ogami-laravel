@@ -67,13 +67,14 @@ const SECTIONS: NavSection[] = [
     label: 'Team Management',
     icon: Users,
     permission: 'employees.view_team',
-    roles: ['manager', 'head'],
+    roles: ['manager', 'head', 'ga_officer', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'],
     children: [
       { label: 'My Team', href: '/team/employees', permission: 'employees.view_team' },
       { label: 'Team Attendance', href: '/team/attendance', permission: 'attendance.view_team' },
       { label: 'Team Leave', href: '/team/leave', permission: 'leaves.view_team', end: true },
       { label: 'Team Overtime', href: '/team/overtime', permission: 'overtime.view' },
       { label: 'Team Loans', href: '/team/loans', permission: 'loans.view_department' },
+      { label: 'Shift Schedules', href: '/team/shifts', permission: 'attendance.manage_shifts' },
     ],
   },
   {
@@ -127,6 +128,23 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
+    label: 'Financial Reports',
+    icon: BarChart3,
+    permission: 'reports.financial_statements',
+    roles: ['officer', 'executive', 'vice_president'],
+    children: [
+      { label: 'General Ledger',    href: '/accounting/gl',               permission: 'journal_entries.view' },
+      { label: 'Trial Balance',     href: '/accounting/trial-balance',     permission: 'reports.financial_statements' },
+      { label: 'Balance Sheet',     href: '/accounting/balance-sheet',     permission: 'reports.financial_statements' },
+      { label: 'Income Statement',  href: '/accounting/income-statement',  permission: 'reports.financial_statements' },
+      { label: 'Cash Flow',         href: '/accounting/cash-flow',         permission: 'reports.financial_statements' },
+      { label: 'AP Vendors',        href: '/accounting/vendors',           permission: 'vendors.view' },
+      { label: 'AP Invoices',       href: '/accounting/ap/invoices',       permission: 'vendor_invoices.view' },
+      { label: 'AR Customers',      href: '/ar/customers',                 permission: 'customers.view' },
+      { label: 'AR Invoices',       href: '/ar/invoices',                  permission: 'customer_invoices.view' },
+    ],
+  },
+  {
     label: 'Banking',
     icon: Landmark,
     permission: 'bank_accounts.view',
@@ -148,10 +166,10 @@ const SECTIONS: NavSection[] = [
   {
     label: 'Executive',
     icon: Shield,
-    permission: 'leaves.executive_approve',
-    roles: ['executive', 'vice_president'],
+    permission: 'leaves.ga_process',
+    roles: ['ga_officer', 'vice_president'],
     children: [
-      { label: 'Leave Approvals',    href: '/executive/leave-approvals',    permission: 'leaves.executive_approve' },
+      { label: 'GA Leave Processing', href: '/executive/leave-approvals',    permission: 'leaves.ga_process' },
       { label: 'Overtime Approvals', href: '/executive/overtime-approvals', permission: 'overtime.executive_approve' },
     ],
   },
@@ -163,6 +181,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders',   href: '/procurement/purchase-orders',   permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts',    href: '/procurement/goods-receipts',    permission: 'procurement.goods-receipt.view' },
+      { label: 'Vendors',           href: '/accounting/vendors',            permission: 'vendors.view' },
     ],
   },
   {
@@ -194,6 +213,7 @@ const SECTIONS: NavSection[] = [
     children: [
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
       { label: 'NCR',         href: '/qc/ncrs',        permission: 'qc.ncr.view' },
+      { label: 'Templates',   href: '/qc/templates',   permission: 'qc.templates.view' },
     ],
   },
   {
@@ -283,7 +303,7 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
   const [open, setOpen] = useState(isCurrentSection)
 
   if (section.permission && !hasPermission(section.permission)) return null
-  if (section.roles && !hasRole('admin') && !section.roles.some((r) => hasRole(r))) return null
+  if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
   if (visibleChildren.length === 0) return null
 
   return (
@@ -322,7 +342,7 @@ function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSe
   const [open, setOpen] = useState(false)
 
   if (section.permission && !hasPermission(section.permission)) return null
-  if (section.roles && !hasRole('admin') && !section.roles.some((r) => hasRole(r))) return null
+  if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
 
   const visibleChildren = section.children.filter(
     (c) => !c.permission || hasPermission(c.permission),
@@ -687,7 +707,7 @@ export default function AppLayout() {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 w-full p-4 sm:p-6 lg:p-8">
           <Outlet />
         </div>
       </main>

@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class DepartmentScopeMiddleware
 {
-    private const BYPASS_ROLES = ['admin', 'executive'];
+    private const BYPASS_ROLES = ['admin', 'executive', 'super_admin'];
 
     public function handle(Request $request, Closure $next): Response
     {

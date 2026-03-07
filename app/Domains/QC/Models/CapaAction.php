@@ -7,17 +7,19 @@ namespace App\Domains\QC\Models;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 final class CapaAction extends Model implements AuditableContract
 {
-    use HasPublicUlid, Auditable;
+    use HasPublicUlid, Auditable, SoftDeletes;
 
     protected $table = 'capa_actions';
 
     protected $fillable = [
         'ncr_id',
+        'audit_finding_id',
         'type',
         'description',
         'due_date',
@@ -40,6 +42,12 @@ final class CapaAction extends Model implements AuditableContract
     public function ncr(): BelongsTo
     {
         return $this->belongsTo(NonConformanceReport::class, 'ncr_id');
+    }
+
+    /** @return BelongsTo<\App\Domains\ISO\Models\AuditFinding, $this> */
+    public function auditFinding(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\ISO\Models\AuditFinding::class, 'audit_finding_id');
     }
 
     /** @return BelongsTo<\App\Models\User, $this> */

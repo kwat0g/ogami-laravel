@@ -20,6 +20,7 @@ export interface ControlledDocument {
   owner: { id: number; name: string } | null;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface AuditFinding {
@@ -47,6 +48,7 @@ export interface InternalAudit {
   findings?: AuditFinding[];
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface CreateDocumentPayload {

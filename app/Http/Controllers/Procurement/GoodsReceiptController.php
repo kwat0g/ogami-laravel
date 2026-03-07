@@ -28,6 +28,7 @@ final class GoodsReceiptController extends Controller
         $this->authorize('viewAny', GoodsReceipt::class);
 
         $query = GoodsReceipt::with(['purchaseOrder', 'receivedBy'])
+            ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
             ->when(
                 $request->filled('status'),
                 fn ($q) => $q->where('status', $request->input('status')),
@@ -74,5 +75,23 @@ final class GoodsReceiptController extends Controller
         $gr = $this->service->confirm($goodsReceipt->load('items'), auth()->user());
 
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'confirmedBy', 'items']));
+    }
+
+    public function destroy(GoodsReceipt $goodsReceipt): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('delete', $goodsReceipt);
+
+        if ($goodsReceipt->status !== 'draft') {
+            return response()->json([
+                'success'    => false,
+                'error_code' => 'GR_NOT_DRAFT',
+                'message'    => 'Only draft Goods Receipts can be cancelled.',
+            ], 422);
+        }
+
+        $goodsReceipt->items()->delete();
+        $goodsReceipt->delete();
+
+        return response()->json(['success' => true, 'message' => 'Goods Receipt cancelled.']);
     }
 }

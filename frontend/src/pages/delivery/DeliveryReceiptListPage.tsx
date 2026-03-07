@@ -18,10 +18,12 @@ const DIRECTION_COLORS: Record<DrDirection, string> = {
 export default function DeliveryReceiptListPage() {
   const [direction, setDirection] = useState('');
   const [status, setStatus] = useState('');
+  const [withArchived, setWithArchived] = useState(false);
 
-  const params: Record<string, string> = {};
+  const params: Record<string, string | boolean> = {};
   if (direction) params.direction = direction;
   if (status) params.status = status;
+  if (withArchived) params.with_archived = true;
 
   const { data, isLoading } = useDeliveryReceipts(Object.keys(params).length ? params : undefined);
 
@@ -49,6 +51,10 @@ export default function DeliveryReceiptListPage() {
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+          <span>Show Archived</span>
+        </label>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -90,6 +96,7 @@ export default function DeliveryReceiptListPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-500">{dr.receipt_date}</td>
                   <td className="px-4 py-3">
+                    {dr.deleted_at && <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[dr.status]}`}>
                       {dr.status}
                     </span>

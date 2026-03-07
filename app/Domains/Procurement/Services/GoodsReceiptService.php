@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Services;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\GoodsReceiptItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
@@ -43,13 +44,6 @@ final class GoodsReceiptService implements ServiceContract
         }
 
         $receivedDate = $data['received_date'] ?? now()->toDateString();
-        if ($receivedDate > now()->toDateString()) {
-            throw new DomainException(
-                message: 'Received date cannot be in the future.',
-                errorCode: 'GR_FUTURE_DATE',
-                httpStatus: 422,
-            );
-        }
 
         return DB::transaction(function () use ($po, $data, $items, $actor, $receivedDate): GoodsReceipt {
             $reference = $this->generateReference();
@@ -77,13 +71,18 @@ final class GoodsReceiptService implements ServiceContract
                     );
                 }
 
+                // Auto-resolve item_master_id from PO item description
+                // e.g. "PP Resin Natural (RAW-001)" → look up ItemMaster by code RAW-001
+                $itemMasterId = $this->resolveItemMasterId($poItem->item_description ?? '');
+
                 GoodsReceiptItem::create([
-                    'goods_receipt_id' => $gr->id,
-                    'po_item_id'       => $item['po_item_id'],
+                    'goods_receipt_id'  => $gr->id,
+                    'po_item_id'        => $item['po_item_id'],
+                    'item_master_id'    => $itemMasterId,
                     'quantity_received' => $item['quantity_received'],
-                    'unit_of_measure'  => $item['unit_of_measure'],
-                    'condition'        => $item['condition'] ?? 'good',
-                    'remarks'          => $item['remarks'] ?? null,
+                    'unit_of_measure'   => $item['unit_of_measure'],
+                    'condition'         => $item['condition'] ?? 'good',
+                    'remarks'           => $item['remarks'] ?? null,
                 ]);
             }
 
@@ -131,6 +130,34 @@ final class GoodsReceiptService implements ServiceContract
     }
 
     // ── Private ──────────────────────────────────────────────────────────────
+
+    /**
+     * Try to resolve an ItemMaster ID from a free-text description.
+     * Handles two formats:
+     *   - "PP Resin Natural (RAW-001)"  → extracts code from parentheses
+     *   - "RAW-001"                     → direct code match
+     */
+    private function resolveItemMasterId(string $description): ?int
+    {
+        // Extract code from parentheses e.g. (RAW-001)
+        if (preg_match('/\(([A-Z0-9\-]+)\)/', $description, $matches)) {
+            $item = ItemMaster::where('item_code', $matches[1])->first();
+            if ($item !== null) {
+                return $item->id;
+            }
+        }
+
+        // Try the whole description as a direct item code
+        $item = ItemMaster::where('item_code', trim($description))->first();
+        if ($item !== null) {
+            return $item->id;
+        }
+
+        // Try matching by item name (e.g. "PP Resin Natural" → RAW-001)
+        $item = ItemMaster::where('name', trim($description))->first();
+
+        return $item?->id;
+    }
 
     private function generateReference(): string
     {

@@ -8,12 +8,29 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int $id
+ * @property int|null $vendor_id
+ * @property int|null $customer_id
+ * @property string $direction
+ * @property string $status
+ * @property string|null $receipt_date
+ * @property string|null $remarks
+ * @property int|null $received_by_id
+ * @property int|null $created_by_id
+ * @property int|null $vehicle_id
+ * @property string|null $driver_name
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, DeliveryReceiptItem> $items
+ */
 final class DeliveryReceipt extends Model implements AuditableContract
 {
-    use Auditable, HasPublicUlid;
+    use Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'delivery_receipts';
 

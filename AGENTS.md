@@ -4,469 +4,387 @@ This document provides essential information for AI coding agents working on the
 
 ## Project Overview
 
-**Ogami ERP** is a comprehensive Enterprise Resource Planning system built for manufacturing businesses in the Philippines. It integrates HR management, payroll processing, accounting, and financial operations into a unified platform.
+**Ogami ERP** is a comprehensive Enterprise Resource Planning system for manufacturing businesses in the Philippines (HR, payroll, accounting, production, QC, procurement, ISO compliance). Laravel 11 backend + React 18 SPA, backed by PostgreSQL 16.
 
-### Key Domains
+### Domains (17 total — all under `app/Domains/`)
 
-| Domain | Description |
-|--------|-------------|
-| **HR** | Employee management, departments, positions, documents |
-| **Attendance** | Time tracking, shift schedules, overtime requests |
-| **Leave** | Leave types, balance tracking, request workflows |
-| **Payroll** | Multi-step computation pipeline, government contributions (SSS, PhilHealth, Pag-IBIG), withholding tax |
-| **Loans** | Employee loan management with amortization schedules |
-| **Accounting** | Double-entry bookkeeping, chart of accounts, journal entries, financial statements |
-| **AP/AR** | Accounts payable (vendors, vendor invoices) and accounts receivable (customers, customer invoices) |
-| **Tax** | VAT ledger tracking for Philippine tax compliance |
+| Domain | Key Models | Route file |
+|--------|------------|------------|
+| **HR** | `Employee`, `Department`, `Position`, `SalaryGrade` | `routes/api/v1/hr.php` |
+| **Attendance** | `AttendanceLog`, `ShiftSchedule`, `OvertimeRequest` | `routes/api/v1/attendance.php` |
+| **Leave** | `LeaveRequest`, `LeaveBalance`, `LeaveType` | `routes/api/v1/leave.php` |
+| **Payroll** | `PayrollRun`, `PayrollDetail`, `PayrollAdjustment` | `routes/api/v1/payroll.php` |
+| **Loan** | `Loan`, `LoanAmortizationSchedule` | `routes/api/v1/loans.php` |
+| **Accounting** | `ChartOfAccount`, `JournalEntry`, `JournalEntryLine`, `BankAccount` | `routes/api/v1/accounting.php` |
+| **AP** | `Vendor`, `VendorInvoice`, `VendorPayment` | `routes/api/v1/finance.php` |
+| **AR** | `Customer`, `CustomerInvoice`, `CustomerPayment` | `routes/api/v1/ar.php` |
+| **Tax** | `VatLedger` | `routes/api/v1/tax.php` |
+| **Inventory** | `ItemMaster`, `StockLedger`, `MaterialRequisition` | `routes/api/v1/inventory.php` |
+| **Procurement** | `PurchaseRequest`, `PurchaseOrder`, `GoodsReceipt` | `routes/api/v1/procurement.php` |
+| **Production** | `ProductionOrder`, `BillOfMaterials`, `DeliverySchedule` | `routes/api/v1/production.php` |
+| **QC** | `Inspection`, `NonConformanceReport`, `CapaAction` | `routes/api/v1/qc.php` |
+| **Maintenance** | `Equipment`, `MaintenanceWorkOrder`, `PmSchedule` | `routes/api/v1/maintenance.php` |
+| **Mold** | `MoldMaster`, `MoldShotLog` | `routes/api/v1/mold.php` |
+| **Delivery** | `Shipment`, `DeliveryReceipt`, `Vehicle` | `routes/api/v1/delivery.php` |
+| **ISO** | `ControlledDocument`, `InternalAudit`, `AuditFinding` | `routes/api/v1/iso.php` |
 
 ## Technology Stack
 
-### Backend
-- **Framework**: Laravel 11 (PHP 8.3+)
-- **Database**: PostgreSQL 16 (uses stored computed columns, triggers, and constraints)
-- **Cache/Queue/Session**: Redis 7
-- **Queue Workers**: Laravel Horizon (with Supervisor in production)
-- **Real-time**: Laravel Reverb (WebSockets)
-- **Monitoring**: Laravel Pulse
-- **Authentication**: Laravel Sanctum with MFA (TOTP via `pragmarx/google2fa-laravel`)
-- **PDF Generation**: `barryvdh/laravel-dompdf`
-- **Excel Exports**: `maatwebsite/excel`
-- **Media Handling**: `spatie/laravel-medialibrary`
-- **Backup**: `spatie/laravel-backup`
-- **Audit Trail**: `owen-it/laravel-auditing`
-- **RBAC**: `spatie/laravel-permission`
-- **Process Runner**: Spiral RoadRunner (CLI and HTTP)
+**Backend**: Laravel 11 / PHP 8.3+ · PostgreSQL 16 (stored computed columns, CHECK constraints via `DB::statement()`) · Redis 7 · Laravel Sanctum (session-cookie, no JWT) · Spatie RBAC · Owen-it Auditing · Laravel Horizon + Reverb · barryvdh/dompdf · maatwebsite/excel
 
-### Frontend
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite 6
-- **Styling**: Tailwind CSS 3 + Framer Motion
-- **State Management**: Zustand
-- **Server State**: TanStack Query (React Query)
-- **Forms**: React Hook Form + Zod validation
-- **Data Tables**: TanStack Table
-- **Charts**: Recharts
-- **Notifications**: Sonner
-- **Icons**: Lucide React
-- **Testing**: Vitest + React Testing Library + Playwright (E2E)
+**Frontend**: React 18 + TypeScript · Vite 6 · TanStack Query v5 + React Hook Form + Zod · TanStack Table · Zustand · Recharts · Lucide React · Sonner · Tailwind CSS 3
 
-### Testing
-- **Backend**: Pest PHP 3 with PHPUnit 11
-- **Frontend**: Vitest + React Testing Library
-- **E2E**: Playwright
-- **Static Analysis**: PHPStan (Larastan) at level 5
-- **Code Style**: Laravel Pint
-- **Load Testing**: k6
+**Testing**: Pest PHP 3 · Vitest + RTL · Playwright E2E · PHPStan/Larastan level 5 · Laravel Pint
 
-### Infrastructure
-- **Containerization**: Docker + Docker Compose
-- **Web Server**: Nginx (production) / PHP built-in server (development)
-- **Package Manager**: pnpm (frontend), Composer (PHP)
-- **Process Manager**: Supervisor (production)
+**Infra**: Docker Compose · Nginx+PHP-FPM (prod) · pnpm (frontend) · Composer (PHP)
 
 ## Project Structure
 
 ```
-/
-├── app/
-│   ├── Console/Commands/      # Artisan commands
-│   ├── Domains/               # Domain-driven modules
-│   │   ├── AP/                # Accounts Payable
-│   │   ├── AR/                # Accounts Receivable
-│   │   ├── Accounting/        # GL, COA, Journal Entries
-│   │   ├── Attendance/        # Time tracking
-│   │   ├── HR/                # Employees, Departments
-│   │   ├── Leave/             # Leave management
-│   │   ├── Loan/              # Employee loans
-│   │   ├── Payroll/           # Payroll computation pipeline
-│   │   └── Tax/               # VAT tracking
-│   ├── Events/                # Domain events
-│   ├── Exceptions/            # Exception handler
-│   ├── Exports/               # Excel export classes
-│   ├── Http/
-│   │   ├── Controllers/       # Organized by domain
-│   │   ├── Requests/          # Form request validation
-│   │   └── Resources/         # API response transformers
-│   ├── Infrastructure/
-│   │   ├── Middleware/        # Custom middleware
-│   │   ├── Observers/         # Model observers
-│   │   └── Scopes/            # Query scopes
-│   ├── Jobs/                  # Queueable jobs
-│   ├── Models/                # Core models (User, DepartmentPermission, etc.)
-│   ├── Notifications/         # Email/notification classes
-│   ├── Providers/             # Service providers
-│   ├── Rules/                 # Custom validation rules
-│   ├── Services/              # Shared services
-│   └── Shared/
-│       ├── Contracts/         # Interfaces (ServiceContract, etc.)
-│       ├── Exceptions/        # Domain exceptions
-│       ├── Traits/            # Reusable traits
-│       └── ValueObjects/      # Value objects (Money, Minutes, etc.)
-├── bootstrap/
-├── config/                    # Laravel configuration
-├── database/
-│   ├── factories/             # Model factories
-│   ├── migrations/            # Migration files (76+ migrations)
-│   └── seeders/               # Database seeders
-├── docker/                    # Docker configuration
-│   ├── nginx/
-│   ├── php/
-│   ├── postgres/
-│   ├── entrypoint.sh
-│   └── supervisord.conf
-├── docs/                      # Documentation
-│   ├── documentations/        # Phase documentation
-│   └── guides/                # Workflow guides
-├── frontend/                  # React SPA
-│   ├── e2e/                   # Playwright tests
-│   ├── src/
-│   │   ├── components/        # React components (auth, layout, modals, ui)
-│   │   ├── contexts/          # React contexts
-│   │   ├── hooks/             # Custom hooks (tanstack-query wrappers)
-│   │   ├── lib/               # Utilities (api, permissions)
-│   │   ├── pages/             # Page components (by domain)
-│   │   ├── router/            # React Router config
-│   │   ├── schemas/           # Zod validation schemas
-│   │   ├── stores/            # Zustand stores
-│   │   ├── styles/            # Tailwind/CSS styles
-│   │   ├── types/             # TypeScript types (by domain)
-│   │   └── test/              # Test setup
-│   ├── package.json
-│   └── vite.config.ts
-├── public/                    # Web root (built assets go to public/build/)
-├── resources/                 # Laravel resources
-├── routes/
-│   ├── api.php                # API v1 router
-│   ├── api/v1/                # Domain-specific route files
-│   ├── channels.php           # Broadcast channels
-│   ├── console.php            # Console routes
-│   └── web.php                # SPA catch-all
-├── storage/                   # Laravel storage
-├── tests/
-│   ├── Arch/                  # Architecture tests
-│   ├── Feature/               # Feature tests (HTTP endpoints)
-│   ├── Integration/           # Integration tests (cross-domain workflows)
-│   ├── Unit/                  # Unit tests (value objects, services)
-│   ├── Pest.php               # Pest configuration
-│   ├── Support/               # Test helpers
-│   ├── k6/                    # Load testing scripts
-│   └── load/                  # Load test scenarios
-├── composer.json
-├── docker-compose.yml
-├── Dockerfile                 # Multi-stage: base, development, production
-├── phpunit.xml
-├── phpstan.neon
-├── dev.sh                     # Development startup script
-└── package.json               # Root npm scripts
+app/
+  Domains/<Domain>/          # 17 domain modules
+    Models/                  # Eloquent models
+    Services/                # Domain services (implement ServiceContract)
+    Policies/                # Laravel policies
+    StateMachines/           # State machines (HR, Payroll)
+    Pipeline/                # Payroll computation steps
+    DataTransferObjects/     # DTOs (some domains)
+  Http/
+    Controllers/<Domain>/    # Thin, final controllers — no business logic
+    Requests/                # FormRequest validation classes
+    Resources/               # API response transformers (always return data wrapped)
+  Shared/
+    Contracts/ServiceContract.php   # Marker interface all domain services must implement
+    ValueObjects/            # Money, Minutes, PayPeriod, DateRange, EmployeeCode, etc.
+    Exceptions/DomainException.php  # Base for all custom exceptions
+    Traits/                  # Reusable model traits
+  Jobs/<Domain>/             # Queueable jobs (payroll batch, leave accrual, etc.)
+database/migrations/         # 100+ migrations — never SQLite-compatible (PgSQL features)
+database/seeders/            # 20 seeders with strict ordering (see Seeder Order below)
+frontend/src/
+  hooks/                     # TanStack Query wrappers (one file per domain)
+  pages/<domain>/            # Page components
+  schemas/<domain>.ts        # Zod validation schemas
+  types/<domain>.ts          # TypeScript interfaces
+  lib/api.ts                 # Axios instance (baseURL /api/v1, withCredentials)
+  lib/permissions.ts         # Typed Spatie permission constants
+routes/api/v1/               # 23 domain route files
+tests/
+  Feature/<Domain>/          # HTTP endpoint tests
+  Unit/                      # Value objects, payroll computation (golden suite)
+  Integration/               # Cross-domain workflows (PayrollToGL, APToGL)
+  Arch/                      # ARCH-001–006 structural constraints
+  Support/PayrollTestHelper.php    # Payroll test factories
 ```
+
+## Code Patterns
+
+### Domain Service
+`final class` + implements `ServiceContract` + constructor-inject dependencies + wrap mutations in `DB::transaction()`.  
+Reference: `app/Domains/HR/Services/EmployeeService.php`
+
+```php
+final class EmployeeService implements ServiceContract
+{
+    public function __construct(private readonly EmployeeStateMachine $stateMachine) {}
+
+    public function create(array $data): Employee
+    {
+        return DB::transaction(function () use ($data): Employee { ... });
+    }
+}
+```
+
+### Controller
+`final class`, no DB/business logic, delegate to service, return API Resource.  
+Reference: `app/Http/Controllers/Leave/LeaveRequestController.php`
+
+```php
+final class LeaveRequestController extends Controller
+{
+    public function __construct(private readonly LeaveRequestService $service) {}
+
+    public function store(StoreLeaveRequestRequest $request): JsonResponse
+    {
+        $this->authorize('create', [LeaveRequest::class, $employee]);
+        $result = $this->service->submit($employee, $request->validated(), (int) $request->user()->id);
+        return (new LeaveRequestResource($result))->response()->setStatusCode(201);
+    }
+}
+```
+
+Multi-step workflow actions are **named methods** (`headApprove`, `managerCheck`, `gaProcess`) not a generic action.
+
+### Value Objects
+`final readonly class` in `app/Shared/ValueObjects/`.  
+**`Money`**: stores **centavos (integer)**, never float. Factory: `Money::fromFloat(25000.00)` → `2_500_000` centavos. All arithmetic is immutable and rounds with `PHP_ROUND_HALF_UP`.  
+`₱25,000 = 2_500_000 centavos` — pay attention in tests (`'basic_monthly_rate' => 2_500_000`).  
+Reference: `app/Shared/ValueObjects/Money.php`
+
+### State Machines
+Dedicated class with a `TRANSITIONS` constant. Never scatter status string comparisons in controllers.  
+- `app/Domains/HR/StateMachines/EmployeeStateMachine.php` — `draft→active→on_leave|suspended→resigned|terminated`
+- `app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php` — 14-state workflow with legacy alias compatibility
+
+### Payroll Pipeline — 17 Steps
+Uses Laravel `Pipeline::through([Step01...::class, ..., Step17...::class])`. Each step is an invokable with signature:
+
+```php
+public function __invoke(PayrollComputationContext $ctx, Closure $next): PayrollComputationContext
+{
+    // mutate $ctx fields
+    return $next($ctx);
+}
+```
+
+Files in `app/Domains/Payroll/Pipeline/Step01SnapshotsStep.php` through `Step17NetPayStep.php`.  
+Shared mutable state object: `app/Domains/Payroll/Services/PayrollComputationContext.php`.
+
+### PostgreSQL-Specific Migration Gotchas
+1. **Stored computed columns** — `daily_rate` and `hourly_rate` on `employees` table are `GENERATED ALWAYS AS STORED`. **Never include them in factory/test inserts** or PostgreSQL will error. Skip them explicitly in test helpers (see `tests/Support/PayrollTestHelper.php`).
+2. **Raw CHECK constraints** added via `DB::statement("ALTER TABLE ... ADD CONSTRAINT ...")`.
+3. **Government ID encryption** — raw values encrypted + SHA-256 hash columns for uniqueness (`tin_hash`, `sss_no_hash`, etc.).
+
+### Route Conventions
+All routes require `auth:sanctum`. Domain middleware applied at group level (`dept_scope`, `permission:xxx`).  
+Custom workflow actions added beside `apiResource`:
+
+```php
+Route::apiResource('employees', EmployeeController::class);
+Route::post('employees/{employee}/transition', [EmployeeController::class, 'transition']);
+```
+
+Inline closures are acceptable for simple reference/lookup endpoints (salary grades, departments list).  
+Reference: `routes/api/v1/hr.php`
+
+### Frontend Hooks
+One file per domain in `frontend/src/hooks/`. `queryKey` always includes filters object.
+
+```typescript
+export function useLeaveRequests(filters: LeaveFilters = {}) {
+  return useQuery({ queryKey: ['leave-requests', filters], queryFn: ... })
+}
+export function useSubmitLeaveRequest() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: ..., onSuccess: () => qc.invalidateQueries({ queryKey: ['leave-requests'] }) })
+}
+```
+
+Reference: `frontend/src/hooks/useLeave.ts`
+
+### Frontend URL Identifiers
+Frontend URL params use **ULID** strings (not integer IDs): `useParams<{ ulid: string }>()`.
+
+### Zod Schemas
+`z.coerce.number()` for all numeric IDs and monetary inputs. All schemas in `frontend/src/schemas/`.  
+Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormSchema>`.
+
+### SoD (Segregation of Duties)
+Enforced backend (middleware + policy) **and** frontend via `useSodCheck(createdById)`.  
+Same user who created a record cannot approve/activate it.
 
 ## Build and Run Commands
 
-### Development (Local)
-
 ```bash
-# Start all services (PostgreSQL, Redis, Laravel, Vite, Queue Worker)
-npm run dev
-# OR directly:
-bash dev.sh
-```
+# Start all dev services (PG, Redis, Laravel:8000, Vite:5173, queue)
+npm run dev          # OR: bash dev.sh
+npm run dev:minimal  # Without queue/Reverb
+npm run dev:full     # With Reverb WebSocket server
 
-The `dev.sh` script:
-- Starts Docker containers for PostgreSQL (`ogami-pg-test`) and Redis (`ogami-redis-test`) if not running
-- Starts Laravel development server on http://127.0.0.1:8000 (8 workers)
-- Pre-warms PHP workers to avoid cold-start latency
-- Starts queue worker for `default`, `payroll`, and `computations` queues
-- Starts Vite dev server on http://localhost:5173
-- Tails logs from all services
-
-### Docker Development
-
-```bash
-# Build and start all services
-docker-compose up --build
-
-# Run migrations
-docker-compose exec app php artisan migrate
-
-# Access app container
-docker-compose exec app bash
-```
-
-### Production Build
-
-```bash
-# Frontend build (outputs to public/build/)
-cd frontend && pnpm build
-
-# PHP optimizations
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-composer install --no-dev --optimize-autoloader
-```
-
-### Database Operations
-
-```bash
-# Run migrations
+# Database
 php artisan migrate
-
-# Seed database
-php artisan db:seed
-
-# Fresh database with seeding
 php artisan migrate:fresh --seed
+php artisan db:seed  # seed only
 ```
 
 ## Testing Commands
 
-### Backend (Pest/PHPUnit)
-
 ```bash
-# Run all tests
-./vendor/bin/pest
+# Backend (Pest)
+./vendor/bin/pest                         # all suites
+./vendor/bin/pest --testsuite=Unit        # value objects, payroll golden suite
+./vendor/bin/pest --testsuite=Feature     # HTTP endpoint tests
+./vendor/bin/pest --testsuite=Integration # cross-domain workflows
+./vendor/bin/pest --testsuite=Arch        # ARCH-001–006 structural rules
 
-# Run specific test suites
-./vendor/bin/pest --testsuite=Unit
-./vendor/bin/pest --testsuite=Feature
-./vendor/bin/pest --testsuite=Integration
-./vendor/bin/pest --testsuite=Arch
-
-# With coverage
-./vendor/bin/pest --coverage
-```
-
-### Frontend
-
-```bash
+# Frontend
 cd frontend
+pnpm test             # Vitest unit tests
+pnpm typecheck        # tsc --noEmit
+pnpm lint             # ESLint
+pnpm e2e              # Playwright
 
-# Unit tests
-pnpm test
-
-# Watch mode
-pnpm test:watch
-
-# Coverage
-pnpm test:coverage
-
-# E2E tests
-pnpm e2e
-
-# E2E with UI
-pnpm e2e:ui
-```
-
-### Static Analysis
-
-```bash
-# PHPStan (Larastan)
-./vendor/bin/phpstan analyse
-
-# Laravel Pint (code style)
-./vendor/bin/pint
-
-# Type check frontend
-cd frontend && pnpm typecheck
+# Static analysis
+./vendor/bin/phpstan analyse  # Larastan level 5
+./vendor/bin/pint             # Code style fixer
 ```
 
 ## Code Style Guidelines
 
 ### PHP
-
-1. **Strict typing**: All files must start with `declare(strict_types=1);`
-2. **Final classes**: Model classes and value objects should be `final`
-3. **Readonly value objects**: All value objects in `App\Shared\ValueObjects` must be `final readonly`
-4. **Service Contract**: All domain services must implement `ServiceContract` interface
-5. **No direct DB calls in controllers**: Use service classes instead
-6. **Domain exceptions**: All custom exceptions must extend `DomainException`
-7. **No debug helpers**: No `dd()`, `dump()`, `var_dump()`, `ray()`, `rdump()` in production code
-8. **No float for currency**: Use `Money` value object (integer centavos internally)
+1. `declare(strict_types=1)` at top of every file
+2. Domain services and models: `final class`
+3. Value objects: `final readonly class`
+4. All domain services implement `ServiceContract` (marker interface only, no methods)
+5. Controllers delegate everything to services — no `DB::` calls, no business logic
+6. All custom exceptions extend `App\Shared\Exceptions\DomainException`
+7. **No** `dd()`, `dump()`, `var_dump()`, `ray()` — enforced by ARCH-005
+8. **No** float for currency — always use `Money` value object (see `app/Shared/ValueObjects/Money.php`)
 
 ### TypeScript/React
-
-1. **Type safety**: Strict TypeScript configuration
-2. **Functional components**: Use function declarations with explicit return types
-3. **Hooks**: Custom hooks for data fetching use TanStack Query
-4. **State**: Zustand for global state, React Query for server state
-5. **Forms**: React Hook Form with Zod schemas
-6. **Testing**: Vitest with React Testing Library, MSW for API mocking
-7. **Path alias**: Use `@/` for imports from `src/`
+1. Strict TypeScript; all components are `function` declarations with explicit return types
+2. Server state via TanStack Query hooks in `frontend/src/hooks/`; global state via Zustand
+3. Forms: React Hook Form + Zod schema; derive types with `z.infer<typeof schema>`
+4. Always use `@/` path alias for imports from `src/`
+5. `z.coerce.number()` for all numeric IDs and monetary inputs
 
 ## Testing Strategy
 
-### Test Suites
+### Test Setup Pattern (Feature/Integration)
+Always seed RBAC + domain rate tables before tests:
+```php
+beforeEach(function () {
+    $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'SalaryGradeSeeder'])->assertExitCode(0);
+    $this->hrManager = User::factory()->create();
+    $this->hrManager->assignRole('hr_manager');
+});
+```
 
-1. **Unit Tests** (`tests/Unit/`): Pure logic tests, value objects, service computations
-2. **Feature Tests** (`tests/Feature/`): HTTP endpoint tests, authentication, authorization
-3. **Integration Tests** (`tests/Integration/`): Cross-domain workflows (payroll → GL, AP → GL)
-4. **Architecture Tests** (`tests/Arch/`): Structural constraints using Pest Arch plugin
+### Custom Expectations (in `tests/Pest.php`)
+```php
+->toBeValidationError('field_name')  // checks error_code === 'VALIDATION_ERROR' + errors.field
+->toBeDomainError('ERROR_CODE')      // checks error_code matches
+```
 
-### Key Testing Patterns
+### Key Conventions
+- **Always use PostgreSQL** test DB (`ogami_erp_test`) — never SQLite (stored columns, triggers)
+- Monetary values in centavos: `'basic_monthly_rate' => 2_500_000` (= ₱25,000)
+- Payroll golden suite: 24 canonical scenarios in `tests/Unit/Payroll/GoldenSuiteTest.php`
+- Reference payroll test factories: `tests/Support/PayrollTestHelper.php`
+- `RefreshDatabase` applied to Feature + Integration; pure Unit tests don't need it
 
-- **Database**: PostgreSQL test database (`ogami_erp_test`) - never SQLite (triggers and constraints must be tested)
-- **RefreshDatabase**: Used for Feature and Integration tests
-- **Custom expectations**: `toBeValidationError()`, `toBeDomainError()`
-- **Dataset helpers**: `invalidAmounts()` for boundary testing
+### Architecture Rules (ARCH-001–006)
+| Rule | Constraint |
+|------|-----------|
+| ARCH-001 | Controllers: no `DB::` or database calls |
+| ARCH-002 | Domain services must implement `ServiceContract` |
+| ARCH-003 | Custom exceptions must extend `DomainException` |
+| ARCH-004 | Value objects must be `final readonly` |
+| ARCH-005 | No `dd()`/`dump()`/`var_dump()` in `app/` |
+| ARCH-006 | `Shared\Contracts` namespace: interfaces only |
 
-### Architecture Test Rules (ARCH-001 through ARCH-006)
-
-- **ARCH-001**: Controllers must not contain direct DB calls
-- **ARCH-002**: Domain Services must implement ServiceContract
-- **ARCH-003**: All custom exceptions must extend DomainException
-- **ARCH-004**: Value objects must be final readonly classes
-- **ARCH-005**: No dd() / dump() / var_dump() left in app/ source
-- **ARCH-006**: Shared contracts namespace contains only interfaces
-
-### Payroll Testing
-
-The payroll domain has extensive testing including:
-- Golden suite tests for known-good scenarios
-- Edge case handling (negative net pay, mid-period hires)
-- Property-based testing for contribution calculations
-- Tax computation validation
+### Seeder Order (20 seeders — strict dependency order)
+1. Rate tables: SSS, PhilHealth, PagIBIG, Tax, OT multipliers, holiday calendar  
+2. RBAC: `RolePermissionSeeder` → `SampleAccountsSeeder`  
+3. HR reference: `SalaryGradeSeeder`, `LeaveTypeSeeder`, `LoanTypeSeeder`, `ShiftScheduleSeeder`  
+4. Accounting: `ChartOfAccountsSeeder`  
+5. Org structure: `FiscalPeriodSeeder`, `DepartmentPositionSeeder`  
+6. Transactional sample data: `SampleDataSeeder`, `ManufacturingEmployeeSeeder`  
 
 ## Security Considerations
 
 ### Authentication & Authorization
-
-- **MFA**: Time-based One-Time Password (TOTP) required for all users
-- **RBAC**: Role-based access control via `spatie/laravel-permission`
-- **SoD**: Segregation of Duties middleware prevents conflicts (e.g., same user cannot prepare and approve payroll)
-- **Department Scoping**: Users can only access data from their assigned departments
-- **Session**: Redis-backed sessions with encryption
-- **Auth Method**: Session-cookie based (not JWT), no sensitive data in localStorage
+- **Session-cookie auth** (Sanctum) — no JWT, no tokens in localStorage
+- **RBAC**: `spatie/laravel-permission` — roles: `admin → executive → vice_president → manager → officer → head → staff`
+- **SoD**: Same user cannot create AND approve the same record — enforced in middleware/policy AND frontend (`useSodCheck`)
+- **Department scoping**: `dept_scope` middleware applies a global query scope restricting data to user's department
+- **Rate limiting**: 120 reads / 60 writes per minute on all API routes; separate brute-force throttle on auth
 
 ### Data Protection
-
-- **Encryption**: Government IDs (SSS, TIN, etc.) encrypted at model layer
-- **Hashing**: SHA-256 hashes for unique constraint checking without exposing raw values
-- **Audit Trail**: All model changes tracked via `owen-it/laravel-auditing`
-- **Rate Limiting**: 120 reads / 60 writes per minute on API routes
-
-### Input Validation
-
-- Form Request classes for all endpoints
-- Zod schemas for frontend validation
-- Custom validation rules for business logic (e.g., `LeafAccountRule`, `OpenFiscalPeriodRule`)
+- Government IDs (SSS, TIN, PhilHealth, Pag-IBIG) are **encrypted** at model layer
+- **SHA-256 hash columns** (`tin_hash`, `sss_no_hash`) used for uniqueness constraints without storing raw values
+- Full audit trail via `owen-it/laravel-auditing` on all sensitive models
 
 ## Domain Architecture Patterns
 
-### Payroll Computation Pipeline
-
-The payroll system uses a pipeline pattern with 17 steps:
-
+### Payroll Computation Pipeline (17 Steps)
 ```
-Step01SnapshotsStep → Step02PeriodMetaStep → Step03AttendanceSummaryStep → 
-Step04LoadYtdStep → Step05BasicPayStep → Step06OvertimePayStep → 
-Step07HolidayPayStep → Step08NightDiffStep → Step09GrossPayStep → 
-Step10SssStep → Step11PhilHealthStep → Step12PagibigStep → 
-Step13TaxableIncomeStep → Step14WithholdingTaxStep → Step15LoanDeductionsStep → 
+Step01SnapshotsStep → Step02PeriodMetaStep → Step03AttendanceSummaryStep →
+Step04LoadYtdStep → Step05BasicPayStep → Step06OvertimePayStep →
+Step07HolidayPayStep → Step08NightDiffStep → Step09GrossPayStep →
+Step10SssStep → Step11PhilHealthStep → Step12PagibigStep →
+Step13TaxableIncomeStep → Step14WithholdingTaxStep → Step15LoanDeductionsStep →
 Step16OtherDeductionsStep → Step17NetPayStep
 ```
 
-Each step implements `PayrollComputationStep` and operates on a `PayrollComputationContext`.
+Steps are in `app/Domains/Payroll/Pipeline/`. Each is `final class` with signature:
+```php
+public function __invoke(PayrollComputationContext $ctx, Closure $next): PayrollComputationContext
+```
+Shared mutable state: `app/Domains/Payroll/Services/PayrollComputationContext.php`
 
 ### State Machines
+- `app/Domains/HR/StateMachines/EmployeeStateMachine.php`  
+  `draft → active → on_leave|suspended → resigned|terminated`
+- `app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php`  
+  14-state workflow: `DRAFT → SCOPE_SET → PRE_RUN_CHECKED → PROCESSING → COMPUTED → REVIEW → SUBMITTED → HR_APPROVED → ACCTG_APPROVED → DISBURSED → PUBLISHED` (+ `RETURNED`/`REJECTED → DRAFT`)  
+  Has legacy lowercase alias compatibility layer.
 
-- **Employee**: `draft → active → on_leave|suspended → resigned|terminated`
-- **PayrollRun**: `draft → scoped → computed → hr_reviewed → acctg_reviewed → approved → published|cancelled`
+### Value Objects (all in `app/Shared/ValueObjects/`)
+| Class | Key Detail |
+|-------|-----------|
+| `Money` | Integer centavos. `fromFloat(25000.00)` = `2_500_000`. Immutable arithmetic, `PHP_ROUND_HALF_UP` |
+| `Minutes` | Whole integer minutes. `toHours()` → float |
+| `PayPeriod` | Semi-monthly. `periodNumber` must be 1 or 2. Factories: `firstHalf()`, `secondHalf()` |
+| `DateRange` | Start/end date encapsulation |
+| `OvertimeMultiplier` | OT rate calculations |
+| `EmployeeCode` | Code generation (`EMP-YYYY-NNN`) |
 
-### Value Objects
-
-Key value objects in `App\Shared\ValueObjects`:
-- `Money`: Handles centavo-based calculations (never use float for currency)
-- `Minutes`: Time duration calculations
-- `PayPeriod`: Pay period encapsulation
-- `DateRange`: Date range operations
-- `OvertimeMultiplier`: OT rate calculations
-- `EmployeeCode`: Employee code generation
-- `WorkingDays`: Working day calculations
+### Job Queues
+Defined queues: `payroll`, `computations`, `notifications`, `default`  
+Jobs in `app/Jobs/<Domain>/`. Pattern: `final class`, `ShouldQueue`, `Batchable` for payroll.  
+Reference: `app/Jobs/Payroll/ProcessPayrollBatch.php`
 
 ## API Structure
 
-All API routes are under `/api/v1/` and organized by domain:
+All routes under `/api/v1/` via `routes/api.php` which includes 23 domain route files from `routes/api/v1/`.  
+All endpoints require `auth:sanctum`. Write throttle: 60/min; Read throttle: 120/min.
 
-```
-/api/v1/auth/*          # Authentication (login, logout, MFA)
-/api/v1/hr/*            # HR domain
-/api/v1/leave/*         # Leave domain
-/api/v1/loans/*         # Loans domain
-/api/v1/attendance/*    # Attendance domain
-/api/v1/payroll/*       # Payroll domain
-/api/v1/accounting/*    # Accounting domain
-/api/v1/ar/*            # Accounts Receivable
-/api/v1/tax/*           # Tax/VAT domain
-/api/v1/reports/*       # Reports
-/api/v1/employee/*      # Employee self-service
-/api/v1/admin/*         # Administration
-/api/v1/notifications/* # Notifications
-```
+Key prefixes: `hr`, `leave`, `loans`, `attendance`, `payroll`, `accounting`, `ar`, `tax`, `procurement`, `inventory`, `production`, `qc`, `maintenance`, `mold`, `delivery`, `iso`, `reports`, `employee`, `admin`, `notifications`, `dashboard`, `auth`
+
+API responses always use `JsonResource` — data is wrapped: `{ "data": { ... } }` or `{ "data": [...] }`.  
+Error responses: `{ "success": false, "error_code": "DOMAIN_ERROR_CODE", "message": "..." }`.
 
 ## Deployment
 
-### Docker Production Setup
-
-The `Dockerfile` has four stages:
-1. **base**: PHP 8.3 with extensions
-2. **development**: Artisan serve for local dev
-3. **frontend-builder**: Compiles React/Vite SPA
-4. **production**: Nginx + PHP-FPM + Supervisor
-
-### Services in Production
-
-- **app**: Main application (Nginx + PHP-FPM)
-- **horizon**: Queue worker process
-- **reverb**: WebSocket server
-- **postgres**: PostgreSQL database
-- **redis**: Redis cache/queue/session store
-
-### Environment Variables
-
-Key environment variables (see `.env.example`):
-
+### Docker
 ```bash
-APP_ENV=production
-APP_BUILD_TARGET=production
+docker-compose up --build           # Build and start all services
+docker-compose exec app php artisan migrate
+```
+
+### Production Dockerfile stages
+1. `base` — PHP 8.3 + extensions
+2. `development` — Artisan serve
+3. `frontend-builder` — Vite build
+4. `production` — Nginx + PHP-FPM + Supervisor
+
+### Key Environment Variables
+```bash
 DB_CONNECTION=pgsql
 QUEUE_CONNECTION=redis
-CACHE_STORE=redis
 SESSION_DRIVER=redis
 BROADCAST_CONNECTION=reverb
-
-# Sanctum
 SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:3000,localhost
-
-# Reverb (WebSockets)
-REVERB_APP_ID=ogami
-REVERB_HOST=localhost
-REVERB_PORT=8080
-
-# Philippine region for minimum wage lookups
-DEFAULT_REGION=NCR
+DEFAULT_REGION=NCR   # Philippine minimum wage region
 ```
 
 ## Troubleshooting
 
 ### Common Issues
-
-1. **Permission denied on storage**: Run `chmod -R 775 storage bootstrap/cache`
-2. **Queue not processing**: Check Horizon dashboard at `/horizon`
-3. **WebSocket not connecting**: Verify Reverb is running and `REVERB_*` env vars are set
-4. **Database connection errors**: Check Docker containers are running (`docker ps`)
-5. **Test database locked**: Ensure `ogami_erp_test` exists and is accessible
+1. **Storage permissions**: `chmod -R 775 storage bootstrap/cache`
+2. **Queue not processing**: Check Horizon at `/horizon`
+3. **WebSocket issues**: Verify Reverb running and `REVERB_*` env vars set
+4. **DB errors**: Check Docker containers (`docker ps`)
 
 ### Logs
-
 - Laravel: `storage/logs/laravel.log`
-- Dev server: `storage/logs/serve.log`
-- Queue: `storage/logs/queue.log`
-- Vite: `storage/logs/vite.log`
+- Services: `storage/logs/{serve,queue,vite,reverb}.log`
 
 ## Additional Resources
 
-- Documentation: `docs/` directory
-  - Phase documentation: `docs/documentations/`
-  - Workflow guides: `docs/guides/`
-- Security findings: `docs/zap-security-findings.md`
-- Thesis Q&A: `docs/thesis-defence-qa.md`
+- **System Summary**: `docs/SYSTEM_SUMMARY.md`
+- **Testing Guide**: `docs/TESTING_GUIDE.md`
+- **Phase Documentation**: `docs/documentations/`
+- **Workflow Guides**: `docs/guides/`
