@@ -327,13 +327,13 @@ export default function UsersPage() {
                 <td className="px-3 py-2">
                   <div className="flex gap-2">
                     {canUpdate && (
-                      <button onClick={() => openEdit(u)} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">Edit</button>
+                      <button onClick={() => openEdit(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Edit</button>
                     )}
                     {canAssignRole && (
-                      <button onClick={() => openRoleModal(u)} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">Role</button>
+                      <button onClick={() => openRoleModal(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Role</button>
                     )}
                     {canUpdate && isLocked(u) && (
-                      <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium disabled:opacity-50">Unlock</button>
+                      <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50">Unlock</button>
                     )}
                     {canDelete && (
                       <button onClick={() => handleDelete(u)} className="text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>

@@ -40,12 +40,12 @@ final class VendorPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('vendors.create');
+        return $user->hasPermissionTo('vendors.manage');
     }
 
     public function update(User $user, Vendor $vendor): bool
     {
-        return $user->hasPermissionTo('vendors.update');
+        return $user->hasPermissionTo('vendors.manage');
     }
 
     /** Archive (soft-delete) is a manager-level action. */

@@ -206,6 +206,7 @@ const SECTIONS: NavSection[] = [
     children: [
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
       { label: 'NCR',         href: '/qc/ncrs',        permission: 'qc.ncr.view' },
+      { label: 'CAPA',        href: '/qc/capa',        permission: 'qc.ncr.view' },
       { label: 'Templates',   href: '/qc/templates',   permission: 'qc.templates.view' },
     ],
   },
@@ -273,14 +274,14 @@ const ADMIN_SECTION: NavSection = {
 
 // Minimalist link styles - Uncodixified
 const linkStyle = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors ${isActive
-    ? 'bg-neutral-100 text-neutral-900 font-medium'
-    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+  `flex items-center gap-2.5 px-2.5 py-1.5 rounded text-sm transition-colors ${isActive
+    ? 'bg-neutral-100 text-neutral-900 font-medium border-l-2 border-neutral-900 -ml-[2px]'
+    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 border-l-2 border-transparent'
   }`
 
 // Compact link for collapsed sidebar
 const compactLinkStyle = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center justify-center p-2 rounded transition-colors ${isActive
+  `flex items-center justify-center p-1.5 rounded transition-colors ${isActive
     ? 'bg-neutral-100 text-neutral-900'
     : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
   }`
@@ -288,6 +289,7 @@ const compactLinkStyle = ({ isActive }: { isActive: boolean }) =>
 function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; hasPermission: (p: string) => boolean; hasRole: (r: string) => boolean }) {
   const { pathname } = useLocation()
   const Icon = section.icon
+  const isInitialMount = useRef(true)
 
   const visibleChildren = section.children.filter(
     (c) => !c.permission || hasPermission(c.permission),
@@ -296,28 +298,43 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
   const isCurrentSection = visibleChildren.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))
   const [open, setOpen] = useState(isCurrentSection)
 
+  // Auto-collapse when navigating away from this section (but not on initial mount)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    if (!isCurrentSection && open) {
+      setOpen(false)
+    }
+  }, [isCurrentSection])
+
   if (section.permission && !hasPermission(section.permission)) return null
   if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
   if (visibleChildren.length === 0) return null
 
   return (
-    <div className="mb-1">
+    <div className="mb-0.5">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-2 text-sm text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded transition-colors"
+        className={`w-full flex items-center justify-between px-2.5 py-1.5 text-sm rounded transition-colors border-l-2 ${
+          isCurrentSection 
+            ? 'bg-neutral-50 text-neutral-900 font-medium border-neutral-300' 
+            : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 border-transparent'
+        }`}
       >
         <span className="flex items-center gap-3">
-          <Icon className="h-4 w-4 text-neutral-500" />
+          <Icon className={`h-4 w-4 ${isCurrentSection ? 'text-neutral-700' : 'text-neutral-500'}`} />
           {section.label}
         </span>
         {open ? 
-          <ChevronDown className="h-3.5 w-3.5 text-neutral-400" /> : 
+          <ChevronDown className="h-3.5 w-3.5 text-neutral-500" /> : 
           <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
         }
       </button>
 
       {open && (
-        <div className="ml-4 mt-0.5 space-y-0.5">
+        <div className="relative ml-4 mt-0.5 space-y-0.5 pl-3 border-l-2 border-neutral-200">
           {visibleChildren.map((child) => (
             <NavLink key={child.href} to={child.href} end={child.end} className={linkStyle}>
               {child.label}
@@ -514,12 +531,12 @@ export default function AppLayout() {
       {/* Desktop Sidebar */}
       <aside
         className="hidden lg:flex flex-shrink-0 bg-white border-r border-neutral-200 flex-col relative z-20 transition-all duration-200"
-        style={{ width: isSidebarExpanded ? 260 : 72 }}
+        style={{ width: isSidebarExpanded ? 230 : 64 }}
         onMouseEnter={() => setIsHoveringSidebar(true)}
         onMouseLeave={() => setIsHoveringSidebar(false)}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-neutral-200 flex-shrink-0">
+        <div className="h-14 flex items-center px-3 border-b border-neutral-200 flex-shrink-0">
           {!isSidebarExpanded ? (
             <span className="font-semibold text-neutral-900 text-lg mx-auto">
               O
@@ -575,8 +592,10 @@ export default function AppLayout() {
                 </NavLink>
               ))}
 
-              <div className="pt-4 pb-2">
-                <p className="px-3 text-xs font-medium text-neutral-400">Modules</p>
+              <div className="pt-4 pb-2 flex items-center gap-2">
+                <div className="h-px flex-1 bg-neutral-200" />
+                <p className="px-2 text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Modules</p>
+                <div className="h-px flex-1 bg-neutral-200" />
               </div>
 
               {SECTIONS.map((section) => (
@@ -590,8 +609,10 @@ export default function AppLayout() {
 
               {(hasPermission('system.manage_users') || hasPermission('system.edit_settings') || hasPermission('system.view_audit_log')) && (
                 <>
-                  <div className="pt-4 pb-2">
-                    <p className="px-3 text-xs font-medium text-neutral-400">Administration</p>
+                  <div className="pt-4 pb-2 flex items-center gap-2">
+                    <div className="h-px flex-1 bg-neutral-200" />
+                    <p className="px-2 text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Administration</p>
+                    <div className="h-px flex-1 bg-neutral-200" />
                   </div>
                   <SectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} />
                 </>
@@ -604,7 +625,7 @@ export default function AppLayout() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-16 flex-shrink-0 bg-white border-b border-neutral-200 flex items-center justify-between px-4 sm:px-6">
+        <header className="h-14 flex-shrink-0 bg-white border-b border-neutral-200 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger menu */}
             <div className="lg:hidden">
@@ -617,7 +638,7 @@ export default function AppLayout() {
                     <Menu className="h-5 w-5" />
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[260px] p-0 bg-white border-r border-neutral-200/80">
+                <SheetContent side="left" className="w-[230px] p-0 bg-white border-r border-neutral-200/80">
                   <SheetHeader className="border-b border-neutral-100 px-4 py-3">
                     <SheetTitle className="text-neutral-900 font-semibold tracking-tight">Ogami ERP</SheetTitle>
                   </SheetHeader>
@@ -658,7 +679,7 @@ export default function AppLayout() {
             {/* Sidebar toggle button - desktop only */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+              className="hidden lg:flex p-2 rounded-lg border border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-700 transition-colors"
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {sidebarCollapsed ? (
@@ -677,7 +698,7 @@ export default function AppLayout() {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 w-full p-5 sm:p-8">
+        <div className="flex-1 w-full p-4 sm:p-6">
           <Outlet />
         </div>
       </main>

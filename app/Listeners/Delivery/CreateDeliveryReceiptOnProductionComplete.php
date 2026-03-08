@@ -42,6 +42,8 @@ final class CreateDeliveryReceiptOnProductionComplete implements ShouldQueue
         $schedule = $order->deliverySchedule()->first();
         $customerId = $schedule?->customer_id;
 
+        $netQty = max(0.0, (float) $order->qty_produced - (float) $order->qty_rejected);
+
         $this->deliveryService->storeReceipt(
             data: [
                 'direction' => 'outbound',
@@ -52,8 +54,8 @@ final class CreateDeliveryReceiptOnProductionComplete implements ShouldQueue
                 'items' => [
                     [
                         'item_master_id' => $order->product_item_id,
-                        'quantity_expected' => (float) $order->qty_produced,
-                        'quantity_received' => (float) $order->qty_produced,
+                        'quantity_expected' => $netQty,
+                        'quantity_received' => $netQty,
                         'remarks' => "Finished goods from WO {$order->po_reference}",
                     ],
                 ],

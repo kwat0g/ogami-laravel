@@ -406,6 +406,7 @@ export interface SalaryGradeSummary {
 export interface EmployeeListItem {
   id: number
   ulid: string
+  user_id: number | null
   employee_code: string
   full_name: string
   first_name: string
@@ -430,6 +431,7 @@ export interface EmployeeListItem {
 export interface Employee {
   id: number
   ulid: string
+  user_id: number | null
   employee_code: string
   full_name: string
   first_name: string

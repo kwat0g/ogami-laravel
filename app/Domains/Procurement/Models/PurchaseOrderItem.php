@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Models;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int         $id
  * @property int         $purchase_order_id
  * @property int|null    $pr_item_id         FK to purchase_request_items — three-way match
+ * @property int|null    $item_master_id     FK to item_masters — required for GR stock update
  * @property string      $item_description
  * @property string      $unit_of_measure
  * @property numeric-string $quantity_ordered
@@ -33,6 +35,7 @@ final class PurchaseOrderItem extends Model
     protected $fillable = [
         'purchase_order_id',
         'pr_item_id',
+        'item_master_id',
         'item_description',
         'unit_of_measure',
         'quantity_ordered',
@@ -54,5 +57,11 @@ final class PurchaseOrderItem extends Model
     public function prItem(): BelongsTo
     {
         return $this->belongsTo(PurchaseRequestItem::class, 'pr_item_id');
+    }
+
+    /** @return BelongsTo<ItemMaster, PurchaseOrderItem> */
+    public function itemMaster(): BelongsTo
+    {
+        return $this->belongsTo(ItemMaster::class, 'item_master_id');
     }
 }

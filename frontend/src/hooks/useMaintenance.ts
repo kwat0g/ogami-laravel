@@ -96,3 +96,17 @@ export function useCompleteWorkOrder() {
     },
   });
 }
+
+// ── PM Schedules ───────────────────────────────────────────────────────────
+
+export function useStorePmSchedule(equipmentUlid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { task_name: string; frequency_days: number; last_done_on?: string }) =>
+      api.post(`/maintenance/equipment/${equipmentUlid}/pm-schedules`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['equipment'] });
+      qc.invalidateQueries({ queryKey: ['equipment', equipmentUlid] });
+    },
+  });
+}

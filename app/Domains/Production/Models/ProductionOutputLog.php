@@ -47,6 +47,7 @@ final class ProductionOutputLog extends Model
         'qty_produced' => 'decimal:4',
         'qty_rejected' => 'decimal:4',
         'log_date'     => 'date',
+        'created_at'   => 'datetime',
     ];
 
     public function productionOrder(): BelongsTo

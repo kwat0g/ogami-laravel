@@ -92,7 +92,7 @@ export default function NotificationBell() {
       {/* Bell button */}
       <button
         onClick={toggle}
-        className="relative p-2 rounded hover:bg-neutral-100 transition-colors text-neutral-600 hover:text-neutral-900"
+        className="relative p-2 rounded border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-colors text-neutral-600 hover:text-neutral-900"
         aria-label="Notifications"
       >
         <Bell className="h-5 w-5" />
@@ -115,7 +115,7 @@ export default function NotificationBell() {
               <button
                 onClick={() => markAllRead.mutate()}
                 disabled={markAllRead.isPending}
-                className="flex items-center gap-1 text-xs text-neutral-600 hover:text-neutral-900 font-medium disabled:opacity-50"
+                className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 Mark all read
@@ -148,7 +148,7 @@ export default function NotificationBell() {
             <div className="border-t border-neutral-200 px-4 py-2.5 text-center">
               <Link
                 to="/notifications"
-                className="text-xs text-neutral-600 hover:text-neutral-900 font-medium"
+                className="inline-block px-3 py-1.5 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
                 onClick={close}
               >
                 View all {data.meta.total} notifications

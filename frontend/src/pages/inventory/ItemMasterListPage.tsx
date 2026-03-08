@@ -148,7 +148,7 @@ export default function ItemMasterListPage(): React.ReactElement {
                         : <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">Inactive</span>}
                     </td>
                     <td className="px-4 py-3">
-                      <Link to={`/inventory/items/${item.ulid}`} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">
+                      <Link to={`/inventory/items/${item.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
                         Edit →
                       </Link>
                     </td>

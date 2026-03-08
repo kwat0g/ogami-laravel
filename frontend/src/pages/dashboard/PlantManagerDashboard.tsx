@@ -151,7 +151,7 @@ export default function PlantManagerDashboard(): React.ReactElement {
             <Settings className="h-4 w-4 text-neutral-500" />
             Mold Registry
           </h2>
-          <Link to="/mold/masters" className="text-xs text-neutral-600 hover:text-neutral-900 font-medium flex items-center gap-1">
+          <Link to="/mold/masters" className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium flex items-center gap-1">
             View all <ChevronRight className="h-3 w-3" />
           </Link>
         </div>

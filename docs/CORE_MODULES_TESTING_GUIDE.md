@@ -222,15 +222,22 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
 ### 1.3 Convert to Purchase Order
 
 1. On the approved PR detail page, click **Create PO**
-2. The form opens pre-filled — PO is locked to this PR; line items are copied from the PR
-3. Fill in:
+2. The form opens pre-filled — PO is locked to this PR; line items (description, UOM, qty) are copied from the PR and are read-only
+3. Fill in the header fields:
    - **Vendor:** Chinatown Resins Inc.
    - **Delivery Date:** 2026-03-18
-   - **Payment Terms:** Net-30
-   - **Unit Price:** ₱180.00/kg (confirm if needed)
-4. Click **Create PO**, then on the PO detail page click **Send to Vendor**
-5. ✅ Status: `sent` · Reference: `PO-2026-03-00001`
-6. ✅ PR status is now `converted_to_po`
+   - **Payment Terms:** Net 30
+4. For each line item, select the matching **Item Master** entry:
+   - In the **Item Master** dropdown (first column of the line item row), search and select **PP Resin Natural**
+   - The **Unit of Measure** field auto-fills to `kg` from the Item Master; the **Description** remains read-only (`PP Resin Natural` from the PR)
+   - Set **Unit Price:** ₱180.00 (confirm or enter if not pre-filled)
+
+   > ⚠️ **Item Master is now required on every PO line item.** Purchase Requests use free-text descriptions; the PO is the point where each line must be linked to a verified Item Master record. If the item does not yet exist in **Inventory → Item Master**, create it there first before proceeding.
+
+5. Click **Create PO**, then on the PO detail page click **Send to Vendor**
+6. ✅ Status: `sent` · Reference: `PO-2026-03-00001`
+7. ✅ PR status is now `converted_to_po`
+8. ✅ Each PO line item is now linked to an Item Master record — stock updates on GR confirmation will use this link directly (no fuzzy name matching)
 
 ### 1.4 Record First Goods Receipt (498 kg — short delivery)
 
@@ -267,6 +274,8 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
 ## Scenario 2 — Inventory: IQC Inspection, Stock Verification, and Material Issuance
 
 > **Story:** On the same day the goods arrive (March 18), QC performs an incoming inspection on RAW-001. The warehouse then verifies on-hand balances and issues 200 kg to Production via material requisition.
+>
+> **Why do this manually here?** This scenario exists to exercise the full MRQ module (create → approve → fulfill) as a standalone inventory exercise. In a real production workflow you would **skip the manual MRQ** and instead rely on the auto-MRQ generated when the Work Order is released in Scenario 4.3 — the warehouse would approve and fulfill that auto-MRQ to formally issue stock. Both paths do the same thing; the guide does both so every module gets covered.
 
 ### 2.1 Incoming Material Inspection (IQC)
 
@@ -274,19 +283,25 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
 
 1. Go to **QC / QA → Inspections → New**
 2. Fill in:
-   - **Stage:** IQC *(dropdown: iqc / ipqc / oqc)*
+   - **Stage:** select **IQC — Incoming Quality Control**
    - **Inspection Date:** 2026-03-18
-   - **Item:** *(dropdown — search and select **PP Resin Natural**)*
+   - **Item:** select **PP Resin Natural** *(displayed as `ITEM-XXXXXX — PP Resin Natural`)*
    - **Qty Inspected:** 50
-   - **Template:** *(optional — select PP Resin IQC template if seeded)*
-   - **Inspector:** *(optional dropdown — select Superadmin or leave blank)*
+   - **Template:** leave as **— None —** *(no templates seeded)*
+   - **Inspector:** *(optional — dropdown shows QC dept employees only; leave blank if none exist)*
    - **Remarks:** *(optional)*
-3. Click **Create Inspection** → on the detail page, add results and click **Submit Results**
-4. Set all criteria as **Conforming**:
-   - Visual contamination: pass
-   - Moisture content: pass, Actual `0.03%`
-   - Melt Flow Index: pass, Actual `13.2`
-5. ✅ Inspection status: `passed`; reference `INS-2026-IQC-001`
+3. Click **Create Inspection**
+4. On the detail page, click **Submit Results**
+5. Add criteria rows using **+ Add Row** (one row per check):
+
+   | Criterion | Measured / Observed | Meets Spec? |
+   |-----------|---------------------|-------------|
+   | Visual contamination | clean | Pass |
+   | Moisture content | 0.03% | Pass |
+   | Melt Flow Index | 13.2 | Pass |
+
+6. Enter **Units Passed:** `50`, then click **Submit Results**
+7. ✅ Inspection status: `passed`; reference `INS-2026-IQC-001`
 
 ### 2.2 Verify Stock Balance
 
@@ -422,12 +437,22 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
 3. Click **Create** (status `draft`) → **Release** (status `released`) → **Start** (status `in_progress`)
 4. ✅ Production order reference generated (e.g., `WO-2026-03-00001`)
 
+> **Auto-MRQ on Release:** When you click **Release**, the system automatically creates a **draft Material Requisition** (e.g., `MRQ-2026-03-00002`) in **Inventory → Requisitions** — pre-filled with the component quantities from the BOM scaled to `Qty Required`. This is the **intended real-world mechanism** for issuing stock to production: release the WO → warehouse approves and fulfills the auto-MRQ → materials formally deducted from stock.
+>
+> **Why does it appear here if we already did Scenario 2.6?** In this guide the manual MRQ in Scenario 2 was used to demo the MRQ module as a standalone exercise *before* the WO existed. In practice you would only do one or the other — not both. Because Scenario 2.6 already fulfilled 200 kg, the auto-MRQ here is **redundant** and you can safely ignore it (leave it as draft). No double-deduction occurs unless it is explicitly approved and fulfilled.
+>
+> **⚠️ The auto-MRQ does not block the WO.** The WO transitions `released → in_progress → completed` regardless of whether the MRQ is ever touched.
+
 ### 4.4 Log Output and Complete
 
 1. On the `in_progress` order, click **Log Output**:
+   - **Shift:** Shift A *(dropdown: A / B / C — tracks which shift produced the output)*
+   - **Date:** 2026-03-28
+   - **Operator:** *(select any employee from the dropdown — records who ran the production run)*
    - **Qty Produced:** 10,050
    - **Qty Rejected (scrap):** 43
-2. Click **Complete Work Order**
+   - **Remarks:** *(optional)*
+2. Click **Submit Log**, then click **Mark Complete**
 3. ✅ Status: `completed`
 4. ✅ **Inventory → Stock Balances:** Plastic Container 500ml increases by **10,007 units** (10,050 − 43)
 5. ✅ PP Resin Natural stock decreases proportionally (consumed per BOM)
@@ -553,35 +578,67 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
    - **Template:** *(optional)*
    - **Inspector:** *(optional)*
    - **Remarks:** *(optional)*
-3. Click **Create Inspection** → on the detail page, click **Submit Results**:
-   - Visual contamination: **Conforming**
-   - Wall thickness: **Non-Conforming**, Actual: `1.72mm`
-4. ✅ Inspection status: `failed`; reference `INS-2026-IPQC-001`
+3. Click **Create Inspection**
+4. On the detail page, click **Submit Results**
+5. Add criteria rows using **+ Add Row** (one row per check):
+
+   | Criterion | Measured / Observed | Meets Spec? | Remarks |
+   |-----------|---------------------|-------------|---------|
+   | Visual contamination | clean | Pass | *(optional)* |
+   | Wall thickness | 1.72mm | Fail | Below 1.80mm minimum |
+
+6. Enter **Units Passed:** `0`, then click **Submit Results**
+7. ✅ Inspection status: `failed`; reference `INS-2026-IPQC-001`
 
 ### 7.2 Raise a Non-Conformance Report (NCR)
 
 > **Important:** The NCR form requires a **Linked Inspection** — use the failing IPQC from step 7.1.
 
-1. Go to **QC / QA → NCRs → New**
-2. Fill in:
-   - **Linked Inspection:** *(dropdown — select the IPQC inspection from 7.1)*
-   - **Severity:** Major *(dropdown: minor / major / critical)*
-   - **Title:** Wall thickness below minimum spec — IPQC March 23
-   - **Description:** IPQC found average wall thickness of 1.72mm — below the 1.80mm minimum. Suspect mold wear on Container 500ml – Cavity 4.
-3. Click **Submit**
-4. ✅ NCR reference generated (e.g., `NCR-2026-03-00001`); status `open`
+1. Go to **QC / QA → NCRs** (the NCR list page loads).
+2. Click the **New NCR** button in the top-right area of the page.
+   - The page title reads **"Raise Non-Conformance Report"**.
+3. Fill in the form fields (all marked `*` are required):
+
+   | Field | What to do | Value |
+   |---|---|---|
+   | **Linked Inspection** * | Dropdown — each option shows `{reference} — {STAGE} — {date} — {item_code}`. Select the IPQC from 7.1. | *(your IPQC reference, e.g. `INS-2026-IPQC-001 — IPQC — 2026-03-23 — FGD-001`)* |
+   | **Severity** * | Dropdown: Minor / Major / Critical | **Major** |
+   | **Title** * | Short text input | `Wall thickness below minimum spec — IPQC March 23` |
+   | **Description** * | Multi-line text area | `IPQC found average wall thickness of 1.72mm — below the 1.80mm minimum. Suspect mold wear on Container 500ml – Cavity 4.` |
+
+4. Click **Raise NCR** (the primary dark button at the bottom-right of the form).
+   - The **Cancel** button (beside it) discards without saving.
+5. ✅ The page navigates to the newly created NCR detail page.
+   - Header shows the generated reference (e.g., `NCR-2026-03-00001`) with badges **major** and **open**.
 
 ### 7.3 Issue and Complete a CAPA
 
-1. Open `NCR-2026-03-00001`, click **Issue CAPA**:
-   - **Type:** Corrective
-   - **Description:** Re-shim Container 500ml – Cavity 4 mold to restore cavity depth. Verify wall thickness with CMM before resuming. Quarantine suspect units.
-   - **Due Date:** 2026-03-25
-2. ✅ CAPA reference generated; NCR status: `capa_issued`
-3. Click **Complete CAPA**, enter resolution: *Mold re-shimmed +0.16mm. CMM confirms 1.94mm. Trial units conforming.*
-4. ✅ CAPA status: `completed`
-5. Open the NCR → click **Close NCR**
-6. ✅ NCR status: `closed`
+> You should now be on the NCR detail page for `NCR-2026-03-00001` with status **open**.
+
+1. Scroll to the **Actions** section at the bottom of the page.
+2. Click the **Issue CAPA** button (visible only when NCR status is `open` or `under_review`).
+   - An inline form panel labelled **"Issue CAPA Action"** appears above the buttons.
+3. Fill in:
+
+   | Field | What to do | Value |
+   |---|---|---|
+   | **Type** | Dropdown (left column): Corrective / Preventive | **Corrective** |
+   | **Due Date** | Date picker (right column) | `2026-03-25` |
+   | **Description** * | Textarea (full width, 3 rows) | `Re-shim Container 500ml – Cavity 4 mold to restore cavity depth. Verify wall thickness with CMM before resuming. Quarantine suspect units.` |
+   | **Assign To** | Dropdown (left column) — lists active QC/QA staff as `{Full Name} ({Position})`. Optional. | *(select a QC officer or leave unassigned)* |
+
+4. Click **Issue CAPA** (dark button in the inline form).
+   - The **Cancel** button collapses the form without saving.
+5. ✅ The CAPA Actions section appears above the Actions panel, showing the new CAPA entry with:
+   - A **corrective** type badge and the description text
+   - Status badge: **open**
+   - Due date and assigned employee (if selected)
+   - NCR header status badge changes to **capa issued**
+6. In the CAPA Actions section, find the CAPA entry with status **open**.
+   - Click the **Mark Complete** inline text link (shown at the bottom-right of the CAPA row, beside the due date).
+7. ✅ CAPA status badge updates to **completed**.
+8. Back in the **Actions** section, click **Close NCR** (the dark button).
+9. ✅ NCR header status badge changes to **closed** and a **Closed At** date appears in the NCR Details card.
 
 ### 7.4 Outgoing Quality Inspection (OQC)
 
@@ -632,22 +689,27 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
    - **Qty Received:** 10,000
    - **UoM:** pcs
    - **Lot/Batch Number:** *(optional)*
-4. Click **Save → Confirm**
-5. ✅ DR status: `confirmed`; reference `DR-OUT-2026-00001`
-6. ✅ Plastic Container 500ml stock decreases by 10,000
+4. Click **Create Receipt** — the form submits and the app redirects to the **Delivery Receipts** list. The new DR appears with status `draft`.
+5. Click on the new DR row to open it, then click **Confirm Receipt** on the detail page.
+6. ✅ DR status: `confirmed`; reference `DR-OUT-2026-00001`
+7. ✅ Plastic Container 500ml stock decreases by 10,000
 
 > **Note:** The Vehicle field is on the **Shipment** (step 8.2), not on the Delivery Receipt.
 
 ### 8.2 Create and Track a Shipment
 
-1. Go to **Delivery → Shipments → New**
-2. Fill in:
-   - **Link to DR:** `DR-OUT-2026-00001`
-   - **Carrier:** JRS Express, **Tracking No:** JRS-2026-032801
-   - **Shipped Date:** 2026-03-28, **Estimated Arrival:** 2026-03-29
-3. Click **Save** (status `pending`) → **Update Status → In Transit**
-4. Update to **Delivered**, **Actual Arrival:** 2026-03-29
-5. ✅ Shipment status: `delivered`
+1. Go to **Delivery → Shipments → New Shipment** (button top-right)
+2. Fill in the form:
+   - **Delivery Receipt:** select `DR-2026-03-00001 — Ace Hardware Philippines` *(dropdown shows confirmed DRs only)*
+   - **Carrier:** JRS Express
+   - **Tracking No.:** JRS-2026-032801
+   - **Shipped Date:** 2026-03-28
+   - **Estimated Arrival:** 2026-03-29
+   - **Notes:** *(optional)*
+3. Click **Create Shipment** (status `pending`)
+4. On the shipment row in the list, click **Mark In Transit** → status becomes `in_transit`
+5. Click **Mark Delivered**, enter **Actual Arrival:** 2026-03-29
+6. ✅ Shipment status: `delivered`
 
 ---
 

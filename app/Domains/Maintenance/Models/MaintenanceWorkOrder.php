@@ -30,12 +30,14 @@ final class MaintenanceWorkOrder extends Model implements AuditableContract
         'scheduled_date',
         'completed_at',
         'completion_notes',
+        'labor_hours',
         'created_by_id',
     ];
 
     protected $casts = [
         'scheduled_date' => 'date',
         'completed_at'   => 'datetime',
+        'labor_hours'    => 'float',
     ];
 
     /** @return BelongsTo<Equipment, $this> */

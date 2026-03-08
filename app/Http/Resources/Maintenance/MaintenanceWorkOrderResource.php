@@ -24,6 +24,7 @@ final class MaintenanceWorkOrderResource extends JsonResource
             'scheduled_date'   => $this->scheduled_date?->toDateString(),
             'completed_at'     => $this->completed_at?->toISOString(),
             'completion_notes' => $this->completion_notes,
+            'labor_hours'      => $this->labor_hours,
             'equipment'        => $this->whenLoaded('equipment', fn () => [
                 'id'             => $this->equipment->id,
                 'equipment_code' => $this->equipment->equipment_code,

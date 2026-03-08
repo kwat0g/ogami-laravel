@@ -39,7 +39,9 @@ export function useNotifications(page = 1, unreadOnly = false) {
       })
       return res.data
     },
-    staleTime: 30_000,
+    // Keep data fresh for the full polling cycle — prevents stale-on-mount
+    // refetches in the 5min window between polls.
+    staleTime: 5 * 60_000,
     // WebSocket (Reverb) pushes invalidations in real-time via useRealtimeEvents.
     // This poll is a fallback for when the WS connection is unavailable.
     refetchInterval: 5 * 60_000,
@@ -55,12 +57,14 @@ export function useUnreadCount() {
       const res = await api.get<{ count: number }>('/notifications/unread-count')
       return res.data
     },
-    staleTime: 30_000,
+    // Keep data fresh for the full polling cycle — prevents stale-on-mount
+    // refetches in the 2min window between polls.
+    staleTime: 2 * 60_000,
     // WS push handles real-time updates; this is a backstop poll.
     refetchInterval: 2 * 60_000,
     refetchIntervalInBackground: false,
-    // Re-check badge when user switches back to the tab
-    refetchOnWindowFocus: true,
+    // Window-focus refetching removed: global default is false and WS events
+    // handle real-time badge updates. The 2min poll covers the fallback case.
   })
 }
 

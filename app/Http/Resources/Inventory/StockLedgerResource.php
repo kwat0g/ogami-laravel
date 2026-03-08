@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Inventory;
 
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\StockLedger;
+use App\Domains\Procurement\Models\GoodsReceipt;
+use App\Domains\Production\Models\ProductionOrder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,6 +24,8 @@ final class StockLedgerResource extends JsonResource
             'transaction_type' => $this->transaction_type,
             'reference_type'   => $this->reference_type,
             'reference_id'     => $this->reference_id,
+            'reference_label'  => $this->resolveReferenceLabel(),
+            'reference_ulid'   => $this->resolveReferenceUlid(),
             'quantity'         => $this->quantity,
             'balance_after'    => $this->balance_after,
             'remarks'          => $this->remarks,
@@ -40,5 +45,33 @@ final class StockLedgerResource extends JsonResource
                 'name' => $this->createdBy->name,
             ]),
         ];
+    }
+
+    private function resolveReferenceLabel(): ?string
+    {
+        if ($this->reference_type === null || $this->reference_id === null) {
+            return null;
+        }
+
+        return match ($this->reference_type) {
+            'goods_receipts'        => GoodsReceipt::find($this->reference_id)?->gr_reference,
+            'material_requisitions' => MaterialRequisition::find($this->reference_id)?->mr_reference,
+            'production_orders'     => ProductionOrder::find($this->reference_id)?->po_reference,
+            default                 => "{$this->reference_type}#{$this->reference_id}",
+        };
+    }
+
+    private function resolveReferenceUlid(): ?string
+    {
+        if ($this->reference_type === null || $this->reference_id === null) {
+            return null;
+        }
+
+        return match ($this->reference_type) {
+            'goods_receipts'        => GoodsReceipt::find($this->reference_id)?->ulid,
+            'material_requisitions' => MaterialRequisition::find($this->reference_id)?->ulid,
+            'production_orders'     => ProductionOrder::find($this->reference_id)?->ulid,
+            default                 => null,
+        };
     }
 }

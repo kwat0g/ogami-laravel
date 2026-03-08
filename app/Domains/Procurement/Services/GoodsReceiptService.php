@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Services;
 
-use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\GoodsReceiptItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
@@ -71,14 +70,11 @@ final class GoodsReceiptService implements ServiceContract
                     );
                 }
 
-                // Auto-resolve item_master_id from PO item description
-                // e.g. "PP Resin Natural (RAW-001)" → look up ItemMaster by code RAW-001
-                $itemMasterId = $this->resolveItemMasterId($poItem->item_description ?? '');
-
+                // item_master_id comes directly from the PO item FK — no name-matching needed
                 GoodsReceiptItem::create([
                     'goods_receipt_id'  => $gr->id,
                     'po_item_id'        => $item['po_item_id'],
-                    'item_master_id'    => $itemMasterId,
+                    'item_master_id'    => $poItem->item_master_id,
                     'quantity_received' => $item['quantity_received'],
                     'unit_of_measure'   => $item['unit_of_measure'],
                     'condition'         => $item['condition'] ?? 'good',
@@ -137,28 +133,6 @@ final class GoodsReceiptService implements ServiceContract
      *   - "PP Resin Natural (RAW-001)"  → extracts code from parentheses
      *   - "RAW-001"                     → direct code match
      */
-    private function resolveItemMasterId(string $description): ?int
-    {
-        // Extract code from parentheses e.g. (RAW-001)
-        if (preg_match('/\(([A-Z0-9\-]+)\)/', $description, $matches)) {
-            $item = ItemMaster::where('item_code', $matches[1])->first();
-            if ($item !== null) {
-                return $item->id;
-            }
-        }
-
-        // Try the whole description as a direct item code
-        $item = ItemMaster::where('item_code', trim($description))->first();
-        if ($item !== null) {
-            return $item->id;
-        }
-
-        // Try matching by item name (e.g. "PP Resin Natural" → RAW-001)
-        $item = ItemMaster::where('name', trim($description))->first();
-
-        return $item?->id;
-    }
-
     private function generateReference(): string
     {
         $seq = DB::selectOne('SELECT NEXTVAL(\'goods_receipt_seq\') AS val');

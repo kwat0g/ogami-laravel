@@ -25,8 +25,6 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   if (!open) return null
 
-  const isDanger = variant === 'danger'
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -40,7 +38,7 @@ export default function ConfirmDialog({
         {/* Body */}
         <div className="p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${isDanger ? 'text-red-500' : 'text-amber-500'}`} />
+            <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5 text-neutral-500" />
             <div>
               <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
               {description && (
@@ -64,11 +62,7 @@ export default function ConfirmDialog({
             type="button"
             disabled={loading}
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium text-white rounded transition-colors disabled:opacity-50 ${
-              isDanger
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-amber-600 hover:bg-amber-700'
-            }`}
+            className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 rounded hover:bg-neutral-800 transition-colors disabled:opacity-50"
           >
             {loading ? 'Processing…' : confirmLabel}
           </button>

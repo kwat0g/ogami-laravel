@@ -1,19 +1,30 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { useMold, useLogShots } from '@/hooks/useMold';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Pencil } from 'lucide-react';
+import { useMold, useLogShots, useUpdateMold } from '@/hooks/useMold';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useProductionOrders } from '@/hooks/useProduction';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
-import type { LogShotsPayload } from '@/types/mold';
+import type { LogShotsPayload, MoldStatus } from '@/types/mold';
+
+const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 bg-white';
 
 export default function MoldDetailPage() {
   const { ulid } = useParams<{ ulid: string }>();
+  const navigate = useNavigate();
   const { data, isLoading } = useMold(ulid ?? '');
   const logShots = useLogShots(ulid ?? '');
+  const updateMut = useUpdateMold(ulid ?? '');
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '', description: '', cavity_count: '', material: '', location: '', max_shots: '', status: 'active' as MoldStatus,
+  });
   const { data: employeesData } = useEmployees({ per_page: 200, is_active: true })
-  const employees = employeesData?.data ?? []
+  const employees = (employeesData?.data ?? []).filter(
+    (e) => e.department?.name === 'Production' || e.department?.name === 'Mold Department'
+  )
   const { data: ordersData } = useProductionOrders({ status: 'in_progress' })
   const productionOrders = ordersData?.data ?? []
 
@@ -25,6 +36,41 @@ export default function MoldDetailPage() {
 
   if (isLoading) return <div className="py-12 text-center text-neutral-400">Loading…</div>;
   if (!mold) return <div className="py-12 text-center text-neutral-400">Mold not found.</div>;
+
+  const startEdit = () => {
+    setEditForm({
+      name: mold.name,
+      description: mold.description ?? '',
+      cavity_count: String(mold.cavity_count),
+      material: mold.material ?? '',
+      location: mold.location ?? '',
+      max_shots: mold.max_shots != null ? String(mold.max_shots) : '',
+      status: mold.status,
+    });
+    setIsEditing(true);
+  };
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.name.trim()) { toast.error('Name is required.'); return; }
+    const cavityCount = parseInt(editForm.cavity_count, 10);
+    if (!cavityCount || cavityCount < 1) { toast.error('Cavity count must be at least 1.'); return; }
+    try {
+      await updateMut.mutateAsync({
+        name: editForm.name.trim(),
+        description: editForm.description || undefined,
+        cavity_count: cavityCount,
+        material: editForm.material || undefined,
+        location: editForm.location || undefined,
+        max_shots: editForm.max_shots ? parseInt(editForm.max_shots, 10) : undefined,
+        status: editForm.status,
+      });
+      toast.success('Mold updated.');
+      setIsEditing(false);
+    } catch {
+      toast.error('Failed to update mold.');
+    }
+  };
 
   const shotPct = mold.max_shots ? Math.min(100, (mold.current_shots / mold.max_shots) * 100) : null;
 
@@ -42,17 +88,84 @@ export default function MoldDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="font-mono text-xs text-neutral-400">{mold.mold_code}</p>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-6">{mold.name}</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/mold/masters')}
+            className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 text-neutral-500"
+            aria-label="Back to Mold Masters"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <p className="font-mono text-xs text-neutral-400">{mold.mold_code}</p>
+            <h1 className="text-lg font-semibold text-neutral-900">{mold.name}</h1>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {mold.is_critical && (
             <span className="rounded bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700">Critical</span>
           )}
           <span className="rounded bg-neutral-100 px-3 py-1 text-sm capitalize">{mold.status.replace('_', ' ')}</span>
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={startEdit}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Edit form */}
+      {isEditing && (
+        <form onSubmit={handleEditSave} className="bg-white border border-neutral-200 rounded p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Name *</label>
+            <input type="text" className={INPUT} value={editForm.name} onChange={e => setEditForm(s => ({ ...s, name: e.target.value }))} required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
+            <textarea className={INPUT} rows={2} value={editForm.description} onChange={e => setEditForm(s => ({ ...s, description: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Cavity Count *</label>
+              <input type="number" min={1} className={INPUT} value={editForm.cavity_count} onChange={e => setEditForm(s => ({ ...s, cavity_count: e.target.value }))} required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Max Shots</label>
+              <input type="number" min={1} className={INPUT} value={editForm.max_shots} onChange={e => setEditForm(s => ({ ...s, max_shots: e.target.value }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Material</label>
+              <input type="text" className={INPUT} value={editForm.material} onChange={e => setEditForm(s => ({ ...s, material: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Location</label>
+              <input type="text" className={INPUT} value={editForm.location} onChange={e => setEditForm(s => ({ ...s, location: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Status *</label>
+            <select className={INPUT} value={editForm.status} onChange={e => setEditForm(s => ({ ...s, status: e.target.value as MoldStatus }))}>
+              <option value="active">Active</option>
+              <option value="under_maintenance">Under Maintenance</option>
+              <option value="retired">Retired</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-1">
+            <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
+            <button type="submit" disabled={updateMut.isPending} className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+              {updateMut.isPending ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
@@ -133,7 +246,7 @@ export default function MoldDetailPage() {
                     >
                       <option value="">— Select Operator —</option>
                       {employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                        <option key={emp.id} value={emp.user_id ?? ''}>{emp.full_name} ({emp.position?.title ?? emp.department?.name ?? emp.employee_code})</option>
                       ))}
                     </select>
                   )}

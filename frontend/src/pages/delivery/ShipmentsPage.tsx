@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Package, AlertTriangle } from 'lucide-react';
-import { useShipments } from '@/hooks/useDelivery';
+import { Package, AlertTriangle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { useShipments, useCreateShipment, useUpdateShipmentStatus, useDeliveryReceipts } from '@/hooks/useDelivery';
 import type { ShipmentStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<ShipmentStatus, string> = {
@@ -17,17 +17,140 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
   returned:   'Returned',
 };
 
+const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 bg-white';
+
+const NEXT_STATUS: Partial<Record<ShipmentStatus, ShipmentStatus>> = {
+  pending: 'in_transit',
+  in_transit: 'delivered',
+};
+
+const NEXT_STATUS_LABEL: Partial<Record<ShipmentStatus, string>> = {
+  pending: 'Mark In Transit',
+  in_transit: 'Mark Delivered',
+};
+
 export default function ShipmentsPage() {
   const [status, setStatus] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [expandedUlid, setExpandedUlid] = useState<string | null>(null);
+  const [actualArrival, setActualArrival] = useState('');
+  const [deliveryReceiptId, setDeliveryReceiptId] = useState<number | null>(null);
+  const [createForm, setCreateForm] = useState({
+    carrier: '',
+    tracking_number: '',
+    shipped_at: '',
+    estimated_arrival: '',
+    notes: '',
+  });
 
   const params: Record<string, string> = {};
   if (status) params.status = status;
 
   const { data, isLoading, isError } = useShipments(Object.keys(params).length ? params : undefined);
+  const { data: drData } = useDeliveryReceipts({ status: 'confirmed', per_page: '100' });
+  const confirmedDrs = drData?.data ?? [];
+  const createMut = useCreateShipment();
+  const updateStatusMut = useUpdateShipmentStatus();
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createMut.mutateAsync({
+        delivery_receipt_id: deliveryReceiptId ?? undefined,
+        carrier: createForm.carrier || undefined,
+        tracking_number: createForm.tracking_number || undefined,
+        shipped_at: createForm.shipped_at || undefined,
+        estimated_arrival: createForm.estimated_arrival || undefined,
+        notes: createForm.notes || undefined,
+      });
+      import('sonner').then(({ toast }) => toast.success('Shipment created.'));
+      setCreateForm({ carrier: '', tracking_number: '', shipped_at: '', estimated_arrival: '', notes: '' });
+      setDeliveryReceiptId(null);
+      setShowCreate(false);
+    } catch {
+      import('sonner').then(({ toast }) => toast.error('Failed to create shipment.'));
+    }
+  };
+
+  const handleStatusUpdate = async (ulid: string, nextStatus: ShipmentStatus) => {
+    try {
+      await updateStatusMut.mutateAsync({
+        ulid,
+        payload: {
+          status: nextStatus,
+          ...(nextStatus === 'delivered' && actualArrival ? { actual_arrival: actualArrival } : {}),
+        },
+      });
+      import('sonner').then(({ toast }) => toast.success('Status updated.'));
+      setExpandedUlid(null);
+      setActualArrival('');
+    } catch {
+      import('sonner').then(({ toast }) => toast.error('Failed to update status.'));
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">Shipments</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-neutral-900">Shipments</h1>
+        <button
+          type="button"
+          onClick={() => setShowCreate(s => !s)}
+          className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+        >
+          <Plus size={16} /> New Shipment
+        </button>
+      </div>
+
+      {showCreate && (
+        <form onSubmit={handleCreate} className="bg-white border border-neutral-200 rounded p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Delivery Receipt</label>
+            <select
+              className={INPUT}
+              value={deliveryReceiptId ?? ''}
+              onChange={e => setDeliveryReceiptId(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">— None —</option>
+              {confirmedDrs.map(dr => (
+                <option key={dr.id} value={dr.id}>
+                  {dr.dr_reference} — {dr.customer?.name ?? dr.vendor?.name ?? dr.direction}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Carrier</label>
+              <input type="text" className={INPUT} value={createForm.carrier} onChange={e => setCreateForm(s => ({ ...s, carrier: e.target.value }))} placeholder="e.g. LBC Express" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Tracking No.</label>
+              <input type="text" className={INPUT} value={createForm.tracking_number} onChange={e => setCreateForm(s => ({ ...s, tracking_number: e.target.value }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Shipped Date</label>
+              <input type="date" className={INPUT} value={createForm.shipped_at} onChange={e => setCreateForm(s => ({ ...s, shipped_at: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Estimated Arrival</label>
+              <input type="date" className={INPUT} value={createForm.estimated_arrival} onChange={e => setCreateForm(s => ({ ...s, estimated_arrival: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
+            <textarea className={INPUT} rows={2} value={createForm.notes} onChange={e => setCreateForm(s => ({ ...s, notes: e.target.value }))} />
+          </div>
+          <div className="flex justify-end gap-3 pt-1">
+            <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
+            <button type="submit" disabled={createMut.isPending} className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+              {createMut.isPending ? 'Creating…' : 'Create Shipment'}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="flex gap-2">
         <select
@@ -60,7 +183,7 @@ export default function ShipmentsPage() {
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                {['Reference', 'Carrier', 'Tracking #', 'Shipped', 'Est. Arrival', 'Actual Arrival', 'Status'].map((h) => (
+                {['Reference', 'Carrier', 'Tracking #', 'Shipped', 'Est. Arrival', 'Actual Arrival', 'Status', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">
                     {h}
                   </th>
@@ -70,40 +193,95 @@ export default function ShipmentsPage() {
             <tbody className="divide-y divide-neutral-100">
               {(data?.data ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-neutral-400">
+                  <td colSpan={8} className="px-4 py-10 text-center text-neutral-400">
                     <Package size={32} className="mx-auto mb-2 opacity-30" />
                     No shipments found.
                   </td>
                 </tr>
               ) : (
                 (data?.data ?? []).map((shipment) => (
-                  <tr key={shipment.ulid} className="even:bg-neutral-100 hover:bg-neutral-50">
-                    <td className="px-4 py-3 font-mono text-xs font-medium text-neutral-900">
-                      {shipment.shipment_reference}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-700">
-                      {shipment.carrier ?? <span className="text-neutral-400">—</span>}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-neutral-600">
-                      {shipment.tracking_number ?? <span className="text-neutral-400">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600 text-xs">
-                      {shipment.shipped_at ? shipment.shipped_at.slice(0, 10) : <span className="text-neutral-400">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600 text-xs">
-                      {shipment.estimated_arrival ? shipment.estimated_arrival.slice(0, 10) : <span className="text-neutral-400">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600 text-xs">
-                      {shipment.actual_arrival
-                        ? <span className="text-neutral-900 font-medium">{shipment.actual_arrival.slice(0, 10)}</span>
-                        : <span className="text-neutral-400">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[shipment.status]}`}>
-                        {STATUS_LABELS[shipment.status]}
-                      </span>
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={shipment.ulid} className="even:bg-neutral-100 hover:bg-neutral-50">
+                      <td className="px-4 py-3 font-mono text-xs font-medium text-neutral-900">
+                        {shipment.shipment_reference}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-700">
+                        {shipment.carrier ?? <span className="text-neutral-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-neutral-600">
+                        {shipment.tracking_number ?? <span className="text-neutral-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-600 text-xs">
+                        {shipment.shipped_at ? shipment.shipped_at.slice(0, 10) : <span className="text-neutral-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-600 text-xs">
+                        {shipment.estimated_arrival ? shipment.estimated_arrival.slice(0, 10) : <span className="text-neutral-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-600 text-xs">
+                        {shipment.actual_arrival
+                          ? <span className="text-neutral-900 font-medium">{shipment.actual_arrival.slice(0, 10)}</span>
+                          : <span className="text-neutral-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[shipment.status]}`}>
+                          {STATUS_LABELS[shipment.status]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {NEXT_STATUS[shipment.status] && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (expandedUlid === shipment.ulid) {
+                                setExpandedUlid(null);
+                              } else {
+                                setExpandedUlid(shipment.ulid);
+                                setActualArrival('');
+                              }
+                            }}
+                            className="flex items-center gap-1 text-xs text-neutral-600 border border-neutral-300 rounded px-2 py-1 hover:bg-neutral-50"
+                          >
+                            {NEXT_STATUS_LABEL[shipment.status]}
+                            {expandedUlid === shipment.ulid ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                    {expandedUlid === shipment.ulid && NEXT_STATUS[shipment.status] && (
+                      <tr key={`${shipment.ulid}-expand`}>
+                        <td colSpan={8} className="px-4 py-3 bg-neutral-50 border-t border-neutral-200">
+                          <div className="flex items-end gap-4">
+                            {NEXT_STATUS[shipment.status] === 'delivered' && (
+                              <div>
+                                <label className="block text-xs font-medium text-neutral-600 mb-1">Actual Arrival Date</label>
+                                <input
+                                  type="date"
+                                  className="border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 bg-white"
+                                  value={actualArrival}
+                                  onChange={e => setActualArrival(e.target.value)}
+                                />
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              disabled={updateStatusMut.isPending}
+                              onClick={() => handleStatusUpdate(shipment.ulid, NEXT_STATUS[shipment.status]!)}
+                              className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                            >
+                              {updateStatusMut.isPending ? 'Updating…' : `Confirm: ${NEXT_STATUS_LABEL[shipment.status]}`}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedUlid(null)}
+                              className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))
               )}
             </tbody>

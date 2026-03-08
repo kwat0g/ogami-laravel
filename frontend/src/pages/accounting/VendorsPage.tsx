@@ -202,10 +202,12 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
   const updateMut = useUpdateVendor(initial?.id ?? 0)
 
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setFieldErrors({})
     try {
       if (isEdit) {
         await updateMut.mutateAsync(form)
@@ -216,9 +218,12 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
       }
       onClose()
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setError(msg ?? 'An unexpected error occurred.')
-      toast.error(msg ?? 'Failed to save vendor.')
+      const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data
+      const msg = data?.message ?? 'An unexpected error occurred.'
+      const errs = data?.errors ?? {}
+      setError(msg)
+      setFieldErrors(errs)
+      toast.error(msg)
     }
   }
 
@@ -230,7 +235,16 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
         <h2 className="text-lg font-semibold text-neutral-900">{isEdit ? 'Edit Vendor' : 'Add Vendor'}</h2>
 
         {error && (
-          <div className="rounded bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">{error}</div>
+          <div className="rounded bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
+            {error}
+            {Object.keys(fieldErrors).length > 0 && (
+              <ul className="mt-1 list-disc list-inside space-y-0.5">
+                {Object.entries(fieldErrors).map(([field, msgs]) => (
+                  <li key={field}><span className="font-medium">{field}:</span> {msgs[0]}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">

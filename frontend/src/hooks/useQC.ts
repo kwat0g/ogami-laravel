@@ -163,10 +163,20 @@ export function useCloseNcr(ulid: string) {
   })
 }
 
+export function useCapaActions(params?: { status?: string; per_page?: number }) {
+  return useQuery({
+    queryKey: ['qc', 'capa', params],
+    queryFn: () => api.get<Paginated<CapaAction>>('/qc/capa', { params }).then(r => r.data),
+  })
+}
+
 export function useCompleteCapaAction() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (capaId: number) => api.patch(`/qc/capa/${capaId}/complete`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.ncrs }),
+    mutationFn: (capaUlid: string) => api.patch(`/qc/capa/${capaUlid}/complete`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.ncrs })
+      qc.invalidateQueries({ queryKey: ['qc', 'capa'] })
+    },
   })
 }

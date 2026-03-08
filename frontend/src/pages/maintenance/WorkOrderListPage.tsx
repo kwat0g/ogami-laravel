@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, List } from 'lucide-react';
 import { useWorkOrders } from '@/hooks/useMaintenance';
 import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
@@ -19,6 +19,7 @@ const STATUS_COLORS: Record<WorkOrderStatus, string> = {
 };
 
 export default function WorkOrderListPage() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [priority, setPriority] = useState('');
@@ -95,7 +96,11 @@ export default function WorkOrderListPage() {
               </tr>
             ) : (
               (data?.data ?? []).map(wo => (
-                <tr key={wo.ulid} className="even:bg-neutral-100 hover:bg-neutral-50">
+                <tr
+                  key={wo.ulid}
+                  className="even:bg-neutral-100 hover:bg-neutral-50 cursor-pointer"
+                  onClick={() => navigate(`/maintenance/work-orders/${wo.ulid}`)}
+                >
                   <td className="px-4 py-3 font-mono text-xs">{wo.mwo_reference}</td>
                   <td className="px-4 py-3 font-medium text-neutral-900">{wo.title}</td>
                   <td className="px-4 py-3 text-neutral-500">{wo.equipment?.name ?? '—'}</td>

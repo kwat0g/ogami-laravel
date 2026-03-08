@@ -14,7 +14,9 @@ export default function CreateWorkOrderPage(): React.ReactElement {
   const equipment = equipmentData?.data ?? []
 
   const { data: employeesData } = useEmployees({ per_page: 200, is_active: true })
-  const employees = employeesData?.data ?? []
+  const employees = (employeesData?.data ?? []).filter(
+    e => e.department?.name === 'Maintenance'
+  )
 
   const [form, setForm] = useState({
     equipment_id: 0,
@@ -155,7 +157,7 @@ export default function CreateWorkOrderPage(): React.ReactElement {
             >
               <option value="">— Unassigned —</option>
               {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.position?.title ?? emp.employee_code})</option>
               ))}
             </select>
           </div>

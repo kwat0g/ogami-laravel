@@ -162,7 +162,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
           {/* Loan Type */}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
@@ -171,7 +171,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
             <select
               value={formData.loan_type_id}
               onChange={(e) => handleTypeChange(e.target.value)}
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               required
               disabled={loadingTypes}
             >
@@ -197,7 +197,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
               placeholder="e.g. 10,000"
               value={formData.principal_amount}
               onChange={(e) => setFormData({ ...formData, principal_amount: e.target.value })}
-              className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 transition-colors ${
+              className={`w-full border rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 transition-colors ${
                 amountError
                   ? 'border-red-400 focus:ring-red-400 bg-red-50'
                   : 'border-neutral-300 focus:ring-neutral-400'
@@ -225,7 +225,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
             <select
               value={formData.term_months}
               onChange={(e) => setFormData({ ...formData, term_months: e.target.value })}
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 max-h-32"
               required
               disabled={!selectedType}
             >
@@ -298,7 +298,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
             <select
               value={purposePreset}
               onChange={(e) => setPurposePreset(e.target.value as PurposePreset | '')}
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               required
             >
               <option value="">Select a reason...</option>
@@ -311,8 +311,8 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
                 value={formData.purpose}
                 onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
                 placeholder="Please describe the purpose of this loan..."
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none mt-2"
-                rows={3}
+                className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none mt-2"
+                rows={2}
                 required
               />
             )}
@@ -323,14 +323,14 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
+              className="flex-1 px-4 py-1.5 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 text-sm font-medium"
+              className="flex-1 px-4 py-1.5 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 text-sm font-medium"
             >
               {createMutation.isPending ? 'Submitting...' : 'Submit Application'}
             </button>

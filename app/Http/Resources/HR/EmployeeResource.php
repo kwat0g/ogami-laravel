@@ -24,6 +24,7 @@ final class EmployeeResource extends JsonResource
         return [
             'id' => $emp->id,
             'ulid' => $emp->ulid,
+            'user_id' => $emp->user_id,
             'employee_code' => $emp->employee_code,
             'full_name' => $emp->full_name,
             'first_name' => $emp->first_name,

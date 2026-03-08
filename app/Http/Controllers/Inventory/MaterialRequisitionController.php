@@ -22,7 +22,7 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('viewAny', MaterialRequisition::class);
 
-        $query = MaterialRequisition::with(['requestedBy', 'department'])
+        $query = MaterialRequisition::with(['requestedBy', 'department', 'productionOrder'])
             ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
             ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
             ->when($request->input('department_id'), fn ($q, $v) => $q->where('department_id', $v))

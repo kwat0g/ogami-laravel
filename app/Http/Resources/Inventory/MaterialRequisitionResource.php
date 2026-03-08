@@ -41,6 +41,11 @@ final class MaterialRequisitionResource extends JsonResource
             // Relations
             'requested_by'    => $this->whenLoaded('requestedBy', fn () => ['id' => $mrq->requestedBy->id, 'name' => $mrq->requestedBy->name]),
             'department'      => $this->whenLoaded('department', fn () => ['id' => $mrq->department->id, 'name' => $mrq->department->name]),
+            'production_order' => $this->whenLoaded('productionOrder', fn () => $mrq->productionOrder ? [
+                'id'           => $mrq->productionOrder->id,
+                'ulid'         => $mrq->productionOrder->ulid,
+                'po_reference' => $mrq->productionOrder->po_reference,
+            ] : null),
             'noted_by'        => $this->whenLoaded('notedBy', fn () => $mrq->notedBy ? ['id' => $mrq->notedBy->id, 'name' => $mrq->notedBy->name] : null),
             'checked_by'      => $this->whenLoaded('checkedBy', fn () => $mrq->checkedBy ? ['id' => $mrq->checkedBy->id, 'name' => $mrq->checkedBy->name] : null),
             'reviewed_by'     => $this->whenLoaded('reviewedBy', fn () => $mrq->reviewedBy ? ['id' => $mrq->reviewedBy->id, 'name' => $mrq->reviewedBy->name] : null),

@@ -9,6 +9,7 @@ use App\Domains\Inventory\Services\StockService;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Events\Procurement\ThreeWayMatchPassed;
 use App\Models\User;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
@@ -16,14 +17,27 @@ use Illuminate\Support\Facades\Log;
 /**
  * When a GR passes three-way match, auto-receive stock into the default
  * warehouse location for each GR line item.
+ *
+ * Implements ShouldBeUnique so that even if ThreeWayMatchPassed fires twice
+ * (e.g. due to after_commit/immediate double-dispatch), only one stock write
+ * occurs per GR.
  */
-final class LinkGoodsReceiptToInventory implements ShouldQueue
+final class LinkGoodsReceiptToInventory implements ShouldQueue, ShouldBeUnique
 {
     use InteractsWithQueue;
 
     public string $queue = 'default';
 
+    /** Lock TTL — how long the unique lock is held while the job is processing. */
+    public int $uniqueFor = 60;
+
     public function __construct(private readonly StockService $stockService) {}
+
+    /** Unique per GR id — prevents duplicate stock writes for the same GR. */
+    public function uniqueId(ThreeWayMatchPassed $event): string
+    {
+        return 'gr-stock-' . $event->goodsReceipt->id;
+    }
 
     public function handle(ThreeWayMatchPassed $event): void
     {

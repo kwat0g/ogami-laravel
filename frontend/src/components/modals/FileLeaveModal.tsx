@@ -107,7 +107,7 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full border border-neutral-200">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto border border-neutral-200">
         <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
           <h2 className="text-base font-semibold text-neutral-900">File Leave Request</h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
@@ -115,7 +115,7 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
           {/* Leave Type */}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
@@ -124,8 +124,9 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
             <select
               value={formData.leave_type_id}
               onChange={(e) => setFormData({ ...formData, leave_type_id: e.target.value })}
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               required
+              size={leaveTypes && leaveTypes.length > 10 ? 1 : undefined}
             >
               <option value="">Select leave type...</option>
               {(leaveTypes ?? []).map((type) => {
@@ -181,7 +182,7 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
                 type="date"
                 value={formData.date_from}
                 onChange={(e) => setFormData({ ...formData, date_from: e.target.value })}
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 required
               />
             </div>
@@ -194,7 +195,7 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
                 value={formData.date_to}
                 min={formData.date_from}
                 onChange={(e) => setFormData({ ...formData, date_to: e.target.value })}
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 required
               />
             </div>
@@ -242,8 +243,8 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
               placeholder={isOth
                 ? "Specify your leave type and reason (e.g., 'Graduation Ceremony — attending sibling's graduation')"
                 : "Explain the reason for leave..."}
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
-              rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
+              rows={2}
               required
             />
           </div>
@@ -253,14 +254,14 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
+              className="flex-1 px-4 py-1.5 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 text-sm font-medium"
+              className="flex-1 px-4 py-1.5 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 text-sm font-medium"
             >
               {createMutation.isPending ? 'Filing...' : 'File Request'}
             </button>

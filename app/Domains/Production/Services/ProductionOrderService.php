@@ -108,29 +108,40 @@ final class ProductionOrderService implements ServiceContract
             throw new DomainException('Order is not in progress.', 'PROD_ORDER_NOT_IN_PROGRESS', 422);
         }
 
-        $order->update(['status' => 'completed']);
-
-        // Move finished goods into stock
-        $location = WarehouseLocation::where('is_active', true)->first();
-        if ($location !== null) {
-            $systemUser = User::where('email', 'admin@ogamierp.local')->first();
-            if ($systemUser !== null) {
-                $this->stockService->receive(
-                    itemId: $order->product_item_id,
-                    locationId: $location->id,
-                    quantity: (float) $order->qty_produced,
-                    referenceType: ProductionOrder::class,
-                    referenceId: $order->id,
-                    actor: $systemUser,
-                    remarks: "Auto-receive from WO {$order->po_reference}",
-                );
-            }
+        if ((float) $order->qty_produced <= 0) {
+            throw new DomainException(
+                'No output has been logged. Log production output before completing the order.',
+                'PROD_NO_OUTPUT_LOGGED',
+                422,
+            );
         }
 
-        // PROD-DEL-001: Notify Delivery domain to draft an outbound DR for delivery-scheduled WOs.
-        ProductionOrderCompleted::dispatch($order);
+        return DB::transaction(function () use ($order): ProductionOrder {
+            $order->update(['status' => 'completed']);
 
-        return $order->refresh();
+            // Move finished goods into stock
+            $location = WarehouseLocation::where('is_active', true)->first();
+            if ($location !== null) {
+                $systemUser = User::where('email', 'admin@ogamierp.local')->first();
+                if ($systemUser !== null) {
+                    $netQty = (float) $order->qty_produced - (float) $order->qty_rejected;
+                    $this->stockService->receive(
+                        itemId: $order->product_item_id,
+                        locationId: $location->id,
+                        quantity: $netQty,
+                        referenceType: 'production_orders',
+                        referenceId: $order->id,
+                        actor: $systemUser,
+                        remarks: "Auto-receive from WO {$order->po_reference}",
+                    );
+                }
+            }
+
+            // PROD-DEL-001: Notify Delivery domain to draft an outbound DR for delivery-scheduled WOs.
+            ProductionOrderCompleted::dispatch($order);
+
+            return $order->refresh();
+        });
     }
 
     public function cancel(ProductionOrder $order): ProductionOrder

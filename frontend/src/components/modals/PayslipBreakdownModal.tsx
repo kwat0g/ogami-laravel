@@ -68,7 +68,7 @@ export default function PayslipBreakdownModal({ detailId, isOpen, onClose }: Pro
   return (
     <div className="fixed inset-0 z-50 bg-black/50 overflow-y-auto">
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl border border-neutral-200">
+        <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-neutral-200">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200">
             <div>
@@ -89,7 +89,7 @@ export default function PayslipBreakdownModal({ detailId, isOpen, onClose }: Pro
           </div>
 
           {/* Content */}
-          <div className="p-4">
+          <div className="p-4 max-h-[70vh] overflow-y-auto">
             {isLoading ? (
               <SkeletonLoader rows={12} />
             ) : isError ? (

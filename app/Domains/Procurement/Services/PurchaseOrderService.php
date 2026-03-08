@@ -74,7 +74,8 @@ final class PurchaseOrderService implements ServiceContract
             foreach ($items as $index => $item) {
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
-                    'pr_item_id'        => $item['pr_item_id']   ?? null,
+                    'pr_item_id'        => $item['pr_item_id']    ?? null,
+                    'item_master_id'    => $item['item_master_id'],
                     'item_description'  => $item['item_description'],
                     'unit_of_measure'   => $item['unit_of_measure'],
                     'quantity_ordered'  => $item['quantity_ordered'],

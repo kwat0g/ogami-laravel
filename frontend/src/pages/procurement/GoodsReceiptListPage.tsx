@@ -89,7 +89,12 @@ export default function GoodsReceiptListPage(): React.ReactElement {
               {data?.data?.map((gr) => (
                 <tr key={gr.id} className="even:bg-neutral-100 hover:bg-neutral-50">
                   <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{gr.gr_reference}</td>
-                  <td className="px-4 py-3 text-neutral-600">{gr.purchase_order?.po_reference ?? `#${gr.purchase_order_id}`}</td>
+                  <td className="px-4 py-3 text-neutral-600">
+                    {gr.purchase_order
+                      ? <Link to={`/procurement/purchase-orders/${gr.purchase_order.ulid}`} className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2 font-mono text-xs">{gr.purchase_order.po_reference}</Link>
+                      : `#${gr.purchase_order_id}`
+                    }
+                  </td>
                   <td className="px-4 py-3 text-neutral-500">
                     {gr.received_date ? new Date(gr.received_date).toLocaleDateString('en-PH') : '—'}
                   </td>

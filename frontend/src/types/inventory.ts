@@ -79,6 +79,8 @@ export interface StockLedger {
   transaction_type: 'goods_receipt' | 'issue' | 'transfer' | 'adjustment' | 'return' | 'production_output'
   reference_type: string | null
   reference_id: number | null
+  reference_label: string | null
+  reference_ulid: string | null
   quantity: string
   balance_after: string
   remarks: string | null
@@ -137,6 +139,7 @@ export interface MaterialRequisition {
   vp_approved_by: { id: number; name: string } | null
   rejected_by: { id: number; name: string } | null
   fulfilled_by: { id: number; name: string } | null
+  production_order: { id: number; ulid: string; po_reference: string } | null
   items?: MaterialRequisitionItem[]
 }
 

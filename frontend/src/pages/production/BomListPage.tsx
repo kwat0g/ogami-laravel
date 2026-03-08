@@ -93,14 +93,14 @@ export default function BomListPage(): React.ReactElement {
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => navigate(`/production/boms/${bom.ulid}/edit`)}
-                            className="flex items-center gap-1 text-xs text-neutral-700 hover:text-neutral-900 font-medium"
+                            className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
                           >
                             <Pencil className="w-3.5 h-3.5" /> Edit
                           </button>
                           <button
                             onClick={() => handleArchive(bom.ulid, bom.product_item?.name ?? 'BOM')}
                             disabled={deleteMut.isPending}
-                            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-red-600 font-medium disabled:opacity-40"
+                            className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-red-600 font-medium disabled:opacity-40"
                           >
                             <Archive className="w-3.5 h-3.5" /> Archive
                           </button>

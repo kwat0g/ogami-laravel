@@ -93,7 +93,7 @@ function SectionCard({
       <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
         <h2 className="text-sm font-medium text-neutral-900">{title}</h2>
         {action && (
-          <Link to={action.href} className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1">
+          <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
             {action.label}
             <ChevronRight className="h-3 w-3" />
           </Link>

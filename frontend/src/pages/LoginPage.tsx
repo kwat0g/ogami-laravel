@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 import type { ApiSuccess, LoginResult } from '@/types/api'
@@ -18,6 +19,7 @@ type FormValues = z.infer<typeof schema>
 
 export default function LoginPage() {
   const navigate      = useNavigate()
+  const queryClient   = useQueryClient()
   const { setAuth } = useAuthStore()
   const [loading, setLoading] = useState(false)
 
@@ -41,6 +43,9 @@ export default function LoginPage() {
 
       if (result.user) {
         // Session cookie is set by the server — no token stored in localStorage.
+        // Warm the TanStack Query cache so AppLayout's useAuth() gets a cache
+        // hit on mount instead of immediately firing a redundant /auth/me request.
+        queryClient.setQueryData(['auth', 'me'], result.user)
         setAuth(result.user)
         navigate('/dashboard')
       }

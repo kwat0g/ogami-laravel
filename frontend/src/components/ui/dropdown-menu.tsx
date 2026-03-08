@@ -70,7 +70,7 @@ const DropdownMenuContent = ({
     <div
       ref={ref}
       className={cn(
-        'absolute z-50 min-w-[8rem] overflow-hidden rounded-md border border-gray-200 bg-white p-1 shadow-md',
+        'absolute z-50 min-w-[8rem] max-h-60 overflow-auto rounded-md border border-gray-200 bg-white p-1 shadow-md',
         {
           'left-0': align === 'start',
           'right-0': align === 'end',

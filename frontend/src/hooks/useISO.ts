@@ -85,3 +85,33 @@ export function useCreateFinding(auditUlid: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['iso-audits', auditUlid] }),
   });
 }
+
+export function useSubmitDocumentForReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid: string) =>
+      api.patch(`/iso/documents/${ulid}/submit-for-review`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['iso-documents'] }),
+  });
+}
+
+export function useApproveDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid: string) =>
+      api.patch(`/iso/documents/${ulid}/approve`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['iso-documents'] }),
+  });
+}
+
+export function useCloseFinding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ findingUlid, auditUlid }: { findingUlid: string; auditUlid: string }) =>
+      api.patch(`/iso/audit-findings/${findingUlid}/close`).then(r => r.data),
+    onSuccess: (_d, { auditUlid }) => {
+      qc.invalidateQueries({ queryKey: ['iso-audits'] });
+      qc.invalidateQueries({ queryKey: ['iso-audits', auditUlid] });
+    },
+  });
+}

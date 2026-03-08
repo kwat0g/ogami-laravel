@@ -43,6 +43,7 @@ export interface MaintenanceWorkOrder {
   scheduled_date: string | null;
   completed_at: string | null;
   completion_notes: string | null;
+  labor_hours: number | null;
   equipment?: { id: number; equipment_code: string; name: string };
   assigned_to?: { id: number; name: string } | null;
   reported_by?: { id: number; name: string } | null;
@@ -74,5 +75,7 @@ export interface CreateWorkOrderPayload {
 }
 
 export interface CompleteWorkOrderPayload {
-  completion_notes?: string;
+  completion_notes: string;
+  labor_hours?: number | null;
+  actual_completion_date?: string;
 }

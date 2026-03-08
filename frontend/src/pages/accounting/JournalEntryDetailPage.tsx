@@ -131,7 +131,7 @@ export default function JournalEntryDetailPage() {
       {/* Back nav */}
       <button
         onClick={() => navigate('/accounting/journal-entries')}
-        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 mb-6"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
         Journal Entries

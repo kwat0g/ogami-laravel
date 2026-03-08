@@ -259,7 +259,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           </button>
                           <Link
                             to={`/procurement/purchase-requests/${pr.ulid}`}
-                            className="text-xs text-neutral-700 hover:text-neutral-900 font-medium"
+                            className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
                           >
                             View
                           </Link>
@@ -344,7 +344,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           </button>
                           <Link
                             to={`/hr/loans/${loan.ulid ?? loan.id}`}
-                            className="text-xs text-neutral-700 hover:text-neutral-900 font-medium"
+                            className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
                           >
                             View
                           </Link>
@@ -432,7 +432,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           </button>
                           <Link
                             to={`/inventory/requisitions/${mrq.ulid}`}
-                            className="text-xs text-neutral-700 hover:text-neutral-900 font-medium"
+                            className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
                           >
                             View
                           </Link>

@@ -1,8 +1,18 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { List, AlertTriangle } from 'lucide-react'
 import { useStockLedger, useWarehouseLocations } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { StockLedger } from '@/types/inventory'
+
+function resolveReferenceRoute(referenceType: string | null, ulid: string): string {
+  switch (referenceType) {
+    case 'goods_receipts':        return `/procurement/goods-receipts/${ulid}`
+    case 'material_requisitions': return `/inventory/requisitions/${ulid}`
+    case 'production_orders':     return `/production/orders/${ulid}`
+    default:                      return '#'
+  }
+}
 
 const TX_LABELS: Record<StockLedger['transaction_type'], string> = {
   goods_receipt:      'Goods Receipt',
@@ -130,8 +140,18 @@ export default function StockLedgerPage(): React.ReactElement {
                       <td className="px-4 py-3 font-semibold tabular-nums text-right text-neutral-700">
                         {parseFloat(entry.balance_after).toLocaleString('en-PH', { maximumFractionDigits: 4 })}
                       </td>
-                      <td className="px-4 py-3 text-xs text-neutral-400 font-mono">
-                        {entry.reference_type ? `${entry.reference_type}#${entry.reference_id}` : '—'}
+                      <td className="px-4 py-3 text-xs font-mono">
+                        {entry.reference_label && entry.reference_ulid
+                          ? (
+                            <Link
+                              to={resolveReferenceRoute(entry.reference_type, entry.reference_ulid)}
+                              className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2"
+                            >
+                              {entry.reference_label}
+                            </Link>
+                          )
+                          : <span className="text-neutral-400">{entry.reference_label ?? '—'}</span>
+                        }
                       </td>
                       <td className="px-4 py-3 text-xs text-neutral-500">{entry.created_by?.name ?? '—'}</td>
                       <td className="px-4 py-3 text-xs text-neutral-400 max-w-32 truncate">{entry.remarks ?? '—'}</td>

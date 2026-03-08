@@ -135,7 +135,7 @@ export default function InspectionListPage(): React.ReactElement {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Link to={`/qc/inspections/${insp.ulid}`} className="text-xs text-neutral-600 hover:text-neutral-800 font-medium">
+                      <Link to={`/qc/inspections/${insp.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
                         View →
                       </Link>
                     </td>

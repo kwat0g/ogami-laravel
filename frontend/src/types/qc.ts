@@ -66,6 +66,11 @@ export interface CapaAction {
   status: CapaStatus
   assigned_to?: { id: number; name: string } | null
   completed_at: string | null
+  // list-endpoint extras (may be absent when nested inside NCR)
+  ncr_id?: number | null
+  audit_finding_id?: number | null
+  ncr_reference?: string | null
+  audit_reference?: string | null
 }
 
 export interface NonConformanceReport {

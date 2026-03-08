@@ -24,8 +24,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 active:bg-neutral-300': variant === 'secondary',
             // Outline - subtle border
             'border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400': variant === 'outline',
-            // Ghost - transparent
-            'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900': variant === 'ghost',
+            // Ghost - subtle border for visibility
+            'border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900': variant === 'ghost',
             // Destructive - minimal red
             'bg-red-600 text-white hover:bg-red-700 active:bg-red-800': variant === 'destructive',
           },

@@ -277,7 +277,7 @@ export default function BackupPage(): React.ReactElement {
           </div>
           <button
             onClick={() => refetchBackups()}
-            className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-700 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh

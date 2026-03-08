@@ -8,16 +8,11 @@ import {
   useCancelPurchaseOrder,
 } from '@/hooks/usePurchaseOrders'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import StatusBadge from '@/components/ui/StatusBadge'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import type { PurchaseOrderStatus } from '@/types/procurement'
-
-const statusBadgeClass: Record<PurchaseOrderStatus, string> = {
-  draft:              'bg-neutral-100 text-neutral-600',
-  sent:               'bg-neutral-200 text-neutral-800',
-  partially_received: 'bg-neutral-100 text-neutral-700',
-  fully_received:     'bg-neutral-200 text-neutral-800',
-  closed:             'bg-neutral-100 text-neutral-500',
-  cancelled:          'bg-neutral-100 text-neutral-400',
-}
 
 const statusLabel: Record<PurchaseOrderStatus, string> = {
   draft:              'Draft',
@@ -116,7 +111,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 space-y-4">
+      <div className="max-w-5xl mx-auto p-6 space-y-4">
         <SkeletonLoader />
       </div>
     )
@@ -124,7 +119,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
 
   if (isError || !po) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto p-6">
         <div className="flex items-center gap-3 text-red-600 bg-red-50 rounded p-4">
           <AlertTriangle className="w-5 h-5 shrink-0" />
           <p className="text-sm">Failed to load Purchase Order. It may have been deleted or you lack access.</p>
@@ -137,6 +132,41 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
   const canCancel  = po.status === 'draft' || po.status === 'sent'
   const canReceive = po.status === 'sent' || po.status === 'partially_received'
 
+  const actions = (
+    <div className="flex items-center gap-3">
+      {canReceive && (
+        <Link
+          to={`/procurement/goods-receipts/new?po_ulid=${po.ulid}`}
+          className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+        >
+          <PackageCheck className="w-4 h-4" />
+          Receive Goods
+        </Link>
+      )}
+      {canSend && (
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={sendMutation.isPending}
+          className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+        >
+          <Send className="w-4 h-4" />
+          {sendMutation.isPending ? 'Sending…' : 'Send to Vendor'}
+        </button>
+      )}
+      {canCancel && (
+        <button
+          type="button"
+          onClick={() => setShowCancelModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 text-sm font-medium rounded hover:bg-red-50"
+        >
+          <XCircle className="w-4 h-4" />
+          Cancel PO
+        </button>
+      )}
+    </div>
+  )
+
   return (
     <>
       {showCancelModal && (
@@ -147,272 +177,215 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
         />
       )}
 
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
         {/* ── Header ────────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="p-2 rounded hover:bg-neutral-100 text-neutral-500"
-              aria-label="Back"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-lg font-semibold text-neutral-900">{po.po_reference}</h1>
-              <p className="text-sm text-neutral-500 mt-0.5">Purchase Order</p>
-            </div>
-          </div>
-
-          <span
-            className={`inline-flex items-center px-3 py-1 rounded text-xs font-medium ${
-              statusBadgeClass[po.status]
-            }`}
-          >
-            {statusLabel[po.status]}
-          </span>
-        </div>
+        <PageHeader
+          title={po.po_reference}
+          subtitle="Purchase Order"
+          backTo="/procurement/purchase-orders"
+          status={<StatusBadge status={po.status} label={statusLabel[po.status]} />}
+          actions={actions}
+        />
 
         {/* ── Order info card ────────────────────────────────────────────────── */}
-        <div className="bg-white rounded border border-neutral-200 p-6">
-          <h2 className="text-sm font-medium text-neutral-700 mb-4">Order Details</h2>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div>
-              <dt className="text-neutral-400 text-xs">Vendor</dt>
-              <dd className="text-neutral-800 font-medium mt-0.5">{po.vendor?.name ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400 text-xs">PO Date</dt>
-              <dd className="text-neutral-800 mt-0.5">
-                {new Date(po.po_date).toLocaleDateString('en-PH')}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400 text-xs">Delivery Date</dt>
-              <dd className="text-neutral-800 mt-0.5">
-                {new Date(po.delivery_date).toLocaleDateString('en-PH')}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400 text-xs">Payment Terms</dt>
-              <dd className="text-neutral-800 mt-0.5">{po.payment_terms}</dd>
-            </div>
-            {po.delivery_address && (
-              <div className="sm:col-span-2">
-                <dt className="text-neutral-400 text-xs">Delivery Address</dt>
-                <dd className="text-neutral-800 mt-0.5">{po.delivery_address}</dd>
-              </div>
-            )}
-            {po.purchase_request && (
-              <div>
-                <dt className="text-neutral-400 text-xs">Source PR</dt>
-                <dd className="mt-0.5">
-                  <Link
-                    to={`/procurement/purchase-requests/${po.purchase_request.ulid}`}
-                    className="text-neutral-700 hover:text-neutral-900 font-medium"
-                  >
-                    {po.purchase_request.pr_reference}
-                  </Link>
-                </dd>
-              </div>
-            )}
-            <div>
-              <dt className="text-neutral-400 text-xs">Created By</dt>
-              <dd className="text-neutral-800 mt-0.5">{po.created_by?.name ?? '—'}</dd>
-            </div>
-            {po.sent_at && (
-              <div>
-                <dt className="text-neutral-400 text-xs">Sent At</dt>
-                <dd className="text-neutral-800 mt-0.5">
-                  {new Date(po.sent_at).toLocaleDateString('en-PH')}
-                </dd>
-              </div>
-            )}
-            {po.notes && (
-              <div className="sm:col-span-2">
-                <dt className="text-neutral-400 text-xs">Notes</dt>
-                <dd className="text-neutral-600 italic mt-0.5">{po.notes}</dd>
-              </div>
-            )}
-            {po.cancellation_reason && (
-              <div className="sm:col-span-2">
-                <dt className="text-neutral-400 text-xs">Cancellation Reason</dt>
-                <dd className="text-red-600 mt-0.5">{po.cancellation_reason}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
+        <Card>
+          <CardHeader>Order Details</CardHeader>
+          <CardBody>
+            <InfoList columns={2}>
+              <InfoRow label="Vendor" value={po.vendor?.name ?? '—'} />
+              <InfoRow 
+                label="PO Date" 
+                value={new Date(po.po_date).toLocaleDateString('en-PH')} 
+              />
+              <InfoRow 
+                label="Delivery Date" 
+                value={new Date(po.delivery_date).toLocaleDateString('en-PH')} 
+              />
+              <InfoRow label="Payment Terms" value={po.payment_terms} />
+              {po.delivery_address && (
+                <InfoRow label="Delivery Address" value={po.delivery_address} className="sm:col-span-2" />
+              )}
+              {po.purchase_request && (
+                <InfoRow 
+                  label="Source PR" 
+                  value={
+                    <Link
+                      to={`/procurement/purchase-requests/${po.purchase_request.ulid}`}
+                      className="text-neutral-700 hover:text-neutral-900 font-medium"
+                    >
+                      {po.purchase_request.pr_reference}
+                    </Link>
+                  } 
+                />
+              )}
+              <InfoRow label="Created By" value={po.created_by?.name ?? '—'} />
+              {po.sent_at && (
+                <InfoRow 
+                  label="Sent At" 
+                  value={new Date(po.sent_at).toLocaleDateString('en-PH')} 
+                />
+              )}
+              {po.notes && (
+                <InfoRow label="Notes" value={<span className="italic">{po.notes}</span>} className="sm:col-span-2" />
+              )}
+              {po.cancellation_reason && (
+                <InfoRow 
+                  label="Cancellation Reason" 
+                  value={<span className="text-red-600">{po.cancellation_reason}</span>} 
+                  className="sm:col-span-2" 
+                />
+              )}
+            </InfoList>
+          </CardBody>
+        </Card>
 
         {/* ── Line items ────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded border border-neutral-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-neutral-100">
-            <h2 className="text-sm font-medium text-neutral-700">Line Items</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50 text-left">
-                <tr>
-                  <th className="px-4 py-3 font-medium text-neutral-600">#</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600">Description</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">Qty Ordered</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600">UOM</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">Unit Cost</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">Total</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">Received</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">Pending</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {po.items.map((item) => (
-                  <tr key={item.id} className="even:bg-neutral-100 hover:bg-neutral-50">
-                    <td className="px-4 py-3 text-neutral-400">{item.line_order}</td>
-                    <td className="px-4 py-3 text-neutral-800">{item.item_description}</td>
-                    <td className="px-4 py-3 text-right text-neutral-800">{item.quantity_ordered}</td>
-                    <td className="px-4 py-3 text-neutral-600">{item.unit_of_measure}</td>
-                    <td className="px-4 py-3 text-right text-neutral-800">
-                      ₱{item.agreed_unit_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-800 font-medium">
-                      ₱{item.total_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-600">{item.quantity_received}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span
-                        className={`font-medium ${
-                          item.quantity_pending > 0 ? 'text-amber-600' : 'text-green-600'
-                        }`}
-                      >
-                        {item.quantity_pending}
-                      </span>
-                    </td>
+        <Card>
+          <CardHeader>Line Items</CardHeader>
+          <CardBody className="p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-neutral-50 text-left">
+                  <tr>
+                    <th className="px-4 py-3 font-medium text-neutral-600">#</th>
+                    <th className="px-4 py-3 font-medium text-neutral-600">Description</th>
+                    <th className="px-4 py-3 font-medium text-neutral-600 text-right">Qty Ordered</th>
+                    <th className="px-4 py-3 font-medium text-neutral-600">UOM</th>
+                    <th className="px-4 py-3 font-medium text-neutral-600 text-right">Unit Cost</th>
+                    <th className="px-4 py-3 font-medium text-neutral-600 text-right">Total</th>
+                    <th className="px-4 py-3 font-medium text-neutral-600 text-right">Received</th>
+                    <th className="px-4 py-3 font-medium text-neutral-600 text-right">Pending</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-neutral-50">
-                <tr>
-                  <td colSpan={5} className="px-4 py-3 text-right text-sm font-semibold text-neutral-600">
-                    Grand Total
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-bold text-neutral-800">
-                    ₱{po.total_po_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td colSpan={2} />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {po.items.map((item) => (
+                    <tr key={item.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                      <td className="px-4 py-3 text-neutral-400">{item.line_order}</td>
+                      <td className="px-4 py-3 text-neutral-800">{item.item_description}</td>
+                      <td className="px-4 py-3 text-right text-neutral-800">{item.quantity_ordered}</td>
+                      <td className="px-4 py-3 text-neutral-600">{item.unit_of_measure}</td>
+                      <td className="px-4 py-3 text-right text-neutral-800">
+                        ₱{item.agreed_unit_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-right text-neutral-800 font-medium">
+                        ₱{item.total_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-right text-neutral-600">{item.quantity_received}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={`font-medium ${
+                            item.quantity_pending > 0 ? 'text-amber-600' : 'text-green-600'
+                          }`}
+                        >
+                          {item.quantity_pending}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-neutral-50">
+                  <tr>
+                    <td colSpan={5} className="px-4 py-3 text-right text-sm font-semibold text-neutral-600">
+                      Grand Total
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm font-bold text-neutral-800">
+                      ₱{po.total_po_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td colSpan={2} />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </CardBody>
+        </Card>
 
         {/* ── Status timeline ────────────────────────────────────────────────── */}
-        <div className="bg-white rounded border border-neutral-200 p-6">
-          <h2 className="text-sm font-medium text-neutral-700 mb-4">Timeline</h2>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-neutral-100">
-                <CheckCircle2 className="w-4 h-4 text-neutral-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-800">Created</p>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  {po.created_by?.name ?? '—'}
-                  <span className="ml-2 text-neutral-400">
-                    {new Date(po.created_at).toLocaleDateString('en-PH')}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div
-                className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                  po.sent_at ? 'bg-neutral-100' : 'bg-neutral-50'
-                }`}
-              >
-                {po.sent_at ? (
-                  <CheckCircle2 className="w-4 h-4 text-neutral-600" />
-                ) : (
-                  <div className="w-2 h-2 rounded-full bg-neutral-400" />
-                )}
-              </div>
-              <div>
-                <p
-                  className={`text-sm font-medium ${
-                    po.sent_at ? 'text-neutral-800' : 'text-neutral-400'
-                  }`}
-                >
-                  Sent to Vendor
-                </p>
-                {po.sent_at && (
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    {new Date(po.sent_at).toLocaleDateString('en-PH')}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {po.status === 'cancelled' && (
+        <Card>
+          <CardHeader>Timeline</CardHeader>
+          <CardBody>
+            <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-red-100">
-                  <XCircle className="w-4 h-4 text-red-500" />
+                <div className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-neutral-100">
+                  <CheckCircle2 className="w-4 h-4 text-neutral-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-red-600">Cancelled</p>
-                  {po.cancellation_reason && (
-                    <p className="text-xs text-neutral-500 mt-0.5">"{po.cancellation_reason}"</p>
+                  <p className="text-sm font-medium text-neutral-800">Created</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    {po.created_by?.name ?? '—'}
+                    <span className="ml-2 text-neutral-400">
+                      {new Date(po.created_at).toLocaleDateString('en-PH')}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div
+                  className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                    po.sent_at ? 'bg-neutral-100' : 'bg-neutral-50'
+                  }`}
+                >
+                  {po.sent_at ? (
+                    <CheckCircle2 className="w-4 h-4 text-neutral-600" />
+                  ) : (
+                    <div className="w-2 h-2 rounded-full bg-neutral-400" />
+                  )}
+                </div>
+                <div>
+                  <p
+                    className={`text-sm font-medium ${
+                      po.sent_at ? 'text-neutral-800' : 'text-neutral-400'
+                    }`}
+                  >
+                    Sent to Vendor
+                  </p>
+                  {po.sent_at && (
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      {new Date(po.sent_at).toLocaleDateString('en-PH')}
+                    </p>
                   )}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+
+              {po.status === 'cancelled' && (
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-red-100">
+                    <XCircle className="w-4 h-4 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-red-600">Cancelled</p>
+                    {po.cancellation_reason && (
+                      <p className="text-xs text-neutral-500 mt-0.5">"{po.cancellation_reason}"</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardBody>
+        </Card>
 
         {/* ── Goods receipts ────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between rounded border border-neutral-200 bg-white p-4">
-          <Link
-            to={`/procurement/goods-receipts?purchase_order_id=${po.id}`}
-            className="text-sm text-neutral-700 font-medium hover:text-neutral-900"
-          >
-            View Goods Receipts for this PO →
-          </Link>
-          {canReceive && (
-            <Link
-              to={`/procurement/goods-receipts/new?po_ulid=${po.ulid}`}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-            >
-              <PackageCheck className="w-4 h-4" />
-              Receive Goods
-            </Link>
-          )}
-        </div>
-
-        {/* ── Actions ───────────────────────────────────────────────────────── */}
-        {(canSend || canCancel) && (
-          <div className="flex items-center gap-3">
-            {canSend && (
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={sendMutation.isPending}
-                className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50"
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between">
+              <Link
+                to={`/procurement/goods-receipts?purchase_order_id=${po.id}`}
+                className="inline-block px-3 py-1.5 text-sm border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
               >
-                <Send className="w-4 h-4" />
-                {sendMutation.isPending ? 'Sending…' : 'Send to Vendor'}
-              </button>
-            )}
-            {canCancel && (
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50"
-              >
-                <XCircle className="w-4 h-4" />
-                Cancel PO
-              </button>
-            )}
-          </div>
-        )}
+                View Goods Receipts for this PO →
+              </Link>
+              {canReceive && (
+                <Link
+                  to={`/procurement/goods-receipts/new?po_ulid=${po.ulid}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+                >
+                  <PackageCheck className="w-4 h-4" />
+                  Receive Goods
+                </Link>
+              )}
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </>
   )

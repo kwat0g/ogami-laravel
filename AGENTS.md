@@ -30,9 +30,9 @@ This document provides essential information for AI coding agents working on the
 
 ## Technology Stack
 
-**Backend**: Laravel 11 / PHP 8.3+ · PostgreSQL 16 (stored computed columns, CHECK constraints via `DB::statement()`) · Redis 7 · Laravel Sanctum (session-cookie, no JWT) · Spatie RBAC · Owen-it Auditing · Laravel Horizon + Reverb · barryvdh/dompdf · maatwebsite/excel
+**Backend**: Laravel 11 / PHP 8.2+ · PostgreSQL 16 (stored computed columns, CHECK constraints via `DB::statement()`) · Redis 7 · Laravel Sanctum (session-cookie, no JWT) · Spatie RBAC · Spatie Media Library · Owen-it Auditing · Laravel Horizon + Reverb + Pulse · barryvdh/dompdf · maatwebsite/excel · spatie/laravel-backup · bacon/bacon-qr-code
 
-**Frontend**: React 18 + TypeScript · Vite 6 · TanStack Query v5 + React Hook Form + Zod · TanStack Table · Zustand · Recharts · Lucide React · Sonner · Tailwind CSS 3
+**Frontend**: React 18 + TypeScript · Vite 6 · pnpm 10 · TanStack Query v5 + React Hook Form + Zod · TanStack Table · Zustand · Recharts · Lucide React · Sonner · Tailwind CSS 3
 
 **Testing**: Pest PHP 3 · Vitest + RTL · Playwright E2E · PHPStan/Larastan level 5 · Laravel Pint
 
@@ -60,7 +60,7 @@ app/
     Traits/                  # Reusable model traits
   Jobs/<Domain>/             # Queueable jobs (payroll batch, leave accrual, etc.)
 database/migrations/         # 100+ migrations — never SQLite-compatible (PgSQL features)
-database/seeders/            # 20 seeders with strict ordering (see Seeder Order below)
+database/seeders/            # 25 seeders with strict ordering (see Seeder Order below)
 frontend/src/
   hooks/                     # TanStack Query wrappers (one file per domain)
   pages/<domain>/            # Page components
@@ -274,13 +274,14 @@ beforeEach(function () {
 | ARCH-005 | No `dd()`/`dump()`/`var_dump()` in `app/` |
 | ARCH-006 | `Shared\Contracts` namespace: interfaces only |
 
-### Seeder Order (20 seeders — strict dependency order)
-1. Rate tables: SSS, PhilHealth, PagIBIG, Tax, OT multipliers, holiday calendar  
+### Seeder Order (25 seeders — strict dependency order)
+1. Rate tables: `SssContributionTableSeeder`, `PhilhealthPremiumTableSeeder`, `PagibigContributionTableSeeder`, `TrainTaxBracketSeeder`, `OvertimeMultiplierSeeder`, `HolidayCalendarSeeder`, `MinimumWageRateSeeder`  
 2. RBAC: `RolePermissionSeeder` → `SampleAccountsSeeder`  
 3. HR reference: `SalaryGradeSeeder`, `LeaveTypeSeeder`, `LoanTypeSeeder`, `ShiftScheduleSeeder`  
 4. Accounting: `ChartOfAccountsSeeder`  
-5. Org structure: `FiscalPeriodSeeder`, `DepartmentPositionSeeder`  
-6. Transactional sample data: `SampleDataSeeder`, `ManufacturingEmployeeSeeder`  
+5. Org structure: `FiscalPeriodSeeder`, `DepartmentPositionSeeder`, `DepartmentPermissionProfileSeeder`, `DepartmentPermissionTemplateSeeder`  
+6. Transactional sample data: `SampleDataSeeder`, `ManufacturingEmployeeSeeder`, `FleetSeeder`, `LeaveBalanceSeeder`  
+7. System config: `SystemSettingsSeeder`, `NewModulesSeeder`  
 
 ## Security Considerations
 
@@ -330,6 +331,7 @@ Shared mutable state: `app/Domains/Payroll/Services/PayrollComputationContext.ph
 | `DateRange` | Start/end date encapsulation |
 | `OvertimeMultiplier` | OT rate calculations |
 | `EmployeeCode` | Code generation (`EMP-YYYY-NNN`) |
+| `WorkingDays` | Working day count calculations |
 
 ### Job Queues
 Defined queues: `payroll`, `computations`, `notifications`, `default`  
@@ -365,9 +367,13 @@ docker-compose exec app php artisan migrate
 DB_CONNECTION=pgsql
 QUEUE_CONNECTION=redis
 SESSION_DRIVER=redis
+SESSION_ENCRYPT=true          # sessions are encrypted
+SESSION_COOKIE=ogami_session  # custom cookie name
 BROADCAST_CONNECTION=reverb
 SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:3000,localhost
 DEFAULT_REGION=NCR   # Philippine minimum wage region
+APP_TIMEZONE=Asia/Manila
+TEST_DB_DATABASE=ogami_erp_test
 ```
 
 ## Troubleshooting

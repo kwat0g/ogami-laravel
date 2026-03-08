@@ -185,18 +185,23 @@ const ProductionOrderDetailPage      = lazy(() => import('@/pages/production/Pro
 // Delivery
 const DeliveryReceiptListPage         = lazy(() => import('@/pages/delivery/DeliveryReceiptListPage'))
 const CreateDeliveryReceiptPage       = lazy(() => import('@/pages/delivery/CreateDeliveryReceiptPage'))
+const DeliveryReceiptDetailPage       = lazy(() => import('@/pages/delivery/DeliveryReceiptDetailPage'))
 const ShipmentsPage                   = lazy(() => import('@/pages/delivery/ShipmentsPage'))
 
 // ISO / IATF
 const DocumentRegisterPage           = lazy(() => import('@/pages/iso/DocumentRegisterPage'))
 const CreateIsoDocumentPage          = lazy(() => import('@/pages/iso/CreateIsoDocumentPage'))
+const IsoDocumentDetailPage          = lazy(() => import('@/pages/iso/IsoDocumentDetailPage'))
 const AuditListPage                  = lazy(() => import('@/pages/iso/AuditListPage'))
 const CreateIsoAuditPage             = lazy(() => import('@/pages/iso/CreateIsoAuditPage'))
+const IsoAuditDetailPage             = lazy(() => import('@/pages/iso/IsoAuditDetailPage'))
 
 // Maintenance
 const EquipmentListPage              = lazy(() => import('@/pages/maintenance/EquipmentListPage'))
 const EquipmentDetailPage            = lazy(() => import('@/pages/maintenance/EquipmentDetailPage'))
+const CreateEquipmentPage            = lazy(() => import('@/pages/maintenance/CreateEquipmentPage'))
 const WorkOrderListPage              = lazy(() => import('@/pages/maintenance/WorkOrderListPage'))
+const WorkOrderDetailPage            = lazy(() => import('@/pages/maintenance/WorkOrderDetailPage'))
 const CreateWorkOrderPage            = lazy(() => import('@/pages/maintenance/CreateWorkOrderPage'))
 
 // QC additions
@@ -206,6 +211,7 @@ const CreateNcrPage                  = lazy(() => import('@/pages/qc/CreateNcrPa
 // Mold
 const MoldListPage                   = lazy(() => import('@/pages/mold/MoldListPage'))
 const MoldDetailPage                 = lazy(() => import('@/pages/mold/MoldDetailPage'))
+const CreateMoldPage                 = lazy(() => import('@/pages/mold/CreateMoldPage'))
 
 // QC / QA
 const InspectionListPage             = lazy(() => import('@/pages/qc/InspectionListPage'))
@@ -213,6 +219,7 @@ const InspectionDetailPage           = lazy(() => import('@/pages/qc/InspectionD
 const NcrListPage                    = lazy(() => import('@/pages/qc/NcrListPage'))
 const NcrDetailPage                  = lazy(() => import('@/pages/qc/NcrDetailPage'))
 const QcTemplateListPage             = lazy(() => import('@/pages/qc/QcTemplateListPage'))
+const CapaListPage                   = lazy(() => import('@/pages/qc/CapaListPage'))
 
 // VP Approvals
 const VpApprovalsDashboardPage = lazy(() => import('@/pages/approvals/VpApprovalsDashboardPage'))
@@ -411,27 +418,34 @@ export const router = createBrowserRouter([
       { path: '/qc/ncrs/new', element: withSuspense(guard('qc.ncr.create', <CreateNcrPage />)) },
       { path: '/qc/ncrs/:ulid', element: withSuspense(guard('qc.ncr.view', <NcrDetailPage />)) },
       { path: '/qc/templates', element: withSuspense(guard('qc.templates.view', <QcTemplateListPage />)) },
+      { path: '/qc/capa',      element: withSuspense(guard('qc.ncr.view',       <CapaListPage />)) },
 
       // ── Maintenance ───────────────────────────────────────────────────────
       { path: '/maintenance/equipment', element: withSuspense(guard('maintenance.view', <EquipmentListPage />)) },
+      { path: '/maintenance/equipment/new', element: withSuspense(guard('maintenance.manage', <CreateEquipmentPage />)) },
       { path: '/maintenance/equipment/:ulid', element: withSuspense(guard('maintenance.view', <EquipmentDetailPage />)) },
       { path: '/maintenance/work-orders', element: withSuspense(guard('maintenance.view', <WorkOrderListPage />)) },
       { path: '/maintenance/work-orders/new', element: withSuspense(guard('maintenance.manage', <CreateWorkOrderPage />)) },
+      { path: '/maintenance/work-orders/:ulid', element: withSuspense(guard('maintenance.view', <WorkOrderDetailPage />)) },
 
       // ── Mold ─────────────────────────────────────────────────────────────
       { path: '/mold/masters', element: withSuspense(guard('mold.view', <MoldListPage />)) },
+      { path: '/mold/masters/new', element: withSuspense(guard('mold.manage', <CreateMoldPage />)) },
       { path: '/mold/masters/:ulid', element: withSuspense(guard('mold.view', <MoldDetailPage />)) },
 
       // ── Delivery / Logistics ─────────────────────────────────────────
       { path: '/delivery/receipts', element: withSuspense(guard('delivery.view', <DeliveryReceiptListPage />)) },
       { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.manage', <CreateDeliveryReceiptPage />)) },
+      { path: '/delivery/receipts/:ulid', element: withSuspense(guard('delivery.view', <DeliveryReceiptDetailPage />)) },
       { path: '/delivery/shipments', element: withSuspense(guard('delivery.view', <ShipmentsPage />)) },
 
       // ── ISO / IATF ──────────────────────────────────────────────────
       { path: '/iso/documents', element: withSuspense(guard('iso.view', <DocumentRegisterPage />)) },
       { path: '/iso/documents/new', element: withSuspense(guard('iso.manage', <CreateIsoDocumentPage />)) },
+      { path: '/iso/documents/:ulid', element: withSuspense(guard('iso.view', <IsoDocumentDetailPage />)) },
       { path: '/iso/audits', element: withSuspense(guard('iso.view', <AuditListPage />)) },
       { path: '/iso/audits/new', element: withSuspense(guard('iso.manage', <CreateIsoAuditPage />)) },
+      { path: '/iso/audits/:ulid', element: withSuspense(guard('iso.view', <IsoAuditDetailPage />)) },
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────
       { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve', <VpApprovalsDashboardPage />)) },

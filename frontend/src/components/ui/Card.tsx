@@ -3,24 +3,14 @@ import { cn } from '@/lib/utils'
 interface CardProps {
   children: React.ReactNode
   className?: string
-  padding?: 'none' | 'sm' | 'md' | 'lg'
+  hoverable?: boolean
 }
 
-/**
- * Minimalist card component with subtle borders
- */
-export default function Card({ children, className, padding = 'md' }: CardProps) {
-  const paddingClasses = {
-    none: '',
-    sm: 'p-4',
-    md: 'p-5',
-    lg: 'p-6',
-  }
-
+export function Card({ children, className, hoverable }: CardProps) {
   return (
     <div className={cn(
-      'bg-white rounded border border-neutral-200',
-      paddingClasses[padding],
+      'bg-white border border-neutral-200 rounded-lg shadow-sm overflow-hidden',
+      hoverable && 'hover:border-neutral-300 hover:shadow-md transition-all duration-150',
       className
     )}>
       {children}
@@ -29,20 +19,50 @@ export default function Card({ children, className, padding = 'md' }: CardProps)
 }
 
 interface CardHeaderProps {
-  title: string
-  subtitle?: string
-  action?: React.ReactNode
+  children: React.ReactNode
   className?: string
+  action?: React.ReactNode
 }
 
-export function CardHeader({ title, subtitle, action, className }: CardHeaderProps) {
+export function CardHeader({ children, className, action }: CardHeaderProps) {
   return (
-    <div className={cn('flex items-start justify-between gap-4 mb-4', className)}>
-      <div>
-        <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
-        {subtitle && <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>}
-      </div>
-      {action && <div className="flex-shrink-0">{action}</div>}
+    <div className={cn(
+      'px-5 py-4 border-b border-neutral-100 flex items-center justify-between',
+      className
+    )}>
+      <div className="text-sm font-medium text-neutral-900">{children}</div>
+      {action}
     </div>
   )
 }
+
+interface CardBodyProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function CardBody({ children, className }: CardBodyProps) {
+  return (
+    <div className={cn('p-5', className)}>
+      {children}
+    </div>
+  )
+}
+
+interface CardFooterProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function CardFooter({ children, className }: CardFooterProps) {
+  return (
+    <div className={cn(
+      'px-5 py-4 border-t border-neutral-100 bg-neutral-50/50',
+      className
+    )}>
+      {children}
+    </div>
+  )
+}
+
+export default Card

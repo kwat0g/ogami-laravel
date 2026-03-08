@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('throttle:30,1');
     Route::patch('ncrs/{nonConformanceReport}/close',  [NcrController::class, 'close'])
         ->middleware('throttle:30,1');
+    Route::get('capa',                                   [NcrController::class, 'capaIndex']);
     Route::patch('capa/{capaAction}/complete',         [NcrController::class, 'completeCapa'])
         ->middleware('throttle:30,1');
 });

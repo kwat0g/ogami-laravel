@@ -56,7 +56,7 @@ Open it one of two ways:
 ```bash
 sudo apt update
 sudo apt install -y php8.3 php8.3-cli php8.3-mbstring php8.3-xml php8.3-zip \
-    php8.3-pgsql php8.3-curl php8.3-bcmath php8.3-intl php8.3-redis
+    php8.3-pgsql php8.3-curl php8.3-bcmath php8.3-intl php8.3-redis php8.3-gd
 ```
 
 Verify:
@@ -101,22 +101,16 @@ pnpm --version    # Should show 10.x
 
 ```bash
 cd ~
-git clone <your-repo-url> ogamiPHP
-cd ogamiPHP
+mkdir ogamiPHP && cd ogamiPHP
+git clone <your-repo-url> ogami-laravel
+cd ogami-laravel
 ```
 
 ---
 
-### Step 8: Install Dependencies
+### Step 8: Create Your .env File
 
-```bash
-composer install
-cd frontend && pnpm install && cd ..
-```
-
----
-
-### Step 9: Create Your .env File
+This must be done **before** installing PHP dependencies, because Composer's post-install scripts run `php artisan` commands that require a valid `.env`.
 
 ```bash
 cp .env.example .env
@@ -138,16 +132,54 @@ DB_PASSWORD=secret
 REDIS_PASSWORD=secret
 ```
 
-Generate the app key:
+---
+
+### Step 9: Install Dependencies
+
+```bash
+composer install
+cd frontend && pnpm install && cd ..
+```
+
+---
+
+### Step 10: Fix Storage Permissions
+
+Laravel requires these directories to exist before any `php artisan` command can run:
+
+```bash
+mkdir -p storage/framework/{cache,sessions,views,testing}
+mkdir -p storage/logs
+chmod -R 775 storage bootstrap/cache
+```
+
+Then generate the app key:
+
 ```bash
 php artisan key:generate
 ```
 
 ---
 
-### Step 10: Set Up the Database (First Time Only)
+### Step 11: Start Docker Services
 
-Make sure the project is running first (see Step 11), then in a **second terminal**:
+Start the PostgreSQL and Redis containers:
+
+```bash
+docker-compose up -d
+```
+
+Wait a few seconds for the containers to become healthy. You can verify they are up:
+
+```bash
+docker-compose ps
+```
+
+Both `ogami_postgres` and `ogami_redis` should show **healthy**.
+
+---
+
+### Step 12: Set Up the Database (First Time Only)
 
 ```bash
 php artisan migrate
@@ -168,7 +200,7 @@ Default admin login after seeding:
 ### Starting the project
 
 ```bash
-cd ~/ogamiPHP
+cd ~/ogamiPHP/ogami-laravel
 npm run dev
 ```
 
@@ -188,7 +220,7 @@ Once WSL is set up, always open the project this way for the best experience:
 
 1. Open VS Code
 2. Press `Ctrl+Shift+P`
-3. Type **WSL: Open Folder in WSL** → select `~/ogamiPHP`
+3. Type **WSL: Open Folder in WSL** → select `~/ogamiPHP/ogami-laravel`
 4. VS Code reconnects into Ubuntu — the bottom-left corner shows `>< WSL: Ubuntu`
 5. Open the terminal (`Ctrl+`` `) — it's a real Ubuntu bash terminal
 6. Run `npm run dev`

@@ -125,7 +125,7 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full border border-neutral-200">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto border border-neutral-200">
         <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
           <h2 className="text-base font-semibold text-neutral-900">File Overtime Request</h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
@@ -133,7 +133,7 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
           {/* Work Date */}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
@@ -143,7 +143,7 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
               type="date"
               value={formData.work_date}
               onChange={(e) => setFormData({ ...formData, work_date: e.target.value })}
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
               required
             />
           </div>
@@ -165,7 +165,7 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
                   type="time"
                   value={formData.ot_start_time}
                   onChange={(e) => setFormData({ ...formData, ot_start_time: e.target.value, ot_end_time: '' })}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
+                  className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
                   required
                 />
               </div>
@@ -178,7 +178,7 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
                   type="time"
                   value={formData.ot_end_time}
                   onChange={(e) => setFormData({ ...formData, ot_end_time: e.target.value })}
-                  className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none transition-colors ${
+                  className={`w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none transition-colors ${
                     formData.ot_end_time && durationMinutes > 0
                       ? 'border-neutral-400'
                       : formData.ot_end_time && durationMinutes <= 0
@@ -253,8 +253,8 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               placeholder="Explain the reason for overtime..."
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none"
-              rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none"
+              rows={2}
               required
             />
           </div>
@@ -264,14 +264,14 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
+              className="flex-1 px-4 py-1.5 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 px-4 py-2 bg-neutral-800 text-white rounded hover:bg-neutral-900 disabled:opacity-50 text-sm font-medium"
+              className="flex-1 px-4 py-1.5 bg-neutral-800 text-white rounded hover:bg-neutral-900 disabled:opacity-50 text-sm font-medium"
             >
               {createMutation.isPending ? 'Filing...' : 'File Request'}
             </button>

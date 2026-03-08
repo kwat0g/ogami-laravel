@@ -11,7 +11,7 @@ import {
   useLogOutput,
 } from '@/hooks/useProduction'
 import { usePermission } from '@/hooks/usePermission'
-import { useEmployees } from '@/hooks/useEmployees'
+import { useEmployees, useDepartments } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { ProductionOrderStatus } from '@/types/production'
 
@@ -46,7 +46,9 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   })
 
   const { data: order, isLoading, isError } = useProductionOrder(ulid ?? null)
-  const { data: employeesData } = useEmployees({ per_page: 200, is_active: true })
+  const { data: departmentsData } = useDepartments()
+  const prodDeptId = departmentsData?.data?.find(d => d.code === 'PROD')?.id
+  const { data: employeesData } = useEmployees({ per_page: 200, is_active: true, department_id: prodDeptId })
   const employees = employeesData?.data ?? []
 
   const canRelease    = usePermission('production.orders.release')
@@ -60,6 +62,17 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const logMut      = useLogOutput(ulid ?? '')
 
   const handleAction = async (action: 'release' | 'start' | 'complete' | 'cancel') => {
+    if (action === 'complete' && order) {
+      const produced  = parseFloat(order.qty_produced)
+      const required  = parseFloat(order.qty_required)
+      if (produced < required) {
+        const pct = ((produced / required) * 100).toFixed(1)
+        const ok  = window.confirm(
+          `Only ${produced.toLocaleString('en-PH')} of ${required.toLocaleString('en-PH')} units produced (${pct}%).\n\nComplete the work order short?`
+        )
+        if (!ok) return
+      }
+    }
     try {
       const map = { release: releaseMut, start: startMut, complete: completeMut, cancel: cancelMut }
       await map[action].mutateAsync()
@@ -229,7 +242,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                 >
                   <option value="">— Select Operator —</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                    <option key={emp.id} value={emp.id}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : ''}</option>
                   ))}
                 </select>
               </div>
@@ -289,7 +302,12 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
             </button>
           )}
           {order.status === 'in_progress' && canComplete && (
-            <button onClick={() => handleAction('complete')} disabled={completeMut.isPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
+            <button
+              onClick={() => handleAction('complete')}
+              disabled={completeMut.isPending || parseFloat(order.qty_produced) <= 0}
+              title={parseFloat(order.qty_produced) <= 0 ? 'Log production output before completing' : undefined}
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
+            >
               Mark Complete
             </button>
           )}

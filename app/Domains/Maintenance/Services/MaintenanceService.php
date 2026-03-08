@@ -69,15 +69,19 @@ final class MaintenanceService implements ServiceContract
         return $mwo;
     }
 
-    public function completeWorkOrder(MaintenanceWorkOrder $mwo, string $notes): MaintenanceWorkOrder
+    /** @param array<string,mixed> $data */
+    public function completeWorkOrder(MaintenanceWorkOrder $mwo, array $data): MaintenanceWorkOrder
     {
         if (!in_array($mwo->status, ['open', 'in_progress'], true)) {
             throw new DomainException('MAINT_WO_CANNOT_COMPLETE');
         }
         $mwo->update([
             'status'           => 'completed',
-            'completed_at'     => now(),
-            'completion_notes' => $notes,
+            'completed_at'     => !empty($data['actual_completion_date'])
+                ? \Carbon\Carbon::parse($data['actual_completion_date'])
+                : now(),
+            'completion_notes' => $data['completion_notes'],
+            'labor_hours'      => $data['labor_hours'] ?? null,
         ]);
         // Update equipment status back to operational
         $mwo->equipment()->update(['status' => 'operational']);

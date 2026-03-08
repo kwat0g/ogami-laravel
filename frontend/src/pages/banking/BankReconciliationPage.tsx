@@ -204,7 +204,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
                       <button
                         type="button"
                         onClick={() => unmatch(tx.id)}
-                        className="text-neutral-500 hover:text-neutral-700 text-xs font-medium"
+                        className="px-2 py-1 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900"
                       >
                         Unmatch
                       </button>

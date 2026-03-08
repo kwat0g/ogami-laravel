@@ -54,9 +54,37 @@ final class NcrController extends Controller
         return new NcrResource($ncr);
     }
 
-    public function completeCapa(CapaAction $capaAction): JsonResponse
+    public function capaIndex(Request $request): JsonResponse
     {
-        $this->authorize('issueCapa', $capaAction->ncr);
+        $this->authorize('viewAny', NonConformanceReport::class);
+        $query = CapaAction::with(['ncr', 'auditFinding.audit', 'assignedTo', 'createdBy'])
+            ->when($request->input('status'), fn ($q, $s) => $q->where('status', $s))
+            ->orderByDesc('created_at');
+        $paginated = $query->paginate((int) ($request->input('per_page', 20)));
+        $paginated->getCollection()->transform(fn (CapaAction $c) => [
+            'id'                => $c->id,
+            'ulid'              => $c->ulid,
+            'type'              => $c->type,
+            'description'       => $c->description,
+            'due_date'          => $c->due_date?->toDateString(),
+            'status'            => $c->status,
+            'completed_at'      => $c->completed_at?->toIso8601String(),
+            'ncr_id'            => $c->ncr_id,
+            'audit_finding_id'  => $c->audit_finding_id,
+            'ncr_reference'     => $c->ncr?->ncr_reference,
+            'audit_reference'   => $c->auditFinding?->audit?->audit_reference,
+            'assigned_to'       => $c->assignedTo ? ['id' => $c->assignedTo->id, 'name' => $c->assignedTo->name] : null,
+        ]);
+        return response()->json($paginated);
+    }
+
+    public function completeCapa(Request $request, CapaAction $capaAction): JsonResponse
+    {
+        if ($capaAction->ncr_id !== null) {
+            $this->authorize('issueCapa', $capaAction->ncr);
+        } elseif (! $request->user()?->can('qc.ncr.create')) {
+            abort(403, 'Unauthorized to complete CAPA.');
+        }
         $capa = $this->service->completeCapaAction($capaAction);
         return response()->json(['data' => $capa]);
     }

@@ -75,6 +75,12 @@ final class MaterialRequisition extends Model implements Auditable
         return $this->belongsTo(Department::class);
     }
 
+    /** @return BelongsTo<\App\Domains\Production\Models\ProductionOrder, MaterialRequisition> */
+    public function productionOrder(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Production\Models\ProductionOrder::class, 'production_order_id');
+    }
+
     /** @return BelongsTo<User, MaterialRequisition> */
     public function notedBy(): BelongsTo
     {

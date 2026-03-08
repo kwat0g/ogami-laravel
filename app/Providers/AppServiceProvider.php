@@ -34,18 +34,6 @@ use App\Domains\Attendance\Policies\AttendanceLogPolicy;
 use App\Domains\Attendance\Policies\OvertimeRequestPolicy;
 use App\Domains\HR\Events\EmployeeActivated;
 use App\Domains\HR\Listeners\CreateLeaveBalances;
-use App\Events\Procurement\ThreeWayMatchPassed;
-use App\Events\ISO\AuditFindingCreated;
-use App\Events\Production\ProductionOrderCompleted;
-use App\Events\QC\InspectionFailed;
-use App\Events\QC\InspectionPassed;
-use App\Listeners\Procurement\CreateApInvoiceOnThreeWayMatch;
-use App\Listeners\Delivery\CreateDeliveryReceiptOnProductionComplete;
-use App\Listeners\Production\HoldProductionOrderOnInspectionFail;
-use App\Listeners\Production\ResumeProductionOrderOnInspectionPass;
-use App\Listeners\QC\CreateCapaOnAuditFinding;
-use App\Events\Leave\LeaveRequestDecided;
-use App\Listeners\Attendance\RecordLeaveAttendanceCorrection;
 use App\Domains\HR\Models\Employee;
 use App\Domains\HR\Policies\EmployeePolicy;
 use App\Domains\Leave\Models\LeaveBalance;
@@ -92,7 +80,10 @@ class AppServiceProvider extends ServiceProvider
         // the real production database.
         $activeConnection = config('database.default', 'pgsql');
         $activeDatabase   = config("database.connections.{$activeConnection}.database");
-        $isProductionDb   = ($activeDatabase === 'ogami_erp');
+        // Block only when BOTH the DB name is the production DB AND the env is
+        // production. Checking DB name alone would block local dev since local
+        // also uses ogami_erp as the database name.
+        $isProductionDb   = ($activeDatabase === 'ogami_erp') && $this->app->isProduction();
         DB::prohibitDestructiveCommands($isProductionDb || $this->app->isProduction());
 
         // ── Policy registrations ─────────────────────────────────────────────
@@ -138,14 +129,12 @@ class AppServiceProvider extends ServiceProvider
         PayrollRun::observe(PayrollRunObserver::class);
 
         // ── Event → Listener bindings ────────────────────────────────────────
+        // NOTE: Listeners under app/Listeners/ are auto-discovered by Laravel's
+        // event discovery (and cached in bootstrap/cache/events.php). Do NOT
+        // register those here — it would cause every listener to fire twice.
+        //
+        // Only register listeners that live outside the auto-discovered path:
         Event::listen(EmployeeActivated::class, CreateLeaveBalances::class);
-        Event::listen(ThreeWayMatchPassed::class, CreateApInvoiceOnThreeWayMatch::class);
-        Event::listen(ThreeWayMatchPassed::class, \App\Listeners\Inventory\LinkGoodsReceiptToInventory::class);
-        Event::listen(AuditFindingCreated::class, CreateCapaOnAuditFinding::class);
-        Event::listen(ProductionOrderCompleted::class, CreateDeliveryReceiptOnProductionComplete::class);
-        Event::listen(InspectionFailed::class, HoldProductionOrderOnInspectionFail::class);
-        Event::listen(InspectionPassed::class, ResumeProductionOrderOnInspectionPass::class);
-        Event::listen(LeaveRequestDecided::class, RecordLeaveAttendanceCorrection::class);
 
         // ── Super Admin — bypass ALL gate / policy checks for testing ────────
         // Users with the 'super_admin' role skip every Gate::check(), authorize(),

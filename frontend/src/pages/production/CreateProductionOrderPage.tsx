@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Factory } from 'lucide-react'
 import { toast } from 'sonner'
@@ -22,7 +22,14 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     is_active: true,
     per_page: 100,
   })
-  const boms = bomsData?.data ?? []
+  // Only use BOM results when an item is actually selected — prevents the query
+  // from returning all BOMs (global list) before a product is chosen
+  const boms = selectedItemId ? (bomsData?.data ?? []) : []
+
+  // Auto-select BOM when only one active BOM exists for the chosen item
+  useEffect(() => {
+    if (selectedItemId && boms.length === 1) set('bom_id', boms[0].id)
+  }, [boms, selectedItemId])
 
   const { data: dsData } = useDeliverySchedules({ status: 'open', per_page: 200 })
   const deliverySchedules = dsData?.data ?? []
@@ -39,6 +46,13 @@ export default function CreateProductionOrderPage(): React.ReactElement {
 
   const set = (k: keyof typeof form, v: unknown) =>
     setForm(prev => ({ ...prev, [k]: v }))
+
+  const selectedDs = deliverySchedules.find(d => d.id === form.delivery_schedule_id)
+  const dsDueDate  = selectedDs?.target_delivery_date ?? null
+  const lateDateWarning =
+    dsDueDate && form.target_end_date && form.target_end_date > dsDueDate
+      ? `Target end date is after the delivery schedule due date (${new Date(dsDueDate + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}).`
+      : null
 
   const [touched, setTouched] = useState<Set<string>>(new Set())
   const touch = (k: string) => setTouched(prev => new Set([...prev, k]))
@@ -112,7 +126,7 @@ export default function CreateProductionOrderPage(): React.ReactElement {
             onChange={e => set('bom_id', Number(e.target.value))}
             onBlur={() => touch('bom_id')}
             required
-            disabled={!selectedItemId}
+            disabled={!selectedItemId || boms.length === 1}
           >
             <option value="">— Select BOM —</option>
             {boms.map(b => (
@@ -133,12 +147,19 @@ export default function CreateProductionOrderPage(): React.ReactElement {
           <select
             className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
             value={form.delivery_schedule_id}
-            onChange={e => set('delivery_schedule_id', e.target.value ? Number(e.target.value) : '')}
+            onChange={e => {
+              const id = e.target.value ? Number(e.target.value) : ''
+              set('delivery_schedule_id', id)
+              if (id) {
+                const ds = deliverySchedules.find(d => d.id === id)
+                if (ds?.qty_ordered) set('qty_required', String(Math.round(ds.qty_ordered)))
+              }
+            }}
           >
             <option value="">— None —</option>
             {deliverySchedules.map(ds => (
               <option key={ds.id} value={ds.id}>
-                {ds.ds_reference} — {ds.customer?.name ?? 'N/A'} ({ds.target_delivery_date})
+                {ds.ds_reference} — {ds.customer?.name ?? 'N/A'} · Due {new Date(ds.target_delivery_date + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
               </option>
             ))}
           </select>
@@ -186,6 +207,9 @@ export default function CreateProductionOrderPage(): React.ReactElement {
               required
             />
             {fe('target_end_date') && <p className="mt-1 text-xs text-red-600">{fe('target_end_date')}</p>}
+            {!fe('target_end_date') && lateDateWarning && (
+              <p className="mt-1 text-xs text-amber-600">⚠ {lateDateWarning}</p>
+            )}
           </div>
         </div>
 

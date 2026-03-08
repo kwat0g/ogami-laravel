@@ -48,6 +48,20 @@ export interface Shipment {
   deleted_at?: string | null;
 }
 
+export interface CreateShipmentPayload {
+  delivery_receipt_id?: number | null;
+  carrier?: string;
+  tracking_number?: string;
+  shipped_at?: string;
+  estimated_arrival?: string;
+  notes?: string;
+}
+
+export interface UpdateShipmentStatusPayload {
+  status: ShipmentStatus;
+  actual_arrival?: string;
+}
+
 export interface CreateDeliveryReceiptPayload {
   vendor_id?: number | null;
   customer_id?: number | null;

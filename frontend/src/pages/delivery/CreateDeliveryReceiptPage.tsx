@@ -30,7 +30,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
   const customers = customersData?.data ?? []
 
   const { data: itemsData } = useItems({ per_page: 500 })
-  const items = itemsData?.data ?? []
+  const allItems = itemsData?.data ?? []
 
   const [direction, setDirection] = useState<DrDirection>('inbound')
   const [vendorId, setVendorId] = useState<number>(0)
@@ -40,6 +40,10 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { item_master_id: 0, quantity_expected: '', quantity_received: '', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' },
   ])
+
+  const items = direction === 'outbound'
+    ? allItems.filter(i => i.type === 'finished_good' || i.type === 'semi_finished')
+    : allItems
 
   const [touchedDate, setTouchedDate] = useState(false)
   const receiptDateError = useMemo(

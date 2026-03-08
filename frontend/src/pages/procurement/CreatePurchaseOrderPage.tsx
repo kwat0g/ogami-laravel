@@ -8,6 +8,7 @@ import { Plus, Trash2, ShoppingCart } from 'lucide-react'
 import { useCreatePurchaseOrder } from '@/hooks/usePurchaseOrders'
 import { usePurchaseRequests, usePurchaseRequest } from '@/hooks/usePurchaseRequests'
 import { useVendors } from '@/hooks/useAP'
+import { useItems } from '@/hooks/useInventory'
 import type { Vendor } from '@/types/ap'
 
 /** Normalize vendor payment_terms values (e.g. "NET30" → "Net 30") to match PAYMENT_TERMS_OPTIONS */
@@ -29,6 +30,7 @@ const PAYMENT_TERMS_OPTIONS = ['COD', 'Net 7', 'Net 15', 'Net 30', 'Net 60']
 
 const itemSchema = z.object({
   po_item_id:        z.number().optional(),
+  item_master_id:    z.coerce.number().min(1, 'Select an item from Item Master'),
   item_description:  z.string().min(3, 'Description required'),
   quantity_ordered:  z.coerce.number().min(1),
   unit_of_measure:   z.string().min(1, 'UOM required'),
@@ -55,6 +57,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
 
   const { data: prData }     = usePurchaseRequests({ status: 'approved' })
   const { data: vendorData } = useVendors({ per_page: 200, accreditation_status: 'accredited' })
+  const { data: itemData }   = useItems({ per_page: 500, is_active: true, exclude_type: 'finished_good' })
 
   // Pre-fetch the PR from URL param to auto-populate items
   // We need the ulid — find it from the approved list by numeric id
@@ -73,7 +76,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
     mode: 'onBlur',
     defaultValues: {
       purchase_request_id: prIdFromUrl ?? undefined,
-      items: [{ item_description: '', quantity_ordered: 1, unit_of_measure: 'pcs', agreed_unit_cost: 0 }],
+      items: [{ item_master_id: 0, item_description: '', quantity_ordered: 1, unit_of_measure: 'pcs', agreed_unit_cost: 0 }],
     },
   })
 
@@ -84,6 +87,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
       prevPrRef.current = prDetail.id
       setValue('items', prDetail.items.map((item) => ({
         po_item_id:       undefined,
+        item_master_id:   0,           // Purchasing Officer must select from Item Master
         item_description: item.item_description,
         quantity_ordered: item.quantity,
         unit_of_measure:  item.unit_of_measure,
@@ -104,6 +108,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
   const items           = watch('items') ?? []
   const watchedVendorId = watch('vendor_id')
   const vendors         = (vendorData?.data ?? []) as Vendor[]
+  const allItems        = itemData?.data ?? []
   const selectedVendor  = vendors.find(v => v.id === Number(watchedVendorId)) ?? null
   const grandTotal      = items.reduce((sum, item) => sum + (Number(item.quantity_ordered) || 0) * (Number(item.agreed_unit_cost) || 0), 0)
 
@@ -118,6 +123,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
         delivery_address:    values.delivery_address,
         notes:               values.notes,
         items:               values.items.map((it) => ({
+          item_master_id:   it.item_master_id,
           item_description: it.item_description,
           quantity_ordered: it.quantity_ordered,
           unit_of_measure:  it.unit_of_measure,
@@ -256,7 +262,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
             {!prIdFromUrl && (
               <button
                 type="button"
-                onClick={() => append({ item_description: '', quantity_ordered: 1, unit_of_measure: 'pcs', agreed_unit_cost: 0 })}
+                onClick={() => append({ item_master_id: 0, item_description: '', quantity_ordered: 1, unit_of_measure: 'pcs', agreed_unit_cost: 0 })}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -269,16 +275,45 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
             {/* Column Headers */}
             {fields.length > 0 && (
               <div className="grid grid-cols-12 gap-2 px-3">
-                <div className="col-span-4 text-xs font-medium text-neutral-600">Description</div>
-                <div className="col-span-2 text-xs font-medium text-neutral-600">Quantity</div>
+                <div className="col-span-4 text-xs font-medium text-neutral-600">Item Master <span className="text-red-500">*</span></div>
+                <div className="col-span-2 text-xs font-medium text-neutral-600">Description</div>
+                <div className="col-span-1 text-xs font-medium text-neutral-600">Qty</div>
                 <div className="col-span-2 text-xs font-medium text-neutral-600">UOM</div>
-                <div className="col-span-3 text-xs font-medium text-neutral-600">Unit Price</div>
+                <div className="col-span-2 text-xs font-medium text-neutral-600">Unit Price</div>
                 <div className="col-span-1" />
               </div>
             )}
             {fields.map((field, idx) => (
               <div key={field.id} className="grid grid-cols-12 gap-2 items-start border border-neutral-100 rounded p-3 bg-neutral-50">
+                {/* Item Master picker — required, drives item_master_id */}
                 <div className="col-span-4">
+                  <Controller
+                    name={`items.${idx}.item_master_id`}
+                    control={control}
+                    render={({ field: f }) => (
+                      <select
+                        {...f}
+                        onChange={(e) => {
+                          const id = Number(e.target.value)
+                          f.onChange(id)
+                          // Auto-fill UOM from selected item master
+                          const selected = allItems.find(i => i.id === id)
+                          if (selected) {
+                            setValue(`items.${idx}.unit_of_measure`, selected.unit_of_measure)
+                          }
+                        }}
+                        className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                      >
+                        <option value={0}>— Select item —</option>
+                        {allItems.map(i => (
+                          <option key={i.id} value={i.id}>{i.item_code} — {i.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                  {errors.items?.[idx]?.item_master_id && <p className="text-red-500 text-xs mt-0.5">{errors.items[idx]!.item_master_id!.message}</p>}
+                </div>
+                <div className="col-span-2">
                   <input
                     placeholder="Description"
                     {...register(`items.${idx}.item_description`)}
@@ -287,7 +322,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                   />
                   {errors.items?.[idx]?.item_description && <p className="text-red-500 text-xs mt-0.5">{errors.items[idx]!.item_description!.message}</p>}
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1">
                   <Controller
                     name={`items.${idx}.quantity_ordered`}
                     control={control}
@@ -312,7 +347,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                     )}
                   />
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-2">
                   <Controller
                     name={`items.${idx}.agreed_unit_cost`}
                     control={control}

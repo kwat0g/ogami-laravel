@@ -82,9 +82,13 @@ final class MaintenanceController extends Controller
     public function completeWorkOrder(Request $request, MaintenanceWorkOrder $maintenanceWorkOrder): MaintenanceWorkOrderResource
     {
         $this->authorize('update', $maintenanceWorkOrder);
-        $request->validate(['completion_notes' => 'required|string']);
+        $data = $request->validate([
+            'completion_notes'       => 'required|string',
+            'labor_hours'            => 'nullable|numeric|min:0',
+            'actual_completion_date' => 'nullable|date',
+        ]);
         return new MaintenanceWorkOrderResource(
-            $this->service->completeWorkOrder($maintenanceWorkOrder, $request->input('completion_notes'))
+            $this->service->completeWorkOrder($maintenanceWorkOrder, $data)
         );
     }
 
