@@ -5,7 +5,6 @@
         "dev": "bash dev.sh",
         "dev:minimal": "bash dev.sh --minimal",
         "dev:full": "bash dev.sh --with-reverb",
-        "dev:win": "powershell -ExecutionPolicy Bypass -File start.ps1",
         "frontend": "pnpm --filter ogami-erp-frontend",
         "build": "pnpm --filter ogami-erp-frontend build",
         "typecheck": "pnpm --filter ogami-erp-frontend typecheck",
