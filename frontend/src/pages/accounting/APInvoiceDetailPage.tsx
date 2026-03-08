@@ -51,7 +51,7 @@ export default function APInvoiceDetailPage() {
       <div className="text-sm text-red-600 mt-4">
       <ExecutiveReadOnlyBanner />
         Invoice not found or you do not have access.{' '}
-        <Link to="/accounting/ap/invoices" className="text-blue-600 underline">Back to list</Link>
+        <Link to="/accounting/ap/invoices" className="text-neutral-600 underline">Back to list</Link>
       </div>
     )
   }
@@ -166,7 +166,7 @@ export default function APInvoiceDetailPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+          className="text-sm text-neutral-500 hover:text-neutral-700 flex items-center gap-1"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
@@ -184,7 +184,7 @@ export default function APInvoiceDetailPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={submit.isPending}
-                  className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg"
+                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
                 >
                   <FileText className="h-4 w-4" />
                   {submit.isPending ? 'Submitting…' : 'Submit for Approval'}
@@ -250,7 +250,7 @@ export default function APInvoiceDetailPage() {
                 <button
                   type="button"
                   onClick={() => setShowRejectForm(!showRejectForm)}
-                  className="inline-flex items-center gap-1.5 border border-red-300 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded-lg"
+                  className="inline-flex items-center gap-1.5 border border-neutral-300 text-neutral-700 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded"
                 >
                   <XCircle className="h-4 w-4" />
                   Reject
@@ -264,7 +264,7 @@ export default function APInvoiceDetailPage() {
                 <button
                   type="button"
                   onClick={() => { setShowPaymentForm(!showPaymentForm); setPayAmountError('') }}
-                  className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-lg"
+                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded"
                 >
                   <CreditCard className="h-4 w-4" />
                   Record Payment
@@ -277,16 +277,16 @@ export default function APInvoiceDetailPage() {
 
       {/* Payment form */}
       {showPaymentForm && (
-        <div className="mb-5 bg-teal-50 border border-teal-200 rounded-lg p-4 space-y-3">
-          <p className="text-sm font-medium text-teal-800">Record Payment</p>
+        <div className="mb-5 bg-neutral-50 border border-neutral-200 rounded p-4 space-y-3">
+          <p className="text-sm font-medium text-neutral-800">Record Payment</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-medium text-gray-600">Amount (₱) *</label>
+                <label className="block text-xs font-medium text-neutral-600">Amount (₱) *</label>
                 <button
                   type="button"
                   onClick={() => { setPayAmount(String(invoice.balance_due)); setPayAmountError('') }}
-                  className="text-xs text-teal-600 hover:text-teal-800 font-medium underline underline-offset-2"
+                  className="text-xs text-neutral-600 hover:text-neutral-800 font-medium underline underline-offset-2"
                 >
                   Full amount
                 </button>
@@ -298,25 +298,25 @@ export default function APInvoiceDetailPage() {
                 value={payAmount}
                 onChange={(e) => { setPayAmount(e.target.value); setPayAmountError('') }}
                 placeholder={`Max: ${invoice.balance_due.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}
-                className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 ${payAmountError ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 ${payAmountError ? 'border-red-400 bg-red-50' : 'border-neutral-300'}`}
               />
               {payAmountError && <p className="mt-1 text-xs text-red-600">{payAmountError}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Payment Date *</label>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Payment Date *</label>
               <input
                 type="date"
                 value={payDate}
                 onChange={(e) => setPayDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Payment Method</label>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Payment Method</label>
               <select
                 value={payMethod}
                 onChange={(e) => setPayMethod(e.target.value as 'bank_transfer' | 'check' | 'cash' | '')}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               >
                 <option value="">— Select —</option>
                 <option value="bank_transfer">Bank Transfer</option>
@@ -325,13 +325,13 @@ export default function APInvoiceDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Reference No.</label>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Reference No.</label>
               <input
                 type="text"
                 value={payRef}
                 onChange={(e) => setPayRef(e.target.value)}
                 placeholder="Check no., wire ref, etc."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               />
             </div>
           </div>
@@ -340,14 +340,14 @@ export default function APInvoiceDetailPage() {
               type="button"
               onClick={handleRecordPayment}
               disabled={recordPayment.isPending}
-              className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg"
+              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
             >
               {recordPayment.isPending ? 'Saving…' : 'Save Payment'}
             </button>
             <button
               type="button"
               onClick={() => { setShowPaymentForm(false); setPayAmount(''); setPayAmountError(''); setPayRef(''); setPayMethod('') }}
-              className="border border-gray-300 text-gray-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50"
+              className="border border-neutral-300 text-neutral-600 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-50"
             >
               Cancel
             </button>
@@ -357,28 +357,28 @@ export default function APInvoiceDetailPage() {
 
       {/* Reject form */}
       {showRejectForm && (
-        <div className="mb-5 bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-          <p className="text-sm font-medium text-red-700">Rejection Note</p>
+        <div className="mb-5 bg-neutral-50 border border-neutral-200 rounded p-4 space-y-3">
+          <p className="text-sm font-medium text-neutral-800">Rejection Note</p>
           <textarea
             value={rejectNote}
             onChange={(e) => setRejectNote(e.target.value)}
             rows={3}
             placeholder="Explain why this invoice is being rejected…"
-            className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleReject}
               disabled={reject.isPending}
-              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg"
+              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
             >
               {reject.isPending ? 'Rejecting…' : 'Confirm Rejection'}
             </button>
             <button
               type="button"
               onClick={() => { setShowRejectForm(false); setRejectNote('') }}
-              className="border border-gray-300 text-gray-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50"
+              className="border border-neutral-300 text-neutral-600 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-50"
             >
               Cancel
             </button>
@@ -390,42 +390,42 @@ export default function APInvoiceDetailPage() {
         {/* Invoice details */}
         <div className="col-span-2 space-y-5">
           {/* Header card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-white rounded border border-neutral-200 p-5">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-1">Invoice Details</h3>
+                <h3 className="text-sm font-semibold text-neutral-800 mb-1">Invoice Details</h3>
                 {invoice.description && (
-                  <p className="text-sm text-gray-500">{invoice.description}</p>
+                  <p className="text-sm text-neutral-500">{invoice.description}</p>
                 )}
               </div>
               <StatusBadge label={invoice.status} />
             </div>
 
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <dt className="text-gray-500">Invoice Date</dt>
-              <dd className="font-medium">{invoice.invoice_date}</dd>
+              <dt className="text-neutral-500">Invoice Date</dt>
+              <dd className="font-medium text-neutral-900">{invoice.invoice_date}</dd>
 
-              <dt className="text-gray-500">Due Date</dt>
-              <dd className="font-medium">{invoice.due_date}</dd>
+              <dt className="text-neutral-500">Due Date</dt>
+              <dd className="font-medium text-neutral-900">{invoice.due_date}</dd>
 
               {invoice.atc_code && (
                 <>
-                  <dt className="text-gray-500">ATC Code</dt>
-                  <dd className="font-medium">{invoice.atc_code}</dd>
+                  <dt className="text-neutral-500">ATC Code</dt>
+                  <dd className="font-medium text-neutral-900">{invoice.atc_code}</dd>
                 </>
               )}
 
               {invoice.or_number && (
                 <>
-                  <dt className="text-gray-500">OR Number</dt>
-                  <dd className="font-medium">{invoice.or_number}</dd>
+                  <dt className="text-neutral-500">OR Number</dt>
+                  <dd className="font-medium text-neutral-900">{invoice.or_number}</dd>
                 </>
               )}
 
               {invoice.rejection_note && (
                 <>
-                  <dt className="text-gray-500">Rejection Note</dt>
-                  <dd className="font-medium text-red-600">{invoice.rejection_note}</dd>
+                  <dt className="text-neutral-500">Rejection Note</dt>
+                  <dd className="font-medium text-neutral-700">{invoice.rejection_note}</dd>
                 </>
               )}
             </dl>
@@ -433,23 +433,23 @@ export default function APInvoiceDetailPage() {
 
           {/* Payments table */}
           {invoice.payments && invoice.payments.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Payment History</h3>
+            <div className="bg-white rounded border border-neutral-200 p-5">
+              <h3 className="text-sm font-semibold text-neutral-800 mb-4">Payment History</h3>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left pb-2 font-medium text-gray-500">Date</th>
-                    <th className="text-left pb-2 font-medium text-gray-500">Reference</th>
-                    <th className="text-left pb-2 font-medium text-gray-500">Method</th>
-                    <th className="text-right pb-2 font-medium text-gray-500">Amount</th>
+                  <tr className="border-b border-neutral-200">
+                    <th className="text-left pb-2 font-medium text-neutral-500">Date</th>
+                    <th className="text-left pb-2 font-medium text-neutral-500">Reference</th>
+                    <th className="text-left pb-2 font-medium text-neutral-500">Method</th>
+                    <th className="text-right pb-2 font-medium text-neutral-500">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-neutral-100">
                   {invoice.payments.map((p) => (
-                    <tr key={p.id}>
+                    <tr key={p.id} className="even:bg-neutral-100 hover:bg-neutral-50">
                       <td className="py-2">{p.payment_date}</td>
-                      <td className="py-2 text-gray-500">{p.reference_number ?? '—'}</td>
-                      <td className="py-2 text-gray-500">{p.payment_method ?? '—'}</td>
+                      <td className="py-2 text-neutral-500">{p.reference_number ?? '—'}</td>
+                      <td className="py-2 text-neutral-500">{p.payment_method ?? '—'}</td>
                       <td className="py-2 text-right font-medium">
                         <CurrencyAmount centavos={p.amount * 100} />
                       </td>
@@ -463,15 +463,15 @@ export default function APInvoiceDetailPage() {
 
         {/* Amount summary */}
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Amount Summary</h3>
+          <div className="bg-white rounded border border-neutral-200 p-5">
+            <h3 className="text-sm font-semibold text-neutral-800 mb-4">Amount Summary</h3>
             <dl className="space-y-2 text-sm">
               <AmountRow label="Net Amount"  value={invoice.net_amount * 100} />
               <AmountRow label="VAT"         value={invoice.vat_amount * 100} />
               {invoice.ewt_amount > 0 && (
                 <AmountRow label={`EWT (${((invoice.ewt_rate ?? 0) * 100).toFixed(0)}%)`} value={-(invoice.ewt_amount * 100)} />
               )}
-              <div className="border-t border-gray-100 pt-2">
+              <div className="border-t border-neutral-200 pt-2">
                 <AmountRow label="Net Payable" value={invoice.net_payable * 100} bold />
               </div>
               <AmountRow label="Total Paid"    value={invoice.total_paid * 100}  muted />
@@ -481,7 +481,7 @@ export default function APInvoiceDetailPage() {
 
           {/* Overdue badge */}
           {invoice.is_overdue && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm text-neutral-700">
               <CheckCircle className="h-4 w-4 flex-shrink-0" />
               This invoice is <span className="font-semibold">overdue</span>.
             </div>
@@ -509,10 +509,10 @@ function AmountRow({
 }) {
   return (
     <div className="flex justify-between">
-      <dt className={muted ? 'text-gray-400' : 'text-gray-500'}>{label}</dt>
+      <dt className={muted ? 'text-neutral-400' : 'text-neutral-500'}>{label}</dt>
       <dd className={[
         bold ? 'font-semibold' : 'font-medium',
-        highlight ? 'text-red-600' : muted ? 'text-gray-400' : 'text-gray-800',
+        highlight ? 'text-neutral-900' : muted ? 'text-neutral-400' : 'text-neutral-800',
       ].join(' ')}>
         <CurrencyAmount centavos={value} />
       </dd>

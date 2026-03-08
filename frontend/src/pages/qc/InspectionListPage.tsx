@@ -7,17 +7,17 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { InspectionStage, InspectionStatus } from '@/types/qc'
 
 const stageBadge: Record<InspectionStage, string> = {
-  iqc:   'bg-blue-100 text-blue-700',
-  ipqc:  'bg-amber-100 text-amber-700',
-  oqc:   'bg-purple-100 text-purple-700',
+  iqc:   'bg-neutral-100 text-neutral-700',
+  ipqc:  'bg-neutral-100 text-neutral-700',
+  oqc:   'bg-neutral-100 text-neutral-700',
 }
 
 const statusBadge: Record<InspectionStatus, string> = {
-  open:     'bg-gray-100 text-gray-600',
-  passed:   'bg-green-100 text-green-700',
-  failed:   'bg-red-100 text-red-700',
-  on_hold:  'bg-yellow-100 text-yellow-700',
-  voided:   'bg-gray-200 text-gray-400',
+  open:     'bg-neutral-100 text-neutral-600',
+  passed:   'bg-neutral-100 text-neutral-700',
+  failed:   'bg-neutral-100 text-neutral-700',
+  on_hold:  'bg-neutral-100 text-neutral-700',
+  voided:   'bg-neutral-100 text-neutral-400',
 }
 
 export default function InspectionListPage(): React.ReactElement {
@@ -40,18 +40,18 @@ export default function InspectionListPage(): React.ReactElement {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-            <ClipboardCheck className="w-5 h-5 text-teal-600" />
+          <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
+            <ClipboardCheck className="w-5 h-5 text-neutral-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inspections</h1>
-            <p className="text-sm text-gray-500 mt-0.5">IQC, IPQC, and OQC inspection records</p>
+            <h1 className="text-lg font-semibold text-neutral-900 mb-6">Inspections</h1>
+            <p className="text-sm text-neutral-500 mt-0.5">IQC, IPQC, and OQC inspection records</p>
           </div>
         </div>
         {canCreate && (
           <Link
             to="/qc/inspections/new"
-            className="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Inspection
@@ -63,7 +63,7 @@ export default function InspectionListPage(): React.ReactElement {
         <select
           value={stage}
           onChange={(e) => { setStage(e.target.value); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Stages</option>
           <option value="iqc">IQC (Incoming)</option>
@@ -74,15 +74,15 @@ export default function InspectionListPage(): React.ReactElement {
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Statuses</option>
           {(['open', 'passed', 'failed', 'on_hold'] as InspectionStatus[]).map((s) => (
             <option key={s} value={s}>{s.replace('_', ' ')}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300 text-neutral-600" />
           <span>Show Archived</span>
         </label>
       </div>
@@ -96,46 +96,46 @@ export default function InspectionListPage(): React.ReactElement {
 
       {!isLoading && !isError && (
         <>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
                   {['Reference', 'Stage', 'Item', 'Qty Inspected', 'Pass / Fail', 'Date', 'Status', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-400 text-sm">No inspections found.</td>
+                    <td colSpan={8} className="px-4 py-8 text-center text-neutral-400 text-sm">No inspections found.</td>
                   </tr>
                 )}
                 {data?.data?.map((insp) => (
-                  <tr key={insp.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-teal-700 font-medium">{insp.inspection_reference}</td>
+                  <tr key={insp.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                    <td className="px-4 py-3 font-mono text-neutral-700 font-medium">{insp.inspection_reference}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase ${stageBadge[insp.stage]}`}>{insp.stage}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${stageBadge[insp.stage]}`}>{insp.stage}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-xs font-mono text-gray-400">{insp.item_master?.item_code}</div>
+                      <div className="text-xs font-mono text-neutral-400">{insp.item_master?.item_code}</div>
                       <div className="text-sm">{insp.item_master?.name ?? '—'}</div>
                     </td>
                     <td className="px-4 py-3 tabular-nums">{parseFloat(insp.qty_inspected).toLocaleString('en-PH', { maximumFractionDigits: 2 })}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className="text-green-700 font-semibold">{parseFloat(insp.qty_passed).toLocaleString('en-PH', { maximumFractionDigits: 2 })}</span>
+                      <span className="text-neutral-700 font-medium">{parseFloat(insp.qty_passed).toLocaleString('en-PH', { maximumFractionDigits: 2 })}</span>
                       {' / '}
-                      <span className="text-red-600 font-semibold">{parseFloat(insp.qty_failed).toLocaleString('en-PH', { maximumFractionDigits: 2 })}</span>
+                      <span className="text-neutral-600 font-medium">{parseFloat(insp.qty_failed).toLocaleString('en-PH', { maximumFractionDigits: 2 })}</span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{insp.inspection_date}</td>
+                    <td className="px-4 py-3 text-neutral-500 text-xs">{insp.inspection_date}</td>
                     <td className="px-4 py-3">
-                      {insp.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[insp.status]}`}>
+                      {insp.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[insp.status]}`}>
                         {insp.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Link to={`/qc/inspections/${insp.ulid}`} className="text-xs text-teal-600 hover:text-teal-800 font-medium">
+                      <Link to={`/qc/inspections/${insp.ulid}`} className="text-xs text-neutral-600 hover:text-neutral-800 font-medium">
                         View →
                       </Link>
                     </td>
@@ -145,11 +145,11 @@ export default function InspectionListPage(): React.ReactElement {
             </table>
           </div>
           {data && data.meta.last_page > 1 && (
-            <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+            <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} inspections</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

@@ -89,6 +89,18 @@ final class BomService implements ServiceContract
         });
     }
 
+    public function activate(BillOfMaterials $bom): BillOfMaterials
+    {
+        $bom->update(['is_active' => true]);
+
+        return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+    }
+
+    public function archive(BillOfMaterials $bom): void
+    {
+        $bom->delete();
+    }
+
     /** @param array<string,mixed> $filters */
     public function allForItem(int $itemId): Collection
     {

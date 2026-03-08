@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Plus, Archive, CheckCircle, CreditCard, RefreshCw } from 'lucide-react'
 import {
   useCustomers,
@@ -16,17 +17,17 @@ import type { Customer, CreateCustomerPayload } from '@/types/ar'
 
 function CreditMeter({ customer }: { customer: Customer }) {
   if (customer.credit_limit <= 0) {
-    return <span className="text-xs text-gray-400">Unlimited</span>
+    return <span className="text-xs text-neutral-400">Unlimited</span>
   }
   const pct = Math.min(100, (customer.current_outstanding / customer.credit_limit) * 100)
   const colour = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-yellow-400' : 'bg-green-500'
   return (
     <div className="w-32">
-      <div className="flex justify-between text-xs text-gray-500 mb-0.5">
+      <div className="flex justify-between text-xs text-neutral-500 mb-0.5">
         <span>₱{customer.current_outstanding.toLocaleString()}</span>
         <span>₱{customer.credit_limit.toLocaleString()}</span>
       </div>
-      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
         <div className={`h-full ${colour} rounded-full`} style={{ width: `${pct}%` }} />
       </div>
     </div>
@@ -35,11 +36,11 @@ function CreditMeter({ customer }: { customer: Customer }) {
 
 function StatusBadge({ active }: { active: boolean }) {
   return active ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
       <CheckCircle className="w-3 h-3" /> Active
     </span>
   ) : (
-    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Inactive</span>
+    <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">Inactive</span>
   )
 }
 
@@ -51,9 +52,16 @@ function ArchiveCustomerButton({ customer }: { customer: Customer }) {
       description={`Archive "${customer.name}"? This will prevent new invoices from being created for this customer.`}
       confirmWord="ARCHIVE"
       confirmLabel="Archive"
-      onConfirm={async () => { await archiveMut.mutateAsync(customer.id) }}
+      onConfirm={async () => {
+        try {
+          await archiveMut.mutateAsync(customer.id)
+          toast.success('Customer archived.')
+        } catch {
+          toast.error('Failed to archive customer.')
+        }
+      }}
     >
-      <button className="text-xs text-red-500 hover:underline flex items-center gap-1">
+      <button className="text-xs text-neutral-500 hover:underline flex items-center gap-1">
         <Archive className="w-3 h-3" /> Archive
       </button>
     </ConfirmDestructiveDialog>
@@ -110,8 +118,10 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
     e.preventDefault()
     if (initial) {
       await updateMut.mutateAsync(form)
+      toast.success('Customer updated.')
     } else {
       await createMut.mutateAsync(form)
+      toast.success('Customer created.')
     }
     onClose()
   }
@@ -120,85 +130,85 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
   const error = createMut.error || updateMut.error
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
-        <h2 className="text-lg font-semibold mb-4">{initial ? 'Edit Customer' : 'New Customer'}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded border border-neutral-200 w-full max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">{initial ? 'Edit Customer' : 'New Customer'}</h2>
         {error && (
           <p className="text-sm text-red-600 mb-3">{(error as Error).message}</p>
         )}
         <form onSubmit={submit} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="col-span-2 block">
-              <span className="text-sm font-medium text-gray-700">Name *</span>
+              <span className="text-sm font-medium text-neutral-700">Name *</span>
               <input
-                className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
                 required
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">TIN</span>
+              <span className="text-sm font-medium text-neutral-700">TIN</span>
               <input
-                className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.tin ?? ''}
                 onChange={(e) => set('tin', e.target.value || null)}
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Credit Limit (₱)</span>
+              <span className="text-sm font-medium text-neutral-700">Credit Limit (₱)</span>
               <input
                 type="number"
                 min={0}
                 step="0.01"
-                className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.credit_limit ?? 0}
                 onChange={(e) => set('credit_limit', parseFloat(e.target.value) || 0)}
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Email</span>
+              <span className="text-sm font-medium text-neutral-700">Email</span>
               <input
                 type="email"
-                className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.email ?? ''}
                 onChange={(e) => set('email', e.target.value || null)}
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Phone</span>
+              <span className="text-sm font-medium text-neutral-700">Phone</span>
               <input
-                className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.phone ?? ''}
                 onChange={(e) => set('phone', e.target.value || null)}
               />
             </label>
             <label className="col-span-2 block">
-              <span className="text-sm font-medium text-gray-700">Contact Person</span>
+              <span className="text-sm font-medium text-neutral-700">Contact Person</span>
               <input
-                className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.contact_person ?? ''}
                 onChange={(e) => set('contact_person', e.target.value || null)}
               />
             </label>
             <label className="col-span-2 block">
-              <span className="text-sm font-medium text-gray-700">Address</span>
+              <span className="text-sm font-medium text-neutral-700">Address</span>
               <textarea
                 rows={2}
-                className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.address ?? ''}
                 onChange={(e) => set('address', e.target.value || null)}
               />
             </label>
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-1.5 rounded-lg border text-sm hover:bg-gray-50">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-2 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-1.5 rounded border border-neutral-300 text-sm hover:bg-neutral-50">
               Cancel
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
+              className="px-4 py-1.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60"
             >
               {isPending ? 'Saving…' : initial ? 'Update' : 'Create Customer'}
             </button>
@@ -225,19 +235,19 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage customer accounts and credit limits</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Customers</h1>
+          <p className="text-sm text-neutral-500">Manage customer accounts and credit limits</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => refetch()}
-            className="p-2 rounded-lg border hover:bg-gray-50 text-gray-500"
+            className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => setModalCustomer(null)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
           >
             <Plus className="w-4 h-4" /> New Customer
           </button>
@@ -250,37 +260,37 @@ export default function CustomersPage() {
         placeholder="Search by name or TIN…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-sm border rounded-lg px-3 py-1.5 text-sm"
+        className="w-full max-w-sm border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
       />
 
       {/* Table */}
       {isLoading ? (
         <SkeletonLoader rows={6} />
       ) : (
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded border border-neutral-200">
+          <table className="min-w-full divide-y divide-neutral-100 text-sm">
+            <thead className="bg-neutral-50">
               <tr>
                 {['Name', 'TIN', 'Contact', 'Credit Usage', 'Status', ''].map((h) => (
-                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-neutral-100">
               {customers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={6} className="px-3 py-8 text-center text-neutral-400">
                     No customers found.
                   </td>
                 </tr>
               ) : (
                 customers.map((c) => (
-                  <tr key={c.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
-                    <td className="px-3 py-2 font-medium text-gray-900">{c.name}</td>
-                    <td className="px-3 py-2 text-gray-500">{c.tin ?? '—'}</td>
-                    <td className="px-3 py-2 text-gray-500">
+                  <tr key={c.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
+                    <td className="px-3 py-2 font-medium text-neutral-900">{c.name}</td>
+                    <td className="px-3 py-2 text-neutral-500">{c.tin ?? '—'}</td>
+                    <td className="px-3 py-2 text-neutral-500">
                       {c.contact_person ?? c.email ?? '—'}
                     </td>
                     <td className="px-3 py-2">
@@ -293,7 +303,7 @@ export default function CustomersPage() {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => setModalCustomer(c)}
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          className="text-xs text-neutral-600 hover:underline flex items-center gap-1"
                         >
                           <CreditCard className="w-3 h-3" /> Edit
                         </button>

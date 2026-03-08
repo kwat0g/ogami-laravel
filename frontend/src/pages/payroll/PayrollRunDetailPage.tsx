@@ -61,7 +61,7 @@ function DownloadPayslipButton({ runId, detailId }: { runId: string; detailId: n
       onClick={() => void download()}
       disabled={isLoading}
       title="Download payslip PDF"
-      className="p-1 text-gray-400 hover:text-blue-600 disabled:opacity-40 transition-colors"
+      className="p-1 text-neutral-400 hover:text-neutral-900 disabled:opacity-40 transition-colors"
     >
       {isLoading
         ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -82,14 +82,14 @@ interface SummaryCardProps {
   iconClass?: string
 }
 
-function SummaryCard({ label, value, icon: Icon, iconClass = 'text-blue-600' }: SummaryCardProps) {
+function SummaryCard({ label, value, icon: Icon, iconClass = 'text-neutral-900' }: SummaryCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-start gap-4">
-      <div className={`p-2.5 rounded-lg bg-gray-50 ${iconClass.replace('text-', 'bg-').replace('-600', '-100')}`}>
+    <div className="bg-white border border-neutral-200 rounded p-5 flex items-start gap-4">
+      <div className={`p-2.5 rounded bg-neutral-50 ${iconClass.replace('text-', 'bg-').replace('-600', '-100')}`}>
         <Icon className={`h-5 w-5 ${iconClass}`} />
       </div>
       <div>
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-medium text-neutral-500 font-medium">{label}</p>
         <div className="mt-1">{value}</div>
       </div>
     </div>
@@ -119,7 +119,7 @@ function PayslipsTable({
 }) {
   if (details.length === 0) {
     return (
-      <div className="py-10 text-center text-gray-400 text-sm">
+      <div className="py-10 text-center text-neutral-400 text-sm">
         No payslip data yet. Lock the run to start computation.
       </div>
     )
@@ -129,42 +129,42 @@ function PayslipsTable({
     <>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-              <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Days</th>
-              <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">OT</th>
-              <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Basic Pay</th>
-              <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Gross Pay</th>
-              <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Deductions</th>
-              <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Net Pay</th>
-              <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Flags</th>
-              <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Trace</th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 font-medium">Employee</th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">Days</th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">OT</th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">Basic Pay</th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">Gross Pay</th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">Deductions</th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">Net Pay</th>
+              <th className="px-3 py-2.5 text-center text-xs font-semibold text-neutral-500 font-medium">Flags</th>
+              <th className="px-3 py-2.5 text-center text-xs font-semibold text-neutral-500 font-medium">Trace</th>
               {isCompleted && (
-                <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">PDF</th>
+                <th className="px-3 py-2.5 text-center text-xs font-semibold text-neutral-500 font-medium">PDF</th>
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-neutral-100">
             {details.map((d) => (
-              <tr key={d.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
+              <tr key={d.id} className=" hover:bg-neutral-50/60 transition-colors">
                 <td className="px-3 py-2">
-                  <div className="font-medium text-gray-900">
+                  <div className="font-medium text-neutral-900">
                     {d.employee
                       ? `${d.employee.first_name} ${d.employee.last_name}`
                       : `Employee #${d.employee_id}`}
                   </div>
-                  <div className="text-xs text-gray-400 font-mono mt-0.5">
+                  <div className="text-xs text-neutral-400 font-mono mt-0.5">
                     {d.employee?.employee_code ?? ''}
                   </div>
                 </td>
-                <td className="px-3 py-2 text-right text-gray-700 tabular-nums">
+                <td className="px-3 py-2 text-right text-neutral-700 tabular-nums">
                   {d.days_worked}
                   {d.leave_days_paid > 0 && (
-                    <span className="text-xs text-gray-400 ml-1">(+{d.leave_days_paid}L)</span>
+                    <span className="text-xs text-neutral-400 ml-1">(+{d.leave_days_paid}L)</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-right text-gray-700">
+                <td className="px-4 py-3 text-right text-neutral-700">
                   {formatMinutes(d.overtime_regular_minutes + d.overtime_rest_day_minutes)}
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -197,7 +197,7 @@ function PayslipsTable({
                   {d.loan_deduction_detail && d.loan_deduction_detail.length > 0 && (
                     <button
                       onClick={() => onTrace(d)}
-                      className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-50 text-slate-600"
+                      className="text-xs px-2 py-1 border border-neutral-200 rounded hover:bg-neutral-50 text-neutral-600"
                       title="View deduction trace"
                     >
                       Trace
@@ -217,20 +217,20 @@ function PayslipsTable({
 
       {/* Pagination */}
       {lastPage > 1 && (
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
+        <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
           <span>Page {page} of {lastPage}</span>
           <div className="flex gap-2">
             <button
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
-              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
             >
               Previous
             </button>
             <button
               disabled={page >= lastPage}
               onClick={() => onPageChange(page + 1)}
-              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
             >
               Next
             </button>
@@ -252,7 +252,7 @@ function ExceptionsTable({ details }: { details: PayrollDetail[] }) {
 
   if (exceptions.length === 0) {
     return (
-      <div className="py-10 text-center text-gray-400 text-sm">
+      <div className="py-10 text-center text-neutral-400 text-sm">
         No exceptions found — all employees are within normal parameters.
       </div>
     )
@@ -261,24 +261,24 @@ function ExceptionsTable({ details }: { details: PayrollDetail[] }) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-neutral-50 border-b border-neutral-200">
           <tr>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-            <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Net Pay</th>
-            <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Deferred Loans</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Issue</th>
+            <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 font-medium">Employee</th>
+            <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">Net Pay</th>
+            <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 font-medium">Deferred Loans</th>
+            <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 font-medium">Issue</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-neutral-100">
           {exceptions.map((d) => (
-            <tr key={d.id} className="bg-orange-50/50 even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
+            <tr key={d.id} className="bg-orange-50/50  hover:bg-neutral-50/60 transition-colors">
               <td className="px-3 py-2">
-                <div className="font-medium text-gray-900">
+                <div className="font-medium text-neutral-900">
                   {d.employee
                     ? `${d.employee.first_name} ${d.employee.last_name}`
                     : `Employee #${d.employee_id}`}
                 </div>
-                <div className="text-xs text-gray-400 font-mono mt-0.5">
+                <div className="text-xs text-neutral-400 font-mono mt-0.5">
                   {d.employee?.employee_code ?? ''}
                 </div>
               </td>
@@ -288,7 +288,7 @@ function ExceptionsTable({ details }: { details: PayrollDetail[] }) {
               <td className="px-4 py-3 text-right">
                 {d.has_deferred_deductions
                   ? <CurrencyAmount centavos={d.loan_deductions_centavos} />
-                  : <span className="text-gray-400">—</span>
+                  : <span className="text-neutral-400">—</span>
                 }
               </td>
               <td className="px-3 py-2">
@@ -435,7 +435,7 @@ export default function PayrollRunDetailPage() {
       {/* Back nav */}
       <button
         onClick={() => navigate('/payroll/runs')}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Payroll Runs
@@ -445,7 +445,7 @@ export default function PayrollRunDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{run.reference_no}</h1>
+            <h1 className="text-lg font-semibold text-neutral-900">{run.reference_no}</h1>
             <StatusBadge label={run.status} autoVariant />
             {run.run_type === 'thirteenth_month' && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">
@@ -453,13 +453,13 @@ export default function PayrollRunDetailPage() {
               </span>
             )}
             {shouldPoll && (
-              <span className="flex items-center gap-1.5 text-xs text-blue-600">
+              <span className="flex items-center gap-1.5 text-xs text-neutral-900">
                 <RefreshCw className="h-3 w-3 animate-spin" />
                 Computing…
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-neutral-500 mt-1">
             {run.pay_period_label}
             {' · '}
             Cutoff: {formatDate(run.cutoff_start)} – {formatDate(run.cutoff_end)}
@@ -478,7 +478,7 @@ export default function PayrollRunDetailPage() {
               confirmLabel="Lock & Compute"
               onConfirm={handleLock}
             >
-              <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+              <button className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
                 <Lock className="h-4 w-4" />
                 Lock Run
               </button>
@@ -501,7 +501,7 @@ export default function PayrollRunDetailPage() {
                 onClick={() => void exportBreakdown.download()}
                 disabled={exportBreakdown.isLoading}
                 title="Full payroll breakdown with attendance, OT, tax, deductions"
-                className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
               >
                 {exportBreakdown.isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Table2 className="h-4 w-4" />}
                 Full Breakdown (Excel)
@@ -509,7 +509,7 @@ export default function PayrollRunDetailPage() {
               <button
                 onClick={() => void exportRegister.download()}
                 disabled={exportRegister.isLoading}
-                className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
               >
                 {exportRegister.isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Table2 className="h-4 w-4" />}
                 Export Register
@@ -525,7 +525,7 @@ export default function PayrollRunDetailPage() {
               confirmLabel="Cancel Run"
               onConfirm={handleCancel}
             >
-              <button className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+              <button className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded transition-colors">
                 <XCircle className="h-4 w-4" />
                 Cancel Run
               </button>
@@ -536,12 +536,12 @@ export default function PayrollRunDetailPage() {
 
       {/* Cancelled / Rejected banner */}
       {(isCancelled || isRejected) && (
-        <div className={`flex items-start gap-3 rounded-xl border px-5 py-4 mb-6 ${
+        <div className={`flex items-start gap-3 rounded border px-5 py-4 mb-6 ${
           isCancelled
-            ? 'bg-gray-50 border-gray-300 text-gray-700'
+            ? 'bg-neutral-50 border-neutral-300 text-neutral-700'
             : 'bg-red-50 border-red-300 text-red-800'
         }`}>
-          <XCircle className={`h-5 w-5 mt-0.5 shrink-0 ${isCancelled ? 'text-gray-400' : 'text-red-500'}`} />
+          <XCircle className={`h-5 w-5 mt-0.5 shrink-0 ${isCancelled ? 'text-neutral-400' : 'text-red-500'}`} />
           <div>
             <p className="font-semibold text-sm">
               {isCancelled ? 'Payroll run cancelled' : 'Payroll run permanently rejected'}
@@ -559,9 +559,9 @@ export default function PayrollRunDetailPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <SummaryCard
           label="Employees"
-          value={<span className="text-2xl font-bold text-gray-800">{run.total_employees}</span>}
+          value={<span className="text-lg font-semibold text-neutral-800">{run.total_employees}</span>}
           icon={Users}
-          iconClass="text-blue-600"
+          iconClass="text-neutral-900"
         />
         <SummaryCard
           label="Gross Pay"
@@ -579,20 +579,20 @@ export default function PayrollRunDetailPage() {
           label="Net Pay"
           value={<CurrencyAmount centavos={run.net_pay_total} size="xl" />}
           icon={Banknote}
-          iconClass="text-indigo-600"
+          iconClass="text-neutral-900"
         />
       </div>
 
       {/* Notes */}
       {run.notes && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600 mb-6">
+        <div className="bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm text-neutral-600 mb-6">
           {run.notes}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="border-b border-gray-200 px-4 flex gap-1">
+      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+        <div className="border-b border-neutral-200 px-4 flex gap-1">
           {(['payslips', 'exceptions'] as Tab[]).map((tab) => (
             <button
               key={tab}
@@ -600,8 +600,8 @@ export default function PayrollRunDetailPage() {
               className={[
                 'px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px',
                 activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700',
+                  ? 'border-neutral-900 text-neutral-900'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-700',
               ].join(' ')}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -648,9 +648,9 @@ export default function PayrollRunDetailPage() {
         >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Deduction Trace</h2>
-            <button onClick={() => setTraceDetail(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            <button onClick={() => setTraceDetail(null)} className="text-slate-400 hover:text-neutral-600 text-xl leading-none">&times;</button>
           </div>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-neutral-500">
             {traceDetail.employee
               ? `${traceDetail.employee.first_name} ${traceDetail.employee.last_name}`
               : `Employee #${traceDetail.employee_id}`}
@@ -658,17 +658,17 @@ export default function PayrollRunDetailPage() {
 
           {/* Loan deductions */}
           <section>
-            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">Loan Deductions</h3>
+            <h3 className="text-xs font-semibold text-slate-700 font-medium mb-2">Loan Deductions</h3>
             {traceDetail.loan_deduction_detail && traceDetail.loan_deduction_detail.length > 0 ? (
               <table className="w-full text-xs border rounded overflow-hidden">
-                <thead className="bg-slate-50">
+                <thead className="bg-neutral-50">
                   <tr>
                     {['Loan', 'Scheduled', 'Deducted', 'Deferred'].map(h => (
-                      <th key={h} className="px-3 py-1.5 text-left text-slate-500 font-medium">{h}</th>
+                      <th key={h} className="px-3 py-1.5 text-left text-neutral-500 font-medium">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-neutral-100">
                   {traceDetail.loan_deduction_detail.map((ld, idx) => (
                     <tr key={idx}>
                       <td className="px-3 py-1.5 font-mono">{ld.loan_id}</td>
@@ -686,7 +686,7 @@ export default function PayrollRunDetailPage() {
 
           {/* Summary */}
           <section className="space-y-1 text-sm">
-            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">Net Pay Summary</h3>
+            <h3 className="text-xs font-semibold text-slate-700 font-medium mb-2">Net Pay Summary</h3>
             {[
               ['Gross Pay',        (traceDetail.gross_pay_centavos / 100).toFixed(2)],
               ['Statutory (EE)',   ((traceDetail.sss_ee_centavos + traceDetail.philhealth_ee_centavos + traceDetail.pagibig_ee_centavos) / 100).toFixed(2)],
@@ -695,8 +695,8 @@ export default function PayrollRunDetailPage() {
               ['Total Deductions', (traceDetail.total_deductions_centavos / 100).toFixed(2)],
               ['Net Pay',          (traceDetail.net_pay_centavos / 100).toFixed(2)],
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between border-b border-slate-100 pb-1">
-                <span className="text-slate-500">{label}</span>
+              <div key={label} className="flex justify-between border-b border-neutral-100 pb-1">
+                <span className="text-neutral-500">{label}</span>
                 <span className="font-medium tabular-nums">{value}</span>
               </div>
             ))}

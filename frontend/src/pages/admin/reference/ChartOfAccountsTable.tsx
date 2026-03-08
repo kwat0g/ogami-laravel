@@ -52,13 +52,13 @@ import { cn } from '@/lib/utils'
 
 const ACCOUNT_TYPES = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'COGS', 'OPEX', 'TAX']
 const ACCOUNT_TYPE_COLORS: Record<string, string> = {
-  ASSET: 'bg-blue-100 text-blue-700',
-  LIABILITY: 'bg-red-100 text-red-700',
-  EQUITY: 'bg-green-100 text-green-700',
-  REVENUE: 'bg-purple-100 text-purple-700',
-  COGS: 'bg-orange-100 text-orange-700',
-  OPEX: 'bg-yellow-100 text-yellow-700',
-  TAX: 'bg-gray-100 text-gray-700',
+  ASSET: 'bg-neutral-100 text-neutral-700',
+  LIABILITY: 'bg-neutral-100 text-neutral-700',
+  EQUITY: 'bg-neutral-100 text-neutral-700',
+  REVENUE: 'bg-neutral-100 text-neutral-700',
+  COGS: 'bg-neutral-100 text-neutral-700',
+  OPEX: 'bg-neutral-100 text-neutral-700',
+  TAX: 'bg-neutral-100 text-neutral-700',
 }
 
 interface AccountNodeProps {
@@ -89,8 +89,8 @@ function AccountNode({
   return (
     <>
       <TableRow className={cn(
-        !account.is_active && 'opacity-60 bg-gray-50',
-        account.is_system && 'bg-amber-50/30'
+        !account.is_active && 'opacity-60 bg-neutral-50',
+        account.is_system && 'bg-neutral-50'
       )}>
         <TableCell>
           <div 
@@ -100,12 +100,12 @@ function AccountNode({
             {hasChildren ? (
               <button
                 onClick={() => onToggle(account.id)}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-neutral-100 rounded"
               >
                 {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                  <ChevronDown className="h-4 w-4 text-neutral-500" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-500" />
+                  <ChevronRight className="h-4 w-4 text-neutral-500" />
                 )}
               </button>
             ) : (
@@ -113,14 +113,14 @@ function AccountNode({
             )}
             
             {hasChildren ? (
-              <Folder className="h-4 w-4 text-amber-500" />
+              <Folder className="h-4 w-4 text-neutral-500" />
             ) : (
-              <FileText className="h-4 w-4 text-gray-400" />
+              <FileText className="h-4 w-4 text-neutral-400" />
             )}
             
             <span className="font-medium">{account.code}</span>
             {account.is_system && (
-              <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
+              <Badge variant="outline" className="text-neutral-600 border-neutral-300 text-xs">
                 System
               </Badge>
             )}
@@ -329,7 +329,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
   }
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading chart of accounts...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading chart of accounts...</div>
   }
 
   return (
@@ -337,11 +337,11 @@ export default function ChartOfAccountsTable(): JSX.Element {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">Filter by type:</span>
+          <span className="text-sm text-neutral-500">Filter by type:</span>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+            className="text-sm border border-neutral-300 rounded px-3 py-2 focus:ring-1 focus:ring-neutral-400"
           >
             <option value="all">All Types</option>
             {types.map((t) => (
@@ -354,7 +354,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
               type="checkbox"
               checked={showArchived}
               onChange={(e) => setShowArchived(e.target.checked)}
-              className="rounded border-gray-300"
+              className="rounded border-neutral-300"
             />
             Show archived
           </label>
@@ -380,11 +380,11 @@ export default function ChartOfAccountsTable(): JSX.Element {
       </div>
 
       {/* Info Banner */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 text-sm text-amber-800">
-        <AlertCircle className="h-5 w-5 shrink-0" />
+      <div className="bg-neutral-50 border border-neutral-200 rounded p-3 flex items-start gap-2 text-sm text-neutral-800">
+        <AlertCircle className="h-5 w-5 shrink-0 text-neutral-600" />
         <div>
           <p className="font-medium">Chart of Accounts Guidelines:</p>
-          <ul className="list-disc list-inside text-amber-700 mt-1 text-xs">
+          <ul className="list-disc list-inside text-neutral-600 mt-1 text-xs">
             <li>System accounts (marked with badge) cannot be modified or deleted</li>
             <li>Only leaf accounts (no children) can be posted to</li>
             <li>Maximum hierarchy depth is 5 levels</li>
@@ -393,23 +393,23 @@ export default function ChartOfAccountsTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <div className="max-h-[600px] overflow-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-white">
-              <TableRow className="bg-gray-50">
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Normal Balance</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-20">Actions</TableHead>
+              <TableRow className="bg-neutral-50">
+                <TableHead className="text-xs font-semibold text-neutral-600">Code</TableHead>
+                <TableHead className="text-xs font-semibold text-neutral-600">Name</TableHead>
+                <TableHead className="text-xs font-semibold text-neutral-600">Type</TableHead>
+                <TableHead className="text-xs font-semibold text-neutral-600">Normal Balance</TableHead>
+                <TableHead className="text-xs font-semibold text-neutral-600">Status</TableHead>
+                <TableHead className="w-20 text-xs font-semibold text-neutral-600">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayTree.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={6} className="text-center py-8 text-neutral-500">
                     No accounts found
                   </TableCell>
                 </TableRow>
@@ -448,7 +448,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="code" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="code" className="text-sm font-medium text-neutral-700">
                   Account Code <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -463,14 +463,14 @@ export default function ChartOfAccountsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="account_type" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="account_type" className="text-sm font-medium text-neutral-700">
                   Account Type <span className="text-red-500">*</span>
                 </Label>
                 <select
                   id="account_type"
                   value={formData.account_type}
                   onChange={(e) => setFormData({ ...formData, account_type: e.target.value })}
-                  className="w-full h-11 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full h-11 text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   required
                 >
                   {ACCOUNT_TYPES.map(t => (
@@ -481,7 +481,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="name" className="text-sm font-medium text-neutral-700">
                 Account Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -496,14 +496,14 @@ export default function ChartOfAccountsTable(): JSX.Element {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="parent_id" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="parent_id" className="text-sm font-medium text-neutral-700">
                   Parent Account
                 </Label>
                 <select
                   id="parent_id"
                   value={formData.parent_id}
                   onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
-                  className="w-full h-11 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full h-11 text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 >
                   <option value="">None (Top Level)</option>
                   {allAccounts
@@ -515,14 +515,14 @@ export default function ChartOfAccountsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="normal_balance" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="normal_balance" className="text-sm font-medium text-neutral-700">
                   Normal Balance <span className="text-red-500">*</span>
                 </Label>
                 <select
                   id="normal_balance"
                   value={formData.normal_balance}
                   onChange={(e) => setFormData({ ...formData, normal_balance: e.target.value })}
-                  className="w-full h-11 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full h-11 text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   required
                 >
                   <option value="DEBIT">DEBIT</option>
@@ -532,7 +532,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="description" className="text-sm font-medium text-neutral-700">
                 Description
               </Label>
               <Input

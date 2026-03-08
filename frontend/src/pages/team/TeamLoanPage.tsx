@@ -20,7 +20,7 @@ export default function TeamLoanPage() {
 
   if (isError) {
     return (
-      <div className="text-red-600 text-sm mt-4">
+      <div className="text-neutral-600 text-sm mt-4">
         Failed to load team loans. Please try again.
       </div>
     )
@@ -32,19 +32,17 @@ export default function TeamLoanPage() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team Loans</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {data?.meta?.total ?? 0} records
-            <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-              Department Only
-            </span>
-          </p>
-        </div>
+        <h1 className="text-lg font-semibold text-neutral-900">Team Loans</h1>
       </div>
+      <p className="text-sm text-neutral-500 mb-4">
+        {data?.meta?.total ?? 0} records
+        <span className="ml-2 text-xs text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">
+          Department Only
+        </span>
+      </p>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-4 flex flex-wrap gap-3">
         <select
           value={filters.status ?? ''}
           onChange={(e) =>
@@ -54,7 +52,7 @@ export default function TeamLoanPage() {
               page: 1,
             }))
           }
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none focus:border-neutral-400"
         >
           <option value="">All Statuses</option>
           {LOAN_STATUSES.map((s) => (
@@ -66,23 +64,23 @@ export default function TeamLoanPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Balance</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Employee</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Type</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-600">Amount</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Status</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-600">Balance</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={6} className="px-3 py-10 text-center text-neutral-400 text-sm">
                     No loan records found.
                   </td>
                 </tr>
@@ -91,12 +89,12 @@ export default function TeamLoanPage() {
                   <tr
                     key={loan.id}
                     onClick={() => navigate(`/team/loans/${loan.ulid}`)}
-                    className="hover:bg-blue-50/60 cursor-pointer transition-colors even:bg-slate-50"
+                    className="hover:bg-neutral-50 even:bg-neutral-100 cursor-pointer transition-colors"
                   >
-                    <td className="px-3 py-2 font-medium text-gray-900">
+                    <td className="px-3 py-2 font-medium text-neutral-900">
                       {loan.employee?.full_name ?? `Employee #${loan.employee_id}`}
                     </td>
-                    <td className="px-3 py-2 text-gray-600">
+                    <td className="px-3 py-2 text-neutral-600">
                       {loan.loan_type?.name ?? '—'}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -111,7 +109,7 @@ export default function TeamLoanPage() {
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => navigate(`/team/loans/${loan.ulid}`)}
-                        className="px-2.5 py-1 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                        className="px-2.5 py-1 text-xs text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded transition-colors"
                       >
                         View
                       </button>
@@ -125,7 +123,7 @@ export default function TeamLoanPage() {
 
         {/* Pagination */}
         {data?.meta && data.meta.last_page > 1 && (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
+          <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
             <span>
               Page {data.meta.current_page} of {data.meta.last_page} &middot; {data.meta.total} total
             </span>
@@ -133,14 +131,14 @@ export default function TeamLoanPage() {
               <button
                 disabled={data.meta.current_page <= 1}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={data.meta.current_page >= data.meta.last_page}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>

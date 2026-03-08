@@ -13,7 +13,7 @@ export default function TeamEmployeeDetailPage() {
 
   if (isError || !employee) {
     return (
-      <div className="text-red-600 text-sm mt-4">
+      <div className="text-neutral-700 text-sm mt-4">
         Employee not found or failed to load.
       </div>
     )

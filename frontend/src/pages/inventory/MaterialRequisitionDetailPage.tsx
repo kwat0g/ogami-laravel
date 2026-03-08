@@ -19,22 +19,22 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { MaterialRequisitionStatus } from '@/types/inventory'
 
 const statusBadge: Record<MaterialRequisitionStatus, string> = {
-  draft:      'bg-gray-100 text-gray-600',
-  submitted:  'bg-blue-100 text-blue-700',
-  noted:      'bg-indigo-100 text-indigo-700',
-  checked:    'bg-purple-100 text-purple-700',
-  reviewed:   'bg-orange-100 text-orange-700',
-  approved:   'bg-green-100 text-green-700',
-  rejected:   'bg-red-100 text-red-700',
-  cancelled:  'bg-gray-100 text-gray-400',
-  fulfilled:  'bg-teal-100 text-teal-700',
+  draft:      'bg-neutral-100 text-neutral-600',
+  submitted:  'bg-neutral-100 text-neutral-700',
+  noted:      'bg-neutral-100 text-neutral-700',
+  checked:    'bg-neutral-100 text-neutral-700',
+  reviewed:   'bg-neutral-100 text-neutral-700',
+  approved:   'bg-neutral-200 text-neutral-800',
+  rejected:   'bg-neutral-100 text-neutral-400',
+  cancelled:  'bg-neutral-100 text-neutral-400',
+  fulfilled:  'bg-neutral-200 text-neutral-800',
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-4 py-2 border-b border-gray-100 last:border-0">
-      <dt className="text-sm text-gray-500 w-36 flex-shrink-0">{label}</dt>
-      <dd className="text-sm text-gray-900 font-medium">{value ?? '—'}</dd>
+    <div className="flex items-start gap-4 py-2 border-b border-neutral-100 last:border-0">
+      <dt className="text-sm text-neutral-500 w-36 flex-shrink-0">{label}</dt>
+      <dd className="text-sm text-neutral-900 font-medium">{value ?? '—'}</dd>
     </div>
   )
 }
@@ -100,26 +100,23 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
     <div className="max-w-3xl">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/inventory/requisitions')} className="p-2 hover:bg-gray-100 rounded-lg">
-          <ArrowLeft className="w-4 h-4 text-gray-500" />
+        <button onClick={() => navigate('/inventory/requisitions')} className="p-2 hover:bg-neutral-100 rounded">
+          <ArrowLeft className="w-4 h-4 text-neutral-500" />
         </button>
-        <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-          <ClipboardList className="w-5 h-5 text-teal-600" />
-        </div>
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 font-mono">{mrq.mr_reference}</h1>
-            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusBadge[status]}`}>
+            <h1 className="text-lg font-semibold text-neutral-900 font-mono">{mrq.mr_reference}</h1>
+            <span className={`inline-flex px-2.5 py-1 rounded text-xs font-medium capitalize ${statusBadge[status]}`}>
               {status}
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">{mrq.department?.name}</p>
+          <p className="text-sm text-neutral-500 mt-0.5">{mrq.department?.name}</p>
         </div>
       </div>
 
       {/* Details */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Request Information</h2>
+      <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
+        <h2 className="text-sm font-medium text-neutral-700 mb-3">Request Information</h2>
         <dl>
           <InfoRow label="Purpose"       value={mrq.purpose} />
           <InfoRow label="Requested By"  value={mrq.requested_by?.name} />
@@ -135,28 +132,28 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
       </div>
 
       {/* Items */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Items Requested</h2>
+      <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
+        <h2 className="text-sm font-medium text-neutral-700 mb-3">Items Requested</h2>
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-neutral-50">
             <tr>
               {['#', 'Item Code', 'Name', 'UOM', 'Qty Requested', 'Qty Issued', 'Remarks'].map((h) => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-neutral-100">
             {(mrq.items ?? []).map((line) => (
               <tr key={line.id}>
-                <td className="px-3 py-2 text-gray-400 text-xs">{line.line_order}</td>
-                <td className="px-3 py-2 font-mono text-teal-700 font-medium text-xs">{line.item?.item_code ?? `#${line.item_id}`}</td>
-                <td className="px-3 py-2 text-gray-800">{line.item?.name ?? '—'}</td>
-                <td className="px-3 py-2 text-gray-400 text-xs">{line.item?.unit_of_measure}</td>
-                <td className="px-3 py-2 tabular-nums font-semibold">{parseFloat(line.qty_requested).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
-                <td className="px-3 py-2 tabular-nums text-green-700">
+                <td className="px-3 py-2 text-neutral-400 text-xs">{line.line_order}</td>
+                <td className="px-3 py-2 font-mono text-neutral-900 font-medium text-xs">{line.item?.item_code ?? `#${line.item_id}`}</td>
+                <td className="px-3 py-2 text-neutral-800">{line.item?.name ?? '—'}</td>
+                <td className="px-3 py-2 text-neutral-400 text-xs">{line.item?.unit_of_measure}</td>
+                <td className="px-3 py-2 tabular-nums font-medium">{parseFloat(line.qty_requested).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                <td className="px-3 py-2 tabular-nums text-neutral-700">
                   {line.qty_issued !== null ? parseFloat(line.qty_issued).toLocaleString('en-PH', { maximumFractionDigits: 4 }) : '—'}
                 </td>
-                <td className="px-3 py-2 text-gray-400 text-xs">{line.remarks ?? '—'}</td>
+                <td className="px-3 py-2 text-neutral-400 text-xs">{line.remarks ?? '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -164,30 +161,30 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
       </div>
 
       {/* Actions */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Actions</h2>
+      <div className="bg-white border border-neutral-200 rounded p-6">
+        <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>
 
         {/* Comment / reason textarea */}
         {(activeAction === 'note' || activeAction === 'check' || activeAction === 'review' || activeAction === 'approve') && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Comments (optional)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Comments (optional)</label>
             <textarea
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               rows={2}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             />
           </div>
         )}
 
         {activeAction === 'reject' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rejection Reason *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Rejection Reason *</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={2}
-              className="w-full text-sm border border-red-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="w-full text-sm border border-red-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-400"
               placeholder="Provide a reason for rejection…"
             />
           </div>
@@ -195,11 +192,11 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
 
         {activeAction === 'fulfill' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Issue From Location *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Issue From Location *</label>
             <select
               value={locationId}
               onChange={(e) => setLocationId(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             >
               <option value="">Select warehouse location…</option>
               {(locationsData ?? []).map((loc) => (
@@ -213,7 +210,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           {status === 'draft' && (
             <button
               onClick={() => activeAction === 'submit' ? handleAction('submit') : setAction('submit')}
-              className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded"
             >
               Submit for Approval
             </button>
@@ -221,7 +218,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           {status === 'submitted' && canNote && (
             <button
               onClick={() => activeAction === 'note' ? handleAction('note') : setAction('note')}
-              className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded"
             >
               {activeAction === 'note' ? 'Confirm Note' : 'Note'}
             </button>
@@ -229,7 +226,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           {status === 'noted' && canCheck && (
             <button
               onClick={() => activeAction === 'check' ? handleAction('check') : setAction('check')}
-              className="px-4 py-2 text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded"
             >
               {activeAction === 'check' ? 'Confirm Check' : 'Check'}
             </button>
@@ -237,7 +234,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           {status === 'checked' && canReview && (
             <button
               onClick={() => activeAction === 'review' ? handleAction('review') : setAction('review')}
-              className="px-4 py-2 text-sm font-medium bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded"
             >
               {activeAction === 'review' ? 'Confirm Review' : 'Review'}
             </button>
@@ -245,7 +242,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           {status === 'reviewed' && canVpApprove && (
             <button
               onClick={() => activeAction === 'approve' ? handleAction('approve') : setAction('approve')}
-              className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded"
             >
               {activeAction === 'approve' ? 'Confirm Approve' : 'VP Approve'}
             </button>
@@ -254,7 +251,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
             <button
               onClick={() => activeAction === 'fulfill' ? handleAction('fulfill') : setAction('fulfill')}
               disabled={fulfillMut.isPending || (activeAction === 'fulfill' && !locationId)}
-              className="px-4 py-2 text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
             >
               {activeAction === 'fulfill' ? 'Confirm Fulfill' : 'Fulfill (Issue Stock)'}
             </button>
@@ -263,7 +260,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
             <button
               onClick={() => activeAction === 'reject' ? handleAction('reject') : setAction('reject')}
               disabled={rejectMut.isPending}
-              className="px-4 py-2 text-sm font-medium border border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded"
             >
               {activeAction === 'reject' ? 'Confirm Rejection' : 'Reject'}
             </button>
@@ -272,7 +269,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
             <button
               onClick={() => handleAction('cancel')}
               disabled={cancelMut.isPending}
-              className="px-4 py-2 text-sm font-medium border border-gray-300 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-500 hover:bg-neutral-50 rounded"
             >
               Cancel
             </button>
@@ -280,7 +277,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           {activeAction && (
             <button
               onClick={() => { setAction(null); setComments(''); setReason('') }}
-              className="px-4 py-2 text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded"
             >
               Cancel Action
             </button>

@@ -15,11 +15,11 @@ import {
 } from 'lucide-react'
 
 function anomalyStatus(row: AttendanceLog): { label: string; className: string; icon: React.ElementType } {
-  if (row.is_absent) return { label: 'Absent', className: 'bg-red-100 text-red-700 border-red-200', icon: XCircle }
-  if (row.late_minutes > 0) return { label: 'Late', className: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: AlertCircle }
-  if (row.time_in && row.time_out) return { label: 'Present', className: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle }
-  if (row.time_in && !row.time_out) return { label: 'No Out', className: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock }
-  return { label: 'No Entry', className: 'bg-gray-100 text-gray-600 border-gray-200', icon: Clock }
+  if (row.is_absent) return { label: 'Absent', className: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: XCircle }
+  if (row.late_minutes > 0) return { label: 'Late', className: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: AlertCircle }
+  if (row.time_in && row.time_out) return { label: 'Present', className: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: CheckCircle }
+  if (row.time_in && !row.time_out) return { label: 'No Out', className: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: Clock }
+  return { label: 'No Entry', className: 'bg-neutral-100 text-neutral-600 border-neutral-200', icon: Clock }
 }
 
 function formatTime24to12(time: string | null): string {
@@ -104,7 +104,7 @@ export default function TeamAttendancePage() {
 
   if (isError) {
     return (
-      <div className="text-red-600 text-sm mt-4">
+      <div className="text-neutral-700 text-sm mt-4">
         Failed to load attendance records. Please try again.
       </div>
     )
@@ -116,57 +116,55 @@ export default function TeamAttendancePage() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team Attendance</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {data?.meta?.total ?? 0} records
-            <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-              Department Only
-            </span>
-          </p>
-          {(filters.employee_id || searchValue || filters.search) && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                Filtered by: {searchValue || filters.search || `Employee #${filters.employee_id}`}
-              </span>
-              <button
-                onClick={() => {
-                  setFilters((f) => ({ ...f, employee_id: undefined, search: undefined, page: 1 }))
-                  setSearchValue('')
-                  setUserModifiedSearch(false)
-                }}
-                className="text-xs text-gray-500 hover:text-red-600 underline"
-              >
-                Clear filter
-              </button>
-            </div>
-          )}
-        </div>
+        <h1 className="text-lg font-semibold text-neutral-900">Team Attendance</h1>
       </div>
+      <p className="text-sm text-neutral-500 mb-4">
+        {data?.meta?.total ?? 0} records
+        <span className="ml-2 text-xs text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">
+          Department Only
+        </span>
+      </p>
+      {(filters.employee_id || searchValue || filters.search) && (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">
+            Filtered by: {searchValue || filters.search || `Employee #${filters.employee_id}`}
+          </span>
+          <button
+            onClick={() => {
+              setFilters((f) => ({ ...f, employee_id: undefined, search: undefined, page: 1 }))
+              setSearchValue('')
+              setUserModifiedSearch(false)
+            }}
+            className="text-xs text-neutral-500 hover:text-neutral-900 underline"
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-4 flex flex-wrap gap-3">
         <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-gray-400" />
+          <Calendar className="h-4 w-4 text-neutral-400" />
           <input
             type="date"
             value={filters.date_from ?? ''}
             onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value || undefined, page: 1 }))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
           />
-          <span className="text-gray-400">to</span>
+          <span className="text-neutral-400">to</span>
           <input
             type="date"
             value={filters.date_to ?? ''}
             onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value || undefined, page: 1 }))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
           />
         </div>
 
         {/* Search */}
         <div className="flex gap-2 flex-1 min-w-[200px] max-w-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
             <input
               ref={searchInputRef}
               type="text"
@@ -178,11 +176,11 @@ export default function TeamAttendancePage() {
               }}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full border border-neutral-300 rounded pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none transition-all"
             />
             {isFetching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
@@ -195,7 +193,7 @@ export default function TeamAttendancePage() {
                 setFilters((f) => ({ ...f, search: undefined, employee_id: undefined, page: 1 }))
                 searchInputRef.current?.focus()
               }}
-              className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors"
+              className="px-3 py-2 text-sm bg-neutral-100 hover:bg-neutral-200 rounded text-neutral-700 transition-colors"
             >
               Clear
             </button>
@@ -204,34 +202,34 @@ export default function TeamAttendancePage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden relative">
+      <div className="bg-white border border-neutral-200 rounded overflow-hidden relative">
         {/* Loading overlay - only shows when refetching, not initial load */}
         {isFetching && !isLoading && (
           <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
-            <div className="bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 flex items-center gap-2">
-              <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm text-gray-600">Updating...</span>
+            <div className="bg-white px-4 py-2 rounded border border-neutral-200 flex items-center gap-2">
+              <div className="h-4 w-4 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-neutral-600">Updating...</span>
             </div>
           </div>
         )}
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Time In</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Time Out</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Worked</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Late</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">OT</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Date</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Employee</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Status</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Time In</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">Time Out</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-600">Worked</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-600">Late</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-600">OT</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="px-4 py-10 text-center text-neutral-400 text-sm">
                     No attendance records found.
                   </td>
                 </tr>
@@ -240,16 +238,16 @@ export default function TeamAttendancePage() {
                   const status = anomalyStatus(row)
                   const StatusIcon = status.icon
                   return (
-                    <tr key={row.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
-                      <td className="px-3 py-2 text-gray-900">
+                    <tr key={row.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
+                      <td className="px-3 py-2 text-neutral-900">
                         {new Date(row.work_date).toLocaleDateString('en-PH', {
                           month: 'short', day: 'numeric', year: 'numeric'
                         })}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
-                          <User className="h-3.5 w-3.5 text-gray-400" />
-                          <span className="font-medium text-gray-900">
+                          <User className="h-3.5 w-3.5 text-neutral-400" />
+                          <span className="font-medium text-neutral-900">
                             {row.employee?.full_name ?? `Employee #${row.employee_id}`}
                           </span>
                         </div>
@@ -260,27 +258,27 @@ export default function TeamAttendancePage() {
                           {status.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-mono text-gray-700">
+                      <td className="px-3 py-2 font-mono text-neutral-700">
                         {formatTime24to12(row.time_in)}
                       </td>
-                      <td className="px-3 py-2 font-mono text-gray-700">
+                      <td className="px-3 py-2 font-mono text-neutral-700">
                         {formatTime24to12(row.time_out)}
                       </td>
-                      <td className="px-3 py-2 text-right text-gray-700">
+                      <td className="px-3 py-2 text-right text-neutral-700">
                         {row.worked_hours ? `${row.worked_hours.toFixed(2)}h` : '—'}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {row.late_minutes > 0 ? (
-                          <span className="text-red-600 text-xs">{row.late_minutes}m</span>
+                          <span className="text-neutral-900 text-xs">{row.late_minutes}m</span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-neutral-400">—</span>
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {row.overtime_minutes > 0 ? (
-                          <span className="text-green-600 text-xs">{Math.round(row.overtime_minutes / 60 * 10) / 10}h</span>
+                          <span className="text-neutral-700 text-xs">{Math.round(row.overtime_minutes / 60 * 10) / 10}h</span>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-neutral-400">—</span>
                         )}
                       </td>
                     </tr>
@@ -293,7 +291,7 @@ export default function TeamAttendancePage() {
 
         {/* Pagination */}
         {data?.meta && data.meta.last_page > 1 && (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
+          <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
             <span>
               Page {data.meta.current_page} of {data.meta.last_page} &middot; {data.meta.total} total
             </span>
@@ -301,14 +299,14 @@ export default function TeamAttendancePage() {
               <button
                 disabled={data.meta.current_page <= 1}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={data.meta.current_page >= data.meta.last_page}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>

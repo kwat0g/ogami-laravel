@@ -25,6 +25,7 @@ final class ItemMasterController extends Controller
             ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
             ->when($request->input('category_id'), fn ($q, $v) => $q->where('category_id', $v))
             ->when($request->input('type'), fn ($q, $v) => $q->where('type', $v))
+            ->when($request->input('exclude_type'), fn ($q, $v) => $q->where('type', '!=', $v))
             ->when($request->boolean('active_only', true), fn ($q) => $q->where('is_active', true))
             ->when($request->input('search'), fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('name', 'ilike', "%{$v}%")
@@ -38,6 +39,21 @@ final class ItemMasterController extends Controller
     public function categories(): JsonResponse
     {
         return response()->json(['data' => $this->service->allCategories()]);
+    }
+
+    public function storeCategory(Request $request): JsonResponse
+    {
+        $this->authorize('create', ItemMaster::class);
+
+        $data = $request->validate([
+            'code'        => 'required|string|max:50|unique:item_categories,code',
+            'name'        => 'required|string|max:200|unique:item_categories,name',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        $category = $this->service->storeCategory($data);
+
+        return response()->json(['data' => $category], 201);
     }
 
     public function lowStock(): ResourceCollection

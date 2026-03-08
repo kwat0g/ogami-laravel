@@ -17,4 +17,5 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/shipments', [DeliveryController::class, 'indexShipments']);
     Route::post('/shipments', [DeliveryController::class, 'storeShipment']);
     Route::get('/shipments/{shipment}', [DeliveryController::class, 'showShipment']);
+    Route::patch('/shipments/{shipment}/status', [DeliveryController::class, 'updateShipmentStatus']);
 });

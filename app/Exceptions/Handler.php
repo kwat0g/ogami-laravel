@@ -7,6 +7,7 @@ namespace App\Exceptions;
 use App\Shared\Exceptions\DomainException as BaseDomainException;
 use App\Shared\Exceptions\SodViolationException;
 use App\Shared\Traits\ApiResponse;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
@@ -83,6 +84,16 @@ class Handler extends ExceptionHandler
         // ── Unauthenticated ───────────────────────────────────────────────────
         if ($e instanceof AuthenticationException) {
             return $this->errorResponse('Unauthenticated.', 'UNAUTHENTICATED', 401);
+        }
+
+        // ── Authorization failure (policy denied) ──────────────────────────────
+        if ($e instanceof AuthorizationException) {
+            return $this->errorResponse('This action is unauthorized.', 'FORBIDDEN', 403);
+        }
+
+        // ── HttpResponseException (e.g. rate limit 429, abort with Response) ───────
+        if ($e instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+            return $e->getResponse();
         }
 
         // ── Generic HTTP exceptions (404, 405, etc.) ──────────────────────────

@@ -11,7 +11,7 @@ export default function AuthLayout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <SkeletonLoader rows={3} />
       </div>
     )
@@ -22,13 +22,13 @@ export default function AuthLayout() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Ogami ERP</h1>
-          <p className="text-sm text-gray-500 mt-1">Ogami Manufacturing Philippines Corp.</p>
+          <h1 className="text-xl font-semibold text-neutral-900">Ogami ERP</h1>
+          <p className="text-sm text-neutral-500 mt-1">Ogami Manufacturing Philippines Corp.</p>
         </div>
-        <div className="bg-white shadow-sm rounded-xl p-8">
+        <div className="bg-white border border-neutral-200 rounded p-8">
           <Outlet />
         </div>
       </div>

@@ -4,6 +4,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { EmployeeProfileView } from '@/components/employee'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
+import { toast } from 'sonner'
 import { useSodCheck } from '@/hooks/useSodCheck'
 import type { EmploymentStatus } from '@/types/hr'
 import { Edit3 } from 'lucide-react'
@@ -48,7 +49,7 @@ export default function EmployeeDetailPage() {
     <>
       <Link
         to={`/hr/employees/${employee.ulid}/edit`}
-        className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+        className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 transition-colors"
       >
         <Edit3 className="h-4 w-4" />
         Edit Profile
@@ -65,12 +66,19 @@ export default function EmployeeDetailPage() {
                 description={`This will transition ${employee.full_name}'s employment status to "${statusLabel(state)}". The action is recorded in the audit log.`}
                 confirmWord={state.toUpperCase().replace('_', '')}
                 confirmLabel={`Set ${statusLabel(state)}`}
-                onConfirm={() => void transitionMutation.mutateAsync(state)}
+                onConfirm={async () => {
+                  try {
+                    await transitionMutation.mutateAsync(state)
+                    toast.success(`Status changed to "${statusLabel(state)}".`)
+                  } catch {
+                    toast.error('Failed to change employee status.')
+                  }
+                }}
               >
                 <button
                   disabled={isSodBlocked}
                   title={isSodBlocked ? activateReason : undefined}
-                  className="px-3 py-2 text-xs border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors capitalize disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-2 text-xs border border-neutral-300 rounded text-neutral-700 hover:bg-neutral-50 transition-colors capitalize disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   → {statusLabel(state)}
                 </button>

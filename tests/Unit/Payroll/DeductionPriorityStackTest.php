@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
+// Ensure minimum_wage_rates is empty before each test so results don't depend
+// on whatever GoldenSuiteTest / ContributionTest / seeders left behind.
+// PostgreSQL TRUNCATE is transactional, so RefreshDatabase rolls it back cleanly.
+beforeEach(function () {
+    DB::table('minimum_wage_rates')->truncate();
+});
+
 /*
 |--------------------------------------------------------------------------
 | DeductionPriorityStackTest

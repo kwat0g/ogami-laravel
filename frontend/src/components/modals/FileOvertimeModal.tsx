@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useCreateOvertimeRequest } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
-import { X, Clock, ArrowRight, Timer, Zap } from 'lucide-react'
+import { X, ArrowRight, Timer, Zap } from 'lucide-react'
 
 interface FileOvertimeModalProps {
   isOpen: boolean
@@ -124,69 +124,66 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">File Overtime Request</h2>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="h-5 w-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full border border-neutral-200">
+        <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-neutral-900">File Overtime Request</h2>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Work Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Work Date <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
               value={formData.work_date}
               onChange={(e) => setFormData({ ...formData, work_date: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
               required
             />
           </div>
 
           {/* OT Time Range */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-0.5">
+            <label className="block text-sm font-medium text-neutral-700 mb-0.5">
               Overtime Hours <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-3">
-              Regular shift ends at <span className="font-medium text-gray-500">5:00 PM</span>. Adjust if your OT started at a different time.
+            <p className="text-xs text-neutral-500 mb-3">
+              Regular shift ends at <span className="font-medium text-neutral-700">5:00 PM</span>. Adjust if your OT started at a different time.
             </p>
 
             {/* Start / End time row */}
             <div className="flex items-end gap-2 mb-3">
               <div className="flex-1">
-                <div className="text-xs font-medium text-gray-500 mb-1">OT started at</div>
+                <div className="text-xs font-medium text-neutral-600 mb-1">OT started at</div>
                 <input
                   type="time"
                   value={formData.ot_start_time}
                   onChange={(e) => setFormData({ ...formData, ot_start_time: e.target.value, ot_end_time: '' })}
-                  className="w-full border border-blue-300 bg-blue-50 text-blue-900 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
                   required
                 />
               </div>
-              <div className="pb-2 text-gray-400">
+              <div className="pb-2 text-neutral-400">
                 <ArrowRight className="h-4 w-4" />
               </div>
               <div className="flex-1">
-                <div className="text-xs font-medium text-gray-500 mb-1">OT ended at</div>
+                <div className="text-xs font-medium text-neutral-600 mb-1">OT ended at</div>
                 <input
                   type="time"
                   value={formData.ot_end_time}
                   onChange={(e) => setFormData({ ...formData, ot_end_time: e.target.value })}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-colors ${
+                  className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none transition-colors ${
                     formData.ot_end_time && durationMinutes > 0
-                      ? 'border-blue-300 bg-blue-50 text-blue-900'
+                      ? 'border-neutral-400'
                       : formData.ot_end_time && durationMinutes <= 0
                       ? 'border-red-300 bg-red-50 text-red-900'
-                      : 'border-gray-300 text-gray-700'
+                      : 'border-neutral-300 text-neutral-700'
                   }`}
                   required
                 />
@@ -194,8 +191,8 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
             </div>
 
             {/* Quick-pick presets */}
-            <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
-              <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-gray-500">
+            <div className="bg-neutral-50 rounded-lg p-3 border border-neutral-200">
+              <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-neutral-600">
                 <Zap className="h-3 w-3" /> Quick pick — how long did you work OT?
               </div>
               <div className="grid grid-cols-3 gap-1.5">
@@ -207,14 +204,14 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
                       key={p.minutes}
                       type="button"
                       onClick={() => applyPreset(p.minutes)}
-                      className={`rounded-lg px-2 py-2 text-xs font-medium text-center transition-all border ${
+                      className={`rounded px-2 py-2 text-xs font-medium text-center transition-all border ${
                         isActive
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:text-blue-600'
+                          ? 'bg-neutral-800 text-white border-neutral-800'
+                          : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400'
                       }`}
                     >
                       <div className="font-semibold">{p.label}</div>
-                      <div className={`text-[10px] mt-0.5 ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>
+                      <div className={`text-[10px] mt-0.5 ${isActive ? 'text-neutral-300' : 'text-neutral-500'}`}>
                         until {fmt12(endTime)}
                       </div>
                     </button>
@@ -227,9 +224,9 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
             <div className="mt-2">
               {formData.ot_start_time && formData.ot_end_time ? (
                 durationMinutes > 0 ? (
-                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                    <Timer className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                    <span className="text-sm text-blue-700">
+                  <div className="flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded px-3 py-2">
+                    <Timer className="h-4 w-4 text-neutral-600 flex-shrink-0" />
+                    <span className="text-sm text-neutral-700">
                       {fmt12(formData.ot_start_time)} → {fmt12(formData.ot_end_time)}
                       {' · '}<span className="font-semibold">{formatDuration(durationMinutes)}</span>
                     </span>
@@ -238,7 +235,7 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded px-3 py-2">
                     <X className="h-4 w-4 text-red-500 flex-shrink-0" />
                     <span className="text-sm text-red-600">End time must be after start time</span>
                   </div>
@@ -249,14 +246,14 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
 
           {/* Reason */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Reason <span className="text-red-500">*</span>
             </label>
             <textarea
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               placeholder="Explain the reason for overtime..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none"
               rows={3}
               required
             />
@@ -267,14 +264,14 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
+              className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+              className="flex-1 px-4 py-2 bg-neutral-800 text-white rounded hover:bg-neutral-900 disabled:opacity-50 text-sm font-medium"
             >
               {createMutation.isPending ? 'Filing...' : 'File Request'}
             </button>

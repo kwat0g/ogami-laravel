@@ -38,9 +38,9 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 const HOLIDAY_TYPES = [
-  { value: 'REGULAR', label: 'Regular Holiday', icon: Sun, color: 'bg-red-100 text-red-700' },
-  { value: 'SPECIAL_NON_WORKING', label: 'Special Non-Working', icon: Moon, color: 'bg-blue-100 text-blue-700' },
-  { value: 'SPECIAL_WORKING', label: 'Special Working', icon: Calendar, color: 'bg-gray-100 text-gray-700' },
+  { value: 'REGULAR', label: 'Regular Holiday', icon: Sun, color: 'bg-neutral-100 text-neutral-700' },
+  { value: 'SPECIAL_NON_WORKING', label: 'Special Non-Working', icon: Moon, color: 'bg-neutral-100 text-neutral-700' },
+  { value: 'SPECIAL_WORKING', label: 'Special Working', icon: Calendar, color: 'bg-neutral-100 text-neutral-700' },
 ]
 
 export default function HolidayCalendarTable(): JSX.Element {
@@ -152,7 +152,7 @@ export default function HolidayCalendarTable(): JSX.Element {
   const getTypeConfig = (type: string) => HOLIDAY_TYPES.find(t => t.value === type) || HOLIDAY_TYPES[0]
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading holidays...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading holidays...</div>
   }
 
   return (
@@ -160,11 +160,11 @@ export default function HolidayCalendarTable(): JSX.Element {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">Filter:</span>
+          <span className="text-sm text-neutral-500">Filter:</span>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+            className="text-sm border border-neutral-300 rounded px-3 py-2 focus:ring-1 focus:ring-neutral-400"
           >
             <option value="all">All Years</option>
             {years.map((y) => (
@@ -175,7 +175,7 @@ export default function HolidayCalendarTable(): JSX.Element {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+            className="text-sm border border-neutral-300 rounded px-3 py-2 focus:ring-1 focus:ring-neutral-400"
           >
             <option value="all">All Types</option>
             {HOLIDAY_TYPES.map((t) => (
@@ -204,22 +204,22 @@ export default function HolidayCalendarTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <div className="max-h-[500px] overflow-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-white">
-              <TableRow className="bg-gray-50">
-                <TableHead>Date</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Scope</TableHead>
-                <TableHead className="w-20">Actions</TableHead>
+              <TableRow className="bg-neutral-50">
+                <TableHead className="text-xs font-semibold text-neutral-600">Date</TableHead>
+                <TableHead className="text-xs font-semibold text-neutral-600">Name</TableHead>
+                <TableHead className="text-xs font-semibold text-neutral-600">Type</TableHead>
+                <TableHead className="text-xs font-semibold text-neutral-600">Scope</TableHead>
+                <TableHead className="w-20 text-xs font-semibold text-neutral-600">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={5} className="text-center py-8 text-neutral-500">
                     No holidays found
                   </TableCell>
                 </TableRow>
@@ -237,7 +237,7 @@ export default function HolidayCalendarTable(): JSX.Element {
                               month: 'short', day: 'numeric', year: 'numeric' 
                             })}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-neutral-500">
                             {new Date(holiday.holiday_date).toLocaleDateString('en-US', { weekday: 'long' })}
                           </span>
                         </div>
@@ -251,12 +251,12 @@ export default function HolidayCalendarTable(): JSX.Element {
                       </TableCell>
                       <TableCell>
                         {holiday.is_nationwide ? (
-                          <span className="flex items-center gap-1 text-sm text-gray-600">
+                          <span className="flex items-center gap-1 text-sm text-neutral-600">
                             <Globe className="h-3 w-3" />
                             Nationwide
                           </span>
                         ) : (
-                          <Badge variant="outline">Region {holiday.region}</Badge>
+                          <Badge variant="outline" className="border-neutral-300 text-neutral-600">Region {holiday.region}</Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -304,10 +304,10 @@ export default function HolidayCalendarTable(): JSX.Element {
               <AlertTriangle className="h-6 w-6" />
               <DialogTitle>Confirm Deletion</DialogTitle>
             </div>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-neutral-600">
               Are you sure you want to delete this holiday? This action cannot be undone.
               {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-neutral-50 rounded text-sm">
                   <p><strong>Name:</strong> {showDeleteConfirm.name}</p>
                   <p><strong>Date:</strong> {showDeleteConfirm.holiday_date}</p>
                 </div>
@@ -347,7 +347,7 @@ export default function HolidayCalendarTable(): JSX.Element {
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="holiday_date" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="holiday_date" className="text-sm font-medium text-neutral-700">
                   Date <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -361,14 +361,14 @@ export default function HolidayCalendarTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="type" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="type" className="text-sm font-medium text-neutral-700">
                   Type <span className="text-red-500">*</span>
                 </Label>
                 <select
                   id="type"
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full h-11 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full h-11 text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   required
                 >
                   {HOLIDAY_TYPES.map(t => (
@@ -379,7 +379,7 @@ export default function HolidayCalendarTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="name" className="text-sm font-medium text-neutral-700">
                 Holiday Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -398,9 +398,9 @@ export default function HolidayCalendarTable(): JSX.Element {
                   type="checkbox"
                   checked={formData.is_nationwide}
                   onChange={(e) => setFormData({ ...formData, is_nationwide: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-neutral-300 text-neutral-600 focus:ring-neutral-400"
                 />
-                <span className="text-sm font-medium text-gray-700">Nationwide</span>
+                <span className="text-sm font-medium text-neutral-700">Nationwide</span>
               </label>
               
               {!formData.is_nationwide && (
@@ -416,7 +416,7 @@ export default function HolidayCalendarTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="proclamation_reference" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="proclamation_reference" className="text-sm font-medium text-neutral-700">
                 Proclamation Reference
               </Label>
               <Input

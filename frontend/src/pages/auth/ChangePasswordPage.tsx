@@ -53,16 +53,16 @@ export default function ChangePasswordPage() {
   }
 
   const inputCls =
-    'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+    'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400'
 
   return (
-    <div className="max-w-md mx-auto mt-8">
+    <div className="max-w-md mx-auto">
       <PageHeader
         title="Change Password"
         subtitle="Your new password must differ from the current one and meet the complexity requirements."
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded border border-neutral-200 p-6 space-y-5">
         {/* Current password */}
         <FormField
           label="Current Password"
@@ -117,14 +117,14 @@ export default function ChangePasswordPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded transition-colors"
           >
             <Lock className="h-4 w-4" />
             {isSubmitting ? 'Saving…' : 'Update Password'}

@@ -69,11 +69,19 @@ final class VendorInvoicePolicy
     /**
      * AP-010: SoD — approver must not be the same person who submitted.
      * Service re-validates; policy provides an early gate.
+     * Used by all approval-workflow steps (head-note, manager-check, officer-review, approve).
      */
     public function approve(User $user, VendorInvoice $invoice): bool
     {
-        if (! $invoice->isPendingApproval()) {
+        // Allow any status that is part of the approval workflow pipeline
+        $approvalStatuses = ['pending_approval', 'head_noted', 'manager_checked', 'officer_reviewed'];
+        if (! in_array($invoice->status, $approvalStatuses, true)) {
             return false;
+        }
+
+        // super_admin bypasses SoD constraints
+        if ($user->hasRole('super_admin')) {
+            return $user->hasPermissionTo('vendor_invoices.approve');
         }
 
         if ($invoice->submitted_by === $user->id) {

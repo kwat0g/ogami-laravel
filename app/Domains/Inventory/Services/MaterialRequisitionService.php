@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Inventory\Services;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\MaterialRequisitionItem;
 use App\Domains\Production\Models\BomComponent;
@@ -26,6 +27,16 @@ final class MaterialRequisitionService implements ServiceContract
     {
         if (empty($items)) {
             throw new DomainException('A Material Requisition must have at least one item.', 'MRQ_NO_ITEMS', 422);
+        }
+
+        $itemIds = array_column($items, 'item_id');
+        $fgItems = ItemMaster::whereIn('id', $itemIds)->where('type', 'finished_good')->pluck('name');
+        if ($fgItems->isNotEmpty()) {
+            throw new DomainException(
+                message: 'Finished goods cannot be requested via Material Requisition: '.implode(', ', $fgItems->all()),
+                errorCode: 'MRQ_FINISHED_GOOD_NOT_ALLOWED',
+                httpStatus: 422,
+            );
         }
 
         return DB::transaction(function () use ($data, $items, $actor): MaterialRequisition {

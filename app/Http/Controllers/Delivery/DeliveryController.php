@@ -82,4 +82,17 @@ final class DeliveryController extends Controller
             $shipment->loadMissing(['deliveryReceipt', 'createdBy', 'impexDocuments'])
         );
     }
+
+    public function updateShipmentStatus(Request $request, Shipment $shipment): ShipmentResource
+    {
+        $this->authorize('update', DeliveryReceipt::class);
+
+        $request->validate([
+            'status' => ['required', 'string', 'in:pending,in_transit,delivered,cancelled'],
+        ]);
+
+        return new ShipmentResource(
+            $this->service->updateShipmentStatus($shipment, (string) $request->input('status'))
+        );
+    }
 }

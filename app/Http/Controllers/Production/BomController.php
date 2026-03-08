@@ -48,4 +48,20 @@ final class BomController extends Controller
 
         return new BomResource($this->service->update($bom, $request->validated()));
     }
+
+    public function activate(BillOfMaterials $bom): BomResource
+    {
+        $this->authorize('update', $bom);
+
+        return new BomResource($this->service->activate($bom));
+    }
+
+    public function destroy(BillOfMaterials $bom): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('update', $bom);
+
+        $this->service->archive($bom);
+
+        return response()->json(['message' => 'BOM archived.']);
+    }
 }

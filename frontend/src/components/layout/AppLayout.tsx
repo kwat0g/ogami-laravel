@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Navigate, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { motion, AnimatePresence } from 'framer-motion'
+
+// Uncodixified: Simple layout without excessive animations
 import api from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
@@ -133,10 +134,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Balance Sheet',     href: '/accounting/balance-sheet',     permission: 'reports.financial_statements' },
       { label: 'Income Statement',  href: '/accounting/income-statement',  permission: 'reports.financial_statements' },
       { label: 'Cash Flow',         href: '/accounting/cash-flow',         permission: 'reports.financial_statements' },
-      { label: 'AP Vendors',        href: '/accounting/vendors',           permission: 'vendors.view' },
-      { label: 'AP Invoices',       href: '/accounting/ap/invoices',       permission: 'vendor_invoices.view' },
-      { label: 'AR Customers',      href: '/ar/customers',                 permission: 'customers.view' },
-      { label: 'AR Invoices',       href: '/ar/invoices',                  permission: 'customer_invoices.view' },
     ],
   },
   {
@@ -184,6 +181,7 @@ const SECTIONS: NavSection[] = [
     icon: Package,
     permission: 'inventory.items.view',
     children: [
+      { label: 'Item Categories',     href: '/inventory/categories',     permission: 'inventory.items.view' },
       { label: 'Item Master',         href: '/inventory/items',          permission: 'inventory.items.view' },
       { label: 'Warehouse Locations', href: '/inventory/locations',       permission: 'inventory.locations.view' },
       { label: 'Stock Balances',      href: '/inventory/stock',           permission: 'inventory.stock.view' },
@@ -269,19 +267,20 @@ const ADMIN_SECTION: NavSection = {
     { label: 'System Settings', href: '/admin/settings', permission: 'system.edit_settings' },
     { label: 'Reference Tables', href: '/admin/reference-tables', permission: 'system.edit_settings' },
     { label: 'Audit Logs', href: '/admin/audit-logs', permission: 'system.view_audit_log' },
+    { label: 'Backup & Restore', href: '/admin/backup', permission: 'system.manage_backups' },
   ],
 }
 
-// Minimalist link styles
+// Minimalist link styles - Uncodixified
 const linkStyle = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-150 ${isActive
+  `flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors ${isActive
     ? 'bg-neutral-100 text-neutral-900 font-medium'
     : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
   }`
 
 // Compact link for collapsed sidebar
 const compactLinkStyle = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center justify-center p-2 rounded-md transition-all duration-150 ${isActive
+  `flex items-center justify-center p-2 rounded transition-colors ${isActive
     ? 'bg-neutral-100 text-neutral-900'
     : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
   }`
@@ -305,7 +304,7 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
     <div className="mb-1">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-2 text-sm text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-md transition-all duration-150"
+        className="w-full flex items-center justify-between px-3 py-2 text-sm text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded transition-colors"
       >
         <span className="flex items-center gap-3">
           <Icon className="h-4 w-4 text-neutral-500" />
@@ -359,30 +358,22 @@ function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSe
         <Icon className="h-5 w-5" />
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -8 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-full top-0 ml-2 w-52 bg-white rounded-lg border border-neutral-200/80 shadow-lg py-2 z-50"
-          >
-            <p className="px-3 py-1.5 text-xs font-medium text-neutral-400 uppercase tracking-wide">{section.label}</p>
-            {visibleChildren.map((child) => (
-              <NavLink
-                key={child.href}
-                to={child.href}
-                end={child.end}
-                className="block px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
-                onClick={() => setOpen(false)}
-              >
-                {child.label}
-              </NavLink>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {open && (
+        <div className="absolute left-full top-0 ml-2 w-52 bg-white rounded border border-neutral-200 shadow-md py-2 z-50">
+          <p className="px-3 py-1.5 text-xs font-medium text-neutral-400">{section.label}</p>
+          {visibleChildren.map((child) => (
+            <NavLink
+              key={child.href}
+              to={child.href}
+              end={child.end}
+              className="block px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+              onClick={() => setOpen(false)}
+            >
+              {child.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -521,39 +512,23 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50">
       {/* Desktop Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{ width: isSidebarExpanded ? 240 : 64 }}
-        transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-        className="hidden lg:flex flex-shrink-0 bg-white border-r border-neutral-200/80 flex-col relative z-20"
+      <aside
+        className="hidden lg:flex flex-shrink-0 bg-white border-r border-neutral-200 flex-col relative z-20 transition-all duration-200"
+        style={{ width: isSidebarExpanded ? 260 : 72 }}
         onMouseEnter={() => setIsHoveringSidebar(true)}
         onMouseLeave={() => setIsHoveringSidebar(false)}
       >
         {/* Logo */}
-        <div className="h-14 flex items-center px-4 border-b border-neutral-100 flex-shrink-0">
-          <AnimatePresence mode="wait">
-            {!isSidebarExpanded ? (
-              <motion.span
-                key="collapsed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="font-semibold text-neutral-900 text-lg mx-auto tracking-tight"
-              >
-                O
-              </motion.span>
-            ) : (
-              <motion.span
-                key="expanded"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="font-semibold text-neutral-900 text-base tracking-tight whitespace-nowrap"
-              >
-                Ogami ERP
-              </motion.span>
-            )}
-          </AnimatePresence>
+        <div className="h-16 flex items-center px-4 border-b border-neutral-200 flex-shrink-0">
+          {!isSidebarExpanded ? (
+            <span className="font-semibold text-neutral-900 text-lg mx-auto">
+              O
+            </span>
+          ) : (
+            <span className="font-semibold text-neutral-900 text-base whitespace-nowrap">
+              Ogami ERP
+            </span>
+          )}
         </div>
 
         {/* Navigation */}
@@ -572,7 +547,7 @@ export default function AppLayout() {
                 </NavLink>
               ))}
               
-              <div className="my-3 border-t border-neutral-100" />
+              <div className="my-3 border-t border-neutral-200" />
               
               {SECTIONS.map((section) => (
                 <CompactSectionNav
@@ -585,7 +560,7 @@ export default function AppLayout() {
 
               {(hasPermission('system.manage_users') || hasPermission('system.edit_settings') || hasPermission('system.view_audit_log')) && (
                 <>
-                  <div className="my-3 border-t border-neutral-100" />
+                  <div className="my-3 border-t border-neutral-200" />
                   <CompactSectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} />
                 </>
               )}
@@ -601,7 +576,7 @@ export default function AppLayout() {
               ))}
 
               <div className="pt-4 pb-2">
-                <p className="px-3 text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Modules</p>
+                <p className="px-3 text-xs font-medium text-neutral-400">Modules</p>
               </div>
 
               {SECTIONS.map((section) => (
@@ -616,7 +591,7 @@ export default function AppLayout() {
               {(hasPermission('system.manage_users') || hasPermission('system.edit_settings') || hasPermission('system.view_audit_log')) && (
                 <>
                   <div className="pt-4 pb-2">
-                    <p className="px-3 text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Administration</p>
+                    <p className="px-3 text-xs font-medium text-neutral-400">Administration</p>
                   </div>
                   <SectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} />
                 </>
@@ -624,12 +599,12 @@ export default function AppLayout() {
             </>
           )}
         </nav>
-      </motion.aside>
+      </aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-14 flex-shrink-0 bg-white border-b border-neutral-200/80 flex items-center justify-between px-4 sm:px-6">
+        <header className="h-16 flex-shrink-0 bg-white border-b border-neutral-200 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger menu */}
             <div className="lg:hidden">
@@ -702,7 +677,7 @@ export default function AppLayout() {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 w-full p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 w-full p-5 sm:p-8">
           <Outlet />
         </div>
       </main>

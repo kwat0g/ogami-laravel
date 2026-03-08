@@ -22,13 +22,13 @@ import { Building2, User, Settings, CheckCircle, ChevronLeft, ChevronRight, Load
 
 // ── Role badge colors ─────────────────────────────────────────────────────────
 const roleBadgeClass: Record<string, string> = {
-  admin:          'bg-red-100 text-red-700',
-  executive:      'bg-purple-100 text-purple-700',
-  vice_president: 'bg-amber-100 text-amber-700',
-  manager:        'bg-blue-100 text-blue-700',
-  officer:        'bg-teal-100 text-teal-700',
-  head:           'bg-indigo-100 text-indigo-700',
-  staff:          'bg-gray-100 text-gray-600',
+  admin:          'bg-neutral-100 text-neutral-700',
+  executive:      'bg-neutral-100 text-neutral-700',
+  vice_president: 'bg-neutral-100 text-neutral-700',
+  manager:        'bg-neutral-100 text-neutral-700',
+  officer:        'bg-neutral-100 text-neutral-700',
+  head:           'bg-neutral-100 text-neutral-700',
+  staff:          'bg-neutral-100 text-neutral-600',
 }
 
 // ── Department-scoped manager roles ──────────────────────────────────────────
@@ -233,20 +233,20 @@ export default function UsersPage() {
   const isLocked = (u: AdminUser) => u.locked_until && new Date(u.locked_until) > new Date()
 
   if (isLoading) return <SkeletonLoader rows={10} />
-  if (isError)   return <p className="text-red-600 text-sm mt-4">Failed to load users.</p>
+  if (isError)   return <p className="text-neutral-700 text-sm mt-4">Failed to load users.</p>
 
   return (
     <div>
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{meta?.total ?? 0} users total</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-6">User Management</h1>
+          <p className="text-sm text-neutral-500">{meta?.total ?? 0} users total</p>
         </div>
         {canCreate && (
           <button
             onClick={openCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
           >
             + Add User
           </button>
@@ -260,12 +260,12 @@ export default function UsersPage() {
           placeholder="Search name or email…"
           value={filters.search}
           onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm w-64 focus:outline-none focus:ring-1 focus:ring-neutral-400"
         />
         <select
           value={filters.role}
           onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value, page: 1 }))}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
         >
           <option value="">All Roles</option>
           {roles.map((r) => (
@@ -275,68 +275,68 @@ export default function UsersPage() {
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
               {['Name / Email', 'Linked Employee', 'Role', 'Status', 'Last Login', 'Actions'].map((h) => (
-                <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-gray-400 text-sm">No users found.</td>
+                <td colSpan={6} className="px-3 py-8 text-center text-neutral-400 text-sm">No users found.</td>
               </tr>
             )}
             {rows.map((u) => (
-              <tr key={u.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
+              <tr key={u.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
                 <td className="px-3 py-2">
-                  <p className="font-medium text-gray-900">{u.name}</p>
-                  <p className="text-xs text-gray-500">{u.email}</p>
+                  <p className="font-medium text-neutral-900">{u.name}</p>
+                  <p className="text-xs text-neutral-500">{u.email}</p>
                 </td>
                 <td className="px-3 py-2">
                   {u.employee ? (
                     <div>
-                      <p className="text-sm text-gray-800 font-medium">{u.employee.first_name} {u.employee.last_name}</p>
-                      <p className="text-xs text-gray-500">{u.employee.employee_code} · {u.employee.department?.name ?? '—'}</p>
+                      <p className="text-sm text-neutral-800 font-medium">{u.employee.first_name} {u.employee.last_name}</p>
+                      <p className="text-xs text-neutral-500">{u.employee.employee_code} · {u.employee.department?.name ?? '—'}</p>
                     </div>
                   ) : (
-                    <span className="text-xs text-gray-400 italic">No employee record</span>
+                    <span className="text-xs text-neutral-400 italic">No employee record</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
                   {u.roles.length > 0 ? (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleBadgeClass[u.roles[0].name] ?? 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${roleBadgeClass[u.roles[0].name] ?? 'bg-neutral-100 text-neutral-600'}`}>
                       {u.roles[0].name}
                     </span>
                   ) : (
-                    <span className="text-gray-400 text-xs">—</span>
+                    <span className="text-neutral-400 text-xs">—</span>
                   )}
                 </td>
                 <td className="px-3 py-2">
                   {isLocked(u) ? <StatusBadge label="Locked" /> : <StatusBadge label="Active" />}
                   {u.failed_login_attempts > 0 && (
-                    <span className="ml-2 text-xs text-amber-600">{u.failed_login_attempts} failed</span>
+                    <span className="ml-2 text-xs text-neutral-600">{u.failed_login_attempts} failed</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-500">
+                <td className="px-4 py-3 text-xs text-neutral-500">
                   {u.last_login_at ? new Date(u.last_login_at).toLocaleString() : '—'}
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex gap-2">
                     {canUpdate && (
-                      <button onClick={() => openEdit(u)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">Edit</button>
+                      <button onClick={() => openEdit(u)} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">Edit</button>
                     )}
                     {canAssignRole && (
-                      <button onClick={() => openRoleModal(u)} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Role</button>
+                      <button onClick={() => openRoleModal(u)} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">Role</button>
                     )}
                     {canUpdate && isLocked(u) && (
-                      <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="text-xs text-green-600 hover:text-green-800 font-medium disabled:opacity-50">Unlock</button>
+                      <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium disabled:opacity-50">Unlock</button>
                     )}
                     {canDelete && (
-                      <button onClick={() => handleDelete(u)} className="text-xs text-red-600 hover:text-red-800 font-medium">Delete</button>
+                      <button onClick={() => handleDelete(u)} className="text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>
                     )}
                   </div>
                 </td>
@@ -348,11 +348,11 @@ export default function UsersPage() {
 
       {/* ── Pagination ──────────────────────────────────────────────────── */}
       {meta && meta.last_page > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+        <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
           <span>Page {meta.current_page} of {meta.last_page} — {meta.total} total</span>
           <div className="flex gap-2">
-            <button disabled={meta.current_page <= 1} onClick={() => setFilters((f) => ({ ...f, page: f.page! - 1 }))} className="px-3 py-1 border rounded-md disabled:opacity-40 hover:bg-gray-50">Previous</button>
-            <button disabled={meta.current_page >= meta.last_page} onClick={() => setFilters((f) => ({ ...f, page: f.page! + 1 }))} className="px-3 py-1 border rounded-md disabled:opacity-40 hover:bg-gray-50">Next</button>
+            <button disabled={meta.current_page <= 1} onClick={() => setFilters((f) => ({ ...f, page: f.page! - 1 }))} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
+            <button disabled={meta.current_page >= meta.last_page} onClick={() => setFilters((f) => ({ ...f, page: f.page! + 1 }))} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
           </div>
         </div>
       )}
@@ -409,7 +409,7 @@ export default function UsersPage() {
       {roleModal && (
         <Modal title={`Change Role — ${roleModal.userName}`} onClose={() => setRoleModal(null)}>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">Current role: <strong>{roleModal.currentRole || '—'}</strong></p>
+            <p className="text-sm text-neutral-600">Current role: <strong>{roleModal.currentRole || '—'}</strong></p>
             <FormField label="New Role">
               <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className={inputCls}>
                 <option value="">Select role…</option>
@@ -469,16 +469,16 @@ function CreateUserWizard({
           return (
             <div key={s.label} className="flex items-center flex-1 min-w-0">
               <div className={`flex items-center gap-1.5 shrink-0 ${
-                done   ? 'text-green-600' :
-                active ? 'text-blue-600'  : 'text-gray-400'
+                done   ? 'text-neutral-600' :
+                active ? 'text-neutral-600'  : 'text-neutral-400'
               }`}>
                 {done
                   ? <CheckCircle className="h-5 w-5" />
-                  : <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${active ? 'border-blue-600 text-blue-600' : 'border-gray-300 text-gray-400'}`}>{stepNum}</div>
+                  : <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${active ? 'border-neutral-600 text-neutral-600' : 'border-neutral-300 text-neutral-400'}`}>{stepNum}</div>
                 }
                 <span className={`text-xs font-medium ${wizard.skipEmployee && stepNum === 2 ? 'line-through opacity-40' : ''}`}>{s.label}</span>
               </div>
-              {i < STEPS.length - 1 && <div className={`flex-1 mx-2 h-px ${done ? 'bg-green-400' : 'bg-gray-200'}`} />}
+              {i < STEPS.length - 1 && <div className={`flex-1 mx-2 h-px ${done ? 'bg-neutral-400' : 'bg-neutral-200'}`} />}
             </div>
           )
         })}
@@ -487,10 +487,10 @@ function CreateUserWizard({
       {/* ── Step 1: Department ──────────────────────────────────────────── */}
       {wizard.step === 1 && (
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800">
+          <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
             Every ERP user must be linked to an employee record. Start by selecting their department.
             <br />
-            <span className="text-xs text-blue-600">Admin and Executive accounts can be created without an employee record.</span>
+            <span className="text-xs text-neutral-600">Admin and Executive accounts can be created without an employee record.</span>
           </div>
 
           <FormField label="Role *">
@@ -516,7 +516,7 @@ function CreateUserWizard({
 
           {/* Hint for dept-scoped manager roles */}
           {SCOPED_MANAGER_ROLES.includes(wizard.role) && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-xs text-neutral-800">
               <strong>{wizard.role}</strong> is restricted to the{' '}
               <strong>
                 {departments.find((d) => d.code === ROLE_DEPT_MAP[wizard.role])?.name ?? ROLE_DEPT_MAP[wizard.role]}
@@ -548,7 +548,7 @@ function CreateUserWizard({
           )}
 
           {wizard.skipEmployee && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
               <strong>{wizard.role}</strong> accounts do not require a linked employee. You'll fill account details in the next step.
             </div>
           )}
@@ -567,17 +567,17 @@ function CreateUserWizard({
       {/* ── Step 2: Employee selection ──────────────────────────────────── */}
       {wizard.step === 2 && !wizard.skipEmployee && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-neutral-600">
             Select an employee from <strong>{wizard.department?.name}</strong> to link to the new user account.
             Only employees without existing accounts are shown.
           </p>
 
           {empLoading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+            <div className="flex items-center gap-2 text-sm text-neutral-400 py-4">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading employees…
             </div>
           ) : availableEmployees.length === 0 ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 text-sm text-neutral-800">
               No available employees in <strong>{wizard.department?.name}</strong>. All employees in this department already have user accounts, or there are no active employees.
             </div>
           ) : (
@@ -587,14 +587,14 @@ function CreateUserWizard({
                   key={emp.id}
                   type="button"
                   onClick={() => onSetField('employee', emp)}
-                  className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                  className={`w-full text-left px-4 py-3 rounded border transition-colors ${
                     wizard.employee?.id === emp.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                      ? 'border-neutral-500 bg-neutral-50'
+                      : 'border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50'
                   }`}
                 >
-                  <p className="font-medium text-gray-800 text-sm">{emp.first_name} {emp.last_name}</p>
-                  <p className="text-xs text-gray-500">{emp.employee_code} · {emp.department_name}</p>
+                  <p className="font-medium text-neutral-800 text-sm">{emp.first_name} {emp.last_name}</p>
+                  <p className="text-xs text-neutral-500">{emp.employee_code} · {emp.department_name}</p>
                 </button>
               ))}
             </div>
@@ -617,9 +617,9 @@ function CreateUserWizard({
       {wizard.step === 3 && (
         <div className="space-y-4">
           {wizard.employee && (
-            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm">
-              <p className="font-medium text-green-800">Linked Employee</p>
-              <p className="text-green-700">{wizard.employee.first_name} {wizard.employee.last_name} · {wizard.employee.employee_code} · {wizard.employee.department_name}</p>
+            <div className="bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm">
+              <p className="font-medium text-neutral-800">Linked Employee</p>
+              <p className="text-neutral-700">{wizard.employee.first_name} {wizard.employee.last_name} · {wizard.employee.employee_code} · {wizard.employee.department_name}</p>
             </div>
           )}
 
@@ -653,8 +653,8 @@ function CreateUserWizard({
           </FormField>
 
           <FormField label="Role">
-            <input value={wizard.role} readOnly className={`${inputCls} bg-gray-50 text-gray-600 cursor-default`} />
-            <p className="text-xs text-gray-400 mt-1">Role was selected in Step 1.</p>
+            <input value={wizard.role} readOnly className={`${inputCls} bg-neutral-50 text-neutral-600 cursor-default`} />
+            <p className="text-xs text-neutral-400 mt-1">Role was selected in Step 1.</p>
           </FormField>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -685,10 +685,10 @@ function CreateUserWizard({
 function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className={`bg-white rounded-xl shadow-xl w-full ${wide ? 'max-w-lg' : 'max-w-md'}`}>
+      <div className={`bg-white rounded w-full ${wide ? 'max-w-lg' : 'max-w-md'}`}>
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 text-xl leading-none">&times;</button>
         </div>
         <div className="px-6 py-5">{children}</div>
       </div>
@@ -699,15 +699,15 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-neutral-700 mb-1">{label}</label>
       {children}
     </div>
   )
 }
 
-const inputCls     = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-const btnPrimary   = 'bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center'
-const btnSecondary = 'border border-gray-300 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-lg transition-colors'
+const inputCls     = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400'
+const btnPrimary   = 'bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded transition-colors flex items-center'
+const btnSecondary = 'border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors'
 
 // ── Extract API error message ─────────────────────────────────────────────────
 function apiMsg(err: unknown): string | null {

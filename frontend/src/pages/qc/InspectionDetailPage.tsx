@@ -16,24 +16,24 @@ interface ResultRow {
 }
 
 const stageBadge: Record<InspectionStage, string> = {
-  iqc:  'bg-blue-100 text-blue-700',
-  ipqc: 'bg-amber-100 text-amber-700',
-  oqc:  'bg-purple-100 text-purple-700',
+  iqc:  'bg-neutral-100 text-neutral-700',
+  ipqc: 'bg-neutral-100 text-neutral-700',
+  oqc:  'bg-neutral-100 text-neutral-700',
 }
 
 const statusBadge: Record<InspectionStatus, string> = {
-  open:    'bg-gray-100 text-gray-600',
-  passed:  'bg-green-100 text-green-700',
-  failed:  'bg-red-100 text-red-700',
-  on_hold: 'bg-yellow-100 text-yellow-700',
-  voided:  'bg-gray-200 text-gray-400',
+  open:    'bg-neutral-100 text-neutral-600',
+  passed:  'bg-neutral-100 text-neutral-700',
+  failed:  'bg-neutral-100 text-neutral-700',
+  on_hold: 'bg-neutral-100 text-neutral-700',
+  voided:  'bg-neutral-100 text-neutral-400',
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-4 py-2 border-b border-gray-100 last:border-0">
-      <dt className="text-sm text-gray-500 w-36 flex-shrink-0">{label}</dt>
-      <dd className="text-sm text-gray-900 font-medium">{value ?? '—'}</dd>
+    <div className="flex items-start gap-4 py-2 border-b border-neutral-100 last:border-0">
+      <dt className="text-sm text-neutral-500 w-36 flex-shrink-0">{label}</dt>
+      <dd className="text-sm text-neutral-900 font-medium">{value ?? '—'}</dd>
     </div>
   )
 }
@@ -202,16 +202,16 @@ export default function InspectionDetailPage(): React.ReactElement {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/qc/inspections')} className="p-2 hover:bg-gray-100 rounded-lg">
-            <ArrowLeft className="w-4 h-4 text-gray-500" />
+          <button onClick={() => navigate('/qc/inspections')} className="p-2 hover:bg-neutral-100 rounded-lg">
+            <ArrowLeft className="w-4 h-4 text-neutral-500" />
           </button>
-          <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-            <ClipboardCheck className="w-5 h-5 text-teal-600" />
+          <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
+            <ClipboardCheck className="w-5 h-5 text-neutral-600" />
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 font-mono">{inspection.inspection_reference}</h1>
-            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase ${stageBadge[inspection.stage]}`}>{inspection.stage}</span>
-            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[inspection.status]}`}>{inspection.status.replace('_', ' ')}</span>
+            <h1 className="text-lg font-semibold text-neutral-900 font-mono">{inspection.inspection_reference}</h1>
+            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${stageBadge[inspection.stage]}`}>{inspection.stage}</span>
+            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[inspection.status]}`}>{inspection.status.replace('_', ' ')}</span>
           </div>
         </div>
 
@@ -220,7 +220,7 @@ export default function InspectionDetailPage(): React.ReactElement {
             <>
               <button
                 onClick={openForm}
-                className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded transition-colors"
               >
                 <ClipboardCheck className="w-4 h-4" />
                 Record Results
@@ -228,25 +228,25 @@ export default function InspectionDetailPage(): React.ReactElement {
               {!showDismissConfirm && (
                 <button
                   onClick={() => setShowDismissConfirm(true)}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-500 hover:bg-gray-50 hover:border-red-300 hover:text-red-600 text-sm font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 border border-neutral-300 text-neutral-500 hover:bg-neutral-50 hover:border-red-300 hover:text-red-600 text-sm font-medium rounded transition-colors"
                 >
                   <Ban className="w-4 h-4" />
                   Dismiss
                 </button>
               )}
               {showDismissConfirm && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded px-3 py-1.5">
                   <span className="text-xs text-red-700 font-medium">Delete this inspection?</span>
                   <button
                     onClick={() => void handleDismiss()}
                     disabled={deleteMut.isPending}
-                    className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium rounded-md transition-colors"
+                    className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium rounded transition-colors"
                   >
                     {deleteMut.isPending ? 'Deleting…' : 'Yes, Delete'}
                   </button>
                   <button
                     onClick={() => setShowDismissConfirm(false)}
-                    className="px-3 py-1 text-xs border border-gray-300 hover:bg-white rounded-md text-gray-600"
+                    className="px-3 py-1 text-xs border border-neutral-300 hover:bg-white rounded text-neutral-600"
                   >
                     No
                   </button>
@@ -257,7 +257,7 @@ export default function InspectionDetailPage(): React.ReactElement {
           {!isOpen && inspection.status !== 'voided' && !showCancelForm && (
             <button
               onClick={() => setShowCancelForm(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 hover:bg-red-50 text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 hover:bg-red-50 text-sm font-medium rounded transition-colors"
             >
               <XCircle className="w-4 h-4" />
               Cancel Results
@@ -266,7 +266,7 @@ export default function InspectionDetailPage(): React.ReactElement {
           {!isOpen && inspection.status !== 'voided' && showCancelForm && (
             <button
               onClick={closeCancelForm}
-              className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-600"
+              className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-600"
             >
               Dismiss
             </button>
@@ -275,14 +275,14 @@ export default function InspectionDetailPage(): React.ReactElement {
       </div>
 
       {/* Details */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Inspection Details</h2>
+      <div className="bg-white border border-neutral-200 rounded-lg p-6 mb-5">
+        <h2 className="text-sm font-medium text-neutral-900 mb-3">Inspection Details</h2>
         <dl>
           <InfoRow label="Item"          value={inspection.item_master ? `${inspection.item_master.item_code} — ${inspection.item_master.name}` : null} />
           <InfoRow label="Lot / Batch"   value={inspection.lot_batch?.batch_number} />
           <InfoRow label="Qty Inspected" value={parseFloat(inspection.qty_inspected).toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
-          <InfoRow label="Qty Passed"    value={<span className="text-green-700 font-semibold">{parseFloat(inspection.qty_passed).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
-          <InfoRow label="Qty Failed"    value={<span className="text-red-600 font-semibold">{parseFloat(inspection.qty_failed).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
+          <InfoRow label="Qty Passed"    value={<span className="text-neutral-700 font-medium">{parseFloat(inspection.qty_passed).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
+          <InfoRow label="Qty Failed"    value={<span className="text-neutral-600 font-medium">{parseFloat(inspection.qty_failed).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
           <InfoRow label="Date"          value={inspection.inspection_date} />
           <InfoRow label="Inspector"     value={inspection.inspector?.name} />
           <InfoRow label="Remarks"       value={inspection.remarks} />
@@ -291,15 +291,15 @@ export default function InspectionDetailPage(): React.ReactElement {
 
       {/* Cancel Results Form */}
       {!isOpen && showCancelForm && (
-        <form onSubmit={(e) => void handleCancelResults(e)} className="bg-white border border-red-200 rounded-xl p-6 mb-5">
-          <h2 className="text-sm font-semibold text-red-700 mb-1">Cancel Inspection Results</h2>
-          <p className="text-xs text-gray-500 mb-4">This will reset the inspection back to <span className="font-semibold">open</span> status, clear all qty and result rows, and append your reason to the remarks.</p>
+        <form onSubmit={(e) => void handleCancelResults(e)} className="bg-white border border-red-200 rounded-lg p-6 mb-5">
+          <h2 className="text-sm font-medium text-red-700 mb-1">Cancel Inspection Results</h2>
+          <p className="text-xs text-neutral-500 mb-4">This will reset the inspection back to <span className="font-medium">open</span> status, clear all qty and result rows, and append your reason to the remarks.</p>
           <div className="mb-4">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Reason for cancellation *</label>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Reason for cancellation *</label>
             <textarea
               rows={3}
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 outline-none resize-none ${
-                cancelReasonError ? 'border-red-400' : 'border-gray-300'
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none ${
+                cancelReasonError ? 'border-red-400' : 'border-neutral-300'
               }`}
               placeholder="Describe why results are being cancelled (min 10 characters)…"
               value={cancelReason}
@@ -312,14 +312,14 @@ export default function InspectionDetailPage(): React.ReactElement {
             <button
               type="button"
               onClick={closeCancelForm}
-              className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+              className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
             >
               Dismiss
             </button>
             <button
               type="submit"
               disabled={cancelMut.isPending}
-              className="flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded transition-colors"
             >
               <XCircle className="w-4 h-4" />
               {cancelMut.isPending ? 'Cancelling…' : 'Confirm Cancel'}
@@ -330,17 +330,17 @@ export default function InspectionDetailPage(): React.ReactElement {
 
       {/* Record Results Form */}
       {isOpen && showForm && (
-        <form onSubmit={(e) => void handleSubmitResults(e)} className="bg-white border border-teal-200 rounded-xl p-6 mb-5">
-          <h2 className="text-sm font-semibold text-gray-800 mb-4">Record Inspection Results</h2>
+        <form onSubmit={(e) => void handleSubmitResults(e)} className="bg-white border border-neutral-200 rounded-lg p-6 mb-5">
+          <h2 className="text-sm font-medium text-neutral-800 mb-4">Record Inspection Results</h2>
 
           {/* Qty row */}
           <div className="grid grid-cols-2 gap-4 mb-5">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Qty Passed *</label>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Passed *</label>
               <input
                 type="number" min="0" max={qtyInspected} step="1" required
-                className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none ${
-                  qtyError ? 'border-red-400 focus:ring-red-400' : 'border-gray-300'
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none ${
+                  qtyError ? 'border-red-400 focus:ring-red-400' : 'border-neutral-300'
                 }`}
                 value={qtyPassed}
                 onChange={e => setQtyPassed(e.target.value)}
@@ -349,28 +349,28 @@ export default function InspectionDetailPage(): React.ReactElement {
               />
               {qtyError
                 ? <p className="mt-1 text-xs text-red-600">{qtyError}</p>
-                : <p className="mt-1 text-xs text-gray-400">Inspected: {qtyInspected}</p>
+                : <p className="mt-1 text-xs text-neutral-400">Inspected: {qtyInspected}</p>
               }
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Qty Failed <span className="text-gray-400 font-normal">(auto)</span></label>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Failed <span className="text-neutral-400 font-normal">(auto)</span></label>
               <input
                 type="number" readOnly tabIndex={-1}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-default outline-none"
+                className="w-full border border-neutral-200 bg-neutral-50 rounded px-3 py-2 text-sm text-neutral-500 cursor-default outline-none"
                 value={qtyFailed}
                 placeholder="0"
               />
-              <p className="mt-1 text-xs text-gray-400">= Inspected − Passed</p>
+              <p className="mt-1 text-xs text-neutral-400">= Inspected − Passed</p>
             </div>
           </div>
 
           {/* Result rows */}
           <div className="mb-4">
             <div className="grid grid-cols-12 gap-2 mb-1 px-1">
-              <span className="col-span-3 text-xs font-medium text-gray-500">Criterion *</span>
-              <span className="col-span-2 text-xs font-medium text-gray-500">Actual Value</span>
-              <span className="col-span-2 text-xs font-medium text-gray-500">Conforming?</span>
-              <span className="col-span-4 text-xs font-medium text-gray-500">Remarks</span>
+              <span className="col-span-3 text-xs font-medium text-neutral-500">Criterion *</span>
+              <span className="col-span-2 text-xs font-medium text-neutral-500">Actual Value</span>
+              <span className="col-span-2 text-xs font-medium text-neutral-500">Conforming?</span>
+              <span className="col-span-4 text-xs font-medium text-neutral-500">Remarks</span>
               <span className="col-span-1" />
             </div>
 
@@ -378,7 +378,7 @@ export default function InspectionDetailPage(): React.ReactElement {
               {rows.map((row, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                   <input
-                    className="col-span-3 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-gray-50"
+                    className="col-span-3 border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none disabled:bg-neutral-50"
                     value={row.criterion}
                     onChange={e => updateRow(idx, 'criterion', e.target.value)}
                     placeholder="e.g. Visual appearance"
@@ -386,7 +386,7 @@ export default function InspectionDetailPage(): React.ReactElement {
                     required
                   />
                   <input
-                    className="col-span-2 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                    className="col-span-2 border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
                     value={row.actual_value}
                     onChange={e => updateRow(idx, 'actual_value', e.target.value)}
                     placeholder="Measured value"
@@ -395,10 +395,10 @@ export default function InspectionDetailPage(): React.ReactElement {
                     <button
                       type="button"
                       onClick={() => updateRow(idx, 'is_conforming', row.is_conforming === true ? null : true)}
-                      className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium border transition-colors ${
                         row.is_conforming === true
-                          ? 'bg-green-600 border-green-600 text-white'
-                          : 'border-gray-300 text-gray-500 hover:border-green-400'
+                          ? 'bg-neutral-800 border-neutral-800 text-white'
+                          : 'border-neutral-300 text-neutral-500 hover:border-neutral-400'
                       }`}
                     >
                       <CheckCircle2 className="w-3 h-3" />Pass
@@ -406,17 +406,17 @@ export default function InspectionDetailPage(): React.ReactElement {
                     <button
                       type="button"
                       onClick={() => updateRow(idx, 'is_conforming', row.is_conforming === false ? null : false)}
-                      className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium border transition-colors ${
                         row.is_conforming === false
-                          ? 'bg-red-600 border-red-600 text-white'
-                          : 'border-gray-300 text-gray-500 hover:border-red-400'
+                          ? 'bg-neutral-800 border-neutral-800 text-white'
+                          : 'border-neutral-300 text-neutral-500 hover:border-neutral-400'
                       }`}
                     >
                       <XCircle className="w-3 h-3" />Fail
                     </button>
                   </div>
                   <input
-                    className="col-span-4 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                    className="col-span-4 border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
                     value={row.remarks}
                     onChange={e => updateRow(idx, 'remarks', e.target.value)}
                     placeholder="Optional remarks"
@@ -426,7 +426,7 @@ export default function InspectionDetailPage(): React.ReactElement {
                       type="button"
                       onClick={() => removeRow(idx)}
                       disabled={rows.length <= 1}
-                      className="col-span-1 flex justify-center text-gray-400 hover:text-red-500 disabled:opacity-30"
+                      className="col-span-1 flex justify-center text-neutral-400 hover:text-red-500 disabled:opacity-30"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -439,7 +439,7 @@ export default function InspectionDetailPage(): React.ReactElement {
               <button
                 type="button"
                 onClick={addRow}
-                className="mt-2 flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 font-medium"
+                className="mt-2 flex items-center gap-1 text-xs text-neutral-600 hover:text-neutral-800 font-medium"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Row
               </button>
@@ -450,14 +450,14 @@ export default function InspectionDetailPage(): React.ReactElement {
             <button
               type="button"
               onClick={closeForm}
-              className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+              className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={recordMut.isPending}
-              className="flex items-center gap-2 px-5 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium rounded transition-colors"
             >
               <ClipboardCheck className="w-4 h-4" />
               {recordMut.isPending ? 'Saving…' : 'Submit Results'}
@@ -468,29 +468,29 @@ export default function InspectionDetailPage(): React.ReactElement {
 
       {/* Results */}
       {(inspection.results ?? []).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Inspection Results</h2>
+        <div className="bg-white border border-neutral-200 rounded-lg p-6 mb-5">
+          <h2 className="text-sm font-medium text-neutral-900 mb-3">Inspection Results</h2>
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-neutral-50">
               <tr>
                 {['Criterion', 'Actual Value', 'Conforming', 'Remarks'].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-500">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {inspection.results?.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} className="even:bg-neutral-100 hover:bg-neutral-50">
                   <td className="px-3 py-2">{r.criterion}</td>
-                  <td className="px-3 py-2 text-gray-500">{r.actual_value ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-500">{r.actual_value ?? '—'}</td>
                   <td className="px-3 py-2">
                     {r.is_conforming === null
-                      ? <span className="text-gray-400">—</span>
+                      ? <span className="text-neutral-400">—</span>
                       : r.is_conforming
-                        ? <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Yes</span>
-                        : <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">No</span>}
+                        ? <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">Yes</span>
+                        : <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">No</span>}
                   </td>
-                  <td className="px-3 py-2 text-gray-400 text-xs">{r.remarks ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-400 text-xs">{r.remarks ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -500,18 +500,18 @@ export default function InspectionDetailPage(): React.ReactElement {
 
       {/* NCRs */}
       {(inspection.ncrs ?? []).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Non-Conformance Reports</h2>
+        <div className="bg-white border border-neutral-200 rounded-lg p-6">
+          <h2 className="text-sm font-medium text-neutral-900 mb-3">Non-Conformance Reports</h2>
           {inspection.ncrs?.map((ncr) => (
-            <div key={ncr.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div key={ncr.id} className="flex items-center justify-between py-2 border-b border-neutral-100 last:border-0">
               <div>
-                <span className="font-mono text-sm text-teal-700 font-medium">{ncr.ncr_reference}</span>
-                <span className="ml-3 text-sm text-gray-600">{ncr.title}</span>
+                <span className="font-mono text-sm text-neutral-700 font-medium">{ncr.ncr_reference}</span>
+                <span className="ml-3 text-sm text-neutral-600">{ncr.title}</span>
               </div>
-              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                ncr.severity === 'critical' ? 'bg-red-100 text-red-700' :
-                ncr.severity === 'major'    ? 'bg-orange-100 text-orange-700' :
-                                              'bg-yellow-100 text-yellow-700'
+              <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${
+                ncr.severity === 'critical' ? 'bg-neutral-100 text-neutral-700' :
+                ncr.severity === 'major'    ? 'bg-neutral-100 text-neutral-700' :
+                                              'bg-neutral-100 text-neutral-700'
               }`}>{ncr.severity}</span>
             </div>
           ))}

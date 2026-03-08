@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 import {
@@ -30,7 +31,7 @@ function formatAmount(n: number | null | undefined): string {
 }
 
 function AmountCell({ value }: { value: number | null | undefined }) {
-  if (value == null || value === 0) return <span className="text-gray-300">—</span>
+  if (value == null || value === 0) return <span className="text-neutral-300">—</span>
   return <span className="tabular-nums">{formatAmount(value)}</span>
 }
 
@@ -45,41 +46,41 @@ function LinesTable({ lines }: { lines: JournalEntryLine[] }) {
     <div className="overflow-x-auto">
       <ExecutiveReadOnlyBanner />
       <table className="min-w-full text-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-neutral-50 border-b border-neutral-200">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Code</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Account</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">Debit (₱)</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-36">Credit (₱)</th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 w-24">Code</th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500">Account</th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500">Description</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 w-36">Debit (₱)</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 w-36">Credit (₱)</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-neutral-100">
           {lines.map((line) => (
-            <tr key={line.id} className="hover:bg-gray-50">
-              <td className="px-4 py-3 font-mono text-xs text-gray-500">
+            <tr key={line.id} className="hover:bg-neutral-50">
+              <td className="px-4 py-3 font-mono text-xs text-neutral-500">
                 {line.account_code ?? '—'}
               </td>
-              <td className="px-4 py-3 text-gray-900">{line.account_name ?? '—'}</td>
-              <td className="px-4 py-3 text-gray-500 text-xs">{line.description ?? ''}</td>
-              <td className="px-4 py-3 text-right text-gray-800">
+              <td className="px-4 py-3 text-neutral-900">{line.account_name ?? '—'}</td>
+              <td className="px-4 py-3 text-neutral-500 text-xs">{line.description ?? ''}</td>
+              <td className="px-4 py-3 text-right text-neutral-800">
                 <AmountCell value={line.debit} />
               </td>
-              <td className="px-4 py-3 text-right text-gray-800">
+              <td className="px-4 py-3 text-right text-neutral-800">
                 <AmountCell value={line.credit} />
               </td>
             </tr>
           ))}
         </tbody>
-        <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+        <tfoot className="bg-neutral-50 border-t-2 border-neutral-300">
           <tr>
-            <td colSpan={3} className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
+            <td colSpan={3} className="px-4 py-3 text-right text-xs font-bold text-neutral-600">
               Totals
             </td>
-            <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
+            <td className="px-4 py-3 text-right font-bold text-neutral-900 tabular-nums">
               ₱{formatAmount(totalDebit)}
             </td>
-            <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
+            <td className="px-4 py-3 text-right font-bold text-neutral-900 tabular-nums">
               ₱{formatAmount(totalCredit)}
             </td>
           </tr>
@@ -116,8 +117,13 @@ export default function JournalEntryDetailPage() {
 
   async function handleReverse() {
     const desc = window.prompt('Reversal description (optional):') ?? ''
-    const reversed = await reverseMutation.mutateAsync(desc)
-    navigate(`/accounting/journal-entries/${reversed.ulid}`)
+    try {
+      const reversed = await reverseMutation.mutateAsync(desc)
+      toast.success('Reversal entry created.')
+      navigate(`/accounting/journal-entries/${reversed.ulid}`)
+    } catch {
+      toast.error('Failed to create reversal.')
+    }
   }
 
   return (
@@ -125,7 +131,7 @@ export default function JournalEntryDetailPage() {
       {/* Back nav */}
       <button
         onClick={() => navigate('/accounting/journal-entries')}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6"
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
         Journal Entries
@@ -135,22 +141,22 @@ export default function JournalEntryDetailPage() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 font-mono">
-              {entry.je_number ?? <span className="text-gray-400 font-sans text-lg">— Draft —</span>}
+            <h1 className="text-lg font-semibold text-neutral-900 font-mono">
+              {entry.je_number ?? <span className="text-neutral-400 font-sans text-lg">— Draft —</span>}
             </h1>
             <StatusBadge label={entry.status} autoVariant />
             {entry.is_auto_posted && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
                 System
               </span>
             )}
             {entry.reversal_of != null && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
                 Reversal
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-1">{formatDate(entry.date)}</p>
+          <p className="text-sm text-neutral-500 mt-1">{formatDate(entry.date)}</p>
         </div>
 
         {/* Action buttons */}
@@ -158,9 +164,16 @@ export default function JournalEntryDetailPage() {
           <div className="flex items-center gap-2">
             {entry.status === 'draft' && (
               <button
-                onClick={() => void submitMutation.mutateAsync()}
+                onClick={async () => {
+                  try {
+                    await submitMutation.mutateAsync()
+                    toast.success('Journal entry submitted for approval.')
+                  } catch {
+                    toast.error('Failed to submit entry.')
+                  }
+                }}
                 disabled={busy}
-                className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50"
               >
                 {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
               </button>
@@ -169,7 +182,14 @@ export default function JournalEntryDetailPage() {
               <SodActionButton
                 initiatedById={entry.created_by}
                 label="Post"
-                onClick={() => void postMutation.mutateAsync()}
+                onClick={async () => {
+                  try {
+                    await postMutation.mutateAsync()
+                    toast.success('Journal entry posted.')
+                  } catch {
+                    toast.error('Failed to post entry.')
+                  }
+                }}
                 isLoading={postMutation.isPending}
                 disabled={submitMutation.isPending || reverseMutation.isPending}
                 variant="primary"
@@ -179,7 +199,7 @@ export default function JournalEntryDetailPage() {
               <button
                 onClick={() => void handleReverse()}
                 disabled={busy}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-orange-300 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50"
               >
                 <RotateCcw className="h-4 w-4" />
                 {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
@@ -190,39 +210,39 @@ export default function JournalEntryDetailPage() {
       </div>
 
       {/* Meta card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-4">
+      <div className="bg-white border border-neutral-200 rounded p-6 mb-4">
         <dl className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
           <div>
-            <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatDate(entry.date)}</dd>
+            <dt className="text-xs font-semibold text-neutral-500">Date</dt>
+            <dd className="mt-1 text-sm text-neutral-900">{formatDate(entry.date)}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</dt>
+            <dt className="text-xs font-semibold text-neutral-500">Status</dt>
             <dd className="mt-1"><StatusBadge label={entry.status} autoVariant /></dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Source</dt>
-            <dd className="mt-1 text-sm text-gray-900 capitalize">{entry.source_type}</dd>
+            <dt className="text-xs font-semibold text-neutral-500">Source</dt>
+            <dd className="mt-1 text-sm text-neutral-900 capitalize">{entry.source_type}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Fiscal Period</dt>
-            <dd className="mt-1 text-sm text-gray-900">
+            <dt className="text-xs font-semibold text-neutral-500">Fiscal Period</dt>
+            <dd className="mt-1 text-sm text-neutral-900">
               {entry.fiscal_period?.name ?? entry.fiscal_period_id}
             </dd>
           </div>
           {entry.description && (
             <div className="col-span-4">
-              <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</dt>
-              <dd className="mt-1 text-sm text-gray-900">{entry.description}</dd>
+              <dt className="text-xs font-semibold text-neutral-500">Description</dt>
+              <dd className="mt-1 text-sm text-neutral-900">{entry.description}</dd>
             </div>
           )}
           {entry.reversal_of != null && (
             <div>
-              <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Reversal Of</dt>
+              <dt className="text-xs font-semibold text-neutral-500">Reversal Of</dt>
               <dd className="mt-1">
                 <button
                   onClick={() => navigate(`/accounting/journal-entries/${entry.reversal_of_ulid}`)}
-                  className="text-sm text-blue-600 hover:underline font-mono"
+                  className="text-sm text-neutral-600 hover:underline font-mono"
                 >
                   #{entry.reversal_of}
                 </button>
@@ -231,22 +251,22 @@ export default function JournalEntryDetailPage() {
           )}
           {entry.posted_at && (
             <div>
-              <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Posted At</dt>
-              <dd className="mt-1 text-sm text-gray-900">{formatDate(entry.posted_at)}</dd>
+              <dt className="text-xs font-semibold text-neutral-500">Posted At</dt>
+              <dd className="mt-1 text-sm text-neutral-900">{formatDate(entry.posted_at)}</dd>
             </div>
           )}
         </dl>
       </div>
 
       {/* Lines */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-700">Journal Lines</h2>
+      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+        <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200">
+          <h2 className="text-sm font-semibold text-neutral-700">Journal Lines</h2>
         </div>
         {entry.lines && entry.lines.length > 0
           ? <LinesTable lines={entry.lines} />
           : (
-            <p className="px-4 py-8 text-center text-gray-400 text-sm">No lines loaded.</p>
+            <p className="px-4 py-8 text-center text-neutral-400 text-sm">No lines loaded.</p>
           )
         }
       </div>

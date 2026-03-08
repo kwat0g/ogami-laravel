@@ -31,24 +31,24 @@ function fieldLabel(key: string): string {
 }
 
 const EVENT_CONFIG: Record<string, { color: string; icon: typeof Plus; label: string }> = {
-  created: { color: 'bg-green-100 text-green-700 border-green-200', icon: Plus, label: 'Created' },
-  updated: { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Pencil, label: 'Updated' },
-  deleted: { color: 'bg-red-100 text-red-700 border-red-200', icon: Trash2, label: 'Deleted' },
-  retrieved: { color: 'bg-gray-100 text-gray-600 border-gray-200', icon: Eye, label: 'Retrieved' },
-  login: { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: LogIn, label: 'Login' },
-  logout: { color: 'bg-amber-100 text-amber-700 border-amber-200', icon: LogOut, label: 'Logout' },
-  failed_login: { color: 'bg-red-100 text-red-700 border-red-200', icon: AlertTriangle, label: 'Failed Login' },
+  created: { color: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: Plus, label: 'Created' },
+  updated: { color: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: Pencil, label: 'Updated' },
+  deleted: { color: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: Trash2, label: 'Deleted' },
+  retrieved: { color: 'bg-neutral-100 text-neutral-600 border-neutral-200', icon: Eye, label: 'Retrieved' },
+  login: { color: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: LogIn, label: 'Login' },
+  logout: { color: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: LogOut, label: 'Logout' },
+  failed_login: { color: 'bg-neutral-100 text-neutral-700 border-neutral-200', icon: AlertTriangle, label: 'Failed Login' },
 }
 
 function EventBadge({ event }: { event: string }) {
   const cfg = EVENT_CONFIG[event.toLowerCase()] ?? {
-    color: 'bg-purple-100 text-purple-700 border-purple-200',
+    color: 'bg-neutral-100 text-neutral-700 border-neutral-200',
     icon: Shield,
     label: event,
   }
   const Icon = cfg.icon
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.color}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${cfg.color}`}>
       <Icon className="w-3 h-3" />
       {cfg.label}
     </span>
@@ -66,7 +66,7 @@ function ValueDiff({ log }: { log: AuditLog }) {
   const isAuthEvent = ['login', 'logout', 'failed_login'].includes(log.event)
   const hasChanges = log.old_values || log.new_values
 
-  if (!hasChanges) return <span className="text-xs text-gray-400 italic">—</span>
+  if (!hasChanges) return <span className="text-xs text-neutral-400 italic">—</span>
 
   let oldParsed: Record<string, unknown> = {}
   let newParsed: Record<string, unknown> = {}
@@ -80,23 +80,23 @@ function ValueDiff({ log }: { log: AuditLog }) {
 
   const allKeys = Array.from(new Set([...Object.keys(oldParsed), ...Object.keys(newParsed)]))
 
-  if (allKeys.length === 0) return <span className="text-xs text-gray-400 italic">—</span>
+  if (allKeys.length === 0) return <span className="text-xs text-neutral-400 italic">—</span>
 
   if (isAuthEvent) {
     return (
       <div>
         <button
           onClick={() => setOpen(v => !v)}
-          className="text-xs text-indigo-600 hover:underline"
+          className="text-xs text-neutral-700 "
         >
           {open ? 'Hide details' : 'View details'}
         </button>
         {open && (
-          <div className="mt-2 bg-gray-50 rounded-lg border border-gray-200 p-3">
+          <div className="mt-2 bg-neutral-50 rounded border border-neutral-200 p-3">
             {allKeys.map(key => (
               <div key={key} className="text-xs">
-                <span className="font-medium text-gray-600">{fieldLabel(key)}:</span>{' '}
-                <span className="text-gray-800">{String(newParsed[key] ?? '')}</span>
+                <span className="font-medium text-neutral-600">{fieldLabel(key)}:</span>{' '}
+                <span className="text-neutral-800">{String(newParsed[key] ?? '')}</span>
               </div>
             ))}
           </div>
@@ -109,30 +109,30 @@ function ValueDiff({ log }: { log: AuditLog }) {
     <div>
       <button
         onClick={() => setOpen(v => !v)}
-        className="text-xs text-indigo-600 hover:underline"
+        className="text-xs text-neutral-700 hover:underline"
       >
         {open ? 'Hide diff' : `View diff (${allKeys.length} field${allKeys.length !== 1 ? 's' : ''})`}
       </button>
 
       {open && (
-        <div className="mt-2 bg-gray-50 rounded-lg border border-gray-200 overflow-x-auto max-h-60">
+        <div className="mt-2 bg-neutral-50 rounded border border-neutral-200 overflow-x-auto max-h-60">
           <table className="min-w-full text-xs">
-            <thead className="bg-gray-100 sticky top-0">
+            <thead className="bg-neutral-100 sticky top-0">
               <tr>
-                <th className="px-3 py-1.5 text-left font-semibold text-gray-600">Field</th>
+                <th className="px-3 py-1.5 text-left font-semibold text-neutral-600">Field</th>
                 <th className="px-3 py-1.5 text-left font-semibold text-red-600">Before</th>
                 <th className="px-3 py-1.5 text-left font-semibold text-green-600">After</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-neutral-200">
               {allKeys.map(key => (
                 <tr key={key}>
-                  <td className="px-3 py-1.5 font-medium text-gray-700">{fieldLabel(key)}</td>
-                  <td className="px-3 py-1.5 font-mono text-red-700 break-all">
-                    {key in oldParsed ? String(oldParsed[key] ?? 'null') : <span className="text-gray-400 italic">—</span>}
+                  <td className="px-3 py-1.5 font-medium text-neutral-700">{fieldLabel(key)}</td>
+                  <td className="px-3 py-1.5 font-mono text-neutral-700 break-all">
+                    {key in oldParsed ? String(oldParsed[key] ?? 'null') : <span className="text-neutral-400 italic">—</span>}
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-green-700 break-all">
-                    {key in newParsed ? String(newParsed[key] ?? 'null') : <span className="text-gray-400 italic">—</span>}
+                  <td className="px-3 py-1.5 font-mono text-neutral-700 break-all">
+                    {key in newParsed ? String(newParsed[key] ?? 'null') : <span className="text-neutral-400 italic">—</span>}
                   </td>
                 </tr>
               ))}
@@ -207,9 +207,9 @@ export default function AuditLogsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Access Denied</p>
-          <p className="text-sm text-gray-400 mt-1">You need <code>system.view_audit_log</code> permission.</p>
+          <Shield className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+          <p className="text-neutral-500 font-medium">Access Denied</p>
+          <p className="text-sm text-neutral-400 mt-1">You need <code>system.view_audit_log</code> permission.</p>
         </div>
       </div>
     )
@@ -220,8 +220,8 @@ export default function AuditLogsPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-lg font-semibold text-neutral-900 mb-6">Audit Logs</h1>
+          <p className="text-sm text-neutral-500">
             Complete record of all system changes, logins, and data modifications.
           </p>
         </div>
@@ -229,7 +229,7 @@ export default function AuditLogsPage() {
         <button
           onClick={() => void refetch()}
           disabled={isFetching}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh
@@ -239,28 +239,28 @@ export default function AuditLogsPage() {
       {/* Search + Filter toggle */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={e => handleSearch(e.target.value)}
             placeholder="Search by event, model, user, or tag…"
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-neutral-300 rounded focus:outline-none focus:ring-1 focus:ring-neutral-400"
           />
         </div>
 
         <button
           onClick={() => setShowFilters(v => !v)}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm border rounded-lg transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm border rounded transition-colors ${
             showFilters || activeFilterCount > 0
-              ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              ? 'bg-neutral-50 border-neutral-300 text-neutral-700'
+              : 'border-neutral-300 text-neutral-700 hover:bg-neutral-50'
           }`}
         >
           <Filter className="w-4 h-4" />
           Filters
           {activeFilterCount > 0 && (
-            <span className="bg-indigo-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+            <span className="bg-neutral-900 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
               {activeFilterCount}
             </span>
           )}
@@ -269,7 +269,7 @@ export default function AuditLogsPage() {
         {activeFilterCount > 0 && (
           <button
             onClick={clearFilters}
-            className="inline-flex items-center gap-1 px-2 py-2 text-sm text-gray-500 hover:text-red-600"
+            className="inline-flex items-center gap-1 px-2 py-2 text-sm text-neutral-500 hover:text-neutral-700"
           >
             <X className="w-4 h-4" />
             Clear
@@ -279,13 +279,13 @@ export default function AuditLogsPage() {
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-neutral-50 rounded border border-neutral-200 p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Event Type</label>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Event Type</label>
             <select
               value={eventFilter}
               onChange={e => { setEventFilter(e.target.value); setPage(1) }}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             >
               <option value="">All Events</option>
               <option value="created">Created</option>
@@ -298,11 +298,11 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Model Type</label>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Model Type</label>
             <select
               value={modelFilter}
               onChange={e => { setModelFilter(e.target.value); setPage(1) }}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             >
               <option value="">All Models</option>
               <option value="User">User</option>
@@ -330,22 +330,22 @@ export default function AuditLogsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Date From</label>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Date From</label>
             <input
               type="date"
               value={dateFrom}
               onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Date To</label>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Date To</label>
             <input
               type="date"
               value={dateTo}
               onChange={e => { setDateTo(e.target.value); setPage(1) }}
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             />
           </div>
         </div>
@@ -353,28 +353,28 @@ export default function AuditLogsPage() {
 
       {/* Stats bar */}
       {meta && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-neutral-500">
           Showing {logs.length > 0 ? ((page - 1) * perPage) + 1 : 0}–{Math.min(page * perPage, meta.total)} of{' '}
-          <span className="font-semibold text-gray-700">{meta.total.toLocaleString()}</span> log entries
+          <span className="font-semibold text-neutral-700">{meta.total.toLocaleString()}</span> log entries
         </p>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded border border-neutral-200 overflow-hidden">
         {isLoading ? (
           <div className="p-8 space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />
+              <div key={i} className="h-14 bg-neutral-100 rounded animate-pulse" />
             ))}
           </div>
         ) : logs.length === 0 ? (
           <div className="p-12 text-center">
-            <Shield className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No audit logs found.</p>
+            <Shield className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+            <p className="text-neutral-500">No audit logs found.</p>
             {activeFilterCount > 0 && (
               <button
                 onClick={clearFilters}
-                className="mt-2 text-sm text-indigo-600 hover:underline"
+                className="mt-2 text-sm text-neutral-700 hover:underline"
               >
                 Clear filters
               </button>
@@ -382,45 +382,45 @@ export default function AuditLogsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-neutral-200">
+              <thead className="bg-neutral-50">
                 <tr>
                   {['Timestamp', 'User', 'Event', 'Model', 'ID', 'IP Address', 'Changes'].map(h => (
                     <th
                       key={h}
-                      className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600"
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="bg-white divide-y divide-neutral-100">
                 {logs.map(log => (
-                  <tr key={log.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors align-top">
-                    <td className="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">
+                  <tr key={log.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors align-top">
+                    <td className="px-3 py-2 text-sm text-neutral-600 whitespace-nowrap">
                       {formatDate(log.created_at)}
                     </td>
                     <td className="px-3 py-2">
-                      <div className="text-sm font-medium text-gray-900">{log.user_name}</div>
-                      <div className="text-xs text-gray-500">{log.user_email}</div>
+                      <div className="text-sm font-medium text-neutral-900">{log.user_name}</div>
+                      <div className="text-xs text-neutral-500">{log.user_email}</div>
                     </td>
                     <td className="px-3 py-2">
                       <EventBadge event={log.event} />
                       {log.tags && (
-                        <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                        <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-100 text-neutral-500 border border-neutral-200">
                           {log.tags}
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">
+                    <td className="px-3 py-2 text-sm text-neutral-700 whitespace-nowrap">
                       {entityLabel(log.auditable_type)}
                     </td>
-                    <td className="px-3 py-2 text-sm text-gray-500">
+                    <td className="px-3 py-2 text-sm text-neutral-500">
                       #{log.auditable_id}
                     </td>
-                    <td className="px-3 py-2 text-sm text-gray-500 font-mono whitespace-nowrap">
-                      {log.ip_address ?? <span className="text-gray-300 italic">—</span>}
+                    <td className="px-3 py-2 text-sm text-neutral-500 font-mono whitespace-nowrap">
+                      {log.ip_address ?? <span className="text-neutral-300 italic">—</span>}
                     </td>
                     <td className="px-3 py-2 min-w-[200px]">
                       <ValueDiff log={log} />
@@ -436,7 +436,7 @@ export default function AuditLogsPage() {
       {/* Pagination */}
       {meta && meta.last_page > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-500">
             Page {meta.current_page} of {meta.last_page}
           </p>
 
@@ -444,7 +444,7 @@ export default function AuditLogsPage() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page <= 1 || isFetching}
-              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -458,10 +458,10 @@ export default function AuditLogsPage() {
                   key={p}
                   onClick={() => setPage(p)}
                   disabled={isFetching}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                     p === page
-                      ? 'bg-indigo-600 text-white'
-                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-neutral-900 text-white'
+                      : 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
                   }`}
                 >
                   {p}
@@ -472,7 +472,7 @@ export default function AuditLogsPage() {
             <button
               onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
               disabled={page >= meta.last_page || isFetching}
-              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

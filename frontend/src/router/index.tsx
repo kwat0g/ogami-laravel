@@ -145,6 +145,7 @@ const UsersPage = lazy(() => import('@/pages/admin/UsersPage'))
 const SystemSettingsPage = lazy(() => import('@/pages/admin/SystemSettingsPage'))
 const AuditLogsPage = lazy(() => import('@/pages/admin/AuditLogsPage'))
 const ReferenceTablesPage = lazy(() => import('@/pages/admin/ReferenceTablesPage'))
+const BackupPage = lazy(() => import('@/pages/admin/BackupPage'))
 
 // Auth account actions
 const ChangePasswordPage = lazy(() => import('@/pages/auth/ChangePasswordPage'))
@@ -161,6 +162,7 @@ const CreateGoodsReceiptPage    = lazy(() => import('@/pages/procurement/CreateG
 const GoodsReceiptDetailPage    = lazy(() => import('@/pages/procurement/GoodsReceiptDetailPage'))
 
 // Inventory
+const ItemCategoriesPage               = lazy(() => import('@/pages/inventory/ItemCategoriesPage'))
 const ItemMasterListPage               = lazy(() => import('@/pages/inventory/ItemMasterListPage'))
 const ItemMasterFormPage               = lazy(() => import('@/pages/inventory/ItemMasterFormPage'))
 const WarehouseLocationsPage           = lazy(() => import('@/pages/inventory/WarehouseLocationsPage'))
@@ -173,6 +175,7 @@ const MaterialRequisitionDetailPage    = lazy(() => import('@/pages/inventory/Ma
 // Production / PPC
 const BomListPage                    = lazy(() => import('@/pages/production/BomListPage'))
 const CreateBomPage                  = lazy(() => import('@/pages/production/CreateBomPage'))
+const EditBomPage                    = lazy(() => import('@/pages/production/EditBomPage'))
 const DeliveryScheduleListPage       = lazy(() => import('@/pages/production/DeliveryScheduleListPage'))
 const CreateDeliverySchedulePage     = lazy(() => import('@/pages/production/CreateDeliverySchedulePage'))
 const ProductionOrderListPage        = lazy(() => import('@/pages/production/ProductionOrderListPage'))
@@ -379,6 +382,7 @@ export const router = createBrowserRouter([
       { path: '/procurement/goods-receipts/:ulid', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptDetailPage />)) },
 
       // ── Inventory domain ──────────────────────────────────────────────────
+      { path: '/inventory/categories', element: withSuspense(<ItemCategoriesPage />) },
       { path: '/inventory/items', element: withSuspense(guard('inventory.items.view', <ItemMasterListPage />)) },
       { path: '/inventory/items/new', element: withSuspense(guard('inventory.items.create', <ItemMasterFormPage />)) },
       { path: '/inventory/items/:ulid', element: withSuspense(guard('inventory.items.edit', <ItemMasterFormPage />)) },
@@ -391,7 +395,8 @@ export const router = createBrowserRouter([
 
       // ── Production / PPC ──────────────────────────────────────────────────
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
-      { path: '/production/boms/new', element: withSuspense(guard('production.bom.create', <CreateBomPage />)) },
+      { path: '/production/boms/new', element: withSuspense(guard('production.bom.manage', <CreateBomPage />)) },
+      { path: '/production/boms/:ulid/edit', element: withSuspense(guard('production.bom.manage', <EditBomPage />)) },
       { path: '/production/delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
       { path: '/production/delivery-schedules/new', element: withSuspense(guard('production.delivery-schedule.manage', <CreateDeliverySchedulePage />)) },
       { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
@@ -411,7 +416,7 @@ export const router = createBrowserRouter([
       { path: '/maintenance/equipment', element: withSuspense(guard('maintenance.view', <EquipmentListPage />)) },
       { path: '/maintenance/equipment/:ulid', element: withSuspense(guard('maintenance.view', <EquipmentDetailPage />)) },
       { path: '/maintenance/work-orders', element: withSuspense(guard('maintenance.view', <WorkOrderListPage />)) },
-      { path: '/maintenance/work-orders/new', element: withSuspense(guard('maintenance.create', <CreateWorkOrderPage />)) },
+      { path: '/maintenance/work-orders/new', element: withSuspense(guard('maintenance.manage', <CreateWorkOrderPage />)) },
 
       // ── Mold ─────────────────────────────────────────────────────────────
       { path: '/mold/masters', element: withSuspense(guard('mold.view', <MoldListPage />)) },
@@ -419,14 +424,14 @@ export const router = createBrowserRouter([
 
       // ── Delivery / Logistics ─────────────────────────────────────────
       { path: '/delivery/receipts', element: withSuspense(guard('delivery.view', <DeliveryReceiptListPage />)) },
-      { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.create', <CreateDeliveryReceiptPage />)) },
+      { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.manage', <CreateDeliveryReceiptPage />)) },
       { path: '/delivery/shipments', element: withSuspense(guard('delivery.view', <ShipmentsPage />)) },
 
       // ── ISO / IATF ──────────────────────────────────────────────────
       { path: '/iso/documents', element: withSuspense(guard('iso.view', <DocumentRegisterPage />)) },
-      { path: '/iso/documents/new', element: withSuspense(guard('iso.create', <CreateIsoDocumentPage />)) },
+      { path: '/iso/documents/new', element: withSuspense(guard('iso.manage', <CreateIsoDocumentPage />)) },
       { path: '/iso/audits', element: withSuspense(guard('iso.view', <AuditListPage />)) },
-      { path: '/iso/audits/new', element: withSuspense(guard('iso.create', <CreateIsoAuditPage />)) },
+      { path: '/iso/audits/new', element: withSuspense(guard('iso.manage', <CreateIsoAuditPage />)) },
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────
       { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve', <VpApprovalsDashboardPage />)) },
@@ -437,8 +442,7 @@ export const router = createBrowserRouter([
       { path: '/admin/users', element: withSuspense(guard('system.manage_users', <UsersPage />)) },
       { path: '/admin/settings', element: withSuspense(guard('system.edit_settings', <SystemSettingsPage />)) },
       { path: '/admin/audit-logs', element: withSuspense(guard('system.view_audit_log', <AuditLogsPage />)) },
-      { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },
-    ],
+      { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },      { path: '/admin/backup', element: withSuspense(guard('system.manage_backups', <BackupPage />)) },    ],
   },
 
   // ── Utility pages ────────────────────────────────────────────────────────

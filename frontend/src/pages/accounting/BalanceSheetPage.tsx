@@ -10,17 +10,17 @@ const EQUITY_KEYS: BSClassification[] = ['equity']
 function SectionBlock({ section }: { section: BSSection }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 pt-2">{section.label}</p>
+      <p className="text-xs font-semibold text-neutral-500 px-2 pt-2">{section.label}</p>
       {section.accounts.map((acct, i) => (
-        <div key={i} className="flex justify-between items-center px-4 py-1 text-sm text-gray-700">
+        <div key={i} className="flex justify-between items-center px-4 py-1 text-sm text-neutral-700">
           <span>
-            <span className="font-mono text-xs text-gray-400 mr-2">{acct.code}</span>
+            <span className="font-mono text-xs text-neutral-400 mr-2">{acct.code}</span>
             {acct.name}
           </span>
           <span className="font-mono">₱{acct.balance.toLocaleString()}</span>
         </div>
       ))}
-      <div className="flex justify-between items-center px-4 py-1.5 bg-gray-50 rounded text-sm font-semibold text-gray-800 border-t border-gray-200">
+      <div className="flex justify-between items-center px-4 py-1.5 bg-neutral-50 text-sm font-semibold text-neutral-800 border-t border-neutral-200">
         <span>Subtotal — {section.label}</span>
         <span className="font-mono">₱{section.total.toLocaleString()}</span>
       </div>
@@ -50,30 +50,30 @@ export default function BalanceSheetPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Balance Sheet</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Classified statement of financial position — PFRS compliant (GL-003)
+        <h1 className="text-lg font-semibold text-neutral-900 mb-1">Balance Sheet</h1>
+        <p className="text-sm text-neutral-500">
+          Classified statement of financial position — PFRS compliant
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap gap-4 items-end"
+        className="bg-white border border-neutral-200 rounded p-4 flex flex-wrap gap-4 items-end"
       >
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">As of Date</label>
+          <label className="text-xs font-medium text-neutral-600">As of Date</label>
           <input
             type="date"
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none"
             value={asOfDate}
             onChange={e => setAsOfDate(e.target.value)}
           />
         </div>
         <div className="flex items-end gap-2">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 cursor-pointer pb-2">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-neutral-600 cursor-pointer pb-2">
             <input
               type="checkbox"
-              className="rounded"
+              className="rounded border-neutral-300"
               checked={showComp}
               onChange={e => setShowComp(e.target.checked)}
             />
@@ -81,10 +81,10 @@ export default function BalanceSheetPage() {
           </label>
           {showComp && (
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600">Comparative Date</label>
+              <label className="text-xs font-medium text-neutral-600">Comparative Date</label>
               <input
                 type="date"
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none"
                 value={compDate}
                 onChange={e => setCompDate(e.target.value)}
               />
@@ -93,7 +93,7 @@ export default function BalanceSheetPage() {
         </div>
         <button
           type="submit"
-          className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+          className="px-5 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
         >
           Generate
         </button>
@@ -111,32 +111,32 @@ export default function BalanceSheetPage() {
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Assets */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
-              <h2 className="text-base font-bold text-gray-800">Assets</h2>
+            <div className="bg-white border border-neutral-200 rounded p-4 space-y-4">
+              <h2 className="text-base font-bold text-neutral-800">Assets</h2>
               {assetSections.map((s, i) => <SectionBlock key={i} section={s} />)}
-              <div className="flex justify-between items-center border-t-2 border-gray-800 pt-2 font-bold text-gray-900">
+              <div className="flex justify-between items-center border-t-2 border-neutral-800 pt-2 font-bold text-neutral-900">
                 <span>Total Assets</span>
                 <span className="font-mono">₱{bs.totals.total_assets.toLocaleString()}</span>
               </div>
             </div>
 
             {/* Liabilities + Equity */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
-              <h2 className="text-base font-bold text-gray-800">Liabilities</h2>
+            <div className="bg-white border border-neutral-200 rounded p-4 space-y-4">
+              <h2 className="text-base font-bold text-neutral-800">Liabilities</h2>
               {liabilitySections.map((s, i) => <SectionBlock key={i} section={s} />)}
-              <div className="flex justify-between items-center border-t border-gray-200 pt-2 font-semibold text-gray-700">
+              <div className="flex justify-between items-center border-t border-neutral-200 pt-2 font-semibold text-neutral-700">
                 <span>Total Liabilities</span>
                 <span className="font-mono">₱{bs.totals.total_liabilities.toLocaleString()}</span>
               </div>
 
-              <h2 className="text-base font-bold text-gray-800 pt-2">Equity</h2>
+              <h2 className="text-base font-bold text-neutral-800 pt-2">Equity</h2>
               {equitySections.map((s, i) => <SectionBlock key={i} section={s} />)}
-              <div className="flex justify-between items-center border-t border-gray-200 pt-2 font-semibold text-gray-700">
+              <div className="flex justify-between items-center border-t border-neutral-200 pt-2 font-semibold text-neutral-700">
                 <span>Total Equity</span>
                 <span className="font-mono">₱{bs.totals.total_equity.toLocaleString()}</span>
               </div>
 
-              <div className="flex justify-between items-center border-t-2 border-gray-800 pt-2 font-bold text-gray-900">
+              <div className="flex justify-between items-center border-t-2 border-neutral-800 pt-2 font-bold text-neutral-900">
                 <span>Total Liabilities &amp; Equity</span>
                 <span className="font-mono">₱{bs.totals.total_liabilities_and_equity.toLocaleString()}</span>
               </div>

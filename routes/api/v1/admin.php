@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\ChartOfAccountsController;
 use App\Http\Controllers\Admin\HolidayCalendarController;
 use App\Http\Controllers\Admin\LoanTypeController;
@@ -573,5 +574,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Chart of Accounts
         Route::post('chart-of-accounts/{chartOfAccount}/archive', [ChartOfAccountsController::class, 'archive']);
         Route::apiResource('chart-of-accounts', ChartOfAccountsController::class);
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Backup Management
+    // Requires: system.manage_backups (admin only)
+    // ─────────────────────────────────────────────────────────────────────────
+    Route::prefix('backups')->group(function () {
+        Route::get('/',          [BackupController::class, 'index'])->name('admin.backups.index');
+        Route::get('/status',    [BackupController::class, 'status'])->name('admin.backups.status');
+        Route::get('/download',  [BackupController::class, 'download'])->name('admin.backups.download');
+        Route::post('/run',      [BackupController::class, 'run'])->name('admin.backups.run');
+        Route::post('/restore',  [BackupController::class, 'restore'])->name('admin.backups.restore');
     });
 });

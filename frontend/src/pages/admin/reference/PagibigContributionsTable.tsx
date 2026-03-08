@@ -143,45 +143,45 @@ export default function PagibigContributionsTable(): JSX.Element {
   const activeRate = activeData?.data
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading Pag-IBIG contribution table...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading Pag-IBIG contribution table...</div>
   }
 
   return (
     <div className="space-y-4">
       {/* Active Rate Info Card */}
       {activeRate && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-neutral-50 border border-neutral-200 rounded p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Eye className="h-5 w-5 text-green-600" />
-            <h3 className="font-semibold text-green-900">Currently Active Rate</h3>
-            <Badge variant="success">Active</Badge>
+            <Eye className="h-5 w-5 text-neutral-600" />
+            <h3 className="font-medium text-neutral-900">Currently Active Rate</h3>
+            <Badge variant="outline" className="border-neutral-300 text-neutral-700">Active</Badge>
           </div>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">Effective Date</p>
-              <p className="font-medium text-green-900">{activeRate.effective_date?.substring(0, 10)}</p>
+              <p className="text-neutral-500">Effective Date</p>
+              <p className="font-medium text-neutral-900">{activeRate.effective_date?.substring(0, 10)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Salary Threshold</p>
-              <p className="font-medium text-green-900">{formatCurrency(activeRate.salary_threshold)}</p>
+              <p className="text-neutral-500">Salary Threshold</p>
+              <p className="font-medium text-neutral-900">{formatCurrency(activeRate.salary_threshold)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Employee Cap</p>
-              <p className="font-medium text-green-900">{formatCurrency(activeRate.employee_cap_monthly)}/mo</p>
+              <p className="text-neutral-500">Employee Cap</p>
+              <p className="font-medium text-neutral-900">{formatCurrency(activeRate.employee_cap_monthly)}/mo</p>
             </div>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">Employee Rate ({'≤'} threshold)</p>
-              <p className="font-medium text-green-900">{formatPercent(activeRate.employee_rate_below)}</p>
+              <p className="text-neutral-500">Employee Rate ({'≤'} threshold)</p>
+              <p className="font-medium text-neutral-900">{formatPercent(activeRate.employee_rate_below)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Employee Rate ({'>'} threshold)</p>
-              <p className="font-medium text-green-900">{formatPercent(activeRate.employee_rate_above)}</p>
+              <p className="text-neutral-500">Employee Rate ({'>'} threshold)</p>
+              <p className="font-medium text-neutral-900">{formatPercent(activeRate.employee_rate_above)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Employer Rate</p>
-              <p className="font-medium text-green-900">{formatPercent(activeRate.employer_rate)}</p>
+              <p className="text-neutral-500">Employer Rate</p>
+              <p className="font-medium text-neutral-900">{formatPercent(activeRate.employer_rate)}</p>
             </div>
           </div>
         </div>
@@ -210,23 +210,23 @@ export default function PagibigContributionsTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead>Effective Date</TableHead>
-              <TableHead>Salary Threshold</TableHead>
-              <TableHead>Employee {'≤'} Threshold</TableHead>
-              <TableHead>Employee {'>'} Threshold</TableHead>
-              <TableHead>Employee Cap</TableHead>
-              <TableHead>Employer Rate</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
+            <TableRow className="bg-neutral-50">
+              <TableHead className="text-xs font-semibold text-neutral-600">Effective Date</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Salary Threshold</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Employee {'≤'} Threshold</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Employee {'>'} Threshold</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Employee Cap</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Employer Rate</TableHead>
+              <TableHead className="w-20 text-xs font-semibold text-neutral-600">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={7} className="text-center py-8 text-neutral-500">
                   No Pag-IBIG contribution rates found
                 </TableCell>
               </TableRow>
@@ -235,15 +235,15 @@ export default function PagibigContributionsTable(): JSX.Element {
                 <TableRow 
                   key={row.id}
                   className={cn(
-                    row.effective_date === activeEffectiveDate && 'bg-green-50/50'
+                    row.effective_date === activeEffectiveDate && 'bg-neutral-50'
                   )}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <Calendar className="h-4 w-4 text-neutral-400" />
                       {row.effective_date?.substring(0, 10)}
                       {row.effective_date === activeEffectiveDate && (
-                        <Badge variant="success" className="text-xs">Active</Badge>
+                        <Badge variant="outline" className="text-xs border-neutral-300 text-neutral-700">Active</Badge>
                       )}
                     </div>
                   </TableCell>
@@ -295,10 +295,10 @@ export default function PagibigContributionsTable(): JSX.Element {
               <AlertTriangle className="h-6 w-6" />
               <DialogTitle>Confirm Deletion</DialogTitle>
             </div>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-neutral-600">
               Are you sure you want to delete this Pag-IBIG contribution rate? This action cannot be undone.
               {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-neutral-50 rounded text-sm">
                   <p><strong>Effective Date:</strong> {showDeleteConfirm.effective_date?.substring(0, 10)}</p>
                   <p><strong>Salary Threshold:</strong> {formatCurrency(showDeleteConfirm.salary_threshold)}</p>
                 </div>
@@ -326,9 +326,9 @@ export default function PagibigContributionsTable(): JSX.Element {
       </Dialog>
 
       {/* Info */}
-      <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-800">
+      <div className="bg-neutral-50 rounded p-4 text-sm text-neutral-800">
         <p className="font-medium mb-1">How Pag-IBIG Contributions Work:</p>
-        <ul className="list-disc list-inside space-y-1 text-blue-700">
+        <ul className="list-disc list-inside space-y-1 text-neutral-700">
           <li>Employee contributes 1% if monthly basic ≤ threshold, 2% if above</li>
           <li>Employee contribution is capped at ₱100/month (₱50 semi-monthly)</li>
           <li>Employer always contributes 2%, no cap</li>
@@ -347,7 +347,7 @@ export default function PagibigContributionsTable(): JSX.Element {
           
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="effective_date" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="effective_date" className="text-sm font-medium text-neutral-700">
                 Effective Date <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -361,7 +361,7 @@ export default function PagibigContributionsTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="salary_threshold" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="salary_threshold" className="text-sm font-medium text-neutral-700">
                 Salary Threshold (₱) <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -375,14 +375,14 @@ export default function PagibigContributionsTable(): JSX.Element {
                 required
                 className="h-11"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-neutral-500">
                 Monthly basic salary threshold for different employee rates
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="employee_rate_below" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="employee_rate_below" className="text-sm font-medium text-neutral-700">
                   Employee Rate {'≤'} Threshold (%) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -400,7 +400,7 @@ export default function PagibigContributionsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="employee_rate_above" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="employee_rate_above" className="text-sm font-medium text-neutral-700">
                   Employee Rate {'>'} Threshold (%) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -420,7 +420,7 @@ export default function PagibigContributionsTable(): JSX.Element {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="employee_cap_monthly" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="employee_cap_monthly" className="text-sm font-medium text-neutral-700">
                   Employee Cap Monthly (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -437,7 +437,7 @@ export default function PagibigContributionsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="employer_rate" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="employer_rate" className="text-sm font-medium text-neutral-700">
                   Employer Rate (%) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -456,7 +456,7 @@ export default function PagibigContributionsTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="legal_basis" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="legal_basis" className="text-sm font-medium text-neutral-700">
                 Legal Basis
               </Label>
               <Input

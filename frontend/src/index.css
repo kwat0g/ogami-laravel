@@ -9,6 +9,14 @@
 
   html {
     @apply antialiased;
+    font-size: 16px;
+  }
+
+  /* Increase base sizing to make UI more readable at 100% zoom */
+  @media (min-width: 1280px) {
+    html {
+      font-size: 17px;
+    }
   }
 
   /* Use JetBrains Mono for all monetary / numeric cells */

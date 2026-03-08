@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useVatLedgerList, useCloseVatPeriod } from '@/hooks/useTax'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -9,18 +10,11 @@ import type { VatLedger } from '@/types/tax'
 // ---------------------------------------------------------------------------
 
 function VatCard({ label, amount, highlight }: { label: string; amount: number; highlight?: 'green' | 'red' | 'blue' }) {
-  const colours = {
-    green: 'border-green-200 bg-green-50 text-green-700',
-    red:   'border-red-200 bg-red-50 text-red-700',
-    blue:  'border-blue-200 bg-blue-50 text-blue-700',
-    default: 'border-gray-200 bg-gray-50 text-gray-700',
-  }
-  const cls = highlight ? colours[highlight] : colours.default
-
+  // Neutral styling regardless of highlight
   return (
-    <div className={`rounded-xl border p-4 ${cls}`}>
-      <p className="text-xs font-medium uppercase tracking-wide opacity-70">{label}</p>
-      <p className="text-2xl font-bold mt-1">₱{amount.toLocaleString()}</p>
+    <div className="rounded border border-neutral-200 bg-neutral-50 p-4">
+      <p className="text-xs font-medium opacity-70 text-neutral-600">{label}</p>
+      <p className="text-2xl font-bold mt-1 text-neutral-900">₱{amount.toLocaleString()}</p>
     </div>
   )
 }
@@ -44,12 +38,17 @@ function ClosePeriodButton({ ledger }: { ledger: VatLedger }) {
       confirmWord="CLOSE"
       confirmLabel="Close Period"
       onConfirm={async () => {
-        await closeMut.mutateAsync(
-          nextPeriodId ? { next_fiscal_period_id: parseInt(nextPeriodId) } : {}
-        )
+        try {
+          await closeMut.mutateAsync(
+            nextPeriodId ? { next_fiscal_period_id: parseInt(nextPeriodId) } : {}
+          )
+          toast.success('VAT period closed.')
+        } catch {
+          toast.error('Failed to close VAT period.')
+        }
       }}
     >
-      <button className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700">
+      <button className="px-3 py-1.5 rounded bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">
         Close Period
       </button>
     </ConfirmDestructiveDialog>
@@ -67,8 +66,8 @@ export default function VatLedgerPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">VAT Ledger</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h1 className="text-lg font-semibold text-neutral-900 mb-1">VAT Ledger</h1>
+        <p className="text-sm text-neutral-500">
           Per-period input / output / net VAT tracking (VAT-004)
         </p>
       </div>
@@ -76,27 +75,27 @@ export default function VatLedgerPage() {
       {isLoading ? (
         <SkeletonLoader rows={4} />
       ) : ledgers.length === 0 ? (
-        <p className="text-gray-400 text-sm">No VAT ledger entries found.</p>
+        <p className="text-neutral-400 text-sm">No VAT ledger entries found.</p>
       ) : (
         <div className="space-y-8">
           {ledgers.map((ledger) => (
-            <div key={ledger.id} className="rounded-2xl border p-5 space-y-4">
+            <div key={ledger.id} className="rounded border border-neutral-200 p-5 space-y-4">
               {/* Period header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-gray-900">Fiscal Period #{ledger.fiscal_period_id}</p>
+                  <p className="font-semibold text-neutral-900">Fiscal Period #{ledger.fiscal_period_id}</p>
                   {ledger.is_closed && (
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-neutral-400 mt-0.5">
                       Closed {ledger.closed_at ? new Date(ledger.closed_at).toLocaleDateString() : ''}
                       {ledger.closed_by ? ` by ${ledger.closed_by.name}` : ''}
                     </p>
                   )}
                 </div>
                 {ledger.is_closed ? (
-                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Closed</span>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">Closed</span>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-600">Open</span>
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">Open</span>
                     <ClosePeriodButton ledger={ledger} />
                   </div>
                 )}
@@ -105,28 +104,26 @@ export default function VatLedgerPage() {
               {/* VAT cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <VatCard label="Input VAT" amount={ledger.input_vat} />
-                <VatCard label="Output VAT" amount={ledger.output_vat} highlight="blue" />
+                <VatCard label="Output VAT" amount={ledger.output_vat} />
                 <VatCard
                   label="Net VAT"
                   amount={ledger.net_vat}
-                  highlight={ledger.net_vat >= 0 ? 'green' : 'red'}
                 />
                 <VatCard
                   label="VAT Payable"
                   amount={ledger.vat_payable}
-                  highlight={ledger.vat_payable > 0 ? 'red' : 'green'}
                 />
               </div>
 
               {/* Carry-forward indicator */}
               {ledger.carry_forward_from_prior > 0 && (
-                <div className="text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+                <div className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded px-3 py-2">
                   Carry-forward from prior period: ₱{ledger.carry_forward_from_prior.toLocaleString()}
                   (reduces this period's VAT payable)
                 </div>
               )}
               {ledger.vat_payable < 0 && !ledger.is_closed && (
-                <div className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+                <div className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded px-3 py-2">
                   Negative VAT payable: ₱{Math.abs(ledger.vat_payable).toLocaleString()} will be carried forward
                   to the next period upon closing.
                 </div>

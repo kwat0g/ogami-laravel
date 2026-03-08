@@ -15,92 +15,32 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
-// Modern stat card with subtle shadow and hover effect
+// Simple stat card - no decorative styling
 function StatCard({
   label,
   value,
   sub,
   icon: Icon,
-  color = 'blue',
   href,
 }: {
   label: string
   value: React.ReactNode
   sub?: string
   icon: React.ComponentType<{ className?: string }>
-  color?: 'blue' | 'green' | 'amber' | 'purple' | 'red' | 'gray' | 'indigo'
   href?: string
 }) {
-  const colorMap = {
-    blue: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-100',
-      iconBg: 'bg-blue-500',
-      text: 'text-blue-700',
-      subText: 'text-blue-600',
-    },
-    green: {
-      bg: 'bg-green-50',
-      border: 'border-green-100',
-      iconBg: 'bg-green-500',
-      text: 'text-green-700',
-      subText: 'text-green-600',
-    },
-    amber: {
-      bg: 'bg-amber-50',
-      border: 'border-amber-100',
-      iconBg: 'bg-amber-500',
-      text: 'text-amber-700',
-      subText: 'text-amber-600',
-    },
-    purple: {
-      bg: 'bg-purple-50',
-      border: 'border-purple-100',
-      iconBg: 'bg-purple-500',
-      text: 'text-purple-700',
-      subText: 'text-purple-600',
-    },
-    red: {
-      bg: 'bg-red-50',
-      border: 'border-red-100',
-      iconBg: 'bg-red-500',
-      text: 'text-red-700',
-      subText: 'text-red-600',
-    },
-    gray: {
-      bg: 'bg-gray-50',
-      border: 'border-gray-200',
-      iconBg: 'bg-gray-500',
-      text: 'text-gray-700',
-      subText: 'text-gray-600',
-    },
-    indigo: {
-      bg: 'bg-indigo-50',
-      border: 'border-indigo-100',
-      iconBg: 'bg-indigo-500',
-      text: 'text-indigo-700',
-      subText: 'text-indigo-600',
-    },
-  }
-
-  const colors = colorMap[color]
-
   const content = (
-    <div className={`${colors.bg} border ${colors.border} rounded-xl p-5 hover:shadow-md transition-all duration-200`}>
+    <div className="bg-white border border-neutral-200 rounded p-5">
       <div className="flex items-start justify-between">
-        <div className={`h-12 w-12 rounded-xl ${colors.iconBg} flex items-center justify-center shadow-sm`}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
+        <Icon className="h-5 w-5 text-neutral-500" />
         {href && (
-          <div className="h-8 w-8 rounded-lg bg-white/60 flex items-center justify-center">
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-          </div>
+          <ChevronRight className="h-4 w-4 text-neutral-400" />
         )}
       </div>
       <div className="mt-4">
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
-        <p className={`text-sm font-medium ${colors.text} mt-1`}>{label}</p>
-        {sub && <p className={`text-xs mt-1 ${colors.subText}`}>{sub}</p>}
+        <p className="text-2xl font-semibold text-neutral-900">{value}</p>
+        <p className="text-sm text-neutral-600 mt-1">{label}</p>
+        {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
       </div>
     </div>
   )
@@ -111,74 +51,28 @@ function StatCard({
   return content
 }
 
-// Quick link card
-function QuickLink({
-  to,
-  icon: Icon,
-  label,
-  description,
-  color = 'blue'
-}: {
-  to: string
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  description: string
-  color?: 'blue' | 'green' | 'amber' | 'purple' | 'indigo'
-}) {
-  const colorMap = {
-    blue: { bg: 'bg-blue-100', text: 'text-blue-600', hoverBg: 'group-hover:bg-blue-500' },
-    green: { bg: 'bg-green-100', text: 'text-green-600', hoverBg: 'group-hover:bg-green-500' },
-    amber: { bg: 'bg-amber-100', text: 'text-amber-600', hoverBg: 'group-hover:bg-amber-500' },
-    purple: { bg: 'bg-purple-100', text: 'text-purple-600', hoverBg: 'group-hover:bg-purple-500' },
-    indigo: { bg: 'bg-indigo-100', text: 'text-indigo-600', hoverBg: 'group-hover:bg-indigo-500' },
-  }
-  
-  const colors = colorMap[color]
-
-  return (
-    <Link
-      to={to}
-      className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
-    >
-      <div className={`h-10 w-10 rounded-lg ${colors.bg} ${colors.text} ${colors.hoverBg} flex items-center justify-center group-hover:text-white transition-colors`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">{label}</p>
-        <p className="text-xs text-gray-500 truncate">{description}</p>
-      </div>
-      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500" />
-    </Link>
-  )
-}
-
-// Section card with header
+// Section card with header - minimal styling
 function SectionCard({ 
   title, 
-  icon: Icon, 
   children,
   action
 }: { 
   title: string
-  icon?: React.ComponentType<{ className?: string }>
   children: React.ReactNode
   action?: { label: string; href: string }
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-        <div className="flex items-center gap-2">
-          {Icon && <Icon className="h-5 w-5 text-gray-500" />}
-          <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
-        </div>
+    <div className="bg-white border border-neutral-200 rounded">
+      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+        <h2 className="text-sm font-medium text-neutral-900">{title}</h2>
         {action && (
-          <Link to={action.href} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+          <Link to={action.href} className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1">
             {action.label}
             <ChevronRight className="h-3 w-3" />
           </Link>
         )}
       </div>
-      <div className="p-6">
+      <div className="p-4">
         {children}
       </div>
     </div>
@@ -198,17 +92,17 @@ function RecentRequestsTable({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
-        <Link to={href} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+    <div className="bg-white border border-neutral-200 rounded">
+      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+        <h3 className="text-sm font-medium text-neutral-900">{title}</h3>
+        <Link to={href} className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1">
           View all
           <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-neutral-100">
         {children || (
-          <p className="px-6 py-8 text-sm text-gray-400 text-center">{emptyMessage}</p>
+          <p className="px-4 py-6 text-sm text-neutral-400 text-center">{emptyMessage}</p>
         )}
       </div>
     </div>
@@ -226,27 +120,27 @@ function RequestRow({
   status: string
   detail?: string
 }) {
-  const statusColors: Record<string, { bg: string; text: string; border: string }> = {
-    pending: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-    approved: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-    rejected: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-    cancelled: { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
-    supervisor_approved: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-    submitted: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-    head_approved: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-    manager_checked: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
-    ga_processed: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  const statusColors: Record<string, string> = {
+    pending: 'text-amber-600',
+    approved: 'text-green-600',
+    rejected: 'text-red-600',
+    cancelled: 'text-neutral-500',
+    supervisor_approved: 'text-blue-600',
+    submitted: 'text-amber-600',
+    head_approved: 'text-blue-600',
+    manager_checked: 'text-indigo-600',
+    ga_processed: 'text-purple-600',
   }
   
-  const colors = statusColors[status] || statusColors.pending
+  const colorClass = statusColors[status] || statusColors.pending
   
   return (
-    <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+    <div className="px-4 py-3 flex items-center justify-between hover:bg-neutral-50">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">{type}</p>
-        <p className="text-xs text-gray-500">{date} {detail && `• ${detail}`}</p>
+        <p className="text-sm font-medium text-neutral-900">{type}</p>
+        <p className="text-xs text-neutral-500">{date} {detail && `• ${detail}`}</p>
       </div>
-      <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${colors.bg} ${colors.text} ${colors.border} capitalize`}>
+      <span className={`text-xs font-medium ${colorClass} capitalize`}>
         {status.replace('_', ' ')}
       </span>
     </div>
@@ -266,19 +160,9 @@ export default function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome, {user?.name?.split(' ')[0] ?? 'there'}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Your personal dashboard for {currentYear}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-500">{new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">
+        Welcome, {user?.name?.split(' ')[0] ?? 'there'}
+      </h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -287,7 +171,6 @@ export default function EmployeeDashboard() {
           value={`${stats?.leave.balance_days ?? 0} days`}
           sub={`${stats?.leave.pending_requests ?? 0} pending`}
           icon={Calendar}
-          color="blue"
           href="/me/leaves"
         />
         <StatCard
@@ -295,7 +178,6 @@ export default function EmployeeDashboard() {
           value={stats?.loans.active_loans ?? 0}
           sub={`${stats?.loans.pending_approvals ?? 0} pending`}
           icon={PiggyBank}
-          color="amber"
           href="/me/loans"
         />
         <StatCard
@@ -303,7 +185,6 @@ export default function EmployeeDashboard() {
           value={stats?.attendance.this_month.ot_hours ?? 0}
           sub="This month"
           icon={Timer}
-          color="purple"
           href="/me/overtime"
         />
         <StatCard
@@ -314,41 +195,32 @@ export default function EmployeeDashboard() {
           })}`}
           sub={`${currentYear} to date`}
           icon={Wallet}
-          color="green"
           href="/self-service/payslips"
         />
       </div>
 
       {/* Attendance Summary */}
-      <SectionCard title="Attendance This Month" icon={Clock} action={{ label: 'View details', href: '/me/attendance' }}>
+      <SectionCard title="Attendance This Month" action={{ label: 'View details', href: '/me/attendance' }}>
         <div className="grid grid-cols-4 gap-4">
-          <div className="text-center p-4 rounded-xl bg-green-50 border border-green-100">
-            <div className="h-10 w-10 rounded-lg bg-green-500 flex items-center justify-center mx-auto mb-2">
-              <CheckCircle2 className="h-5 w-5 text-white" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.attendance.this_month.present ?? 0}</p>
-            <p className="text-xs text-gray-600 font-medium">Present</p>
+          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
+            <CheckCircle2 className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.present ?? 0}</p>
+            <p className="text-xs text-neutral-600">Present</p>
           </div>
-          <div className="text-center p-4 rounded-xl bg-red-50 border border-red-100">
-            <div className="h-10 w-10 rounded-lg bg-red-500 flex items-center justify-center mx-auto mb-2">
-              <AlertCircle className="h-5 w-5 text-white" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.attendance.this_month.absent ?? 0}</p>
-            <p className="text-xs text-gray-600 font-medium">Absent</p>
+          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
+            <AlertCircle className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.absent ?? 0}</p>
+            <p className="text-xs text-neutral-600">Absent</p>
           </div>
-          <div className="text-center p-4 rounded-xl bg-amber-50 border border-amber-100">
-            <div className="h-10 w-10 rounded-lg bg-amber-500 flex items-center justify-center mx-auto mb-2">
-              <Clock className="h-5 w-5 text-white" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.attendance.this_month.late ?? 0}</p>
-            <p className="text-xs text-gray-600 font-medium">Late</p>
+          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
+            <Clock className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.late ?? 0}</p>
+            <p className="text-xs text-neutral-600">Late</p>
           </div>
-          <div className="text-center p-4 rounded-xl bg-blue-50 border border-blue-100">
-            <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center mx-auto mb-2">
-              <Timer className="h-5 w-5 text-white" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.attendance.this_month.ot_hours ?? 0}</p>
-            <p className="text-xs text-gray-600 font-medium">OT Hours</p>
+          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
+            <Timer className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.ot_hours ?? 0}</p>
+            <p className="text-xs text-neutral-600">OT Hours</p>
           </div>
         </div>
       </SectionCard>
@@ -390,14 +262,12 @@ export default function EmployeeDashboard() {
 
       {/* Loan Summary */}
       {(stats?.loans.active_loans ?? 0) > 0 && (
-        <SectionCard title="Active Loans" icon={PiggyBank} action={{ label: 'View all', href: '/me/loans' }}>
-          <div className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100">
-            <div className="h-14 w-14 rounded-xl bg-amber-500 flex items-center justify-center shadow-sm">
-              <PiggyBank className="h-7 w-7 text-white" />
-            </div>
+        <SectionCard title="Active Loans" action={{ label: 'View all', href: '/me/loans' }}>
+          <div className="flex items-center gap-4 p-4 bg-neutral-50 border border-neutral-200 rounded">
+            <PiggyBank className="h-5 w-5 text-neutral-500" />
             <div className="flex-1">
-              <p className="text-sm text-gray-600">Total Outstanding Balance</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xs text-neutral-600">Total Outstanding Balance</p>
+              <p className="text-xl font-semibold text-neutral-900">
                 ₱{((stats?.loans.total_outstanding ?? 0) / 100).toLocaleString('en-PH', { 
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
@@ -405,8 +275,8 @@ export default function EmployeeDashboard() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-600">Active Loans</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.loans.active_loans}</p>
+              <p className="text-xs text-neutral-600">Active Loans</p>
+              <p className="text-xl font-semibold text-neutral-900">{stats?.loans.active_loans}</p>
             </div>
           </div>
         </SectionCard>
@@ -414,50 +284,68 @@ export default function EmployeeDashboard() {
 
       {/* Quick Links */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Quick Access</h2>
+        <h2 className="text-sm font-medium text-neutral-700 mb-3">Quick Access</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          <QuickLink 
+          <Link 
             to="/self-service/payslips" 
-            icon={FileText} 
-            label="My Payslips" 
-            description="View and download payslips"
-            color="blue"
-          />
-          <QuickLink 
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+          >
+            <FileText className="h-4 w-4 text-neutral-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-neutral-700">My Payslips</p>
+              <p className="text-xs text-neutral-500 truncate">View and download payslips</p>
+            </div>
+          </Link>
+          <Link 
             to="/me/leaves" 
-            icon={Calendar} 
-            label="My Leaves" 
-            description="Apply for leave or check balance"
-            color="green"
-          />
-          <QuickLink 
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+          >
+            <Calendar className="h-4 w-4 text-neutral-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-neutral-700">My Leaves</p>
+              <p className="text-xs text-neutral-500 truncate">Apply for leave or check balance</p>
+            </div>
+          </Link>
+          <Link 
             to="/me/loans" 
-            icon={Wallet} 
-            label="My Loans" 
-            description="Track repayments and apply"
-            color="amber"
-          />
-          <QuickLink 
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+          >
+            <Wallet className="h-4 w-4 text-neutral-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-neutral-700">My Loans</p>
+              <p className="text-xs text-neutral-500 truncate">Track repayments and apply</p>
+            </div>
+          </Link>
+          <Link 
             to="/me/overtime" 
-            icon={Timer} 
-            label="My Overtime" 
-            description="View OT history and requests"
-            color="purple"
-          />
-          <QuickLink 
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+          >
+            <Timer className="h-4 w-4 text-neutral-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-neutral-700">My Overtime</p>
+              <p className="text-xs text-neutral-500 truncate">View OT history and requests</p>
+            </div>
+          </Link>
+          <Link 
             to="/me/attendance" 
-            icon={Clock} 
-            label="My Attendance" 
-            description="View attendance records"
-            color="indigo"
-          />
-          <QuickLink 
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+          >
+            <Clock className="h-4 w-4 text-neutral-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-neutral-700">My Attendance</p>
+              <p className="text-xs text-neutral-500 truncate">View attendance records</p>
+            </div>
+          </Link>
+          <Link 
             to="/me/profile" 
-            icon={UserCircle} 
-            label="My Profile" 
-            description="Update personal information"
-            color="blue"
-          />
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+          >
+            <UserCircle className="h-4 w-4 text-neutral-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-neutral-700">My Profile</p>
+              <p className="text-xs text-neutral-500 truncate">Update personal information</p>
+            </div>
+          </Link>
         </div>
       </div>
     </div>

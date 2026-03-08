@@ -78,22 +78,14 @@ export default function CreateProductionOrderPage(): React.ReactElement {
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
-          <Factory className="w-5 h-5 text-violet-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Production Order</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Creates a work order in Draft status</p>
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Production Order</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
         {/* Product Item */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Product Item *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Product Item *</label>
           <select
-            className={`w-full border rounded-lg px-3 py-2 text-sm bg-white ${fe('product_item_id') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm bg-white ${fe('product_item_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.product_item_id || ''}
             onChange={e => {
               const id = Number(e.target.value)
@@ -113,9 +105,9 @@ export default function CreateProductionOrderPage(): React.ReactElement {
 
         {/* BOM */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bill of Materials *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Bill of Materials *</label>
           <select
-            className={`w-full border rounded-lg px-3 py-2 text-sm bg-white ${fe('bom_id') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm bg-white ${fe('bom_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.bom_id || ''}
             onChange={e => set('bom_id', Number(e.target.value))}
             onBlur={() => touch('bom_id')}
@@ -135,11 +127,11 @@ export default function CreateProductionOrderPage(): React.ReactElement {
 
         {/* Delivery Schedule (optional) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Delivery Schedule <span className="text-gray-400 font-normal">(optional)</span>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
+            Delivery Schedule <span className="text-neutral-400 font-normal">(optional)</span>
           </label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
             value={form.delivery_schedule_id}
             onChange={e => set('delivery_schedule_id', e.target.value ? Number(e.target.value) : '')}
           >
@@ -154,12 +146,12 @@ export default function CreateProductionOrderPage(): React.ReactElement {
 
         {/* Qty */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Qty Required *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Qty Required *</label>
           <input
             type="number"
             min="0.001"
             step="0.001"
-            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('qty_required') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm ${fe('qty_required') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.qty_required}
             onChange={e => set('qty_required', e.target.value)}
             onBlur={() => touch('qty_required')}
@@ -171,10 +163,10 @@ export default function CreateProductionOrderPage(): React.ReactElement {
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Target Start Date *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Target Start Date *</label>
             <input
               type="date"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('target_start_date') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm ${fe('target_start_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.target_start_date}
               onChange={e => set('target_start_date', e.target.value)}
               onBlur={() => touch('target_start_date')}
@@ -183,10 +175,10 @@ export default function CreateProductionOrderPage(): React.ReactElement {
             {fe('target_start_date') && <p className="mt-1 text-xs text-red-600">{fe('target_start_date')}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Target End Date *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Target End Date *</label>
             <input
               type="date"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('target_end_date') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm ${fe('target_end_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.target_end_date}
               min={form.target_start_date || undefined}
               onChange={e => set('target_end_date', e.target.value)}
@@ -199,10 +191,10 @@ export default function CreateProductionOrderPage(): React.ReactElement {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
           <textarea
             rows={2}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm resize-none"
             value={form.notes}
             onChange={e => set('notes', e.target.value)}
           />
@@ -212,14 +204,14 @@ export default function CreateProductionOrderPage(): React.ReactElement {
           <button
             type="button"
             onClick={() => navigate('/production/orders')}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {createMut.isPending ? 'Creating…' : 'Create Work Order'}
           </button>

@@ -22,7 +22,7 @@ function LoanAccordion({ ulid }: { ulid: string }) {
 
   return (
     <div>
-      <button onClick={() => setOpen((o) => !o)} className="text-xs text-blue-600 hover:underline mt-2">
+      <button onClick={() => setOpen((o) => !o)} className="text-xs text-neutral-600 hover:underline mt-2">
         {open ? '▲ Hide schedule' : '▼ View schedule'}
       </button>
       {open && (
@@ -30,7 +30,7 @@ function LoanAccordion({ ulid }: { ulid: string }) {
           {isLoading ? <SkeletonLoader rows={3} /> : (
             <table className="min-w-full text-xs">
               <thead>
-                <tr className="text-gray-400">
+                <tr className="text-neutral-400">
                   {['#', 'Due', 'Amortization', 'Balance', 'Paid?'].map((h) => (
                     <th key={h} className="pr-4 pb-1 text-left font-medium">{h}</th>
                   ))}
@@ -38,12 +38,12 @@ function LoanAccordion({ ulid }: { ulid: string }) {
               </thead>
               <tbody>
                 {(schedule ?? []).map((entry) => (
-                  <tr key={entry.installment_no} className={entry.is_paid ? 'text-green-700' : 'text-gray-700'}>
+                  <tr key={entry.installment_no} className={entry.is_paid ? 'text-neutral-700' : 'text-neutral-700'}>
                     <td className="pr-4 py-0.5">{entry.installment_no}</td>
                     <td className="pr-4 py-0.5">{entry.due_date}</td>
                     <td className="pr-4 py-0.5"><CurrencyAmount centavos={entry.amortization} /></td>
                     <td className="pr-4 py-0.5"><CurrencyAmount centavos={entry.balance} /></td>
-                    <td className="py-0.5">{entry.is_paid ? <span className="text-green-600">✓</span> : '—'}</td>
+                    <td className="py-0.5">{entry.is_paid ? <span className="text-neutral-700">✓</span> : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -73,7 +73,7 @@ export default function MyLoansPage() {
   const cancelLoan = useCancelLoan()
 
   if (!employeeId) {
-    return <div className="text-gray-500 text-sm mt-4">No employee profile linked to your account.</div>
+    return <div className="text-neutral-500 text-sm mt-4">No employee profile linked to your account.</div>
   }
 
   const rows = data?.data ?? []
@@ -84,16 +84,13 @@ export default function MyLoansPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Loans</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Your active and past loan applications</p>
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-semibold text-neutral-900">My Loans</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           disabled={!!activeLoan}
           title={activeLoan ? `You already have an active ${activeLoan.loan_type?.name ?? 'loan'}` : undefined}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
+          className="bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Apply for Loan
@@ -106,10 +103,10 @@ export default function MyLoansPage() {
           <button
             key={opt.value}
             onClick={() => { setStatusFilter(opt.value); setPage(1) }}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors border ${
               statusFilter === opt.value
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                ? 'bg-neutral-900 border-neutral-900 text-white'
+                : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
             }`}
           >
             {opt.label}
@@ -120,8 +117,8 @@ export default function MyLoansPage() {
       {isLoading ? <SkeletonLoader rows={6} /> : (
         <>
           {activeLoan && (
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-800">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-500" />
+            <div className="flex items-start gap-3 bg-neutral-50 border border-neutral-200 rounded px-4 py-3 mb-4 text-sm text-neutral-800">
+              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-neutral-500" />
               <span>
                 You have an active <span className="font-semibold">{activeLoan.loan_type?.name ?? 'loan'}</span> ({activeLoan.reference_no}).
                 You can only apply for a new loan once it is fully settled.
@@ -129,27 +126,27 @@ export default function MyLoansPage() {
             </div>
           )}
           {rows.length === 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400">
+            <div className="bg-white border border-neutral-200 rounded p-8 text-center text-neutral-400">
               No loan applications yet. Click "+ Apply for Loan" to get started.
             </div>
           )}
 
           <div className="space-y-4">
             {rows.map((loan) => (
-              <div key={loan.id} className="bg-white border border-gray-200 rounded-xl p-5">
+              <div key={loan.id} className="bg-white border border-neutral-200 rounded p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="font-semibold text-gray-900">{loan.loan_type?.name ?? '—'}</span>
+                      <span className="font-semibold text-neutral-900">{loan.loan_type?.name ?? '—'}</span>
                       <StatusBadge label={loan.status} />
                     </div>
-                    <p className="text-xs text-gray-500">Loan #{loan.id} · {loan.loan_date}</p>
+                    <p className="text-xs text-neutral-500">Loan #{loan.id} · {loan.loan_date}</p>
                   </div>
                   <div className="flex items-start gap-3">
                     {['pending', 'supervisor_approved'].includes(loan.status) && (
                       confirmCancelUlid === loan.ulid ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">Cancel this loan?</span>
+                          <span className="text-xs text-neutral-500">Cancel this loan?</span>
                           <button
                             onClick={() => {
                               cancelLoan.mutate(loan.ulid, {
@@ -157,14 +154,14 @@ export default function MyLoansPage() {
                               })
                             }}
                             disabled={cancelLoan.isPending}
-                            className="text-xs px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md disabled:opacity-50"
+                            className="text-xs px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
                           >
                             {cancelLoan.isPending ? 'Cancelling…' : 'Yes, cancel'}
                           </button>
                           <button
                             onClick={() => setConfirmCancelUlid(null)}
                             disabled={cancelLoan.isPending}
-                            className="text-xs px-2.5 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                            className="text-xs px-2.5 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50"
                           >
                             Keep
                           </button>
@@ -172,48 +169,48 @@ export default function MyLoansPage() {
                       ) : (
                         <button
                           onClick={() => setConfirmCancelUlid(loan.ulid)}
-                          className="text-xs px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors"
+                          className="text-xs px-3 py-1 border border-neutral-300 text-neutral-600 hover:bg-neutral-50 transition-colors rounded"
                         >
                           Cancel
                         </button>
                       )
                     )}
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">Outstanding</p>
-                      <p className="text-lg font-bold text-blue-700"><CurrencyAmount centavos={loan.outstanding_balance_centavos} /></p>
+                      <p className="text-sm text-neutral-500">Outstanding</p>
+                      <p className="text-lg font-bold text-neutral-700"><CurrencyAmount centavos={loan.outstanding_balance_centavos} /></p>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-4 gap-4 mt-4 text-sm">
                   <div>
-                    <p className="text-xs text-gray-400">Principal</p>
-                    <p className="font-medium text-gray-700"><CurrencyAmount centavos={loan.principal_centavos} /></p>
+                    <p className="text-xs text-neutral-400">Principal</p>
+                    <p className="font-medium text-neutral-700"><CurrencyAmount centavos={loan.principal_centavos} /></p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Monthly Amort.</p>
-                    <p className="font-medium text-gray-700"><CurrencyAmount centavos={loan.monthly_amortization_centavos} /></p>
+                    <p className="text-xs text-neutral-400">Monthly Amort.</p>
+                    <p className="font-medium text-neutral-700"><CurrencyAmount centavos={loan.monthly_amortization_centavos} /></p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Term</p>
-                    <p className="font-medium text-gray-700">{loan.term_months} months</p>
+                    <p className="text-xs text-neutral-400">Term</p>
+                    <p className="font-medium text-neutral-700">{loan.term_months} months</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Interest Rate</p>
-                    <p className="font-medium text-gray-700">{(loan.interest_rate_annual * 100).toFixed(0)}% <span className="text-xs text-gray-400 font-normal">p.a.</span></p>
+                    <p className="text-xs text-neutral-400">Interest Rate</p>
+                    <p className="font-medium text-neutral-700">{(loan.interest_rate_annual * 100).toFixed(0)}% <span className="text-xs text-neutral-400 font-normal">p.a.</span></p>
                   </div>
                 </div>
 
                 {/* Progress bar for repayment */}
                 {loan.status === 'active' && loan.principal_centavos > 0 && (
                   <div className="mt-3">
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <div className="flex justify-between text-xs text-neutral-400 mb-1">
                       <span>Repaid</span>
                       <span>{Math.round(((loan.principal_centavos - loan.outstanding_balance_centavos) / loan.principal_centavos) * 100)}%</span>
                     </div>
-                    <div className="bg-gray-100 rounded-full h-2">
+                    <div className="bg-neutral-100 rounded h-2">
                       <div
-                        className="bg-blue-500 h-2 rounded-full"
+                        className="bg-neutral-600 h-2 rounded"
                         style={{ width: `${Math.min(100, ((loan.principal_centavos - loan.outstanding_balance_centavos) / loan.principal_centavos) * 100)}%` }}
                       />
                     </div>
@@ -230,13 +227,13 @@ export default function MyLoansPage() {
 
           {/* Pagination */}
           {(data?.meta?.last_page ?? 1) > 1 && (
-            <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+            <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data?.meta?.current_page} of {data?.meta?.last_page}</span>
               <div className="flex gap-2">
                 <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Prev</button>
+                  className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
                 <button disabled={page >= (data?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Next</button>
+                  className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
               </div>
             </div>
           )}

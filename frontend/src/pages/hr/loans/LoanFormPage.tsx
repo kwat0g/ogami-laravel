@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'\nimport { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useLoanTypes, useCreateLoan } from '@/hooks/useLoans'
@@ -29,20 +29,24 @@ export default function LoanFormPage() {
 
   const onSubmit = (values: LoanApplicationFormValues) => {
     create.mutate(values, {
-      onSuccess: (data) => navigate(`/hr/loans/${data.ulid}`),
+      onSuccess: (data) => {
+        toast.success('Loan application submitted.')
+        navigate(`/hr/loans/${data.ulid}`)
+      },
+      onError: () => toast.error('Failed to submit loan application.'),
     })
   }
 
   return (
     <div className="max-w-xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">New Loan Application</h1>
-        <button onClick={() => navigate('/hr/loans')} className="text-sm text-gray-500 hover:text-gray-700">← Back</button>
+        <h1 className="text-lg font-semibold text-neutral-900">New Loan Application</h1>
+        <button onClick={() => navigate('/hr/loans')} className="text-sm text-neutral-500 hover:text-neutral-700">← Back</button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white border border-neutral-200 rounded-lg p-6">
         {create.isError && (
-          <div className="text-red-600 text-sm mb-4 bg-red-50 rounded-lg px-3 py-2">
+          <div className="text-red-600 text-sm mb-4 bg-red-50 rounded px-3 py-2">
             {(create.error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to create loan.'}
           </div>
         )}
@@ -51,7 +55,7 @@ export default function LoanFormPage() {
 
           {/* Employee */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Employee</label>
             <Controller
               name="employee_id"
               control={control}
@@ -59,7 +63,7 @@ export default function LoanFormPage() {
                 <select
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                 >
                   <option value="">Select employee…</option>
                   {employees.map((emp) => (
@@ -73,7 +77,7 @@ export default function LoanFormPage() {
 
           {/* Loan Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Loan Type</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Loan Type</label>
             <Controller
               name="loan_type_id"
               control={control}
@@ -81,7 +85,7 @@ export default function LoanFormPage() {
                 <select
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                 >
                   <option value="">Select type…</option>
                   {(loanTypes ?? []).map((lt) => (
@@ -96,24 +100,24 @@ export default function LoanFormPage() {
           {/* Principal + Term */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Principal (PHP)</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Principal (PHP)</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 {...register('principal')}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                 placeholder="0.00"
               />
               {errors.principal && <p className="mt-1 text-xs text-red-600">{errors.principal.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Term (months)</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Term (months)</label>
               <input
                 type="number"
                 min="1"
                 {...register('term_months')}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                 placeholder="12"
               />
               {errors.term_months && <p className="mt-1 text-xs text-red-600">{errors.term_months.message}</p>}
@@ -122,33 +126,33 @@ export default function LoanFormPage() {
 
           {/* Loan Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Loan Date</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Loan Date</label>
             <input
               type="date"
               {...register('loan_date')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
             />
             {errors.loan_date && <p className="mt-1 text-xs text-red-600">{errors.loan_date.message}</p>}
           </div>
 
           {/* Purpose */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Purpose</label>
             <textarea
               {...register('purpose')}
               rows={2}
               placeholder="Brief description of purpose…"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
             />
             {errors.purpose && <p className="mt-1 text-xs text-red-600">{errors.purpose.message}</p>}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={() => navigate('/hr/loans')} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+            <button type="button" onClick={() => navigate('/hr/loans')} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
             <button
               type="submit"
               disabled={create.isPending || isSubmitting}
-              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
             >
               {create.isPending ? 'Submitting…' : 'Submit Application'}
             </button>

@@ -5,6 +5,8 @@ import {
   useUpdateBankAccount,
   useDeleteBankAccount,
 } from '@/hooks/useBanking'
+import { toast } from 'sonner'
+import { useChartOfAccounts } from '@/hooks/useAccounting'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { BankAccount, CreateBankAccountPayload } from '@/types/banking'
@@ -67,37 +69,41 @@ function BankAccountFormModal({
       : EMPTY
   )
 
-  const { mutate: create, isPending: creating } = useCreateBankAccount()
   const { mutate: update, isPending: updating } = useUpdateBankAccount(initial?.id ?? 0)
+  const { mutate: create, isPending: creating } = useCreateBankAccount()
+  const { data: accounts } = useChartOfAccounts()
   const busy = creating || updating
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (initial) {
-      update(form, { onSuccess: onClose })
+      update(form, {
+        onSuccess: () => { toast.success('Bank account updated.'); onClose() },
+        onError: () => toast.error('Failed to update bank account.'),
+      })
     } else {
-      create(form, { onSuccess: onClose })
+      create(form, {
+        onSuccess: () => { toast.success('Bank account created.'); onClose() },
+        onError: () => toast.error('Failed to create bank account.'),
+      })
     }
   }
 
   function field(label: string, children: React.ReactNode) {
     return (
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-600">{label}</label>
+        <label className="text-xs font-medium text-neutral-600">{label}</label>
         {children}
       </div>
     )
   }
 
-  const inputCls = 'border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none'
+  const inputCls = 'border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md space-y-4"
-      >
-        <h2 className="text-lg font-bold text-gray-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <form onSubmit={handleSubmit} className="bg-white rounded border border-neutral-200 p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto space-y-4">
+        <h2 className="text-lg font-semibold text-neutral-900">
           {initial ? 'Edit Bank Account' : 'New Bank Account'}
         </h2>
 
@@ -120,9 +126,18 @@ function BankAccountFormModal({
             <option value="savings">Savings</option>
           </select>
         ))}
-        {field('GL Account ID', (
-          <input type="number" min={1} className={inputCls} value={form.account_id || ''}
-            onChange={e => setForm(f => ({ ...f, account_id: parseInt(e.target.value) || 0 }))} required />
+        {field('GL Account', (
+          <select
+            className={inputCls}
+            value={form.account_id || ''}
+            onChange={e => setForm(f => ({ ...f, account_id: parseInt(e.target.value) || 0 }))}
+            required
+          >
+            <option value="">— Select GL Account —</option>
+            {accounts?.map(a => (
+              <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+            ))}
+          </select>
         ))}
         {field('Opening Balance', (
           <input type="number" step="0.01" className={inputCls} value={form.opening_balance}
@@ -133,13 +148,13 @@ function BankAccountFormModal({
             onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} />
         ))}
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
           <button type="submit" disabled={busy}
-            className="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+            className="flex-1 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50">
             {busy ? 'Saving…' : 'Save'}
           </button>
           <button type="button" onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+            className="flex-1 py-2 rounded border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-50">
             Cancel
           </button>
         </div>
@@ -162,13 +177,13 @@ export default function BankAccountsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bank Accounts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage bank accounts linked to GL (GL-006)</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Bank Accounts</h1>
+          <p className="text-sm text-neutral-500">Manage bank accounts linked to GL (GL-006)</p>
         </div>
         <button
           type="button"
           onClick={() => { setEditing(undefined); setShowForm(true) }}
-          className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+          className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
         >
           + New Account
         </button>
@@ -176,9 +191,9 @@ export default function BankAccountsPage() {
 
       {isLoading && <SkeletonLoader rows={5} />}
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-auto">
+      <div className="bg-white border border-neutral-200 rounded overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-neutral-50 text-xs font-semibold text-neutral-500">
             <tr>
               <th className="px-3 py-2.5 text-left">Name</th>
               <th className="px-3 py-2.5 text-left">Account #</th>
@@ -192,23 +207,23 @@ export default function BankAccountsPage() {
           <tbody>
             {accounts.length === 0 && !isLoading && (
               <tr>
-                <td colSpan={7} className="text-center px-3 py-8 text-gray-400 text-sm">
+                <td colSpan={7} className="text-center px-3 py-8 text-neutral-400 text-sm">
                   No bank accounts yet.
                 </td>
               </tr>
             )}
             {(accounts as BankAccount[]).map((acct: BankAccount) => (
-              <tr key={acct.id} className="border-b border-gray-100 even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
-                <td className="px-3 py-2 font-medium text-gray-900">{acct.name}</td>
-                <td className="px-3 py-2 font-mono text-xs text-gray-500">{acct.account_number}</td>
-                <td className="px-3 py-2 text-gray-700">{acct.bank_name}</td>
-                <td className="px-3 py-2 capitalize text-gray-600">{acct.account_type}</td>
+              <tr key={acct.id} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
+                <td className="px-3 py-2 font-medium text-neutral-900">{acct.name}</td>
+                <td className="px-3 py-2 font-mono text-xs text-neutral-500">{acct.account_number}</td>
+                <td className="px-3 py-2 text-neutral-700">{acct.bank_name}</td>
+                <td className="px-3 py-2 capitalize text-neutral-600">{acct.account_type}</td>
                 <td className="px-3 py-2 text-right font-mono">₱{acct.opening_balance.toLocaleString()}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     acct.is_active
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500'
+                      ? 'bg-neutral-100 text-neutral-700'
+                      : 'bg-neutral-100 text-neutral-500'
                   }`}>
                     {acct.is_active ? 'Active' : 'Inactive'}
                   </span>
@@ -217,7 +232,7 @@ export default function BankAccountsPage() {
                   <button
                     type="button"
                     onClick={() => { setEditing(acct); setShowForm(true) }}
-                    className="text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                    className="text-neutral-600 hover:text-neutral-800 text-xs font-medium"
                   >
                     Edit
                   </button>

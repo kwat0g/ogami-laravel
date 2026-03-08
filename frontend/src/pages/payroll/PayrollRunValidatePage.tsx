@@ -26,7 +26,7 @@ function CheckRow({ check, warnAcked, onAck }: {
   onAck: () => void
 }) {
   return (
-    <div className={`flex items-start gap-3 p-3 rounded-lg border ${
+    <div className={`flex items-start gap-3 p-3 rounded border ${
       check.status === 'block' ? 'bg-red-50 border-red-200' :
       check.status === 'warn'  ? 'bg-amber-50 border-amber-200' :
       'bg-green-50 border-green-100'
@@ -34,16 +34,16 @@ function CheckRow({ check, warnAcked, onAck }: {
       <SeverityIcon check={check} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-sm font-medium text-gray-800">{check.label}</p>
-          <span className="text-xs font-mono text-gray-400 shrink-0">{check.code}</span>
+          <p className="text-sm font-medium text-neutral-800">{check.label}</p>
+          <span className="text-xs font-mono text-neutral-400 shrink-0">{check.code}</span>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">{check.message}</p>
+        <p className="text-xs text-neutral-500 mt-0.5">{check.message}</p>
         {check.details?.employees && check.details.employees.length > 0 && (
-          <div className="mt-2 border border-amber-100 rounded-lg divide-y divide-amber-50 max-h-32 overflow-y-auto">
+          <div className="mt-2 border border-amber-100 rounded divide-y divide-amber-50 max-h-32 overflow-y-auto">
             {check.details.employees.map(emp => (
               <div key={emp.employee_code} className="flex items-center gap-2 px-3 py-1.5">
-                <span className="text-xs font-mono text-gray-400 shrink-0">{emp.employee_code}</span>
-                <span className="text-xs text-gray-700">{emp.full_name}</span>
+                <span className="text-xs font-mono text-neutral-400 shrink-0">{emp.employee_code}</span>
+                <span className="text-xs text-neutral-700">{emp.full_name}</span>
               </div>
             ))}
           </div>
@@ -54,7 +54,7 @@ function CheckRow({ check, warnAcked, onAck }: {
               type="checkbox"
               checked={warnAcked}
               onChange={onAck}
-              className="accent-amber-600"
+              className="accent-neutral-700"
             />
             <span className="text-xs text-amber-800">I acknowledge this warning and wish to proceed</span>
           </label>
@@ -123,7 +123,7 @@ export default function PayrollRunValidatePage() {
     <div className="max-w-3xl space-y-6">
       <button
         onClick={() => navigate(`/payroll/runs/${runId}/scope`)}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Scope
       </button>
@@ -140,7 +140,7 @@ export default function PayrollRunValidatePage() {
           {result && (
             <>
               <span className="text-green-600 font-medium">{result.total_passed} passed</span>
-              <span className="text-gray-300">|</span>
+              <span className="text-neutral-300">|</span>
               {hasBlocker
                 ? <span className="text-red-600 font-medium">Blockers found — fix required</span>
                 : <span className="text-amber-600 font-medium">{warnChecks.length} warning{warnChecks.length !== 1 ? 's' : ''}</span>
@@ -152,7 +152,7 @@ export default function PayrollRunValidatePage() {
           type="button"
           onClick={() => void refetch()}
           disabled={isFetching}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-800 transition-colors"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh checks
@@ -161,7 +161,7 @@ export default function PayrollRunValidatePage() {
 
       {/* Checks list */}
       {isFetching && !result ? (
-        <div className="flex items-center gap-2 text-sm text-gray-500 py-8">
+        <div className="flex items-center gap-2 text-sm text-neutral-500 py-8">
           <Loader2 className="h-5 w-5 animate-spin" />
           Running pre-run checks…
         </div>
@@ -179,17 +179,17 @@ export default function PayrollRunValidatePage() {
       )}
 
       {/* Auto-refresh notice */}
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-neutral-400">
         Checks auto-refresh every 10 seconds. Fix any blockers in their respective modules then refresh.
       </p>
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => navigate(`/payroll/runs/${runId}/scope`)}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Scope
           </button>
@@ -209,7 +209,7 @@ export default function PayrollRunValidatePage() {
                 <button
                   type="button"
                   onClick={() => setConfirmCancel(false)}
-                  className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md transition-colors"
+                  className="px-3 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 border border-neutral-200 rounded-md transition-colors"
                 >
                   Keep
                 </button>
@@ -218,7 +218,7 @@ export default function PayrollRunValidatePage() {
               <button
                 type="button"
                 onClick={() => setConfirmCancel(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors"
               >
                 <Ban className="h-4 w-4" /> Cancel Run
               </button>
@@ -230,7 +230,7 @@ export default function PayrollRunValidatePage() {
           onClick={handleAcknowledge}
           disabled={!canProceed || acknowledge.isPending}
           title={hasBlocker ? 'Fix all blocking issues first.' : !allWarnsAck ? 'Acknowledge all warnings to continue.' : undefined}
-          className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
         >
           {acknowledge.isPending
             ? <><Loader2 className="h-4 w-4 animate-spin" /> Acknowledging…</>

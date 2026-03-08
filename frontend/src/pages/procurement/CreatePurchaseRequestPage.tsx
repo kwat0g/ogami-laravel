@@ -81,21 +81,16 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">New Purchase Request</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Saved as <strong>Draft</strong>. Submit when ready for approval.
-        </p>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Purchase Request</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Header Section */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-          <h2 className="text-base font-semibold text-gray-800">Request Details</h2>
+        <div className="bg-white border border-neutral-200 rounded p-6 space-y-4">
+          <h2 className="text-sm font-medium text-neutral-700">Request Details</h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
                 Department <span className="text-red-500">*</span>
               </label>
               <Controller
@@ -105,7 +100,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                   <select
                     {...field}
                     onChange={e => field.onChange(Number(e.target.value))}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   >
                     <option value="">— Select Department —</option>
                     {departments.map(d => (
@@ -120,7 +115,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
                 Urgency
               </label>
               <Controller
@@ -129,7 +124,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                 render={({ field }) => (
                   <select
                     {...field}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   >
                     <option value="normal">Normal</option>
                     <option value="urgent">Urgent</option>
@@ -141,14 +136,14 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Justification <span className="text-red-500">*</span>
             </label>
             <textarea
               {...register('justification')}
               rows={3}
               placeholder="Explain why this purchase is needed (min. 20 characters)"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
             />
             {errors.justification && (
               <p className="text-xs text-red-600 mt-1">{errors.justification.message}</p>
@@ -156,22 +151,22 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Additional Notes
             </label>
             <textarea
               {...register('notes')}
               rows={2}
               placeholder="Optional notes for approvers"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
             />
           </div>
         </div>
 
         {/* Line Items */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border border-neutral-200 rounded p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-800">Line Items</h2>
+            <h2 className="text-sm font-medium text-neutral-700">Line Items</h2>
             <button
               type="button"
               onClick={() =>
@@ -182,7 +177,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                   estimated_unit_cost: 0,
                 })
               }
-              className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="inline-flex items-center gap-1.5 text-sm text-neutral-700 hover:text-neutral-900 font-medium"
             >
               <Plus className="w-4 h-4" />
               Add Item
@@ -200,14 +195,14 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
               const lineTotal = qty * cost
 
               return (
-                <div key={field.id} className="grid grid-cols-12 gap-2 items-start bg-gray-50 rounded-lg p-3">
+                <div key={field.id} className="grid grid-cols-12 gap-2 items-start bg-neutral-50 rounded p-3">
                   {/* Description */}
                   <div className="col-span-4">
-                    {index === 0 && <p className="text-xs text-gray-500 mb-1">Description *</p>}
+                    {index === 0 && <p className="text-xs text-neutral-500 mb-1">Description *</p>}
                     <input
                       {...register(`items.${index}.item_description`)}
                       placeholder="Item description"
-                      className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                     />
                     {errors.items?.[index]?.item_description && (
                       <p className="text-xs text-red-600 mt-0.5">
@@ -218,10 +213,10 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
                   {/* UoM */}
                   <div className="col-span-1">
-                    {index === 0 && <p className="text-xs text-gray-500 mb-1">UoM *</p>}
+                    {index === 0 && <p className="text-xs text-neutral-500 mb-1">UoM *</p>}
                     <select
                       {...register(`items.${index}.unit_of_measure`)}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                     >
                       <option value="">—</option>
                       {UOM_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -230,23 +225,23 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
                   {/* Quantity */}
                   <div className="col-span-2">
-                    {index === 0 && <p className="text-xs text-gray-500 mb-1">Qty *</p>}
+                    {index === 0 && <p className="text-xs text-neutral-500 mb-1">Qty *</p>}
                     <input
                       type="number"
                       step="0.001"
                       {...register(`items.${index}.quantity`)}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                     />
                   </div>
 
                   {/* Unit Cost */}
                   <div className="col-span-2">
-                    {index === 0 && <p className="text-xs text-gray-500 mb-1">Unit Cost *</p>}
+                    {index === 0 && <p className="text-xs text-neutral-500 mb-1">Unit Cost *</p>}
                     <input
                       type="number"
                       step="0.01"
                       {...register(`items.${index}.estimated_unit_cost`)}
-                      className="w-full text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                     />
                   </div>
 
@@ -255,26 +250,26 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                     <input
                       {...register(`items.${index}.specifications`)}
                       placeholder="Specifications (optional)"
-                      className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                      className="w-full text-sm border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-neutral-50"
                     />
                   </div>
 
                   {/* Line Total */}
                   <div className="col-span-2">
-                    {index === 0 && <p className="text-xs text-gray-500 mb-1">Est. Total</p>}
-                    <div className="text-sm text-gray-700 font-medium py-1.5 px-2">
+                    {index === 0 && <p className="text-xs text-neutral-500 mb-1">Est. Total</p>}
+                    <div className="text-sm text-neutral-700 font-medium py-1.5 px-2">
                       ₱{lineTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
 
                   {/* Remove */}
                   <div className="col-span-1 flex items-end justify-center pb-1">
-                    {index === 0 && <p className="text-xs text-gray-500 mb-1 opacity-0">—</p>}
+                    {index === 0 && <p className="text-xs text-neutral-500 mb-1 opacity-0">—</p>}
                     <button
                       type="button"
                       disabled={fields.length === 1}
                       onClick={() => remove(index)}
-                      className="p-1 text-gray-400 hover:text-red-500 disabled:opacity-30 transition-colors"
+                      className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -285,10 +280,10 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
           </div>
 
           {/* Grand Total */}
-          <div className="flex justify-end mt-4 pt-4 border-t border-gray-200">
+          <div className="flex justify-end mt-4 pt-4 border-t border-neutral-200">
             <div className="text-right">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Total Estimated Cost</p>
-              <p className="text-xl font-bold text-gray-900 mt-0.5">
+              <p className="text-xs text-neutral-500">Total Estimated Cost</p>
+              <p className="text-xl font-bold text-neutral-900 mt-0.5">
                 ₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
               </p>
             </div>
@@ -300,14 +295,14 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="text-sm px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
+            className="text-sm px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-medium rounded transition-colors"
           >
             {isSubmitting ? 'Saving…' : 'Save Draft'}
           </button>

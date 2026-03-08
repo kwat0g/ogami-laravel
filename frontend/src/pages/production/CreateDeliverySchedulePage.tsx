@@ -62,22 +62,14 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center">
-          <Truck className="w-5 h-5 text-cyan-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Delivery Schedule</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Schedule a customer delivery commitment</p>
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Delivery Schedule</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
         {/* Customer */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Customer *</label>
           <select
-            className={`w-full border rounded-lg px-3 py-2 text-sm bg-white ${fe('customer_id') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm bg-white ${fe('customer_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.customer_id || ''}
             onChange={e => set('customer_id', Number(e.target.value))}
             onBlur={() => touch('customer_id')}
@@ -93,9 +85,9 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
 
         {/* Product */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Product Item *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Product Item *</label>
           <select
-            className={`w-full border rounded-lg px-3 py-2 text-sm bg-white ${fe('product_item_id') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm bg-white ${fe('product_item_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.product_item_id || ''}
             onChange={e => set('product_item_id', Number(e.target.value))}
             onBlur={() => touch('product_item_id')}
@@ -112,12 +104,12 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
         {/* Qty & Date */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Qty Ordered *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Qty Ordered *</label>
             <input
               type="number"
               min="0.001"
               step="0.001"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('qty_ordered') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm ${fe('qty_ordered') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.qty_ordered}
               onChange={e => set('qty_ordered', e.target.value)}
               onBlur={() => touch('qty_ordered')}
@@ -126,10 +118,10 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
             {fe('qty_ordered') && <p className="mt-1 text-xs text-red-600">{fe('qty_ordered')}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Target Delivery Date *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Target Delivery Date *</label>
             <input
               type="date"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('target_delivery_date') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm ${fe('target_delivery_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.target_delivery_date}
               onChange={e => set('target_delivery_date', e.target.value)}
               onBlur={() => touch('target_delivery_date')}
@@ -141,9 +133,9 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
 
         {/* Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Type *</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
             value={form.type}
             onChange={e => set('type', e.target.value)}
           >
@@ -154,10 +146,10 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
           <textarea
             rows={2}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm resize-none"
             value={form.notes}
             onChange={e => set('notes', e.target.value)}
           />
@@ -167,14 +159,14 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
           <button
             type="button"
             onClick={() => navigate('/production/delivery-schedules')}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {createMut.isPending ? 'Saving…' : 'Create Schedule'}
           </button>

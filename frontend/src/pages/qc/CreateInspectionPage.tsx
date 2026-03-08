@@ -94,21 +94,21 @@ export default function CreateInspectionPage(): React.ReactElement {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-          <ClipboardCheck className="w-5 h-5 text-teal-600" />
+        <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
+          <ClipboardCheck className="w-5 h-5 text-neutral-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Inspection</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Record an IQC, IPQC, or OQC inspection</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Inspection</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Record an IQC, IPQC, or OQC inspection</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-lg p-6 space-y-5">
         {/* Stage */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Stage *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Stage *</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400"
             value={form.stage}
             onChange={e => set('stage', e.target.value)}
             required
@@ -121,10 +121,10 @@ export default function CreateInspectionPage(): React.ReactElement {
 
         {/* Date */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Inspection Date *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Inspection Date *</label>
           <input
             type="date"
-            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('inspection_date') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('inspection_date') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.inspection_date}
             onChange={e => set('inspection_date', e.target.value)}
             onBlur={() => touch('inspection_date')}
@@ -135,9 +135,9 @@ export default function CreateInspectionPage(): React.ReactElement {
 
         {/* Item */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Item</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Item</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400"
             value={form.item_master_id}
             onChange={e => set('item_master_id', e.target.value ? Number(e.target.value) : '')}
           >
@@ -151,12 +151,12 @@ export default function CreateInspectionPage(): React.ReactElement {
         {/* Qty & Template */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Qty Inspected *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Qty Inspected *</label>
             <input
               type="number"
               min="0.001"
               step="0.001"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('qty_inspected') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('qty_inspected') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.qty_inspected}
               onChange={e => set('qty_inspected', e.target.value)}
               onBlur={() => touch('qty_inspected')}
@@ -165,9 +165,9 @@ export default function CreateInspectionPage(): React.ReactElement {
             {fe('qty_inspected') && <p className="mt-1 text-xs text-red-600">{fe('qty_inspected')}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Template</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400"
               value={form.inspection_template_id}
               onChange={e => set('inspection_template_id', e.target.value ? Number(e.target.value) : '')}
             >
@@ -181,9 +181,9 @@ export default function CreateInspectionPage(): React.ReactElement {
 
         {/* Inspector */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Inspector</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Inspector</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400"
             value={form.inspector_id}
             onChange={e => set('inspector_id', e.target.value ? Number(e.target.value) : '')}
           >
@@ -198,10 +198,10 @@ export default function CreateInspectionPage(): React.ReactElement {
 
         {/* Remarks */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Remarks</label>
           <textarea
             rows={2}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm resize-none focus:ring-1 focus:ring-neutral-400"
             value={form.remarks}
             onChange={e => set('remarks', e.target.value)}
           />
@@ -211,14 +211,14 @@ export default function CreateInspectionPage(): React.ReactElement {
           <button
             type="button"
             onClick={() => navigate('/qc/inspections')}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {createMut.isPending ? 'Saving…' : 'Create Inspection'}
           </button>

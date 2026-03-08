@@ -138,20 +138,59 @@ final class VerifyBackupCommand extends Command
         // ── Step 4: Run golden test suite against restored DB ─────────────────
         $this->info('Step 4/5: Running golden payroll test suite against restored DB...');
 
-        $env = array_merge($_ENV, [
-            'DB_DATABASE' => self::TEST_DB,
-            'APP_ENV' => 'testing',
-            'QUEUE_CONNECTION' => 'sync',
-        ]);
+        // SAFETY GUARD 1: the dedicated phpunit-backup-verify.xml must exist.
+        // It uses force="true" on ALL database env vars, guaranteeing that
+        // RefreshDatabase / migrate:fresh targets ogami_erp_restore_test and
+        // NEVER the production database, regardless of shell env or .env values.
+        $verifyConfig = base_path('phpunit-backup-verify.xml');
+        if (! file_exists($verifyConfig)) {
+            $this->notifyFailure(
+                'SAFETY ABORT: phpunit-backup-verify.xml not found at '.$verifyConfig.'. '
+                .'Cannot run tests without the guaranteed-safe PHPUnit configuration. '
+                .'Restore the file from git before re-running backup:verify.',
+            );
 
-        $testResult = Process::timeout(300)->env($env)->run(
-            'php artisan test --filter=GoldenSuiteTest --no-coverage 2>&1',
+            return self::FAILURE;
+        }
+
+        // SAFETY GUARD 2: confirm ogami_erp_restore_test actually exists in
+        // PostgreSQL before running any tests. If the restore step above
+        // silently failed, this prevents running migrate:fresh on an empty
+        // DB that might resolve to production.
+        $dbCheckResult = Process::timeout(10)
+            ->env(['PGPASSWORD' => $password])
+            ->run(
+                "psql -h {$host} -p {$port} -U {$user} -d postgres -tAc "
+                ."\"SELECT 1 FROM pg_database WHERE datname='".self::TEST_DB."';\" 2>&1",
+            );
+
+        if (trim($dbCheckResult->output()) !== '1') {
+            $this->notifyFailure(
+                'SAFETY ABORT: '.self::TEST_DB.' database does not exist in PostgreSQL. '
+                .'The restore step may have failed silently. '
+                .'Not running tests to protect production data.',
+            );
+
+            return self::FAILURE;
+        }
+
+        $this->line('<info>✓</info> Safety checks passed — restore DB exists, dedicated config found');
+
+        // Use ./vendor/bin/pest with the dedicated phpunit-backup-verify.xml.
+        // This config has force="true" on DB_DATABASE=ogami_erp_restore_test,
+        // which is the only mechanism that unconditionally wins over every
+        // other env source (OS env, .env file, phpunit.xml, Process::env()).
+        $pestBin = base_path('vendor/bin/pest');
+        $testResult = Process::timeout(300)->run(
+            "{$pestBin} --configuration ".escapeshellarg($verifyConfig).' --no-coverage 2>&1',
         );
 
         $output = $testResult->output();
         $this->line($output);
 
-        $testsPassed = str_contains($output, 'PASS') && ! str_contains($output, 'FAIL');
+        // Use the process exit code — reliable regardless of terminal colour codes.
+        // Pest/PHPUnit exits 0 on full pass, non-zero on any failure.
+        $testsPassed = $testResult->successful();
 
         if (! $testsPassed) {
             $this->notifyFailure('Golden test suite FAILED against restored database', $output);

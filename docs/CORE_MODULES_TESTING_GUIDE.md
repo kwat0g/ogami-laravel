@@ -2,7 +2,8 @@
 
 > **Account:** `superadmin@ogamierp.local` / `SuperAdmin@12345!`
 > **Environment:** `http://localhost:5173`
-> **Before starting:** `php artisan migrate:fresh --seed` then `npm run dev`
+> ⚠️ **Before starting — LOCAL / STAGING ONLY:** `php artisan migrate:fresh --seed` then `npm run dev`
+> **⛔ WARNING: `migrate:fresh` PERMANENTLY DELETES ALL DATABASE DATA.** Only run this on a local or staging environment. Never run it on a production server. If the server has already been used, the re-seed will restore default accounts only — all manually created transactional data (POs, GRs, invoices, etc.) will be gone.
 > **Single account throughout** — no login/logout required between steps.
 
 This guide covers all core operational and financial modules in one connected real-life manufacturing cycle:
@@ -65,9 +66,10 @@ Everything else: bank account, vendor, customer, item category, item masters, wa
    - **Name:** BDO
    - **Account Number:** 0000-1234-5678
    - **Bank Name:** Banco de Oro (BDO)
-   - **Account Type:** Checking
-   - **GL Account ID:** `1` *(this is the database ID for account `1001 — Cash in Bank`, which is seeded automatically — enter the number 1)*
+   - **Account Type:** Checking *(dropdown: Checking / Savings)*
+   - **GL Account:** select **1001 — Cash in Bank** from the dropdown *(seeded automatically)*
    - **Opening Balance:** 500000
+   - **Active:** leave checked
 3. Click **Save**
 4. ✅ Bank account available for payment entries; GL account `1001 — Cash in Bank` is now linked
 
@@ -77,14 +79,16 @@ Everything else: bank account, vendor, customer, item category, item masters, wa
 
 1. Go to **Accounting → AP Vendors → New**
 2. Fill in:
-   - **Name:** Chinatown Resins Inc.
+   - **Vendor Name:** Chinatown Resins Inc.
    - **TIN:** 000-123-456-000
-   - **Payment Terms:** NET30
-   - **Address:** 12 Resin Street, Tondo, Manila
+   - **ATC Code:** *(leave blank)*
    - **Contact Person:** Juan Dela Cruz
    - **Email:** sales@chinatownresins.test
    - **Phone:** +63 2 8888 0001
-   - **Subject to EWT:** No
+   - **Address:** 12 Resin Street, Tondo, Manila
+   - **Subject to EWT (AP-004):** *(leave unchecked)*
+   - **Banking Details → Bank Name:** *(leave blank)*
+   - **Banking Details → Payment Terms:** NET30
 3. Click **Save**
 4. ✅ Vendor available in PO and AP invoice dropdowns
 
@@ -96,77 +100,91 @@ Everything else: bank account, vendor, customer, item category, item masters, wa
 2. Fill in:
    - **Name:** Ace Hardware Philippines
    - **TIN:** 000-987-654-000
+   - **Credit Limit (₱):** 500000
    - **Email:** procurement@acehw.test
    - **Phone:** +63 2 8999 0002
    - **Contact Person:** Maria Cruz
    - **Address:** 1 Hardware Ave, Pasig, Metro Manila
-   - **Credit Limit:** ₱500,000.00
 3. Click **Save**
 4. ✅ Customer available in delivery schedule and AR invoice dropdowns
 
 ### 0.4 Create an Item Category
 
-1. Go to **Inventory → Item Categories → New**
+1. Go to **Inventory → Item Categories → + New Category**
 2. Fill in:
-   - **Code:** `RAW-MAT`
+   - **Code:** RAW-MAT
    - **Name:** Raw Materials
    - **Description:** Plastic pellets and raw resin inputs
 3. Click **Save**
-4. ✅ Category `RAW-MAT` available for item master creation
+4. ✅ Category `RAW-MAT` available in the Category dropdown when creating item masters
 
 ### 0.5 Create Item Masters
 
-Create the following three items. Go to **Inventory → Item Master → New Item** for each.
+Create the following three items. Go to **Inventory → Item Master → + New** for each.
+
+> **Note:** Item codes are **auto-generated** by the system (format: `ITEM-000001`). There is no Item Code field on the form — the code appears after saving. Throughout this guide, items are identified by name in dropdowns.
 
 **Item 1 — PP Resin Natural**
-- **Item Code:** `RAW-001` · **Name:** PP Resin Natural
-- **Category:** Raw Materials · **Type:** Raw Material
-- **UoM:** kg · **Reorder Point:** 500 · **Reorder Qty:** 2000
-- **Requires IQC:** ✅ Yes
+- **Category:** Raw Materials *(dropdown)*
+- **Name:** PP Resin Natural
+- **Type:** Raw Material *(dropdown)*
+- **Unit of Measure:** kg
+- **Reorder Point:** 500 · **Reorder Qty:** 2000
+- Check ✅ **Requires Incoming Quality Control (IQC)**
 - Click **Save**
 
 **Item 2 — HDPE Resin Black**
-- **Item Code:** `RAW-002` · **Name:** HDPE Resin Black
-- **Category:** Raw Materials · **Type:** Raw Material
-- **UoM:** kg · **Reorder Point:** 300 · **Reorder Qty:** 1000
-- **Requires IQC:** ✅ Yes
+- **Category:** Raw Materials *(dropdown)*
+- **Name:** HDPE Resin Black
+- **Type:** Raw Material *(dropdown)*
+- **Unit of Measure:** kg
+- **Reorder Point:** 300 · **Reorder Qty:** 1000
+- Check ✅ **Requires Incoming Quality Control (IQC)**
 - Click **Save**
 
 **Item 3 — Plastic Container 500ml**
-- **Item Code:** `FGD-001` · **Name:** Plastic Container 500ml
-- **Category:** Raw Materials · **Type:** Finished Good
-- **UoM:** pcs · **Reorder Point:** 1000 · **Reorder Qty:** 5000
-- **Requires IQC:** ✅ Yes
+- **Category:** Raw Materials *(dropdown)*
+- **Name:** Plastic Container 500ml
+- **Type:** Finished Good *(dropdown)*
+- **Unit of Measure:** pcs
+- **Reorder Point:** 1000 · **Reorder Qty:** 5000
+- Check ✅ **Requires Incoming Quality Control (IQC)**
 - Click **Save**
 
-✅ All three items visible in **Inventory → Item Master**
+✅ All three items visible in **Inventory → Item Master** with auto-generated codes
 
 ### 0.6 Create a Warehouse Location
 
 1. Go to **Inventory → Warehouse Locations → New**
 2. Fill in:
-   - **Code:** `WH-A1` · **Name:** Warehouse A – Rack 1
-   - **Zone:** A · **Bin:** Rack-01
+   - **Code:** WH-A1
+   - **Name:** Warehouse A – Rack 1
+   - **Zone:** A
+   - **Bin/Rack:** Rack-01
 3. Click **Save**
 4. ✅ Location `WH-A1` available for stock ledger entries
 
-### 0.7 Create a Bill of Materials for FGD-001
+### 0.7 Create a Bill of Materials for Plastic Container 500ml
 
-> Required for: production order creation (Scenario 4). Items RAW-001, RAW-002, and FGD-001 must exist first (step 0.5).
+> Required for: production order creation (Scenario 4). All three items from step 0.5 must exist first.
 
 1. Go to **Production → Bill of Materials → New**
 2. Header:
-   - **Product Item:** FGD-001 Plastic Container 500ml *(dropdown)*
+   - **Product Item:** select **Plastic Container 500ml** *(dropdown shows Finished Goods only — item displayed as `ITEM-XXXXXX — Plastic Container 500ml`)*
    - **Version:** 1.0
    - **Notes:** Injection-moulded 500ml PP container. 20g gross weight per unit.
-3. Add component — click **+ Add Component**:
-   - **Component:** RAW-001 PP Resin Natural
-   - **Qty per Unit:** 0.0192 · **UoM:** kg · **Scrap %:** 4
-4. Add second component:
-   - **Component:** RAW-002 HDPE Resin Black
-   - **Qty per Unit:** 0.0008 · **UoM:** kg · **Scrap %:** 2
+3. Click **Add Component** to add the first row:
+   - **Component Item:** search and select **PP Resin Natural** *(dropdown shows all items)*
+   - **Qty/Unit:** 0.0192
+   - **UoM:** kg *(dropdown: pcs, kg, g, L, mL, m …)*
+   - **Scrap %:** 4
+4. Click **Add Component** again for the second row:
+   - **Component Item:** search and select **HDPE Resin Black**
+   - **Qty/Unit:** 0.0008
+   - **UoM:** kg
+   - **Scrap %:** 2
 5. Click **Save** → **Activate**
-6. ✅ BOM for FGD-001 v1.0 active; components visible
+6. ✅ BOM for **Plastic Container 500ml** v1.0 active; components visible
 
 ---
 
@@ -224,7 +242,7 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 3. Click **Record Goods Receipt**, then on the GR detail page click **Confirm Receipt & Run 3-Way Match**
 4. ✅ Status: `confirmed` · Reference: `GR-2026-03-00001`
 5. ✅ PO status: `partially_received`
-6. ✅ **Inventory → Stock Balances:** RAW-001 increases by 498 kg *(requires queue worker)*
+4. ✅ **Inventory → Stock Balances:** PP Resin Natural increases by 498 kg *(requires queue worker)*
 7. ✅ **Accounting → AP Invoices:** a draft AP invoice for Chinatown Resins is auto-created *(requires queue worker)*
 
 ### 1.5 Record Second Goods Receipt (remaining 2 kg)
@@ -235,7 +253,7 @@ Create the following three items. Go to **Inventory → Item Master → New Item
    - **Qty Received:** `2` *(pre-filled from outstanding balance)*
 3. Click **Record Goods Receipt** → **Confirm Receipt & Run 3-Way Match**
 4. ✅ PO status: `fully_received`
-5. ✅ **Inventory → Stock Balances:** RAW-001 total = 500 kg
+5. ✅ **Inventory → Stock Balances:** PP Resin Natural total = 500 kg
 6. ✅ A second draft AP invoice for the remaining 2 kg (₱360) is auto-created
 
 > **Two draft AP invoices now exist in Accounting → AP Invoices:**
@@ -258,7 +276,7 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 2. Fill in:
    - **Stage:** IQC *(dropdown: iqc / ipqc / oqc)*
    - **Inspection Date:** 2026-03-18
-   - **Item:** *(dropdown — search and select RAW-001 PP Resin Natural)*
+   - **Item:** *(dropdown — search and select **PP Resin Natural**)*
    - **Qty Inspected:** 50
    - **Template:** *(optional — select PP Resin IQC template if seeded)*
    - **Inspector:** *(optional dropdown — select Superadmin or leave blank)*
@@ -273,13 +291,13 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 ### 2.2 Verify Stock Balance
 
 1. Go to **Inventory → Stock Balances**
-2. Search for **RAW-001**
+2. Search for **PP Resin Natural**
 3. ✅ On-hand qty ≈ 500 kg (from Scenario 1)
 
 ### 2.3 Check Stock Ledger
 
 1. Go to **Inventory → Stock Ledger**
-2. Filter by **Item:** RAW-001
+2. Filter by **Item:** PP Resin Natural
 3. ✅ Two inbound transactions visible — GR-2026-03-00001 (498 kg) and GR-2026-03-00002 (2 kg)
 4. ✅ Running balance column reflects cumulative totals correctly
 
@@ -290,7 +308,7 @@ Create the following three items. Go to **Inventory → Item Master → New Item
    - **Department:** Production
    - **Purpose:** Materials for March production run for FGD-001 *(min 10 characters)*
 3. In the **Line Items** section, search and select items from the **item dropdown** (existing inventory items):
-   - **Item:** search for `PP Resin Natural` → select **RAW-001**
+   - **Item:** search for `PP Resin Natural` → select **PP Resin Natural** from the dropdown
    - **Qty:** 200
    - **Remarks:** *(optional)*
 4. Click **Submit**
@@ -311,7 +329,7 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 
 1. On the approved MRQ, click **Fulfill Requisition**
 2. ✅ Status: `fulfilled`
-3. ✅ **Inventory → Stock Balances:** RAW-001 decreases by 200 kg → ≈ 300 kg remaining
+3. ✅ **Inventory → Stock Balances:** PP Resin Natural decreases by 200 kg → ≈ 300 kg remaining
 4. ✅ **Inventory → Stock Ledger:** new outbound transaction logged (source: MRQ)
 
 ---
@@ -362,9 +380,9 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 5. ✅ GL entry per invoice:
    - DR Accounts Payable (invoice net)
    - CR EWT Payable (2% EWT)
-   - CR Cash / Bank (net − EWT)![alt text](image.png)
+   - CR Cash / Bank (net − EWT)
 6. Repeat for the second invoice
-7. Go to **Accounting → General Ledger** → filter by `2001 — Accounts Payable` → ✅ closing balance = ₱0
+7. Go to **Financial Reports → General Ledger** → select **Account:** `2001 — Accounts Payable`, set date range for March 2026, click **Run Report** → ✅ closing balance = ₱0
 
 ---
 
@@ -377,25 +395,25 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 1. Go to **Production → Delivery Schedules → New**
 2. Fill in:
    - **Customer:** Ace Hardware Philippines *(dropdown)*
-   - **Product Item:** FGD-001 Plastic Container 500ml *(dropdown — finished goods only)*
+   - **Product Item:** Plastic Container 500ml *(dropdown — finished goods only)*
    - **Qty Ordered:** 10,000
    - **Target Delivery Date:** 2026-03-28
    - **Type:** Local
    - **Notes:** *(optional)*
 3. Click **Save**
-4. ✅ Status `scheduled`; schedule visible on the board
+4. ✅ Status `open`; schedule visible on the board
 
 ### 4.2 Review the Bill of Materials
 
 1. Go to **Production → Bill of Materials**
-2. Open the BOM for **FGD-001 Plastic Container 500ml**
-3. ✅ Component list shows RAW-001 and RAW-002 with per-unit quantities and routing steps
+2. Open the BOM for **Plastic Container 500ml**
+3. ✅ Component list shows PP Resin Natural and HDPE Resin Black with per-unit quantities and routing steps
 
 ### 4.3 Create, Release, and Start the Production Order
 
 1. Go to **Production → Orders → New**
 2. Fill in:
-   - **Product Item:** FGD-001 Plastic Container 500ml *(dropdown — select item first)*
+   - **Product Item:** Plastic Container 500ml *(dropdown — select item first)*
    - **BOM:** *(auto-filters to BOMs for the selected item — select the active BOM)*
    - **Delivery Schedule:** *(optional dropdown — link to the schedule created in 4.1)*
    - **Qty Required:** 10,000
@@ -411,8 +429,8 @@ Create the following three items. Go to **Inventory → Item Master → New Item
    - **Qty Rejected (scrap):** 43
 2. Click **Complete Work Order**
 3. ✅ Status: `completed`
-4. ✅ **Inventory → Stock Balances:** FGD-001 increases by **10,007 units** (10,050 − 43)
-5. ✅ RAW-001 stock decreases proportionally (consumed per BOM)
+4. ✅ **Inventory → Stock Balances:** Plastic Container 500ml increases by **10,007 units** (10,050 − 43)
+5. ✅ PP Resin Natural stock decreases proportionally (consumed per BOM)
 6. ✅ A **Draft Outbound Delivery Receipt** is auto-created (linked to the delivery schedule)
 
 ---
@@ -530,9 +548,12 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 2. Fill in:
    - **Stage:** IPQC
    - **Inspection Date:** 2026-03-23
-   - **Item:** FGD-001 Plastic Container 500ml *(dropdown)*
+   - **Item:** *(dropdown — search and select **Plastic Container 500ml**)*
    - **Qty Inspected:** 50
-3. Click **Create** → on the detail page, click **Submit Results**:
+   - **Template:** *(optional)*
+   - **Inspector:** *(optional)*
+   - **Remarks:** *(optional)*
+3. Click **Create Inspection** → on the detail page, click **Submit Results**:
    - Visual contamination: **Conforming**
    - Wall thickness: **Non-Conforming**, Actual: `1.72mm`
 4. ✅ Inspection status: `failed`; reference `INS-2026-IPQC-001`
@@ -568,7 +589,7 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 2. Fill in:
    - **Stage:** OQC
    - **Inspection Date:** 2026-03-25
-   - **Item:** *(dropdown — select FGD-001 Plastic Container 500ml)*
+   - **Item:** *(dropdown — search and select **Plastic Container 500ml**)*
    - **Qty Inspected:** 200
    - **Template:** *(optional)*
    - **Inspector:** *(optional)*
@@ -592,10 +613,10 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 
 1. Go to **Delivery → Delivery Receipts**
 2. Locate the draft outbound DR linked to Ace Hardware Philippines
-3. Verify line item: FGD-001, Qty: 10,000
+3. Verify line item: Plastic Container 500ml, Qty: 10,000
 4. Click **Confirm**
 5. ✅ DR status: `confirmed`; reference `DR-OUT-2026-00001`
-6. ✅ FGD-001 stock decreases by 10,000
+6. ✅ Plastic Container 500ml stock decreases by 10,000
 
 > **Alternative — if no auto-created DR exists:**
 
@@ -606,14 +627,14 @@ Create the following three items. Go to **Inventory → Item Master → New Item
    - **Receipt Date:** 2026-03-28
    - **Remarks:** *(optional)*
 3. Add a line item:
-   - **Item:** *(dropdown — search and select FGD-001)*
+   - **Item:** *(dropdown — search and select **Plastic Container 500ml**)*
    - **Qty Expected:** 10,000
    - **Qty Received:** 10,000
    - **UoM:** pcs
    - **Lot/Batch Number:** *(optional)*
 4. Click **Save → Confirm**
 5. ✅ DR status: `confirmed`; reference `DR-OUT-2026-00001`
-6. ✅ FGD-001 stock decreases by 10,000
+6. ✅ Plastic Container 500ml stock decreases by 10,000
 
 > **Note:** The Vehicle field is on the **Shipment** (step 8.2), not on the Delivery Receipt.
 
@@ -668,7 +689,7 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 5. ✅ GL entry:
    - DR Cash / Bank ₱313,600
    - CR Accounts Receivable ₱313,600
-6. ✅ **Accounting → General Ledger** → AR account balance = ₱0
+6. ✅ **Financial Reports → General Ledger** → AR account balance = ₱0
 
 ---
 
@@ -711,10 +732,10 @@ Create the following three items. Go to **Inventory → Item Master → New Item
 
 ### 10.4 General Ledger — Account Drilldown
 
-1. Go to **Accounting → General Ledger**
-2. Filter by **Account:** `2001 — Accounts Payable`
+1. Go to **Financial Reports → General Ledger**
+2. Select **Account:** `2001 — Accounts Payable`, set **From:** 2026-03-01, **To:** 2026-03-31, click **Run Report**
 3. ✅ Credit entries from AP invoice approvals (Scenario 3); debit entries from payments; closing balance ₱0
-4. Filter by **Account:** `3001 — Accounts Receivable`
+4. Change **Account:** to `3001 — Accounts Receivable`, click **Run Report**
 5. ✅ Debit from AR invoice; credit from payment; closing balance ₱0
 
 ### 10.5 Income Statement
@@ -786,8 +807,8 @@ After completing all scenarios, verify these summary points:
 
 | Check | Expected Value |
 |-------|----------------|
-| RAW-001 stock | ≈ 300 kg (500 received − 200 issued via MRQ) |
-| FGD-001 stock | 7 units (10,007 produced − 10,000 delivered; ±actual BOM consumption) |
+| PP Resin Natural stock | ≈ 300 kg (500 received − 200 issued via MRQ) |
+| Plastic Container 500ml stock | 7 units (10,007 produced − 10,000 delivered; ±actual BOM consumption) |
 | Accounts Payable balance (2001) | ₱0 — two invoices totalling ₱90,000 approved and paid (Scenario 3) |
 | Accounts Receivable balance (3001) | ₱0 — invoice of ₱313,600 collected (Scenario 9) |
 | Sales Revenue (March 2026) | ₱280,000 net |
@@ -808,14 +829,14 @@ These are background integrations that fire automatically. Check each one after 
 | Trigger | Where to Verify | Scenario |
 |---------|----------------|-----------|
 | PO Sent → Warehouse notification | Notification bell (top right) | 1.3 |
-| GR Confirmed → Stock receive | Inventory → Stock Balances — RAW-001 up | 1.4 |
+| GR Confirmed → Stock receive | Inventory → Stock Balances — PP Resin Natural up | 1.4 |
 | 3WM passed → Draft AP invoice | Accounting → AP Invoices — one draft per confirmed GR | 1.4, 1.5 |
-| AP Invoice Approved → GL entry posted | Accounting → General Ledger — DR Expense / CR AP | 3.2 |
-| AP Payment Recorded → GL entry posted | Accounting → General Ledger — DR AP / CR Cash | 3.3 |
+| AP Invoice Approved → GL entry posted | Financial Reports → General Ledger — DR Expense / CR AP | 3.2 |
+| AP Payment Recorded → GL entry posted | Financial Reports → General Ledger — DR AP / CR Cash | 3.3 |
 | Production Complete → Draft outbound DR | Delivery → Delivery Receipts — draft DR appears | 4.4 |
 | Mold shots ≥ max → Preventive WO auto-created | Maintenance → Work Orders — new WO linked to mold | 6.2 |
 | QC Pass (OQC) → Production order not put on hold | Production → Orders — order status remains `completed` | 7.4 |
-| AR Invoice Approved → GL entry posted | Accounting → General Ledger — DR AR / CR Revenue | 9.1 |
+| AR Invoice Approved → GL entry posted | Financial Reports → General Ledger — DR AR / CR Revenue | 9.1 |
 | ISO Audit Finding created → CAPA auto-created | QC / QA → CAPA — CAPA linked to finding | 11.3 |
 
 ---
@@ -839,7 +860,7 @@ These are background integrations that fire automatically. Check each one after 
 | AP invoice EWT not filling in | EWT is auto-computed from vendor setup, not a form input |
 | ISO Document No not editable | Document number is system-generated — no manual input field |
 | ISO Audit has no Clauses field | Include clause references in the **Audit Scope** text field |
-| FGD-001 stock not updated after production | Work order must reach `completed` status |
+| Plastic Container 500ml stock not updated after production | Work order must reach `completed` status |
 | Auto outbound DR not created | Verify production order has a `delivery_schedule_id` linked |
 | AP invoice GL accounts blank | Seeder must have CoA codes `2001` and `6001` — re-run `ChartOfAccountsSeeder` if missing |
 | Output VAT not posted on AR | AR invoice must reach `approved` status |

@@ -156,7 +156,7 @@ export default function LoanTypesTable(): JSX.Element {
     : data?.data?.filter(t => t.category === selectedCategory) || []
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading loan types...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading loan types...</div>
   }
 
   return (
@@ -164,11 +164,11 @@ export default function LoanTypesTable(): JSX.Element {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">Filter by category:</span>
+          <span className="text-sm text-neutral-500">Filter by category:</span>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+            className="text-sm border border-neutral-300 rounded px-3 py-2 focus:ring-1 focus:ring-neutral-400"
           >
             <option value="all">All Categories</option>
             <option value="government">Government</option>
@@ -196,24 +196,24 @@ export default function LoanTypesTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead>Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Interest Rate</TableHead>
-              <TableHead>Max Term</TableHead>
-              <TableHead>Amount Range</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
+            <TableRow className="bg-neutral-50">
+              <TableHead className="text-xs font-semibold text-neutral-600">Code</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Name</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Category</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Interest Rate</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Max Term</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Amount Range</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Status</TableHead>
+              <TableHead className="w-20 text-xs font-semibold text-neutral-600">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-neutral-500">
                   No loan types found
                 </TableCell>
               </TableRow>
@@ -228,18 +228,18 @@ export default function LoanTypesTable(): JSX.Element {
                     <div>
                       <p className="font-medium">{type.name}</p>
                       {type.description && (
-                        <p className="text-xs text-gray-500 truncate max-w-xs">{type.description}</p>
+                        <p className="text-xs text-neutral-500 truncate max-w-xs">{type.description}</p>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     {type.category === 'government' ? (
-                      <Badge className="bg-purple-100 text-purple-700 gap-1">
+                      <Badge className="bg-neutral-100 text-neutral-700 gap-1">
                         <Building2 className="h-3 w-3" />
                         Government
                       </Badge>
                     ) : (
-                      <Badge className="bg-blue-100 text-blue-700 gap-1">
+                      <Badge className="bg-neutral-100 text-neutral-700 gap-1">
                         <Briefcase className="h-3 w-3" />
                         Company
                       </Badge>
@@ -300,10 +300,10 @@ export default function LoanTypesTable(): JSX.Element {
               <AlertTriangle className="h-6 w-6" />
               <DialogTitle>Confirm Deletion</DialogTitle>
             </div>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-neutral-600">
               Are you sure you want to delete this loan type? This action cannot be undone.
               {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-neutral-50 rounded text-sm">
                   <p><strong>Code:</strong> {showDeleteConfirm.code}</p>
                   <p><strong>Name:</strong> {showDeleteConfirm.name}</p>
                 </div>
@@ -343,7 +343,7 @@ export default function LoanTypesTable(): JSX.Element {
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="code" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="code" className="text-sm font-medium text-neutral-700">
                   Code <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -358,14 +358,14 @@ export default function LoanTypesTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="category" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="category" className="text-sm font-medium text-neutral-700">
                   Category <span className="text-red-500">*</span>
                 </Label>
                 <select
                   id="category"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full h-11 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full h-11 text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   required
                 >
                   <option value="government">Government</option>
@@ -375,7 +375,7 @@ export default function LoanTypesTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="name" className="text-sm font-medium text-neutral-700">
                 Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -389,7 +389,7 @@ export default function LoanTypesTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="description" className="text-sm font-medium text-neutral-700">
                 Description
               </Label>
               <Textarea
@@ -404,7 +404,7 @@ export default function LoanTypesTable(): JSX.Element {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="interest_rate_annual" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="interest_rate_annual" className="text-sm font-medium text-neutral-700">
                   Annual Interest (%) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -422,7 +422,7 @@ export default function LoanTypesTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="max_term_months" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="max_term_months" className="text-sm font-medium text-neutral-700">
                   Max Term (months) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -440,7 +440,7 @@ export default function LoanTypesTable(): JSX.Element {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="min_amount_centavos" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="min_amount_centavos" className="text-sm font-medium text-neutral-700">
                   Min Amount (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -457,7 +457,7 @@ export default function LoanTypesTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="max_amount_centavos" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="max_amount_centavos" className="text-sm font-medium text-neutral-700">
                   Max Amount (₱)
                 </Label>
                 <Input
@@ -479,9 +479,9 @@ export default function LoanTypesTable(): JSX.Element {
                   type="checkbox"
                   checked={formData.subject_to_min_wage_protection}
                   onChange={(e) => setFormData({ ...formData, subject_to_min_wage_protection: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-neutral-300 text-neutral-600 focus:ring-neutral-400"
                 />
-                <span className="text-sm font-medium text-gray-700">Subject to minimum wage protection (LN-007)</span>
+                <span className="text-sm font-medium text-neutral-700">Subject to minimum wage protection (LN-007)</span>
               </label>
 
               <label className="flex items-center gap-2.5 cursor-pointer">
@@ -489,9 +489,9 @@ export default function LoanTypesTable(): JSX.Element {
                   type="checkbox"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-neutral-300 text-neutral-600 focus:ring-neutral-400"
                 />
-                <span className="text-sm font-medium text-gray-700">Active</span>
+                <span className="text-sm font-medium text-neutral-700">Active</span>
               </label>
             </div>
 

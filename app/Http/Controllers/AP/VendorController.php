@@ -39,7 +39,12 @@ final class VendorController extends Controller
                 fn ($q) => $q->where('is_ewt_subject', $request->boolean('is_ewt_subject')),
             )
             ->when(
+                $request->filled('accreditation_status'),
+                fn ($q) => $q->where('accreditation_status', $request->input('accreditation_status')),
+            )
+            ->when(
                 $request->filled('search'),
+
                 fn ($q) => $q->where(function ($inner) use ($request) {
                     $inner->where('name', 'like', '%'.$request->input('search').'%')
                         ->orWhere('tin', 'like', '%'.$request->input('search').'%');

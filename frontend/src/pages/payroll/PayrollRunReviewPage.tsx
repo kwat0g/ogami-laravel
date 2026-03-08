@@ -62,9 +62,9 @@ function BreakdownTab({ runId }: { runId: string | null }) {
             { label: 'Total Deductions', val: formatCentavos(data.summary.total_deductions) },
             { label: 'Net Pay', val: formatCentavos(data.summary.total_net) },
           ].map(({ label, val }) => (
-            <div key={label} className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">{label}</p>
-              <p className="text-base font-semibold text-gray-900">{val}</p>
+            <div key={label} className="bg-neutral-50 rounded-lg p-3">
+              <p className="text-xs text-neutral-500">{label}</p>
+              <p className="text-base font-semibold text-neutral-900">{val}</p>
             </div>
           ))}
         </div>
@@ -73,18 +73,18 @@ function BreakdownTab({ runId }: { runId: string | null }) {
       {/* Filters */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search employees…"
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full pl-9 pr-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
           />
         </div>
         <select
           value={flagFilter}
           onChange={e => setFlagFilter(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
         >
           <option value="">All Employees</option>
           <option value="flagged">Flagged Only</option>
@@ -95,14 +95,14 @@ function BreakdownTab({ runId }: { runId: string | null }) {
 
       {/* Table */}
       {isLoading ? (
-        <div className="flex items-center gap-2 text-sm text-gray-400 py-8">
+        <div className="flex items-center gap-2 text-sm text-neutral-400 py-8">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading breakdown…
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wide">
+              <tr className="border-b border-neutral-200 text-xs text-neutral-500 font-medium">
                 <th className="px-3 py-2.5">Employee</th>
                 <th className="px-3 py-2.5 text-right">Gross</th>
                 <th className="px-3 py-2.5 text-right">Deductions</th>
@@ -118,10 +118,10 @@ function BreakdownTab({ runId }: { runId: string | null }) {
                 return (
                   <Fragment key={detail.id}>
                     <tr
-                      className={`border-b border-gray-100 even:bg-slate-50 hover:bg-blue-50/60 transition-colors ${isFlagged ? 'bg-amber-50' : ''}`}
+                      className={`border-b border-neutral-100 even:bg-neutral-50 hover:bg-neutral-50/60 transition-colors ${isFlagged ? 'bg-amber-50' : ''}`}
                     >
                       <td className="px-3 py-2">
-                        <p className="font-medium text-gray-800">
+                        <p className="font-medium text-neutral-800">
                           {detail.employee ? `${detail.employee.first_name} ${detail.employee.last_name}` : `#${detail.employee_id}`}
                         </p>
                         {detail.is_below_min_wage && (
@@ -131,16 +131,16 @@ function BreakdownTab({ runId }: { runId: string | null }) {
                           <span className="ml-1 text-xs text-amber-600 font-medium">LN-007</span>
                         )}
                       </td>
-                      <td className="py-2 pr-4 text-right text-gray-700">{formatCentavos(detail.gross_pay_centavos)}</td>
-                      <td className="py-2 pr-4 text-right text-gray-700">{formatCentavos(detail.total_deductions_centavos)}</td>
-                      <td className="py-2 pr-4 text-right font-medium text-gray-900">{formatCentavos(detail.net_pay_centavos)}</td>
+                      <td className="py-2 pr-4 text-right text-neutral-700">{formatCentavos(detail.gross_pay_centavos)}</td>
+                      <td className="py-2 pr-4 text-right text-neutral-700">{formatCentavos(detail.total_deductions_centavos)}</td>
+                      <td className="py-2 pr-4 text-right font-medium text-neutral-900">{formatCentavos(detail.net_pay_centavos)}</td>
                       <td className="py-2 pr-4 text-center">
                         <button
                           type="button"
                           onClick={() => toggleFlag(detail)}
                           disabled={flagEmployee.isPending}
                           title={isFlagged ? 'Remove flag' : 'Flag for review'}
-                          className={`p-1 rounded transition-colors ${isFlagged ? 'text-amber-600 hover:text-amber-800' : 'text-gray-300 hover:text-amber-500'}`}
+                          className={`p-1 rounded transition-colors ${isFlagged ? 'text-amber-600 hover:text-amber-800' : 'text-neutral-300 hover:text-amber-500'}`}
                         >
                           <Flag className="h-4 w-4" />
                         </button>
@@ -149,24 +149,24 @@ function BreakdownTab({ runId }: { runId: string | null }) {
                         <button
                           type="button"
                           onClick={() => setExpandedId(isExpanded ? null : detail.id)}
-                          className="p-1 rounded text-gray-400 hover:text-gray-700"
+                          className="p-1 rounded text-neutral-400 hover:text-neutral-700"
                         >
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </button>
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr key={`${detail.id}-expanded`} className="bg-gray-50">
+                      <tr key={`${detail.id}-expanded`} className="bg-neutral-50">
                         <td colSpan={6} className="px-4 py-3">
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                            <div><p className="text-gray-400">Basic Pay</p><p className="font-medium">{formatCentavos(detail.basic_pay_centavos)}</p></div>
-                            <div><p className="text-gray-400">OT Pay</p><p className="font-medium">{formatCentavos(detail.overtime_pay_centavos)}</p></div>
-                            <div><p className="text-gray-400">SSS (EE)</p><p className="font-medium">{formatCentavos(detail.sss_ee_centavos)}</p></div>
-                            <div><p className="text-gray-400">PhilHealth (EE)</p><p className="font-medium">{formatCentavos(detail.philhealth_ee_centavos)}</p></div>
-                            <div><p className="text-gray-400">Pag-IBIG (EE)</p><p className="font-medium">{formatCentavos(detail.pagibig_ee_centavos)}</p></div>
-                            <div><p className="text-gray-400">Withholding Tax</p><p className="font-medium">{formatCentavos(detail.withholding_tax_centavos)}</p></div>
-                            <div><p className="text-gray-400">Loan Deductions</p><p className="font-medium">{formatCentavos(detail.loan_deductions_centavos)}</p></div>
-                            <div><p className="text-gray-400">Other Deductions</p><p className="font-medium">{formatCentavos(detail.other_deductions_centavos)}</p></div>
+                            <div><p className="text-neutral-400">Basic Pay</p><p className="font-medium">{formatCentavos(detail.basic_pay_centavos)}</p></div>
+                            <div><p className="text-neutral-400">OT Pay</p><p className="font-medium">{formatCentavos(detail.overtime_pay_centavos)}</p></div>
+                            <div><p className="text-neutral-400">SSS (EE)</p><p className="font-medium">{formatCentavos(detail.sss_ee_centavos)}</p></div>
+                            <div><p className="text-neutral-400">PhilHealth (EE)</p><p className="font-medium">{formatCentavos(detail.philhealth_ee_centavos)}</p></div>
+                            <div><p className="text-neutral-400">Pag-IBIG (EE)</p><p className="font-medium">{formatCentavos(detail.pagibig_ee_centavos)}</p></div>
+                            <div><p className="text-neutral-400">Withholding Tax</p><p className="font-medium">{formatCentavos(detail.withholding_tax_centavos)}</p></div>
+                            <div><p className="text-neutral-400">Loan Deductions</p><p className="font-medium">{formatCentavos(detail.loan_deductions_centavos)}</p></div>
+                            <div><p className="text-neutral-400">Other Deductions</p><p className="font-medium">{formatCentavos(detail.other_deductions_centavos)}</p></div>
                             {detail.ln007_applied && (
                               <div className="col-span-2">
                                 <p className="text-amber-600">LN-007 Applied — Truncated: {formatCentavos(detail.ln007_truncated_amt)} · Carried Fwd: {formatCentavos(detail.ln007_carried_fwd)}</p>
@@ -191,20 +191,20 @@ function BreakdownTab({ runId }: { runId: string | null }) {
 
       {/* Pagination */}
       {data?.meta?.last_page > 1 && (
-        <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center justify-between text-sm text-neutral-500">
           <span>Page {data.meta?.current_page} of {data.meta?.last_page} ({data.meta?.total} employees)</span>
           <div className="flex gap-2">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage(p => p - 1)}
-              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40"
+              className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40"
             >← Prev</button>
             <button
               type="button"
               disabled={page >= (data.meta?.last_page ?? 1)}
               onClick={() => setPage(p => p + 1)}
-              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40"
+              className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40"
             >Next →</button>
           </div>
         </div>
@@ -218,7 +218,7 @@ function ExceptionsTab({ runId }: { runId: number }) {
   const { data, isLoading } = usePayrollExceptions(runId)
   const rows = (data?.data ?? []) as Record<string, unknown>[]
 
-  if (isLoading) return <div className="flex items-center gap-2 text-sm text-gray-400 py-8"><Loader2 className="h-4 w-4 animate-spin" /> Loading exceptions…</div>
+  if (isLoading) return <div className="flex items-center gap-2 text-sm text-neutral-400 py-8"><Loader2 className="h-4 w-4 animate-spin" /> Loading exceptions…</div>
   if (!rows.length) return <div className="py-8 text-center text-sm text-green-600"><CheckSquare className="h-6 w-6 mx-auto mb-2" /> No exceptions found for this run.</div>
 
   return (
@@ -228,9 +228,9 @@ function ExceptionsTab({ runId }: { runId: number }) {
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
             <span className="font-medium text-amber-800">{(row.employee_name as string) ?? `Employee #${row.employee_id}`}</span>
-            {Boolean(row.department) && <span className="text-xs text-gray-500">— {row.department as string}</span>}
+            {Boolean(row.department) && <span className="text-xs text-neutral-500">— {row.department as string}</span>}
           </div>
-          <div className="mt-1 flex flex-wrap gap-3 text-xs text-gray-600">
+          <div className="mt-1 flex flex-wrap gap-3 text-xs text-neutral-600">
             {Boolean(row.is_below_min_wage) && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Below Min Wage</span>}
             {Boolean(row.ln007_applied)     && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">LN-007 Applied</span>}
             {Boolean(row.has_deferred_deductions) && <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Deferred Deductions</span>}
@@ -292,7 +292,7 @@ export default function PayrollRunReviewPage() {
       {!isLocked && (
         <button
           onClick={() => navigate(`/payroll/runs/${runId}/compute`)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Computation
         </button>
@@ -305,7 +305,7 @@ export default function PayrollRunReviewPage() {
       />
 
       {/* Tab strip */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-neutral-200">
         <div className="flex gap-6">
           {TABS.map(({ key, label }) => (
             <button
@@ -314,8 +314,8 @@ export default function PayrollRunReviewPage() {
               onClick={() => setTab(key)}
               className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
                 tab === key
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
+                  ? 'border-neutral-900 text-neutral-900'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800'
               }`}
             >
               {label}
@@ -329,20 +329,20 @@ export default function PayrollRunReviewPage() {
         {tab === 'breakdown'  && <BreakdownTab  runId={runId} />}
         {tab === 'exceptions' && <ExceptionsTab runId={runId} />}
         {tab === 'gov' && (
-          <div className="py-8 text-center text-sm text-gray-400">
+          <div className="py-8 text-center text-sm text-neutral-400">
             Gov report exports (SSS R3, PhilHealth RF-1, Pag-IBIG MCRF) available after disbursement.
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
         <div className="flex items-center gap-2">
           {!isLocked ? (
             <button
               type="button"
               onClick={() => navigate(`/payroll/runs/${runId}/compute`)}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
@@ -369,7 +369,7 @@ export default function PayrollRunReviewPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmCancel(false)}
-                  className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md transition-colors"
+                  className="px-3 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 border border-neutral-200 rounded-md transition-colors"
                 >
                   Keep
                 </button>
@@ -389,7 +389,7 @@ export default function PayrollRunReviewPage() {
           type="button"
           onClick={handleSubmitForHr}
           disabled={submitForHr.isPending || !canSubmit}
-          className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
         >
           {submitForHr.isPending
             ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>

@@ -36,8 +36,8 @@ function DayCell({ date, events, holiday }: DayCellProps) {
   const isToday = toDateStr(date) === toDateStr(new Date())
 
   return (
-    <div className={`min-h-[80px] border border-slate-200 p-1 text-xs ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
-      <span className={`text-xs font-semibold ${isToday ? 'text-blue-600' : 'text-slate-700'}`}>
+    <div className={`min-h-[80px] border border-neutral-200 p-1 text-xs ${isToday ? 'bg-neutral-50' : 'bg-white'}`}>
+      <span className={`text-xs font-semibold ${isToday ? 'text-neutral-700' : 'text-neutral-700'}`}>
         {date.getDate()}
       </span>
 
@@ -53,7 +53,7 @@ function DayCell({ date, events, holiday }: DayCellProps) {
       {events.map(ev => (
         <div
           key={ev.id}
-          className={`mt-0.5 rounded px-1 py-0.5 truncate ${ev.is_paid ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-700'}`}
+          className={`mt-0.5 rounded px-1 py-0.5 truncate ${ev.is_paid ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-700'}`}
           title={`${ev.employee_name ?? 'Employee'} — ${ev.leave_type ?? 'Leave'} (${ev.leave_days}d)`}
         >
           {ev.employee_name?.split(' ')[0] ?? '?'} · {ev.leave_type ?? 'Leave'}
@@ -103,7 +103,7 @@ export default function LeaveCalendarPage() {
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={prevMonth}
-          className="px-3 py-1.5 text-sm border rounded hover:bg-slate-50"
+          className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
         >
           ‹ Prev
         </button>
@@ -112,34 +112,34 @@ export default function LeaveCalendarPage() {
         </span>
         <button
           onClick={nextMonth}
-          className="px-3 py-1.5 text-sm border rounded hover:bg-slate-50"
+          className="px-3 py-1.5 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
         >
           Next ›
         </button>
 
         <div className="ml-auto flex items-center gap-2">
-          <label className="text-xs text-slate-500">Dept ID</label>
+          <label className="text-xs text-neutral-500">Dept ID</label>
           <input
             type="number"
             placeholder="All"
             value={departmentId ?? ''}
             onChange={e => setDeptId(e.target.value ? Number(e.target.value) : undefined)}
-            className="w-20 border rounded px-2 py-1 text-sm"
+            className="w-20 border border-neutral-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
           />
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-slate-600">
+      <div className="flex items-center gap-4 text-xs text-neutral-600">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-100 border border-green-300 inline-block" /> Paid leave</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-100 border border-slate-300 inline-block" /> Unpaid leave</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-neutral-100 border border-neutral-300 inline-block" /> Unpaid leave</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-100 border border-amber-300 inline-block" /> Holiday</span>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-7 gap-px bg-slate-200 rounded overflow-hidden">
+        <div className="grid grid-cols-7 gap-px bg-neutral-200 rounded overflow-hidden">
           {DAY_LABELS.map(d => (
-            <div key={d} className="bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500 text-center">{d}</div>
+            <div key={d} className="bg-neutral-50 px-2 py-1 text-xs font-medium text-neutral-500 text-center">{d}</div>
           ))}
           {Array(35).fill(null).map((_, i) => (
             <div key={i} className="min-h-[80px] bg-white animate-pulse" />
@@ -148,11 +148,11 @@ export default function LeaveCalendarPage() {
       ) : isError ? (
         <p className="text-red-600 text-sm">Failed to load leave calendar.</p>
       ) : (
-        <div className="rounded overflow-hidden border border-slate-200">
+        <div className="rounded overflow-hidden border border-neutral-200">
           {/* Day headers */}
-          <div className="grid grid-cols-7 bg-slate-50">
+          <div className="grid grid-cols-7 bg-neutral-50">
             {DAY_LABELS.map(d => (
-              <div key={d} className="px-2 py-1.5 text-xs font-medium text-slate-500 text-center border-b border-slate-200">
+              <div key={d} className="px-2 py-1.5 text-xs font-medium text-neutral-500 text-center border-b border-neutral-200">
                 {d}
               </div>
             ))}
@@ -162,7 +162,7 @@ export default function LeaveCalendarPage() {
           <div className="grid grid-cols-7">
             {grid.map((date, idx) =>
               date === null ? (
-                <div key={idx} className="min-h-[80px] bg-slate-50 border border-slate-100" />
+                <div key={idx} className="min-h-[80px] bg-neutral-50 border border-neutral-100" />
               ) : (
                 <DayCell
                   key={toDateStr(date)}

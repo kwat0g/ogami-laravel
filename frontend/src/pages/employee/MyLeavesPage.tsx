@@ -35,7 +35,7 @@ export default function MyLeavesPage() {
   const myBalances = balancesData?.data?.[0]?.balances ?? []
 
   if (!employeeId) {
-    return <div className="text-gray-500 text-sm mt-4">No employee profile linked to your account.</div>
+    return <div className="text-neutral-500 text-sm mt-4">No employee profile linked to your account.</div>
   }
 
   const handleSuccess = () => {
@@ -47,13 +47,10 @@ export default function MyLeavesPage() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Leaves</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Your leave requests and available credits</p>
-        </div>
+        <h1 className="text-lg font-semibold text-neutral-900">My Leaves</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
+          className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           File Leave
@@ -64,8 +61,8 @@ export default function MyLeavesPage() {
       <div className="flex gap-3 mb-5">
         {YEARS.map((y) => (
           <button key={y} onClick={() => { setYear(y); setPage(1) }}
-            className={`px-4 py-1.5 text-sm rounded-full border transition-colors
-              ${year === y ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+            className={`px-4 py-1.5 text-sm rounded border transition-colors
+              ${year === y ? 'bg-neutral-900 text-white border-neutral-900' : 'border-neutral-300 text-neutral-600 hover:bg-neutral-50'}`}>
             {y}
           </button>
         ))}
@@ -83,19 +80,19 @@ export default function MyLeavesPage() {
               return (
                 <div
                   key={b.leave_type_id}
-                  className={`bg-white border rounded-lg px-3 py-2.5 ${isEmpty ? 'border-red-200 bg-red-50/40' : 'border-gray-200'}`}
+                  className={`bg-white border border-neutral-200 rounded px-3 py-2.5 ${isEmpty ? 'border-neutral-200' : 'border-neutral-200'}`}
                 >
-                  <p className="text-[11px] text-gray-500 mb-0.5 truncate leading-tight">{b.leave_type_name}</p>
+                  <p className="text-[11px] text-neutral-500 mb-0.5 truncate leading-tight">{b.leave_type_name}</p>
                   <div className="flex items-baseline gap-0.5">
-                    <span className={`text-lg font-bold leading-none ${isEmpty ? 'text-red-600' : 'text-blue-700'}`}>
+                    <span className={`text-lg font-bold leading-none ${isEmpty ? 'text-neutral-700' : 'text-neutral-700'}`}>
                       {b.balance}
                     </span>
-                    <span className="text-xs text-gray-400">/{total}</span>
+                    <span className="text-xs text-neutral-400">/{total}</span>
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{b.used} used{isEmpty ? ' · ' : ''}{isEmpty && <span className="text-red-500 font-medium">No balance</span>}</p>
-                  <div className="mt-1.5 bg-gray-100 rounded-full h-1">
+                  <p className="text-[10px] text-neutral-400 mt-0.5">{b.used} used{isEmpty ? ' · ' : ''}{isEmpty && <span className="text-neutral-600 font-medium">No balance</span>}</p>
+                  <div className="mt-1.5 bg-neutral-100 rounded-full h-1">
                     <div
-                      className={`h-1 rounded-full ${isEmpty ? 'bg-red-400' : 'bg-blue-500'}`}
+                      className={`h-1 rounded-full ${isEmpty ? 'bg-neutral-500' : 'bg-neutral-600'}`}
                       style={{ width: `${usedPct}%` }}
                     />
                   </div>
@@ -103,49 +100,49 @@ export default function MyLeavesPage() {
               )
             })}
           {myBalances.length === 0 && (
-            <div className="col-span-7 text-sm text-gray-400">No leave balances set up for {year}.</div>
+            <div className="col-span-7 text-sm text-neutral-400">No leave balances set up for {year}.</div>
           )}
         </div>
       )}
 
       {/* Leave history */}
-      <h2 className="text-base font-semibold text-gray-900 mb-3">Leave History</h2>
+      <h2 className="text-base font-semibold text-neutral-900 mb-3">Leave History</h2>
       {leavesLoading ? <SkeletonLoader rows={6} /> : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
                 {['Leave Type', 'From', 'To', 'Days', 'Status', 'Filed', 'Action'].map((h) => (
-                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {(leavesData?.data ?? []).length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No leave requests for {year}.</td></tr>
+                <tr><td colSpan={7} className="px-3 py-8 text-center text-neutral-400">No leave requests for {year}.</td></tr>
               )}
               {(leavesData?.data ?? []).map((row) => (
-                <tr key={row.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
-                  <td className="px-3 py-2 text-gray-700">{row.leave_type?.name ?? '—'}</td>
-                  <td className="px-3 py-2 text-gray-600">{row.date_from}</td>
-                  <td className="px-3 py-2 text-gray-600">{row.date_to}</td>
-                  <td className="px-3 py-2 text-gray-600">{row.total_days}</td>
+                <tr key={row.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
+                  <td className="px-3 py-2 text-neutral-700">{row.leave_type?.name ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-600">{row.date_from}</td>
+                  <td className="px-3 py-2 text-neutral-600">{row.date_to}</td>
+                  <td className="px-3 py-2 text-neutral-600">{row.total_days}</td>
                   <td className="px-3 py-2">
                     <StatusBadge label={row.status} />
                     {row.status === 'rejected' && row.reviewer_remarks && (
-                      <p className="text-[11px] text-red-500 mt-0.5 leading-tight max-w-[180px]" title={row.reviewer_remarks}>
+                      <p className="text-[11px] text-neutral-600 mt-0.5 leading-tight max-w-[180px]" title={row.reviewer_remarks}>
                         {row.reviewer_remarks.length > 60
                           ? row.reviewer_remarks.slice(0, 60) + '…'
                           : row.reviewer_remarks}
                       </p>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-400">{row.created_at?.slice(0, 10) ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-400">{row.created_at?.slice(0, 10) ?? '—'}</td>
                   <td className="px-3 py-2">
                     {['submitted', 'draft'].includes(row.status) && (
                       <button
                         onClick={() => setCancelTarget(row.id)}
-                        className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                        className="text-xs text-neutral-600 hover:text-neutral-900 hover:underline"
                       >
                         Cancel
                       </button>
@@ -160,13 +157,13 @@ export default function MyLeavesPage() {
 
       {/* Pagination */}
       {(leavesData?.meta?.last_page ?? 1) > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+        <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
           <span>Page {leavesData?.meta?.current_page} of {leavesData?.meta?.last_page}</span>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Prev</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
             <button disabled={page >= (leavesData?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Next</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
           </div>
         </div>
       )}

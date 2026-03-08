@@ -148,24 +148,24 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
-        <div className="px-6 py-4 border-b border-amber-200 bg-amber-50 flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-amber-600" />
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded max-w-md w-full max-h-[90vh] overflow-y-auto overflow-hidden">
+        <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex items-center gap-3">
+          <AlertTriangle className="h-6 w-6 text-neutral-600" />
+          <h3 className="text-lg font-semibold text-neutral-900">{title}</h3>
         </div>
         <div className="p-6">
-          <p className="text-gray-600 mb-6 whitespace-pre-line">{message}</p>
-          <div className="flex justify-end gap-3">
+          <p className="text-neutral-600 mb-6 whitespace-pre-line">{message}</p>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors"
+              className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded border border-neutral-300 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
-              className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors"
             >
               {confirmText}
             </button>
@@ -203,14 +203,14 @@ export default function ReferenceTablesPage(): JSX.Element {
     <EditModeContext.Provider value={{ isEditMode }}>
       <div className="space-y-6">
         {/* Header with Info */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6">
+        <div className="bg-neutral-50 border border-neutral-200 rounded p-6">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-indigo-100 rounded-xl">
-              <Database className="h-8 w-8 text-indigo-600" />
+            <div className="p-3 bg-neutral-100 rounded">
+              <Database className="h-8 w-8 text-neutral-600" />
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Reference Tables</h1>
-              <p className="text-gray-600 mb-4">
+              <h1 className="text-lg font-semibold text-neutral-900 mb-2">Reference Tables</h1>
+              <p className="text-neutral-600 mb-4">
                 This page manages <strong>versioned reference data with effective dates</strong>. 
                 These are multi-row datasets (tax brackets, contribution tables, wage rates) that 
                 change over time based on government regulations.
@@ -237,14 +237,14 @@ export default function ReferenceTablesPage(): JSX.Element {
         </div>
 
         {/* Distinction Notice */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-neutral-50 border border-neutral-200 rounded p-4">
           <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <p className="font-semibold mb-1">Looking for application settings or configuration?</p>
+            <Info className="h-5 w-5 text-neutral-600 mt-0.5" />
+            <div className="text-sm text-neutral-800">
+              <p className="font-medium mb-1">Looking for application settings or configuration?</p>
               <p>
                 System behavior settings (timeouts, account codes, flags) are managed in 
-                <a href="/admin/system-settings" className="font-semibold underline ml-1 hover:text-blue-900">
+                <a href="/admin/system-settings" className="font-medium underline ml-1 hover:text-neutral-900">
                   System Settings
                 </a>.
                 This page is for government-mandated rate tables only.
@@ -266,22 +266,22 @@ export default function ReferenceTablesPage(): JSX.Element {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all',
-                      'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all',
+                      'hover:bg-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400',
                       isActive 
-                        ? 'bg-indigo-600 text-white shadow-sm' 
-                        : 'bg-white text-gray-700 hover:text-gray-900 border border-gray-200'
+                        ? 'bg-neutral-900 text-white' 
+                        : 'bg-white text-neutral-700 hover:text-neutral-900 border border-neutral-200'
                     )}
                   >
-                    <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-indigo-100' : 'text-gray-400')} />
+                    <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-neutral-100' : 'text-neutral-400')} />
                     <div className="flex-1 min-w-0">
-                      <p className={cn('font-medium text-sm truncate', isActive ? 'text-white' : 'text-gray-900')}>
+                      <p className={cn('font-medium text-sm truncate', isActive ? 'text-white' : 'text-neutral-900')}>
                         {tab.label}
                       </p>
                     </div>
                     <ChevronRight className={cn(
                       'h-4 w-4 shrink-0 transition-transform',
-                      isActive ? 'rotate-90 text-indigo-200' : 'text-gray-300'
+                      isActive ? 'rotate-90 text-neutral-200' : 'text-neutral-300'
                     )} />
                   </button>
                 )
@@ -290,20 +290,20 @@ export default function ReferenceTablesPage(): JSX.Element {
 
             {/* Edit Mode Card */}
             <div className={cn(
-              "rounded-xl p-4 border-2 transition-all",
+              "rounded p-4 border transition-all",
               isEditMode 
-                ? 'bg-green-50 border-green-300' 
-                : 'bg-gray-50 border-gray-200'
+                ? 'bg-neutral-50 border-neutral-300' 
+                : 'bg-neutral-50 border-neutral-200'
             )}>
               <div className="flex items-center gap-2 mb-3">
                 {isEditMode ? (
-                  <Unlock className="h-5 w-5 text-green-600" />
+                  <Unlock className="h-5 w-5 text-neutral-600" />
                 ) : (
-                  <Lock className="h-5 w-5 text-gray-500" />
+                  <Lock className="h-5 w-5 text-neutral-500" />
                 )}
                 <span className={cn(
-                  "font-semibold",
-                  isEditMode ? 'text-green-800' : 'text-gray-700'
+                  "font-medium",
+                  isEditMode ? 'text-neutral-800' : 'text-neutral-700'
                 )}>
                   {isEditMode ? 'Editing Enabled' : 'View Mode'}
                 </span>
@@ -311,13 +311,13 @@ export default function ReferenceTablesPage(): JSX.Element {
               
               {isEditMode ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-green-700">
+                  <p className="text-sm text-neutral-700">
                     You can now modify reference data. New records will use the effective date you specify.
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={handleDisableClick}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm rounded-lg border border-gray-300 transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-neutral-600 hover:bg-white rounded border border-neutral-300 transition-all"
                     >
                       <Lock className="h-4 w-4" />
                       Lock Editing
@@ -326,12 +326,12 @@ export default function ReferenceTablesPage(): JSX.Element {
                 </div>
               ) : (
                 <>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-neutral-600 mb-3">
                     Reference tables are locked to prevent accidental modifications. Enable editing to make changes.
                   </p>
                   <button
                     onClick={handleEnableEdit}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors"
                   >
                     <Edit3 className="h-4 w-4" />
                     Enable Editing
@@ -341,12 +341,12 @@ export default function ReferenceTablesPage(): JSX.Element {
             </div>
 
             {/* Help Card */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <h4 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-4">
+              <h4 className="font-medium text-neutral-900 mb-2 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 How Versioning Works
               </h4>
-              <ul className="text-sm text-amber-800 space-y-1.5 list-disc list-inside">
+              <ul className="text-sm text-neutral-800 space-y-1.5 list-disc list-inside">
                 <li>Add new rows with future effective dates</li>
                 <li>Payroll uses the latest effective date ≤ pay period</li>
                 <li>Never delete historical records — they preserve past payroll accuracy</li>
@@ -358,28 +358,28 @@ export default function ReferenceTablesPage(): JSX.Element {
           {/* Content Area */}
           <div className="flex-1 min-w-0">
             {activeTable && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded border border-neutral-200 overflow-hidden">
                 {/* Table Header */}
-                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <activeTable.icon className="h-5 w-5 text-indigo-600" />
+                    <div className="p-2 bg-neutral-100 rounded">
+                      <activeTable.icon className="h-5 w-5 text-neutral-600" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-lg font-semibold text-gray-900">{activeTable.label}</h2>
-                      <p className="text-sm text-gray-500">{activeTable.description}</p>
+                      <h2 className="text-lg font-semibold text-neutral-900">{activeTable.label}</h2>
+                      <p className="text-sm text-neutral-500">{activeTable.description}</p>
                     </div>
                   </div>
                   
                   {activeTable.warning && (
-                    <div className="mt-3 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-4 py-3">
+                    <div className="mt-3 flex items-start gap-2 text-sm text-neutral-700 bg-neutral-50 rounded px-4 py-3">
                       <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                       <span>{activeTable.warning}</span>
                     </div>
                   )}
 
                   {!isEditMode && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-3">
+                    <div className="mt-3 flex items-center gap-2 text-sm text-neutral-500 bg-neutral-50 rounded px-4 py-3">
                       <Lock className="h-4 w-4" />
                       <span>View mode: Click "Enable Editing" in the sidebar to modify reference data</span>
                     </div>
@@ -413,13 +413,13 @@ export default function ReferenceTablesPage(): JSX.Element {
 
 function InfoBadge({ icon: Icon, text, variant }: { icon: React.ElementType, text: string, variant: 'info' | 'warning' | 'success' }) {
   const variants = {
-    info: 'bg-indigo-100 text-indigo-700',
-    warning: 'bg-amber-100 text-amber-700',
-    success: 'bg-green-100 text-green-700'
+    info: 'bg-neutral-100 text-neutral-700',
+    warning: 'bg-neutral-100 text-neutral-700',
+    success: 'bg-neutral-100 text-neutral-700'
   }
   
   return (
-    <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium", variants[variant])}>
+    <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium", variants[variant])}>
       <Icon className="h-3.5 w-3.5" />
       <span>{text}</span>
     </div>

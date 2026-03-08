@@ -41,6 +41,7 @@ export function useItems(params: {
   search?: string
   category_id?: number
   type?: string
+  exclude_type?: string
   is_active?: boolean
   page?: number
   per_page?: number

@@ -46,6 +46,12 @@ return new class extends Migration
                 DROP COLUMN IF EXISTS mold_master_id
         SQL);
 
+        // Remove rows where equipment_id is null (mold work orders) before
+        // restoring the NOT NULL constraint — otherwise rollback will crash.
+        DB::statement(<<<'SQL'
+            DELETE FROM maintenance_work_orders WHERE equipment_id IS NULL
+        SQL);
+
         DB::statement(<<<'SQL'
             ALTER TABLE maintenance_work_orders
                 ALTER COLUMN equipment_id SET NOT NULL

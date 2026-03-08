@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   useDepartments,
   useCreateDepartment,
@@ -39,15 +40,15 @@ export default function DepartmentsPage() {
     if (!form.code.trim() || !form.name.trim()) { setFormError('Code and Name are required.'); return }
 
     if (form.id) {
-      update.mutate({ ...form, id: form.id as number }, { onSuccess: closeForm, onError: () => setFormError('Update failed.') })
+      update.mutate({ ...form, id: form.id as number }, { onSuccess: () => { toast.success('Department updated.'); closeForm() }, onError: () => { toast.error('Failed to update department.'); setFormError('Update failed.') } })
     } else {
-      create.mutate(form, { onSuccess: closeForm, onError: () => setFormError('Create failed.') })
+      create.mutate(form, { onSuccess: () => { toast.success('Department created.'); closeForm() }, onError: () => { toast.error('Failed to create department.'); setFormError('Create failed.') } })
     }
   }
 
   const handleDelete = (id: number) => {
     if (confirm('Delete this department?')) {
-      remove.mutate(id)
+      remove.mutate(id, { onSuccess: () => toast.success('Department deleted.'), onError: () => toast.error('Failed to delete department.') })
     }
   }
 
@@ -62,41 +63,41 @@ export default function DepartmentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Departments</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{rows.length} departments</p>
+          <h1 className="text-lg font-semibold text-neutral-900">Departments</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">{rows.length} departments</p>
         </div>
         <button onClick={openCreate}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+          className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
           + Add Department
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
               {['Code', 'Name', 'Cost Center', 'Status', 'Actions'].map((h) => (
-                <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-8 text-center text-gray-400">No departments yet. Click + Add Department to start.</td></tr>
+              <tr><td colSpan={5} className="px-3 py-8 text-center text-neutral-400">No departments yet. Click + Add Department to start.</td></tr>
             )}
             {rows.map((dept) => (
-              <tr key={dept.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
-                <td className="px-3 py-2 font-mono text-gray-700">{dept.code}</td>
-                <td className="px-3 py-2 font-medium text-gray-900">{dept.name}</td>
-                <td className="px-3 py-2 text-gray-600">{dept.cost_center_code ?? '—'}</td>
+              <tr key={dept.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
+                <td className="px-3 py-2 font-mono text-neutral-700">{dept.code}</td>
+                <td className="px-3 py-2 font-medium text-neutral-900">{dept.name}</td>
+                <td className="px-3 py-2 text-neutral-600">{dept.cost_center_code ?? '—'}</td>
                 <td className="px-3 py-2">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${dept.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${dept.is_active ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500'}`}>
                     {dept.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
                 <td className="px-3 py-2 flex gap-2">
-                  <button onClick={() => openEdit(dept)} className="text-xs text-blue-600 hover:underline">Edit</button>
+                  <button onClick={() => openEdit(dept)} className="text-xs text-neutral-600 hover:underline">Edit</button>
                   <button onClick={() => handleDelete(dept.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                 </td>
               </tr>
@@ -108,36 +109,36 @@ export default function DepartmentsPage() {
       {/* Modal */}
       {form !== null && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{form.id ? 'Edit Department' : 'New Department'}</h2>
+          <div className="bg-white rounded-lg border border-neutral-200 p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold text-neutral-900 mb-4">{form.id ? 'Edit Department' : 'New Department'}</h2>
             {formError && <div className="text-red-600 text-sm mb-3 bg-red-50 rounded px-3 py-2">{formError}</div>}
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Code</label>
                   <input value={form.code} onChange={(e) => set('code', e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cost Center</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Cost Center</label>
                   <input value={form.cost_center_code} onChange={(e) => set('cost_center_code', e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
                 <input value={form.name} onChange={(e) => set('name', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                 <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} className="rounded" />
                 Active
               </label>
             </div>
             <div className="flex justify-end gap-3 mt-5">
-              <button onClick={closeForm} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
               <button onClick={handleSave} disabled={create.isPending || update.isPending}
-                className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
                 {form.id ? 'Save Changes' : 'Create'}
               </button>
             </div>

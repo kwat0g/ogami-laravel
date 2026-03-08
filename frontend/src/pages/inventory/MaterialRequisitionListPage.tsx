@@ -7,15 +7,15 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { MaterialRequisitionStatus } from '@/types/inventory'
 
 const statusBadge: Record<MaterialRequisitionStatus, string> = {
-  draft:      'bg-gray-100 text-gray-600',
-  submitted:  'bg-blue-100 text-blue-700',
-  noted:      'bg-indigo-100 text-indigo-700',
-  checked:    'bg-purple-100 text-purple-700',
-  reviewed:   'bg-orange-100 text-orange-700',
-  approved:   'bg-green-100 text-green-700',
-  rejected:   'bg-red-100 text-red-700',
-  cancelled:  'bg-gray-100 text-gray-400',
-  fulfilled:  'bg-teal-100 text-teal-700',
+  draft:      'bg-neutral-100 text-neutral-600',
+  submitted:  'bg-neutral-100 text-neutral-700',
+  noted:      'bg-neutral-100 text-neutral-700',
+  checked:    'bg-neutral-100 text-neutral-700',
+  reviewed:   'bg-neutral-100 text-neutral-700',
+  approved:   'bg-neutral-200 text-neutral-800',
+  rejected:   'bg-neutral-100 text-neutral-400',
+  cancelled:  'bg-neutral-100 text-neutral-400',
+  fulfilled:  'bg-neutral-200 text-neutral-800',
 }
 
 const ALL_STATUSES: MaterialRequisitionStatus[] = [
@@ -40,19 +40,11 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-            <ClipboardList className="w-5 h-5 text-teal-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Material Requisitions</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Request and track material issuances</p>
-          </div>
-        </div>
+        <h1 className="text-lg font-semibold text-neutral-900">Material Requisitions</h1>
         {canCreate && (
           <Link
             to="/inventory/requisitions/new"
-            className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
           >
             <Plus className="w-4 h-4" /> New Requisition
           </Link>
@@ -60,19 +52,19 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
       </div>
 
       {/* Filter */}
-      <div className="mb-5">
+      <div className="mb-5 flex items-center gap-3">
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value as MaterialRequisitionStatus | ''); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Statuses</option>
           {ALL_STATUSES.map((s) => (
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-teal-600" />
+        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
           <span>Show Archived</span>
         </label>
       </div>
@@ -86,38 +78,38 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
 
       {!isLoading && !isError && (
         <>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
                   {['MR Reference', 'Department', 'Purpose', 'Status', 'Requested By', 'Date', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">No requisitions found.</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No requisitions found.</td>
                   </tr>
                 )}
                 {data?.data?.map((mrq) => (
-                  <tr key={mrq.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-teal-700 font-medium">{mrq.mr_reference}</td>
-                    <td className="px-4 py-3 text-gray-600">{mrq.department?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{mrq.purpose}</td>
+                  <tr key={mrq.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                    <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{mrq.mr_reference}</td>
+                    <td className="px-4 py-3 text-neutral-600">{mrq.department?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-neutral-500 max-w-xs truncate">{mrq.purpose}</td>
                     <td className="px-4 py-3">
-                      {mrq.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[mrq.status]}`}>
+                      {mrq.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[mrq.status]}`}>
                         {mrq.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{mrq.requested_by?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">
+                    <td className="px-4 py-3 text-neutral-500">{mrq.requested_by?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-neutral-400 text-xs">
                       {mrq.created_at ? new Date(mrq.created_at).toLocaleDateString('en-PH') : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <Link to={`/inventory/requisitions/${mrq.ulid}`} className="text-xs text-teal-600 hover:text-teal-800 font-medium">
+                      <Link to={`/inventory/requisitions/${mrq.ulid}`} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">
                         View →
                       </Link>
                     </td>
@@ -128,11 +120,11 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
           </div>
 
           {data && data.meta.last_page > 1 && (
-            <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+            <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} requisitions</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

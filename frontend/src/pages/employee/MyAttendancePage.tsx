@@ -53,7 +53,7 @@ export default function MyAttendancePage() {
   }, [attendanceData])
 
   if (!employeeId) {
-    return <div className="text-gray-500 text-sm mt-4">No employee profile linked to your account.</div>
+    return <div className="text-neutral-500 text-sm mt-4">No employee profile linked to your account.</div>
   }
 
   const formatTime12hr = (time: string | null) => {
@@ -75,47 +75,44 @@ export default function MyAttendancePage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Attendance</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Your daily attendance records</p>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">My Attendance</h1>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-green-600 mb-1">
+        <div className="bg-white border border-neutral-200 rounded p-4">
+          <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Briefcase className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase">Present</span>
+            <span className="text-xs font-medium">Present</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.present}</p>
+          <p className="text-2xl font-bold text-neutral-900">{stats.present}</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-red-600 mb-1">
+        <div className="bg-white border border-neutral-200 rounded p-4">
+          <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Calendar className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase">Absent</span>
+            <span className="text-xs font-medium">Absent</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.absent}</p>
+          <p className="text-2xl font-bold text-neutral-900">{stats.absent}</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-amber-600 mb-1">
+        <div className="bg-white border border-neutral-200 rounded p-4">
+          <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Clock className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase">Late</span>
+            <span className="text-xs font-medium">Late</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.late}</p>
+          <p className="text-2xl font-bold text-neutral-900">{stats.late}</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-orange-600 mb-1">
+        <div className="bg-white border border-neutral-200 rounded p-4">
+          <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Coffee className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase">Incomplete</span>
+            <span className="text-xs font-medium">Incomplete</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.incomplete}</p>
+          <p className="text-2xl font-bold text-neutral-900">{stats.incomplete}</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 col-span-2 lg:col-span-1">
-          <div className="flex items-center gap-2 text-blue-600 mb-1">
+        <div className="bg-white border border-neutral-200 rounded p-4 col-span-2 lg:col-span-1">
+          <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Clock className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase">OT Hours</span>
+            <span className="text-xs font-medium">OT Hours</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{Math.round(stats.totalOvertime / 60 * 10) / 10}h</p>
+          <p className="text-2xl font-bold text-neutral-900">{Math.round(stats.totalOvertime / 60 * 10) / 10}h</p>
         </div>
       </div>
 
@@ -124,7 +121,7 @@ export default function MyAttendancePage() {
         <select
           value={year}
           onChange={(e) => { setYear(Number(e.target.value)); setPage(1) }}
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-1.5 text-sm border border-neutral-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
         >
           {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
             <option key={y} value={y}>{y}</option>
@@ -133,7 +130,7 @@ export default function MyAttendancePage() {
         <select
           value={month}
           onChange={(e) => { setMonth(Number(e.target.value)); setPage(1) }}
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-1.5 text-sm border border-neutral-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
         >
           {MONTHS.map((m, i) => (
             <option key={i + 1} value={i + 1}>{m}</option>
@@ -143,27 +140,27 @@ export default function MyAttendancePage() {
 
       {/* Attendance Table */}
       {isLoading ? <SkeletonLoader rows={6} /> : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
                 {['Date', 'Time In', 'Time Out', 'Worked', 'Status', 'Remarks'].map((h) => (
-                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {(attendanceData?.data ?? []).length === 0 && (
-                <tr><td colSpan={6} className="px-3 py-8 text-center text-gray-400">No attendance records for {MONTHS[month - 1]} {year}.</td></tr>
+                <tr><td colSpan={6} className="px-3 py-8 text-center text-neutral-400">No attendance records for {MONTHS[month - 1]} {year}.</td></tr>
               )}
               {(attendanceData?.data ?? []).map((row) => (
-                <tr key={row.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
-                  <td className="px-3 py-2 text-gray-700 font-medium">
+                <tr key={row.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
+                  <td className="px-3 py-2 text-neutral-700 font-medium">
                     {new Date(row.work_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </td>
-                  <td className="px-3 py-2 text-gray-600">{formatTime12hr(row.time_in)}</td>
-                  <td className="px-3 py-2 text-gray-600">{formatTime12hr(row.time_out)}</td>
-                  <td className="px-3 py-2 text-gray-600">
+                  <td className="px-3 py-2 text-neutral-600">{formatTime12hr(row.time_in)}</td>
+                  <td className="px-3 py-2 text-neutral-600">{formatTime12hr(row.time_out)}</td>
+                  <td className="px-3 py-2 text-neutral-600">
                     {row.worked_hours > 0 ? (
                       <span>{row.worked_hours}h {row.worked_minutes % 60}m</span>
                     ) : (
@@ -171,7 +168,7 @@ export default function MyAttendancePage() {
                     )}
                   </td>
                   <td className="px-3 py-2">{getStatusBadge(row)}</td>
-                  <td className="px-3 py-2 text-gray-500 max-w-xs truncate" title={row.remarks ?? ''}>
+                  <td className="px-3 py-2 text-neutral-500 max-w-xs truncate" title={row.remarks ?? ''}>
                     {row.remarks ?? '—'}
                   </td>
                 </tr>
@@ -183,13 +180,13 @@ export default function MyAttendancePage() {
 
       {/* Pagination */}
       {(attendanceData?.meta?.last_page ?? 1) > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+        <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
           <span>Page {attendanceData?.meta?.current_page} of {attendanceData?.meta?.last_page}</span>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Prev</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
             <button disabled={page >= (attendanceData?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Next</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
           </div>
         </div>
       )}

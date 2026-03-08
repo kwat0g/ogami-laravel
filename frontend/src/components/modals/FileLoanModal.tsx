@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useCreateLoan, useLoanTypes } from '@/hooks/useLoans'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
-import { X, Wallet, Calculator, Calendar, AlertTriangle } from 'lucide-react'
+import { X, Calculator, Calendar, AlertTriangle } from 'lucide-react'
 
 interface FileLoanModalProps {
   isOpen: boolean
@@ -153,28 +153,25 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Apply for Loan</h2>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="h-5 w-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto border border-neutral-200">
+        <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between sticky top-0 bg-white z-10">
+          <h2 className="text-base font-semibold text-neutral-900">Apply for Loan</h2>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Loan Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Loan Type <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.loan_type_id}
               onChange={(e) => handleTypeChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               required
               disabled={loadingTypes}
             >
@@ -189,7 +186,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
 
           {/* Principal Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Loan Amount (₱) <span className="text-red-500">*</span>
             </label>
             <input
@@ -200,10 +197,10 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
               placeholder="e.g. 10,000"
               value={formData.principal_amount}
               onChange={(e) => setFormData({ ...formData, principal_amount: e.target.value })}
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 outline-none transition-colors ${
+              className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 transition-colors ${
                 amountError
                   ? 'border-red-400 focus:ring-red-400 bg-red-50'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  : 'border-neutral-300 focus:ring-neutral-400'
               }`}
               required
             />
@@ -213,7 +210,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
                 <p className="text-xs text-red-600">{amountError}</p>
               </div>
             ) : selectedType && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-neutral-400 mt-1">
                 Min: {formatPeso(selectedType.min_amount_centavos / 100)} ·
                 Max: {formatPeso(selectedType.max_amount_centavos / 100)}
               </p>
@@ -222,13 +219,13 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
 
           {/* Repayment Term — dropdown */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Repayment Term <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.term_months}
               onChange={(e) => setFormData({ ...formData, term_months: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               required
               disabled={!selectedType}
             >
@@ -241,19 +238,19 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
 
           {/* Amortization summary */}
           {monthlyAmort > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2 text-blue-700 font-medium text-sm mb-1">
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 space-y-2">
+              <div className="flex items-center gap-2 text-neutral-700 font-medium text-sm mb-1">
                 <Calculator className="h-4 w-4" />
                 Repayment Summary
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                <span className="text-gray-500">Monthly deduction</span>
-                <span className="font-semibold text-gray-900 text-right">{formatPeso(monthlyAmort)}</span>
-                <span className="text-gray-500">Total payable</span>
-                <span className="font-semibold text-gray-900 text-right">{formatPeso(totalPayable)}</span>
+                <span className="text-neutral-500">Monthly deduction</span>
+                <span className="font-semibold text-neutral-900 text-right">{formatPeso(monthlyAmort)}</span>
+                <span className="text-neutral-500">Total payable</span>
+                <span className="font-semibold text-neutral-900 text-right">{formatPeso(totalPayable)}</span>
                 {selectedType && selectedType.interest_rate_annual > 0 && (
                   <>
-                    <span className="text-gray-500">Interest ({(selectedType.interest_rate_annual * 100).toFixed(1)}% p.a.)</span>
+                    <span className="text-neutral-500">Interest ({(selectedType.interest_rate_annual * 100).toFixed(1)}% p.a.)</span>
                     <span className="font-semibold text-amber-600 text-right">{formatPeso(totalPayable - principal)}</span>
                   </>
                 )}
@@ -263,11 +260,11 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
 
           {/* Deduction Cut-off */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
-              <Calendar className="h-4 w-4 text-gray-400" />
+            <label className="block text-sm font-medium text-neutral-700 mb-1 flex items-center gap-1.5">
+              <Calendar className="h-4 w-4 text-neutral-400" />
               Deduct on which cut-off? <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-2">
+            <p className="text-xs text-neutral-400 mb-2">
               Choose when your monthly amortization will be deducted from your salary.
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -276,16 +273,16 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
                   key={cutoff}
                   type="button"
                   onClick={() => setFormData(f => ({ ...f, deduction_cutoff: cutoff }))}
-                  className={`rounded-xl border-2 p-3 text-left transition-all ${
+                  className={`rounded border p-3 text-left transition-colors ${
                     formData.deduction_cutoff === cutoff
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-neutral-900 bg-neutral-100'
+                      : 'border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
-                  <div className={`text-sm font-semibold ${formData.deduction_cutoff === cutoff ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <div className={`text-sm font-semibold ${formData.deduction_cutoff === cutoff ? 'text-neutral-900' : 'text-neutral-700'}`}>
                     {cutoff} Cut-off
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div className="text-xs text-neutral-400 mt-0.5">
                     {cutoff === '1st' ? 'Deducted every 1st–15th' : 'Deducted every 16th–end'}
                   </div>
                 </button>
@@ -295,13 +292,13 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
 
           {/* Purpose */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Purpose <span className="text-red-500">*</span>
             </label>
             <select
               value={purposePreset}
               onChange={(e) => setPurposePreset(e.target.value as PurposePreset | '')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
               required
             >
               <option value="">Select a reason...</option>
@@ -314,7 +311,7 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
                 value={formData.purpose}
                 onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
                 placeholder="Please describe the purpose of this loan..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none mt-2"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none mt-2"
                 rows={3}
                 required
               />
@@ -326,14 +323,14 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
+              className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+              className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 text-sm font-medium"
             >
               {createMutation.isPending ? 'Submitting...' : 'Submit Application'}
             </button>

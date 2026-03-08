@@ -33,8 +33,8 @@ class CreateCustomerInvoiceRequest extends FormRequest
             'subtotal' => ['required', 'numeric', 'min:0.01'],
             // VAT-002: computed from subtotal × vat_rate; nullable means VAT-exempt
             'vat_amount' => ['nullable', 'numeric', 'min:0'],
-            // VAT-001: OR number required when VAT is charged
-            'or_number' => ['nullable', 'string', 'max:50', 'required_if_has_vat'],
+            // VAT-001: OR number required when VAT is charged (enforced in withValidator)
+            'or_number' => ['nullable', 'string', 'max:50'],
             // VAT-003: exemption reason must be from allowed list
             'vat_exemption_reason' => ['nullable', 'string', 'max:200'],
             'description' => ['nullable', 'string', 'max:500'],

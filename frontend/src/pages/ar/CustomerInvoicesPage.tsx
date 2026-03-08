@@ -15,12 +15,12 @@ import type { CustomerInvoice, CustomerInvoiceStatus } from '@/types/ar'
 // ---------------------------------------------------------------------------
 
 const STATUS_STYLES: Record<CustomerInvoiceStatus, string> = {
-  draft:          'bg-gray-100 text-gray-600',
-  approved:       'bg-blue-100 text-blue-700',
-  partially_paid: 'bg-yellow-100 text-yellow-700',
-  paid:           'bg-green-100 text-green-700',
-  written_off:    'bg-red-100 text-red-700',
-  cancelled:      'bg-gray-100 text-gray-400',
+  draft:          'bg-neutral-100 text-neutral-600',
+  approved:       'bg-neutral-100 text-neutral-700',
+  partially_paid: 'bg-neutral-100 text-neutral-700',
+  paid:           'bg-neutral-100 text-neutral-700',
+  written_off:    'bg-neutral-100 text-neutral-600',
+  cancelled:      'bg-neutral-100 text-neutral-400',
 }
 
 function StatusBadge({ status }: { status: CustomerInvoiceStatus }) {
@@ -58,7 +58,7 @@ function ApproveDraftButton({ invoice }: { invoice: CustomerInvoice }) {
       confirmLabel="Approve"
       onConfirm={async () => { await approveMut.mutateAsync(invoice.ulid) }}
     >
-      <button className="text-xs text-green-600 hover:underline">Approve</button>
+      <button className="text-xs text-neutral-600 hover:underline">Approve</button>
     </ConfirmDestructiveDialog>
   )
 }
@@ -73,7 +73,7 @@ function CancelDraftButton({ invoice }: { invoice: CustomerInvoice }) {
       confirmLabel="Cancel Invoice"
       onConfirm={async () => { await cancelMut.mutateAsync(invoice.ulid) }}
     >
-      <button className="text-xs text-red-500 hover:underline">Cancel</button>
+      <button className="text-xs text-neutral-500 hover:underline">Cancel</button>
     </ConfirmDestructiveDialog>
   )
 }
@@ -95,16 +95,16 @@ export default function CustomerInvoicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer Invoices</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track and manage AR invoices</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Customer Invoices</h1>
+          <p className="text-sm text-neutral-500">Track and manage AR invoices</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => refetch()} className="p-2 rounded-lg border hover:bg-gray-50 text-gray-500">
+          <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => navigate('/ar/invoices/new')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
           >
             <Plus className="w-4 h-4" /> New Invoice
           </button>
@@ -112,15 +112,15 @@ export default function CustomerInvoicesPage() {
       </div>
 
       {/* Status Tabs */}
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-1 border-b border-neutral-200">
         {TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.value
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-neutral-900 text-neutral-900'
+                : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >
             {tab.label}
@@ -132,21 +132,21 @@ export default function CustomerInvoicesPage() {
       {isLoading ? (
         <SkeletonLoader rows={8} />
       ) : (
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded border border-neutral-200">
+          <table className="min-w-full divide-y divide-neutral-100 text-sm">
+            <thead className="bg-neutral-50">
               <tr>
                 {['Invoice #', 'Customer', 'Date', 'Due Date', 'Total', 'Balance Due', 'Status', ''].map((h) => (
-                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-neutral-100">
               {invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={8} className="px-3 py-8 text-center text-neutral-400">
                     No invoices found.
                   </td>
                 </tr>
@@ -154,21 +154,21 @@ export default function CustomerInvoicesPage() {
                 invoices.map((inv) => (
                   <tr
                     key={inv.id}
-                    className={`even:bg-slate-50 hover:bg-blue-50/60 transition-colors ${inv.is_overdue ? 'bg-red-50' : ''}`}
+                    className={`hover:bg-neutral-50 transition-colors ${inv.is_overdue ? 'bg-neutral-50' : ''}`}
                   >
-                    <td className="px-3 py-2 font-mono text-xs text-gray-700">
-                      {inv.invoice_number ?? <span className="text-gray-400 italic">Draft</span>}
+                    <td className="px-3 py-2 font-mono text-xs text-neutral-700">
+                      {inv.invoice_number ?? <span className="text-neutral-400 italic">Draft</span>}
                     </td>
-                    <td className="px-3 py-2 font-medium text-gray-900">
+                    <td className="px-3 py-2 font-medium text-neutral-900">
                       {inv.customer?.name ?? `Customer #${inv.customer_id}`}
                     </td>
-                    <td className="px-3 py-2 text-gray-500">{inv.invoice_date}</td>
-                    <td className={`px-4 py-3 ${inv.is_overdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                    <td className="px-3 py-2 text-neutral-500">{inv.invoice_date}</td>
+                    <td className={`px-4 py-3 ${inv.is_overdue ? 'text-neutral-800 font-medium' : 'text-neutral-500'}`}>
                       {inv.due_date}
                       {inv.is_overdue && <span className="ml-1 text-xs">(overdue)</span>}
                     </td>
-                    <td className="px-3 py-2 text-gray-900">₱{inv.total_amount.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-gray-700">₱{inv.balance_due.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-neutral-900">₱{inv.total_amount.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-neutral-700">₱{inv.balance_due.toLocaleString()}</td>
                     <td className="px-3 py-2">
                       <StatusBadge label={inv.status} />
                     </td>
@@ -176,7 +176,7 @@ export default function CustomerInvoicesPage() {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => navigate(`/ar/invoices/${inv.ulid}`)}
-                          className="text-xs text-blue-600 hover:underline"
+                          className="text-xs text-neutral-600 hover:underline"
                         >
                           View
                         </button>

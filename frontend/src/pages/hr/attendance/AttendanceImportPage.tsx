@@ -38,10 +38,10 @@ export default function AttendanceImportPage() {
     <div className="max-w-xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Import Attendance</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Upload a CSV file from your biometric/time-keeping device.</p>
+          <h1 className="text-lg font-semibold text-neutral-900">Import Attendance</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Upload a CSV file from your biometric/time-keeping device.</p>
         </div>
-        <Link to="/hr/attendance" className="text-sm text-gray-500 hover:text-gray-700">← Back</Link>
+        <Link to="/hr/attendance" className="text-sm text-neutral-500 hover:text-neutral-700">← Back</Link>
       </div>
 
       {/* Drop zone */}
@@ -50,19 +50,19 @@ export default function AttendanceImportPage() {
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-colors
-          ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-white hover:border-gray-400'}`}
+        className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-colors
+          ${dragOver ? 'border-neutral-400 bg-neutral-50' : 'border-neutral-300 bg-white hover:border-neutral-400'}`}
       >
-        <svg className="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-10 h-10 text-neutral-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
         {file ? (
-          <p className="text-sm font-medium text-blue-700">{file.name}</p>
+          <p className="text-sm font-medium text-neutral-700">{file.name}</p>
         ) : (
           <>
-            <p className="text-sm font-medium text-gray-700">Drop your CSV here or <span className="text-blue-600 underline">browse</span></p>
-            <p className="text-xs text-gray-400 mt-1">Supported: .csv</p>
+            <p className="text-sm font-medium text-neutral-700">Drop your CSV here or <span className="text-neutral-900 underline">browse</span></p>
+            <p className="text-xs text-neutral-400 mt-1">Supported: .csv</p>
           </>
         )}
         <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
@@ -71,13 +71,13 @@ export default function AttendanceImportPage() {
       {/* Actions */}
       <div className="flex justify-between items-center mt-5">
         {file && (
-          <button onClick={() => { setFile(null); setResult(null) }} className="text-sm text-gray-500 hover:text-gray-700">Clear</button>
+          <button onClick={() => { setFile(null); setResult(null) }} className="text-sm text-neutral-500 hover:text-neutral-700">Clear</button>
         )}
         <div className="ml-auto">
           <button
             disabled={!file || importMutation.isPending}
             onClick={handleSubmit}
-            className="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-40 transition-colors"
+            className="px-5 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-40 transition-colors"
           >
             {importMutation.isPending ? 'Importing…' : 'Start Import'}
           </button>
@@ -86,16 +86,16 @@ export default function AttendanceImportPage() {
 
       {/* Result */}
       {result && (
-        <div className="mt-6 bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Import Result</h2>
+        <div className="mt-6 bg-white border border-neutral-200 rounded-lg p-5">
+          <h2 className="text-base font-semibold text-neutral-900 mb-3">Import Result</h2>
           <div className="flex gap-6 mb-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600">{result.imported}</p>
-              <p className="text-xs text-gray-500">Imported</p>
+              <p className="text-xs text-neutral-500">Imported</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-red-600">{result.failed}</p>
-              <p className="text-xs text-gray-500">Failed</p>
+              <p className="text-xs text-neutral-500">Failed</p>
             </div>
           </div>
           {result.errors.length > 0 && (

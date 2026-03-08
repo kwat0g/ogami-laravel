@@ -36,6 +36,12 @@ final class CreateVendorRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:200'],
             'phone' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'payment_terms' => ['nullable', 'string', 'max:50'],
+            'bank_name' => ['nullable', 'string', 'max:200'],
+            'bank_account_no' => ['nullable', 'string', 'max:100'],
+            'bank_account_name' => ['nullable', 'string', 'max:200'],
+            'accreditation_status' => ['nullable', 'string', 'max:50'],
+            'accreditation_notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

@@ -43,7 +43,7 @@ export default function PayrollRunComputingPage() {
 
   if (!run) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-neutral-500">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading…
       </div>
     )
@@ -66,19 +66,19 @@ export default function PayrollRunComputingPage() {
 
       {/* Begin Computation — shown when checks passed but computation not yet started */}
       {isPreRunChecked && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 space-y-4">
+        <div className="bg-green-50 border border-green-200 rounded p-6 space-y-4">
           <div className="flex items-center gap-3">
             <CheckCircle className="h-7 w-7 text-green-500 shrink-0" />
             <div>
-              <p className="text-base font-semibold text-gray-900">All Pre-Run Checks Passed</p>
-              <p className="text-sm text-gray-500 mt-0.5">The run is ready to compute. Click below to start the payroll batch.</p>
+              <p className="text-base font-semibold text-neutral-900">All Pre-Run Checks Passed</p>
+              <p className="text-sm text-neutral-500 mt-0.5">The run is ready to compute. Click below to start the payroll batch.</p>
             </div>
           </div>
           <button
             type="button"
             disabled={beginComputation.isPending}
             onClick={() => beginComputation.mutate()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+            className="flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
           >
             {beginComputation.isPending
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Starting…</>
@@ -89,25 +89,25 @@ export default function PayrollRunComputingPage() {
       )}
 
       {/* Status card */}
-      <div className={`rounded-xl border p-6 space-y-4 ${
+      <div className={`rounded border p-6 space-y-4 ${
         isFailed   ? 'bg-red-50 border-red-200' :
         isComputed ? 'bg-green-50 border-green-200' :
-        'bg-blue-50 border-blue-200'
+        'bg-neutral-50 border-neutral-200'
       }`}>
         {/* Status icon + message */}
         <div className="flex items-center gap-3">
-          {isProcessing && <Loader2 className="h-7 w-7 text-blue-500 animate-spin shrink-0" />}
+          {isProcessing && <Loader2 className="h-7 w-7 text-neutral-500 animate-spin shrink-0" />}
           {isFailed     && <XCircle  className="h-7 w-7 text-red-500 shrink-0" />}
           {isComputed   && <CheckCircle className="h-7 w-7 text-green-500 shrink-0" />}
           <div>
-            <p className="text-base font-semibold text-gray-900">
+            <p className="text-base font-semibold text-neutral-900">
               {isProcessing && 'Computing payroll…'}
               {isFailed     && 'Computation Failed'}
               {isComputed   && 'Computation Complete!'}
               {!isProcessing && !isFailed && !isComputed && !isPreRunChecked && 'Waiting to start…'}
             </p>
             {progress?.current_department && isProcessing && (
-              <p className="text-sm text-gray-500 mt-0.5">
+              <p className="text-sm text-neutral-500 mt-0.5">
                 Currently processing: <strong>{progress.current_department}</strong>
               </p>
             )}
@@ -117,13 +117,13 @@ export default function PayrollRunComputingPage() {
         {/* Progress bar */}
         {isProcessing && (
           <div className="space-y-1">
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-neutral-500">
               <span>{progress?.employees_processed ?? 0} of {progress?.total_employees ?? run.total_employees} employees</span>
               <span>{pct}%</span>
             </div>
-            <div className="h-2 rounded-full bg-blue-200 overflow-hidden">
+            <div className="h-2 rounded bg-neutral-200 overflow-hidden">
               <div
-                className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                className="h-full bg-neutral-900 rounded transition-all duration-500"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -132,7 +132,7 @@ export default function PayrollRunComputingPage() {
 
         {/* Error message */}
         {isFailed && progress?.error && (
-          <div className="bg-white border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+          <div className="bg-white border border-red-200 rounded px-4 py-3 text-sm text-red-700">
             {progress.error}
           </div>
         )}
@@ -141,16 +141,16 @@ export default function PayrollRunComputingPage() {
         {isComputed && run && (
           <div className="grid grid-cols-3 gap-4 pt-2">
             <div className="text-center">
-              <p className="text-xl font-bold text-gray-900">{run.total_employees}</p>
-              <p className="text-xs text-gray-500">Employees Processed</p>
+              <p className="text-xl font-bold text-neutral-900">{run.total_employees}</p>
+              <p className="text-xs text-neutral-500">Employees Processed</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-gray-900">{formatCentavos(run.gross_pay_total_centavos)}</p>
-              <p className="text-xs text-gray-500">Total Gross</p>
+              <p className="text-xl font-bold text-neutral-900">{formatCentavos(run.gross_pay_total_centavos)}</p>
+              <p className="text-xs text-neutral-500">Total Gross</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-gray-900">{formatCentavos(run.net_pay_total_centavos)}</p>
-              <p className="text-xs text-gray-500">Total Net Pay</p>
+              <p className="text-xl font-bold text-neutral-900">{formatCentavos(run.net_pay_total_centavos)}</p>
+              <p className="text-xs text-neutral-500">Total Net Pay</p>
             </div>
           </div>
         )}
@@ -158,7 +158,7 @@ export default function PayrollRunComputingPage() {
 
       {/* Timing info */}
       {(progress?.started_at || run.computation_started_at) && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-neutral-400">
           Started: {new Date(progress?.started_at ?? run.computation_started_at ?? '').toLocaleString('en-PH')}
           {(progress?.finished_at ?? run.computation_completed_at) &&
             ` · Finished: ${new Date(progress?.finished_at ?? run.computation_completed_at ?? '').toLocaleString('en-PH')}`
@@ -167,7 +167,7 @@ export default function PayrollRunComputingPage() {
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
         <div className="flex items-center gap-2">
           {/* Cancel button available until submitted to accounting */}
           {!['SUBMITTED', 'HR_APPROVED', 'ACCTG_APPROVED', 'APPROVED', 'POSTED', 'DISBURSED'].includes(status || '') && (
@@ -186,7 +186,7 @@ export default function PayrollRunComputingPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmCancel(false)}
-                  className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 rounded-md transition-colors"
+                  className="px-3 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 border border-neutral-200 rounded-md transition-colors"
                 >
                   Keep
                 </button>
@@ -195,7 +195,7 @@ export default function PayrollRunComputingPage() {
               <button
                 type="button"
                 onClick={() => setConfirmCancel(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors"
               >
                 <Ban className="h-4 w-4" /> Cancel Run
               </button>
@@ -206,7 +206,7 @@ export default function PayrollRunComputingPage() {
           <button
             type="button"
             onClick={() => navigate(`/payroll/runs/${runId}/review`)}
-            className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded transition-colors"
           >
             Proceed to Review <ArrowRight className="h-4 w-4" />
           </button>
@@ -215,7 +215,7 @@ export default function PayrollRunComputingPage() {
           <button
             type="button"
             onClick={() => navigate(`/payroll/runs/${runId}/validate`)}
-            className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded transition-colors"
           >
             <RefreshCw className="h-4 w-4" /> Back to Validation
           </button>

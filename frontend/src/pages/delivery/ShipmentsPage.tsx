@@ -4,10 +4,10 @@ import { useShipments } from '@/hooks/useDelivery';
 import type { ShipmentStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<ShipmentStatus, string> = {
-  pending:    'bg-gray-100 text-gray-600',
-  in_transit: 'bg-blue-100 text-blue-700',
-  delivered:  'bg-green-100 text-green-700',
-  returned:   'bg-red-100 text-red-500',
+  pending:    'bg-neutral-100 text-neutral-600',
+  in_transit: 'bg-neutral-100 text-neutral-700',
+  delivered:  'bg-neutral-200 text-neutral-800',
+  returned:   'bg-neutral-100 text-neutral-400',
 };
 
 const STATUS_LABELS: Record<ShipmentStatus, string> = {
@@ -27,21 +27,13 @@ export default function ShipmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-          <Package className="w-5 h-5 text-blue-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Shipments</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track outbound shipments and delivery status</p>
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">Shipments</h1>
 
       <div className="flex gap-2">
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:ring-1 focus:ring-neutral-400 focus:outline-none bg-white"
         >
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
@@ -52,7 +44,7 @@ export default function ShipmentsPage() {
       </div>
 
       {isLoading && (
-        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 text-sm">
+        <div className="bg-white border border-neutral-200 rounded p-8 text-center text-neutral-400 text-sm">
           Loading shipments…
         </div>
       )}
@@ -64,50 +56,50 @@ export default function ShipmentsPage() {
       )}
 
       {!isLoading && !isError && (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded border border-neutral-200 bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
                 {['Reference', 'Carrier', 'Tracking #', 'Shipped', 'Est. Arrival', 'Actual Arrival', 'Status'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {(data?.data ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-neutral-400">
                     <Package size={32} className="mx-auto mb-2 opacity-30" />
                     No shipments found.
                   </td>
                 </tr>
               ) : (
                 (data?.data ?? []).map((shipment) => (
-                  <tr key={shipment.ulid} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs font-medium text-blue-700">
+                  <tr key={shipment.ulid} className="even:bg-neutral-100 hover:bg-neutral-50">
+                    <td className="px-4 py-3 font-mono text-xs font-medium text-neutral-900">
                       {shipment.shipment_reference}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
-                      {shipment.carrier ?? <span className="text-gray-400">—</span>}
+                    <td className="px-4 py-3 text-neutral-700">
+                      {shipment.carrier ?? <span className="text-neutral-400">—</span>}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      {shipment.tracking_number ?? <span className="text-gray-400">—</span>}
+                    <td className="px-4 py-3 font-mono text-xs text-neutral-600">
+                      {shipment.tracking_number ?? <span className="text-neutral-400">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
-                      {shipment.shipped_at ? shipment.shipped_at.slice(0, 10) : <span className="text-gray-400">—</span>}
+                    <td className="px-4 py-3 text-neutral-600 text-xs">
+                      {shipment.shipped_at ? shipment.shipped_at.slice(0, 10) : <span className="text-neutral-400">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
-                      {shipment.estimated_arrival ? shipment.estimated_arrival.slice(0, 10) : <span className="text-gray-400">—</span>}
+                    <td className="px-4 py-3 text-neutral-600 text-xs">
+                      {shipment.estimated_arrival ? shipment.estimated_arrival.slice(0, 10) : <span className="text-neutral-400">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
+                    <td className="px-4 py-3 text-neutral-600 text-xs">
                       {shipment.actual_arrival
-                        ? <span className="text-green-700 font-medium">{shipment.actual_arrival.slice(0, 10)}</span>
-                        : <span className="text-gray-400">—</span>}
+                        ? <span className="text-neutral-900 font-medium">{shipment.actual_arrival.slice(0, 10)}</span>
+                        : <span className="text-neutral-400">—</span>}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[shipment.status]}`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[shipment.status]}`}>
                         {STATUS_LABELS[shipment.status]}
                       </span>
                     </td>

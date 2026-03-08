@@ -46,6 +46,12 @@ return new class extends Migration
                 DROP COLUMN IF EXISTS audit_finding_id
         SQL);
 
+        // Remove rows where ncr_id is null (came from audit findings) before
+        // restoring the NOT NULL constraint — otherwise rollback will crash.
+        DB::statement(<<<'SQL'
+            DELETE FROM capa_actions WHERE ncr_id IS NULL
+        SQL);
+
         DB::statement(<<<'SQL'
             ALTER TABLE capa_actions
                 ALTER COLUMN ncr_id SET NOT NULL

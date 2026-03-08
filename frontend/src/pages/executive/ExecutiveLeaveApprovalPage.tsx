@@ -26,7 +26,7 @@ export default function ExecutiveLeaveApprovalPage() {
   if (isLoading) return <SkeletonLoader rows={10} />
   if (isError) {
     return (
-      <div className="text-red-600 text-sm mt-4">
+      <div className="text-neutral-600 text-sm mt-4">
         Failed to load leave requests for GA processing.
       </div>
     )
@@ -36,30 +36,19 @@ export default function ExecutiveLeaveApprovalPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">GA Leave Processing</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {data?.meta?.total ?? 0} requests pending GA processing
-            <span className="ml-2 text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-              GA Officer
-            </span>
-          </p>
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">GA Leave Processing</h1>
 
       {/* Info Card */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
-        <h3 className="text-sm font-medium text-indigo-900 mb-1">GA Processing (Step 4 — AD-084-00)</h3>
-        <p className="text-sm text-indigo-700">
+      <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-6">
+        <h3 className="text-sm font-medium text-neutral-900 mb-1">GA Processing (Step 4 — AD-084-00)</h3>
+        <p className="text-sm text-neutral-600">
           Review leave requests that have been checked by the Plant Manager. Set the action taken
           (approved with pay, without pay, or disapproved) before forwarding to VP for final notation.
         </p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-4 flex flex-wrap gap-3">
         <select
           value={filters.status ?? 'manager_checked'}
           onChange={(e) =>
@@ -69,7 +58,7 @@ export default function ExecutiveLeaveApprovalPage() {
               page: 1,
             }))
           }
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           <option value="manager_checked">Pending GA Process</option>
           <option value="ga_processed">Pending VP Notation</option>
@@ -85,7 +74,7 @@ export default function ExecutiveLeaveApprovalPage() {
               page: 1,
             }))
           }
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           <option value="">All Years</option>
           {YEARS.map((y) => (
@@ -97,9 +86,9 @@ export default function ExecutiveLeaveApprovalPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
               {[
                 'Employee',
@@ -113,35 +102,35 @@ export default function ExecutiveLeaveApprovalPage() {
               ].map((h) => (
                 <th
                   key={h}
-                  className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-semibold text-neutral-600"
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">
                   No leave requests pending GA processing.
                 </td>
               </tr>
             )}
             {rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">
+              <tr key={row.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                <td className="px-4 py-3 font-medium text-neutral-900">
                   {row.employee?.full_name ?? `#${row.employee_id}`}
                 </td>
-                <td className="px-4 py-3 text-gray-600">
+                <td className="px-4 py-3 text-neutral-600">
                   {row.employee?.department?.name ?? '—'}
                 </td>
-                <td className="px-4 py-3 text-gray-600">
+                <td className="px-4 py-3 text-neutral-600">
                   {row.leave_type?.name ?? '—'}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{row.date_from}</td>
-                <td className="px-4 py-3 text-gray-600">{row.date_to}</td>
-                <td className="px-4 py-3 text-gray-600">{row.total_days}</td>
+                <td className="px-4 py-3 text-neutral-600">{row.date_from}</td>
+                <td className="px-4 py-3 text-neutral-600">{row.date_to}</td>
+                <td className="px-4 py-3 text-neutral-600">{row.total_days}</td>
                 <td className="px-4 py-3">
                   <StatusBadge label={row.status} />
                 </td>
@@ -151,7 +140,7 @@ export default function ExecutiveLeaveApprovalPage() {
                       <button
                         onClick={() => setProcessId(row.id)}
                         disabled={gaProcess.isPending}
-                        className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
                       >
                         Process
                       </button>
@@ -166,7 +155,7 @@ export default function ExecutiveLeaveApprovalPage() {
                           )
                         }}
                         disabled={reject.isPending}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-neutral-600 text-white rounded hover:bg-neutral-700 disabled:opacity-50"
                       >
                         Reject
                       </button>
@@ -181,7 +170,7 @@ export default function ExecutiveLeaveApprovalPage() {
 
       {/* Pagination */}
       {data?.meta && data.meta.last_page > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+        <div className="mt-4 flex items-center justify-between text-sm text-neutral-600">
           <span>
             Page {data.meta.current_page} of {data.meta.last_page}
           </span>
@@ -191,7 +180,7 @@ export default function ExecutiveLeaveApprovalPage() {
               onClick={() =>
                 setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))
               }
-              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50"
             >
               Previous
             </button>
@@ -200,7 +189,7 @@ export default function ExecutiveLeaveApprovalPage() {
               onClick={() =>
                 setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))
               }
-              className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50"
             >
               Next
             </button>
@@ -211,17 +200,17 @@ export default function ExecutiveLeaveApprovalPage() {
       {/* GA Process Modal */}
       {processId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded p-6 w-full max-w-md border border-neutral-200">
+            <h3 className="text-base font-semibold text-neutral-900 mb-4">
               Process Leave Request (GA Officer)
             </h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Action Taken</label>
               <select
                 value={actionTaken}
                 onChange={(e) => setActionTaken(e.target.value as GaProcessPayload['action_taken'])}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
               >
                 <option value="approved_with_pay">Approved With Pay</option>
                 <option value="approved_without_pay">Approved Without Pay</option>
@@ -230,12 +219,12 @@ export default function ExecutiveLeaveApprovalPage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Remarks (optional)</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Remarks (optional)</label>
               <textarea
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Enter remarks..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
                 rows={3}
               />
             </div>
@@ -247,7 +236,7 @@ export default function ExecutiveLeaveApprovalPage() {
                   setRemarks('')
                   setActionTaken('approved_with_pay')
                 }}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded"
               >
                 Cancel
               </button>
@@ -268,7 +257,7 @@ export default function ExecutiveLeaveApprovalPage() {
                   )
                 }}
                 disabled={gaProcess.isPending}
-                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
               >
                 {gaProcess.isPending ? 'Processing…' : 'Submit'}
               </button>
@@ -279,4 +268,3 @@ export default function ExecutiveLeaveApprovalPage() {
     </div>
   )
 }
-

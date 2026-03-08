@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table'
 import { useState } from 'react'
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import SkeletonLoader from './SkeletonLoader'
 
 // ── Pagination meta ───────────────────────────────────────────────────────────
@@ -87,10 +88,10 @@ export default function DataTable<TData>({
   const colCount = columns.length
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
-      <table className="min-w-full divide-y divide-gray-200 text-sm">
+    <div className="overflow-x-auto rounded border border-neutral-200">
+      <table className="min-w-full divide-y divide-neutral-200 text-sm">
         {/* Head */}
-        <thead className="bg-gray-50">
+        <thead className="bg-neutral-50">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((header) => {
@@ -100,10 +101,10 @@ export default function DataTable<TData>({
                 return (
                   <th
                     key={header.id}
-                    className={[
-                      'px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap',
-                      canSort ? 'cursor-pointer select-none hover:text-gray-700' : '',
-                    ].join(' ')}
+                    className={cn(
+                      'px-3 py-2.5 text-left text-sm font-medium text-neutral-600 whitespace-nowrap',
+                      canSort && 'cursor-pointer select-none hover:text-neutral-800'
+                    )}
                     onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                   >
                     <span className="inline-flex items-center gap-1">
@@ -124,7 +125,7 @@ export default function DataTable<TData>({
         </thead>
 
         {/* Body */}
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody className="bg-white divide-y divide-neutral-100">
           {table.getRowModel().rows.length === 0 ? (
             <tr>
               <td colSpan={colCount} className="px-4 py-10 text-center text-sm text-gray-400">
@@ -133,9 +134,9 @@ export default function DataTable<TData>({
             </tr>
           ) : (
             table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
+              <tr key={row.id} className="hover:bg-neutral-50 even:bg-neutral-100">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                  <td key={cell.id} className="px-3 py-2 text-neutral-700 whitespace-nowrap">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -147,8 +148,8 @@ export default function DataTable<TData>({
 
       {/* Pagination */}
       {pagination && onPageChange && pagination.last_page > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
-          <p className="text-xs text-gray-500">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200 bg-neutral-50">
+          <p className="text-xs text-neutral-500">
             Page <span className="font-medium">{pagination.current_page}</span> of{' '}
             <span className="font-medium">{pagination.last_page}</span>
             {' — '}
@@ -188,7 +189,7 @@ function PaginationButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="px-3 py-1 text-xs rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      className="px-3 py-1 text-xs rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
     >
       {label}
     </button>

@@ -16,18 +16,18 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { ProductionOrderStatus } from '@/types/production'
 
 const statusBadge: Record<ProductionOrderStatus, string> = {
-  draft:       'bg-gray-100 text-gray-600',
-  released:    'bg-blue-100 text-blue-700',
-  in_progress: 'bg-amber-100 text-amber-700',
-  completed:   'bg-green-100 text-green-700',
-  cancelled:   'bg-gray-100 text-gray-400',
+  draft:       'bg-neutral-100 text-neutral-600',
+  released:    'bg-neutral-200 text-neutral-800',
+  in_progress: 'bg-neutral-100 text-neutral-700',
+  completed:   'bg-neutral-200 text-neutral-800',
+  cancelled:   'bg-neutral-100 text-neutral-400',
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-4 py-2 border-b border-gray-100 last:border-0">
-      <dt className="text-sm text-gray-500 w-36 flex-shrink-0">{label}</dt>
-      <dd className="text-sm text-gray-900 font-medium">{value ?? '—'}</dd>
+    <div className="flex items-start gap-4 py-2 border-b border-neutral-100 last:border-0">
+      <dt className="text-sm text-neutral-500 w-36 flex-shrink-0">{label}</dt>
+      <dd className="text-sm text-neutral-900 font-medium">{value ?? '—'}</dd>
     </div>
   )
 }
@@ -96,16 +96,13 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/production/orders')} className="p-2 hover:bg-gray-100 rounded-lg">
-          <ArrowLeft className="w-4 h-4 text-gray-500" />
+        <button onClick={() => navigate('/production/orders')} className="p-2 hover:bg-neutral-100 rounded">
+          <ArrowLeft className="w-4 h-4 text-neutral-500" />
         </button>
-        <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
-          <Factory className="w-5 h-5 text-violet-600" />
-        </div>
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 font-mono">{order.po_reference}</h1>
-            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusBadge[order.status]}`}>
+            <h1 className="text-lg font-semibold text-neutral-900 font-mono">{order.po_reference}</h1>
+            <span className={`inline-flex px-2.5 py-1 rounded text-xs font-medium capitalize ${statusBadge[order.status]}`}>
               {order.status.replace('_', ' ')}
             </span>
           </div>
@@ -113,8 +110,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       </div>
 
       {/* Details */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Work Order Details</h2>
+      <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
+        <h2 className="text-sm font-medium text-neutral-700 mb-3">Work Order Details</h2>
         <dl>
           <InfoRow label="Product" value={`${order.product_item?.item_code} — ${order.product_item?.name}`} />
           <InfoRow label="BOM Version" value={order.bom ? `v${order.bom.version}` : '—'} />
@@ -123,10 +120,10 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
             <div className="flex items-center gap-2">
               <span>{parseFloat(order.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>
               <div className="flex items-center gap-1">
-                <div className="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-violet-500 rounded-full" style={{ width: `${Math.min(100, order.progress_pct)}%` }} />
+                <div className="h-2 w-24 bg-neutral-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-neutral-600 rounded-full" style={{ width: `${Math.min(100, order.progress_pct)}%` }} />
                 </div>
-                <span className="text-xs text-gray-400">{order.progress_pct.toFixed(1)}%</span>
+                <span className="text-xs text-neutral-400">{order.progress_pct.toFixed(1)}%</span>
               </div>
             </div>
           } />
@@ -139,26 +136,26 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
       {/* BOM Components */}
       {order.bom && (order.bom.components ?? []).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">BOM Components</h2>
+        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
+          <h2 className="text-sm font-medium text-neutral-700 mb-3">BOM Components</h2>
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-neutral-50">
               <tr>
                 {['Component', 'Qty/Unit', 'UOM', 'Scrap %'].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {order.bom.components?.map((comp) => (
                 <tr key={comp.id}>
                   <td className="px-3 py-2">
-                    <div className="font-mono text-xs text-gray-400">{comp.component_item?.item_code}</div>
-                    <div className="text-sm">{comp.component_item?.name}</div>
+                    <div className="font-mono text-xs text-neutral-400">{comp.component_item?.item_code}</div>
+                    <div className="text-sm text-neutral-800">{comp.component_item?.name}</div>
                   </td>
                   <td className="px-3 py-2 tabular-nums">{parseFloat(comp.qty_per_unit).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
-                  <td className="px-3 py-2 text-gray-400">{comp.unit_of_measure}</td>
-                  <td className="px-3 py-2 text-gray-400">{comp.scrap_factor_pct}%</td>
+                  <td className="px-3 py-2 text-neutral-400">{comp.unit_of_measure}</td>
+                  <td className="px-3 py-2 text-neutral-400">{comp.scrap_factor_pct}%</td>
                 </tr>
               ))}
             </tbody>
@@ -168,25 +165,25 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
       {/* Output Logs */}
       {(order.output_logs ?? []).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-5">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Output Logs</h2>
+        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
+          <h2 className="text-sm font-medium text-neutral-700 mb-3">Output Logs</h2>
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-neutral-50">
               <tr>
                 {['Date', 'Shift', 'Produced', 'Rejected', 'Operator', 'Recorded By'].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {order.output_logs?.map((log) => (
                 <tr key={log.id}>
-                  <td className="px-3 py-2 text-gray-500 text-xs">{log.log_date}</td>
+                  <td className="px-3 py-2 text-neutral-500 text-xs">{log.log_date}</td>
                   <td className="px-3 py-2 font-semibold">{log.shift}</td>
-                  <td className="px-3 py-2 tabular-nums text-green-700 font-semibold">{parseFloat(log.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                  <td className="px-3 py-2 tabular-nums text-neutral-900 font-semibold">{parseFloat(log.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
                   <td className="px-3 py-2 tabular-nums text-red-600">{parseFloat(log.qty_rejected).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
-                  <td className="px-3 py-2 text-gray-500">{log.operator?.name ?? '—'}</td>
-                  <td className="px-3 py-2 text-gray-400 text-xs">{log.recorded_by?.name ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-500">{log.operator?.name ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-400 text-xs">{log.recorded_by?.name ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -195,19 +192,19 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       )}
 
       {/* Actions */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Actions</h2>
+      <div className="bg-white border border-neutral-200 rounded p-6">
+        <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>
 
         {showLogForm && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">Log Production Output</h3>
+          <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-4 space-y-3">
+            <h3 className="text-sm font-medium text-neutral-700">Log Production Output</h3>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Shift</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Shift</label>
                 <select
                   value={logData.shift}
                   onChange={(e) => setLogData((d) => ({ ...d, shift: e.target.value as 'A' | 'B' | 'C' }))}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 >
                   <option value="A">Shift A</option>
                   <option value="B">Shift B</option>
@@ -215,20 +212,20 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Date</label>
                 <input
                   type="date"
                   value={logData.log_date}
                   onChange={(e) => setLogData((d) => ({ ...d, log_date: e.target.value }))}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Operator</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Operator</label>
                 <select
                   value={logData.operator_id}
                   onChange={(e) => setLogData((d) => ({ ...d, operator_id: e.target.value }))}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 >
                   <option value="">— Select Operator —</option>
                   {employees.map(emp => (
@@ -237,31 +234,31 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Qty Produced</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Produced</label>
                 <input
                   type="number"
                   step="0.0001"
                   value={logData.qty_produced}
                   onChange={(e) => setLogData((d) => ({ ...d, qty_produced: e.target.value }))}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Qty Rejected</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Rejected</label>
                 <input
                   type="number"
                   step="0.0001"
                   value={logData.qty_rejected}
                   onChange={(e) => setLogData((d) => ({ ...d, qty_rejected: e.target.value }))}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Remarks</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Remarks</label>
                 <input
                   value={logData.remarks}
                   onChange={(e) => setLogData((d) => ({ ...d, remarks: e.target.value }))}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 />
               </div>
             </div>
@@ -269,11 +266,11 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
               <button
                 onClick={handleLogOutput}
                 disabled={logMut.isPending || !logData.qty_produced}
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg disabled:opacity-50"
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
               >
                 Submit Log
               </button>
-              <button onClick={() => setShowLogForm(false)} className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
+              <button onClick={() => setShowLogForm(false)} className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50">
                 Cancel
               </button>
             </div>
@@ -282,27 +279,27 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
         <div className="flex flex-wrap gap-2">
           {order.status === 'draft' && canRelease && (
-            <button onClick={() => handleAction('release')} disabled={releaseMut.isPending} className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
+            <button onClick={() => handleAction('release')} disabled={releaseMut.isPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
               Release
             </button>
           )}
           {order.status === 'released' && canRelease && (
-            <button onClick={() => handleAction('start')} disabled={startMut.isPending} className="px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg disabled:opacity-50">
+            <button onClick={() => handleAction('start')} disabled={startMut.isPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
               Start Production
             </button>
           )}
           {order.status === 'in_progress' && canComplete && (
-            <button onClick={() => handleAction('complete')} disabled={completeMut.isPending} className="px-4 py-2 text-sm font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50">
+            <button onClick={() => handleAction('complete')} disabled={completeMut.isPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
               Mark Complete
             </button>
           )}
           {['released', 'in_progress'].includes(order.status) && canLogOutput && !showLogForm && (
-            <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-violet-300 text-violet-700 hover:bg-violet-50 rounded-lg">
+            <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded">
               Log Output
             </button>
           )}
           {['draft', 'released'].includes(order.status) && (
-            <button onClick={() => handleAction('cancel')} disabled={cancelMut.isPending} className="px-4 py-2 text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg">
+            <button onClick={() => handleAction('cancel')} disabled={cancelMut.isPending} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded">
               Cancel WO
             </button>
           )}

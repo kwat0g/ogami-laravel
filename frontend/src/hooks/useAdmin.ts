@@ -333,3 +333,86 @@ export function useEmployeesAvailable(departmentId: number | null) {
     staleTime: 30_000,
   })
 }
+
+// ---------------------------------------------------------------------------
+// Backup Management
+// ---------------------------------------------------------------------------
+
+export interface BackupFile {
+  filename:   string
+  size_bytes: number
+  size_human: string
+  created_at: string
+  age_days:   number
+}
+
+export interface BackupStatus {
+  backup_count:  number
+  latest_backup: {
+    filename:   string
+    size_human: string
+    created_at: string
+    age_days:   number
+  } | null
+}
+
+/** List all backup archives (sorted newest first). */
+export function useBackups() {
+  return useQuery({
+    queryKey: ['admin-backups'],
+    queryFn: async () => {
+      const res = await api.get<{ data: BackupFile[] }>('/admin/backups')
+      return res.data.data
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
+}
+
+/** Lightweight status card: count + latest file info. */
+export function useBackupStatus() {
+  return useQuery({
+    queryKey: ['admin-backups-status'],
+    queryFn: async () => {
+      const res = await api.get<{ data: BackupStatus }>('/admin/backups/status')
+      return res.data.data
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  })
+}
+
+/** Trigger an on-demand backup. */
+export function useTriggerBackup() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.post<{ success: boolean; message: string; data: BackupFile | null }>(
+        '/admin/backups/run'
+      )
+      return res.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-backups'] })
+      qc.invalidateQueries({ queryKey: ['admin-backups-status'] })
+    },
+  })
+}
+
+/** Restore a selected backup archive to the production database. */
+export function useRestoreBackup() {
+  return useMutation({
+    mutationFn: async ({ filename, confirm }: { filename: string; confirm: string }) => {
+      const res = await api.post<{ success: boolean; message: string }>(
+        '/admin/backups/restore',
+        { filename, confirm }
+      )
+      return res.data
+    },
+  })
+}
+
+/** Returns a download URL for a backup archive (opens directly in browser). */
+export function backupDownloadUrl(filename: string): string {
+  return `/api/v1/admin/backups/download?file=${encodeURIComponent(filename)}`
+}

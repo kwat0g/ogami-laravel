@@ -66,22 +66,22 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-          <FileText className="w-5 h-5 text-blue-600" />
+        <div className="w-10 h-10 bg-neutral-100 rounded flex items-center justify-center">
+          
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Controlled Document</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Register a document in the ISO document control system</p>
+          <h1 className="text-lg font-semibold text-neutral-900">New Controlled Document</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Register a document in the ISO document control system</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Title *</label>
           <input
             type="text"
-            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('title') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm ${fe('title') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.title}
             onChange={e => set('title', e.target.value)}
             onBlur={() => touch('title')}
@@ -94,9 +94,9 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
         {/* Type & Category */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Document Type *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Document Type *</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
               value={form.document_type}
               onChange={e => set('document_type', e.target.value)}
             >
@@ -106,10 +106,10 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Category</label>
             <input
               type="text"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
               value={form.category}
               onChange={e => set('category', e.target.value)}
               placeholder="e.g. Quality, Safety"
@@ -120,19 +120,19 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
         {/* Version & Owner */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Version</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Version</label>
             <input
               type="text"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
               value={form.current_version}
               onChange={e => set('current_version', e.target.value)}
               placeholder="e.g. 1.0"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Owner</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
               value={form.owner_id}
               onChange={e => set('owner_id', e.target.value ? Number(e.target.value) : '')}
             >
@@ -147,19 +147,19 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Effective Date</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Effective Date</label>
             <input
               type="date"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
               value={form.effective_date}
               onChange={e => set('effective_date', e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Review Date</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Review Date</label>
             <input
               type="date"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
               value={form.review_date}
               onChange={e => set('review_date', e.target.value)}
             />
@@ -170,14 +170,14 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
           <button
             type="button"
             onClick={() => navigate('/iso/documents')}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {createMut.isPending ? 'Saving…' : 'Register Document'}
           </button>

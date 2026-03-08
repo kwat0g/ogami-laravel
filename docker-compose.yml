@@ -15,6 +15,7 @@ services:
     volumes:
       - .:/var/www/html
       - /var/www/html/vendor
+      - ogami_storage:/var/www/html/storage
     ports:
       - "8000:8000"
     depends_on:
@@ -79,6 +80,7 @@ services:
     volumes:
       - .:/var/www/html
       - /var/www/html/vendor
+      - ogami_storage:/var/www/html/storage
     depends_on:
       app:
         condition: service_started
@@ -123,6 +125,8 @@ volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  ogami_storage:
     driver: local
 
 networks:

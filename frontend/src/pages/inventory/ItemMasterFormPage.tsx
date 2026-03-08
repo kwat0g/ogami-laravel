@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Package, ArrowLeft, Save, ToggleLeft } from 'lucide-react'
+import { Save, ToggleLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   useItem,
@@ -92,30 +92,16 @@ export default function ItemMasterFormPage(): React.ReactElement {
   }
 
   const fieldCls = (err?: { message?: string }) =>
-    `w-full text-sm border rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500 ${err ? 'border-red-400' : 'border-gray-300'}`
+    `w-full text-sm border rounded px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${err ? 'border-red-400' : 'border-neutral-300'}`
 
   return (
     <div className="max-w-2xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/inventory/items')} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft className="w-4 h-4 text-gray-500" />
-        </button>
-        <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-          <Package className="w-5 h-5 text-teal-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{isEdit ? 'Edit Item' : 'New Item'}</h1>
-          {isEdit && item && (
-            <p className="text-sm text-gray-500 mt-0.5 font-mono">{item.item_code}</p>
-          )}
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">{isEdit ? 'Edit Item' : 'New Item'}</h1>
 
-      <form onSubmit={onSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      <form onSubmit={onSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
         {/* Category */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Category *</label>
           <Controller
             control={control}
             name="category_id"
@@ -136,14 +122,14 @@ export default function ItemMasterFormPage(): React.ReactElement {
 
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Name *</label>
           <input {...register('name')} className={fieldCls(errors.name)} placeholder="e.g. Steel Rod 40mm" />
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
         </div>
 
         {/* Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Type *</label>
           <Controller
             control={control}
             name="type"
@@ -159,7 +145,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
 
         {/* UOM */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Unit of Measure *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Unit of Measure *</label>
           <input {...register('unit_of_measure')} className={fieldCls(errors.unit_of_measure)} placeholder="e.g. pcs, kg, L" />
           {errors.unit_of_measure && <p className="text-red-500 text-xs mt-1">{errors.unit_of_measure.message}</p>}
         </div>
@@ -167,7 +153,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
         {/* Reorder */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reorder Point</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Reorder Point</label>
             <input
               type="number"
               step="0.0001"
@@ -176,7 +162,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reorder Qty</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Reorder Qty</label>
             <input
               type="number"
               step="0.0001"
@@ -188,7 +174,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
           <textarea
             {...register('description')}
             rows={3}
@@ -208,22 +194,22 @@ export default function ItemMasterFormPage(): React.ReactElement {
                   type="checkbox"
                   checked={field.value}
                   onChange={(e) => field.onChange(e.target.checked)}
-                  className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  className="rounded border-neutral-300"
                 />
               )}
             />
-            <span className="text-sm font-medium text-gray-700">Requires Incoming Quality Control (IQC)</span>
+            <span className="text-sm font-medium text-neutral-700">Requires Incoming Quality Control (IQC)</span>
           </label>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
           {isEdit && item && (
             <button
               type="button"
               onClick={handleToggle}
               disabled={toggleMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50"
             >
               <ToggleLeft className="w-4 h-4" />
               {item.is_active ? 'Deactivate' : 'Activate'}
@@ -233,14 +219,14 @@ export default function ItemMasterFormPage(): React.ReactElement {
             <button
               type="button"
               onClick={() => navigate('/inventory/items')}
-              className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!isDirty || createMutation.isPending || updateMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
               Save

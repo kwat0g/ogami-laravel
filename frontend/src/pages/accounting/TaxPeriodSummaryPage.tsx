@@ -12,16 +12,16 @@ export default function TaxPeriodSummaryPage() {
   return (
     <div className="p-6 space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Tax Period Summary</h1>
-        <p className="text-sm text-gray-500 mt-0.5">VAT ledger across all fiscal periods</p>
+        <h1 className="text-lg font-semibold text-neutral-900 mb-1">Tax Period Summary</h1>
+        <p className="text-sm text-neutral-500">VAT ledger across all fiscal periods</p>
       </div>
 
       {isLoading ? (
         <SkeletonLoader rows={8} />
       ) : (
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded border border-neutral-200">
+          <table className="min-w-full divide-y divide-neutral-100 text-sm">
+            <thead className="bg-neutral-50">
               <tr>
                 {[
                   'Fiscal Period',
@@ -32,40 +32,40 @@ export default function TaxPeriodSummaryPage() {
                   'VAT Payable',
                   'Status',
                 ].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-neutral-500">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-neutral-100">
               {ledgers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-neutral-400">
                     No VAT data found.
                   </td>
                 </tr>
               ) : (
                 ledgers.map((l) => (
-                  <tr key={l.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">#{l.fiscal_period_id}</td>
-                    <td className="px-4 py-3 text-gray-700">₱{l.input_vat.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-gray-700">₱{l.output_vat.toLocaleString()}</td>
-                    <td className={`px-4 py-3 font-medium ${l.net_vat >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  <tr key={l.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3 font-medium text-neutral-900">#{l.fiscal_period_id}</td>
+                    <td className="px-4 py-3 text-neutral-700">₱{l.input_vat.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-neutral-700">₱{l.output_vat.toLocaleString()}</td>
+                    <td className={`px-4 py-3 font-medium ${l.net_vat >= 0 ? 'text-neutral-800' : 'text-neutral-700'}`}>
                       ₱{l.net_vat.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-indigo-600">
+                    <td className="px-4 py-3 text-neutral-600">
                       {l.carry_forward_from_prior > 0 ? `₱${l.carry_forward_from_prior.toLocaleString()}` : '—'}
                     </td>
-                    <td className={`px-4 py-3 font-semibold ${l.vat_payable > 0 ? 'text-red-700' : 'text-green-700'}`}>
+                    <td className={`px-4 py-3 font-semibold ${l.vat_payable > 0 ? 'text-neutral-800' : 'text-neutral-700'}`}>
                       ₱{l.vat_payable.toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-0.5 rounded text-xs font-medium ${
                           l.is_closed
-                            ? 'bg-gray-100 text-gray-500'
-                            : 'bg-blue-100 text-blue-600'
+                            ? 'bg-neutral-100 text-neutral-500'
+                            : 'bg-neutral-100 text-neutral-700'
                         }`}
                       >
                         {l.is_closed ? 'Closed' : 'Open'}

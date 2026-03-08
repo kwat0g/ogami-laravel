@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
@@ -17,12 +18,12 @@ import type { CustomerInvoiceStatus, ReceivePaymentPayload, WriteOffPayload } fr
 // ---------------------------------------------------------------------------
 
 const STATUS_STYLES: Record<CustomerInvoiceStatus, string> = {
-  draft:          'bg-gray-100 text-gray-600',
-  approved:       'bg-blue-100 text-blue-700',
-  partially_paid: 'bg-yellow-100 text-yellow-700',
-  paid:           'bg-green-100 text-green-700',
-  written_off:    'bg-red-100 text-red-700',
-  cancelled:      'bg-gray-100 text-gray-400',
+  draft:          'bg-neutral-100 text-neutral-600',
+  approved:       'bg-neutral-100 text-neutral-700',
+  partially_paid: 'bg-neutral-100 text-neutral-700',
+  paid:           'bg-neutral-100 text-neutral-700',
+  written_off:    'bg-neutral-100 text-neutral-600',
+  cancelled:      'bg-neutral-100 text-neutral-400',
 }
 
 function StatusBadge({ status }: { status: CustomerInvoiceStatus }) {
@@ -59,7 +60,7 @@ function ReceivePaymentPanel({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700"
+        className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
       >
         Receive Payment
       </button>
@@ -67,60 +68,60 @@ function ReceivePaymentPanel({
   }
 
   return (
-    <div className="rounded-xl border p-4 space-y-3">
+    <div className="rounded border border-neutral-200 p-4 space-y-3">
       <ExecutiveReadOnlyBanner />
-      <h3 className="font-semibold text-gray-800">Record Payment</h3>
+      <h3 className="font-semibold text-neutral-800">Record Payment</h3>
       {payMut.error && (
         <p className="text-sm text-red-600">{(payMut.error as Error).message}</p>
       )}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">Amount (₱) *</span>
+          <span className="text-xs font-medium text-neutral-600">Amount (₱) *</span>
           <input
             type="number"
             min={0.01}
             step="0.01"
-            className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.amount}
             onChange={(e) => setForm((p) => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
           />
           {form.amount > balanceDue && (
-            <p className="text-xs text-yellow-600 mt-0.5">
+            <p className="text-xs text-neutral-600 mt-0.5">
               ₱{(form.amount - balanceDue).toLocaleString()} excess → advance payment (AR-005)
             </p>
           )}
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">Payment Date *</span>
+          <span className="text-xs font-medium text-neutral-600">Payment Date *</span>
           <input
             type="date"
-            className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.payment_date}
             onChange={(e) => setForm((p) => ({ ...p, payment_date: e.target.value }))}
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">Cash Account ID *</span>
+          <span className="text-xs font-medium text-neutral-600">Cash Account ID *</span>
           <input
             type="number"
-            className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.cash_account_id || ''}
             onChange={(e) => setForm((p) => ({ ...p, cash_account_id: parseInt(e.target.value) || 0 }))}
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">AR Account ID *</span>
+          <span className="text-xs font-medium text-neutral-600">AR Account ID *</span>
           <input
             type="number"
-            className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.ar_account_id || ''}
             onChange={(e) => setForm((p) => ({ ...p, ar_account_id: parseInt(e.target.value) || 0 }))}
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-gray-600">Reference #</span>
+          <span className="text-xs font-medium text-neutral-600">Reference #</span>
           <input
-            className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.reference_number ?? ''}
             onChange={(e) => setForm((p) => ({ ...p, reference_number: e.target.value || null }))}
           />
@@ -129,15 +130,20 @@ function ReceivePaymentPanel({
       <div className="flex gap-2">
         <button
           onClick={async () => {
-            await payMut.mutateAsync(form)
-            setOpen(false)
+            try {
+              await payMut.mutateAsync(form)
+              toast.success('Payment recorded.')
+              setOpen(false)
+            } catch {
+              toast.error('Failed to record payment.')
+            }
           }}
           disabled={payMut.isPending}
-          className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-60"
+          className="px-4 py-1.5 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-60"
         >
           {payMut.isPending ? 'Saving…' : 'Record'}
         </button>
-        <button onClick={() => setOpen(false)} className="px-4 py-1.5 border text-sm rounded-lg hover:bg-gray-50">
+        <button onClick={() => setOpen(false)} className="px-4 py-1.5 border border-neutral-300 text-sm rounded hover:bg-neutral-50">
           Cancel
         </button>
       </div>
@@ -163,9 +169,16 @@ function WriteOffSection({ invoiceId }: { invoiceId: string }) {
       description="This will write off the remaining balance as bad debt. A journal entry (DR Bad Debt Expense / CR Accounts Receivable) will be auto-posted. This action requires the \`manager\` role with accounting department access."
       confirmWord="WRITEOFF"
       confirmLabel="Write Off"
-      onConfirm={async () => { await writeOffMut.mutateAsync(form) }}
+      onConfirm={async () => {
+        try {
+          await writeOffMut.mutateAsync(form)
+          toast.success('Invoice written off.')
+        } catch {
+          toast.error('Failed to write off invoice.')
+        }
+      }}
     >
-      <button className="px-4 py-2 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50">
+      <button className="px-4 py-2 rounded border border-neutral-300 text-neutral-600 text-sm font-medium hover:bg-neutral-50">
         Write Off (AR-006)
       </button>
     </ConfirmDestructiveDialog>
@@ -195,7 +208,7 @@ export default function CustomerInvoiceDetailPage() {
       {/* Back */}
       <button
         onClick={() => navigate('/ar/invoices')}
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Invoices
       </button>
@@ -203,10 +216,10 @@ export default function CustomerInvoiceDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {invoice.invoice_number ?? <span className="italic text-gray-400">Draft Invoice</span>}
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">
+            {invoice.invoice_number ?? <span className="italic text-neutral-400">Draft Invoice</span>}
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-neutral-500">
             {invoice.customer?.name ?? `Customer #${invoice.customer_id}`}
           </p>
         </div>
@@ -225,16 +238,16 @@ export default function CustomerInvoiceDetailPage() {
           { label: 'Balance Due', value: `₱${invoice.balance_due.toLocaleString()}` },
           { label: 'Fiscal Period', value: `#${invoice.fiscal_period_id}` },
         ].map(({ label, value }) => (
-          <div key={label} className="rounded-lg border bg-gray-50 p-3">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className="font-semibold text-gray-900 mt-0.5">{value}</p>
+          <div key={label} className="rounded border bg-neutral-50 p-3">
+            <p className="text-xs text-neutral-500">{label}</p>
+            <p className="font-semibold text-neutral-900 mt-0.5">{value}</p>
           </div>
         ))}
       </div>
 
       {/* Description */}
       {invoice.description && (
-        <p className="text-sm text-gray-600">{invoice.description}</p>
+        <p className="text-sm text-neutral-600">{invoice.description}</p>
       )}
 
       {/* Actions */}
@@ -245,9 +258,16 @@ export default function CustomerInvoiceDetailPage() {
             description="Approve this invoice? An invoice number (INV-YYYY-MM-NNNNNN) will be generated and a journal entry will be auto-posted."
             confirmWord="APPROVE"
             confirmLabel="Approve"
-            onConfirm={async () => { await approveMut.mutateAsync(invoiceId ?? '') }}
+            onConfirm={async () => {
+              try {
+                await approveMut.mutateAsync(invoiceId ?? '')
+                toast.success('Invoice approved.')
+              } catch {
+                toast.error('Failed to approve invoice.')
+              }
+            }}
           >
-            <button className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700">
+            <button className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800">
               Approve Invoice
             </button>
           </ConfirmDestructiveDialog>
@@ -263,23 +283,23 @@ export default function CustomerInvoiceDetailPage() {
       {/* Payment history */}
       {invoice.payments && invoice.payments.length > 0 && (
         <div>
-          <h2 className="text-base font-semibold text-gray-800 mb-2">Payment History</h2>
-          <div className="rounded-xl border overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+          <h2 className="text-sm font-semibold text-neutral-800 mb-2">Payment History</h2>
+          <div className="rounded border border-neutral-200 overflow-hidden">
+            <table className="min-w-full divide-y divide-neutral-100 text-sm">
+              <thead className="bg-neutral-50">
                 <tr>
                   {['Date', 'Amount', 'Method', 'Reference'].map((h) => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-neutral-500">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="divide-y divide-neutral-100 bg-white">
                 {invoice.payments.map((p) => (
                   <tr key={p.id}>
-                    <td className="px-4 py-2 text-gray-700">{p.payment_date}</td>
-                    <td className="px-4 py-2 font-medium text-gray-900">₱{p.amount.toLocaleString()}</td>
-                    <td className="px-4 py-2 text-gray-500 capitalize">{p.payment_method?.replace('_', ' ') ?? '—'}</td>
-                    <td className="px-4 py-2 text-gray-500">{p.reference_number ?? '—'}</td>
+                    <td className="px-4 py-2 text-neutral-700">{p.payment_date}</td>
+                    <td className="px-4 py-2 font-medium text-neutral-900">₱{p.amount.toLocaleString()}</td>
+                    <td className="px-4 py-2 text-neutral-500 capitalize">{p.payment_method?.replace('_', ' ') ?? '—'}</td>
+                    <td className="px-4 py-2 text-neutral-500">{p.reference_number ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -290,7 +310,7 @@ export default function CustomerInvoiceDetailPage() {
 
       {/* Write-off info */}
       {invoice.status === 'written_off' && invoice.write_off_reason && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+        <div className="rounded bg-neutral-50 border border-neutral-200 p-4 text-sm text-neutral-700">
           <p className="font-semibold">Written Off</p>
           <p className="mt-1">{invoice.write_off_reason}</p>
           {invoice.write_off_at && (

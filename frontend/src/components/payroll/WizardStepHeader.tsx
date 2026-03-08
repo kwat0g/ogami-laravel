@@ -24,7 +24,7 @@ export function WizardStepHeader({ step, title, description }: Props) {
   return (
     <div className="space-y-4">
       {/* Step breadcrumb trail */}
-      <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+      <div className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-500">
         {STEPS.map((label, i) => {
           const stepNum = i + 1
           const isActive   = stepNum === step
@@ -32,20 +32,20 @@ export function WizardStepHeader({ step, title, description }: Props) {
           return (
             <span key={label} className="flex items-center gap-1.5">
               <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-medium shrink-0 ${
                   isActive
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-neutral-900 text-white'
                     : isComplete
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200 text-gray-500'
+                    ? 'bg-neutral-600 text-white'
+                    : 'bg-neutral-200 text-neutral-500'
                 }`}
               >
                 {isComplete ? '✓' : stepNum}
               </span>
-              <span className={isActive ? 'text-blue-600 font-semibold' : isComplete ? 'text-green-700' : 'text-gray-400'}>
+              <span className={isActive ? 'text-neutral-900 font-medium' : isComplete ? 'text-neutral-700' : 'text-neutral-400'}>
                 {label}
               </span>
-              {i < STEPS.length - 1 && <span className="text-gray-300 select-none">›</span>}
+              {i < STEPS.length - 1 && <span className="text-neutral-300 select-none">›</span>}
             </span>
           )
         })}
@@ -53,9 +53,9 @@ export function WizardStepHeader({ step, title, description }: Props) {
 
       {/* Step heading */}
       <div>
-        <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-0.5">Step {step} of {STEPS.length}</p>
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+        <p className="text-xs font-medium text-neutral-500 mb-0.5">Step {step} of {STEPS.length}</p>
+        <h1 className="text-lg font-semibold text-neutral-900">{title}</h1>
+        {description && <p className="text-sm text-neutral-500 mt-1">{description}</p>}
       </div>
     </div>
   )

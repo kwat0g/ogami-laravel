@@ -10,13 +10,14 @@ interface PageHeaderProps {
 }
 
 /**
- * Minimalist page header with clean typography
+ * Standard page header - Uncodixified
+ * Consistent bottom margin, simple typography
  */
 export default function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4 mb-8">
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold text-neutral-900 tracking-tight">
+        <h1 className="text-xl font-semibold text-neutral-900">
           {title}
         </h1>
         {subtitle && (

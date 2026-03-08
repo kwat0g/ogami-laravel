@@ -59,21 +59,21 @@ export default function CreateIsoAuditPage(): React.ReactElement {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-          <Search className="w-5 h-5 text-purple-600" />
+        <div className="w-10 h-10 bg-neutral-100 rounded flex items-center justify-center">
+          
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule Internal Audit</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Plan an ISO/IATF internal audit</p>
+          <h1 className="text-lg font-semibold text-neutral-900">Schedule Internal Audit</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Plan an ISO/IATF internal audit</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
         {/* Standard */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Standard *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Standard *</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
             value={form.standard}
             onChange={e => set('standard', e.target.value)}
           >
@@ -83,10 +83,10 @@ export default function CreateIsoAuditPage(): React.ReactElement {
 
         {/* Audit Scope */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Audit Scope *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Audit Scope *</label>
           <textarea
             rows={4}
-            className={`w-full border rounded-lg px-3 py-2 text-sm resize-none ${fe('audit_scope') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm resize-none ${fe('audit_scope') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.audit_scope}
             onChange={e => set('audit_scope', e.target.value)}
             onBlur={() => touch('audit_scope')}
@@ -99,9 +99,9 @@ export default function CreateIsoAuditPage(): React.ReactElement {
         {/* Lead Auditor & Date */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lead Auditor</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Lead Auditor</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
               value={form.lead_auditor_id}
               onChange={e => set('lead_auditor_id', e.target.value ? Number(e.target.value) : '')}
             >
@@ -112,10 +112,10 @@ export default function CreateIsoAuditPage(): React.ReactElement {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Audit Date *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Audit Date *</label>
             <input
               type="date"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('audit_date') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm ${fe('audit_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.audit_date}
               onChange={e => set('audit_date', e.target.value)}
               onBlur={() => touch('audit_date')}
@@ -129,14 +129,14 @@ export default function CreateIsoAuditPage(): React.ReactElement {
           <button
             type="button"
             onClick={() => navigate('/iso/audits')}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {createMut.isPending ? 'Saving…' : 'Schedule Audit'}
           </button>

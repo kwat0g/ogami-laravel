@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { AlertTriangle } from 'lucide-react'
 import { useCreateCustomerInvoice } from '@/hooks/useAR'
 import { useCustomers } from '@/hooks/useAR'
@@ -104,19 +105,24 @@ export default function CustomerInvoiceFormPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await createMut.mutateAsync(form)
-    navigate('/ar/invoices')
+    try {
+      await createMut.mutateAsync(form)
+      toast.success('Customer invoice created.')
+      navigate('/ar/invoices')
+    } catch {
+      toast.error('Failed to create invoice.')
+    }
   }
 
   return (
     <div className="p-6 max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">New Customer Invoice</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Invoice number will be generated on approval (AR-003)</p>
+        <h1 className="text-lg font-semibold text-neutral-900 mb-1">New Customer Invoice</h1>
+        <p className="text-sm text-neutral-500">Invoice number will be generated on approval (AR-003)</p>
       </div>
 
       {createMut.error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
           {(createMut.error as Error).message}
         </div>
       )}
@@ -124,9 +130,9 @@ export default function CustomerInvoiceFormPage() {
       <form onSubmit={submit} className="space-y-4">
         {/* Customer */}
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Customer *</span>
+          <span className="text-sm font-medium text-neutral-700">Customer *</span>
           <select
-            className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('customer_id') ? 'border-red-400' : ''}`}
+            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('customer_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.customer_id || ''}
             onChange={(e) => set('customer_id', parseInt(e.target.value))}
             onBlur={() => touch('customer_id')}
@@ -153,9 +159,9 @@ export default function CustomerInvoiceFormPage() {
 
         {/* Fiscal Period */}
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Fiscal Period *</span>
+          <span className="text-sm font-medium text-neutral-700">Fiscal Period *</span>
           <select
-            className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('fiscal_period_id') ? 'border-red-400' : ''}`}
+            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('fiscal_period_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.fiscal_period_id || ''}
             onChange={e => set('fiscal_period_id', parseInt(e.target.value))}
             onBlur={() => touch('fiscal_period_id')}
@@ -172,9 +178,9 @@ export default function CustomerInvoiceFormPage() {
         {/* GL Accounts */}
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">AR Account *</span>
+            <span className="text-sm font-medium text-neutral-700">AR Account *</span>
             <select
-              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('ar_account_id') ? 'border-red-400' : ''}`}
+              className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('ar_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.ar_account_id || ''}
               onChange={e => set('ar_account_id', parseInt(e.target.value))}
               onBlur={() => touch('ar_account_id')}
@@ -190,9 +196,9 @@ export default function CustomerInvoiceFormPage() {
             {fe('ar_account_id') && <p className="mt-1 text-xs text-red-600">{fe('ar_account_id')}</p>}
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">Revenue Account *</span>
+            <span className="text-sm font-medium text-neutral-700">Revenue Account *</span>
             <select
-              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('revenue_account_id') ? 'border-red-400' : ''}`}
+              className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('revenue_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.revenue_account_id || ''}
               onChange={e => set('revenue_account_id', parseInt(e.target.value))}
               onBlur={() => touch('revenue_account_id')}
@@ -212,10 +218,10 @@ export default function CustomerInvoiceFormPage() {
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">Invoice Date *</span>
+            <span className="text-sm font-medium text-neutral-700">Invoice Date *</span>
             <input
               type="date"
-              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('invoice_date') ? 'border-red-400' : ''}`}
+              className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('invoice_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.invoice_date}
               onChange={(e) => set('invoice_date', e.target.value)}
               onBlur={() => touch('invoice_date')}
@@ -224,11 +230,11 @@ export default function CustomerInvoiceFormPage() {
             {fe('invoice_date') && <p className="mt-1 text-xs text-red-600">{fe('invoice_date')}</p>}
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">Due Date *</span>
+            <span className="text-sm font-medium text-neutral-700">Due Date *</span>
             <input
               type="date"
               min={form.invoice_date}
-              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('due_date') ? 'border-red-400' : ''}`}
+              className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('due_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.due_date}
               onChange={(e) => set('due_date', e.target.value)}
               onBlur={() => touch('due_date')}
@@ -241,12 +247,12 @@ export default function CustomerInvoiceFormPage() {
         {/* Amounts */}
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">Subtotal (₱) *</span>
+            <span className="text-sm font-medium text-neutral-700">Subtotal (₱) *</span>
             <input
               type="number"
               min={0.01}
               step="0.01"
-              className={`mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm ${fe('subtotal') ? 'border-red-400' : ''}`}
+              className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('subtotal') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.subtotal || ''}
               onChange={(e) => set('subtotal', parseFloat(e.target.value) || 0)}
               onBlur={() => touch('subtotal')}
@@ -255,15 +261,15 @@ export default function CustomerInvoiceFormPage() {
             {fe('subtotal') && <p className="mt-1 text-xs text-red-600">{fe('subtotal')}</p>}
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-neutral-700">
               VAT Amount (₱)
-              <span className="ml-1 text-xs text-gray-400">(auto: {VAT_RATE * 100}%)</span>
+              <span className="ml-1 text-xs text-neutral-400">(auto: {VAT_RATE * 100}%)</span>
             </span>
             <input
               type="number"
               min={0}
               step="0.01"
-              className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+              className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
               value={form.vat_amount ?? ''}
               onChange={(e) => set('vat_amount', parseFloat(e.target.value) || 0)}
             />
@@ -271,16 +277,16 @@ export default function CustomerInvoiceFormPage() {
         </div>
 
         {/* Total preview */}
-        <div className="rounded-lg bg-gray-50 border px-4 py-3 text-sm">
+        <div className="rounded bg-neutral-50 border border-neutral-200 px-4 py-3 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600">Subtotal</span>
+            <span className="text-neutral-600">Subtotal</span>
             <span className="font-medium">₱{form.subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">VAT</span>
+            <span className="text-neutral-600">VAT</span>
             <span className="font-medium">₱{(form.vat_amount ?? 0).toLocaleString()}</span>
           </div>
-          <div className="flex justify-between border-t pt-1 mt-1 font-semibold">
+          <div className="flex justify-between border-t border-neutral-200 pt-1 mt-1 font-semibold">
             <span>Total</span>
             <span>₱{total.toLocaleString()}</span>
           </div>
@@ -288,10 +294,10 @@ export default function CustomerInvoiceFormPage() {
 
         {/* Description */}
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Description</span>
+          <span className="text-sm font-medium text-neutral-700">Description</span>
           <textarea
             rows={2}
-            className="mt-1 block w-full border rounded-lg px-3 py-1.5 text-sm"
+            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.description ?? ''}
             onChange={(e) => set('description', e.target.value || null)}
           />
@@ -301,14 +307,14 @@ export default function CustomerInvoiceFormPage() {
           <button
             type="button"
             onClick={() => navigate('/ar/invoices')}
-            className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50"
+            className="px-4 py-2 rounded border border-neutral-300 text-sm hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
+            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60"
           >
             {createMut.isPending ? 'Saving…' : 'Create Invoice (Draft)'}
           </button>

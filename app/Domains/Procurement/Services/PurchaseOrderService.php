@@ -44,6 +44,8 @@ final class PurchaseOrderService implements ServiceContract
             );
         }
 
+        $vendor->assertAccredited();
+
         if (empty($items)) {
             throw new DomainException(
                 message: 'A Purchase Order must have at least one line item.',

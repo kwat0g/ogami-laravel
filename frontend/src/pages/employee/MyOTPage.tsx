@@ -40,7 +40,7 @@ export default function MyOTPage() {
   const cancel = useCancelOvertimeRequest()
 
   if (!employeeId) {
-    return <div className="text-gray-500 text-sm mt-4">No employee profile linked to your account.</div>
+    return <div className="text-neutral-500 text-sm mt-4">No employee profile linked to your account.</div>
   }
 
   const formatDuration = (minutes: number | null) => {
@@ -55,13 +55,10 @@ export default function MyOTPage() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Overtime</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Your overtime requests and approvals</p>
-        </div>
+        <h1 className="text-lg font-semibold text-neutral-900">My Overtime</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
+          className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           File OT Request
@@ -73,7 +70,7 @@ export default function MyOTPage() {
         <select
           value={year}
           onChange={(e) => { setYear(Number(e.target.value)); setPage(1) }}
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-1.5 text-sm border border-neutral-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
         >
           {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
             <option key={y} value={y}>{y}</option>
@@ -82,7 +79,7 @@ export default function MyOTPage() {
         <select
           value={month}
           onChange={(e) => { setMonth(Number(e.target.value)); setPage(1) }}
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-1.5 text-sm border border-neutral-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
         >
           {MONTHS.map((m, i) => (
             <option key={i + 1} value={i + 1}>{m}</option>
@@ -92,40 +89,40 @@ export default function MyOTPage() {
 
       {/* OT History */}
       {isLoading ? <SkeletonLoader rows={6} /> : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
                 {['Date', 'Requested', 'Approved', 'Reason', 'Status', 'Filed', 'Action'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-neutral-600">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {(otData?.data ?? []).length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No overtime requests for {MONTHS[month - 1]} {year}.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-400">No overtime requests for {MONTHS[month - 1]} {year}.</td></tr>
               )}
               {(otData?.data ?? []).map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-700 font-medium">{row.work_date}</td>
-                  <td className="px-4 py-3 text-gray-600">{formatDuration(row.requested_minutes)}</td>
-                  <td className="px-4 py-3 text-gray-600">
+                <tr key={row.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                  <td className="px-4 py-3 text-neutral-700 font-medium">{row.work_date}</td>
+                  <td className="px-4 py-3 text-neutral-600">{formatDuration(row.requested_minutes)}</td>
+                  <td className="px-4 py-3 text-neutral-600">
                     {row.status === 'approved' ? (
-                      <span className="text-green-600 font-medium">{formatDuration(row.approved_minutes)}</span>
+                      <span className="text-neutral-700 font-medium">{formatDuration(row.approved_minutes)}</span>
                     ) : (
                       formatDuration(row.approved_minutes)
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-neutral-600">
                     <div className="w-40 truncate text-sm" title={row.reason || undefined}>{row.reason || '—'}</div>
                   </td>
                   <td className="px-4 py-3"><StatusBadge label={row.status} /></td>
-                  <td className="px-4 py-3 text-gray-400">{row.created_at?.slice(0, 10) ?? '—'}</td>
+                  <td className="px-4 py-3 text-neutral-400">{row.created_at?.slice(0, 10) ?? '—'}</td>
                   <td className="px-4 py-3">
                     {['pending', 'pending_executive'].includes(row.status) && (
                       <button
                         onClick={() => setCancelTarget(row.id)}
-                        className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                        className="text-xs text-neutral-600 hover:text-neutral-900 hover:underline"
                       >
                         Cancel
                       </button>
@@ -140,13 +137,13 @@ export default function MyOTPage() {
 
       {/* Pagination */}
       {(otData?.meta?.last_page ?? 1) > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+        <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
           <span>Page {otData?.meta?.current_page} of {otData?.meta?.last_page}</span>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Prev</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
             <button disabled={page >= (otData?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40">Next</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
           </div>
         </div>
       )}

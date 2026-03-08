@@ -24,7 +24,7 @@ export default function BankReconciliationDetailPage() {
 
   if (isLoading) return (
     <div className="p-6 space-y-4">
-      <div className="h-6 w-48 bg-slate-200 animate-pulse rounded" />
+      <div className="h-6 w-48 bg-neutral-200 animate-pulse rounded" />
       <SkeletonTable rows={8} cols={5} />
     </div>
   )
@@ -49,13 +49,13 @@ export default function BankReconciliationDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <Link to="/banking/reconciliations" className="text-xs text-blue-600 hover:underline">
+          <Link to="/banking/reconciliations" className="text-xs text-neutral-600 hover:underline">
             ← Bank Reconciliations
           </Link>
-          <h1 className="mt-1 text-xl font-bold text-slate-900">
+          <h1 className="mt-1 text-lg font-semibold text-neutral-900">
             {recon.bank_account?.account_number ?? `Account #${recon.bank_account_id}`}
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-neutral-500">
             {recon.period_from} – {recon.period_to}
           </p>
         </div>
@@ -81,26 +81,26 @@ export default function BankReconciliationDetailPage() {
           { label: 'Difference',       value: fmtAmt(recon.closing_balance - recon.opening_balance) },
           { label: 'Unmatched',        value: String(recon.unmatched_count) },
         ].map(({ label, value }) => (
-          <div key={label} className="rounded-lg border bg-white p-4 shadow-sm">
-            <p className="text-xs text-slate-500 uppercase tracking-wide">{label}</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900">{value}</p>
+          <div key={label} className="rounded border border-neutral-200 bg-white p-4">
+            <p className="text-xs text-neutral-500">{label}</p>
+            <p className="mt-1 text-lg font-semibold text-neutral-900">{value}</p>
           </div>
         ))}
       </div>
 
       {/* Notes */}
       {recon.notes && (
-        <div className="rounded border-l-4 border-blue-400 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        <div className="rounded border-l-4 border-neutral-400 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
           {recon.notes}
         </div>
       )}
 
       {/* Unmatched transactions */}
       <section>
-        <h2 className="text-sm font-semibold text-slate-700 mb-2">
+        <h2 className="text-sm font-semibold text-neutral-700 mb-2">
           Unmatched Transactions
           {unmatched.length > 0 && (
-            <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">
+            <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
               {unmatched.length}
             </span>
           )}
@@ -115,9 +115,9 @@ export default function BankReconciliationDetailPage() {
 
       {/* Matched / reconciled transactions */}
       <section>
-        <h2 className="text-sm font-semibold text-slate-700 mb-2">
+        <h2 className="text-sm font-semibold text-neutral-700 mb-2">
           Matched Transactions
-          <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
+          <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
             {matched.length}
           </span>
         </h2>
@@ -131,7 +131,7 @@ export default function BankReconciliationDetailPage() {
 
       {/* Certification info */}
       {recon.certified_at && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-neutral-500">
           Certified on {new Date(recon.certified_at).toLocaleDateString('en-PH', { dateStyle: 'long' })}
           {recon.certified_by ? ` by user #${recon.certified_by}` : ''}
         </p>
@@ -149,24 +149,24 @@ interface TxTableProps {
 
 function TransactionTable({ transactions, isDraft, onUnmatch, emptyMsg }: TxTableProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50">
+    <div className="overflow-x-auto rounded border border-neutral-200 bg-white">
+      <table className="min-w-full divide-y divide-neutral-100 text-sm">
+        <thead className="bg-neutral-50">
           <tr>
             {['Date', 'Description', 'Type', 'Amount', 'Status', isDraft && onUnmatch ? 'Actions' : null]
               .filter(Boolean)
               .map(h => (
-                <th key={h as string} className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">{h}</th>
+                <th key={h as string} className="px-4 py-2 text-left text-xs font-semibold text-neutral-500">{h}</th>
               ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-neutral-100">
           {transactions.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-6 text-center text-slate-400">{emptyMsg}</td>
+              <td colSpan={6} className="px-4 py-6 text-center text-neutral-400">{emptyMsg}</td>
             </tr>
           ) : transactions.map(tx => (
-            <tr key={tx.id} className="hover:bg-slate-50">
+            <tr key={tx.id} className="hover:bg-neutral-50">
               <td className="px-4 py-2 whitespace-nowrap">{tx.transaction_date}</td>
               <td className="px-4 py-2 max-w-xs truncate">{tx.description}</td>
               <td className="px-4 py-2 capitalize">{tx.transaction_type}</td>
@@ -181,7 +181,7 @@ function TransactionTable({ transactions, isDraft, onUnmatch, emptyMsg }: TxTabl
                   {tx.status === 'matched' && (
                     <button
                       onClick={() => onUnmatch(tx.id)}
-                      className="text-xs px-2 py-1 border border-slate-300 rounded hover:bg-slate-100"
+                      className="text-xs px-2 py-1 border border-neutral-300 rounded hover:bg-neutral-50"
                     >
                       Unmatch
                     </button>

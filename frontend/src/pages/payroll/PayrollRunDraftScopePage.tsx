@@ -101,7 +101,7 @@ function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: Emp
   return (
     <div ref={containerRef} className="relative flex-1">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
         <input
           type="text"
           placeholder={selectedEmployee ? selectedEmployee.full_name : "Search by surname or name..."}
@@ -111,12 +111,12 @@ function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: Emp
             setIsOpen(true)
           }}
           onFocus={() => setIsOpen(true)}
-          className="w-full border border-gray-300 rounded-lg pl-10 pr-10 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          className="w-full border border-neutral-300 rounded pl-10 pr-10 py-2 text-sm focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 outline-none"
         />
         {selectedEmployee && (
           <button
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
           >
             <X className="h-4 w-4" />
           </button>
@@ -124,17 +124,17 @@ function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: Emp
       </div>
       
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-neutral-200 rounded  max-h-60 overflow-y-auto">
           {isLoading ? (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-500">
+            <div className="flex items-center gap-2 px-4 py-3 text-sm text-neutral-500">
               <Loader2 className="h-4 w-4 animate-spin" /> Searching...
             </div>
           ) : query.length < 2 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
+            <div className="px-4 py-3 text-sm text-neutral-500">
               Type at least 2 characters to search
             </div>
           ) : filteredEmployees.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
+            <div className="px-4 py-3 text-sm text-neutral-500">
               No employees found
             </div>
           ) : (
@@ -142,13 +142,13 @@ function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: Emp
               <button
                 key={emp.id}
                 onClick={() => handleSelect(emp)}
-                className="w-full text-left px-4 py-2 hover:bg-gray-50 border-b border-gray-50 last:border-0"
+                className="w-full text-left px-4 py-2 hover:bg-neutral-50 border-b border-neutral-50 last:border-0"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800">{emp.full_name}</span>
-                  <span className="text-xs text-gray-500">{emp.employee_code}</span>
+                  <span className="font-medium text-neutral-800">{emp.full_name}</span>
+                  <span className="text-xs text-neutral-500">{emp.employee_code}</span>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-neutral-500">
                   {emp.department?.name || 'No Department'} • {emp.position?.title || 'No Position'}
                 </div>
               </button>
@@ -297,7 +297,7 @@ export default function PayrollRunDraftScopePage() {
     <div className="max-w-5xl space-y-6">
       <button
         onClick={() => navigate('/payroll/runs/new')}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Run Definition
       </button>
@@ -309,7 +309,7 @@ export default function PayrollRunDraftScopePage() {
       />
 
       {/* Draft notice */}
-      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-xs text-amber-800">
+      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-2.5 text-xs text-amber-800">
         <span className="font-semibold">Draft — not saved yet.</span>
         <span>The payroll run is only created in the database when you click "Begin Computation" on the next step.</span>
       </div>
@@ -318,18 +318,18 @@ export default function PayrollRunDraftScopePage() {
 
         {/* ── Left: Scope Filters ─────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-5">
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
-            <h3 className="text-sm font-semibold text-gray-800">Scope Filters</h3>
+          <div className="bg-white border border-neutral-200 rounded p-5 space-y-5">
+            <h3 className="text-sm font-semibold text-neutral-800">Scope Filters</h3>
 
             {/* Employment Types */}
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Employment Types</p>
+              <p className="text-sm font-medium text-neutral-700 mb-2">Employment Types</p>
               <div className="flex flex-wrap gap-2">
                 {EMPLOYMENT_TYPES.map(({ value, label }) => (
-                  <label key={value} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors ${
+                  <label key={value} className={`flex items-center gap-2 px-3 py-1.5 rounded border text-sm cursor-pointer transition-colors ${
                     employmentTypes.includes(value)
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400'
+                      ? 'bg-neutral-900 border-neutral-900 text-white'
+                      : 'bg-white border-neutral-300 text-neutral-700 hover:border-neutral-400'
                   }`}>
                     <input
                       type="checkbox"
@@ -350,15 +350,15 @@ export default function PayrollRunDraftScopePage() {
                 [includeProbationEnd, setIncludeProbationEnd, 'Include employees whose probation ends this period'] as const,
               ] as const).map(([val, set, label]) => (
                 <label key={label} className="flex items-center justify-between cursor-pointer">
-                  <span className="text-sm text-gray-700">{label}</span>
+                  <span className="text-sm text-neutral-700">{label}</span>
                   <button
                     type="button"
                     role="switch"
                     aria-checked={val}
                     onClick={() => (set as (v: boolean) => void)(!val)}
-                    className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${val ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    className={`relative inline-flex h-5 w-9 rounded transition-colors ${val ? 'bg-neutral-900' : 'bg-neutral-300'}`}
                   >
-                    <span className={`inline-block h-4 w-4 bg-white rounded-full shadow transform transition-transform mt-0.5 ${val ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    <span className={`inline-block h-4 w-4 bg-white rounded shadow transform transition-transform mt-0.5 ${val ? 'translate-x-4' : 'translate-x-0.5'}`} />
                   </button>
                 </label>
               ))}
@@ -367,22 +367,22 @@ export default function PayrollRunDraftScopePage() {
 
           {/* ── Auto-excluded: missing bank accounts ── */}
           {autoExcludedEmployees.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-blue-600 shrink-0" />
-                <p className="text-sm font-semibold text-blue-800">
+                <Info className="h-4 w-4 text-neutral-900 shrink-0" />
+                <p className="text-sm font-semibold text-neutral-800">
                   {autoExcludedEmployees.length} employee{autoExcludedEmployees.length !== 1 ? 's' : ''} automatically excluded
                 </p>
               </div>
-              <p className="text-xs text-blue-700">
+              <p className="text-xs text-neutral-800">
                 These employees have no bank account on file and were excluded from this run automatically. You may remove them from the exclusion list below to include them (payroll will need to be disbursed manually).
               </p>
-              <div className="border border-blue-100 rounded-lg overflow-hidden divide-y divide-blue-50 max-h-36 overflow-y-auto">
+              <div className="border border-neutral-100 rounded overflow-hidden divide-y divide-neutral-50 max-h-36 overflow-y-auto">
                 {autoExcludedEmployees.map(emp => (
                   <div key={emp.id} className="flex items-center gap-3 px-3 py-2 bg-white/70">
-                    <span className="text-xs font-mono text-gray-400 shrink-0">{emp.employee_code}</span>
-                    <span className="text-sm text-gray-700">{emp.full_name}</span>
-                    <span className="text-xs text-gray-400 ml-auto shrink-0">{emp.department_name}</span>
+                    <span className="text-xs font-mono text-neutral-400 shrink-0">{emp.employee_code}</span>
+                    <span className="text-sm text-neutral-700">{emp.full_name}</span>
+                    <span className="text-xs text-neutral-400 ml-auto shrink-0">{emp.department_name}</span>
                   </div>
                 ))}
               </div>
@@ -390,9 +390,9 @@ export default function PayrollRunDraftScopePage() {
           )}
 
           {/* ── Manual Exclusions ─────────────────────────────────────────── */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-800">Manual Exclusions</h3>
-            <p className="text-xs text-gray-500">
+          <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-neutral-800">Manual Exclusions</h3>
+            <p className="text-xs text-neutral-500">
               Exclude specific employees from this run. These are stored locally until you reach the final step.
             </p>
 
@@ -410,13 +410,13 @@ export default function PayrollRunDraftScopePage() {
                   value={exclReason}
                   onChange={e => setExclReason(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleAddExclusion()}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleAddExclusion}
-                className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm font-medium flex items-center gap-1 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" /> Exclude
               </button>
@@ -424,13 +424,13 @@ export default function PayrollRunDraftScopePage() {
 
             {/* List */}
             {exclusions.length > 0 && (
-              <div className="border border-red-100 rounded-lg divide-y divide-red-50">
+              <div className="border border-red-100 rounded divide-y divide-red-50">
                 {exclusions.map(exc => (
                   <div key={exc.employee_id} className="flex items-center gap-3 px-4 py-2">
                     <Users className="h-4 w-4 text-red-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-gray-800">{exc.label}</span>
-                      <p className="text-xs text-gray-500 truncate">{exc.reason}</p>
+                      <span className="text-sm text-neutral-800">{exc.label}</span>
+                      <p className="text-xs text-neutral-500 truncate">{exc.reason}</p>
                     </div>
                     <button
                       type="button"
@@ -448,38 +448,38 @@ export default function PayrollRunDraftScopePage() {
 
         {/* ── Right: Live Preview ──────────────────────────────────────────── */}
         <div className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 sticky top-6">
-            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-500" />
+          <div className="bg-white border border-neutral-200 rounded p-5 space-y-4 sticky top-6">
+            <h3 className="text-sm font-semibold text-neutral-800 flex items-center gap-2">
+              <Users className="h-4 w-4 text-neutral-500" />
               In-Scope Preview
-              {previewLoading && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
+              {previewLoading && <Loader2 className="h-3 w-3 animate-spin text-neutral-400" />}
             </h3>
 
             {preview ? (
               <>
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-green-50 rounded-lg p-3">
+                  <div className="bg-green-50 rounded p-3">
                     <p className="text-2xl font-bold text-green-700">{preview.total_eligible}</p>
                     <p className="text-xs text-green-600">Eligible</p>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-3">
+                  <div className="bg-red-50 rounded p-3">
                     <p className="text-2xl font-bold text-red-600">{preview.manually_excluded}</p>
                     <p className="text-xs text-red-500">Excluded</p>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-3">
-                    <p className="text-2xl font-bold text-blue-700">{preview.net_in_scope}</p>
-                    <p className="text-xs text-blue-600">In Scope</p>
+                  <div className="bg-neutral-50 rounded p-3">
+                    <p className="text-2xl font-bold text-neutral-800">{preview.net_in_scope}</p>
+                    <p className="text-xs text-neutral-900">In Scope</p>
                   </div>
                 </div>
 
                 {preview.by_department?.length > 0 && (
                   <div className="space-y-1 max-h-64 overflow-y-auto">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">By Department</p>
+                    <p className="text-xs font-medium text-neutral-500 font-medium">By Department</p>
                     {preview.by_department.map(dept => (
-                      <div key={dept.department_id} className="flex items-center justify-between text-sm py-1 border-b border-gray-50">
-                        <span className="text-gray-700 truncate max-w-[140px]" title={dept.department_name}>{dept.department_name}</span>
-                        <span className="text-blue-600 font-medium shrink-0">
-                          {dept.in_scope} <span className="text-gray-400 font-normal">/ {dept.eligible}</span>
+                      <div key={dept.department_id} className="flex items-center justify-between text-sm py-1 border-b border-neutral-50">
+                        <span className="text-neutral-700 truncate max-w-[140px]" title={dept.department_name}>{dept.department_name}</span>
+                        <span className="text-neutral-900 font-medium shrink-0">
+                          {dept.in_scope} <span className="text-neutral-400 font-normal">/ {dept.eligible}</span>
                         </span>
                       </div>
                     ))}
@@ -487,14 +487,14 @@ export default function PayrollRunDraftScopePage() {
                 )}
               </>
             ) : (
-              <p className="text-xs text-gray-400">Adjust filters to see live counts.</p>
+              <p className="text-xs text-neutral-400">Adjust filters to see live counts.</p>
             )}
 
             <button
               type="button"
               onClick={handleNext}
               disabled={previewLoading || !preview || preview.net_in_scope === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
             >
               Next: Review &amp; Begin <ArrowRight className="h-4 w-4" />
             </button>
@@ -508,49 +508,47 @@ export default function PayrollRunDraftScopePage() {
 
       {/* Missing bank account — proceed anyway confirmation dialog */}
       {showMissingBankConfirm && preview?.missing_bank_employees && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
           onClick={() => setShowMissingBankConfirm(false)}
         >
-          <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4"
+          <div className="bg-white rounded shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-neutral-900">
                   {preview.missing_bank_employees.length} employee{preview.missing_bank_employees.length !== 1 ? 's' : ''} without a bank account
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-neutral-600 mt-1">
                   These employees cannot be included in bank disbursement. They will be computed but skipped when generating the bank file.
                 </p>
               </div>
             </div>
-            <div className="border border-amber-100 rounded-lg divide-y divide-amber-50 max-h-40 overflow-y-auto">
+            <div className="border border-amber-100 rounded divide-y divide-amber-50 max-h-40 overflow-y-auto">
               {preview.missing_bank_employees.map(emp => (
                 <div key={emp.id} className="flex items-center gap-3 px-3 py-2">
-                  <span className="text-xs font-mono text-gray-400 shrink-0">{emp.employee_code}</span>
-                  <span className="text-sm text-gray-700">{emp.full_name}</span>
-                  <span className="text-xs text-gray-400 ml-auto shrink-0">{emp.department_name}</span>
+                  <span className="text-xs font-mono text-neutral-400 shrink-0">{emp.employee_code}</span>
+                  <span className="text-sm text-neutral-700">{emp.full_name}</span>
+                  <span className="text-xs text-neutral-400 ml-auto shrink-0">{emp.department_name}</span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-neutral-500">
               You can still go back and use the <strong>Auto-exclude</strong> button in the warning panel above.
             </p>
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setShowMissingBankConfirm(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 border border-neutral-200 rounded transition-colors"
               >
                 Go back
               </button>
               <button
                 type="button"
                 onClick={() => { setShowMissingBankConfirm(false); doNavigateNext() }}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors"
               >
                 Proceed anyway
               </button>

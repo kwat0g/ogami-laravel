@@ -69,7 +69,7 @@ export default function OvertimeListPage() {
       case 'rejected':
         return 'bg-red-500'
       case 'cancelled':
-        return 'bg-gray-400'
+        return 'bg-neutral-400'
       default:
         return 'bg-amber-500'
     }
@@ -82,19 +82,19 @@ export default function OvertimeListPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">All Overtime Requests</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-lg font-semibold text-neutral-900">All Overtime Requests</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">
             {meta?.total ?? 0} records across all departments
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 flex flex-wrap gap-3">
         {/* Search */}
         <div className="flex gap-2 flex-1 min-w-[200px] max-w-md relative">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
             <input
               ref={searchInputRef}
               type="text"
@@ -106,7 +106,7 @@ export default function OvertimeListPage() {
               }}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              className="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full border border-neutral-300 rounded pl-9 pr-9 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400 outline-none"
             />
             {searchValue && (
               <button
@@ -115,14 +115,14 @@ export default function OvertimeListPage() {
                   setFilters((f) => ({ ...f, search: undefined, page: 1 }))
                   searchInputRef.current?.focus()
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
             {isFetching && (
               <div className="absolute right-8 top-1/2 -translate-y-1/2">
-                <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
@@ -136,7 +136,7 @@ export default function OvertimeListPage() {
             department_id: e.target.value ? Number(e.target.value) : undefined,
             page: 1 
           }))}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none min-w-[180px]"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none min-w-[180px]"
         >
           <option value="">All Departments</option>
           {(departmentsData?.data ?? []).map((dept) => (
@@ -153,7 +153,7 @@ export default function OvertimeListPage() {
               page: 1,
             }))
           }
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           <option value="">All Statuses</option>
           {['pending', 'approved', 'rejected', 'cancelled'].map((s) => (
@@ -167,14 +167,14 @@ export default function OvertimeListPage() {
           type="date"
           value={filters.date_from ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, date_from: e.target.value || undefined, page: 1 }))}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
           placeholder="From"
         />
         <input
           type="date"
           value={filters.date_to ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, date_to: e.target.value || undefined, page: 1 }))}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
           placeholder="To"
         />
       </div>
@@ -182,29 +182,29 @@ export default function OvertimeListPage() {
       {/* Active Filters */}
       {(filters.department_id || filters.search || filters.status || filters.date_from || filters.date_to) && (
         <div className="mb-4 flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-gray-500">Active filters:</span>
+          <span className="text-sm text-neutral-500">Active filters:</span>
           {filters.department_id && (
-            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+            <span className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
               {departmentsData?.data.find(d => d.id === filters.department_id)?.name}
             </span>
           )}
           {filters.search && (
-            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+            <span className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
               Search: {filters.search}
             </span>
           )}
           {filters.status && (
-            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full capitalize">
+            <span className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded capitalize">
               {filters.status}
             </span>
           )}
           {filters.date_from && (
-            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+            <span className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
               From: {filters.date_from}
             </span>
           )}
           {filters.date_to && (
-            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+            <span className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
               To: {filters.date_to}
             </span>
           )}
@@ -213,7 +213,7 @@ export default function OvertimeListPage() {
               setSearchValue('')
               setFilters({ per_page: 15, page: 1 })
             }}
-            className="text-xs text-gray-500 hover:text-red-600 underline"
+            className="text-xs text-neutral-500 hover:text-red-600 underline"
           >
             Clear all
           </button>
@@ -221,33 +221,33 @@ export default function OvertimeListPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden relative">
+      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden relative">
         {/* Loading overlay for search/filter */}
         {isFetching && !isLoading && (
           <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
-            <div className="bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 flex items-center gap-2">
-              <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm text-gray-600">Updating...</span>
+            <div className="bg-white px-4 py-2 rounded-lg border border-neutral-200 flex items-center gap-2">
+              <div className="h-4 w-4 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-neutral-600">Updating...</span>
             </div>
           </div>
         )}
 
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-10"></th>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Work Date</th>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Requested</th>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Approved</th>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Approved By</th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider w-10"></th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Employee</th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Work Date</th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Requested</th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Approved</th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Status</th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Approved By</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-gray-400 text-sm">
+                <td colSpan={8} className="px-3 py-8 text-center text-neutral-400 text-sm">
                   No overtime requests found.
                 </td>
               </tr>
@@ -256,22 +256,22 @@ export default function OvertimeListPage() {
                 <>
                   <tr 
                     key={row.id} 
-                    className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors cursor-pointer"
+                    className="hover:bg-neutral-50 even:bg-neutral-100 transition-colors cursor-pointer"
                     onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
                   >
                     <td className="px-3 py-2">
-                      <button className="text-gray-400 hover:text-gray-600">
+                      <button className="text-neutral-400 hover:text-neutral-600">
                         {expandedRow === row.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
                     </td>
-                    <td className="px-3 py-2 font-medium text-gray-900">
+                    <td className="px-3 py-2 font-medium text-neutral-900">
                       {row.employee?.full_name ?? `#${row.employee_id}`}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">{row.work_date}</td>
-                    <td className="px-3 py-2 text-gray-700">
+                    <td className="px-3 py-2 text-neutral-700">{row.work_date}</td>
+                    <td className="px-3 py-2 text-neutral-700">
                       {formatDuration(row.requested_minutes)}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">
+                    <td className="px-3 py-2 text-neutral-700">
                       {row.approved_minutes != null
                         ? formatDuration(row.approved_minutes)
                         : '—'}
@@ -279,49 +279,49 @@ export default function OvertimeListPage() {
                     <td className="px-3 py-2">
                       <StatusBadge label={row.status} />
                     </td>
-                    <td className="px-3 py-2 text-gray-600">
+                    <td className="px-3 py-2 text-neutral-600">
                       {row.approved_by ? (
                         <span className="text-green-700 font-medium">Approved</span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-neutral-400">—</span>
                       )}
                     </td>
                   </tr>
 
                   {/* Expanded Details */}
                   {expandedRow === row.id && (
-                    <tr className="bg-gray-50">
+                    <tr className="bg-neutral-50">
                       <td colSpan={8} className="px-4 py-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Request Details */}
-                          <div className="bg-white rounded-lg p-4 border border-gray-200">
-                            <h4 className="font-medium text-gray-900 mb-3">Request Details</h4>
+                          <div className="bg-white rounded p-4 border border-neutral-200">
+                            <h4 className="font-medium text-neutral-900 mb-3">Request Details</h4>
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between">
-                                <span className="text-gray-500">Reason:</span>
-                                <span className="text-gray-900 max-w-xs text-right">{row.reason || '—'}</span>
+                                <span className="text-neutral-500">Reason:</span>
+                                <span className="text-neutral-900 max-w-xs text-right">{row.reason || '—'}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-gray-500">Requested:</span>
-                                <span className="text-gray-900">{formatDuration(row.requested_minutes)}</span>
+                                <span className="text-neutral-500">Requested:</span>
+                                <span className="text-neutral-900">{formatDuration(row.requested_minutes)}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-gray-500">Filed By:</span>
-                                <span className="text-gray-900">User #{row.created_by_id}</span>
+                                <span className="text-neutral-500">Filed By:</span>
+                                <span className="text-neutral-900">User #{row.created_by_id}</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Approval Timeline */}
-                          <div className="bg-white rounded-lg p-4 border border-gray-200">
-                            <h4 className="font-medium text-gray-900 mb-3">Approval Timeline</h4>
+                          <div className="bg-white rounded p-4 border border-neutral-200">
+                            <h4 className="font-medium text-neutral-900 mb-3">Approval Timeline</h4>
                             <div className="space-y-3">
                               {/* Submitted */}
                               <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5"></div>
+                                <div className="w-2 h-2 rounded-full bg-neutral-500 mt-1.5"></div>
                                 <div className="text-sm">
-                                  <p className="font-medium text-gray-900">Submitted</p>
-                                  <p className="text-gray-500">{formatDate(row.created_at)}</p>
+                                  <p className="font-medium text-neutral-900">Submitted</p>
+                                  <p className="text-neutral-500">{formatDate(row.created_at)}</p>
                                 </div>
                               </div>
                               
@@ -330,10 +330,10 @@ export default function OvertimeListPage() {
                                 <div className="flex items-start gap-3">
                                   <div className={`w-2 h-2 rounded-full ${getStatusColor(row.status)} mt-1.5`}></div>
                                   <div className="text-sm">
-                                    <p className="font-medium text-gray-900">
+                                    <p className="font-medium text-neutral-900">
                                       {row.status === 'approved' ? 'Approved' : row.status === 'rejected' ? 'Rejected' : 'Reviewed'}
                                     </p>
-                                    <p className="text-gray-500">{formatDate(row.reviewed_at)}</p>
+                                    <p className="text-neutral-500">{formatDate(row.reviewed_at)}</p>
                                     {row.approved_minutes != null && row.status === 'approved' && (
                                       <p className="text-green-600 mt-1">
                                         Approved: {formatDuration(row.approved_minutes)}
@@ -349,7 +349,7 @@ export default function OvertimeListPage() {
                                   <div className="w-2 h-2 rounded-full bg-amber-300 mt-1.5 animate-pulse"></div>
                                   <div className="text-sm">
                                     <p className="font-medium text-amber-700">Pending Approval</p>
-                                    <p className="text-gray-500">Waiting for manager review</p>
+                                    <p className="text-neutral-500">Waiting for manager review</p>
                                   </div>
                                 </div>
                               )}
@@ -370,7 +370,7 @@ export default function OvertimeListPage() {
 
       {/* Pagination */}
       {meta && meta.last_page > 1 && (
-        <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
+        <div className="flex justify-between items-center mt-4 text-sm text-neutral-600">
           <span>
             Page {meta.current_page} of {meta.last_page} • {meta.total} total
           </span>
@@ -378,14 +378,14 @@ export default function OvertimeListPage() {
             <button
               disabled={meta.current_page <= 1}
               onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-              className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 transition-colors"
             >
               Previous
             </button>
             <button
               disabled={meta.current_page >= meta.last_page}
               onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-              className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 transition-colors"
             >
               Next
             </button>

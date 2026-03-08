@@ -57,6 +57,7 @@ use App\Domains\Tax\Models\VatLedger;
 use App\Infrastructure\Observers\PayrollRunObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -77,6 +78,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ── Production safety: block destructive DB commands ─────────────────
+        // Prevents `migrate:fresh`, `migrate:reset`, and `db:wipe` from ever
+        // running against the production database. This is the final hard stop
+        // in a layered defence:
+        //   1. phpunit.xml        — force="true" pins DB_DATABASE=ogami_erp_test
+        //   2. phpunit-backup-verify.xml — force="true" + ogami_erp_restore_test
+        //   3. VerifyBackupCommand — dual pre-flight guards before running tests
+        //   4. HERE              — framework-level prohibition (this block)
+        //
+        // We check the actual DB name (not only APP_ENV) because accidents most
+        // often happen when APP_ENV=local but DB_DATABASE accidentally points at
+        // the real production database.
+        $activeConnection = config('database.default', 'pgsql');
+        $activeDatabase   = config("database.connections.{$activeConnection}.database");
+        $isProductionDb   = ($activeDatabase === 'ogami_erp');
+        DB::prohibitDestructiveCommands($isProductionDb || $this->app->isProduction());
+
         // ── Policy registrations ─────────────────────────────────────────────
         // Laravel auto-discovery does not resolve policies in custom domain
         // namespaces, so we register them explicitly here.
@@ -158,6 +176,11 @@ class AppServiceProvider extends ServiceProvider
         // 'api' limiter: reads 120/min, writes 60/min — differentiated by HTTP method.
         // Both share the same throttle:api middleware applied on all domain route groups.
         RateLimiter::for('api', function (Request $request) {
+            // Disable rate limiting in test environment
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
             $isWrite = in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE']);
 
             $jsonResponse = fn (string $msg) => response()->json([
@@ -184,6 +207,11 @@ class AppServiceProvider extends ServiceProvider
         // 'api-action' limiter: for critical state-change endpoints (approve / reject / endorse / disburse).
         // 20 actions per 5 minutes per user — prevents button-spam even when blocked by validation (422).
         RateLimiter::for('api-action', function (Request $request) {
+            // Disable rate limiting in test environment
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
             return $request->user()
                 ? Limit::perMinutes(5, 20)->by('action:'.$request->user()->id)
                     ->response(fn () => response()->json([

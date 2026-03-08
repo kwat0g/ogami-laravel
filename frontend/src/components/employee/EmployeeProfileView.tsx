@@ -131,11 +131,11 @@ function InfoCard({
   const hasContent = children && (Array.isArray(children) ? children.length > 0 : true)
   
   return (
-    <section className={`bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm ${className}`}>
-      <div className="px-5 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex items-center justify-between">
+    <section className={`bg-white border border-neutral-200 rounded-lg overflow-hidden ${className}`}>
+      <div className="px-5 py-3 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-blue-600" />
-          <h2 className="text-sm font-semibold text-gray-700">{title}</h2>
+          <Icon className="h-4 w-4 text-neutral-500" />
+          <h2 className="text-sm font-medium text-neutral-700">{title}</h2>
         </div>
         {action && <div>{action}</div>}
       </div>
@@ -143,11 +143,11 @@ function InfoCard({
         {hasContent ? children : (
           emptyState ? (
             <div className="text-center py-8">
-              <p className="text-sm text-gray-400 mb-3">{emptyState.message}</p>
+              <p className="text-sm text-neutral-400 mb-3">{emptyState.message}</p>
               {emptyState.action}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-gray-300">
+            <div className="flex flex-col items-center justify-center py-8 text-neutral-300">
               <Icon className="h-10 w-10 mb-2" />
               <p className="text-sm">No data available</p>
             </div>
@@ -173,43 +173,29 @@ function InfoRow({
   const hasValue = value && value !== '—' && value !== null && value !== undefined
   
   return (
-    <div className="flex justify-between items-start py-2.5 border-b border-gray-50 last:border-0">
+    <div className="flex justify-between items-start py-2.5 border-b border-neutral-100 last:border-0">
       <div className="flex items-center gap-1.5">
-        {Icon && <Icon className="h-3.5 w-3.5 text-gray-400" />}
-        <span className="text-xs text-gray-500 uppercase tracking-wide">{label}</span>
+        {Icon && <Icon className="h-3.5 w-3.5 text-neutral-400" />}
+        <span className="text-xs text-neutral-500">{label}</span>
       </div>
-      <span className={`text-sm text-right ${highlight ? 'font-semibold text-gray-900' : 'text-gray-700'} ${!hasValue ? 'text-gray-400 italic' : ''}`}>
+      <span className={`text-sm text-right ${highlight ? 'font-medium text-neutral-900' : 'text-neutral-700'} ${!hasValue ? 'text-neutral-400 italic' : ''}`}>
         {value || '—'}
       </span>
     </div>
   )
 }
 
-function StatCard({ label, value, subtext, icon: Icon, color = 'blue' }: {
+function StatCard({ label, value, subtext }: {
   label: string
   value: string | number
   subtext?: string
-  icon: React.ElementType
-  color?: 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'gray'
 }) {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
-    green: 'bg-green-50 text-green-600 border-green-100',
-    amber: 'bg-amber-50 text-amber-600 border-amber-100',
-    red: 'bg-red-50 text-red-600 border-red-100',
-    purple: 'bg-purple-50 text-purple-600 border-purple-100',
-    gray: 'bg-gray-50 text-gray-500 border-gray-100',
-  }
-  
   return (
-    <div className={`p-4 rounded-xl border ${colorClasses[color]}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium opacity-80">{label}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
-          {subtext && <p className="text-xs mt-1 opacity-70">{subtext}</p>}
-        </div>
-        <Icon className="h-5 w-5 opacity-60" />
+    <div className="p-4 border border-neutral-200 rounded">
+      <div>
+        <p className="text-xs font-medium text-neutral-500">{label}</p>
+        <p className="text-lg font-semibold mt-1 text-neutral-900">{value}</p>
+        {subtext && <p className="text-xs mt-1 text-neutral-400">{subtext}</p>}
       </div>
     </div>
   )
@@ -281,7 +267,7 @@ export default function EmployeeProfileView({
         {backTo ? (
           <Link 
             to={backTo}
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             {backLabel}
@@ -289,7 +275,7 @@ export default function EmployeeProfileView({
         ) : onBack ? (
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             {backLabel}
@@ -298,11 +284,11 @@ export default function EmployeeProfileView({
       </div>
 
       {/* Profile Header */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+      <div className="bg-white border border-neutral-200 rounded-lg p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg ring-4 ring-blue-50">
+            <div className="w-24 h-24 bg-neutral-100 flex items-center justify-center text-neutral-600 text-3xl font-medium">
               {initials}
             </div>
           </div>
@@ -310,7 +296,7 @@ export default function EmployeeProfileView({
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{employee.full_name}</h1>
+              <h1 className="text-2xl font-semibold text-neutral-900">{employee.full_name}</h1>
               <StatusBadge 
                 label={employee.employment_status.replace('_', ' ')} 
                 autoVariant 
@@ -318,23 +304,23 @@ export default function EmployeeProfileView({
             </div>
             
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm">
-              <span className="font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+              <span className="font-mono text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded">
                 {employee.employee_code}
               </span>
               {employee.department && (
-                <span className="text-gray-600 flex items-center gap-1">
-                  <Building2 className="h-4 w-4 text-gray-400" />
+                <span className="text-neutral-600 flex items-center gap-1">
+                  <Building2 className="h-4 w-4 text-neutral-400" />
                   {employee.department.name}
                 </span>
               )}
               {employee.position && (
-                <span className="text-gray-600 flex items-center gap-1">
-                  <Briefcase className="h-4 w-4 text-gray-400" />
+                <span className="text-neutral-600 flex items-center gap-1">
+                  <Briefcase className="h-4 w-4 text-neutral-400" />
                   {employee.position.title}
                 </span>
               )}
-              <span className="text-gray-500 flex items-center gap-1">
-                <Calendar className="h-4 w-4 text-gray-400" />
+              <span className="text-neutral-500 flex items-center gap-1">
+                <Calendar className="h-4 w-4 text-neutral-400" />
                 {tenure} tenure
               </span>
             </div>
@@ -343,17 +329,17 @@ export default function EmployeeProfileView({
           {/* Quick Stats */}
           {showStats && (
             <div className="flex gap-3">
-              <div className="text-center px-4 py-2 bg-blue-50 rounded-xl border border-blue-100">
-                <p className="text-2xl font-bold text-blue-600">{presentDays}</p>
-                <p className="text-xs text-blue-600/70">Present</p>
+              <div className="text-center px-4 py-2 border border-neutral-200 rounded">
+                <p className="text-lg font-semibold text-neutral-900">{presentDays}</p>
+                <p className="text-xs text-neutral-500">Present</p>
               </div>
-              <div className="text-center px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
-                <p className="text-2xl font-bold text-amber-600">{lateDays}</p>
-                <p className="text-xs text-amber-600/70">Late</p>
+              <div className="text-center px-4 py-2 border border-neutral-200 rounded">
+                <p className="text-lg font-semibold text-neutral-900">{lateDays}</p>
+                <p className="text-xs text-neutral-500">Late</p>
               </div>
-              <div className="text-center px-4 py-2 bg-green-50 rounded-xl border border-green-100">
-                <p className="text-2xl font-bold text-green-600">{totalLeaveBalance}</p>
-                <p className="text-xs text-green-600/70">Leave Days</p>
+              <div className="text-center px-4 py-2 border border-neutral-200 rounded">
+                <p className="text-lg font-semibold text-neutral-900">{totalLeaveBalance}</p>
+                <p className="text-xs text-neutral-500">Leave Days</p>
               </div>
             </div>
           )}
@@ -374,29 +360,21 @@ export default function EmployeeProfileView({
             label="Present This Month" 
             value={presentDays} 
             subtext="Working days"
-            icon={BadgeCheck}
-            color="green"
           />
           <StatCard 
             label="Late Arrivals" 
             value={lateDays} 
             subtext="This month"
-            icon={Clock}
-            color={lateDays > 0 ? 'amber' : 'blue'}
           />
           <StatCard 
             label="Absences" 
             value={absentDays} 
             subtext="This month"
-            icon={AlertCircle}
-            color={absentDays > 0 ? 'red' : 'blue'}
           />
           <StatCard 
             label="Leave Balance" 
             value={totalLeaveBalance} 
             subtext="Days available"
-            icon={Calendar}
-            color="purple"
           />
         </div>
       )}
@@ -420,30 +398,30 @@ export default function EmployeeProfileView({
         {/* Contact Details */}
         <InfoCard title="Contact Details" icon={Mail}>
           <div className="space-y-1">
-            <div className="flex justify-between items-start py-2.5 border-b border-gray-50">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Personal Email</span>
+            <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
+              <span className="text-xs text-neutral-500">Personal Email</span>
               {employee.personal_email ? (
                 <a 
                   href={`mailto:${employee.personal_email}`}
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-sm text-neutral-700 hover:underline"
                 >
                   {employee.personal_email}
                 </a>
               ) : (
-                <span className="text-sm text-gray-400 italic">Not provided</span>
+                <span className="text-sm text-neutral-400 italic">Not provided</span>
               )}
             </div>
-            <div className="flex justify-between items-start py-2.5 border-b border-gray-50">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Mobile</span>
+            <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
+              <span className="text-xs text-neutral-500">Mobile</span>
               {employee.personal_phone ? (
                 <a 
                   href={`tel:${employee.personal_phone}`}
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-sm text-neutral-700 hover:underline"
                 >
                   {employee.personal_phone}
                 </a>
               ) : (
-                <span className="text-sm text-gray-400 italic">Not provided</span>
+                <span className="text-sm text-neutral-400 italic">Not provided</span>
               )}
             </div>
             <InfoRow 
@@ -451,7 +429,7 @@ export default function EmployeeProfileView({
               value={
                 employee.present_address ? (
                   <span className="flex items-start gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <MapPin className="h-3.5 w-3.5 text-neutral-400 mt-0.5 flex-shrink-0" />
                     <span className="line-clamp-2">{employee.present_address}</span>
                   </span>
                 ) : 'Not provided'
@@ -462,7 +440,7 @@ export default function EmployeeProfileView({
               value={
                 employee.permanent_address ? (
                   <span className="flex items-start gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <MapPin className="h-3.5 w-3.5 text-neutral-400 mt-0.5 flex-shrink-0" />
                     <span className="line-clamp-2">{employee.permanent_address}</span>
                   </span>
                 ) : 'Not provided'
@@ -508,7 +486,7 @@ export default function EmployeeProfileView({
             action: !employee.salary_grade && isHR && (
               <Link 
                 to={`/hr/employees/${employee.ulid}/edit`} 
-                className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+                className="text-sm text-neutral-600 hover:underline inline-flex items-center gap-1"
               >
                 <Plus className="h-4 w-4" />
                 Assign Salary Grade
@@ -526,25 +504,25 @@ export default function EmployeeProfileView({
                 label="Step" 
                 value={employee.salary_grade.name} 
               />
-              <div className="flex justify-between items-start py-2.5 border-b border-gray-50">
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Basic Monthly</span>
-                <span className="text-sm font-semibold text-gray-900">
+              <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
+                <span className="text-xs text-neutral-500">Basic Monthly</span>
+                <span className="text-sm font-medium text-neutral-900">
                   {employee.basic_monthly_rate ? (
                     <CurrencyAmount centavos={employee.basic_monthly_rate} />
                   ) : '—'}
                 </span>
               </div>
-              <div className="flex justify-between items-start py-2.5 border-b border-gray-50">
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Basic Daily</span>
-                <span className="text-sm text-gray-700">
+              <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
+                <span className="text-xs text-neutral-500">Basic Daily</span>
+                <span className="text-sm text-neutral-700">
                   {employee.daily_rate ? (
                     <CurrencyAmount centavos={employee.daily_rate} />
                   ) : '—'}
                 </span>
               </div>
-              <div className="flex justify-between items-start py-2.5 border-b border-gray-50">
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Basic Hourly</span>
-                <span className="text-sm text-gray-700">
+              <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
+                <span className="text-xs text-neutral-500">Basic Hourly</span>
+                <span className="text-sm text-neutral-700">
                   {employee.hourly_rate ? (
                     <CurrencyAmount centavos={employee.hourly_rate} />
                   ) : '—'}
@@ -563,7 +541,7 @@ export default function EmployeeProfileView({
             action: isHR && (
               <Link 
                 to={`/hr/employees/${employee.ulid}/edit`} 
-                className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+                className="text-sm text-neutral-600 hover:underline inline-flex items-center gap-1"
               >
                 <Plus className="h-4 w-4" />
                 Add Information
@@ -574,7 +552,7 @@ export default function EmployeeProfileView({
           <div className="space-y-4">
             {/* Government IDs Section */}
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Government IDs</p>
+              <p className="text-xs font-medium text-neutral-500 mb-2">Government IDs</p>
               <div className="space-y-1">
                 {isHR ? (
                   // HR View - Show On file / Missing badges
@@ -585,7 +563,7 @@ export default function EmployeeProfileView({
                         employee.has_sss_no ? (
                           <StatusBadge label="On file" variant="success" />
                         ) : (
-                          <span className="text-gray-400 italic text-xs">Not recorded</span>
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
                       } 
                     />
@@ -595,7 +573,7 @@ export default function EmployeeProfileView({
                         employee.has_philhealth_no ? (
                           <StatusBadge label="On file" variant="success" />
                         ) : (
-                          <span className="text-gray-400 italic text-xs">Not recorded</span>
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
                       } 
                     />
@@ -605,7 +583,7 @@ export default function EmployeeProfileView({
                         employee.has_pagibig_no ? (
                           <StatusBadge label="On file" variant="success" />
                         ) : (
-                          <span className="text-gray-400 italic text-xs">Not recorded</span>
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
                       } 
                     />
@@ -615,7 +593,7 @@ export default function EmployeeProfileView({
                         employee.has_tin ? (
                           <StatusBadge label="On file" variant="success" />
                         ) : (
-                          <span className="text-gray-400 italic text-xs">Not recorded</span>
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
                       } 
                     />
@@ -626,19 +604,19 @@ export default function EmployeeProfileView({
                   <>
                     <InfoRow 
                       label="SSS" 
-                      value={employee.has_sss_no ? <span className="text-green-600 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-gray-400 italic text-xs">Not recorded</span>} 
+                      value={employee.has_sss_no ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
                     />
                     <InfoRow 
                       label="PhilHealth" 
-                      value={employee.has_philhealth_no ? <span className="text-green-600 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-gray-400 italic text-xs">Not recorded</span>} 
+                      value={employee.has_philhealth_no ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
                     />
                     <InfoRow 
                       label="Pag-IBIG" 
-                      value={employee.has_pagibig_no ? <span className="text-green-600 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-gray-400 italic text-xs">Not recorded</span>} 
+                      value={employee.has_pagibig_no ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
                     />
                     <InfoRow 
                       label="TIN" 
-                      value={employee.has_tin ? <span className="text-green-600 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-gray-400 italic text-xs">Not recorded</span>} 
+                      value={employee.has_tin ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
                     />
                   </>
                 )}
@@ -646,13 +624,13 @@ export default function EmployeeProfileView({
             </div>
 
             {/* Divider */}
-            <div className="border-t border-gray-100" />
+            <div className="border-t border-neutral-100" />
 
             {/* Bank Information Section */}
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Bank Information</p>
+              <p className="text-xs font-medium text-neutral-500 mb-2">Bank Information</p>
               <div className="space-y-1">
-                <InfoRow label="Bank Name" value={employee.bank_name ?? <span className="text-gray-400 italic text-xs">Not recorded</span>} />
+                <InfoRow label="Bank Name" value={employee.bank_name ?? <span className="text-neutral-400 italic text-xs">Not recorded</span>} />
                 <InfoRow 
                   label="Account Number" 
                   value={
@@ -661,7 +639,7 @@ export default function EmployeeProfileView({
                         {'•••• •••• ' + employee.bank_account_no.slice(-4)}
                       </span>
                     ) : (
-                      <span className="text-gray-400 italic text-xs">Not recorded</span>
+                      <span className="text-neutral-400 italic text-xs">Not recorded</span>
                     )
                   } 
                 />
@@ -671,12 +649,12 @@ export default function EmployeeProfileView({
             {/* Notes Section */}
             {employee.notes && (
               <>
-                <div className="border-t border-gray-100" />
+                <div className="border-t border-neutral-100" />
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Notes</p>
+                  <p className="text-xs font-medium text-neutral-500 mb-2">Notes</p>
                   <div className="flex items-start gap-2">
-                    <FileText className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{employee.notes}</p>
+                    <FileText className="h-4 w-4 text-neutral-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-neutral-700 whitespace-pre-wrap">{employee.notes}</p>
                   </div>
                 </div>
               </>
@@ -688,7 +666,7 @@ export default function EmployeeProfileView({
         <InfoCard 
           title="Leave Balances" 
           icon={Calendar}
-          action={<span className="text-xs text-gray-500">{new Date().getFullYear()}</span>}
+          action={<span className="text-xs text-neutral-500">{new Date().getFullYear()}</span>}
           emptyState={{ message: 'No leave balances found for this year' }}
         >
           {leaveBalanceItems.length > 0 && (
@@ -703,36 +681,32 @@ export default function EmployeeProfileView({
                 const isEventBased = totalEntitlement === 0
 
                 return (
-                  <div key={balance.leave_type_id} className="py-2 border-b border-gray-50 last:border-0">
+                  <div key={balance.leave_type_id} className="py-2 border-b border-neutral-100 last:border-0">
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm text-gray-700">{balance.leave_type_name}</span>
+                      <span className="text-sm text-neutral-700">{balance.leave_type_name}</span>
                       <div className="flex items-baseline gap-0.5">
                         {isEventBased ? (
-                          <span className="text-xs text-gray-400 italic">Event-based</span>
+                          <span className="text-xs text-neutral-400 italic">Event-based</span>
                         ) : (
                           <>
-                            <span className={`text-sm font-semibold ${
-                              balance.balance > 3 ? 'text-green-600' :
-                              balance.balance > 0 ? 'text-amber-600' : 'text-red-600'
-                            }`}>{balance.balance}</span>
-                            <span className="text-xs text-gray-400">/{totalEntitlement} days</span>
+                            <span className="text-sm font-medium text-neutral-900">
+                              {balance.balance}
+                            </span>
+                            <span className="text-xs text-neutral-400">/{totalEntitlement} days</span>
                           </>
                         )}
                       </div>
                     </div>
                     {!isEventBased && (
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-neutral-100 rounded overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${
-                            isEmpty ? 'bg-red-400' :
-                            pct < 30 ? 'bg-amber-400' : 'bg-green-400'
-                          }`}
+                          className="h-full bg-neutral-400 rounded transition-all"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
                     )}
                     {balance.used > 0 && (
-                      <p className="text-[11px] text-gray-400 mt-0.5">{balance.used} day{balance.used !== 1 ? 's' : ''} used</p>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">{balance.used} day{balance.used !== 1 ? 's' : ''} used</p>
                     )}
                   </div>
                 )
@@ -751,7 +725,7 @@ export default function EmployeeProfileView({
                 ? `/hr/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}` 
                 : `/team/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}`
               } 
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs text-neutral-600 hover:underline"
             >
               View All
             </Link>
@@ -761,20 +735,20 @@ export default function EmployeeProfileView({
           {attendanceLogs.length > 0 && (
             <div className="space-y-2">
               {attendanceLogs.slice(0, 5).map((log) => (
-                <div key={log.id} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                  <span className="text-sm text-gray-600">
+                <div key={log.id} className="flex justify-between items-center py-2 border-b border-neutral-100 last:border-0">
+                  <span className="text-sm text-neutral-600">
                     {new Date(log.work_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
                   </span>
                   <div className="flex items-center gap-2">
                     {log.is_absent ? (
-                      <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full">Absent</span>
+                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">Absent</span>
                     ) : log.late_minutes > 0 ? (
-                      <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">Late ({log.late_minutes}m)</span>
+                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">Late ({log.late_minutes}m)</span>
                     ) : (
-                      <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">Present</span>
+                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">Present</span>
                     )}
                     {log.time_in && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-neutral-500">
                         {log.time_in.slice(0, 5)} - {log.time_out?.slice(0, 5) || '—'}
                       </span>
                     )}
@@ -794,7 +768,7 @@ export default function EmployeeProfileView({
             action: !hasSupervisor && isHR && (
               <Link 
                 to={`/hr/employees/${employee.ulid}/edit`} 
-                className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+                className="text-sm text-neutral-600 hover:underline inline-flex items-center gap-1"
               >
                 <Plus className="h-4 w-4" />
                 Assign Supervisor
@@ -809,7 +783,7 @@ export default function EmployeeProfileView({
                 value={
                   <Link 
                     to={isHR ? `/hr/employees/${employee.supervisor!.ulid}` : `/team/employees/${employee.supervisor!.ulid}`}
-                    className="text-blue-600 hover:underline flex items-center gap-1"
+                    className="text-neutral-700 hover:underline flex items-center gap-1"
                   >
                     <UserCircle className="h-3.5 w-3.5" />
                     {employee.supervisor!.full_name}

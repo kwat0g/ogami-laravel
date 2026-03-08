@@ -1,7 +1,8 @@
 import * as React from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { motion, AnimatePresence } from 'framer-motion'
+
+// Uncodixified: Simple sheet with no slide animations
 
 interface SheetContextValue {
   open: boolean
@@ -89,29 +90,6 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
   ({ className, children, side = 'right', ...props }, ref) => {
     const { open, onOpenChange } = useSheet()
 
-    const sideVariants = {
-      left: {
-        initial: { x: '-100%' },
-        animate: { x: 0 },
-        exit: { x: '-100%' },
-      },
-      right: {
-        initial: { x: '100%' },
-        animate: { x: 0 },
-        exit: { x: '100%' },
-      },
-      top: {
-        initial: { y: '-100%' },
-        animate: { y: 0 },
-        exit: { y: '-100%' },
-      },
-      bottom: {
-        initial: { y: '100%' },
-        animate: { y: 0 },
-        exit: { y: '100%' },
-      },
-    }
-
     const sideClasses = {
       left: 'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r',
       right: 'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l',
@@ -119,39 +97,29 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
       bottom: 'inset-x-0 bottom-0 w-full h-auto max-h-[50vh] border-t',
     }
 
-    return (
-      <AnimatePresence>
-        {open && (
-          <div className="fixed inset-0 z-50">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => onOpenChange(false)}
-            />
+    if (!open) return null
 
-            {/* Content */}
-            <motion.div
-              ref={ref}
-              initial={sideVariants[side].initial}
-              animate={sideVariants[side].animate}
-              exit={sideVariants[side].exit}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={cn(
-                'fixed bg-white shadow-2xl',
-                sideClasses[side],
-                className
-              )}
-              {...props}
-            >
-              {children}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+    return (
+      <div className="fixed inset-0 z-50">
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={() => onOpenChange(false)}
+        />
+
+        {/* Content */}
+        <div
+          ref={ref}
+          className={cn(
+            'fixed bg-white shadow-lg',
+            sideClasses[side],
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </div>
+      </div>
     )
   }
 )
@@ -164,7 +132,7 @@ const SheetHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'flex flex-col space-y-1.5 p-6 border-b border-gray-100',
+      'flex flex-col space-y-1 p-4 border-b border-neutral-200',
       className
     )}
     {...props}
@@ -179,7 +147,7 @@ const SheetFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2 p-6 border-t border-gray-100',
+      'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2 p-4 border-t border-neutral-200',
       className
     )}
     {...props}
@@ -194,7 +162,7 @@ const SheetTitle = React.forwardRef<
   <h2
     ref={ref}
     className={cn(
-      'text-lg font-semibold text-gray-900',
+      'text-base font-semibold text-neutral-900',
       className
     )}
     {...props}
@@ -208,7 +176,7 @@ const SheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('text-sm text-gray-500', className)}
+    className={cn('text-sm text-neutral-500', className)}
     {...props}
   />
 ))
@@ -224,7 +192,7 @@ const SheetClose = React.forwardRef<
       ref={ref}
       onClick={() => onOpenChange(false)}
       className={cn(
-        'absolute right-4 top-4 p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors',
+        'absolute right-3 top-3 p-1.5 rounded text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors',
         className
       )}
       {...props}

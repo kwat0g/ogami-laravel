@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\AR;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Validates customer create / update payloads.
@@ -26,7 +27,7 @@ class CreateCustomerRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:20',
-                "unique:customers,tin,{$customerId}",
+                Rule::unique('customers', 'tin')->ignore($customerId),
             ],
             'email' => ['nullable', 'email', 'max:200'],
             'phone' => ['nullable', 'string', 'max:50'],

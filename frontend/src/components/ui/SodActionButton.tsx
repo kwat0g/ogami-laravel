@@ -19,13 +19,13 @@ interface SodActionButtonProps {
 
 const variantClasses: Record<NonNullable<SodActionButtonProps['variant']>, string> = {
   primary:
-    'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 focus:ring-blue-500',
+    'bg-neutral-900 text-white hover:bg-neutral-800 disabled:bg-neutral-300 focus:ring-neutral-400',
   danger:
     'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 focus:ring-red-500',
   warning:
-    'bg-amber-500 text-white hover:bg-amber-600 disabled:bg-amber-300 focus:ring-amber-400',
+    'bg-amber-600 text-white hover:bg-amber-700 disabled:bg-amber-300 focus:ring-amber-400',
   ghost:
-    'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 disabled:opacity-50 focus:ring-gray-400',
+    'bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 disabled:opacity-50 focus:ring-neutral-400',
 }
 
 /**
@@ -72,8 +72,8 @@ export function SodActionButton({
         disabled={isDisabled}
         aria-disabled={isDisabled}
         className={[
-          'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-offset-1',
+          'px-4 py-2 text-sm font-medium rounded transition-colors',
+          'focus:outline-none focus:ring-1',
           'disabled:cursor-not-allowed',
           variantClasses[variant],
           isBlocked ? 'opacity-60 cursor-not-allowed' : '',

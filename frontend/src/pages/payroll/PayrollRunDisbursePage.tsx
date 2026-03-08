@@ -79,24 +79,24 @@ export default function PayrollRunDisbursePage() {
     return (
       <div className="max-w-2xl space-y-6">
         <WizardStepHeader step={7} title="Disburse & Publish" description={`Run #${run.reference_no}`} />
-        <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
+        <div className="bg-green-50 border border-green-200 rounded p-8 text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Payroll Run Complete</h2>
-          <p className="text-sm text-gray-600">Payslips have been published. Reference: <strong>{run.reference_no}</strong></p>
-          <p className="text-sm text-gray-600 mt-1">Net Pay Total: <strong>{formatCentavos(run.net_pay_total_centavos)}</strong></p>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">Payroll Run Complete</h2>
+          <p className="text-sm text-neutral-600">Payslips have been published. Reference: <strong>{run.reference_no}</strong></p>
+          <p className="text-sm text-neutral-600 mt-1">Net Pay Total: <strong>{formatCentavos(run.net_pay_total_centavos)}</strong></p>
           <div className="flex justify-center gap-3 mt-6">
             <button
               type="button"
               onClick={() => void downloadBreakdown()}
               disabled={breakdownLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
             >
               <Download className="h-4 w-4" /> Download Full Breakdown (Excel)
             </button>
             <button
               type="button"
               onClick={() => navigate('/payroll/runs')}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-600 text-white text-sm rounded hover:bg-neutral-700"
             >
               Back to Runs
             </button>
@@ -115,30 +115,30 @@ export default function PayrollRunDisbursePage() {
       />
 
       {/* ── 7a: Disburse ── */}
-      <div className={`bg-white border rounded-xl overflow-hidden ${stage !== 'disburse' || disburseDone ? 'border-green-200' : 'border-gray-200'}`}>
-        <div className={`px-5 py-4 border-b flex items-center gap-3 ${stage !== 'disburse' || disburseDone ? 'bg-green-50 border-green-100' : 'border-gray-100'}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${stage !== 'disburse' || disburseDone ? 'bg-green-500 text-white' : 'bg-blue-600 text-white'}`}>
+      <div className={`bg-white border rounded overflow-hidden ${stage !== 'disburse' || disburseDone ? 'border-green-200' : 'border-neutral-200'}`}>
+        <div className={`px-5 py-4 border-b flex items-center gap-3 ${stage !== 'disburse' || disburseDone ? 'bg-green-50 border-green-100' : 'border-neutral-100'}`}>
+          <div className={`w-8 h-8 rounded flex items-center justify-center text-sm font-bold ${stage !== 'disburse' || disburseDone ? 'bg-green-500 text-white' : 'bg-neutral-900 text-white'}`}>
             {stage !== 'disburse' || disburseDone ? '✓' : '7a'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-800">Step 7a: Disbursement</p>
-            <p className="text-xs text-gray-500">Post GL journal entry and generate bank disbursement file.</p>
+            <p className="text-sm font-semibold text-neutral-800">Step 7a: Disbursement</p>
+            <p className="text-xs text-neutral-500">Post GL journal entry and generate bank disbursement file.</p>
           </div>
         </div>
 
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-400">Total Net Pay</p>
-              <p className="font-bold text-gray-900">{formatCentavos(run.net_pay_total_centavos)}</p>
+            <div className="bg-neutral-50 rounded p-3">
+              <p className="text-xs text-neutral-400">Total Net Pay</p>
+              <p className="font-bold text-neutral-900">{formatCentavos(run.net_pay_total_centavos)}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-400">Employees</p>
-              <p className="font-bold text-gray-900">{run.total_employees}</p>
+            <div className="bg-neutral-50 rounded p-3">
+              <p className="text-xs text-neutral-400">Employees</p>
+              <p className="font-bold text-neutral-900">{run.total_employees}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-400">Pay Date</p>
-              <p className="font-bold text-gray-900">{new Date(run.pay_date).toLocaleDateString('en-PH')}</p>
+            <div className="bg-neutral-50 rounded p-3">
+              <p className="text-xs text-neutral-400">Pay Date</p>
+              <p className="font-bold text-neutral-900">{new Date(run.pay_date).toLocaleDateString('en-PH')}</p>
             </div>
           </div>
 
@@ -148,7 +148,7 @@ export default function PayrollRunDisbursePage() {
                 type="button"
                 onClick={handleDisburse}
                 disabled={disburse.isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium rounded transition-colors"
               >
                 {disburse.isPending
                   ? <><Loader2 className="h-4 w-4 animate-spin" /> Posting…</>
@@ -166,7 +166,7 @@ export default function PayrollRunDisbursePage() {
                 type="button"
                 onClick={() => void downloadBreakdown()}
                 disabled={breakdownLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
               >
                 <Download className="h-4 w-4" />
                 {breakdownLoading ? 'Downloading…' : 'Full Breakdown (Excel)'}
@@ -177,36 +177,36 @@ export default function PayrollRunDisbursePage() {
       </div>
 
       {/* ── 7b: Publish Payslips ── */}
-      <div className={`bg-white border rounded-xl overflow-hidden ${
-        stage === 'disburse' && !disburseDone ? 'border-gray-100 opacity-50 pointer-events-none' : 'border-gray-200'
+      <div className={`bg-white border rounded overflow-hidden ${
+        stage === 'disburse' && !disburseDone ? 'border-neutral-100 opacity-50 pointer-events-none' : 'border-neutral-200'
       }`}>
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold text-white">7b</div>
+        <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-neutral-900 flex items-center justify-center text-sm font-bold text-white">7b</div>
           <div>
-            <p className="text-sm font-semibold text-gray-800">Step 7b: Publish Payslips</p>
-            <p className="text-xs text-gray-500">Make payslips visible to employees. Optionally schedule for a future date.</p>
+            <p className="text-sm font-semibold text-neutral-800">Step 7b: Publish Payslips</p>
+            <p className="text-xs text-neutral-500">Make payslips visible to employees. Optionally schedule for a future date.</p>
           </div>
         </div>
 
         <div className="p-5 space-y-4">
           {/* Schedule */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <CalendarClock className="inline h-4 w-4 mr-1 text-gray-400" />
-              Publish Date &amp; Time <span className="text-gray-400 font-normal">(leave blank to publish immediately)</span>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <CalendarClock className="inline h-4 w-4 mr-1 text-neutral-400" />
+              Publish Date &amp; Time <span className="text-neutral-400 font-normal">(leave blank to publish immediately)</span>
             </label>
             <input
               type="datetime-local"
               value={publishAt}
               onChange={e => setPublishAt(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
             />
           </div>
 
           {/* Notification options */}
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700 mb-1">
-              <Bell className="inline h-4 w-4 mr-1 text-gray-400" />
+            <p className="text-sm font-medium text-neutral-700 mb-1">
+              <Bell className="inline h-4 w-4 mr-1 text-neutral-400" />
               Notify Employees
             </p>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -214,18 +214,18 @@ export default function PayrollRunDisbursePage() {
                 type="checkbox"
                 checked={notifyEmail}
                 onChange={e => setNotifyEmail(e.target.checked)}
-                className="accent-blue-600"
+                className="accent-neutral-900"
               />
-              <span className="text-sm text-gray-700">Email notification</span>
+              <span className="text-sm text-neutral-700">Email notification</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={notifyInApp}
                 onChange={e => setNotifyInApp(e.target.checked)}
-                className="accent-blue-600"
+                className="accent-neutral-900"
               />
-              <span className="text-sm text-gray-700">In-app notification</span>
+              <span className="text-sm text-neutral-700">In-app notification</span>
             </label>
           </div>
 
@@ -233,7 +233,7 @@ export default function PayrollRunDisbursePage() {
             type="button"
             onClick={handlePublish}
             disabled={publish.isPending}
-            className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium rounded transition-colors"
           >
             {publish.isPending
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</>

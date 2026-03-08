@@ -1,6 +1,6 @@
 /**
- * StatusBadge - Minimalist design
- * Renders subtle status indicators with minimal color usage
+ * StatusBadge - Uncodixified
+ * Simple status indicators without pills or dots
  */
 
 type Variant = 'default' | 'muted' | 'subtle'
@@ -72,8 +72,7 @@ export default function StatusBadge({ label, variant = 'default', autoStyle = tr
   }
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
-      {style.dot && <span className={`h-1 w-1 rounded-full ${style.dot}`} />}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
       {label}
     </span>
   )

@@ -2,6 +2,8 @@ import * as React from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// Uncodixified: Simple modal with no animations, consistent 8px radius, subtle shadow
+
 // Dialog context for managing open state
 const DialogContext = React.createContext<{
   open: boolean
@@ -50,7 +52,7 @@ const Dialog = ({
     <DialogContext.Provider value={{ open: isOpen, onOpenChange: handleOpenChange }}>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+          className="fixed inset-0 bg-black/50" 
           onClick={() => handleOpenChange(false)}
         />
         <div className="relative z-50 w-full">
@@ -83,7 +85,7 @@ const DialogContent = React.forwardRef<
       {children}
       <button
         type="button"
-        className="absolute right-4 top-4 p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        className="absolute right-3 top-3 p-1.5 rounded text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"
         onClick={() => onOpenChange(false)}
       >
         <X className="h-4 w-4" />
@@ -99,7 +101,7 @@ const DialogHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex flex-col space-y-1.5 text-left p-6 pb-4 border-b border-gray-100',
+      'flex flex-col space-y-1 p-4 border-b border-neutral-200',
       className
     )}
     {...props}
@@ -113,7 +115,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2 p-6 pt-4 bg-gray-50/50 rounded-b-xl',
+      'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2 p-4 border-t border-neutral-200 bg-neutral-50',
       className
     )}
     {...props}
@@ -128,7 +130,7 @@ const DialogTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      'text-lg font-semibold text-gray-900 leading-none tracking-tight',
+      'text-base font-semibold text-neutral-900',
       className
     )}
     {...props}
@@ -142,7 +144,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('text-sm text-gray-500 mt-1.5', className)}
+    className={cn('text-sm text-neutral-500', className)}
     {...props}
   />
 ))

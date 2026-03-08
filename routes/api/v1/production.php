@@ -14,6 +14,8 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
     Route::post('boms',                 [BomController::class, 'store']);
     Route::get('boms/{bom}',            [BomController::class, 'show']);
     Route::put('boms/{bom}',            [BomController::class, 'update']);
+    Route::patch('boms/{bom}/activate', [BomController::class, 'activate']);
+    Route::delete('boms/{bom}',         [BomController::class, 'destroy']);
 
     // ── Delivery Schedules ───────────────────────────────────────────────────
     Route::get('delivery-schedules',                              [DeliveryScheduleController::class, 'index']);

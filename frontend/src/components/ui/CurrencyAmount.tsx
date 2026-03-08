@@ -14,7 +14,7 @@ const SIZE_CLASSES: Record<NonNullable<CurrencyAmountProps['size']>, string> = {
   sm: 'text-xs',
   base: 'text-sm',
   lg: 'text-base',
-  xl: 'text-lg font-medium',
+  xl: 'text-lg font-semibold',
 }
 
 export default function CurrencyAmount({ 
@@ -35,6 +35,7 @@ export default function CurrencyAmount({
 
   return (
     <span
+      data-currency
       className={[
         'font-mono tabular-nums tracking-tight',
         SIZE_CLASSES[size],

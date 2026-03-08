@@ -134,17 +134,17 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
     <div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-          <ClipboardCheck className="w-5 h-5 text-amber-600" />
+        <div className="w-10 h-10 bg-neutral-100 rounded flex items-center justify-center">
+          <ClipboardCheck className="w-5 h-5 text-neutral-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pending Approvals</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Items awaiting your final sign-off</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-6">Pending Approvals</h1>
+          <p className="text-sm text-neutral-500">Items awaiting your final sign-off</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-6">
+      <div className="flex gap-1 bg-neutral-100 rounded p-1 w-fit mb-6">
         {(
           [
             { id: 'purchase-requests', label: 'Purchase Requests', count: prCount },
@@ -155,19 +155,19 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'bg-white shadow-sm text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-white text-neutral-900'
+                : 'text-neutral-500 hover:text-neutral-700'
             }`}
           >
             {tab.label}
             {tab.count > 0 && (
               <span
-                className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                   activeTab === tab.id
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-gray-200 text-gray-600'
+                    ? 'bg-neutral-100 text-neutral-700'
+                    : 'bg-neutral-200 text-neutral-600'
                 }`}
               >
                 {tab.count}
@@ -182,21 +182,21 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
         <div>
           {prQuery.isLoading && <SkeletonLoader rows={5} />}
           {prQuery.isError && (
-            <div className="flex items-center gap-2 text-red-600 text-sm">
+            <div className="flex items-center gap-2 text-neutral-700 text-sm">
               <AlertTriangle className="w-4 h-4" />
               Failed to load purchase requests.
             </div>
           )}
           {!prQuery.isLoading && !prQuery.isError && (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-white border border-neutral-200 rounded overflow-hidden">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
                     {['PR Reference', 'Dept', 'Urgency', 'Total Est. Cost', 'Submitted By', 'Reviewed By', 'Actions'].map(
                       (h) => (
                         <th
                           key={h}
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                          className="px-4 py-3 text-left text-xs font-semibold text-neutral-600"
                         >
                           {h}
                         </th>
@@ -204,17 +204,17 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-neutral-100">
                   {prQuery.data?.data?.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">
+                      <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">
                         No purchase requests awaiting your approval.
                       </td>
                     </tr>
                   )}
                   {prQuery.data?.data?.map((pr) => (
-                    <tr key={pr.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-blue-700 font-medium">
+                    <tr key={pr.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                      <td className="px-4 py-3 font-mono text-neutral-700 font-medium">
                         <Link
                           to={`/procurement/purchase-requests/${pr.ulid}`}
                           className="hover:underline"
@@ -222,29 +222,29 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           {pr.pr_reference}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">#{pr.department_id}</td>
+                      <td className="px-4 py-3 text-neutral-600">#{pr.department_id}</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            pr.urgency === 'critical' ? 'bg-red-100 text-red-700' :
-                            pr.urgency === 'urgent'   ? 'bg-orange-100 text-orange-700' :
-                            'bg-gray-100 text-gray-500'
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            pr.urgency === 'critical' ? 'bg-neutral-100 text-neutral-700' :
+                            pr.urgency === 'urgent'   ? 'bg-neutral-100 text-neutral-700' :
+                            'bg-neutral-100 text-neutral-500'
                           }`}
                         >
                           {pr.urgency}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-800">
+                      <td className="px-4 py-3 font-medium text-neutral-800">
                         ₱{Number(pr.total_estimated_cost).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{pr.submitted_by?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{pr.reviewed_by?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-600">{pr.submitted_by?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-600">{pr.reviewed_by?.name ?? '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleApprovePR(pr.ulid)}
                             disabled={vpApprovePR.isPending}
-                            className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium rounded-lg transition-colors"
+                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 text-white font-medium rounded transition-colors"
                           >
                             Approve
                           </button>
@@ -253,13 +253,13 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                               setRejectPrTarget(pr.ulid)
                               setRejectPrReason('')
                             }}
-                            className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-colors"
+                            className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
                           >
                             Reject
                           </button>
                           <Link
                             to={`/procurement/purchase-requests/${pr.ulid}`}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="text-xs text-neutral-700 hover:text-neutral-900 font-medium"
                           >
                             View
                           </Link>
@@ -285,15 +285,15 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
             </div>
           )}
           {!loanQuery.isLoading && !loanQuery.isError && (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-white border border-neutral-200 rounded overflow-hidden">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
                     {['Loan Reference', 'Employee', 'Type', 'Amount', 'Officer Reviewed', 'Actions'].map(
                       (h) => (
                         <th
                           key={h}
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                          className="px-4 py-3 text-left text-xs font-semibold text-neutral-600"
                         >
                           {h}
                         </th>
@@ -301,25 +301,25 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-neutral-100">
                   {loanQuery.data?.data?.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">
+                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">
                         No loans awaiting your approval.
                       </td>
                     </tr>
                   )}
                   {loanQuery.data?.data?.map((loan) => (
-                    <tr key={loan.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-blue-700 font-medium">
+                    <tr key={loan.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                      <td className="px-4 py-3 font-mono text-neutral-700 font-medium">
                         {loan.reference_no ?? `LOAN-${loan.id}`}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{loan.employee?.full_name ?? `#${loan.employee_id}`}</td>
-                      <td className="px-4 py-3 text-gray-600">{loan.loan_type?.name ?? '—'}</td>
-                      <td className="px-4 py-3 font-medium text-gray-800">
+                      <td className="px-4 py-3 text-neutral-600">{loan.employee?.full_name ?? `#${loan.employee_id}`}</td>
+                      <td className="px-4 py-3 text-neutral-600">{loan.loan_type?.name ?? '—'}</td>
+                      <td className="px-4 py-3 font-medium text-neutral-800">
                         ₱{Number(loan.principal_php).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-4 py-3 text-neutral-600">
                         {loan.officer_reviewed_at
                           ? new Date(loan.officer_reviewed_at).toLocaleDateString('en-PH')
                           : '—'}
@@ -329,7 +329,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           <button
                             onClick={() => handleApproveLoan(loan.ulid ?? String(loan.id))}
                             disabled={vpApproveLoan.isPending}
-                            className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium rounded-lg transition-colors"
+                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 text-white font-medium rounded transition-colors"
                           >
                             Approve
                           </button>
@@ -338,13 +338,13 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                               setRejectLoanTarget(loan.ulid ?? String(loan.id))
                               setRejectLoanRemarks('')
                             }}
-                            className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-colors"
+                            className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
                           >
                             Reject
                           </button>
                           <Link
                             to={`/hr/loans/${loan.ulid ?? loan.id}`}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="text-xs text-neutral-700 hover:text-neutral-900 font-medium"
                           >
                             View
                           </Link>
@@ -370,15 +370,15 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
             </div>
           )}
           {!mrqQuery.isLoading && !mrqQuery.isError && (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-white border border-neutral-200 rounded overflow-hidden">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
                     {['MR Reference', 'Department', 'Purpose', 'Reviewed By', 'Reviewed At', 'Actions'].map(
                       (h) => (
                         <th
                           key={h}
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                          className="px-4 py-3 text-left text-xs font-semibold text-neutral-600"
                         >
                           {h}
                         </th>
@@ -386,17 +386,17 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-neutral-100">
                   {mrqQuery.data?.data?.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">
+                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">
                         No material requisitions awaiting your approval.
                       </td>
                     </tr>
                   )}
                   {mrqQuery.data?.data?.map((mrq) => (
-                    <tr key={mrq.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-blue-700 font-medium">
+                    <tr key={mrq.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                      <td className="px-4 py-3 font-mono text-neutral-700 font-medium">
                         <Link
                           to={`/inventory/requisitions/${mrq.ulid}`}
                           className="hover:underline"
@@ -404,10 +404,10 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           {mrq.mr_reference}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{mrq.department?.name ?? `#${mrq.department_id}`}</td>
-                      <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{mrq.purpose}</td>
-                      <td className="px-4 py-3 text-gray-600">{mrq.reviewed_by?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-4 py-3 text-neutral-600">{mrq.department?.name ?? `#${mrq.department_id}`}</td>
+                      <td className="px-4 py-3 text-neutral-600 max-w-xs truncate">{mrq.purpose}</td>
+                      <td className="px-4 py-3 text-neutral-600">{mrq.reviewed_by?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-600">
                         {mrq.reviewed_at
                           ? new Date(mrq.reviewed_at).toLocaleDateString('en-PH')
                           : '—'}
@@ -417,7 +417,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           <button
                             onClick={() => handleApproveMRQ(mrq.ulid)}
                             disabled={vpApproveMRQ.isPending}
-                            className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium rounded-lg transition-colors"
+                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 text-white font-medium rounded transition-colors"
                           >
                             Approve
                           </button>
@@ -426,13 +426,13 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                               setRejectMrqTarget(mrq.ulid)
                               setRejectMrqReason('')
                             }}
-                            className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-colors"
+                            className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
                           >
                             Reject
                           </button>
                           <Link
                             to={`/inventory/requisitions/${mrq.ulid}`}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="text-xs text-neutral-700 hover:text-neutral-900 font-medium"
                           >
                             View
                           </Link>
@@ -450,26 +450,26 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
       {/* Reject PR Modal */}
       {rejectPrTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-base font-semibold text-red-700">Reject Purchase Request</h3>
+          <div className="bg-white rounded max-w-md w-full p-6 space-y-4">
+            <h3 className="text-base font-medium text-neutral-700">Reject Purchase Request</h3>
             <textarea
               value={rejectPrReason}
               onChange={(e) => setRejectPrReason(e.target.value)}
               rows={3}
               placeholder="Reason for rejection (min. 10 characters)"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
             />
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => { setRejectPrTarget(null); setRejectPrReason('') }}
-                className="text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50"
               >
                 Cancel
               </button>
               <button
                 disabled={rejectPrReason.length < 10 || rejectPR.isPending}
                 onClick={handleRejectPR}
-                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded-lg"
+                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded"
               >
                 {rejectPR.isPending ? 'Rejecting…' : 'Confirm Reject'}
               </button>
@@ -481,26 +481,26 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
       {/* Reject Loan Modal */}
       {rejectLoanTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-base font-semibold text-red-700">Reject Loan</h3>
+          <div className="bg-white rounded max-w-md w-full p-6 space-y-4">
+            <h3 className="text-base font-medium text-red-700">Reject Loan</h3>
             <textarea
               value={rejectLoanRemarks}
               onChange={(e) => setRejectLoanRemarks(e.target.value)}
               rows={3}
               placeholder="Remarks for rejection (min. 5 characters)"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
             />
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => { setRejectLoanTarget(null); setRejectLoanRemarks('') }}
-                className="text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50"
               >
                 Cancel
               </button>
               <button
                 disabled={rejectLoanRemarks.length < 5 || rejectLoan.isPending}
                 onClick={handleRejectLoan}
-                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded-lg"
+                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded"
               >
                 {rejectLoan.isPending ? 'Rejecting…' : 'Confirm Reject'}
               </button>
@@ -512,26 +512,26 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
       {/* Reject MRQ Modal */}
       {rejectMrqTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-base font-semibold text-red-700">Reject Material Requisition</h3>
+          <div className="bg-white rounded max-w-md w-full p-6 space-y-4">
+            <h3 className="text-base font-medium text-red-700">Reject Material Requisition</h3>
             <textarea
               value={rejectMrqReason}
               onChange={(e) => setRejectMrqReason(e.target.value)}
               rows={3}
               placeholder="Reason for rejection (min. 10 characters)"
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
             />
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => { setRejectMrqTarget(null); setRejectMrqReason('') }}
-                className="text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50"
               >
                 Cancel
               </button>
               <button
                 disabled={rejectMrqReason.length < 10 || rejectMRQMutation.isPending}
                 onClick={handleRejectMRQ}
-                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded-lg"
+                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded"
               >
                 {rejectMRQMutation.isPending ? 'Rejecting…' : 'Confirm Reject'}
               </button>

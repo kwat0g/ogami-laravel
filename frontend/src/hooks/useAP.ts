@@ -30,6 +30,7 @@ interface Paginated<T> {
 export function useVendors(params: {
   is_active?: boolean
   is_ewt_subject?: boolean
+  accreditation_status?: string
   search?: string
   per_page?: number
   page?: number

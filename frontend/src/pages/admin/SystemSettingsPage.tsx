@@ -97,34 +97,33 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded max-w-md w-full max-h-[90vh] overflow-y-auto overflow-hidden">
         <div className={cn(
           "px-6 py-4 border-b flex items-center gap-3",
-          confirmVariant === 'danger' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+          'bg-neutral-50 border-neutral-200'
         )}>
           <AlertTriangle className={cn(
-            "h-6 w-6",
-            confirmVariant === 'danger' ? 'text-red-600' : 'text-amber-600'
+            "h-6 w-6 text-neutral-600"
           )} />
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-neutral-900">{title}</h3>
         </div>
         <div className="p-6">
-          <p className="text-gray-600 mb-6">{message}</p>
-          <div className="flex justify-end gap-3">
+          <p className="text-neutral-600 mb-6">{message}</p>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-300 transition-colors"
+              className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded border border-neutral-300 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
               className={cn(
-                "px-4 py-2 text-sm text-white rounded-lg transition-colors",
+                "px-4 py-2 text-sm text-white rounded transition-colors",
                 confirmVariant === 'danger' 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  ? 'bg-neutral-800 hover:bg-neutral-700' 
+                  : 'bg-neutral-900 hover:bg-neutral-800'
               )}
             >
               {confirmText}
@@ -211,12 +210,12 @@ export default function SystemSettingsPage() {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <SettingsIcon className="h-6 w-6 text-blue-600" />
+          <div className="p-2 bg-neutral-100 rounded">
+            <SettingsIcon className="h-6 w-6 text-neutral-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-            <p className="text-sm text-gray-500">Configure operational parameters for the ERP system</p>
+            <h1 className="text-lg font-semibold text-neutral-900">System Settings</h1>
+            <p className="text-sm text-neutral-500">Configure operational parameters for the ERP system</p>
           </div>
         </div>
         <SkeletonLoader rows={10} />
@@ -227,14 +226,14 @@ export default function SystemSettingsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header with Info */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+      <div className="bg-neutral-50 border border-neutral-200 rounded p-6">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-100 rounded-xl">
-            <SettingsIcon className="h-8 w-8 text-blue-600" />
+          <div className="p-3 bg-neutral-100 rounded">
+            <SettingsIcon className="h-8 w-8 text-neutral-700" />
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">System Settings</h1>
-            <p className="text-gray-600 mb-4">
+            <h1 className="text-lg font-semibold text-neutral-900 mb-2">System Settings</h1>
+            <p className="text-neutral-600 mb-4">
               This page controls <strong>application behavior and configuration parameters</strong>. 
               These are single-value settings (like timeouts, account codes, and flags) that determine 
               how the system operates.
@@ -261,15 +260,15 @@ export default function SystemSettingsPage() {
       </div>
 
       {/* Distinction Notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="bg-neutral-50 border border-neutral-200 rounded p-4">
         <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 text-amber-600 mt-0.5" />
-          <div className="text-sm text-amber-800">
-            <p className="font-semibold mb-1">Looking for government rates or multi-row tables?</p>
+          <Info className="h-5 w-5 text-neutral-600 mt-0.5" />
+          <div className="text-sm text-neutral-800">
+            <p className="font-medium mb-1">Looking for government rates or multi-row tables?</p>
             <p>
               Government contribution tables (SSS, PhilHealth, Pag-IBIG, Tax Brackets) and other 
               reference data with <strong>effective dates and version history</strong> are managed in 
-              <a href="/admin/reference-tables" className="font-semibold underline ml-1 hover:text-amber-900">
+              <a href="/admin/reference-tables" className="font-medium underline ml-1 hover:text-neutral-900">
                 Reference Tables
               </a>.
               This page is for application configuration only.
@@ -291,13 +290,13 @@ export default function SystemSettingsPage() {
                     toast.warning('You have unsaved changes. Save or cancel before switching groups.')
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded transition-colors ${
                   activeGroup === group.key
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-100 bg-white border border-gray-200'
+                    ? 'bg-neutral-900 text-white'
+                    : 'text-neutral-700 hover:bg-neutral-100 bg-white border border-neutral-200'
                 }`}
               >
-                <group.icon className={`h-5 w-5 ${activeGroup === group.key ? 'text-blue-100' : 'text-gray-500'}`} />
+                <group.icon className={`h-5 w-5 ${activeGroup === group.key ? 'text-neutral-100' : 'text-neutral-500'}`} />
                 <span className="font-medium text-sm">{group.label}</span>
               </button>
             ))}
@@ -305,20 +304,20 @@ export default function SystemSettingsPage() {
 
           {/* Edit Mode Card */}
           <div className={cn(
-            "rounded-xl p-4 border-2 transition-all",
+            "rounded p-4 border transition-all",
             isEditMode 
-              ? 'bg-green-50 border-green-300' 
-              : 'bg-gray-50 border-gray-200'
+              ? 'bg-neutral-50 border-neutral-300' 
+              : 'bg-neutral-50 border-neutral-200'
           )}>
             <div className="flex items-center gap-2 mb-3">
               {isEditMode ? (
-                <Unlock className="h-5 w-5 text-green-600" />
+                <Unlock className="h-5 w-5 text-neutral-600" />
               ) : (
-                <Lock className="h-5 w-5 text-gray-500" />
+                <Lock className="h-5 w-5 text-neutral-500" />
               )}
               <span className={cn(
-                "font-semibold",
-                isEditMode ? 'text-green-800' : 'text-gray-700'
+                "font-medium",
+                isEditMode ? 'text-neutral-800' : 'text-neutral-700'
               )}>
                 {isEditMode ? 'Editing Enabled' : 'View Mode'}
               </span>
@@ -326,11 +325,11 @@ export default function SystemSettingsPage() {
             
             {isEditMode ? (
               <div className="space-y-3">
-                <p className="text-sm text-green-700">
+                <p className="text-sm text-neutral-700">
                   You can now modify settings. Remember to save your changes.
                 </p>
                 {hasChanges && (
-                  <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-100 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 text-sm text-neutral-700 bg-neutral-100 rounded px-3 py-2">
                     <AlertTriangle className="h-4 w-4" />
                     <span>{Object.keys(editedValues).length} unsaved change(s)</span>
                   </div>
@@ -338,7 +337,7 @@ export default function SystemSettingsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleCancelClick}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-white hover:shadow-sm rounded-lg border border-gray-300 transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-neutral-600 hover:bg-white rounded border border-neutral-300 transition-all"
                   >
                     <X className="h-4 w-4" />
                     Cancel
@@ -346,7 +345,7 @@ export default function SystemSettingsPage() {
                   <button
                     onClick={handleSaveClick}
                     disabled={!hasChanges || bulkUpdate.isPending}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-400 text-white rounded transition-all"
                   >
                     <Save className="h-4 w-4" />
                     {bulkUpdate.isPending ? 'Saving...' : 'Save'}
@@ -355,12 +354,12 @@ export default function SystemSettingsPage() {
               </div>
             ) : (
               <>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-neutral-600 mb-3">
                   Settings are locked to prevent accidental changes. Enable editing to modify values.
                 </p>
                 <button
                   onClick={handleEnableEdit}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors"
                 >
                   <Edit3 className="h-4 w-4" />
                   Enable Editing
@@ -372,20 +371,20 @@ export default function SystemSettingsPage() {
 
         {/* Settings Form */}
         <div className="lg:col-span-3">
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <currentGroup.icon className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-neutral-100 rounded">
+                  <currentGroup.icon className="h-5 w-5 text-neutral-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{currentGroup.label}</h2>
-                  <p className="text-sm text-gray-500">{currentGroup.description}</p>
+                  <h2 className="text-lg font-semibold text-neutral-900">{currentGroup.label}</h2>
+                  <p className="text-sm text-neutral-500">{currentGroup.description}</p>
                 </div>
               </div>
               
               {currentGroup.warning && (
-                <div className="mt-3 flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-4 py-3">
+                <div className="mt-3 flex items-start gap-2 text-sm text-neutral-700 bg-neutral-50 rounded px-4 py-3">
                   <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                   <span>{currentGroup.warning}</span>
                 </div>
@@ -394,14 +393,14 @@ export default function SystemSettingsPage() {
 
             <div className="p-6 space-y-6">
               {!isEditMode && currentSettings.length > 0 && (
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-3">
+                <div className="flex items-center gap-2 text-sm text-neutral-500 bg-neutral-50 rounded px-4 py-3">
                   <Lock className="h-4 w-4" />
                   <span>View mode: Click "Enable Editing" in the sidebar to modify these settings</span>
                 </div>
               )}
 
               {currentSettings.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No settings found for this group.</p>
+                <p className="text-neutral-500 text-center py-8">No settings found for this group.</p>
               ) : (
                 currentSettings.map((setting) => (
                   <SettingField
@@ -456,13 +455,13 @@ function SettingsIcon({ className }: { className?: string }) {
 
 function InfoBadge({ icon: Icon, text, variant }: { icon: React.ElementType, text: string, variant: 'info' | 'warning' | 'success' }) {
   const variants = {
-    info: 'bg-blue-100 text-blue-700',
-    warning: 'bg-amber-100 text-amber-700',
-    success: 'bg-green-100 text-green-700'
+    info: 'bg-neutral-100 text-neutral-700',
+    warning: 'bg-neutral-100 text-neutral-700',
+    success: 'bg-neutral-100 text-neutral-700'
   }
   
   return (
-    <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium", variants[variant])}>
+    <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium", variants[variant])}>
       <Icon className="h-3.5 w-3.5" />
       <span>{text}</span>
     </div>
@@ -486,20 +485,20 @@ function SettingField({ setting, value, onChange, isEdited, isEditMode }: Settin
 
   const renderInput = () => {
     const baseClassName = cn(
-      "w-full px-3 py-2 border rounded-lg transition-all",
-      !isEditMode && "bg-gray-50 text-gray-500 cursor-not-allowed",
-      isEditMode && "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
-      isEdited && isEditMode && "border-blue-400 bg-blue-50/50"
+      "w-full px-3 py-2 border rounded transition-all",
+      !isEditMode && "bg-neutral-50 text-neutral-500 cursor-not-allowed",
+      isEditMode && "border-neutral-300 focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400",
+      isEdited && isEditMode && "border-neutral-400 bg-neutral-50"
     )
 
     switch (setting.data_type) {
       case 'boolean':
         return (
           <label className={cn(
-            "flex items-center gap-3 cursor-pointer p-3 rounded-lg border transition-all",
-            !isEditMode && "bg-gray-50 cursor-not-allowed opacity-60",
-            isEditMode && "cursor-pointer hover:bg-gray-50",
-            value ? 'border-green-300 bg-green-50/50' : 'border-gray-200'
+            "flex items-center gap-3 cursor-pointer p-3 rounded border transition-all",
+            !isEditMode && "bg-neutral-50 cursor-not-allowed opacity-60",
+            isEditMode && "cursor-pointer hover:bg-neutral-50",
+            value ? 'border-neutral-300 bg-neutral-50' : 'border-neutral-200'
           )}>
             <input
               type="checkbox"
@@ -507,11 +506,11 @@ function SettingField({ setting, value, onChange, isEdited, isEditMode }: Settin
               checked={Boolean(value)}
               onChange={(e) => isEditMode && onChange(e.target.checked)}
               disabled={!isEditMode}
-              className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 disabled:opacity-50"
+              className="w-5 h-5 text-neutral-600 rounded border-neutral-300 focus:ring-neutral-400 disabled:opacity-50"
             />
             <span className={cn(
               "text-sm font-medium",
-              value ? 'text-green-700' : 'text-gray-600'
+              value ? 'text-neutral-700' : 'text-neutral-600'
             )}>
               {value ? '✓ Enabled' : '✗ Disabled'}
             </span>
@@ -547,7 +546,7 @@ function SettingField({ setting, value, onChange, isEdited, isEditMode }: Settin
       case 'json':
         return (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+            <div className="flex items-center gap-2 text-sm text-neutral-600 mb-2">
               <Code2 className="h-4 w-4" />
               <span>JSON Format — Must be valid JSON</span>
             </div>
@@ -579,7 +578,7 @@ function SettingField({ setting, value, onChange, isEdited, isEditMode }: Settin
                 <span>{jsonError}</span>
               </div>
             )}
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-neutral-500">
               Example: {JSON.stringify(setting.value).substring(0, 100)}
               {JSON.stringify(setting.value).length > 100 ? '...' : ''}
             </p>
@@ -619,31 +618,31 @@ function SettingField({ setting, value, onChange, isEdited, isEditMode }: Settin
 
   return (
     <div className={cn(
-      "p-4 rounded-xl border-2 transition-all",
+      "p-4 rounded border transition-all",
       isEdited && isEditMode
-        ? 'bg-blue-50/50 border-blue-300 shadow-sm' 
-        : 'bg-white border-gray-100 hover:border-gray-200'
+        ? 'bg-neutral-50 border-neutral-400' 
+        : 'bg-white border-neutral-200 hover:border-neutral-300'
     )}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <label htmlFor={inputId} className="block text-sm font-semibold text-gray-900">
+            <label htmlFor={inputId} className="block text-sm font-medium text-neutral-900">
               {setting.label}
             </label>
             {isEdited && isEditMode && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
                 <Edit3 className="h-3 w-3" />
                 Modified
               </span>
             )}
             {setting.is_sensitive && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
                 <Lock className="h-3 w-3" />
                 Sensitive
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500 mb-3 font-mono">
+          <p className="text-xs text-neutral-500 mb-3 font-mono">
             {setting.key}
           </p>
           {renderInput()}

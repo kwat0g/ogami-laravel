@@ -100,4 +100,29 @@ final class ISOController extends Controller
         $finding = $this->service->storeFinding($internalAudit, $request->validated(), $request->user()->id);
         return response()->json(['data' => $finding], 201);
     }
+
+    public function submitDocumentForReview(ControlledDocument $controlledDocument): ControlledDocumentResource
+    {
+        $this->authorize('update', $controlledDocument);
+
+        return new ControlledDocumentResource(
+            $this->service->submitForReview($controlledDocument)
+        );
+    }
+
+    public function approveDocument(ControlledDocument $controlledDocument): ControlledDocumentResource
+    {
+        $this->authorize('update', $controlledDocument);
+
+        return new ControlledDocumentResource(
+            $this->service->approveDocument($controlledDocument)
+        );
+    }
+
+    public function closeFinding(AuditFinding $auditFinding): JsonResponse
+    {
+        $this->authorize('audit', InternalAudit::class);
+
+        return response()->json(['data' => $this->service->closeFinding($auditFinding)]);
+    }
 }

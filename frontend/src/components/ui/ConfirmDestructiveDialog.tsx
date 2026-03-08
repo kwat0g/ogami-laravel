@@ -67,40 +67,42 @@ export default function ConfirmDestructiveDialog({
       {/* Backdrop + dialog */}
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
           onClick={() => setOpen(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 space-y-4"
+            className="bg-white rounded-lg shadow-lg w-full max-w-md border border-neutral-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="p-4 space-y-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
+                  <p className="text-sm text-neutral-500 mt-1">{description}</p>
+                </div>
+              </div>
+
               <div>
-                <h3 className="font-semibold text-gray-900">{title}</h3>
-                <p className="text-sm text-gray-500 mt-1">{description}</p>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Type <span className="font-mono font-bold text-red-600">{confirmWord}</span> to confirm
+                </label>
+                <input
+                  type="text"
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm font-mono
+                           focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  autoFocus
+                />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Type <span className="font-mono font-bold text-red-600">{confirmWord}</span> to confirm
-              </label>
-              <input
-                type="text"
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono
-                           focus:outline-none focus:ring-2 focus:ring-red-500"
-                autoFocus
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 p-4 border-t border-neutral-200 bg-neutral-50">
               <button
                 type="button"
                 onClick={() => { setOpen(false); setTyped('') }}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
               >
                 Cancel
               </button>
@@ -108,7 +110,7 @@ export default function ConfirmDestructiveDialog({
                 type="button"
                 disabled={!canConfirm || loading}
                 onClick={handleConfirm}
-                className="px-4 py-2 text-sm text-white bg-red-600 rounded-lg
+                className="px-4 py-2 text-sm text-white bg-red-600 rounded
                            hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Processing…' : confirmLabel}

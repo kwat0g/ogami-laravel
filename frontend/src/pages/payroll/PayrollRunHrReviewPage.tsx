@@ -78,7 +78,7 @@ export default function PayrollRunHrReviewPage() {
     <div className="max-w-3xl space-y-6">
       <button
         onClick={() => navigate(`/payroll/runs/${runId}/review`)}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Review
       </button>
@@ -91,7 +91,7 @@ export default function PayrollRunHrReviewPage() {
 
       {/* SoD badge */}
       {sodViolation && (
-        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded p-4">
           <ShieldAlert className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-red-800">SoD Violation — SOD-005/006</p>
@@ -103,20 +103,20 @@ export default function PayrollRunHrReviewPage() {
       )}
 
       {/* Summary card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">Run Summary</h3>
+      <div className="bg-white border border-neutral-200 rounded p-5">
+        <h3 className="text-sm font-semibold text-neutral-800 mb-4">Run Summary</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-          <div><p className="text-gray-400 text-xs">Reference</p><p className="font-medium">{run.reference_no}</p></div>
-          <div><p className="text-gray-400 text-xs">Pay Date</p><p className="font-medium">{new Date(run.pay_date).toLocaleDateString('en-PH')}</p></div>
-          <div><p className="text-gray-400 text-xs">Employees</p><p className="font-medium">{run.total_employees}</p></div>
-          <div><p className="text-gray-400 text-xs">Net Pay Total</p><p className="font-medium">{formatCentavos(run.net_pay_total_centavos)}</p></div>
+          <div><p className="text-neutral-400 text-xs">Reference</p><p className="font-medium">{run.reference_no}</p></div>
+          <div><p className="text-neutral-400 text-xs">Pay Date</p><p className="font-medium">{new Date(run.pay_date).toLocaleDateString('en-PH')}</p></div>
+          <div><p className="text-neutral-400 text-xs">Employees</p><p className="font-medium">{run.total_employees}</p></div>
+          <div><p className="text-neutral-400 text-xs">Net Pay Total</p><p className="font-medium">{formatCentavos(run.net_pay_total_centavos)}</p></div>
         </div>
       </div>
 
       {/* Prior approvals (if run was returned before) */}
       {approvals && approvals.filter(a => a.stage === 'HR_REVIEW').length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Prior HR Review Actions</p>
+        <div className="bg-amber-50 border border-amber-200 rounded p-4 space-y-2">
+          <p className="text-xs font-semibold text-amber-800 font-medium">Prior HR Review Actions</p>
           {approvals.filter(a => a.stage === 'HR_REVIEW').map(apr => (
             <div key={apr.id} className="text-xs text-amber-700">
               <strong>{apr.actor?.name ?? `User #${apr.actor_id}`}</strong> {apr.action === 'RETURNED' ? 'returned' : 'approved'} on {new Date(apr.acted_at).toLocaleString('en-PH')}
@@ -128,18 +128,18 @@ export default function PayrollRunHrReviewPage() {
 
       {/* Checklist */}
       {!sodViolation && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-800">Approval Checklist</h3>
-          <p className="text-xs text-gray-500">You must check all items before approving.</p>
+        <div className="bg-white border border-neutral-200 rounded p-5 space-y-3">
+          <h3 className="text-sm font-semibold text-neutral-800">Approval Checklist</h3>
+          <p className="text-xs text-neutral-500">You must check all items before approving.</p>
           {CHECKLIST_ITEMS.map((item, i) => (
             <label key={i} className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={!!checked[i]}
                 onChange={() => setChecked(prev => ({ ...prev, [i]: !prev[i] }))}
-                className="accent-blue-600 mt-0.5"
+                className="accent-neutral-900 mt-0.5"
               />
-              <span className="text-sm text-gray-700">{item}</span>
+              <span className="text-sm text-neutral-700">{item}</span>
             </label>
           ))}
         </div>
@@ -147,22 +147,22 @@ export default function PayrollRunHrReviewPage() {
 
       {/* Comments */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Comments <span className="text-gray-400 font-normal">(optional)</span>
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
+          Comments <span className="text-neutral-400 font-normal">(optional)</span>
         </label>
         <textarea
           rows={3}
           value={comments}
           onChange={e => setComments(e.target.value)}
           placeholder="Add approval comments or notes for the record…"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full border border-neutral-300 rounded px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-neutral-500 outline-none"
         />
       </div>
 
       {/* Return reason */}
       {action === 'RETURNED' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
             Return Reason <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -170,13 +170,13 @@ export default function PayrollRunHrReviewPage() {
             value={returnReason}
             onChange={e => setReturnReason(e.target.value)}
             placeholder="Explain why the run is being returned for rework…"
-            className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-red-500 outline-none"
+            className="w-full border border-red-300 rounded px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-red-500 outline-none"
           />
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
         <button
           type="button"
           onClick={() => {
@@ -191,7 +191,7 @@ export default function PayrollRunHrReviewPage() {
             void handleAction('RETURNED')
           }}
           disabled={hrApprove.isPending}
-          className="flex items-center gap-2 px-5 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-5 py-2 border border-neutral-300 text-neutral-700 hover:bg-neutral-50 text-sm font-medium rounded transition-colors"
         >
           <RotateCcw className="h-4 w-4" />
           {action === 'RETURNED' ? 'Confirm Return' : 'Return for Rework'}
@@ -201,7 +201,7 @@ export default function PayrollRunHrReviewPage() {
           type="button"
           onClick={() => handleAction('APPROVED')}
           disabled={hrApprove.isPending || !allChecked || sodViolation || run.status !== 'SUBMITTED'}
-          className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
         >
           {hrApprove.isPending
             ? <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>

@@ -27,9 +27,9 @@ function FieldSkeleton() {
   return (
     <div className="flex flex-col gap-1.5">
       {/* Label */}
-      <div className="h-3.5 bg-gray-200 rounded w-24" />
+      <div className="h-3.5 bg-neutral-200 rounded w-24" />
       {/* Input */}
-      <div className="h-10 bg-gray-200 rounded w-full" />
+      <div className="h-10 bg-neutral-200 rounded w-full" />
     </div>
   )
 }
@@ -54,20 +54,20 @@ export default function SkeletonForm({
         <div className="mb-6">
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-3.5 bg-gray-200 rounded w-16" />
-            <div className="h-3 bg-gray-200 rounded w-2" />
-            <div className="h-3.5 bg-gray-200 rounded w-24" />
-            <div className="h-3 bg-gray-200 rounded w-2" />
-            <div className="h-3.5 bg-gray-200 rounded w-32" />
+            <div className="h-3.5 bg-neutral-200 rounded w-16" />
+            <div className="h-3 bg-neutral-200 rounded w-2" />
+            <div className="h-3.5 bg-neutral-200 rounded w-24" />
+            <div className="h-3 bg-neutral-200 rounded w-2" />
+            <div className="h-3.5 bg-neutral-200 rounded w-32" />
           </div>
           {/* Title */}
-          <div className="h-7 bg-gray-200 rounded w-56 mb-1" />
+          <div className="h-7 bg-neutral-200 rounded w-56 mb-1" />
           {/* Subtitle */}
-          <div className="h-4 bg-gray-200 rounded w-72" />
+          <div className="h-4 bg-neutral-200 rounded w-72" />
         </div>
       )}
 
-      <div className={withCard ? 'bg-white border border-gray-200 rounded-xl p-6' : ''}>
+      <div className={withCard ? 'bg-white border border-neutral-200 rounded p-6' : ''}>
         <div className={gridClass}>
           {fields.map((_, i) => (
             <FieldSkeleton key={i} />
@@ -76,9 +76,9 @@ export default function SkeletonForm({
       </div>
 
       {withActions && (
-        <div className="flex items-center justify-end gap-3 mt-5 pt-4 border-t border-gray-100">
-          <div className="h-9 bg-gray-200 rounded w-20" />
-          <div className="h-9 bg-gray-200 rounded w-28" />
+        <div className="flex items-center justify-end gap-3 mt-5 pt-4 border-t border-neutral-100">
+          <div className="h-9 bg-neutral-200 rounded w-20" />
+          <div className="h-9 bg-neutral-200 rounded w-28" />
         </div>
       )}
 

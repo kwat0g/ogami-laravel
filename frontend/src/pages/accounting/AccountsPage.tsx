@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Plus, RefreshCw, ChevronRight, ChevronDown, Archive } from 'lucide-react'
 import {
   useChartOfAccounts,
@@ -14,13 +15,13 @@ import type { ChartOfAccount, AccountType, NormalBalance, CreateAccountPayload }
 // Helpers
 // ---------------------------------------------------------------------------
 const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
-  ASSET:     'bg-blue-100 text-blue-700',
-  LIABILITY: 'bg-red-100 text-red-700',
-  EQUITY:    'bg-purple-100 text-purple-700',
-  REVENUE:   'bg-green-100 text-green-700',
-  COGS:      'bg-yellow-100 text-yellow-700',
-  OPEX:      'bg-orange-100 text-orange-700',
-  TAX:       'bg-pink-100 text-pink-700',
+  ASSET:     'bg-neutral-100 text-neutral-700',
+  LIABILITY: 'bg-neutral-100 text-neutral-700',
+  EQUITY:    'bg-neutral-100 text-neutral-700',
+  REVENUE:   'bg-neutral-100 text-neutral-700',
+  COGS:      'bg-neutral-100 text-neutral-700',
+  OPEX:      'bg-neutral-100 text-neutral-700',
+  TAX:       'bg-neutral-100 text-neutral-700',
 }
 
 const ACCOUNT_TYPES: AccountType[] = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'COGS', 'OPEX', 'TAX']
@@ -50,28 +51,28 @@ function AccountRow({ account, depth, onEdit, onArchive }: AccountRowProps) {
 
   return (
     <>
-      <tr className="even:bg-slate-50 hover:bg-blue-50/60 transition-colors">
+      <tr className="hover:bg-neutral-50 transition-colors">
         <td className="px-3 py-2">
           <div className="flex items-center gap-1" style={{ paddingLeft: `${depth * 20}px` }}>
             {hasChildren ? (
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="p-0.5 text-gray-400 hover:text-gray-700"
+                className="p-0.5 text-neutral-400 hover:text-neutral-700"
               >
                 {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               </button>
             ) : (
               <span className="w-5" />
             )}
-            <span className="font-mono text-xs text-gray-500">{account.code}</span>
+            <span className="font-mono text-xs text-neutral-500">{account.code}</span>
           </div>
         </td>
         <td className="px-3 py-2">
-          <span className={`font-medium text-sm ${!account.is_active ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+          <span className={`font-medium text-sm ${!account.is_active ? 'text-neutral-400 line-through' : 'text-neutral-900'}`}>
             {account.name}
           </span>
           {account.is_system && (
-            <span className="ml-2 text-xs text-gray-400">(system)</span>
+            <span className="ml-2 text-xs text-neutral-400">(system)</span>
           )}
         </td>
         <td className="px-3 py-2">
@@ -86,14 +87,14 @@ function AccountRow({ account, depth, onEdit, onArchive }: AccountRowProps) {
               <>
                 <button
                   onClick={() => onEdit(account)}
-                  className="text-xs text-blue-600 hover:underline"
+                  className="text-xs text-neutral-700 hover:underline"
                 >
                   Edit
                 </button>
                 {!account.is_system && (
                   <button
                     onClick={() => onArchive(account)}
-                    className="text-xs text-red-500 hover:underline"
+                    className="text-xs text-neutral-500 hover:underline"
                   >
                     Archive
                   </button>
@@ -101,7 +102,7 @@ function AccountRow({ account, depth, onEdit, onArchive }: AccountRowProps) {
               </>
             )}
             {!account.is_active && (
-              <span className="text-xs text-gray-400 flex items-center gap-1">
+              <span className="text-xs text-neutral-400 flex items-center gap-1">
                 <Archive className="h-3 w-3" /> Archived
               </span>
             )}
@@ -173,15 +174,15 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-white rounded border border-neutral-200 w-full max-w-md p-6">
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">
           {initial ? 'Edit Account' : 'New Account'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Code</label>
             <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none font-mono"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               required
@@ -189,9 +190,9 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
             <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -200,9 +201,9 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
               <select
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
                 value={accountType}
                 onChange={(e) => setAccountType(e.target.value as AccountType)}
               >
@@ -212,9 +213,9 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Normal Balance</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Normal Balance</label>
               <select
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
                 value={normalBalance}
                 onChange={(e) => setNormalBalance(e.target.value as NormalBalance)}
               >
@@ -225,9 +226,9 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Parent Account (optional)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Parent Account (optional)</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
             >
@@ -245,14 +246,14 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -290,18 +291,29 @@ export default function AccountsPage() {
   }
 
   async function handleSave(payload: CreateAccountPayload, id?: number) {
-    if (id) {
-      await updateMutation.mutateAsync(payload)
-    } else {
-      await createMutation.mutateAsync(payload)
+    try {
+      if (id) {
+        await updateMutation.mutateAsync(payload)
+        toast.success('Account updated.')
+      } else {
+        await createMutation.mutateAsync(payload)
+        toast.success('Account created.')
+      }
+      setModalOpen(false)
+      setEditing(null)
+    } catch {
+      toast.error('Failed to save account. Please try again.')
     }
-    setModalOpen(false)
-    setEditing(null)
   }
 
   async function handleArchive() {
     if (!archiveTarget) return
-    await archiveMutation.mutateAsync()
+    try {
+      await archiveMutation.mutateAsync()
+      toast.success('Account archived.')
+    } catch {
+      toast.error('Failed to archive account.')
+    }
     setArchiveTarget(null)
   }
 
@@ -320,32 +332,32 @@ export default function AccountsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Chart of Accounts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Chart of Accounts</h1>
+          <p className="text-sm text-neutral-500">
             {flattenAccounts(accounts).filter((a) => a.is_active).length} active accounts
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <label className="flex items-center gap-1.5 text-sm text-neutral-600 cursor-pointer">
             <input
               type="checkbox"
               checked={includeArchived}
               onChange={(e) => setIncludeArchived(e.target.checked)}
-              className="rounded border-gray-300"
+              className="rounded border-neutral-300"
             />
             Show archived
           </label>
           <button
             onClick={() => void refetch()}
             disabled={isFetching}
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-40"
+            className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-600 transition-colors disabled:opacity-40"
             title="Refresh"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
           >
             <Plus className="h-4 w-4" />
             New Account
@@ -354,22 +366,22 @@ export default function AccountsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Code</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Type</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Normal Balance</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Actions</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 w-32">Code</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500">Name</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 w-32">Type</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 w-32">Normal Balance</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 w-28">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {accounts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={5} className="px-3 py-10 text-center text-neutral-400 text-sm">
                     No accounts found.
                   </td>
                 </tr>
@@ -404,22 +416,22 @@ export default function AccountsPage() {
       {/* Archive Confirm Dialog */}
       {archiveTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Archive Account?</h2>
-            <p className="text-sm text-gray-600 mb-6">
+          <div className="bg-white rounded border border-neutral-200 w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold text-neutral-900 mb-2">Archive Account?</h2>
+            <p className="text-sm text-neutral-600 mb-6">
               Archive <strong>{archiveTarget.code} — {archiveTarget.name}</strong>? This account will no longer be available for new journal entries.
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setArchiveTarget(null)}
-                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
               >
                 Cancel
               </button>
               <button
                 onClick={() => void handleArchive()}
                 disabled={archiveMutation.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50"
               >
                 {archiveMutation.isPending ? 'Archiving…' : 'Archive'}
               </button>

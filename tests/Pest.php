@@ -16,6 +16,10 @@ pest()->extend(Tests\TestCase::class)
 pest()->extend(Tests\TestCase::class)
     ->in('Unit/Shared');
 
+// E2E — full sequential walkthrough tests; each file brings its own DB trait
+pest()->extend(Tests\TestCase::class)
+    ->in('E2E');
+
 // Unit/Payroll — service tests that hit contribution & tax rate tables
 pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)

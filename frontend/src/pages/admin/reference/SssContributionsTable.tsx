@@ -148,7 +148,7 @@ export default function SssContributionsTable(): JSX.Element {
   const activeEffectiveDate = activeData?.effective_as_of
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading SSS contribution table...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading SSS contribution table...</div>
   }
 
   return (
@@ -156,24 +156,24 @@ export default function SssContributionsTable(): JSX.Element {
       {/* Active Version Info */}
       {activeEffectiveDate && (
         <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-2 rounded-lg">
+          <div className="flex items-center gap-2 text-neutral-700 bg-neutral-50 px-4 py-2 rounded">
             <Eye className="h-4 w-4" />
             <span>Currently active: <strong>{activeEffectiveDate?.substring(0, 10)}</strong></span>
           </div>
-          <span className="text-gray-500">
+          <span className="text-neutral-500">
             {activeData?.total_brackets} brackets
           </span>
         </div>
       )}
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between bg-gray-50/50 p-3 rounded-lg border border-gray-200">
+      <div className="flex items-center justify-between bg-neutral-50 p-3 rounded border border-neutral-200">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">Filter by version:</span>
+          <span className="text-sm text-neutral-500">Filter by version:</span>
           <select
             value={selectedVersion}
             onChange={(e) => setSelectedVersion(e.target.value)}
-            className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="text-sm border border-neutral-300 rounded px-3 py-1.5 bg-white focus:ring-1 focus:ring-neutral-400"
           >
             <option value="all">All Versions</option>
             {versions.map((v) => (
@@ -202,24 +202,24 @@ export default function SssContributionsTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <div className="max-h-[500px] overflow-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-white z-10">
-              <TableRow className="bg-gray-50 hover:bg-gray-50">
-                <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Date</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Salary Range</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">MSC</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Employee</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Employer</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">EC</TableHead>
-                <TableHead className="w-20 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</TableHead>
+              <TableRow className="bg-neutral-50">
+                <TableHead className="font-semibold text-neutral-600 text-xs">Date</TableHead>
+                <TableHead className="font-semibold text-neutral-600 text-xs">Salary Range</TableHead>
+                <TableHead className="font-semibold text-neutral-600 text-xs">MSC</TableHead>
+                <TableHead className="font-semibold text-neutral-600 text-xs">Employee</TableHead>
+                <TableHead className="font-semibold text-neutral-600 text-xs">Employer</TableHead>
+                <TableHead className="font-semibold text-neutral-600 text-xs">EC</TableHead>
+                <TableHead className="w-20 font-semibold text-neutral-600 text-xs">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={7} className="text-center py-8 text-neutral-500">
                     No SSS contribution rows found
                   </TableCell>
                 </TableRow>
@@ -228,15 +228,15 @@ export default function SssContributionsTable(): JSX.Element {
                   <TableRow 
                     key={row.id}
                     className={cn(
-                      row.effective_date === activeEffectiveDate && 'bg-green-50/50'
+                      row.effective_date === activeEffectiveDate && 'bg-neutral-50'
                     )}
                   >
                     <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-3 w-3 text-gray-400" />
+                        <Calendar className="h-3 w-3 text-neutral-400" />
                         <span className="text-xs">{row.effective_date?.substring(0, 10)}</span>
                         {row.effective_date === activeEffectiveDate && (
-                          <Badge variant="success" className="text-[10px] px-1">Active</Badge>
+                          <Badge variant="outline" className="text-[10px] px-1 border-neutral-300 text-neutral-700">Active</Badge>
                         )}
                       </div>
                     </TableCell>
@@ -244,9 +244,9 @@ export default function SssContributionsTable(): JSX.Element {
                       {formatCurrency(row.salary_range_from)} - {row.salary_range_to ? formatCurrency(row.salary_range_to) : 'up'}
                     </TableCell>
                     <TableCell className="font-medium">{formatCurrency(row.monthly_salary_credit)}</TableCell>
-                    <TableCell className="text-blue-600">{formatCurrency(row.employee_contribution)}</TableCell>
-                    <TableCell className="text-purple-600">{formatCurrency(row.employer_contribution)}</TableCell>
-                    <TableCell className="text-orange-600">{formatCurrency(row.ec_contribution)}</TableCell>
+                    <TableCell>{formatCurrency(row.employee_contribution)}</TableCell>
+                    <TableCell>{formatCurrency(row.employer_contribution)}</TableCell>
+                    <TableCell>{formatCurrency(row.ec_contribution)}</TableCell>
                     <TableCell>
                       {isEditMode ? (
                         <DropdownMenu>
@@ -284,7 +284,7 @@ export default function SssContributionsTable(): JSX.Element {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 text-xs text-gray-500">
+      <div className="flex items-center gap-6 text-xs text-neutral-500">
         <div className="flex items-center gap-2">
           <span className="font-medium">MSC:</span> Monthly Salary Credit
         </div>
@@ -301,10 +301,10 @@ export default function SssContributionsTable(): JSX.Element {
               <AlertTriangle className="h-6 w-6" />
               <DialogTitle>Confirm Deletion</DialogTitle>
             </div>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-neutral-600">
               Are you sure you want to delete this SSS contribution row? This action cannot be undone.
               {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-neutral-50 rounded text-sm">
                   <p><strong>Effective Date:</strong> {showDeleteConfirm.effective_date?.substring(0, 10)}</p>
                   <p><strong>Salary Range:</strong> {formatCurrency(showDeleteConfirm.salary_range_from)} - {showDeleteConfirm.salary_range_to ? formatCurrency(showDeleteConfirm.salary_range_to) : 'up'}</p>
                   <p><strong>MSC:</strong> {formatCurrency(showDeleteConfirm.monthly_salary_credit)}</p>
@@ -344,7 +344,7 @@ export default function SssContributionsTable(): JSX.Element {
           
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="effective_date" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="effective_date" className="text-sm font-medium text-neutral-700">
                 Effective Date <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -355,12 +355,12 @@ export default function SssContributionsTable(): JSX.Element {
                 required
                 className="h-11"
               />
-              <p className="text-xs text-gray-500">Payroll on/after this date uses this contribution table</p>
+              <p className="text-xs text-neutral-500">Payroll on/after this date uses this contribution table</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="salary_range_from" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="salary_range_from" className="text-sm font-medium text-neutral-700">
                   Salary From (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -377,7 +377,7 @@ export default function SssContributionsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="salary_range_to" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="salary_range_to" className="text-sm font-medium text-neutral-700">
                   Salary To (₱)
                 </Label>
                 <Input
@@ -390,12 +390,12 @@ export default function SssContributionsTable(): JSX.Element {
                   onChange={(e) => setFormData({ ...formData, salary_range_to: e.target.value })}
                   className="h-11"
                 />
-                <p className="text-xs text-gray-500">Leave blank for no upper limit</p>
+                <p className="text-xs text-neutral-500">Leave blank for no upper limit</p>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="monthly_salary_credit" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="monthly_salary_credit" className="text-sm font-medium text-neutral-700">
                 Monthly Salary Credit (MSC) <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -413,7 +413,7 @@ export default function SssContributionsTable(): JSX.Element {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="employee_contribution" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="employee_contribution" className="text-sm font-medium text-neutral-700">
                   Employee (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -430,7 +430,7 @@ export default function SssContributionsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="employer_contribution" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="employer_contribution" className="text-sm font-medium text-neutral-700">
                   Employer (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -447,7 +447,7 @@ export default function SssContributionsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="ec_contribution" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="ec_contribution" className="text-sm font-medium text-neutral-700">
                   EC (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input

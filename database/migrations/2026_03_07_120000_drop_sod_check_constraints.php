@@ -54,10 +54,9 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Restore purchase_requests SoD constraints
-        DB::statement('ALTER TABLE purchase_requests ADD CONSTRAINT chk_pr_sod_noted CHECK (noted_by_id IS NULL OR noted_by_id <> submitted_by_id)');
-        DB::statement('ALTER TABLE purchase_requests ADD CONSTRAINT chk_pr_sod_checked CHECK (checked_by_id IS NULL OR checked_by_id <> noted_by_id)');
-        DB::statement('ALTER TABLE purchase_requests ADD CONSTRAINT chk_pr_sod_reviewed CHECK (reviewed_by_id IS NULL OR reviewed_by_id <> checked_by_id)');
-        DB::statement('ALTER TABLE purchase_requests ADD CONSTRAINT chk_pr_sod_vp CHECK (vp_approved_by_id IS NULL OR vp_approved_by_id <> reviewed_by_id)');
+        // Intentionally empty: SoD is enforced at the application layer, not the
+        // database layer. Re-adding these constraints during rollback would violate
+        // existing data created by super_admin (who has a legitimate SoD bypass).
+        // These constraints will not be restored on rollback.
     }
 };

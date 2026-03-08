@@ -61,21 +61,21 @@ export default function CreateWorkOrderPage(): React.ReactElement {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-          <Wrench className="w-5 h-5 text-orange-600" />
+        <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
+          <Wrench className="w-5 h-5 text-neutral-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Work Order</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Create a maintenance work order</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Work Order</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Create a maintenance work order</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-lg p-6 space-y-5">
         {/* Equipment */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Equipment *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Equipment *</label>
           <select
-            className={`w-full border rounded-lg px-3 py-2 text-sm bg-white ${fe('equipment_id') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 ${fe('equipment_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.equipment_id || ''}
             onChange={e => set('equipment_id', Number(e.target.value))}
             onBlur={() => touch('equipment_id')}
@@ -92,9 +92,9 @@ export default function CreateWorkOrderPage(): React.ReactElement {
         {/* Type & Priority */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Type *</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400"
               value={form.type}
               onChange={e => set('type', e.target.value)}
             >
@@ -103,9 +103,9 @@ export default function CreateWorkOrderPage(): React.ReactElement {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Priority *</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400"
               value={form.priority}
               onChange={e => set('priority', e.target.value)}
             >
@@ -119,10 +119,10 @@ export default function CreateWorkOrderPage(): React.ReactElement {
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Title *</label>
           <input
             type="text"
-            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('title') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('title') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.title}
             onChange={e => set('title', e.target.value)}
             onBlur={() => touch('title')}
@@ -134,10 +134,10 @@ export default function CreateWorkOrderPage(): React.ReactElement {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
           <textarea
             rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm resize-none focus:ring-1 focus:ring-neutral-400"
             value={form.description}
             onChange={e => set('description', e.target.value)}
             placeholder="Detailed description of the maintenance task"
@@ -147,9 +147,9 @@ export default function CreateWorkOrderPage(): React.ReactElement {
         {/* Assigned To & Scheduled Date */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Assigned To</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400"
               value={form.assigned_to_id}
               onChange={e => set('assigned_to_id', e.target.value ? Number(e.target.value) : '')}
             >
@@ -160,10 +160,10 @@ export default function CreateWorkOrderPage(): React.ReactElement {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Date</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Scheduled Date</label>
             <input
               type="date"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
               value={form.scheduled_date}
               onChange={e => set('scheduled_date', e.target.value)}
             />
@@ -174,14 +174,14 @@ export default function CreateWorkOrderPage(): React.ReactElement {
           <button
             type="button"
             onClick={() => navigate('/maintenance/work-orders')}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded-lg bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {createMut.isPending ? 'Saving…' : 'Create Work Order'}
           </button>

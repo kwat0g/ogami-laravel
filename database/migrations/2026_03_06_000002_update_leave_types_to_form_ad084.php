@@ -46,6 +46,12 @@ return new class extends Migration
             ->whereIn('code', ['SL', 'SIL', 'SPL', 'VAWCL', 'LWOP'])
             ->update(['is_active' => true]);
 
+        // Remove leave_balances referencing OTH before deleting it (FK constraint)
+        $othId = DB::table('leave_types')->where('code', 'OTH')->value('id');
+        if ($othId) {
+            DB::table('leave_balances')->where('leave_type_id', $othId)->delete();
+        }
+
         // Remove OTH
         DB::table('leave_types')->where('code', 'OTH')->delete();
     }

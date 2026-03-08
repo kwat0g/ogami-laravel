@@ -44,7 +44,7 @@ function FieldError({ message }: { message?: string }) {
 
 function Label({ htmlFor, required, children }: { htmlFor: string; required?: boolean; children: React.ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">
+    <label htmlFor={htmlFor} className="block text-sm font-medium text-neutral-700 mb-1">
       {children}
       {required && <span className="ml-1 text-red-500">*</span>}
     </label>
@@ -76,7 +76,7 @@ function ConflictCheckRow({ check }: { check: DateConflictCheck }) {
   const isWarn    = check.status === 'warn'
 
   return (
-    <div className={`flex items-start gap-3 rounded-lg px-3 py-2.5 border text-sm ${
+    <div className={`flex items-start gap-3 rounded px-3 py-2.5 border text-sm ${
       isBlock ? 'bg-red-50 border-red-200' :
       isWarn  ? 'bg-amber-50 border-amber-200' :
                 'bg-green-50 border-green-100'
@@ -89,7 +89,7 @@ function ConflictCheckRow({ check }: { check: DateConflictCheck }) {
           <span className={`font-medium ${isBlock ? 'text-red-800' : isWarn ? 'text-amber-800' : 'text-green-800'}`}>
             {CHECK_DESCRIPTIONS[check.code] ?? check.label}
           </span>
-          <span className="text-xs font-mono text-gray-400 shrink-0">{check.code}</span>
+          <span className="text-xs font-mono text-neutral-400 shrink-0">{check.code}</span>
         </div>
         {check.message && !isPassed && (
           <p className={`text-xs mt-0.5 ${isBlock ? 'text-red-700' : 'text-amber-700'}`}>
@@ -113,16 +113,16 @@ function ConflictCheckPanel({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date Validation</p>
+        <p className="text-xs font-semibold text-neutral-600 font-medium">Date Validation</p>
         {checking && (
-          <span className="flex items-center gap-1.5 text-xs text-gray-400">
+          <span className="flex items-center gap-1.5 text-xs text-neutral-400">
             <Loader2 className="h-3 w-3 animate-spin" /> Checking…
           </span>
         )}
       </div>
 
       {checking && checks.length === 0 ? (
-        <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+        <div className="flex items-center gap-2 text-sm text-neutral-400 py-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Checking for conflicts and validating dates…
         </div>
@@ -133,7 +133,7 @@ function ConflictCheckPanel({
       )}
 
       {!checking && hasBlockers && (
-        <div className="flex items-start gap-2 bg-red-100 border border-red-300 rounded-lg px-3 py-2.5 text-sm text-red-800">
+        <div className="flex items-start gap-2 bg-red-100 border border-red-300 rounded px-3 py-2.5 text-sm text-red-800">
           <Ban className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
           <span>
             <strong>Cannot proceed.</strong> Fix the issues above before creating this payroll run.
@@ -258,36 +258,36 @@ export default function CreatePayrollRunPage() {
       {/* Back */}
       <button
         onClick={() => navigate('/payroll/runs')}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Payroll Runs
       </button>
 
       {/* Wizard step indicator */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-6 text-xs text-gray-500">
+      <div className="flex flex-wrap items-center gap-1.5 mb-6 text-xs text-neutral-500">
         {['Define Run', 'Set Scope', 'Validate', 'Compute', 'Review', 'Acctg Review', 'Disburse'].map((step, i) => (
           <span key={step} className="flex items-center gap-1.5">
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>{i + 1}</span>
-            <span className={i === 0 ? 'text-blue-600 font-semibold' : 'text-gray-400'}>{step}</span>
-            {i < 6 && <span className="text-gray-300">›</span>}
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-500'}`}>{i + 1}</span>
+            <span className={i === 0 ? 'text-neutral-900 font-semibold' : 'text-neutral-400'}>{step}</span>
+            {i < 6 && <span className="text-neutral-300">›</span>}
           </span>
         ))}
       </div>
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <CalendarRange className="h-5 w-5 text-blue-600" />
+        <div className="p-2 bg-neutral-100 rounded">
+          <CalendarRange className="h-5 w-5 text-neutral-900" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Payroll Run</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Step 1 of 7 — Define the run type and pay period.</p>
+          <h1 className="text-lg font-semibold text-neutral-900">New Payroll Run</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Step 1 of 7 — Define the run type and pay period.</p>
         </div>
       </div>
 
       {/* Form card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="bg-white border border-neutral-200 rounded p-6">
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
 
           {/* Run Type */}
@@ -296,14 +296,14 @@ export default function CreatePayrollRunPage() {
             <select
               id="run_type"
               {...register('run_type')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
             >
               {(Object.entries(RUN_TYPE_LABELS) as [PayrollRunType, string][]).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
             {hint && (
-              <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+              <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded px-3 py-2 text-xs text-amber-800">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" />
                 {hint}
               </div>
@@ -316,13 +316,13 @@ export default function CreatePayrollRunPage() {
             <Label htmlFor="pay_period">Pay Period</Label>
             <div className="relative">
               {periodsLoading && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400 pointer-events-none" />
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-neutral-400 pointer-events-none" />
               )}
               <select
                 id="pay_period"
                 onChange={handlePeriodSelect}
                 disabled={periodsLoading}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none disabled:bg-neutral-50"
                 defaultValue=""
               >
                 <option value="">— Select a pay period (auto-fills dates) —</option>
@@ -333,7 +333,7 @@ export default function CreatePayrollRunPage() {
                 ))}
               </select>
             </div>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-neutral-400">
               Only open pay periods are listed. Selecting one auto-fills the dates below; you can still adjust them manually.
             </p>
           </div>
@@ -346,8 +346,8 @@ export default function CreatePayrollRunPage() {
                 id="cutoff_start"
                 type="date"
                 {...register('cutoff_start')}
-                className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
-                  errors.cutoff_start ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none ${
+                  errors.cutoff_start ? 'border-red-400 bg-red-50' : 'border-neutral-300'
                 }`}
               />
               <FieldError message={errors.cutoff_start?.message} />
@@ -358,8 +358,8 @@ export default function CreatePayrollRunPage() {
                 id="cutoff_end"
                 type="date"
                 {...register('cutoff_end')}
-                className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
-                  errors.cutoff_end ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none ${
+                  errors.cutoff_end ? 'border-red-400 bg-red-50' : 'border-neutral-300'
                 }`}
               />
               <FieldError message={errors.cutoff_end?.message} />
@@ -370,8 +370,8 @@ export default function CreatePayrollRunPage() {
                 id="pay_date"
                 type="date"
                 {...register('pay_date')}
-                className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
-                  errors.pay_date ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none ${
+                  errors.pay_date ? 'border-red-400 bg-red-50' : 'border-neutral-300'
                 }`}
               />
               <FieldError message={errors.pay_date?.message} />
@@ -389,30 +389,30 @@ export default function CreatePayrollRunPage() {
 
           {/* Notes */}
           <div>
-            <Label htmlFor="notes">Reference / Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <Label htmlFor="notes">Reference / Notes <span className="text-neutral-400 font-normal">(optional)</span></Label>
             <textarea
               id="notes"
               rows={2}
               {...register('notes')}
               placeholder="e.g. January 2026 Second Half Regular Payroll"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none resize-none"
             />
             <FieldError message={errors.notes?.message} />
           </div>
 
           {/* Workflow info */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+          <div className="bg-neutral-50 border border-neutral-100 rounded p-3 text-xs text-neutral-800 space-y-1">
             <p className="font-semibold">7-Step Workflow</p>
             <p>You will configure <strong>Scope → Validate</strong> locally. The payroll run is only saved to the database when you click <strong>"Begin Computation"</strong> on the final setup step.</p>
-            <p className="text-blue-600">SoD enforced: the initiator cannot approve at HR or Accounting stages.</p>
+            <p className="text-neutral-900">SoD enforced: the initiator cannot approve at HR or Accounting stages.</p>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
             <button
               type="button"
               onClick={() => navigate('/payroll/runs')}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
             >
               Cancel
             </button>
@@ -425,7 +425,7 @@ export default function CreatePayrollRunPage() {
                 hasZodDateErrors   ? 'Correct the date errors before proceeding.' :
                 undefined
               }
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
             >
               {isSubmitting
                 ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>

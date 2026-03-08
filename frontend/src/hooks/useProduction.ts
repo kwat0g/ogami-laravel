@@ -24,14 +24,14 @@ export function useBoms(params: { product_item_id?: number; is_active?: boolean;
   })
 }
 
-export function useBom(id: number | null) {
+export function useBom(ulid: string | null) {
   return useQuery({
-    queryKey: ['boms', id],
+    queryKey: ['boms', ulid],
     queryFn: async () => {
-      const res = await api.get<{ data: Bom }>(`/production/boms/${id}`)
+      const res = await api.get<{ data: Bom }>(`/production/boms/${ulid}`)
       return res.data.data
     },
-    enabled: id !== null,
+    enabled: ulid !== null,
   })
 }
 
@@ -44,11 +44,11 @@ export function useCreateBom() {
   })
 }
 
-export function useUpdateBom(id: number) {
+export function useUpdateBom(ulid: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: Partial<CreateBomPayload>) =>
-      api.put(`/production/boms/${id}`, payload),
+      api.put(`/production/boms/${ulid}`, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['boms'] }),
   })
 }
@@ -180,5 +180,13 @@ export function useLogOutput(ulid: string) {
     mutationFn: (payload: LogProductionOutputPayload) =>
       api.post(`/production/orders/${ulid}/output`, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['production-orders'] }),
+  })
+}
+
+export function useDeleteBom() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ulid: string) => api.delete(`/production/boms/${ulid}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['boms'] }),
   })
 }

@@ -22,15 +22,7 @@ export default function StockBalancePage(): React.ReactElement {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center">
-            <BarChart2 className="w-5 h-5 text-teal-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Stock Balances</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Current on-hand quantities per location</p>
-          </div>
-        </div>
+        <h1 className="text-lg font-semibold text-neutral-900">Stock Balances</h1>
       </div>
 
       {/* Filters */}
@@ -40,22 +32,22 @@ export default function StockBalancePage(): React.ReactElement {
           placeholder="Search item code or name…"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white w-52"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white w-52"
         />
         <select
           value={locationId}
           onChange={(e) => { setLocationId(e.target.value ? Number(e.target.value) : ''); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Locations</option>
           {(locations ?? []).map((l) => <option key={l.id} value={l.id}>{l.code} — {l.name}</option>)}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
           <input
             type="checkbox"
             checked={lowStock}
             onChange={(e) => { setLowStock(e.target.checked); setPage(1) }}
-            className="rounded border-gray-300 text-red-500 focus:ring-red-400"
+            className="rounded border-neutral-300"
           />
           Low stock only
         </label>
@@ -70,19 +62,19 @@ export default function StockBalancePage(): React.ReactElement {
 
       {!isLoading && !isError && (
         <>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
                   {['Item Code', 'Name', 'Location', 'UOM', 'On Hand', 'Reorder Pt.', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">No stock records found.</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No stock records found.</td>
                   </tr>
                 )}
                 {data?.data?.map((bal) => {
@@ -91,15 +83,15 @@ export default function StockBalancePage(): React.ReactElement {
                   const isBelowReorder = onHand <= reorderPt
 
                   return (
-                    <tr key={`${bal.item_id}-${bal.location_id}`} className={`hover:bg-gray-50 ${isBelowReorder ? 'bg-red-50/30' : ''}`}>
-                      <td className="px-4 py-3 font-mono text-teal-700 font-medium">{bal.item?.item_code ?? `#${bal.item_id}`}</td>
-                      <td className="px-4 py-3 text-gray-900">{bal.item?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-500">{bal.location ? `${bal.location.code} — ${bal.location.name}` : `#${bal.location_id}`}</td>
-                      <td className="px-4 py-3 text-gray-500">{bal.item?.unit_of_measure ?? '—'}</td>
-                      <td className={`px-4 py-3 font-semibold tabular-nums ${isBelowReorder ? 'text-red-600' : 'text-gray-900'}`}>
+                    <tr key={`${bal.item_id}-${bal.location_id}`} className={`hover:bg-neutral-50 ${isBelowReorder ? 'bg-red-50/30' : ''}`}>
+                      <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{bal.item?.item_code ?? `#${bal.item_id}`}</td>
+                      <td className="px-4 py-3 text-neutral-900">{bal.item?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-500">{bal.location ? `${bal.location.code} — ${bal.location.name}` : `#${bal.location_id}`}</td>
+                      <td className="px-4 py-3 text-neutral-500">{bal.item?.unit_of_measure ?? '—'}</td>
+                      <td className={`px-4 py-3 font-semibold tabular-nums ${isBelowReorder ? 'text-red-600' : 'text-neutral-900'}`}>
                         {onHand.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
                       </td>
-                      <td className="px-4 py-3 text-gray-400 tabular-nums">
+                      <td className="px-4 py-3 text-neutral-400 tabular-nums">
                         {reorderPt.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
                       </td>
                       <td className="px-4 py-3">
@@ -118,20 +110,20 @@ export default function StockBalancePage(): React.ReactElement {
 
           {/* Pagination */}
           {data && data.meta && data.meta.last_page > 1 && (
-            <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+            <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} records</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                  className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= data.meta.last_page}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                  className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50"
                 >
                   Next
                 </button>

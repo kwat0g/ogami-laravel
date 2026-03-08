@@ -7,12 +7,12 @@ import { useAuthStore } from '@/stores/authStore'
 import type { PurchaseOrderStatus } from '@/types/procurement'
 
 const statusBadge: Record<PurchaseOrderStatus, string> = {
-  draft:              'bg-gray-100 text-gray-600',
-  sent:               'bg-purple-100 text-purple-700',
-  partially_received: 'bg-yellow-100 text-yellow-700',
-  fully_received:     'bg-green-100 text-green-700',
-  closed:             'bg-blue-100 text-blue-700',
-  cancelled:          'bg-red-100 text-red-700',
+  draft:              'bg-neutral-100 text-neutral-600',
+  sent:               'bg-neutral-200 text-neutral-800',
+  partially_received: 'bg-neutral-100 text-neutral-700',
+  fully_received:     'bg-neutral-200 text-neutral-800',
+  closed:             'bg-neutral-100 text-neutral-500',
+  cancelled:          'bg-neutral-100 text-neutral-400',
 }
 
 export default function PurchaseOrderListPage(): React.ReactElement {
@@ -32,19 +32,11 @@ export default function PurchaseOrderListPage(): React.ReactElement {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-            <ShoppingCart className="w-5 h-5 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage vendor purchase orders</p>
-          </div>
-        </div>
+        <h1 className="text-lg font-semibold text-neutral-900">Purchase Orders</h1>
         {canCreate && (
           <Link
             to="/procurement/purchase-orders/new"
-            className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
           >
             <Plus className="w-4 h-4" />
             Create PO
@@ -57,15 +49,15 @@ export default function PurchaseOrderListPage(): React.ReactElement {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value as PurchaseOrderStatus | ''); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Statuses</option>
           {(['draft', 'sent', 'partially_received', 'fully_received', 'closed', 'cancelled'] as PurchaseOrderStatus[]).map((s) => (
             <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-purple-600" />
+        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
           <span>Show Archived</span>
         </label>
       </div>
@@ -79,42 +71,42 @@ export default function PurchaseOrderListPage(): React.ReactElement {
         </div>
       )}
       {!isLoading && !isError && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
                 {['PO Number', 'Vendor', 'PR Reference', 'Total Amount', 'Status', 'Created', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-100">
               {data?.data?.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">
+                  <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">
                     No purchase orders found.
                   </td>
                 </tr>
               )}
               {data?.data?.map((po) => (
-                <tr key={po.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-blue-700 font-medium">{po.po_reference}</td>
-                  <td className="px-4 py-3 text-gray-700">{po.vendor?.name ?? `#${po.vendor_id}`}</td>
-                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">{po.purchase_request?.pr_reference ?? '—'}</td>
-                  <td className="px-4 py-3 font-medium text-gray-800">
+                <tr key={po.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                  <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{po.po_reference}</td>
+                  <td className="px-4 py-3 text-neutral-700">{po.vendor?.name ?? `#${po.vendor_id}`}</td>
+                  <td className="px-4 py-3 text-neutral-600 font-mono text-xs">{po.purchase_request?.pr_reference ?? '—'}</td>
+                  <td className="px-4 py-3 font-medium text-neutral-800">
                     ₱{Number(po.total_po_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-4 py-3">
-                    {po.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge[po.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                    {po.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
+                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${statusBadge[po.status] ?? 'bg-neutral-100 text-neutral-600'}`}>
                       {po.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{new Date(po.created_at).toLocaleDateString('en-PH')}</td>
+                  <td className="px-4 py-3 text-neutral-500">{new Date(po.created_at).toLocaleDateString('en-PH')}</td>
                   <td className="px-4 py-3">
-                    <Link to={`/procurement/purchase-orders/${po.ulid}`} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                    <Link to={`/procurement/purchase-orders/${po.ulid}`} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">
                       View
                     </Link>
                   </td>
@@ -125,11 +117,11 @@ export default function PurchaseOrderListPage(): React.ReactElement {
 
           {/* Pagination */}
           {data?.meta && data.meta.last_page > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-100 text-sm text-neutral-500">
               <span>Page {data.meta.current_page} of {data.meta.last_page}</span>
               <div className="flex gap-2">
-                <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border rounded-lg disabled:opacity-40">Prev</button>
-                <button disabled={page === data.meta.last_page} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded-lg disabled:opacity-40">Next</button>
+                <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Prev</button>
+                <button disabled={page === data.meta.last_page} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

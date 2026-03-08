@@ -35,25 +35,25 @@ export default function SkeletonTable({
       {/* Optional page header skeleton */}
       {withHeader && (
         <div className="flex items-center justify-between mb-4">
-          <div className="h-7 bg-gray-200 rounded w-48" />
-          <div className="h-9 bg-gray-200 rounded w-32" />
+          <div className="h-7 bg-neutral-200 rounded w-48" />
+          <div className="h-9 bg-neutral-200 rounded w-32" />
         </div>
       )}
 
       {/* Table search / filter bar */}
       <div className="flex items-center gap-3 mb-3">
-        <div className="h-9 bg-gray-200 rounded w-64" />
-        <div className="h-9 bg-gray-200 rounded w-24" />
+        <div className="h-9 bg-neutral-200 rounded w-64" />
+        <div className="h-9 bg-neutral-200 rounded w-24" />
       </div>
 
       {/* Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         {/* Header row */}
-        <div className="bg-gray-50 border-b border-gray-200 flex gap-4 px-4 py-3">
+        <div className="bg-neutral-50 border-b border-neutral-200 flex gap-4 px-4 py-3">
           {Array.from({ length: cols }).map((_, i) => (
             <div
               key={i}
-              className="h-4 bg-gray-300 rounded flex-1"
+              className="h-4 bg-neutral-300 rounded flex-1"
               style={{ maxWidth: i === 0 ? '120px' : undefined }}
             />
           ))}
@@ -64,15 +64,15 @@ export default function SkeletonTable({
           <div
             key={rowIdx}
             className={[
-              'flex gap-4 px-4 py-3 border-b border-gray-100 last:border-0',
-              rowIdx % 2 === 1 ? 'bg-gray-50/50' : 'bg-white',
+              'flex gap-4 px-4 py-3 border-b border-neutral-100 last:border-0',
+              rowIdx % 2 === 1 ? 'bg-neutral-50/30' : 'bg-white',
             ].join(' ')}
           >
             {Array.from({ length: cols }).map((_, colIdx) => (
               <div
                 key={colIdx}
                 className={[
-                  'h-4 bg-gray-200 rounded flex-1',
+                  'h-4 bg-neutral-200 rounded flex-1',
                   COL_WIDTHS[(rowIdx + colIdx) % COL_WIDTHS.length],
                 ].join(' ')}
               />
@@ -83,10 +83,10 @@ export default function SkeletonTable({
 
       {/* Pagination skeleton */}
       <div className="flex items-center justify-between mt-3">
-        <div className="h-4 bg-gray-200 rounded w-40" />
+        <div className="h-4 bg-neutral-200 rounded w-40" />
         <div className="flex gap-1">
           {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="h-8 w-8 bg-gray-200 rounded" />
+            <div key={n} className="h-8 w-8 bg-neutral-200 rounded" />
           ))}
         </div>
       </div>

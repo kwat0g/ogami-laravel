@@ -143,39 +143,39 @@ export default function PhilhealthContributionsTable(): JSX.Element {
   const activeRate = activeData?.data
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading PhilHealth premium table...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading PhilHealth premium table...</div>
   }
 
   return (
     <div className="space-y-4">
       {/* Active Rate Info Card */}
       {activeRate && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-neutral-50 border border-neutral-200 rounded p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Eye className="h-5 w-5 text-green-600" />
-            <h3 className="font-semibold text-green-900">Currently Active Rate</h3>
-            <Badge variant="success">Active</Badge>
+            <Eye className="h-5 w-5 text-neutral-600" />
+            <h3 className="font-medium text-neutral-900">Currently Active Rate</h3>
+            <Badge variant="outline" className="border-neutral-300 text-neutral-700">Active</Badge>
           </div>
           <div className="grid grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">Effective Date</p>
-              <p className="font-medium text-green-900">{activeRate.effective_date?.substring(0, 10)}</p>
+              <p className="text-neutral-500">Effective Date</p>
+              <p className="font-medium text-neutral-900">{activeRate.effective_date?.substring(0, 10)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Premium Rate</p>
-              <p className="font-medium text-green-900">{formatPercent(activeRate.premium_rate)}</p>
+              <p className="text-neutral-500">Premium Rate</p>
+              <p className="font-medium text-neutral-900">{formatPercent(activeRate.premium_rate)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Min Premium</p>
-              <p className="font-medium text-green-900">{formatCurrency(activeRate.min_monthly_premium)}</p>
+              <p className="text-neutral-500">Min Premium</p>
+              <p className="font-medium text-neutral-900">{formatCurrency(activeRate.min_monthly_premium)}</p>
             </div>
             <div>
-              <p className="text-gray-500">Max Premium</p>
-              <p className="font-medium text-green-900">{formatCurrency(activeRate.max_monthly_premium)}</p>
+              <p className="text-neutral-500">Max Premium</p>
+              <p className="font-medium text-neutral-900">{formatCurrency(activeRate.max_monthly_premium)}</p>
             </div>
           </div>
           {activeRate.legal_basis && (
-            <p className="mt-3 text-xs text-green-700">
+            <p className="mt-3 text-xs text-neutral-700">
               <Info className="h-3 w-3 inline mr-1" />
               {activeRate.legal_basis}
             </p>
@@ -206,23 +206,23 @@ export default function PhilhealthContributionsTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead>Effective Date</TableHead>
-              <TableHead>Salary Range</TableHead>
-              <TableHead>Premium Rate</TableHead>
-              <TableHead>Min Premium</TableHead>
-              <TableHead>Max Premium</TableHead>
-              <TableHead>Legal Basis</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
+            <TableRow className="bg-neutral-50">
+              <TableHead className="text-xs font-semibold text-neutral-600">Effective Date</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Salary Range</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Premium Rate</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Min Premium</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Max Premium</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Legal Basis</TableHead>
+              <TableHead className="w-20 text-xs font-semibold text-neutral-600">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={7} className="text-center py-8 text-neutral-500">
                   No PhilHealth premium rates found
                 </TableCell>
               </TableRow>
@@ -231,15 +231,15 @@ export default function PhilhealthContributionsTable(): JSX.Element {
                 <TableRow 
                   key={row.id}
                   className={cn(
-                    row.effective_date === activeEffectiveDate && 'bg-green-50/50'
+                    row.effective_date === activeEffectiveDate && 'bg-neutral-50'
                   )}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <Calendar className="h-4 w-4 text-neutral-400" />
                       {row.effective_date?.substring(0, 10)}
                       {row.effective_date === activeEffectiveDate && (
-                        <Badge variant="success" className="text-xs">Active</Badge>
+                        <Badge variant="outline" className="text-xs border-neutral-300 text-neutral-700">Active</Badge>
                       )}
                     </div>
                   </TableCell>
@@ -249,13 +249,13 @@ export default function PhilhealthContributionsTable(): JSX.Element {
                         {row.salary_floor !== null ? formatCurrency(row.salary_floor) : 'Any'} - {row.salary_ceiling !== null ? formatCurrency(row.salary_ceiling) : 'Any'}
                       </span>
                     ) : (
-                      <span className="text-gray-400">All salaries</span>
+                      <span className="text-neutral-400">All salaries</span>
                     )}
                   </TableCell>
                   <TableCell className="font-medium">{formatPercent(row.premium_rate)}</TableCell>
                   <TableCell>{formatCurrency(row.min_monthly_premium)}</TableCell>
                   <TableCell>{formatCurrency(row.max_monthly_premium)}</TableCell>
-                  <TableCell className="max-w-xs truncate text-sm text-gray-500">
+                  <TableCell className="max-w-xs truncate text-sm text-neutral-500">
                     {row.legal_basis || '-'}
                   </TableCell>
                   <TableCell>
@@ -301,10 +301,10 @@ export default function PhilhealthContributionsTable(): JSX.Element {
               <AlertTriangle className="h-6 w-6" />
               <DialogTitle>Confirm Deletion</DialogTitle>
             </div>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-neutral-600">
               Are you sure you want to delete this PhilHealth premium rate? This action cannot be undone.
               {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-neutral-50 rounded text-sm">
                   <p><strong>Effective Date:</strong> {showDeleteConfirm.effective_date?.substring(0, 10)}</p>
                   <p><strong>Premium Rate:</strong> {(showDeleteConfirm.premium_rate * 100).toFixed(2)}%</p>
                 </div>
@@ -332,9 +332,9 @@ export default function PhilhealthContributionsTable(): JSX.Element {
       </Dialog>
 
       {/* Info */}
-      <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-800">
+      <div className="bg-neutral-50 rounded p-4 text-sm text-neutral-800">
         <p className="font-medium mb-1">How PhilHealth Premiums Work:</p>
-        <ul className="list-disc list-inside space-y-1 text-blue-700">
+        <ul className="list-disc list-inside space-y-1 text-neutral-700">
           <li>Premium = Basic Salary × Premium Rate</li>
           <li>Employee pays 50%, Employer pays 50%</li>
           <li>Semi-monthly deduction = Monthly premium ÷ 2</li>
@@ -354,7 +354,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
           
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="effective_date" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="effective_date" className="text-sm font-medium text-neutral-700">
                 Effective Date <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -369,7 +369,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="salary_floor" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="salary_floor" className="text-sm font-medium text-neutral-700">
                   Salary Floor (₱)
                 </Label>
                 <Input
@@ -385,7 +385,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="salary_ceiling" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="salary_ceiling" className="text-sm font-medium text-neutral-700">
                   Salary Ceiling (₱)
                 </Label>
                 <Input
@@ -402,7 +402,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="premium_rate" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="premium_rate" className="text-sm font-medium text-neutral-700">
                 Premium Rate (%) <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -417,14 +417,14 @@ export default function PhilhealthContributionsTable(): JSX.Element {
                 required
                 className="h-11"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-neutral-500">
                 Total premium rate (employee + employer combined)
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="min_monthly_premium" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="min_monthly_premium" className="text-sm font-medium text-neutral-700">
                   Min Monthly (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -441,7 +441,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="max_monthly_premium" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="max_monthly_premium" className="text-sm font-medium text-neutral-700">
                   Max Monthly (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -459,7 +459,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="legal_basis" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="legal_basis" className="text-sm font-medium text-neutral-700">
                 Legal Basis
               </Label>
               <Input

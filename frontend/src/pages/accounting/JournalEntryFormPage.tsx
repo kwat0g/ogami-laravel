@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Plus, Trash2, CheckCircle, XCircle } from 'lucide-react'
 import {
   useCreateJournalEntry,
@@ -68,7 +69,7 @@ function LineRow({ line, leafAccounts, onChange, onRemove, canRemove }: LineRowP
         <select
           value={line.account_id ?? ''}
           onChange={(e) => onChange(line._key, 'account_id', e.target.value ? Number(e.target.value) : null)}
-          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
           required
         >
           <option value="">Select account…</option>
@@ -83,7 +84,7 @@ function LineRow({ line, leafAccounts, onChange, onRemove, canRemove }: LineRowP
         <select
           value={line.debit_or_credit}
           onChange={(e) => onChange(line._key, 'debit_or_credit', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           <option value="debit">Debit</option>
           <option value="credit">Credit</option>
@@ -96,7 +97,7 @@ function LineRow({ line, leafAccounts, onChange, onRemove, canRemove }: LineRowP
           step="0.01"
           value={line.amount}
           onChange={(e) => onChange(line._key, 'amount', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm text-right focus:ring-1 focus:ring-neutral-400 outline-none"
           placeholder="0.00"
           required
         />
@@ -106,7 +107,7 @@ function LineRow({ line, leafAccounts, onChange, onRemove, canRemove }: LineRowP
           type="button"
           onClick={() => onRemove(line._key)}
           disabled={!canRemove}
-          className="p-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-30"
+          className="p-1 text-neutral-400 hover:text-neutral-600 transition-colors disabled:opacity-30"
           title="Remove line"
         >
           <Trash2 className="h-4 w-4" />
@@ -184,10 +185,12 @@ export default function JournalEntryFormPage() {
         })),
       }
       const entry = await createMutation.mutateAsync(payload)
+      toast.success('Journal entry created.')
       navigate(`/accounting/journal-entries/${entry.ulid}`)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       setSubmitError(msg ?? 'Failed to create journal entry. Please try again.')
+      toast.error(msg ?? 'Failed to create journal entry.')
     }
   }
 
@@ -198,13 +201,13 @@ export default function JournalEntryFormPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Journal Entry</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Create a manual journal entry</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">New Journal Entry</h1>
+          <p className="text-sm text-neutral-500">Create a manual journal entry</p>
         </div>
         <button
           type="button"
           onClick={() => navigate('/accounting/journal-entries')}
-          className="text-sm text-gray-500 hover:text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+          className="text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-300 px-4 py-2 rounded hover:bg-neutral-50 transition-colors"
         >
           Cancel
         </button>
@@ -212,10 +215,10 @@ export default function JournalEntryFormPage() {
 
       <form onSubmit={handleSubmit}>
         {/* Header fields */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-4 space-y-4">
+        <div className="bg-white border border-neutral-200 rounded p-6 mb-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
                 Entry Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -224,39 +227,39 @@ export default function JournalEntryFormPage() {
                 onChange={(e) => setEntryDate(e.target.value)}
                 onBlur={() => setTouchedDate(true)}
                 required
-                className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none ${entryDateError ? 'border-red-400' : 'border-gray-300'}`}
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none ${entryDateError ? 'border-red-400' : 'border-neutral-300'}`}
               />
               {entryDateError && <p className="mt-1 text-xs text-red-600">{entryDateError}</p>}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none"
               placeholder="Optional description…"
             />
           </div>
         </div>
 
         {/* Lines */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-700">Journal Lines</h2>
+        <div className="bg-white border border-neutral-200 rounded overflow-hidden mb-4">
+          <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200">
+            <h2 className="text-sm font-semibold text-neutral-700">Journal Lines</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="border-b border-gray-100">
+              <thead className="border-b border-neutral-100">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Account</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Dr / Cr</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Amount (₱)</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">Account</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500 w-28">Dr / Cr</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-neutral-500 w-40">Amount (₱)</th>
                   <th className="px-3 py-2 w-12" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100">
                 {lines.map((line) => (
                   <LineRow
                     key={line._key}
@@ -270,11 +273,11 @@ export default function JournalEntryFormPage() {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-3 border-t border-gray-100">
+          <div className="px-4 py-3 border-t border-neutral-100">
             <button
               type="button"
               onClick={addLine}
-              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-800 font-medium"
             >
               <Plus className="h-4 w-4" />
               Add Line
@@ -283,17 +286,17 @@ export default function JournalEntryFormPage() {
         </div>
 
         {/* Running totals + balance indicator */}
-        <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 mb-6">
+        <div className="bg-white border border-neutral-200 rounded px-6 py-4 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
               <div>
-                <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-0.5">Total Debits</div>
-                <div className="text-lg font-bold text-gray-900 tabular-nums">₱{formatAmount(totalDebits)}</div>
+                <div className="text-xs text-neutral-500 font-semibold mb-0.5">Total Debits</div>
+                <div className="text-lg font-bold text-neutral-900 tabular-nums">₱{formatAmount(totalDebits)}</div>
               </div>
-              <div className="text-gray-300 text-2xl font-light">|</div>
+              <div className="text-neutral-300 text-2xl font-light">|</div>
               <div>
-                <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-0.5">Total Credits</div>
-                <div className="text-lg font-bold text-gray-900 tabular-nums">₱{formatAmount(totalCredits)}</div>
+                <div className="text-xs text-neutral-500 font-semibold mb-0.5">Total Credits</div>
+                <div className="text-lg font-bold text-neutral-900 tabular-nums">₱{formatAmount(totalCredits)}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -315,7 +318,7 @@ export default function JournalEntryFormPage() {
         </div>
 
         {submitError && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 bg-red-50 border border-red-200 rounded px-4 py-3 text-sm text-red-700">
             {submitError}
           </div>
         )}
@@ -325,7 +328,7 @@ export default function JournalEntryFormPage() {
           <button
             type="submit"
             disabled={!canSubmit || createMutation.isPending}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-6 py-2.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMutation.isPending ? 'Saving…' : 'Save as Draft'}
           </button>

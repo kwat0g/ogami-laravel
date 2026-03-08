@@ -150,7 +150,7 @@ export default function SalaryGradesTable(): JSX.Element {
     : data?.data?.filter(g => g.employment_type === selectedType) || []
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading salary grades...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading salary grades...</div>
   }
 
   return (
@@ -158,15 +158,15 @@ export default function SalaryGradesTable(): JSX.Element {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">Filter by type:</span>
+          <span className="text-sm text-neutral-500">Filter by type:</span>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+            className="text-sm border border-neutral-300 rounded px-3 py-2 focus:ring-1 focus:ring-neutral-400"
           >
             <option value="all">All Types</option>
             {types.map((t) => (
-              <option key={t} value={t}>{t.replace('_', ' ').toUpperCase()}</option>
+              <option key={t} value={t}>{t.replace('_', ' ')}</option>
             ))}
           </select>
         </div>
@@ -191,24 +191,24 @@ export default function SalaryGradesTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead>Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Min Monthly</TableHead>
-              <TableHead>Max Monthly</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
+            <TableRow className="bg-neutral-50">
+              <TableHead className="text-xs font-semibold text-neutral-600">Code</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Name</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Level</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Type</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Min Monthly</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Max Monthly</TableHead>
+              <TableHead className="text-xs font-semibold text-neutral-600">Status</TableHead>
+              <TableHead className="w-20 text-xs font-semibold text-neutral-600">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-neutral-500">
                   No salary grades found
                 </TableCell>
               </TableRow>
@@ -222,12 +222,12 @@ export default function SalaryGradesTable(): JSX.Element {
                   <TableCell>{grade.name}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <GraduationCap className="h-4 w-4 text-gray-400" />
+                      <GraduationCap className="h-4 w-4 text-neutral-400" />
                       {grade.level}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="border-neutral-300 text-neutral-600">
                       {grade.employment_type.replace('_', ' ')}
                     </Badge>
                   </TableCell>
@@ -283,10 +283,10 @@ export default function SalaryGradesTable(): JSX.Element {
               <AlertTriangle className="h-6 w-6" />
               <DialogTitle>Confirm Deletion</DialogTitle>
             </div>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-neutral-600">
               Are you sure you want to delete this salary grade? This action cannot be undone.
               {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-neutral-50 rounded text-sm">
                   <p><strong>Code:</strong> {showDeleteConfirm.code}</p>
                   <p><strong>Name:</strong> {showDeleteConfirm.name}</p>
                 </div>
@@ -326,7 +326,7 @@ export default function SalaryGradesTable(): JSX.Element {
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="code" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="code" className="text-sm font-medium text-neutral-700">
                   Code <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -341,7 +341,7 @@ export default function SalaryGradesTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="level" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="level" className="text-sm font-medium text-neutral-700">
                   Level (1-20) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -359,7 +359,7 @@ export default function SalaryGradesTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="name" className="text-sm font-medium text-neutral-700">
                 Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -373,14 +373,14 @@ export default function SalaryGradesTable(): JSX.Element {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="employment_type" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="employment_type" className="text-sm font-medium text-neutral-700">
                 Employment Type <span className="text-red-500">*</span>
               </Label>
               <select
                 id="employment_type"
                 value={formData.employment_type}
                 onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-                className="w-full h-11 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full h-11 text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 required
               >
                 {EMPLOYMENT_TYPES.map(t => (
@@ -391,7 +391,7 @@ export default function SalaryGradesTable(): JSX.Element {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="min_monthly_rate" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="min_monthly_rate" className="text-sm font-medium text-neutral-700">
                   Min Monthly (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -408,7 +408,7 @@ export default function SalaryGradesTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="max_monthly_rate" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="max_monthly_rate" className="text-sm font-medium text-neutral-700">
                   Max Monthly (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -430,9 +430,9 @@ export default function SalaryGradesTable(): JSX.Element {
                 type="checkbox"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-neutral-300 text-neutral-600 focus:ring-neutral-400"
               />
-              <span className="text-sm font-medium text-gray-700">Active</span>
+              <span className="text-sm font-medium text-neutral-700">Active</span>
             </label>
 
             <DialogFooter>

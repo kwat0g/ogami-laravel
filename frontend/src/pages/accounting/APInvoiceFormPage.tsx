@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { useVendors, useCreateAPInvoice } from '@/hooks/useAP'
 import { useFiscalPeriods, useChartOfAccounts } from '@/hooks/useAccounting'
@@ -88,10 +89,12 @@ export default function APInvoiceFormPage() {
         or_number: form.or_number || null,
         description: form.description || null,
       })
+      toast.success('AP Invoice created.')
       navigate(`/accounting/ap/invoices/${invoice.ulid}`)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       setError(msg ?? 'An unexpected error occurred.')
+      toast.error(msg ?? 'Failed to create AP invoice.')
     }
   }
 
@@ -101,26 +104,26 @@ export default function APInvoiceFormPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+          className="p-2 rounded border border-neutral-300 hover:bg-neutral-50"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">New AP Invoice</h1>
-          <p className="text-sm text-gray-500">Create a vendor invoice (AP-001 to AP-004)</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">New AP Invoice</h1>
+          <p className="text-sm text-neutral-500">Create a vendor invoice</p>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{error}</div>
+        <div className="rounded bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white rounded border border-neutral-200 p-6 space-y-5">
         {/* Vendor */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Vendor *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Vendor *</label>
           <select
-            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('vendor_id') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('vendor_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={selectedVendorId ?? ''}
             onChange={e => setSelectedVendorId(Number(e.target.value) || null)}
             onBlur={() => touch('vendor_id')}
@@ -133,7 +136,7 @@ export default function APInvoiceFormPage() {
           </select>
           {fe('vendor_id') && <p className="mt-1 text-xs text-red-600">{fe('vendor_id')}</p>}
           {selectedVendor?.is_ewt_subject && (
-            <p className="mt-1 text-xs text-purple-600">
+            <p className="mt-1 text-xs text-neutral-600">
               EWT Subject — ATC: {selectedVendor.atc_code ?? 'N/A'} | Rate: {selectedVendor.ewt_rate ? `${(selectedVendor.ewt_rate.rate * 100).toFixed(2)}%` : 'N/A'}
             </p>
           )}
@@ -141,9 +144,9 @@ export default function APInvoiceFormPage() {
 
         {/* Fiscal Period */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fiscal Period *</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Fiscal Period *</label>
           <select
-            className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('fiscal_period_id') ? 'border-red-400' : 'border-gray-300'}`}
+            className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('fiscal_period_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.fiscal_period_id || ''}
             onChange={e => setForm(f => ({ ...f, fiscal_period_id: Number(e.target.value) }))}
             onBlur={() => touch('fiscal_period_id')}
@@ -160,9 +163,9 @@ export default function APInvoiceFormPage() {
         {/* GL Accounts */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">AP Account *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">AP Account *</label>
             <select
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('ap_account_id') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('ap_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.ap_account_id || ''}
               onChange={e => setForm(f => ({ ...f, ap_account_id: Number(e.target.value) }))}
               onBlur={() => touch('ap_account_id')}
@@ -178,9 +181,9 @@ export default function APInvoiceFormPage() {
             {fe('ap_account_id') && <p className="mt-1 text-xs text-red-600">{fe('ap_account_id')}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expense Account *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Expense Account *</label>
             <select
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('expense_account_id') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('expense_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.expense_account_id || ''}
               onChange={e => setForm(f => ({ ...f, expense_account_id: Number(e.target.value) }))}
               onBlur={() => touch('expense_account_id')}
@@ -200,10 +203,10 @@ export default function APInvoiceFormPage() {
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Invoice Date *</label>
             <input
               type="date"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('invoice_date') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('invoice_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.invoice_date}
               onChange={e => setForm(f => ({ ...f, invoice_date: e.target.value }))}
               onBlur={() => touch('invoice_date')}
@@ -212,10 +215,10 @@ export default function APInvoiceFormPage() {
             {fe('invoice_date') && <p className="mt-1 text-xs text-red-600">{fe('invoice_date')}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date * (AP-001)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Due Date * (AP-001)</label>
             <input
               type="date"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('due_date') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('due_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.due_date}
               min={form.invoice_date || undefined}
               onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
@@ -229,12 +232,12 @@ export default function APInvoiceFormPage() {
         {/* Amounts */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Net Amount *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Net Amount *</label>
             <input
               type="number"
               step="0.01"
               min="0.01"
-              className={`w-full border rounded-lg px-3 py-2 text-sm ${fe('net_amount') ? 'border-red-400' : 'border-gray-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('net_amount') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.net_amount || ''}
               onChange={e => setForm(f => ({ ...f, net_amount: parseFloat(e.target.value) || 0 }))}
               onBlur={() => touch('net_amount')}
@@ -243,12 +246,12 @@ export default function APInvoiceFormPage() {
             {fe('net_amount') && <p className="mt-1 text-xs text-red-600">{fe('net_amount')}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">VAT Amount (12%)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">VAT Amount (12%)</label>
             <input
               type="number"
               step="0.01"
               min="0"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
               value={vatAmount || ''}
               onChange={e => setForm(f => ({ ...f, vat_amount: parseFloat(e.target.value) || 0 }))}
             />
@@ -257,11 +260,11 @@ export default function APInvoiceFormPage() {
 
         {/* OR Number (required when VAT > 0) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
             OR Number {vatAmount > 0 && <span className="text-red-500">* (required when VAT &gt; 0)</span>}
           </label>
           <input
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.or_number ?? ''}
             onChange={e => setForm(f => ({ ...f, or_number: e.target.value || null }))}
             required={vatAmount > 0}
@@ -270,30 +273,30 @@ export default function APInvoiceFormPage() {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
           <input
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
             value={form.description ?? ''}
             onChange={e => setForm(f => ({ ...f, description: e.target.value || null }))}
           />
         </div>
 
         {/* AP-005 Summary */}
-        <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-          <div className="flex justify-between text-gray-600">
+        <div className="bg-neutral-50 rounded p-4 space-y-2 text-sm border border-neutral-200">
+          <div className="flex justify-between text-neutral-600">
             <span>Net Amount</span>
             <span className="font-mono">{formatCurrency(form.net_amount)}</span>
           </div>
-          <div className="flex justify-between text-gray-600">
+          <div className="flex justify-between text-neutral-600">
             <span>VAT</span>
             <span className="font-mono">{formatCurrency(vatAmount)}</span>
           </div>
-          <div className="flex justify-between text-gray-600">
+          <div className="flex justify-between text-neutral-600">
             <span>EWT (preview)</span>
-            <span className="font-mono text-red-600">− {formatCurrency(ewtPreview)}</span>
+            <span className="font-mono text-neutral-700">− {formatCurrency(ewtPreview)}</span>
           </div>
-          <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-200 pt-2">
-            <span>Net Payable (AP-005)</span>
+          <div className="flex justify-between font-semibold text-neutral-900 border-t border-neutral-200 pt-2">
+            <span>Net Payable</span>
             <span className="font-mono">{formatCurrency(netPayablePreview)}</span>
           </div>
         </div>
@@ -303,14 +306,14 @@ export default function APInvoiceFormPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50"
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {createMut.isPending ? 'Creating…' : 'Create Invoice (Draft)'}
           </button>

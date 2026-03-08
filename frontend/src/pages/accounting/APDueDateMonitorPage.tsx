@@ -27,34 +27,34 @@ function InvoiceCard({ invoice, variant }: { invoice: VendorInvoice; variant: 'o
   const diff = daysDiff(invoice.due_date)
 
   const borderColors = {
-    overdue: 'border-l-4 border-l-red-400 bg-red-50',
-    soon:    'border-l-4 border-l-orange-400 bg-orange-50',
-    pending: 'border-l-4 border-l-blue-400 bg-blue-50',
+    overdue: 'border-l-4 border-l-neutral-400 bg-neutral-50',
+    soon:    'border-l-4 border-l-neutral-400 bg-neutral-50',
+    pending: 'border-l-4 border-l-neutral-400 bg-neutral-50',
   }
 
   return (
     <Link
       to={`/accounting/ap/invoices/${invoice.ulid}`}
-      className={`block rounded-xl p-4 hover:shadow-sm transition-shadow ${borderColors[variant]}`}
+      className={`block rounded p-4 hover:bg-neutral-50 transition-colors ${borderColors[variant]}`}
     >
       <div className="flex items-start justify-between">
         <div>
-          <div className="font-medium text-gray-900 text-sm">{invoice.vendor?.name ?? `Vendor #${invoice.vendor_id}`}</div>
+          <div className="font-medium text-neutral-900 text-sm">{invoice.vendor?.name ?? `Vendor #${invoice.vendor_id}`}</div>
           {invoice.description && (
-            <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]">{invoice.description}</div>
+            <div className="text-xs text-neutral-500 mt-0.5 truncate max-w-[200px]">{invoice.description}</div>
           )}
         </div>
         <div className="text-right">
-          <div className="font-mono text-sm font-semibold text-gray-800">{formatCurrency(invoice.balance_due)}</div>
-          <div className={`text-xs mt-0.5 ${diff < 0 ? 'text-red-600' : 'text-orange-600'}`}>
+          <div className="font-mono text-sm font-semibold text-neutral-800">{formatCurrency(invoice.balance_due)}</div>
+          <div className={`text-xs mt-0.5 ${diff < 0 ? 'text-neutral-700' : 'text-neutral-600'}`}>
             {diff < 0 ? `${Math.abs(diff)}d overdue` : diff === 0 ? 'Due today' : `${diff}d left`}
           </div>
         </div>
       </div>
-      <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+      <div className="mt-2 flex items-center gap-3 text-xs text-neutral-500">
         <span>Due: {invoice.due_date}</span>
-        <span className={`px-1.5 py-0.5 rounded capitalize ${
-          invoice.status === 'approved' ? 'bg-blue-100 text-blue-600' : 'bg-indigo-100 text-indigo-600'
+        <span className={`px-1.5 py-0.5 rounded capitalize border ${
+          invoice.status === 'approved' ? 'bg-neutral-100 text-neutral-700 border-neutral-200' : 'bg-neutral-100 text-neutral-700 border-neutral-200'
         }`}>{invoice.status.replace('_', ' ')}</span>
       </div>
     </Link>
@@ -83,13 +83,13 @@ function Column({
   const total = invoices.reduce((sum, inv) => sum + inv.balance_due, 0)
 
   return (
-    <div className="flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className={`px-4 py-3 border-b border-gray-100 flex items-center justify-between ${color}`}>
-        <div className="flex items-center gap-2 font-semibold text-sm">
+    <div className="flex flex-col bg-white rounded border border-neutral-200 overflow-hidden">
+      <div className={`px-4 py-3 border-b border-neutral-200 flex items-center justify-between bg-neutral-50`}>
+        <div className="flex items-center gap-2 font-semibold text-sm text-neutral-900">
           {icon}
           {title}
         </div>
-        <div className="text-xs font-medium opacity-80">
+        <div className="text-xs font-medium text-neutral-600">
           {invoices.length} inv. · {formatCurrency(total)}
         </div>
       </div>
@@ -97,7 +97,7 @@ function Column({
         {isLoading ? (
           <SkeletonLoader rows={3} />
         ) : invoices.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-8">No invoices</p>
+          <p className="text-center text-neutral-400 text-sm py-8">No invoices</p>
         ) : (
           invoices.map(inv => (
             <InvoiceCard key={inv.id} invoice={inv} variant={variant} />
@@ -142,12 +142,12 @@ export default function APDueDateMonitorPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AP Due Date Monitor</h1>
-          <p className="text-sm text-gray-500 mt-1">Real-time payables status — auto-refreshes every 60 seconds</p>
+          <h1 className="text-lg font-semibold text-neutral-900 mb-1">AP Due Date Monitor</h1>
+          <p className="text-sm text-neutral-500">Real-time payables status</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+          className="flex items-center gap-2 px-3 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
         >
           <RefreshCw className="w-4 h-4" /> Refresh
         </button>
@@ -155,24 +155,24 @@ export default function APDueDateMonitorPage() {
 
       {/* Summary row */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-red-50 rounded-xl p-4 border border-red-100">
-          <div className="text-xs font-medium text-red-600 uppercase tracking-wide">Overdue</div>
-          <div className="text-2xl font-bold text-red-700 mt-1">{overdueInvoices.length}</div>
-          <div className="text-xs text-red-500 mt-0.5">
+        <div className="bg-neutral-50 rounded p-4 border border-neutral-200">
+          <div className="text-xs font-medium text-neutral-600">Overdue</div>
+          <div className="text-2xl font-bold text-neutral-900 mt-1">{overdueInvoices.length}</div>
+          <div className="text-xs text-neutral-500 mt-0.5">
             {formatCurrency(overdueInvoices.reduce((s, i) => s + i.balance_due, 0))} outstanding
           </div>
         </div>
-        <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
-          <div className="text-xs font-medium text-orange-600 uppercase tracking-wide">Due ≤ 7 days</div>
-          <div className="text-2xl font-bold text-orange-700 mt-1">{dueSoonInvoices.length}</div>
-          <div className="text-xs text-orange-500 mt-0.5">
+        <div className="bg-neutral-50 rounded p-4 border border-neutral-200">
+          <div className="text-xs font-medium text-neutral-600">Due ≤ 7 days</div>
+          <div className="text-2xl font-bold text-neutral-900 mt-1">{dueSoonInvoices.length}</div>
+          <div className="text-xs text-neutral-500 mt-0.5">
             {formatCurrency(dueSoonInvoices.reduce((s, i) => s + i.balance_due, 0))} outstanding
           </div>
         </div>
-        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-          <div className="text-xs font-medium text-blue-600 uppercase tracking-wide">Pending Approval</div>
-          <div className="text-2xl font-bold text-blue-700 mt-1">{pendingInvoices.length}</div>
-          <div className="text-xs text-blue-500 mt-0.5">
+        <div className="bg-neutral-50 rounded p-4 border border-neutral-200">
+          <div className="text-xs font-medium text-neutral-600">Pending Approval</div>
+          <div className="text-2xl font-bold text-neutral-900 mt-1">{pendingInvoices.length}</div>
+          <div className="text-xs text-neutral-500 mt-0.5">
             {formatCurrency(pendingInvoices.reduce((s, i) => s + i.net_payable, 0))} net payable
           </div>
         </div>
@@ -182,24 +182,24 @@ export default function APDueDateMonitorPage() {
       <div className="grid grid-cols-3 gap-4">
         <Column
           title="Overdue"
-          icon={<AlertCircle className="w-4 h-4 text-red-600" />}
-          color="bg-red-50"
+          icon={<AlertCircle className="w-4 h-4 text-neutral-700" />}
+          color="bg-neutral-50"
           invoices={overdueInvoices}
           isLoading={loadingOverdue || loadingPartial}
           variant="overdue"
         />
         <Column
           title="Due Soon (≤7 days)"
-          icon={<Clock className="w-4 h-4 text-orange-600" />}
-          color="bg-orange-50"
+          icon={<Clock className="w-4 h-4 text-neutral-700" />}
+          color="bg-neutral-50"
           invoices={dueSoonInvoices}
           isLoading={loadingDueSoon}
           variant="soon"
         />
         <Column
           title="Pending Approval"
-          icon={<CheckCircle className="w-4 h-4 text-blue-600" />}
-          color="bg-blue-50"
+          icon={<CheckCircle className="w-4 h-4 text-neutral-700" />}
+          color="bg-neutral-50"
           invoices={pendingInvoices}
           isLoading={loadingPending}
           variant="pending"

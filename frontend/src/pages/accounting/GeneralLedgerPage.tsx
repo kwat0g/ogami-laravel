@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useGeneralLedger } from '@/hooks/useReports'
+import { useChartOfAccounts } from '@/hooks/useAccounting'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { GLFilters } from '@/types/reports'
 
@@ -19,22 +20,22 @@ function GLRow({
   runningBalance: number
 }) {
   return (
-    <tr className="border-b border-gray-100 even:bg-slate-50 hover:bg-blue-50/60 transition-colors text-sm">
-      <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{date}</td>
-      <td className="px-3 py-2 font-mono text-xs text-gray-500">{jeNumber ?? '—'}</td>
-      <td className="px-3 py-2 text-gray-700 max-w-xs truncate">{description}</td>
+    <tr className="border-b border-neutral-100 even:bg-neutral-100 hover:bg-neutral-50 transition-colors text-sm">
+      <td className="px-3 py-2 text-neutral-500 whitespace-nowrap">{date}</td>
+      <td className="px-3 py-2 font-mono text-xs text-neutral-500">{jeNumber ?? '—'}</td>
+      <td className="px-3 py-2 text-neutral-700 max-w-xs truncate">{description}</td>
       <td className="px-3 py-2">
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600 capitalize">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-neutral-100 text-neutral-600 capitalize">
           {sourceType}
         </span>
       </td>
-      <td className="px-3 py-2 text-right font-mono text-green-700">
+      <td className="px-3 py-2 text-right font-mono text-neutral-700">
         {debit != null ? `₱${debit.toLocaleString()}` : ''}
       </td>
-      <td className="px-3 py-2 text-right font-mono text-red-600">
+      <td className="px-3 py-2 text-right font-mono text-neutral-700">
         {credit != null ? `₱${credit.toLocaleString()}` : ''}
       </td>
-      <td className="px-3 py-2 text-right font-mono font-semibold text-gray-900">
+      <td className="px-3 py-2 text-right font-mono font-semibold text-neutral-900">
         ₱{runningBalance.toLocaleString()}
       </td>
     </tr>
@@ -55,6 +56,7 @@ export default function GeneralLedgerPage() {
   const [submitted, setSubmitted] = useState<GLFilters | null>(null)
 
   const { data: report, isLoading, isError } = useGeneralLedger(submitted)
+  const { data: accounts = [] } = useChartOfAccounts({})
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -65,52 +67,54 @@ export default function GeneralLedgerPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">General Ledger</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Line-by-line movement for a single account with running balance (GL-001)
+        <h1 className="text-lg font-semibold text-neutral-900 mb-1">General Ledger</h1>
+        <p className="text-sm text-neutral-500">
+          Line-by-line movement for a single account with running balance
         </p>
       </div>
 
       {/* Filter form */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap gap-4 items-end"
+        className="bg-white border border-neutral-200 rounded p-4 flex flex-wrap gap-4 items-end"
       >
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Account ID</label>
-          <input
-            type="number"
-            min={1}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-36 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-            placeholder="e.g. 12"
+          <label className="text-xs font-medium text-neutral-600">Account</label>
+          <select
+            className="border border-neutral-300 rounded px-3 py-2 text-sm w-64 focus:ring-1 focus:ring-neutral-400 focus:outline-none"
             value={filters.account_id || ''}
             onChange={e => setFilters(f => ({ ...f, account_id: parseInt(e.target.value) || 0 }))}
-          />
+          >
+            <option value="">Select account…</option>
+            {accounts.map(a => (
+              <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+            ))}
+          </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">From</label>
+          <label className="text-xs font-medium text-neutral-600">From</label>
           <input
             type="date"
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none"
             value={filters.date_from}
             onChange={e => setFilters(f => ({ ...f, date_from: e.target.value }))}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">To</label>
+          <label className="text-xs font-medium text-neutral-600">To</label>
           <input
             type="date"
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none"
             value={filters.date_to}
             onChange={e => setFilters(f => ({ ...f, date_to: e.target.value }))}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600">Cost Center (optional)</label>
+          <label className="text-xs font-medium text-neutral-600">Cost Center (optional)</label>
           <input
             type="number"
             min={1}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-36 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="border border-neutral-300 rounded px-3 py-2 text-sm w-36 focus:ring-1 focus:ring-neutral-400 focus:outline-none"
             placeholder="Leave blank"
             value={filters.cost_center_id ?? ''}
             onChange={e =>
@@ -120,7 +124,7 @@ export default function GeneralLedgerPage() {
         </div>
         <button
           type="submit"
-          className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+          className="px-5 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
         >
           Run Report
         </button>
@@ -135,35 +139,35 @@ export default function GeneralLedgerPage() {
       {report && (
         <div className="space-y-4">
           {/* Account header + summary */}
-          <div className="flex flex-wrap gap-6 bg-white border border-gray-200 rounded-xl p-4">
+          <div className="flex flex-wrap gap-6 bg-white border border-neutral-200 rounded p-4">
             <div>
-              <p className="text-xs text-gray-500">Account</p>
-              <p className="font-semibold text-gray-900">
+              <p className="text-xs text-neutral-500">Account</p>
+              <p className="font-semibold text-neutral-900">
                 {report.data.account.code} — {report.data.account.name}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Opening Balance</p>
-              <p className="font-mono font-semibold text-gray-900">
+              <p className="text-xs text-neutral-500">Opening Balance</p>
+              <p className="font-mono font-semibold text-neutral-900">
                 ₱{report.data.opening_balance.toLocaleString()}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Closing Balance</p>
-              <p className="font-mono font-semibold text-indigo-700">
+              <p className="text-xs text-neutral-500">Closing Balance</p>
+              <p className="font-mono font-semibold text-neutral-800">
                 ₱{report.data.closing_balance.toLocaleString()}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Lines</p>
-              <p className="font-semibold text-gray-900">{report.data.lines.length}</p>
+              <p className="text-xs text-neutral-500">Lines</p>
+              <p className="font-semibold text-neutral-900">{report.data.lines.length}</p>
             </div>
           </div>
 
           {/* Lines table */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-auto">
+          <div className="bg-white border border-neutral-200 rounded overflow-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <thead className="bg-neutral-50 text-xs font-medium text-neutral-500">
                 <tr>
                   <th className="px-3 py-2.5 text-left">Date</th>
                   <th className="px-3 py-2.5 text-left">JE #</th>
@@ -177,7 +181,7 @@ export default function GeneralLedgerPage() {
               <tbody>
                 {report.data.lines.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-gray-400 text-sm">
+                    <td colSpan={7} className="text-center py-8 text-neutral-400 text-sm">
                       No transactions in this period.
                     </td>
                   </tr>
@@ -197,7 +201,7 @@ export default function GeneralLedgerPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-400 text-right">
+          <p className="text-xs text-neutral-400 text-right">
             Generated: {new Date(report.meta.generated_at).toLocaleString()}
           </p>
         </div>

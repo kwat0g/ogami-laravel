@@ -130,7 +130,7 @@ export default function PayPeriodListPage() {
     }
   }
 
-  const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+  const inputCls = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500'
 
   return (
     <div>
@@ -142,7 +142,7 @@ export default function PayPeriodListPage() {
             <button
               type="button"
               onClick={() => setShowCreate(!showCreate)}
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded"
             >
               <Plus className="h-4 w-4" />
               New Period
@@ -155,9 +155,9 @@ export default function PayPeriodListPage() {
       {showCreate && (
         <form
           onSubmit={handleSubmit(onCreateSubmit)}
-          className="bg-white rounded-xl border border-blue-200 p-5 mb-5 space-y-4"
+          className="bg-white rounded border border-neutral-200 p-5 mb-5 space-y-4"
         >
-          <h3 className="text-sm font-semibold text-gray-700">Create Pay Period</h3>
+          <h3 className="text-sm font-semibold text-neutral-700">Create Pay Period</h3>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Label" required error={errors.label?.message} htmlFor="pp_label">
               <input id="pp_label" className={inputCls} placeholder="e.g. Feb 2026 1st" {...register('label')} />
@@ -183,14 +183,14 @@ export default function PayPeriodListPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg"
+              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
             >
               {isSubmitting ? 'Creating…' : 'Create Period'}
             </button>
             <button
               type="button"
               onClick={() => { setShowCreate(false); reset() }}
-              className="border border-gray-300 text-gray-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50"
+              className="border border-neutral-300 text-neutral-600 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-50"
             >
               Cancel
             </button>
@@ -203,7 +203,7 @@ export default function PayPeriodListPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500"
         >
           <option value="">All statuses</option>
           <option value="open">Open</option>
@@ -216,31 +216,31 @@ export default function PayPeriodListPage() {
         <SkeletonLoader rows={6} />
       ) : !data || data.data.length === 0 ? (
         <EmptyState
-          icon={<Calendar className="h-12 w-12 text-gray-300" />}
+          icon={<Calendar className="h-12 w-12 text-neutral-300" />}
           title="No pay periods found"
           description="Create a pay period to start linking payroll runs."
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+          <div className="overflow-x-auto rounded border border-neutral-200">
+            <table className="min-w-full divide-y divide-neutral-200 text-sm">
+              <thead className="bg-neutral-50">
                 <tr>
                   {['Label', 'Frequency', 'Cutoff Start', 'Cutoff End', 'Pay Date', 'Status', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500 font-medium whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="bg-white divide-y divide-neutral-100">
                 {data.data.map((period) => (
-                  <tr key={period.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{period.label}</td>
-                    <td className="px-4 py-3 text-gray-500 capitalize">{period.frequency.replace('_', '-')}</td>
-                    <td className="px-4 py-3 text-gray-700">{period.cutoff_start}</td>
-                    <td className="px-4 py-3 text-gray-700">{period.cutoff_end}</td>
-                    <td className="px-4 py-3 text-gray-700">{period.pay_date}</td>
+                  <tr key={period.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3 font-medium text-neutral-900">{period.label}</td>
+                    <td className="px-4 py-3 text-neutral-500 capitalize">{period.frequency.replace('_', '-')}</td>
+                    <td className="px-4 py-3 text-neutral-700">{period.cutoff_start}</td>
+                    <td className="px-4 py-3 text-neutral-700">{period.cutoff_end}</td>
+                    <td className="px-4 py-3 text-neutral-700">{period.pay_date}</td>
                     <td className="px-4 py-3"><StatusBadge label={period.status} /></td>
                     <td className="px-4 py-3">
                       {period.status === 'open' && (
@@ -265,7 +265,7 @@ export default function PayPeriodListPage() {
           {/* Pagination */}
           {data?.meta?.last_page > 1 && (
             <div className="flex items-center justify-between mt-4">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-neutral-500">
                 Page {data.meta?.current_page} of {data.meta?.last_page} — {data.meta?.total} total
               </p>
               <div className="flex gap-1">
@@ -273,7 +273,7 @@ export default function PayPeriodListPage() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage(p => p - 1)}
-                  className="px-3 py-1 text-xs rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                  className="px-3 py-1 text-xs rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 disabled:opacity-40"
                 >
                   ← Prev
                 </button>
@@ -281,7 +281,7 @@ export default function PayPeriodListPage() {
                   type="button"
                   disabled={page >= (data.meta?.last_page ?? 1)}
                   onClick={() => setPage(p => p + 1)}
-                  className="px-3 py-1 text-xs rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                  className="px-3 py-1 text-xs rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 disabled:opacity-40"
                 >
                   Next →
                 </button>

@@ -145,25 +145,25 @@ export default function LeaveBalancesPage() {
         <div>
           <button
             onClick={() => navigate('/hr/leave')}
-            className="text-sm text-blue-600 hover:underline mb-2 flex items-center gap-1"
+            className="text-sm text-neutral-600 hover:underline mb-2 flex items-center gap-1"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Leave Requests
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Leave Balances</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-lg font-semibold text-neutral-900">Leave Balances</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">
             {meta?.total ?? 0} employees • Showing {employees.length} per page
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowGrantModal(true)}
-            className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
           >
             <Plus className="h-4 w-4" />
             Grant Special Leave
           </button>
-          <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+          <div className="flex items-center gap-2 text-sm text-neutral-600 bg-neutral-100 px-3 py-2 rounded">
             <Calendar className="h-4 w-4" />
             <span>Auto-managed</span>
           </div>
@@ -171,12 +171,12 @@ export default function LeaveBalancesPage() {
       </div>
 
       {/* Info Banner */}
-      <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="mb-4 bg-neutral-50 border border-neutral-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-blue-800">
+          <Info className="h-5 w-5 text-neutral-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-neutral-700">
             <p className="font-medium mb-1">How Leave Balances Work</p>
-            <ul className="space-y-1 text-blue-700 list-disc list-inside">
+            <ul className="space-y-1 text-neutral-600 list-disc list-inside">
               <li><strong>Auto-created:</strong> Leave balances are automatically set up when an employee is activated</li>
               <li><strong>Monthly accrual:</strong> VL and SL accrue monthly (0.4 days/month = 5 days/year)</li>
               <li><strong>Yearly renewal:</strong> All leave balances reset on January 1st of each year</li>
@@ -188,7 +188,7 @@ export default function LeaveBalancesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 flex flex-wrap gap-3">
         {/* Department Filter */}
         <select
           value={departmentId ?? ''}
@@ -196,7 +196,7 @@ export default function LeaveBalancesPage() {
             setDepartmentId(Number(e.target.value) || undefined)
             setPage(1)
           }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none min-w-[200px]"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none min-w-[200px]"
         >
           <option value="">All Departments</option>
           {(departmentsData?.data ?? []).map((dept) => (
@@ -211,7 +211,7 @@ export default function LeaveBalancesPage() {
             setYear(Number(e.target.value))
             setPage(1)
           }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
@@ -219,7 +219,7 @@ export default function LeaveBalancesPage() {
         {/* Search */}
         <div className="flex gap-2 flex-1 min-w-[200px] max-w-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
             <input
               ref={searchInputRef}
               type="text"
@@ -231,11 +231,11 @@ export default function LeaveBalancesPage() {
               }}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full border border-neutral-300 rounded pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400 outline-none"
             />
             {isFetching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
@@ -246,7 +246,7 @@ export default function LeaveBalancesPage() {
                 setPage(1)
                 searchInputRef.current?.focus()
               }}
-              className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors"
+              className="px-3 py-2 text-sm bg-neutral-100 hover:bg-neutral-200 rounded text-neutral-700 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -257,14 +257,14 @@ export default function LeaveBalancesPage() {
       {/* Active Filters Indicator */}
       {(departmentId || searchValue) && (
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-gray-500">Active filters:</span>
+          <span className="text-sm text-neutral-500">Active filters:</span>
           {departmentId && (
-            <span className="text-sm bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+            <span className="text-sm bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded">
               {departmentsData?.data.find(d => d.id === departmentId)?.name}
             </span>
           )}
           {searchValue && (
-            <span className="text-sm bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+            <span className="text-sm bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded">
               Search: {searchValue}
             </span>
           )}
@@ -274,7 +274,7 @@ export default function LeaveBalancesPage() {
               setSearchValue('')
               setPage(1)
             }}
-            className="text-xs text-gray-500 hover:text-red-600 underline"
+            className="text-xs text-neutral-500 hover:text-red-600 underline"
           >
             Clear all
           </button>
@@ -282,9 +282,9 @@ export default function LeaveBalancesPage() {
       )}
 
       {/* Leave Type Reference */}
-      <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
-        <p className="font-medium text-gray-700 mb-2">Leave Type Reference:</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs text-gray-600">
+      <div className="mb-4 bg-neutral-50 border border-neutral-200 rounded-lg p-3 text-sm">
+        <p className="font-medium text-neutral-700 mb-2">Leave Type Reference:</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs text-neutral-600">
           <span title="5 days/year, accrues 1.25 days/month"><strong>VL</strong> = Vacation Leave</span>
           <span title="5 days/year, accrues 1.25 days/month"><strong>SL</strong> = Sick Leave</span>
           <span title="5 days after 1 year of service"><strong>SIL</strong> = Service Incentive Leave</span>
@@ -297,37 +297,37 @@ export default function LeaveBalancesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden relative">
+      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden relative">
         {/* Loading overlay - only shows when refetching, not initial load */}
         {isFetching && !isLoading && (
           <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
-            <div className="bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 flex items-center gap-2">
-              <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm text-gray-600">Updating...</span>
+            <div className="bg-white px-4 py-2 rounded-lg border border-neutral-200 flex items-center gap-2">
+              <div className="h-4 w-4 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-neutral-600">Updating...</span>
             </div>
           </div>
         )}
         {employees.length === 0 ? (
-          <div className="px-4 py-8 text-center text-gray-400">
+          <div className="px-4 py-8 text-center text-neutral-400">
             No employees found. Try adjusting your filters.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-10"></th>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[200px]">Employee</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider w-10"></th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider min-w-[200px]">Employee</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Department</th>
                   {leaveTypes.map((type) => (
-                    <th key={type.id} className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[80px]">
+                    <th key={type.id} className="px-3 py-2.5 text-center text-xs font-semibold text-neutral-500 uppercase tracking-wider min-w-[80px]">
                       {type.code}
                     </th>
                   ))}
-                  <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                  <th className="px-3 py-2.5 text-center text-xs font-semibold text-neutral-500 uppercase tracking-wider">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100">
                 {employees.map((employee) => {
                   const isExpanded = expandedRows.has(employee.employee_id)
                   const hasNoBalances = employee.total_balance === 0
@@ -336,34 +336,34 @@ export default function LeaveBalancesPage() {
                     <Fragment key={employee.employee_id}>
                       {/* Summary Row */}
                       <tr
-                        className={`even:bg-slate-50 hover:bg-blue-50/60 cursor-pointer transition-colors ${hasNoBalances ? 'bg-red-50/30' : ''}`}
+                        className={`hover:bg-neutral-50 even:bg-neutral-100 cursor-pointer transition-colors ${hasNoBalances ? 'bg-red-50/30' : ''}`}
                         onClick={() => toggleRow(employee.employee_id)}
                       >
                         <td className="px-3 py-2">
-                          <button className="text-gray-400 hover:text-gray-600">
+                          <button className="text-neutral-400 hover:text-neutral-600">
                             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                           </button>
                         </td>
                         <td className="px-3 py-2">
-                          <div className="font-medium text-gray-900">{employee.employee_name}</div>
-                          <div className="text-xs text-gray-500">{employee.employee_code}</div>
+                          <div className="font-medium text-neutral-900">{employee.employee_name}</div>
+                          <div className="text-xs text-neutral-500">{employee.employee_code}</div>
                         </td>
-                        <td className="px-3 py-2 text-gray-600">
+                        <td className="px-3 py-2 text-neutral-600">
                           {employee.department_name ?? '—'}
                         </td>
                         {employee.balances.map((bal) => (
                           <td key={bal.leave_type_id} className="px-3 py-2 text-center">
                             {bal.has_balance ? (
-                              <span className={`font-semibold ${bal.balance > 0 ? 'text-blue-700' : 'text-gray-400'}`}>
+                              <span className={`font-semibold ${bal.balance > 0 ? 'text-neutral-700' : 'text-neutral-400'}`}>
                                 {fmt(bal.balance)}
                               </span>
                             ) : (
-                              <span className="text-gray-300 text-xs" title="Balance not yet created - will be set up automatically">—</span>
+                              <span className="text-neutral-300 text-xs" title="Balance not yet created - will be set up automatically">—</span>
                             )}
                           </td>
                         ))}
                         <td className="px-3 py-2 text-center">
-                          <span className={`font-bold ${employee.total_balance > 0 ? 'text-blue-700' : 'text-red-400'}`}>
+                          <span className={`font-bold ${employee.total_balance > 0 ? 'text-neutral-700' : 'text-red-400'}`}>
                             {fmt(employee.total_balance)}
                           </span>
                         </td>
@@ -371,25 +371,25 @@ export default function LeaveBalancesPage() {
                       
                       {/* Expanded Detail Row */}
                       {isExpanded && (
-                        <tr className="bg-gray-50/50">
+                        <tr className="bg-neutral-50/50">
                           <td colSpan={leaveTypes.length + 4} className="px-4 py-4">
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                               {employee.balances.map((bal) => (
                                 <div 
                                   key={bal.leave_type_id} 
-                                  className={`rounded-lg p-3 border ${bal.has_balance ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200 border-dashed'}`}
+                                  className={`rounded p-3 border ${bal.has_balance ? 'bg-white border-neutral-200' : 'bg-neutral-100 border-neutral-200 border-dashed'}`}
                                 >
                                   <div className="flex items-center justify-between mb-1">
-                                    <p className="text-xs text-gray-500">{bal.leave_type_name}</p>
+                                    <p className="text-xs text-neutral-500">{bal.leave_type_name}</p>
                                   </div>
                                   <div className="flex items-baseline gap-2">
-                                    <span className={`text-lg font-bold ${bal.balance > 0 ? 'text-blue-700' : bal.has_balance ? 'text-gray-400' : 'text-gray-300'}`}>
+                                    <span className={`text-lg font-bold ${bal.balance > 0 ? 'text-neutral-700' : bal.has_balance ? 'text-neutral-400' : 'text-neutral-300'}`}>
                                       {bal.has_balance ? fmt(bal.balance) : '—'}
                                     </span>
-                                    {bal.has_balance && <span className="text-xs text-gray-400">days</span>}
+                                    {bal.has_balance && <span className="text-xs text-neutral-400">days</span>}
                                   </div>
                                   {bal.has_balance ? (
-                                    <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">
+                                    <div className="mt-2 pt-2 border-t border-neutral-100 text-xs text-neutral-500">
                                       <div className="flex justify-between">
                                         <span>Opening:</span>
                                         <span>{fmt(bal.opening_balance)}</span>
@@ -410,7 +410,7 @@ export default function LeaveBalancesPage() {
                                       </div>
                                     </div>
                                   ) : (
-                                    <p className="mt-2 text-xs text-gray-400 italic">Auto-setup pending</p>
+                                    <p className="mt-2 text-xs text-neutral-400 italic">Auto-setup pending</p>
                                   )}
                                 </div>
                               ))}
@@ -428,7 +428,7 @@ export default function LeaveBalancesPage() {
 
         {/* Pagination */}
         {meta && meta.last_page > 1 && (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
+          <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
             <span>
               Page {meta.current_page} of {meta.last_page} • {meta.total} total employees
             </span>
@@ -436,14 +436,14 @@ export default function LeaveBalancesPage() {
               <button
                 disabled={meta.current_page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={meta.current_page >= meta.last_page}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>
@@ -453,9 +453,9 @@ export default function LeaveBalancesPage() {
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">
+      <div className="mt-4 flex flex-wrap gap-4 text-xs text-neutral-500">
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></span>
+          <span className="w-3 h-3 rounded bg-neutral-100 border border-neutral-300"></span>
           <span>Click row to expand details</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -463,15 +463,15 @@ export default function LeaveBalancesPage() {
           <span>Red highlight = No leave balances (new employee)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="font-bold text-blue-700">Blue numbers</span>
+          <span className="font-bold text-neutral-700">Blue numbers</span>
           <span>= Available balance</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-gray-300">—</span>
+          <span className="text-neutral-300">—</span>
           <span>= Balance pending auto-setup</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-gray-300">SPL/VAWCL</span>
+          <span className="text-neutral-300">SPL/VAWCL</span>
           <span>= Require HR verification (Grant Special Leave button)</span>
         </div>
       </div>
@@ -479,10 +479,10 @@ export default function LeaveBalancesPage() {
       {/* Grant Special Leave Modal */}
       {showGrantModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Grant Special Leave</h2>
-              <p className="text-sm text-gray-500 mt-1">
+          <div className="bg-white rounded-lg border border-neutral-200 max-w-md w-full">
+            <div className="px-6 py-4 border-b border-neutral-200">
+              <h2 className="text-lg font-semibold text-neutral-900">Grant Special Leave</h2>
+              <p className="text-sm text-neutral-500 mt-1">
                 Manually grant ML, PL, SPL, or VAWCL leave. Requires eligibility verification.
               </p>
             </div>
@@ -556,13 +556,13 @@ export default function LeaveBalancesPage() {
             >
               {/* Employee Search */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Employee <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   {grantForm.employee_id ? (
                     /* Selected state — shown inside the "input" box */
-                    <div className="flex items-center justify-between w-full border border-green-400 bg-green-50 rounded-lg px-3 py-2 text-sm">
+                    <div className="flex items-center justify-between w-full border border-green-400 bg-green-50 rounded px-3 py-2 text-sm">
                       <span className="text-green-800 font-medium truncate">
                         {employeesData?.data.find(e => e.id === Number(grantForm.employee_id))?.full_name}
                         <span className="ml-2 text-xs text-green-600 font-mono font-normal">
@@ -587,16 +587,16 @@ export default function LeaveBalancesPage() {
                       placeholder="Type at least 3 letters of last name..."
                       value={employeeSearch}
                       onChange={(e) => setEmployeeSearch(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
                       autoFocus
                     />
                   )}
                 </div>
                 {/* Search Results dropdown */}
                 {employeeSearch.length >= 3 && !grantForm.employee_id && (
-                  <div className="mt-1 max-h-40 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100 shadow-sm">
+                  <div className="mt-1 max-h-40 overflow-y-auto border border-neutral-200 rounded divide-y divide-neutral-100">
                     {(employeesData?.data ?? []).length === 0 ? (
-                      <p className="px-3 py-2 text-sm text-gray-500">No active employees found</p>
+                      <p className="px-3 py-2 text-sm text-neutral-500">No active employees found</p>
                     ) : (
                       (employeesData?.data ?? []).map((emp) => (
                         <button
@@ -606,10 +606,10 @@ export default function LeaveBalancesPage() {
                             setGrantForm({ ...grantForm, employee_id: String(emp.id) })
                             setEmployeeSearch(emp.full_name)
                           }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex justify-between items-center"
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 flex justify-between items-center"
                         >
                           <span>{emp.full_name}</span>
-                          <span className="text-xs text-gray-500 font-mono">{emp.employee_code}</span>
+                          <span className="text-xs text-neutral-500 font-mono">{emp.employee_code}</span>
                         </button>
                       ))
                     )}
@@ -619,7 +619,7 @@ export default function LeaveBalancesPage() {
 
               {/* Leave Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Leave Type <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -629,7 +629,7 @@ export default function LeaveBalancesPage() {
                     const defaultDays = lt === 'VAWCL' ? 10 : lt === 'ML' ? 105 : 7
                     setGrantForm({ ...grantForm, leave_type: lt, days: defaultDays })
                   }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
                 >
                   {SPECIAL_LEAVE_TYPES.map((lt) => {
                     const grant = selectedEmpBalanceMap[lt.code]
@@ -653,19 +653,19 @@ export default function LeaveBalancesPage() {
                 
                 {grantForm.leave_type === 'ML' && (
                   <div className="flex items-start gap-1.5 mt-1">
-                    <AlertCircle className="h-3.5 w-3.5 text-blue-500 mt-0.5" />
-                    <p className="text-xs text-blue-700">
+                    <AlertCircle className="h-3.5 w-3.5 text-neutral-500 mt-0.5" />
+                    <p className="text-xs text-neutral-600">
                       105 days paid leave for normal delivery (120 days for solo mothers). For female employees. Requires medical certificate.
                     </p>
                   </div>
                 )}
                 {grantForm.leave_type === 'PL' && (
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-neutral-600 mt-1">
                     7 days for married male employees on birth/miscarriage of legitimate child. Requires marriage certificate.
                   </p>
                 )}
                 {grantForm.leave_type === 'SPL' && (
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-neutral-600 mt-1">
                     For solo parents (single mothers/fathers, widowed, legally separated, etc.)
                   </p>
                 )}
@@ -681,7 +681,7 @@ export default function LeaveBalancesPage() {
 
               {/* Days */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Days to Grant <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -690,9 +690,9 @@ export default function LeaveBalancesPage() {
                   max="105"
                   value={grantForm.days}
                   readOnly
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
+                  className="w-full border border-neutral-200 rounded px-3 py-2 text-sm bg-neutral-50 text-neutral-500 cursor-not-allowed outline-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-neutral-500 mt-1">
                   Standard: 105 days for ML, 7 days for PL, 7 days for SPL, 10 days for VAWCL
                 </p>
               </div>
@@ -706,7 +706,7 @@ export default function LeaveBalancesPage() {
                     setGrantForm({ employee_id: '', leave_type: 'SPL', days: 7 })
                     setEmployeeSearch('')
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
+                  className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
                 >
                   Cancel
                 </button>
@@ -718,7 +718,7 @@ export default function LeaveBalancesPage() {
                     (selectedEmpBalanceMap[grantForm.leave_type]?.granted ?? false) ||
                     SPECIAL_LEAVE_TYPES.every((lt) => selectedEmpBalanceMap[lt.code]?.granted)
                   }
-                  className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 text-sm font-medium"
+                  className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 text-sm font-medium"
                 >
                   {createBalanceMutation.isPending ? 'Granting...' : 'Grant Leave'}
                 </button>

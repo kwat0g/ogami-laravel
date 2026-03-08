@@ -7,17 +7,17 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { NcrSeverity, NcrStatus } from '@/types/qc'
 
 const severityBadge: Record<NcrSeverity, string> = {
-  minor:    'bg-yellow-100 text-yellow-700',
-  major:    'bg-orange-100 text-orange-700',
-  critical: 'bg-red-100 text-red-700',
+  minor:    'bg-neutral-100 text-neutral-700',
+  major:    'bg-neutral-100 text-neutral-700',
+  critical: 'bg-neutral-100 text-neutral-700',
 }
 
 const statusBadge: Record<NcrStatus, string> = {
-  open:          'bg-gray-100 text-gray-600',
-  under_review:  'bg-blue-100 text-blue-700',
-  capa_issued:   'bg-amber-100 text-amber-700',
-  closed:        'bg-green-100 text-green-700',
-  voided:        'bg-gray-100 text-gray-400',
+  open:          'bg-neutral-100 text-neutral-600',
+  under_review:  'bg-neutral-100 text-neutral-700',
+  capa_issued:   'bg-neutral-100 text-neutral-700',
+  closed:        'bg-neutral-100 text-neutral-700',
+  voided:        'bg-neutral-100 text-neutral-400',
 }
 
 export default function NcrListPage(): React.ReactElement {
@@ -40,18 +40,18 @@ export default function NcrListPage(): React.ReactElement {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-            <AlertOctagon className="w-5 h-5 text-red-600" />
+          <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
+            <AlertOctagon className="w-5 h-5 text-neutral-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Non-Conformance Reports</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Track quality failures and corrective actions</p>
+            <h1 className="text-lg font-semibold text-neutral-900 mb-6">Non-Conformance Reports</h1>
+            <p className="text-sm text-neutral-500 mt-0.5">Track quality failures and corrective actions</p>
           </div>
         </div>
         {canCreate && (
           <Link
             to="/qc/ncrs/new"
-            className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
           >
             <Plus className="w-4 h-4" />
             New NCR
@@ -63,7 +63,7 @@ export default function NcrListPage(): React.ReactElement {
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Statuses</option>
           {(['open', 'under_review', 'capa_issued', 'closed', 'voided'] as NcrStatus[]).map((s) => (
@@ -73,15 +73,15 @@ export default function NcrListPage(): React.ReactElement {
         <select
           value={severity}
           onChange={(e) => { setSeverity(e.target.value); setPage(1) }}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Severities</option>
           <option value="minor">Minor</option>
           <option value="major">Major</option>
           <option value="critical">Critical</option>
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
+          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300 text-neutral-600" />
           <span>Show Archived</span>
         </label>
       </div>
@@ -95,40 +95,40 @@ export default function NcrListPage(): React.ReactElement {
 
       {!isLoading && !isError && (
         <>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
                   {['NCR Reference', 'Title', 'Item', 'Severity', 'Status', 'Raised', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">No NCRs found.</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No NCRs found.</td>
                   </tr>
                 )}
                 {data?.data?.map((ncr) => (
-                  <tr key={ncr.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-red-700 font-medium">{ncr.ncr_reference}</td>
-                    <td className="px-4 py-3 text-gray-800 max-w-xs truncate">{ncr.title}</td>
-                    <td className="px-4 py-3 text-gray-500 text-sm">{ncr.inspection?.item_master?.name ?? '—'}</td>
+                  <tr key={ncr.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                    <td className="px-4 py-3 font-mono text-neutral-700 font-medium">{ncr.ncr_reference}</td>
+                    <td className="px-4 py-3 text-neutral-800 max-w-xs truncate">{ncr.title}</td>
+                    <td className="px-4 py-3 text-neutral-500 text-sm">{ncr.inspection?.item_master?.name ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${severityBadge[ncr.severity]}`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${severityBadge[ncr.severity]}`}>
                         {ncr.severity}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {ncr.deleted_at && <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 mr-1">Archived</span>}
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[ncr.status]}`}>
+                      {ncr.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[ncr.status]}`}>
                         {ncr.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{new Date(ncr.created_at).toLocaleDateString('en-PH')}</td>
+                    <td className="px-4 py-3 text-neutral-400 text-xs">{new Date(ncr.created_at).toLocaleDateString('en-PH')}</td>
                     <td className="px-4 py-3">
-                      <Link to={`/qc/ncrs/${ncr.ulid}`} className="text-xs text-red-600 hover:text-red-800 font-medium">
+                      <Link to={`/qc/ncrs/${ncr.ulid}`} className="text-xs text-neutral-600 hover:text-neutral-800 font-medium">
                         View →
                       </Link>
                     </td>
@@ -138,11 +138,11 @@ export default function NcrListPage(): React.ReactElement {
             </table>
           </div>
           {data && data.meta.last_page > 1 && (
-            <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+            <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} NCRs</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

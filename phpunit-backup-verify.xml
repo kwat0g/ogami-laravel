@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+│  Backup Integrity Verification — PHPUnit configuration
+│
+│  Used exclusively by: php artisan backup:verify (VerifyBackupCommand)
+│  Scheduled:           Weekly, Sundays 04:00 AM (routes/console.php)
+│
+│  CRITICAL DESIGN RULES:
+│  1. DB_DATABASE must point to ogami_erp_restore_test — NEVER production.
+│  2. ALL database env vars use force="true" so they win over ANY inherited
+│     shell env, OS env, Process::env() merge, or .env file value.
+│  3. This file must NEVER include the production DB name.
+│  4. Only the Unit/Payroll suite is run (GoldenSuiteTest) — it uses
+│     RefreshDatabase which calls migrate:fresh, but that is safe here
+│     because the DB is ogami_erp_restore_test (disposable restore target).
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <!-- Only run the golden payroll suite — it is the canary that will
+             detect any migration drift (missing columns, wrong types, etc.)
+             that would prevent the backup from being usable in production. -->
+        <testsuite name="BackupVerify">
+            <directory>tests/Unit/Payroll</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV"                 value="testing"               force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER"  value="file"                  force="true"/>
+        <env name="BCRYPT_ROUNDS"           value="4"                     force="true"/>
+        <env name="CACHE_STORE"             value="array"                 force="true"/>
+        <!-- ══════════════════════════════════════════════════════════════════
+             DATABASE — force="true" on ALL entries is the primary safety net.
+             These values MUST NOT be changed to point at ogami_erp (production)
+             or ogami_erp_test (shared test DB used by the main test suite).
+             ogami_erp_restore_test is a disposable DB created and destroyed
+             by VerifyBackupCommand on every backup verification run.
+             ══════════════════════════════════════════════════════════════════ -->
+        <env name="DB_CONNECTION"  value="pgsql"                  force="true"/>
+        <env name="DB_HOST"        value="127.0.0.1"              force="true"/>
+        <env name="DB_PORT"        value="5432"                   force="true"/>
+        <env name="DB_DATABASE"    value="ogami_erp_restore_test" force="true"/>
+        <env name="DB_USERNAME"    value="ogami"                  force="true"/>
+        <env name="DB_PASSWORD"    value="secret"                 force="true"/>
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <env name="MAIL_MAILER"          value="array"  force="true"/>
+        <env name="PULSE_ENABLED"        value="false"  force="true"/>
+        <env name="QUEUE_CONNECTION"     value="sync"   force="true"/>
+        <env name="BROADCAST_CONNECTION" value="log"    force="true"/>
+        <env name="SESSION_DRIVER"       value="array"  force="true"/>
+        <env name="REDIS_CLIENT"         value="array"  force="true"/>
+        <env name="TELESCOPE_ENABLED"    value="false"  force="true"/>
+    </php>
+</phpunit>

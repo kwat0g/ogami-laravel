@@ -347,8 +347,7 @@ final class CustomerInvoiceService implements ServiceContract
         $prefix = "INV-{$yyyy}-{$mm}-";
 
         $lastSeq = CustomerInvoice::where('invoice_number', 'like', "{$prefix}%")
-            ->lockForUpdate()
-            ->max(DB::raw('CAST(SUBSTRING(invoice_number, -6) AS UNSIGNED)'));
+            ->max(DB::raw("CAST(RIGHT(invoice_number, 6) AS INTEGER)"));
 
         $seq = (int) $lastSeq + 1;
 
@@ -374,10 +373,8 @@ final class CustomerInvoiceService implements ServiceContract
             if ($vatOutputAccountId) {
                 $lines[] = ['account_id' => $vatOutputAccountId, 'credit' => (float) $invoice->vat_amount];
             } else {
-                // Fallback: fold VAT into revenue line
+                // Fallback: fold VAT into revenue line (DR AR / CR Revenue for full amount)
                 $lines[1]['credit'] = (float) $invoice->total_amount;
-                unset($lines[0]); // re-index
-                $lines = array_values($lines);
             }
         }
 

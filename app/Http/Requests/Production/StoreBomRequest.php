@@ -16,8 +16,10 @@ final class StoreBomRequest extends FormRequest
     /** @return array<string,mixed> */
     public function rules(): array
     {
+        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
+
         return [
-            'product_item_id'                  => ['required', 'integer', 'exists:item_masters,id'],
+            'product_item_id'                  => [$isUpdate ? 'sometimes' : 'required', 'integer', 'exists:item_masters,id'],
             'version'                          => ['sometimes', 'string', 'max:20'],
             'notes'                            => ['nullable', 'string', 'max:500'],
             'components'                       => ['required', 'array', 'min:1'],

@@ -145,28 +145,28 @@ export default function TaxBracketsTable(): JSX.Element {
   const activeEffectiveDate = activeData?.effective_as_of
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading tax brackets...</div>
+    return <div className="text-center py-8 text-neutral-500">Loading tax brackets...</div>
   }
 
   return (
     <div className="space-y-4">
       {/* Active Version Info */}
       {activeEffectiveDate && (
-        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-2 rounded-lg">
+        <div className="flex items-center gap-2 text-sm text-neutral-700 bg-neutral-50 px-4 py-2 rounded">
           <Eye className="h-4 w-4" />
           <span>Currently active version: <strong>{activeEffectiveDate?.substring(0, 10)}</strong></span>
-          <span className="text-green-600 ml-2">(used for payroll computation)</span>
+          <span className="text-neutral-500 ml-2">(used for payroll computation)</span>
         </div>
       )}
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between bg-gray-50/50 p-3 rounded-lg border border-gray-200">
+      <div className="flex items-center justify-between bg-neutral-50 p-3 rounded border border-neutral-200">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">Filter by version:</span>
+          <span className="text-sm text-neutral-500">Filter by version:</span>
           <select
             value={selectedVersion}
             onChange={(e) => setSelectedVersion(e.target.value)}
-            className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="text-sm border border-neutral-300 rounded px-3 py-1.5 bg-white focus:ring-1 focus:ring-neutral-400"
           >
             <option value="all">All Versions</option>
             {versions.map((v) => (
@@ -195,22 +195,22 @@ export default function TaxBracketsTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+      <div className="border border-neutral-200 rounded overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50 hover:bg-gray-50">
-              <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Effective Date</TableHead>
-              <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Annual Income From</TableHead>
-              <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Annual Income To</TableHead>
-              <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Base Tax</TableHead>
-              <TableHead className="font-semibold text-gray-700 text-xs uppercase tracking-wider">Excess Rate</TableHead>
-              <TableHead className="w-20 font-semibold text-gray-700 text-xs uppercase tracking-wider">Actions</TableHead>
+            <TableRow className="bg-neutral-50">
+              <TableHead className="font-semibold text-neutral-600 text-xs">Effective Date</TableHead>
+              <TableHead className="font-semibold text-neutral-600 text-xs">Annual Income From</TableHead>
+              <TableHead className="font-semibold text-neutral-600 text-xs">Annual Income To</TableHead>
+              <TableHead className="font-semibold text-neutral-600 text-xs">Base Tax</TableHead>
+              <TableHead className="font-semibold text-neutral-600 text-xs">Excess Rate</TableHead>
+              <TableHead className="w-20 font-semibold text-neutral-600 text-xs">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-neutral-500">
                   No tax brackets found
                 </TableCell>
               </TableRow>
@@ -219,16 +219,16 @@ export default function TaxBracketsTable(): JSX.Element {
                 <TableRow 
                   key={bracket.id}
                   className={cn(
-                    'hover:bg-gray-50/80',
-                    bracket.effective_date === activeEffectiveDate && 'bg-green-50/60 border-l-2 border-l-green-500'
+                    'hover:bg-neutral-50',
+                    bracket.effective_date === activeEffectiveDate && 'bg-neutral-50'
                   )}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
-                      <span className="font-medium text-gray-900">{bracket.effective_date?.substring(0, 10)}</span>
+                      <Calendar className="h-4 w-4 text-neutral-400 shrink-0" />
+                      <span className="font-medium text-neutral-900">{bracket.effective_date?.substring(0, 10)}</span>
                       {bracket.effective_date === activeEffectiveDate && (
-                        <Badge variant="success" className="text-[10px] px-1.5 py-0">Active</Badge>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-neutral-300 text-neutral-700">Active</Badge>
                       )}
                     </div>
                   </TableCell>
@@ -286,7 +286,7 @@ export default function TaxBracketsTable(): JSX.Element {
           <form onSubmit={handleSubmit} className="p-6 pt-2 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="effective_date" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="effective_date" className="text-sm font-medium text-neutral-700">
                   Effective Date <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -297,11 +297,11 @@ export default function TaxBracketsTable(): JSX.Element {
                   required
                   className="h-11"
                 />
-                <p className="text-xs text-gray-500">Payroll on/after this date uses this bracket</p>
+                <p className="text-xs text-neutral-500">Payroll on/after this date uses this bracket</p>
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="base_tax" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="base_tax" className="text-sm font-medium text-neutral-700">
                   Base Tax (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -320,7 +320,7 @@ export default function TaxBracketsTable(): JSX.Element {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="income_from" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="income_from" className="text-sm font-medium text-neutral-700">
                   Income From (₱) <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -337,7 +337,7 @@ export default function TaxBracketsTable(): JSX.Element {
               </div>
               
               <div className="space-y-1.5">
-                <Label htmlFor="income_to" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="income_to" className="text-sm font-medium text-neutral-700">
                   Income To (₱)
                 </Label>
                 <Input
@@ -350,12 +350,12 @@ export default function TaxBracketsTable(): JSX.Element {
                   onChange={(e) => setFormData({ ...formData, income_to: e.target.value })}
                   className="h-11"
                 />
-                <p className="text-xs text-gray-500">Leave blank for no upper limit (top bracket)</p>
+                <p className="text-xs text-neutral-500">Leave blank for no upper limit (top bracket)</p>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="excess_rate" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="excess_rate" className="text-sm font-medium text-neutral-700">
                 Excess Rate (%) <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -370,13 +370,13 @@ export default function TaxBracketsTable(): JSX.Element {
                 required
                 className="h-11"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-neutral-500">
                 Percentage applied to income above the threshold
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="notes" className="text-sm font-medium text-neutral-700">
                 Notes
               </Label>
               <Input
@@ -417,10 +417,10 @@ export default function TaxBracketsTable(): JSX.Element {
               <AlertTriangle className="h-6 w-6" />
               <DialogTitle>Confirm Deletion</DialogTitle>
             </div>
-            <DialogDescription className="text-gray-600">
+            <DialogDescription className="text-neutral-600">
               Are you sure you want to delete this tax bracket? This action cannot be undone.
               {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                <div className="mt-4 p-3 bg-neutral-50 rounded text-sm">
                   <p><strong>Effective Date:</strong> {showDeleteConfirm.effective_date?.substring(0, 10)}</p>
                   <p><strong>Income Range:</strong> {formatCurrency(showDeleteConfirm.income_from, 'PHP', 0)} - {showDeleteConfirm.income_to ? formatCurrency(showDeleteConfirm.income_to, 'PHP', 0) : 'No limit'}</p>
                 </div>

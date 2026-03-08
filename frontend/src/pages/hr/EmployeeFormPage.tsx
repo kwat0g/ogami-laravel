@@ -1,5 +1,6 @@
 import { useEffect, useRef, forwardRef, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -57,11 +58,11 @@ function FormField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">
+      <label className="block text-xs font-medium text-neutral-700 mb-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
-      {hint && !error && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      {hint && !error && <p className="text-xs text-neutral-400 mt-1">{hint}</p>}
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   )
@@ -73,9 +74,9 @@ const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputEl
       <input
         {...props}
         ref={ref}
-        className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                    disabled:bg-gray-50 disabled:text-gray-500 ${className}`}
+        className={`w-full border border-neutral-300 rounded px-3 py-2 text-sm
+                    focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400
+                    disabled:bg-neutral-50 disabled:text-neutral-500 ${className}`}
       />
     )
   },
@@ -87,8 +88,8 @@ const Select = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSele
       <select
         {...props}
         ref={ref}
-        className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
+        className={`w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white
+                    focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400 ${className}`}
       >
         {children}
       </select>
@@ -293,14 +294,14 @@ export default function EmployeeFormPage() {
   if (isEditing && employeeError) {
     return (
       <div className="max-w-4xl">
-        <button type="button" onClick={() => navigate(-1)} className="text-sm text-blue-600 hover:underline mb-4 block">← Back</button>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <button type="button" onClick={() => navigate(-1)} className="text-sm text-neutral-600 hover:underline mb-4 block">← Back</button>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 font-medium mb-1">Failed to load employee data</p>
           <p className="text-red-600 text-sm mb-4">The record may not exist or you may not have permission to edit it.</p>
           <button
             type="button"
             onClick={() => void refetchEmployee()}
-            className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 transition-colors"
           >
             Try Again
           </button>
@@ -340,6 +341,7 @@ export default function EmployeeFormPage() {
             effective_from: new Date().toISOString().split('T')[0],
           })
         }
+        toast.success('Employee updated.')
       } else {
         const newEmployee = await createMutation.mutateAsync(payload as unknown as CreateEmployeePayload)
         if (data.shift_schedule_id) {
@@ -349,6 +351,7 @@ export default function EmployeeFormPage() {
             effective_from: data.date_hired,
           })
         }
+        toast.success('Employee created.')
       }
       navigate('/hr/employees/all')
     } catch (err: unknown) {
@@ -371,19 +374,19 @@ export default function EmployeeFormPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-sm text-blue-600 hover:underline mb-2 block"
+          className="text-sm text-neutral-600 hover:underline mb-2 block"
         >
           ← Back
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-lg font-semibold text-neutral-900">
           {isEditing ? 'Edit Employee' : 'Add Employee'}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Personal */}
-        <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Personal Information</h2>
+        <section className="bg-white border border-neutral-200 rounded-lg p-5">
+          <h2 className="text-sm font-semibold text-neutral-700 mb-4">Personal Information</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="First Name" required error={errors.first_name?.message}>
               <Input {...register('first_name')} placeholder="Juan" />
@@ -439,7 +442,7 @@ export default function EmployeeFormPage() {
                     onClick={() => {
                       if (watchedPresentAddress) setValue('permanent_address', watchedPresentAddress, { shouldDirty: true, shouldValidate: true })
                     }}
-                    className="text-xs text-blue-600 hover:underline"
+                    className="text-xs text-neutral-600 hover:underline"
                   >
                     Same as present address
                   </button>
@@ -450,8 +453,8 @@ export default function EmployeeFormPage() {
         </section>
 
         {/* Employment */}
-        <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Employment Details</h2>
+        <section className="bg-white border border-neutral-200 rounded-lg p-5">
+          <h2 className="text-sm font-semibold text-neutral-700 mb-4">Employment Details</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Employment Type" required error={errors.employment_type?.message}>
               <Select {...register('employment_type')}>
@@ -586,9 +589,9 @@ export default function EmployeeFormPage() {
         </section>
 
         {/* Government IDs */}
-        <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Government IDs</h2>
-          <p className="text-xs text-gray-500 mb-4">
+        <section className="bg-white border border-neutral-200 rounded-lg p-5">
+          <h2 className="text-sm font-semibold text-neutral-700 mb-4">Government IDs</h2>
+          <p className="text-xs text-neutral-500 mb-4">
             IDs are <span className="font-medium">encrypted at rest</span> and never exposed after saving.
             {isEditing && ' Leave a field blank to keep the current saved value.'}
           </p>
@@ -629,8 +632,8 @@ export default function EmployeeFormPage() {
         </section>
 
         {/* Bank */}
-        <section className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Bank Disbursement</h2>
+        <section className="bg-white border border-neutral-200 rounded-lg p-5">
+          <h2 className="text-sm font-semibold text-neutral-700 mb-4">Bank Disbursement</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Bank Name" required={!isEditing} error={errors.bank_name?.message}>
               <Input {...register('bank_name')} placeholder="BDO, BPI, UnionBank…" />
@@ -644,8 +647,8 @@ export default function EmployeeFormPage() {
               <textarea
                 {...register('notes')}
                 rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm resize-none
+                           focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400"
                 placeholder="Internal notes…"
               />
             </FormField>
@@ -657,14 +660,14 @@ export default function EmployeeFormPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="px-5 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-5 py-2 text-sm border border-neutral-300 rounded text-neutral-700 hover:bg-neutral-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting || (isEditing && !isDirty)}
-            className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700
+            className="px-5 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800
                        disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Employee'}

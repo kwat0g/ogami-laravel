@@ -100,23 +100,11 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
   return (
     <div className="max-w-4xl">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-          <PackageCheck className="w-5 h-5 text-green-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Record Goods Receipt</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {poDetail
-              ? `Receiving goods for ${poDetail.po_reference}`
-              : 'Confirm items received from vendor delivery'}
-          </p>
-        </div>
-      </div>
+      <h1 className="text-lg font-semibold text-neutral-900 mb-6">Record Goods Receipt</h1>
 
       {/* Source PO info banner when pre-filled */}
       {poDetail && (
-        <div className="mb-4 flex items-center gap-2 text-xs text-green-800 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+        <div className="mb-4 flex items-center gap-2 text-xs text-neutral-700 bg-neutral-50 border border-neutral-200 rounded px-4 py-2.5">
           <PackageCheck className="w-3.5 h-3.5 shrink-0" />
           <span>
             Pre-filled from <span className="font-semibold">{poDetail.po_reference}</span>
@@ -128,24 +116,24 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Header details */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Receipt Header</h2>
+        <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
+          <h2 className="text-sm font-medium text-neutral-700">Receipt Header</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             {/* Purchase Order */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Order <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Purchase Order <span className="text-red-500">*</span></label>
               {poUlidFromUrl !== null ? (
                 <>
                   <input type="hidden" {...register('purchase_order_id')} />
-                  <div className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed">
+                  <div className="w-full text-sm border border-neutral-200 rounded px-3 py-2 bg-neutral-100 text-neutral-500 cursor-not-allowed">
                     {poDetail?.po_reference ?? '—'}
                   </div>
                 </>
               ) : (
                 <select
                   {...register('purchase_order_id')}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
                 >
                   <option value="">— Select Sent PO —</option>
                   {poData?.data?.map((po) => (
@@ -160,46 +148,46 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
 
             {/* Received Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Received Date</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Received Date</label>
               <input
                 type="date"
                 {...register('received_date')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
               />
             </div>
 
             {/* Delivery Note Number */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Note No. <span className="text-gray-400 font-normal">(optional)</span></label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Delivery Note No. <span className="text-neutral-400 font-normal">(optional)</span></label>
               <input
                 type="text"
                 placeholder="DR-XXXX"
                 {...register('delivery_note_number')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
               />
             </div>
 
             {/* Condition Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Overall Condition Notes <span className="text-gray-400 font-normal">(optional)</span></label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Overall Condition Notes <span className="text-neutral-400 font-normal">(optional)</span></label>
               <input
                 type="text"
                 {...register('condition_notes')}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
               />
             </div>
           </div>
         </div>
 
         {/* Line Items */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Items Received</h2>
+            <h2 className="text-sm font-medium text-neutral-700">Items Received</h2>
             {!poUlidFromUrl && (
               <button
                 type="button"
                 onClick={() => append({ po_item_id: undefined as unknown as number, quantity_received: 1, unit_of_measure: 'pcs', condition: 'good', remarks: '' })}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Item
@@ -212,20 +200,20 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
             <div className="grid grid-cols-12 gap-2 px-3">
               {poUlidFromUrl ? (
                 <>
-                  <div className="col-span-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Description</div>
-                  <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Qty Received</div>
-                  <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wide">UOM</div>
-                  <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wide text-center">Pending</div>
-                  <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Condition</div>
-                  <div className="col-span-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Remarks</div>
+                  <div className="col-span-3 text-xs font-medium text-neutral-600">Description</div>
+                  <div className="col-span-2 text-xs font-medium text-neutral-600">Qty Received</div>
+                  <div className="col-span-1 text-xs font-medium text-neutral-600">UOM</div>
+                  <div className="col-span-1 text-xs font-medium text-neutral-600 text-center">Pending</div>
+                  <div className="col-span-2 text-xs font-medium text-neutral-600">Condition</div>
+                  <div className="col-span-3 text-xs font-medium text-neutral-600">Remarks</div>
                 </>
               ) : (
                 <>
-                  <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wide">PO Item ID</div>
-                  <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Qty</div>
-                  <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wide">UOM</div>
-                  <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Condition</div>
-                  <div className="col-span-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Remarks</div>
+                  <div className="col-span-2 text-xs font-medium text-neutral-600">PO Item ID</div>
+                  <div className="col-span-2 text-xs font-medium text-neutral-600">Qty</div>
+                  <div className="col-span-2 text-xs font-medium text-neutral-600">UOM</div>
+                  <div className="col-span-2 text-xs font-medium text-neutral-600">Condition</div>
+                  <div className="col-span-3 text-xs font-medium text-neutral-600">Remarks</div>
                   <div className="col-span-1" />
                 </>
               )}
@@ -236,7 +224,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
             {fields.map((field, idx) => {
               const poItem = poDetail?.items?.[idx]
               return (
-                <div key={field.id} className="grid grid-cols-12 gap-2 items-start border border-gray-100 rounded-lg p-3 bg-gray-50">
+                <div key={field.id} className="grid grid-cols-12 gap-2 items-start border border-neutral-100 rounded p-3 bg-neutral-50">
                   {poUlidFromUrl ? (
                     <>
                       {/* Hidden po_item_id */}
@@ -248,7 +236,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                           disabled
                           value={poItem?.item_description ?? ''}
                           readOnly
-                          className="w-full text-sm border border-gray-200 rounded px-2.5 py-1.5 bg-gray-100 text-gray-500 cursor-not-allowed"
+                          className="w-full text-sm border border-neutral-200 rounded px-2.5 py-1.5 bg-neutral-100 text-neutral-500 cursor-not-allowed"
                         />
                       </div>
 
@@ -265,7 +253,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                               max={poItem?.quantity_pending}
                               placeholder="Qty"
                               {...f}
-                              className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400"
+                              className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                             />
                           )}
                         />
@@ -280,13 +268,13 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                           disabled
                           value={poItem?.unit_of_measure ?? ''}
                           readOnly
-                          className="w-full text-sm border border-gray-200 rounded px-2.5 py-1.5 bg-gray-100 text-gray-500 cursor-not-allowed"
+                          className="w-full text-sm border border-neutral-200 rounded px-2.5 py-1.5 bg-neutral-100 text-neutral-500 cursor-not-allowed"
                         />
                       </div>
 
                       {/* Pending qty reference */}
                       <div className="col-span-1 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-amber-600">
+                        <span className="text-xs font-semibold text-neutral-600">
                           {poItem?.quantity_pending ?? '—'}
                         </span>
                       </div>
@@ -295,7 +283,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                       <div className="col-span-2">
                         <select
                           {...register(`items.${idx}.condition`)}
-                          className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-green-400"
+                          className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                         >
                           {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
@@ -306,7 +294,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                         <input
                           placeholder="Remarks (optional)"
                           {...register(`items.${idx}.remarks`)}
-                          className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400"
+                          className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                         />
                       </div>
                     </>
@@ -318,7 +306,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                           name={`items.${idx}.po_item_id`}
                           control={control}
                           render={({ field: f }) => (
-                            <input type="number" placeholder="PO Item ID" {...f} className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400" />
+                            <input type="number" placeholder="PO Item ID" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
                           )}
                         />
                         {errors.items?.[idx]?.po_item_id && <p className="text-red-500 text-xs mt-0.5">{errors.items[idx]!.po_item_id!.message}</p>}
@@ -328,24 +316,24 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                           name={`items.${idx}.quantity_received`}
                           control={control}
                           render={({ field: f }) => (
-                            <input type="number" min={0} step="0.01" placeholder="Qty" {...f} className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400" />
+                            <input type="number" min={0} step="0.01" placeholder="Qty" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
                           )}
                         />
                       </div>
                       <div className="col-span-2">
-                        <input placeholder="UOM" {...register(`items.${idx}.unit_of_measure`)} className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400" />
+                        <input placeholder="UOM" {...register(`items.${idx}.unit_of_measure`)} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
                       </div>
                       <div className="col-span-2">
-                        <select {...register(`items.${idx}.condition`)} className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-green-400">
+                        <select {...register(`items.${idx}.condition`)} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400">
                           {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                       <div className="col-span-3">
-                        <input placeholder="Remarks (optional)" {...register(`items.${idx}.remarks`)} className="w-full text-sm border border-gray-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-400" />
+                        <input placeholder="Remarks (optional)" {...register(`items.${idx}.remarks`)} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
                       </div>
                       <div className="col-span-1 flex justify-center pt-1.5">
                         {fields.length > 1 && (
-                          <button type="button" onClick={() => remove(idx)} className="text-red-400 hover:text-red-600">
+                          <button type="button" onClick={() => remove(idx)} className="text-neutral-400 hover:text-red-500">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
@@ -361,13 +349,13 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
 
         {/* Submit */}
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => navigate(-1)} className="px-5 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50">
+          <button type="button" onClick={() => navigate(-1)} className="px-5 py-2.5 border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50">
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white text-sm font-medium rounded-xl transition-colors"
+            className="px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium rounded"
           >
             {isSubmitting ? 'Saving…' : 'Record Goods Receipt'}
           </button>

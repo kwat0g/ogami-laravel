@@ -50,7 +50,7 @@ function CheckRow({ check, acked, onAck }: {
   onAck: () => void
 }) {
   return (
-    <div className={`flex items-start gap-3 p-3 rounded-lg border ${
+    <div className={`flex items-start gap-3 p-3 rounded border ${
       check.status === 'block' ? 'bg-red-50 border-red-200' :
       check.status === 'warn'  ? 'bg-amber-50 border-amber-200' :
       'bg-green-50 border-green-100'
@@ -58,17 +58,17 @@ function CheckRow({ check, acked, onAck }: {
       <SeverityIcon check={check} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-sm font-medium text-gray-800">{check.label}</p>
-          <span className="text-xs font-mono text-gray-400 shrink-0">{check.code}</span>
+          <p className="text-sm font-medium text-neutral-800">{check.label}</p>
+          <span className="text-xs font-mono text-neutral-400 shrink-0">{check.code}</span>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">{check.message}</p>
+        <p className="text-xs text-neutral-500 mt-0.5">{check.message}</p>
         {check.status === 'warn' && (
           <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={acked}
               onChange={onAck}
-              className="accent-amber-600"
+              className="accent-neutral-700"
             />
             <span className="text-xs text-amber-800">I acknowledge this warning and wish to proceed</span>
           </label>
@@ -226,7 +226,7 @@ export default function PayrollRunDraftValidatePage() {
     <div className="max-w-3xl space-y-6">
       <button
         onClick={() => navigate('/payroll/runs/new/scope')}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
         disabled={isRunning}
       >
         <ArrowLeft className="h-4 w-4" /> Back to Scope
@@ -239,47 +239,47 @@ export default function PayrollRunDraftValidatePage() {
       />
 
       {/* Draft notice */}
-      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-xs text-amber-800">
+      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-2.5 text-xs text-amber-800">
         <span className="font-semibold">Not saved yet.</span>
         <span>Everything above is still in draft. Clicking <strong>Begin Computation</strong> creates the run and starts processing.</span>
       </div>
 
       {/* Run summary card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-gray-800">Run Summary</h3>
+      <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-neutral-800">Run Summary</h3>
         <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
           <div>
-            <dt className="text-xs text-gray-500 uppercase tracking-wide">Type</dt>
-            <dd className="font-medium text-gray-900 mt-0.5">{runLabel}</dd>
+            <dt className="text-xs text-neutral-500 font-medium">Type</dt>
+            <dd className="font-medium text-neutral-900 mt-0.5">{runLabel}</dd>
           </div>
           <div>
-            <dt className="text-xs text-gray-500 uppercase tracking-wide">Cutoff Start</dt>
-            <dd className="font-medium text-gray-900 mt-0.5">{s1.cutoff_start}</dd>
+            <dt className="text-xs text-neutral-500 font-medium">Cutoff Start</dt>
+            <dd className="font-medium text-neutral-900 mt-0.5">{s1.cutoff_start}</dd>
           </div>
           <div>
-            <dt className="text-xs text-gray-500 uppercase tracking-wide">Cutoff End</dt>
-            <dd className="font-medium text-gray-900 mt-0.5">{s1.cutoff_end}</dd>
+            <dt className="text-xs text-neutral-500 font-medium">Cutoff End</dt>
+            <dd className="font-medium text-neutral-900 mt-0.5">{s1.cutoff_end}</dd>
           </div>
           <div>
-            <dt className="text-xs text-gray-500 uppercase tracking-wide">Pay Date</dt>
-            <dd className="font-medium text-gray-900 mt-0.5">{s1.pay_date}</dd>
+            <dt className="text-xs text-neutral-500 font-medium">Pay Date</dt>
+            <dd className="font-medium text-neutral-900 mt-0.5">{s1.pay_date}</dd>
           </div>
           <div>
-            <dt className="text-xs text-gray-500 uppercase tracking-wide">Employment Types</dt>
-            <dd className="font-medium text-gray-900 mt-0.5">
+            <dt className="text-xs text-neutral-500 font-medium">Employment Types</dt>
+            <dd className="font-medium text-neutral-900 mt-0.5">
               {s2.employment_types.map(formatLabel).join(', ') || '—'}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-gray-500 uppercase tracking-wide">Exclusions</dt>
-            <dd className="font-medium text-gray-900 mt-0.5">
+            <dt className="text-xs text-neutral-500 font-medium">Exclusions</dt>
+            <dd className="font-medium text-neutral-900 mt-0.5">
               {s2.exclusions.length > 0 ? `${s2.exclusions.length} employee(s)` : 'None'}
             </dd>
           </div>
           {s1.notes && (
             <div className="col-span-2 sm:col-span-3">
-              <dt className="text-xs text-gray-500 uppercase tracking-wide">Notes</dt>
-              <dd className="text-gray-700 mt-0.5">{s1.notes}</dd>
+              <dt className="text-xs text-neutral-500 font-medium">Notes</dt>
+              <dd className="text-neutral-700 mt-0.5">{s1.notes}</dd>
             </div>
           )}
         </dl>
@@ -288,7 +288,7 @@ export default function PayrollRunDraftValidatePage() {
       {/* ── Blocked — show errors, run was rolled back ─────────────────────── */}
       {phase.kind === 'blocked' && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded px-4 py-3">
             <XCircle className="h-5 w-5 text-red-500 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-red-800">Pre-Run Checks Failed</p>
@@ -305,7 +305,7 @@ export default function PayrollRunDraftValidatePage() {
           <button
             type="button"
             onClick={() => setPhase({ kind: 'idle' })}
-            className="flex items-center gap-2 px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-5 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-sm font-medium rounded transition-colors"
           >
             <RefreshCw className="h-4 w-4" /> Try Again
           </button>
@@ -315,7 +315,7 @@ export default function PayrollRunDraftValidatePage() {
       {/* ── Warning acknowledgment ─────────────────────────────────────────── */}
       {phase.kind === 'ack' && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-3">
             <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-amber-800">Warnings Detected</p>
@@ -334,7 +334,7 @@ export default function PayrollRunDraftValidatePage() {
               />
             ))}
           </div>
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
             <button
               type="button"
               onClick={() => {
@@ -342,7 +342,7 @@ export default function PayrollRunDraftValidatePage() {
                 void api.delete(`/payroll/runs/${phase.runId}`).catch(() => {})
                 setPhase({ kind: 'idle' })
               }}
-              className="text-sm text-gray-500 hover:text-gray-800"
+              className="text-sm text-neutral-500 hover:text-neutral-800"
             >
               Cancel &amp; go back
             </button>
@@ -350,7 +350,7 @@ export default function PayrollRunDraftValidatePage() {
               type="button"
               onClick={() => void handleProceedFromAck()}
               disabled={phase.checks.filter(c => c.status === 'warn').some(c => !phase.acked[c.code])}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+              className="flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
             >
               <PlayCircle className="h-4 w-4" /> Acknowledge &amp; Begin Computation
             </button>
@@ -360,12 +360,12 @@ export default function PayrollRunDraftValidatePage() {
 
       {/* ── Idle / Running — main action button ────────────────────────────── */}
       {(phase.kind === 'idle' || phase.kind === 'running') && (
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
           <button
             type="button"
             onClick={() => navigate('/payroll/runs/new/scope')}
             disabled={isRunning}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 disabled:opacity-40 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Scope
           </button>
@@ -374,7 +374,7 @@ export default function PayrollRunDraftValidatePage() {
             type="button"
             onClick={() => void handleBeginComputation()}
             disabled={isRunning}
-            className="flex items-center gap-2 px-7 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+            className="flex items-center gap-2 px-7 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
           >
             {isRunning ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> {phase.label}</>
