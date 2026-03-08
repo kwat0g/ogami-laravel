@@ -89,7 +89,7 @@ export default function NcrDetailPage(): React.ReactElement {
         status={
           <>
             <StatusBadge status={ncr.severity}>{ncr.severity}</StatusBadge>
-            <StatusBadge status={ncr.status}>{ncr.status.replace('_', ' ')}</StatusBadge>
+            <StatusBadge status={ncr.status}>{ncr.status?.replace('_', ' ') || 'Unknown'}</StatusBadge>
           </>
         }
         actions={
@@ -168,7 +168,7 @@ export default function NcrDetailPage(): React.ReactElement {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <StatusBadge status={capa.status}>{capa.status.replace('_', ' ')}</StatusBadge>
+                      <StatusBadge status={capa.status}>{capa.status?.replace('_', ' ') || 'Unknown'}</StatusBadge>
                       {canCreate && capa.status === 'open' && (
                         <button
                           onClick={() => completeCapa.mutate(capa.id)}

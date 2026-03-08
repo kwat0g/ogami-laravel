@@ -116,7 +116,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-neutral-900 font-mono">{order.po_reference}</h1>
             <span className={`inline-flex px-2.5 py-1 rounded text-xs font-medium capitalize ${statusBadge[order.status]}`}>
-              {order.status.replace('_', ' ')}
+              {order.status?.replace('_', ' ') || 'Unknown'}
             </span>
           </div>
         </div>

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { MapPin, Plus, AlertTriangle, X } from 'lucide-react'
+import { Plus, AlertTriangle, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useWarehouseLocations, useCreateLocation, useUpdateLocation } from '@/hooks/useInventory'
 import { useDepartments } from '@/hooks/useEmployees'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import StatusBadge from '@/components/ui/StatusBadge'
 import type { WarehouseLocation } from '@/types/inventory'
 
 const schema = z.object({
@@ -69,19 +71,8 @@ export default function WarehouseLocationsPage(): React.ReactElement {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Warehouse Locations</h1>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-        >
-          <Plus className="w-4 h-4" /> New Location
-        </button>
-      </div>
-
       {/* Filter */}
-      <div className="mb-4">
+      <div className="mb-5">
         <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
           <input
             type="checkbox"
@@ -101,45 +92,59 @@ export default function WarehouseLocationsPage(): React.ReactElement {
       )}
 
       {!isLoading && !isError && (
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                {['Code', 'Name', 'Zone', 'Bin', 'Department', 'Status', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {(locations ?? []).length === 0 && (
+        <Card>
+          <CardHeader
+            action={
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+              >
+                <Plus className="w-4 h-4" /> New Location
+              </button>
+            }
+          >
+            Warehouse Locations
+          </CardHeader>
+          <CardBody className="p-0">
+            <table className="min-w-full text-sm">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">
-                    No locations found.
-                  </td>
+                  {['Code', 'Name', 'Zone', 'Bin', 'Department', 'Status', ''].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
+                  ))}
                 </tr>
-              )}
-              {(locations ?? []).map((loc) => (
-                <tr key={loc.id} className="even:bg-neutral-100 hover:bg-neutral-50">
-                  <td className="px-4 py-3 font-mono font-medium text-neutral-900">{loc.code}</td>
-                  <td className="px-4 py-3 text-neutral-900">{loc.name}</td>
-                  <td className="px-4 py-3 text-neutral-500">{loc.zone ?? '—'}</td>
-                  <td className="px-4 py-3 text-neutral-500">{loc.bin ?? '—'}</td>
-                  <td className="px-4 py-3 text-neutral-500">{loc.department?.name ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    {loc.is_active
-                      ? <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-200 text-neutral-800">Active</span>
-                      : <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">Inactive</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => openEdit(loc)} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {(locations ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                      No locations found.
+                    </td>
+                  </tr>
+                )}
+                {(locations ?? []).map((loc) => (
+                  <tr key={loc.id} className="hover:bg-neutral-50/50 transition-colors">
+                    <td className="px-4 py-3 font-mono font-medium text-neutral-900">{loc.code}</td>
+                    <td className="px-4 py-3 text-neutral-900">{loc.name}</td>
+                    <td className="px-4 py-3 text-neutral-500">{loc.zone ?? '—'}</td>
+                    <td className="px-4 py-3 text-neutral-500">{loc.bin ?? '—'}</td>
+                    <td className="px-4 py-3 text-neutral-500">{loc.department?.name ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      {loc.is_active
+                        ? <StatusBadge className="bg-neutral-200 text-neutral-800">Active</StatusBadge>
+                        : <StatusBadge className="bg-neutral-100 text-neutral-500">Inactive</StatusBadge>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button onClick={() => openEdit(loc)} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardBody>
+        </Card>
       )}
 
       {/* Slide-in form modal */}

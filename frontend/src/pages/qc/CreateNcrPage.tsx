@@ -75,7 +75,7 @@ export default function CreateNcrPage(): React.ReactElement {
             <option value="">— Select Inspection —</option>
             {inspections.map(insp => (
               <option key={insp.id} value={insp.id}>
-                {insp.inspection_reference} — {insp.stage.toUpperCase()} — {insp.inspection_date}
+                {insp.inspection_reference} — {insp.stage?.toUpperCase() || 'N/A'} — {insp.inspection_date}
                 {insp.item_master ? ` — ${insp.item_master.item_code}` : ''}
               </option>
             ))}

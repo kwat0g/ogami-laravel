@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import {
   useCustomerInvoice,
   useReceivePayment,
@@ -11,28 +10,11 @@ import {
 } from '@/hooks/useAR'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import PageHeader from '@/components/ui/PageHeader'
+import StatusBadge from '@/components/ui/StatusBadge'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import type { CustomerInvoiceStatus, ReceivePaymentPayload, WriteOffPayload } from '@/types/ar'
-
-// ---------------------------------------------------------------------------
-// Status Badge
-// ---------------------------------------------------------------------------
-
-const STATUS_STYLES: Record<CustomerInvoiceStatus, string> = {
-  draft:          'bg-neutral-100 text-neutral-600',
-  approved:       'bg-neutral-100 text-neutral-700',
-  partially_paid: 'bg-neutral-100 text-neutral-700',
-  paid:           'bg-neutral-100 text-neutral-700',
-  written_off:    'bg-neutral-100 text-neutral-600',
-  cancelled:      'bg-neutral-100 text-neutral-400',
-}
-
-function StatusBadge({ status }: { status: CustomerInvoiceStatus }) {
-  return (
-    <span className={`px-2.5 py-0.5 rounded text-sm font-medium capitalize ${STATUS_STYLES[status]}`}>
-      {status.replace('_', ' ')}
-    </span>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Receive Payment Panel
@@ -68,8 +50,7 @@ function ReceivePaymentPanel({
   }
 
   return (
-    <div className="rounded border border-neutral-200 p-4 space-y-3">
-      <ExecutiveReadOnlyBanner />
+    <div className="rounded border border-neutral-200 bg-white p-4 space-y-3">
       <h3 className="font-semibold text-neutral-800">Record Payment</h3>
       {payMut.error && (
         <p className="text-sm text-red-600">{(payMut.error as Error).message}</p>
@@ -143,7 +124,7 @@ function ReceivePaymentPanel({
         >
           {payMut.isPending ? 'Saving…' : 'Record'}
         </button>
-        <button onClick={() => setOpen(false)} className="px-4 py-1.5 border border-neutral-300 text-sm rounded hover:bg-neutral-50">
+        <button onClick={() => setOpen(false)} className="px-4 py-1.5 bg-white text-neutral-700 border border-neutral-300 text-sm rounded hover:bg-neutral-50">
           Cancel
         </button>
       </div>
@@ -166,7 +147,7 @@ function WriteOffSection({ invoiceId }: { invoiceId: string }) {
   return (
     <ConfirmDestructiveDialog
       title="Write Off Invoice (AR-006)"
-      description="This will write off the remaining balance as bad debt. A journal entry (DR Bad Debt Expense / CR Accounts Receivable) will be auto-posted. This action requires the \`manager\` role with accounting department access."
+      description="This will write off the remaining balance as bad debt. A journal entry (DR Bad Debt Expense / CR Accounts Receivable) will be auto-posted. This action requires the `manager` role with accounting department access."
       confirmWord="WRITEOFF"
       confirmLabel="Write Off"
       onConfirm={async () => {
@@ -178,7 +159,7 @@ function WriteOffSection({ invoiceId }: { invoiceId: string }) {
         }
       }}
     >
-      <button className="px-4 py-2 rounded border border-neutral-300 text-neutral-600 text-sm font-medium hover:bg-neutral-50">
+      <button className="px-4 py-2 rounded bg-white text-red-600 border border-red-300 text-sm font-medium hover:bg-red-50">
         Write Off (AR-006)
       </button>
     </ConfirmDestructiveDialog>
@@ -204,51 +185,14 @@ export default function CustomerInvoiceDetailPage() {
   const canWriteOff = canPay && invoice.balance_due > 0
 
   return (
-    <div className="p-6 max-w-3xl space-y-6">
-      {/* Back */}
-      <button
-        onClick={() => navigate('/ar/invoices')}
-        className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-neutral-700"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to Invoices
-      </button>
-
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">
-            {invoice.invoice_number ?? <span className="italic text-neutral-400">Draft Invoice</span>}
-          </h1>
-          <p className="text-sm text-neutral-500">
-            {invoice.customer?.name ?? `Customer #${invoice.customer_id}`}
-          </p>
-        </div>
-        <StatusBadge label={invoice.status} />
-      </div>
-
-      {/* Details grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Invoice Date', value: invoice.invoice_date },
-          { label: 'Due Date', value: invoice.due_date + (invoice.is_overdue ? ' ⚠️' : '') },
-          { label: 'Subtotal', value: `₱${invoice.subtotal.toLocaleString()}` },
-          { label: 'VAT', value: `₱${invoice.vat_amount.toLocaleString()}` },
-          { label: 'Total', value: `₱${invoice.total_amount.toLocaleString()}` },
-          { label: 'Total Paid', value: `₱${invoice.total_paid.toLocaleString()}` },
-          { label: 'Balance Due', value: `₱${invoice.balance_due.toLocaleString()}` },
-          { label: 'Fiscal Period', value: `#${invoice.fiscal_period_id}` },
-        ].map(({ label, value }) => (
-          <div key={label} className="rounded border bg-neutral-50 p-3">
-            <p className="text-xs text-neutral-500">{label}</p>
-            <p className="font-semibold text-neutral-900 mt-0.5">{value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Description */}
-      {invoice.description && (
-        <p className="text-sm text-neutral-600">{invoice.description}</p>
-      )}
+    <div className="max-w-5xl mx-auto space-y-6">
+      <PageHeader
+        backTo="/ar/invoices"
+        title={invoice.invoice_number ?? 'Draft Invoice'}
+        subtitle={invoice.customer?.name ?? `Customer #${invoice.customer_id}`}
+        icon={<FileText className="w-5 h-5" />}
+        status={<StatusBadge label={invoice.status} />}
+      />
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
@@ -275,6 +219,63 @@ export default function CustomerInvoiceDetailPage() {
         {canWriteOff && <WriteOffSection invoiceId={invoiceId ?? ''} />}
       </div>
 
+      {/* Details grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardBody>
+            <InfoRow label="Invoice Date" value={invoice.invoice_date} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <InfoRow 
+              label="Due Date" 
+              value={invoice.due_date + (invoice.is_overdue ? ' ⚠️' : '')} 
+            />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <InfoRow label="Subtotal" value={`₱${invoice.subtotal.toLocaleString()}`} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <InfoRow label="VAT" value={`₱${invoice.vat_amount.toLocaleString()}`} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <InfoRow label="Total" value={`₱${invoice.total_amount.toLocaleString()}`} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <InfoRow label="Total Paid" value={`₱${invoice.total_paid.toLocaleString()}`} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <InfoRow label="Balance Due" value={`₱${invoice.balance_due.toLocaleString()}`} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <InfoRow label="Fiscal Period" value={`#${invoice.fiscal_period_id}`} />
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Description */}
+      {invoice.description && (
+        <Card>
+          <CardHeader>Description</CardHeader>
+          <CardBody>
+            <p className="text-sm text-neutral-600">{invoice.description}</p>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Payment panel */}
       {canPay && (
         <ReceivePaymentPanel invoiceId={invoiceId ?? ''} balanceDue={invoice.balance_due} />
@@ -282,9 +283,9 @@ export default function CustomerInvoiceDetailPage() {
 
       {/* Payment history */}
       {invoice.payments && invoice.payments.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold text-neutral-800 mb-2">Payment History</h2>
-          <div className="rounded border border-neutral-200 overflow-hidden">
+        <Card>
+          <CardHeader>Payment History</CardHeader>
+          <CardBody className="p-0">
             <table className="min-w-full divide-y divide-neutral-100 text-sm">
               <thead className="bg-neutral-50">
                 <tr>
@@ -304,19 +305,21 @@ export default function CustomerInvoiceDetailPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       )}
 
       {/* Write-off info */}
       {invoice.status === 'written_off' && invoice.write_off_reason && (
-        <div className="rounded bg-neutral-50 border border-neutral-200 p-4 text-sm text-neutral-700">
-          <p className="font-semibold">Written Off</p>
-          <p className="mt-1">{invoice.write_off_reason}</p>
-          {invoice.write_off_at && (
-            <p className="text-xs mt-1 opacity-70">{new Date(invoice.write_off_at).toLocaleString()}</p>
-          )}
-        </div>
+        <Card>
+          <CardHeader>Write-Off Information</CardHeader>
+          <CardBody>
+            <p className="text-sm text-neutral-700">{invoice.write_off_reason}</p>
+            {invoice.write_off_at && (
+              <p className="text-xs text-neutral-500 mt-1">{new Date(invoice.write_off_at).toLocaleString()}</p>
+            )}
+          </CardBody>
+        </Card>
       )}
     </div>
   )

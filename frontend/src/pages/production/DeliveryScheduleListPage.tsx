@@ -118,7 +118,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
                     <td className="px-4 py-3">
                       {ds.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
                       <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[ds.status]}`}>
-                        {ds.status.replace('_', ' ')}
+                        {ds.status?.replace('_', ' ') || 'Unknown'}
                       </span>
                     </td>
                   </tr>

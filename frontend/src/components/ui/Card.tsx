@@ -9,8 +9,8 @@ interface CardProps {
 export function Card({ children, className, hoverable }: CardProps) {
   return (
     <div className={cn(
-      'bg-white border border-neutral-200 rounded-lg shadow-sm overflow-hidden',
-      hoverable && 'hover:border-neutral-300 hover:shadow-md transition-all duration-150',
+      'bg-white border border-neutral-200 rounded-xl shadow-subtle overflow-hidden',
+      hoverable && 'card-hover cursor-pointer',
       className
     )}>
       {children}

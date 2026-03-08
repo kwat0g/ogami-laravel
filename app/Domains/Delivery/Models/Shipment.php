@@ -21,13 +21,14 @@ final class Shipment extends Model implements AuditableContract
     protected $fillable = [
         'delivery_receipt_id', 'carrier', 'tracking_number',
         'shipped_at', 'estimated_arrival', 'actual_arrival',
-        'status', 'notes', 'created_by_id',
+        'status', 'notes', 'ar_invoice_created', 'created_by_id',
     ];
 
     protected $casts = [
-        'shipped_at'        => 'datetime',
-        'estimated_arrival' => 'date',
-        'actual_arrival'    => 'date',
+        'shipped_at'          => 'datetime',
+        'estimated_arrival'   => 'date',
+        'actual_arrival'      => 'date',
+        'ar_invoice_created'  => 'boolean',
     ];
 
     public function deliveryReceipt(): BelongsTo

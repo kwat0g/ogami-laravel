@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useStaffDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { StatusBadge } from '@/components/ui/StatusBadge'
 import {
   FileText,
   Calendar,
@@ -15,7 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
-// Simple stat card - no decorative styling
+// Simple stat card using Card component
 function StatCard({
   label,
   value,
@@ -30,19 +32,21 @@ function StatCard({
   href?: string
 }) {
   const content = (
-    <div className="bg-white border border-neutral-200 rounded p-5">
-      <div className="flex items-start justify-between">
-        <Icon className="h-5 w-5 text-neutral-500" />
-        {href && (
-          <ChevronRight className="h-4 w-4 text-neutral-400" />
-        )}
+    <Card className="h-full">
+      <div className="p-5">
+        <div className="flex items-start justify-between">
+          <Icon className="h-5 w-5 text-neutral-500" />
+          {href && (
+            <ChevronRight className="h-4 w-4 text-neutral-400" />
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
+          <p className="text-sm text-neutral-600 mt-1">{label}</p>
+          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
+        </div>
       </div>
-      <div className="mt-4">
-        <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-        <p className="text-sm text-neutral-600 mt-1">{label}</p>
-        {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-      </div>
-    </div>
+    </Card>
   )
 
   if (href) {
@@ -51,7 +55,7 @@ function StatCard({
   return content
 }
 
-// Section card with header - minimal styling
+// Section card using Card component
 function SectionCard({ 
   title, 
   children,
@@ -62,24 +66,21 @@ function SectionCard({
   action?: { label: string; href: string }
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-neutral-900">{title}</h2>
-        {action && (
-          <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-            {action.label}
-            <ChevronRight className="h-3 w-3" />
-          </Link>
-        )}
-      </div>
-      <div className="p-4">
-        {children}
-      </div>
-    </div>
+    <Card>
+      <CardHeader action={action && (
+        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
+          {action.label}
+          <ChevronRight className="h-3 w-3" />
+        </Link>
+      )}>
+        {title}
+      </CardHeader>
+      <CardBody>{children}</CardBody>
+    </Card>
   )
 }
 
-// Simple table for recent requests
+// Simple table for recent requests using Card component
 function RecentRequestsTable({ 
   title, 
   emptyMessage,
@@ -92,20 +93,21 @@ function RecentRequestsTable({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-neutral-900">{title}</h3>
+    <Card>
+      <CardHeader action={(
         <Link to={href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
           View all
           <ChevronRight className="h-3 w-3" />
         </Link>
-      </div>
+      )}>
+        {title}
+      </CardHeader>
       <div className="divide-y divide-neutral-100">
         {children || (
           <p className="px-4 py-6 text-sm text-neutral-400 text-center">{emptyMessage}</p>
         )}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -120,19 +122,7 @@ function RequestRow({
   status: string
   detail?: string
 }) {
-  const statusColors: Record<string, string> = {
-    pending: 'text-amber-600',
-    approved: 'text-green-600',
-    rejected: 'text-red-600',
-    cancelled: 'text-neutral-500',
-    supervisor_approved: 'text-blue-600',
-    submitted: 'text-amber-600',
-    head_approved: 'text-blue-600',
-    manager_checked: 'text-indigo-600',
-    ga_processed: 'text-purple-600',
-  }
-  
-  const colorClass = statusColors[status] || statusColors.pending
+  const normalizedStatus = status?.toLowerCase() || 'draft'
   
   return (
     <div className="px-4 py-3 flex items-center justify-between hover:bg-neutral-50">
@@ -140,9 +130,9 @@ function RequestRow({
         <p className="text-sm font-medium text-neutral-900">{type}</p>
         <p className="text-xs text-neutral-500">{date} {detail && `• ${detail}`}</p>
       </div>
-      <span className={`text-xs font-medium ${colorClass} capitalize`}>
-        {status.replace('_', ' ')}
-      </span>
+      <StatusBadge status={normalizedStatus}>
+        {status?.replace(/_/g, ' ') || 'Unknown'}
+      </StatusBadge>
     </div>
   )
 }
@@ -158,9 +148,9 @@ export default function EmployeeDashboard() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">
+      <h1 className="text-lg font-semibold text-neutral-900">
         Welcome, {user?.name?.split(' ')[0] ?? 'there'}
       </h1>
 
@@ -202,26 +192,34 @@ export default function EmployeeDashboard() {
       {/* Attendance Summary */}
       <SectionCard title="Attendance This Month" action={{ label: 'View details', href: '/me/attendance' }}>
         <div className="grid grid-cols-4 gap-4">
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <CheckCircle2 className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.present ?? 0}</p>
-            <p className="text-xs text-neutral-600">Present</p>
-          </div>
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <AlertCircle className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.absent ?? 0}</p>
-            <p className="text-xs text-neutral-600">Absent</p>
-          </div>
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <Clock className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.late ?? 0}</p>
-            <p className="text-xs text-neutral-600">Late</p>
-          </div>
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <Timer className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.ot_hours ?? 0}</p>
-            <p className="text-xs text-neutral-600">OT Hours</p>
-          </div>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <CheckCircle2 className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.present ?? 0}</p>
+              <p className="text-xs text-neutral-600">Present</p>
+            </div>
+          </Card>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <AlertCircle className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.absent ?? 0}</p>
+              <p className="text-xs text-neutral-600">Absent</p>
+            </div>
+          </Card>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <Clock className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.late ?? 0}</p>
+              <p className="text-xs text-neutral-600">Late</p>
+            </div>
+          </Card>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <Timer className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.ot_hours ?? 0}</p>
+              <p className="text-xs text-neutral-600">OT Hours</p>
+            </div>
+          </Card>
         </div>
       </SectionCard>
 
@@ -263,7 +261,7 @@ export default function EmployeeDashboard() {
       {/* Loan Summary */}
       {(stats?.loans.active_loans ?? 0) > 0 && (
         <SectionCard title="Active Loans" action={{ label: 'View all', href: '/me/loans' }}>
-          <div className="flex items-center gap-4 p-4 bg-neutral-50 border border-neutral-200 rounded">
+          <div className="flex items-center gap-4 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
             <PiggyBank className="h-5 w-5 text-neutral-500" />
             <div className="flex-1">
               <p className="text-xs text-neutral-600">Total Outstanding Balance</p>
@@ -288,7 +286,7 @@ export default function EmployeeDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           <Link 
             to="/self-service/payslips" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <FileText className="h-4 w-4 text-neutral-500" />
             <div className="flex-1 min-w-0">
@@ -298,7 +296,7 @@ export default function EmployeeDashboard() {
           </Link>
           <Link 
             to="/me/leaves" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <Calendar className="h-4 w-4 text-neutral-500" />
             <div className="flex-1 min-w-0">
@@ -308,7 +306,7 @@ export default function EmployeeDashboard() {
           </Link>
           <Link 
             to="/me/loans" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <Wallet className="h-4 w-4 text-neutral-500" />
             <div className="flex-1 min-w-0">
@@ -318,7 +316,7 @@ export default function EmployeeDashboard() {
           </Link>
           <Link 
             to="/me/overtime" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <Timer className="h-4 w-4 text-neutral-500" />
             <div className="flex-1 min-w-0">
@@ -328,7 +326,7 @@ export default function EmployeeDashboard() {
           </Link>
           <Link 
             to="/me/attendance" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <Clock className="h-4 w-4 text-neutral-500" />
             <div className="flex-1 min-w-0">
@@ -338,7 +336,7 @@ export default function EmployeeDashboard() {
           </Link>
           <Link 
             to="/me/profile" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <UserCircle className="h-4 w-4 text-neutral-500" />
             <div className="flex-1 min-w-0">

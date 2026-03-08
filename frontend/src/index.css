@@ -19,10 +19,220 @@
     font-family: theme('fontFamily.mono');
     font-variant-numeric: tabular-nums;
   }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Better focus styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-neutral-400 ring-offset-2 ring-offset-white;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-neutral-200 text-neutral-900;
+  }
+}
+
+@layer components {
+  /* Enhanced card hover effect */
+  .card-hover {
+    @apply transition-all duration-200 ease-out;
+  }
+  .card-hover:hover {
+    @apply shadow-md border-neutral-300;
+    transform: translateY(-1px);
+  }
+
+  /* Button press effect */
+  .btn-press {
+    @apply transition-all duration-150;
+  }
+  .btn-press:active {
+    transform: translateY(1px);
+  }
+
+  /* Status badge pulse for active states */
+  .status-pulse {
+    @apply relative;
+  }
+  .status-pulse::before {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-current opacity-20;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Subtle gradient background for headers */
+  .header-gradient {
+    @apply bg-gradient-to-r from-white to-neutral-50;
+  }
+
+  /* Improved table row hover */
+  .table-row-hover {
+    @apply transition-colors duration-150;
+  }
+  .table-row-hover:hover {
+    @apply bg-neutral-50;
+  }
+
+  /* Form input enhancements */
+  .input-enhanced {
+    @apply transition-all duration-150;
+    @apply border-neutral-300 bg-white;
+    @apply focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100;
+  }
+  .input-enhanced:hover:not(:focus) {
+    @apply border-neutral-400;
+  }
+
+  /* Section divider with gradient */
+  .section-divider {
+    @apply h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent;
+  }
+
+  /* Icon button with hover background */
+  .icon-btn {
+    @apply p-2 rounded-lg border border-neutral-200 bg-white text-neutral-500;
+    @apply transition-all duration-150;
+    @apply hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-700;
+    @apply active:bg-neutral-100;
+  }
+
+  /* Primary action button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 bg-neutral-900 text-white;
+    @apply rounded-lg text-sm font-medium;
+    @apply transition-all duration-150;
+    @apply hover:bg-neutral-800 hover:shadow-md;
+    @apply active:bg-neutral-950 active:translate-y-px;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none;
+  }
+
+  /* Secondary action button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 bg-white text-neutral-700;
+    @apply border border-neutral-300 rounded-lg text-sm font-medium;
+    @apply transition-all duration-150;
+    @apply hover:bg-neutral-50 hover:border-neutral-400;
+    @apply active:bg-neutral-100 active:translate-y-px;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Danger action button */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-4 py-2 bg-white text-red-600;
+    @apply border border-red-300 rounded-lg text-sm font-medium;
+    @apply transition-all duration-150;
+    @apply hover:bg-red-50 hover:border-red-400;
+    @apply active:bg-red-100 active:translate-y-px;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Ghost/Tertiary button */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-3 py-1.5 text-neutral-600;
+    @apply rounded-lg text-sm font-medium;
+    @apply transition-all duration-150;
+    @apply hover:bg-neutral-100 hover:text-neutral-900;
+    @apply active:bg-neutral-200;
+  }
+
+  /* Page container */
+  .page-container {
+    @apply max-w-5xl mx-auto;
+  }
+
+  /* Card with enhanced shadow */
+  .card-elevated {
+    @apply bg-white border border-neutral-200 rounded-xl;
+    @apply shadow-sm;
+    @apply transition-shadow duration-200;
+  }
+  .card-elevated:hover {
+    @apply shadow-md;
+  }
+
+  /* Animated fade in */
+  .fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* Status indicator dot */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  .status-dot-active {
+    @apply bg-emerald-500;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  }
+  .status-dot-pending {
+    @apply bg-amber-500;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  }
+  .status-dot-inactive {
+    @apply bg-neutral-300;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Subtle shadow variations */
+  .shadow-subtle {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  .shadow-elevated {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  }
+  .shadow-floating {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.5);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-400;
 }

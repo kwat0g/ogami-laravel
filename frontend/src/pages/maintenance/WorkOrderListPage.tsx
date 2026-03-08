@@ -113,7 +113,7 @@ export default function WorkOrderListPage() {
                   <td className="px-4 py-3">
                     {wo.deleted_at && <span className="rounded px-2 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
                     <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[wo.status]}`}>
-                      {wo.status.replace('_', ' ')}
+                      {wo.status?.replace('_', ' ') || 'Unknown'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-neutral-500">{wo.scheduled_date ?? '—'}</td>

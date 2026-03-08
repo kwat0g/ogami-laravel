@@ -109,7 +109,7 @@ export default function CapaListPage() {
                     <td className="px-4 py-3 text-neutral-600">{capa.due_date ?? '—'}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={capa.status}>
-                        {capa.status.replace('_', ' ')}
+                        {capa.status?.replace('_', ' ') || 'Unknown'}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-neutral-600">

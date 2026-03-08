@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardList, Plus, AlertTriangle } from 'lucide-react'
+import { Plus, AlertTriangle } from 'lucide-react'
 import { useMaterialRequisitions } from '@/hooks/useInventory'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import StatusBadge from '@/components/ui/StatusBadge'
 import type { MaterialRequisitionStatus } from '@/types/inventory'
 
 const statusBadge: Record<MaterialRequisitionStatus, string> = {
@@ -38,19 +40,6 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Material Requisitions</h1>
-        {canCreate && (
-          <Link
-            to="/inventory/requisitions/new"
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-          >
-            <Plus className="w-4 h-4" /> New Requisition
-          </Link>
-        )}
-      </div>
-
       {/* Filter */}
       <div className="mb-5 flex items-center gap-3">
         <select
@@ -78,59 +67,75 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
 
       {!isLoading && !isError && (
         <>
-          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
-                <tr>
-                  {['MR Reference', 'Department', 'Purpose', 'Status', 'Requested By', 'Date', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {data?.data?.length === 0 && (
+          <Card>
+            <CardHeader
+              action={
+                canCreate && (
+                  <Link
+                    to="/inventory/requisitions/new"
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+                  >
+                    <Plus className="w-4 h-4" /> New Requisition
+                  </Link>
+                )
+              }
+            >
+              Material Requisitions
+            </CardHeader>
+            <CardBody className="p-0">
+              <table className="min-w-full text-sm">
+                <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No requisitions found.</td>
+                    {['MR Reference', 'Department', 'Purpose', 'Status', 'Requested By', 'Date', ''].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
+                    ))}
                   </tr>
-                )}
-                {data?.data?.map((mrq) => (
-                  <tr key={mrq.id} className="even:bg-neutral-100 hover:bg-neutral-50">
-                    <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{mrq.mr_reference}</td>
-                    <td className="px-4 py-3 text-neutral-600">{mrq.department?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-neutral-500 max-w-xs truncate">
-                      {mrq.production_order
-                        ? (
-                          <Link
-                            to={`/production/orders/${mrq.production_order.ulid}`}
-                            className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2"
-                            title={`Go to ${mrq.production_order.po_reference}`}
-                          >
-                            {mrq.purpose}
-                          </Link>
-                        )
-                        : mrq.purpose
-                      }
-                    </td>
-                    <td className="px-4 py-3">
-                      {mrq.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[mrq.status]}`}>
-                        {mrq.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500">{mrq.requested_by?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-neutral-400 text-xs">
-                      {mrq.created_at ? new Date(mrq.created_at).toLocaleDateString('en-PH') : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/inventory/requisitions/${mrq.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
-                        View →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {data?.data?.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No requisitions found.</td>
+                    </tr>
+                  )}
+                  {data?.data?.map((mrq) => (
+                    <tr key={mrq.id} className="hover:bg-neutral-50/50 transition-colors">
+                      <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{mrq.mr_reference}</td>
+                      <td className="px-4 py-3 text-neutral-600">{mrq.department?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-500 max-w-xs truncate">
+                        {mrq.production_order
+                          ? (
+                            <Link
+                              to={`/production/orders/${mrq.production_order.ulid}`}
+                              className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2"
+                              title={`Go to ${mrq.production_order.po_reference}`}
+                            >
+                              {mrq.purpose}
+                            </Link>
+                          )
+                          : mrq.purpose
+                        }
+                      </td>
+                      <td className="px-4 py-3">
+                        {mrq.deleted_at && <StatusBadge className="bg-neutral-100 text-neutral-500 mr-1">Archived</StatusBadge>}
+                        <StatusBadge className={`capitalize ${statusBadge[mrq.status]}`}>
+                          {mrq.status}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3 text-neutral-500">{mrq.requested_by?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-400 text-xs">
+                        {mrq.created_at ? new Date(mrq.created_at).toLocaleDateString('en-PH') : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link to={`/inventory/requisitions/${mrq.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
+                          View →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardBody>
+          </Card>
 
           {data && data.meta.last_page > 1 && (
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">

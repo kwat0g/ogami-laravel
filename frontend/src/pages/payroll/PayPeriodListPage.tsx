@@ -237,7 +237,7 @@ export default function PayPeriodListPage() {
                 {data.data.map((period) => (
                   <tr key={period.id} className="hover:bg-neutral-50">
                     <td className="px-4 py-3 font-medium text-neutral-900">{period.label}</td>
-                    <td className="px-4 py-3 text-neutral-500 capitalize">{period.frequency.replace('_', '-')}</td>
+                    <td className="px-4 py-3 text-neutral-500 capitalize">{period.frequency?.replace('_', '-') || '—'}</td>
                     <td className="px-4 py-3 text-neutral-700">{period.cutoff_start}</td>
                     <td className="px-4 py-3 text-neutral-700">{period.cutoff_end}</td>
                     <td className="px-4 py-3 text-neutral-700">{period.pay_date}</td>

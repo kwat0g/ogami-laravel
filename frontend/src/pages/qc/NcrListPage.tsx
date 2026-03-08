@@ -123,7 +123,7 @@ export default function NcrListPage(): React.ReactElement {
                     <td className="px-4 py-3">
                       {ncr.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
                       <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[ncr.status]}`}>
-                        {ncr.status.replace('_', ' ')}
+                        {ncr.status?.replace('_', ' ') || 'Unknown'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-neutral-400 text-xs">{new Date(ncr.created_at).toLocaleDateString('en-PH')}</td>

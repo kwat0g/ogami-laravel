@@ -1,18 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDocument, useSubmitDocumentForReview, useApproveDocument } from '@/hooks/useISO';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import PageHeader from '@/components/ui/PageHeader';
+import StatusBadge from '@/components/ui/StatusBadge';
+import { Card, CardHeader, CardBody } from '@/components/ui/Card';
+import { InfoRow, InfoList } from '@/components/ui/InfoRow';
 import type { DocumentStatus, DocumentType } from '@/types/iso';
-
-const STATUS_COLORS: Record<DocumentStatus, string> = {
-  draft: 'bg-neutral-100 text-neutral-600',
-  under_review: 'bg-neutral-100 text-neutral-700',
-  approved: 'bg-neutral-200 text-neutral-800',
-  obsolete: 'bg-neutral-100 text-neutral-400',
-};
 
 const TYPE_LABELS: Record<DocumentType, string> = {
   procedure: 'Procedure',
@@ -66,89 +63,63 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
 
   const isPending = submitReviewMut.isPending || approveMut.isPending;
 
-  return (
-    <div className="max-w-3xl">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/iso/documents')}
-            className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 text-neutral-500"
-            aria-label="Back to Document Register"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-neutral-600" />
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-neutral-900 font-mono">{doc.doc_code}</h1>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[doc.status]}`}>
-                {doc.status.replace('_', ' ')}
-              </span>
-              {!doc.is_active && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-400">
-                  Inactive
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-neutral-500 mt-0.5">{doc.title}</p>
-          </div>
-        </div>
+  const statusBadges = (
+    <div className="flex items-center gap-2">
+      <StatusBadge label={doc.status} />
+      {!doc.is_active && (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-400">
+          Inactive
+        </span>
+      )}
+    </div>
+  );
 
-        <div className="flex items-center gap-2 shrink-0">
-          {doc.status === 'draft' && (
-            <button
-              type="button"
-              onClick={() => setConfirmAction('submit_review')}
-              className="px-4 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
-            >
-              Submit for Review
-            </button>
-          )}
-          {doc.status === 'under_review' && (
-            <button
-              type="button"
-              onClick={() => setConfirmAction('approve')}
-              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-            >
-              Approve
-            </button>
-          )}
-        </div>
-      </div>
+  return (
+    <div className="max-w-5xl mx-auto">
+      <PageHeader
+        backTo="/iso/documents"
+        title={doc.doc_code}
+        subtitle={doc.title}
+        icon={<FileText className="w-5 h-5" />}
+        status={statusBadges}
+        actions={
+          <div className="flex items-center gap-2 shrink-0">
+            {doc.status === 'draft' && (
+              <button
+                type="button"
+                onClick={() => setConfirmAction('submit_review')}
+                className="px-4 py-2 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
+              >
+                Submit for Review
+              </button>
+            )}
+            {doc.status === 'under_review' && (
+              <button
+                type="button"
+                onClick={() => setConfirmAction('approve')}
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+              >
+                Approve
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {/* Details */}
-      <div className="bg-white border border-neutral-200 rounded p-6">
-        <dl className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Document Type</dt>
-            <dd className="mt-1 text-neutral-900">{TYPE_LABELS[doc.document_type] ?? doc.document_type}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Category</dt>
-            <dd className="mt-1 text-neutral-900">{doc.category ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Version</dt>
-            <dd className="mt-1 font-mono text-neutral-900">{doc.current_version}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Owner</dt>
-            <dd className="mt-1 text-neutral-900">{doc.owner?.name ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Effective Date</dt>
-            <dd className="mt-1 text-neutral-900">{doc.effective_date ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Review Date</dt>
-            <dd className="mt-1 text-neutral-900">{doc.review_date ?? '—'}</dd>
-          </div>
-        </dl>
-      </div>
+      <Card>
+        <CardHeader>Document Information</CardHeader>
+        <CardBody>
+          <InfoList columns={2}>
+            <InfoRow label="Document Type" value={TYPE_LABELS[doc.document_type] ?? doc.document_type} />
+            <InfoRow label="Category" value={doc.category ?? '—'} />
+            <InfoRow label="Version" value={<span className="font-mono">{doc.current_version}</span>} />
+            <InfoRow label="Owner" value={doc.owner?.name ?? '—'} />
+            <InfoRow label="Effective Date" value={doc.effective_date ?? '—'} />
+            <InfoRow label="Review Date" value={doc.review_date ?? '—'} />
+          </InfoList>
+        </CardBody>
+      </Card>
 
       <ConfirmDialog
         open={confirmAction !== null}

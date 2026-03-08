@@ -1,27 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Wrench } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkOrderDetail, useStartWorkOrder, useCompleteWorkOrder } from '@/hooks/useMaintenance';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import PageHeader from '@/components/ui/PageHeader';
+import StatusBadge from '@/components/ui/StatusBadge';
+import { Card, CardHeader, CardBody } from '@/components/ui/Card';
+import { InfoRow, InfoList } from '@/components/ui/InfoRow';
 import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
 
-const STATUS_COLOR: Record<WorkOrderStatus, string> = {
-  open:        'bg-neutral-100 text-neutral-600',
-  in_progress: 'bg-blue-50 text-blue-700',
-  completed:   'bg-green-50 text-green-700',
-  cancelled:   'bg-neutral-100 text-neutral-400',
-};
-
-const STATUS_LABEL: Record<WorkOrderStatus, string> = {
-  open:        'Open',
-  in_progress: 'In Progress',
-  completed:   'Completed',
-  cancelled:   'Cancelled',
-};
-
-const PRIORITY_COLOR: Record<WorkOrderPriority, string> = {
+const PRIORITY_COLORS: Record<WorkOrderPriority, string> = {
   low:      'bg-neutral-100 text-neutral-500',
   normal:   'bg-neutral-100 text-neutral-600',
   high:     'bg-amber-50 text-amber-700',
@@ -86,106 +76,69 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   const isInProgress = wo.status === 'in_progress';
   const isCompleted  = wo.status === 'completed';
 
-  return (
-    <div className="max-w-3xl">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/maintenance/work-orders')}
-            className="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 text-neutral-500"
-            aria-label="Back to Work Orders"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center shrink-0">
-            <Wrench className="w-5 h-5 text-neutral-600" />
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-neutral-900 font-mono">{wo.mwo_reference}</h1>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${STATUS_COLOR[wo.status]}`}>
-                {STATUS_LABEL[wo.status]}
-              </span>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium capitalize ${PRIORITY_COLOR[wo.priority]}`}>
-                {wo.priority}
-              </span>
-            </div>
-            <p className="text-sm text-neutral-500 mt-0.5">{wo.title}</p>
-          </div>
-        </div>
+  const statusBadges = (
+    <div className="flex items-center gap-2">
+      <StatusBadge label={wo.status} />
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium capitalize ${PRIORITY_COLORS[wo.priority]}`}>
+        {wo.priority}
+      </span>
+    </div>
+  );
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          {isOpen && (
-            <button
-              type="button"
-              onClick={() => setStartConfirm(true)}
-              disabled={startMut.isPending}
-              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
-            >
-              Start Work
-            </button>
-          )}
-          {isInProgress && !showCompleteForm && (
-            <button
-              type="button"
-              onClick={() => setShowCompleteForm(true)}
-              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-            >
-              Complete
-            </button>
-          )}
-        </div>
-      </div>
+  return (
+    <div className="max-w-5xl mx-auto">
+      <PageHeader
+        backTo="/maintenance/work-orders"
+        title={wo.mwo_reference}
+        subtitle={wo.title}
+        icon={<Wrench className="w-5 h-5" />}
+        status={statusBadges}
+        actions={
+          <div className="flex items-center gap-2 shrink-0">
+            {isOpen && (
+              <button
+                type="button"
+                onClick={() => setStartConfirm(true)}
+                disabled={startMut.isPending}
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+              >
+                Start Work
+              </button>
+            )}
+            {isInProgress && !showCompleteForm && (
+              <button
+                type="button"
+                onClick={() => setShowCompleteForm(true)}
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+              >
+                Complete
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {/* Detail card */}
       {!showCompleteForm && (
-        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
-            <div>
-              <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Type</dt>
-              <dd className="mt-1 text-neutral-900 capitalize">{wo.type}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Equipment</dt>
-              <dd className="mt-1 text-neutral-900">{wo.equipment?.name ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Assigned To</dt>
-              <dd className="mt-1 text-neutral-900">{wo.assigned_to?.name ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Scheduled Date</dt>
-              <dd className="mt-1 text-neutral-900">{wo.scheduled_date ?? '—'}</dd>
-            </div>
-            {isCompleted && (
-              <div>
-                <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Completed At</dt>
-                <dd className="mt-1 text-neutral-900">{wo.completed_at ? new Date(wo.completed_at).toLocaleDateString() : '—'}</dd>
-              </div>
-            )}
-            {isCompleted && wo.labor_hours != null && (
-              <div>
-                <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Labor Hours</dt>
-                <dd className="mt-1 text-neutral-900">{wo.labor_hours} hrs</dd>
-              </div>
-            )}
-            {wo.description && (
-              <div className="col-span-2">
-                <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Description</dt>
-                <dd className="mt-1 text-neutral-900 whitespace-pre-wrap">{wo.description}</dd>
-              </div>
-            )}
-            {wo.completion_notes && (
-              <div className="col-span-2">
-                <dt className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Completion Notes</dt>
-                <dd className="mt-1 text-neutral-900 whitespace-pre-wrap">{wo.completion_notes}</dd>
-              </div>
-            )}
-          </dl>
-        </div>
+        <Card className="mb-5">
+          <CardHeader>Work Order Details</CardHeader>
+          <CardBody>
+            <InfoList columns={2}>
+              <InfoRow label="Type" value={<span className="capitalize">{wo.type}</span>} />
+              <InfoRow label="Equipment" value={wo.equipment?.name ?? '—'} />
+              <InfoRow label="Assigned To" value={wo.assigned_to?.name ?? '—'} />
+              <InfoRow label="Scheduled Date" value={wo.scheduled_date ?? '—'} />
+              {isCompleted && (
+                <InfoRow label="Completed At" value={wo.completed_at ? new Date(wo.completed_at).toLocaleDateString() : '—'} />
+              )}
+              {isCompleted && wo.labor_hours != null && (
+                <InfoRow label="Labor Hours" value={`${wo.labor_hours} hrs`} />
+              )}
+              {wo.description && <InfoRow label="Description" value={wo.description} />}
+              {wo.completion_notes && <InfoRow label="Completion Notes" value={wo.completion_notes} />}
+            </InfoList>
+          </CardBody>
+        </Card>
       )}
 
       {/* Complete form */}
@@ -234,7 +187,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
             <button
               type="button"
               onClick={() => setShowCompleteForm(false)}
-              className="px-4 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
+              className="px-4 py-2 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
             >
               Cancel
             </button>

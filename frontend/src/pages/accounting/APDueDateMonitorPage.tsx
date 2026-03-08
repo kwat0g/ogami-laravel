@@ -55,7 +55,7 @@ function InvoiceCard({ invoice, variant }: { invoice: VendorInvoice; variant: 'o
         <span>Due: {invoice.due_date}</span>
         <span className={`px-1.5 py-0.5 rounded capitalize border ${
           invoice.status === 'approved' ? 'bg-neutral-100 text-neutral-700 border-neutral-200' : 'bg-neutral-100 text-neutral-700 border-neutral-200'
-        }`}>{invoice.status.replace('_', ' ')}</span>
+        }`}>{invoice.status?.replace('_', ' ') || 'Unknown'}</span>
       </div>
     </Link>
   )

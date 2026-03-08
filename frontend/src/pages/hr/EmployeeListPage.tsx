@@ -212,7 +212,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                       {emp.position?.title ?? <span className="text-neutral-300">—</span>}
                     </td>
                     <td className="px-3 py-2 text-neutral-600 capitalize">
-                      {emp.employment_type.replace('_', ' ')}
+                      {emp.employment_type?.replace('_', ' ') || '—'}
                     </td>
                     <td className="px-3 py-2">
                       <StatusBadge label={emp.employment_status} autoVariant />

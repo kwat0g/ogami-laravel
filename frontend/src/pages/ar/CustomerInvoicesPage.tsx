@@ -26,7 +26,7 @@ const STATUS_STYLES: Record<CustomerInvoiceStatus, string> = {
 function StatusBadge({ status }: { status: CustomerInvoiceStatus }) {
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${STATUS_STYLES[status]}`}>
-      {status.replace('_', ' ')}
+      {status?.replace('_', ' ') || 'Unknown'}
     </span>
   )
 }

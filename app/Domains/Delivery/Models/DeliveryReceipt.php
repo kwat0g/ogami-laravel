@@ -35,7 +35,7 @@ final class DeliveryReceipt extends Model implements AuditableContract
     protected $table = 'delivery_receipts';
 
     protected $fillable = [
-        'vendor_id', 'customer_id', 'direction', 'status',
+        'vendor_id', 'customer_id', 'delivery_schedule_id', 'direction', 'status',
         'receipt_date', 'remarks', 'received_by_id', 'created_by_id',
         'vehicle_id', 'driver_name',
     ];
@@ -43,6 +43,11 @@ final class DeliveryReceipt extends Model implements AuditableContract
     protected $casts = [
         'receipt_date' => 'date',
     ];
+
+    public function deliverySchedule(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Production\Models\DeliverySchedule::class);
+    }
 
     public function vendor(): BelongsTo
     {

@@ -1,7 +1,7 @@
 // UI Components Barrel Export
 
 export { Button } from './button'
-export { default as Card, CardHeader } from './Card'
+export { Card, CardHeader, CardBody } from './Card'
 export { Checkbox } from './checkbox'
 export { default as ConfirmDestructiveDialog } from './ConfirmDestructiveDialog'
 export { default as CurrencyAmount } from './CurrencyAmount'
@@ -9,6 +9,7 @@ export { default as DataTable } from './DataTable'
 export { default as EmptyState } from './EmptyState'
 export { default as ExecutiveReadOnlyBanner } from './ExecutiveReadOnlyBanner'
 export { default as FormField } from './FormField'
+export { InfoRow, InfoList } from './InfoRow'
 export { Input } from './input'
 export { Label } from './label'
 export { default as PageHeader } from './PageHeader'

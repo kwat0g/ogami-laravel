@@ -92,7 +92,7 @@ export default function MoldListPage() {
                     <td className="px-4 py-3">
                       {m.deleted_at && <span className="rounded px-2 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
                       <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[m.status]}`}>
-                        {m.status.replace('_', ' ')}
+                        {m.status?.replace('_', ' ') || 'Unknown'}
                       </span>
                     </td>
                   </tr>

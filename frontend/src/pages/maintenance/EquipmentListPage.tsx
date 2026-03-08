@@ -81,8 +81,8 @@ export default function EquipmentListPage() {
                   <td className="px-4 py-3 text-neutral-500">{eq.location ?? '—'}</td>
                   <td className="px-4 py-3">
                     {eq.deleted_at && <span className="rounded px-2 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[eq.status]}`}>
-                      {eq.status.replace('_', ' ')}
+                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[eq.status] || STATUS_COLORS.active}`}>
+                      {eq.status?.replace('_', ' ') || 'Unknown'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-neutral-500">{eq.work_orders_count ?? 0}</td>

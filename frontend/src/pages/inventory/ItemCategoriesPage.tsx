@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useItemCategories, useCreateItemCategory } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import type { ItemCategory } from '@/types/inventory'
 
 // ---------------------------------------------------------------------------
@@ -101,48 +102,52 @@ export default function ItemCategoriesPage(): React.ReactElement {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Item Categories</h1>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-        >
-          <Plus className="w-4 h-4" />
-          New Category
-        </button>
-      </div>
-
       {isLoading && <SkeletonLoader rows={5} />}
 
       {!isLoading && (
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Code</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Description</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {(!categories || categories.length === 0) && (
+        <Card>
+          <CardHeader
+            action={
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+              >
+                <Plus className="w-4 h-4" />
+                New Category
+              </button>
+            }
+          >
+            Item Categories
+          </CardHeader>
+          <CardBody className="p-0">
+            <table className="min-w-full text-sm">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-neutral-400 text-sm">
-                    No categories yet. Create one above.
-                  </td>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Code</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Description</th>
                 </tr>
-              )}
-              {categories?.map((cat: ItemCategory) => (
-                <tr key={cat.id} className="even:bg-neutral-50 hover:bg-neutral-50">
-                  <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{cat.code}</td>
-                  <td className="px-4 py-3 text-neutral-900 font-medium">{cat.name}</td>
-                  <td className="px-4 py-3 text-neutral-500">{cat.description ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {(!categories || categories.length === 0) && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                      No categories yet. Create one above.
+                    </td>
+                  </tr>
+                )}
+                {categories?.map((cat: ItemCategory) => (
+                  <tr key={cat.id} className="hover:bg-neutral-50/50 transition-colors">
+                    <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{cat.code}</td>
+                    <td className="px-4 py-3 text-neutral-900 font-medium">{cat.name}</td>
+                    <td className="px-4 py-3 text-neutral-500">{cat.description ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardBody>
+        </Card>
       )}
 
       {showForm && <CategoryFormModal onClose={() => setShowForm(false)} />}

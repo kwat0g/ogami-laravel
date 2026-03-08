@@ -4,6 +4,7 @@ import { useWorkOrders } from '@/hooks/useMaintenance'
 import { useInspections, useNcrs } from '@/hooks/useQC'
 import { useMolds } from '@/hooks/useMold'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {
   Factory,
   Wrench,
@@ -16,6 +17,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
+// Stat card using Card component
 function StatCard({
   label,
   value,
@@ -30,21 +32,23 @@ function StatCard({
   href: string
 }) {
   return (
-    <Link
-      to={href}
-      className="flex items-start gap-4 p-4 bg-white border border-neutral-200 rounded hover:border-neutral-300"
-    >
-      <Icon className="h-5 w-5 text-neutral-500 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-        <p className="text-sm text-neutral-600 mt-0.5">{label}</p>
-        {sub && <p className="text-xs text-neutral-500 mt-0.5">{sub}</p>}
-      </div>
-      <ChevronRight className="h-4 w-4 text-neutral-300 mt-1 shrink-0" />
+    <Link to={href}>
+      <Card className="h-full hover:border-neutral-300 transition-colors">
+        <div className="p-5 flex items-start gap-4">
+          <Icon className="h-5 w-5 text-neutral-500 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-2xl font-semibold text-neutral-900">{value}</p>
+            <p className="text-sm text-neutral-600 mt-0.5">{label}</p>
+            {sub && <p className="text-xs text-neutral-500 mt-0.5">{sub}</p>}
+          </div>
+          <ChevronRight className="h-4 w-4 text-neutral-300 mt-1 shrink-0" />
+        </div>
+      </Card>
     </Link>
   )
 }
 
+// Quick link using Card styling
 function QuickLink({
   href,
   label,
@@ -57,7 +61,7 @@ function QuickLink({
   return (
     <Link
       to={href}
-      className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+      className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle transition-colors"
     >
       <Icon className="h-4 w-4 text-neutral-500" />
       <span className="text-sm font-medium text-neutral-700">{label}</span>
@@ -77,9 +81,9 @@ export default function PlantManagerDashboard(): React.ReactElement {
   if (isLoading) return <SkeletonLoader rows={8} />
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">
+      <h1 className="text-lg font-semibold text-neutral-900">
         Plant Operations
       </h1>
 
@@ -145,19 +149,22 @@ export default function PlantManagerDashboard(): React.ReactElement {
       </div>
 
       {/* Mold Summary */}
-      <div className="bg-white border border-neutral-200 rounded p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-            <Settings className="h-4 w-4 text-neutral-500" />
-            Mold Registry
-          </h2>
+      <Card>
+        <CardHeader action={(
           <Link to="/mold/masters" className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium flex items-center gap-1">
             View all <ChevronRight className="h-3 w-3" />
           </Link>
-        </div>
-        <p className="text-2xl font-semibold text-neutral-900">{molds?.meta?.total ?? 0}</p>
-        <p className="text-sm text-neutral-500 mt-0.5">Total molds registered</p>
-      </div>
+        )}>
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4 text-neutral-500" />
+            Mold Registry
+          </div>
+        </CardHeader>
+        <CardBody>
+          <p className="text-2xl font-semibold text-neutral-900">{molds?.meta?.total ?? 0}</p>
+          <p className="text-sm text-neutral-500 mt-0.5">Total molds registered</p>
+        </CardBody>
+      </Card>
     </div>
   )
 }

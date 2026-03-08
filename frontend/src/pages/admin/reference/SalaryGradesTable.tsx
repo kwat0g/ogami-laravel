@@ -228,7 +228,7 @@ export default function SalaryGradesTable(): JSX.Element {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="border-neutral-300 text-neutral-600">
-                      {grade.employment_type.replace('_', ' ')}
+                      {grade.employment_type?.replace('_', ' ') || '—'}
                     </Badge>
                   </TableCell>
                   <TableCell>{formatCurrency(grade.min_monthly_rate / 100)}</TableCell>

@@ -12,6 +12,8 @@ import {
   useToggleItemActive,
   useItemCategories,
 } from '@/hooks/useInventory'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import type { ItemMaster } from '@/types/inventory'
 
 const schema = z.object({
@@ -95,145 +97,153 @@ export default function ItemMasterFormPage(): React.ReactElement {
     `w-full text-sm border rounded px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${err ? 'border-red-400' : 'border-neutral-300'}`
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">{isEdit ? 'Edit Item' : 'New Item'}</h1>
+    <div className="max-w-3xl mx-auto">
+      <PageHeader
+        title={isEdit ? 'Edit Item' : 'New Item'}
+        backTo="/inventory/items"
+      />
 
-      <form onSubmit={onSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
-        {/* Category */}
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Category *</label>
-          <Controller
-            control={control}
-            name="category_id"
-            render={({ field }) => (
-              <select
-                {...field}
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(Number(e.target.value))}
-                className={fieldCls(errors.category_id)}
-              >
-                <option value="">Select category…</option>
-                {categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            )}
-          />
-          {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>}
-        </div>
+      <Card>
+        <CardHeader>Item Information</CardHeader>
+        <CardBody>
+          <form onSubmit={onSubmit} className="space-y-5">
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Category *</label>
+              <Controller
+                control={control}
+                name="category_id"
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    className={fieldCls(errors.category_id)}
+                  >
+                    <option value="">Select category…</option>
+                    {categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                )}
+              />
+              {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id.message}</p>}
+            </div>
 
-        {/* Name */}
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Name *</label>
-          <input {...register('name')} className={fieldCls(errors.name)} placeholder="e.g. Steel Rod 40mm" />
-          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-        </div>
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Name *</label>
+              <input {...register('name')} className={fieldCls(errors.name)} placeholder="e.g. Steel Rod 40mm" />
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+            </div>
 
-        {/* Type */}
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Type *</label>
-          <Controller
-            control={control}
-            name="type"
-            render={({ field }) => (
-              <select {...field} className={fieldCls(errors.type)}>
-                <option value="">Select type…</option>
-                {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            )}
-          />
-          {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
-        </div>
+            {/* Type */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Type *</label>
+              <Controller
+                control={control}
+                name="type"
+                render={({ field }) => (
+                  <select {...field} className={fieldCls(errors.type)}>
+                    <option value="">Select type…</option>
+                    {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                )}
+              />
+              {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
+            </div>
 
-        {/* UOM */}
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Unit of Measure *</label>
-          <input {...register('unit_of_measure')} className={fieldCls(errors.unit_of_measure)} placeholder="e.g. pcs, kg, L" />
-          {errors.unit_of_measure && <p className="text-red-500 text-xs mt-1">{errors.unit_of_measure.message}</p>}
-        </div>
+            {/* UOM */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Unit of Measure *</label>
+              <input {...register('unit_of_measure')} className={fieldCls(errors.unit_of_measure)} placeholder="e.g. pcs, kg, L" />
+              {errors.unit_of_measure && <p className="text-red-500 text-xs mt-1">{errors.unit_of_measure.message}</p>}
+            </div>
 
-        {/* Reorder */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Reorder Point</label>
-            <input
-              type="number"
-              step="0.0001"
-              {...register('reorder_point', { valueAsNumber: true })}
-              className={fieldCls(errors.reorder_point)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Reorder Qty</label>
-            <input
-              type="number"
-              step="0.0001"
-              {...register('reorder_qty', { valueAsNumber: true })}
-              className={fieldCls(errors.reorder_qty)}
-            />
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
-          <textarea
-            {...register('description')}
-            rows={3}
-            className={fieldCls(errors.description)}
-            placeholder="Optional notes about this item"
-          />
-        </div>
-
-        {/* Requires IQC */}
-        <div>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <Controller
-              control={control}
-              name="requires_iqc"
-              render={({ field }) => (
+            {/* Reorder */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Reorder Point</label>
                 <input
-                  type="checkbox"
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  className="rounded border-neutral-300"
+                  type="number"
+                  step="0.0001"
+                  {...register('reorder_point', { valueAsNumber: true })}
+                  className={fieldCls(errors.reorder_point)}
                 />
-              )}
-            />
-            <span className="text-sm font-medium text-neutral-700">Requires Incoming Quality Control (IQC)</span>
-          </label>
-        </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Reorder Qty</label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  {...register('reorder_qty', { valueAsNumber: true })}
+                  className={fieldCls(errors.reorder_qty)}
+                />
+              </div>
+            </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
-          {isEdit && item && (
-            <button
-              type="button"
-              onClick={handleToggle}
-              disabled={toggleMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50"
-            >
-              <ToggleLeft className="w-4 h-4" />
-              {item.is_active ? 'Deactivate' : 'Activate'}
-            </button>
-          )}
-          <div className="ml-auto flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/inventory/items')}
-              className="px-4 py-2 text-sm font-medium text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!isDirty || createMutation.isPending || updateMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              Save
-            </button>
-          </div>
-        </div>
-      </form>
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
+              <textarea
+                {...register('description')}
+                rows={3}
+                className={fieldCls(errors.description)}
+                placeholder="Optional notes about this item"
+              />
+            </div>
+
+            {/* Requires IQC */}
+            <div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Controller
+                  control={control}
+                  name="requires_iqc"
+                  render={({ field }) => (
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      className="rounded border-neutral-300"
+                    />
+                  )}
+                />
+                <span className="text-sm font-medium text-neutral-700">Requires Incoming Quality Control (IQC)</span>
+              </label>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+              {isEdit && item && (
+                <button
+                  type="button"
+                  onClick={handleToggle}
+                  disabled={toggleMutation.isPending}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  <ToggleLeft className="w-4 h-4" />
+                  {item.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+              )}
+              <div className="ml-auto flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/inventory/items')}
+                  className="px-5 py-2.5 bg-white text-neutral-700 text-sm font-medium rounded border border-neutral-300 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!isDirty || createMutation.isPending || updateMutation.isPending}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  Save
+                </button>
+              </div>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
     </div>
   )
 }

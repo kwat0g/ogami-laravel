@@ -22,11 +22,11 @@ Run the scenarios **in order** — each one produces data used by the next.
 [March 22] Materials issued via MRQ (200 kg) → production started
 [March 22] Equipment breakdown → corrective maintenance WO → resolved
 [March 22] Mold shot log recorded after production run
-[March 23] IPQC inspection → wall thickness below spec → NCR + CAPA
+[March 23] IPQC inspection → wall thickness below spec → NCR raised → CAPA auto-created
 [March 25] AP invoices approved and paid; CAPA resolved; NCR closed
 [March 25] OQC outgoing inspection → passed
 [March 28] Production completed → 10,007 units FGD-001 in stock
-[March 28] Delivery confirmed; AR invoice raised and approved
+[March 28] Delivery confirmed; AR invoice auto-created on shipment delivered
 [March 29] Shipment delivered
 [April 5]  Customer payment received
 [March 31] Month-end JEs, trial balance, financial reports; ISO audit
@@ -412,6 +412,7 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
    - **Customer:** Ace Hardware Philippines *(dropdown)*
    - **Product Item:** Plastic Container 500ml *(dropdown — finished goods only)*
    - **Qty Ordered:** 10,000
+   - **Unit Price (₱):** 28.00 *(used to compute the AR invoice subtotal when the shipment is delivered)*
    - **Target Delivery Date:** 2026-03-28
    - **Type:** Local
    - **Notes:** *(optional)*
@@ -611,34 +612,24 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
 5. ✅ The page navigates to the newly created NCR detail page.
    - Header shows the generated reference (e.g., `NCR-2026-03-00001`) with badges **major** and **open**.
 
-### 7.3 Issue and Complete a CAPA
+### 7.3 Complete the Auto-Created CAPA and Close the NCR
 
-> You should now be on the NCR detail page for `NCR-2026-03-00001` with status **open**.
+> When the NCR was raised in step 7.2, the system automatically created a draft **CAPA Action** linked to it *(requires queue worker)*. NCR status has already transitioned to `capa_issued`.
 
-1. Scroll to the **Actions** section at the bottom of the page.
-2. Click the **Issue CAPA** button (visible only when NCR status is `open` or `under_review`).
-   - An inline form panel labelled **"Issue CAPA Action"** appears above the buttons.
-3. Fill in:
-
-   | Field | What to do | Value |
-   |---|---|---|
-   | **Type** | Dropdown (left column): Corrective / Preventive | **Corrective** |
-   | **Due Date** | Date picker (right column) | `2026-03-25` |
-   | **Description** * | Textarea (full width, 3 rows) | `Re-shim Container 500ml – Cavity 4 mold to restore cavity depth. Verify wall thickness with CMM before resuming. Quarantine suspect units.` |
-   | **Assign To** | Dropdown (left column) — lists active QC/QA staff as `{Full Name} ({Position})`. Optional. | *(select a QC officer or leave unassigned)* |
-
-4. Click **Issue CAPA** (dark button in the inline form).
-   - The **Cancel** button collapses the form without saving.
-5. ✅ The CAPA Actions section appears above the Actions panel, showing the new CAPA entry with:
-   - A **corrective** type badge and the description text
+1. You should be on the NCR detail page for `NCR-2026-03-00001`. Confirm the header badge shows **capa issued**.
+2. Scroll to the **CAPA Actions** section — an auto-created CAPA entry is visible with:
+   - Type badge: **corrective**
    - Status badge: **open**
-   - Due date and assigned employee (if selected)
-   - NCR header status badge changes to **capa issued**
-6. In the CAPA Actions section, find the CAPA entry with status **open**.
-   - Click the **Mark Complete** inline text link (shown at the bottom-right of the CAPA row, beside the due date).
-7. ✅ CAPA status badge updates to **completed**.
-8. Back in the **Actions** section, click **Close NCR** (the dark button).
-9. ✅ NCR header status badge changes to **closed** and a **Closed At** date appears in the NCR Details card.
+   - Description: *Auto-generated from NCR-2026-03-00001. Update with specific corrective action details before marking complete.*
+   - Due date: 14 days from NCR creation
+3. Click the **Mark Complete** inline text link on the CAPA row.
+   - An input or modal may appear — enter resolution notes:\
+     `Re-shimmed Container 500ml – Cavity 4 mold. CMM verified wall thickness at 1.92mm. Suspect units quarantined and re-inspected.`
+4. ✅ CAPA status badge updates to **completed**.
+5. Back in the **Actions** section at the bottom, click **Close NCR**.
+6. ✅ NCR header status badge changes to **closed** and a **Closed At** date appears in the NCR Details card.
+
+> **If the CAPA was not auto-created** (queue worker not running): Click **Issue CAPA** manually — fill in Type: Corrective, Due Date: 2026-03-25, and the description above — then proceed from step 3.
 
 ### 7.4 Outgoing Quality Inspection (OQC)
 
@@ -717,27 +708,30 @@ Create the following three items. Go to **Inventory → Item Master → + New** 
 
 > **Story:** Bill Ace Hardware Philippines for 10,000 units at ₱28.00/unit = ₱280,000 + 12% VAT = ₱313,600 total.
 
-### 9.1 Create and Approve the Customer Invoice
+### 9.1 Locate the Auto-Created AR Invoice and Approve It
 
-1. Go to **Accounting → AR Invoices → New**
-2. Fill in:
-   - **Customer:** Ace Hardware Philippines *(dropdown)*
-   - **Fiscal Period:** March 2026 *(dropdown)*
-   - **AR Account:** 3001 — Accounts Receivable *(dropdown)*
-   - **Revenue Account:** 4001 — Revenue *(dropdown)*
-   - **Invoice Date:** 2026-03-28
-   - **Due Date:** 2026-04-27
-   - **Subtotal:** ₱280,000.00 *(net amount before VAT)*
-   - **VAT Amount:** ₱33,600 *(auto-computed at 12%; adjust if needed)*
-   - **Description:** FGD-001 Plastic Container 500ml × 10,000 units @ ₱28.00 *(optional)*
-3. Click **Save → Approve**
-4. ✅ Invoice status: `approved`
-5. ✅ GL entry auto-posted:
+> When the shipment was marked **Delivered** in step 8.2, the system automatically created a draft Customer Invoice for Ace Hardware Philippines *(requires queue worker)*.
+
+1. Go to **Accounting → AR Invoices**
+2. Locate the draft invoice for **Ace Hardware Philippines** — description reads *Auto-created from Shipment …*
+3. Verify the amounts:
+   - **Subtotal:** ₱280,000.00 *(10,000 units × ₱28.00 from the delivery schedule)*
+   - **VAT Amount:** ₱33,600.00 *(12%)*
+   - **Total:** ₱313,600.00
+4. Click **View →** to open the invoice detail page, then click **Approve**
+5. ✅ Invoice status: `approved`
+6. ✅ GL entry auto-posted:
    - DR Accounts Receivable ₱313,600
    - CR Sales Revenue ₱280,000
    - CR Output VAT Payable ₱33,600
 
-> **Note:** AR invoices record a **Subtotal** (not individual line items). The total displayed is Subtotal + VAT.
+> **If the invoice is missing** (queue worker not running or delivery schedule had no unit price):
+> Go to **Accounting → AR Invoices → New** and fill in:
+> - **Customer:** Ace Hardware Philippines · **Fiscal Period:** March 2026
+> - **AR Account:** 3001 · **Revenue Account:** 4001
+> - **Invoice Date:** 2026-03-28 · **Due Date:** 2026-04-27
+> - **Subtotal:** ₱280,000.00 · **VAT Amount:** ₱33,600
+> - Click **Save → Approve**
 
 ### 9.2 Receive Customer Payment
 
@@ -899,6 +893,8 @@ These are background integrations that fire automatically. Check each one after 
 | Mold shots ≥ max → Preventive WO auto-created | Maintenance → Work Orders — new WO linked to mold | 6.2 |
 | QC Pass (OQC) → Production order not put on hold | Production → Orders — order status remains `completed` | 7.4 |
 | AR Invoice Approved → GL entry posted | Financial Reports → General Ledger — DR AR / CR Revenue | 9.1 |
+| NCR Raised → Draft CAPA auto-created | QC / QA → NCRs → CAPA Actions section — CAPA linked to NCR | 7.2 |
+| Shipment Delivered → Draft AR Invoice auto-created | Accounting → AR Invoices — draft invoice for the customer | 8.2 |
 | ISO Audit Finding created → CAPA auto-created | QC / QA → CAPA — CAPA linked to finding | 11.3 |
 
 ---
@@ -923,6 +919,8 @@ These are background integrations that fire automatically. Check each one after 
 | ISO Document No not editable | Document number is system-generated — no manual input field |
 | ISO Audit has no Clauses field | Include clause references in the **Audit Scope** text field |
 | Plastic Container 500ml stock not updated after production | Work order must reach `completed` status |
+| Auto-created AR invoice has ₱0 subtotal | Delivery schedule was created without a **Unit Price**. Open the draft invoice and set the subtotal manually before approving |
+| Auto-created CAPA has placeholder description | Normal — the system creates a generic description. Update it with the actual corrective action before marking complete |
 | Auto outbound DR not created | Verify production order has a `delivery_schedule_id` linked |
 | AP invoice GL accounts blank | Seeder must have CoA codes `2001` and `6001` — re-run `ChartOfAccountsSeeder` if missing |
 | Output VAT not posted on AR | AR invoice must reach `approved` status |

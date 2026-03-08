@@ -21,6 +21,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
     customer_id: 0,
     product_item_id: 0,
     qty_ordered: '',
+    unit_price: '',
     target_delivery_date: '',
     type: 'local' as DeliveryScheduleType,
     notes: '',
@@ -49,6 +50,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
         customer_id: form.customer_id,
         product_item_id: form.product_item_id,
         qty_ordered: Number(form.qty_ordered),
+        unit_price: form.unit_price !== '' ? Number(form.unit_price) : null,
         target_delivery_date: form.target_delivery_date,
         type: form.type,
         notes: form.notes || undefined,
@@ -101,7 +103,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
           {fe('product_item_id') && <p className="mt-1 text-xs text-red-600">{fe('product_item_id')}</p>}
         </div>
 
-        {/* Qty & Date */}
+        {/* Qty & Unit Price */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Qty Ordered *</label>
@@ -118,8 +120,23 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
             {fe('qty_ordered') && <p className="mt-1 text-xs text-red-600">{fe('qty_ordered')}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Target Delivery Date *</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Unit Price (₱) <span className="text-neutral-400 font-normal">— for auto-invoice</span></label>
             <input
+              type="number"
+              min="0"
+              step="0.0001"
+              placeholder="0.00"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
+              value={form.unit_price}
+              onChange={e => set('unit_price', e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Target Delivery Date */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Target Delivery Date *</label>
+          <input
               type="date"
               className={`w-full border rounded px-3 py-2 text-sm ${fe('target_delivery_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.target_delivery_date}
@@ -128,7 +145,6 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
               required
             />
             {fe('target_delivery_date') && <p className="mt-1 text-xs text-red-600">{fe('target_delivery_date')}</p>}
-          </div>
         </div>
 
         {/* Type */}

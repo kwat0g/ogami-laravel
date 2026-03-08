@@ -87,12 +87,12 @@ export default function DocumentRegisterPage() {
                   <td className="px-4 py-3 font-medium text-neutral-900">
                     <Link to={`/iso/documents/${doc.ulid}`} className="hover:underline">{doc.title}</Link>
                   </td>
-                  <td className="px-4 py-3 capitalize text-neutral-500">{doc.document_type.replace('_', ' ')}</td>
+                  <td className="px-4 py-3 capitalize text-neutral-500">{doc.document_type?.replace('_', ' ') || '—'}</td>
                   <td className="px-4 py-3 text-neutral-600">{doc.current_version}</td>
                   <td className="px-4 py-3">
                     {doc.deleted_at && <span className="rounded px-2 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
                     <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[doc.status]}`}>
-                      {doc.status.replace('_', ' ')}
+                      {doc.status?.replace('_', ' ') || 'Unknown'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-neutral-500">{doc.review_date ?? '—'}</td>

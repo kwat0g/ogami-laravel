@@ -41,11 +41,13 @@ interface EmployeeProfileViewProps {
 // Helper Functions
 // ============================================================================
 
-function statusLabel(s: string) {
+function statusLabel(s: string | undefined | null) {
+  if (!s) return '—'
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function formatGender(gender: string) {
+function formatGender(gender: string | undefined | null) {
+  if (!gender) return '—'
   const map: Record<string, string> = {
     male: 'Male',
     female: 'Female',
@@ -298,7 +300,7 @@ export default function EmployeeProfileView({
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold text-neutral-900">{employee.full_name}</h1>
               <StatusBadge 
-                label={employee.employment_status.replace('_', ' ')} 
+                label={employee.employment_status?.replace('_', ' ') || 'Unknown'} 
                 autoVariant 
               />
             </div>

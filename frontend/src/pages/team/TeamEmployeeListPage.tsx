@@ -146,7 +146,7 @@ export default function TeamEmployeeListPage() {
                       {emp.full_name}
                     </td>
                     <td className="px-3 py-2 text-neutral-600 capitalize">
-                      {emp.employment_type.replace('_', ' ')}
+                      {emp.employment_type?.replace('_', ' ') || '—'}
                     </td>
                     <td className="px-3 py-2">
                       <StatusBadge label={emp.employment_status} autoVariant />

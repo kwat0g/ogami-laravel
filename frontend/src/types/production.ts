@@ -33,6 +33,7 @@ export interface DeliverySchedule {
   customer: { id: number; name: string } | null
   product_item: { id: number; item_code: string; name: string } | null
   qty_ordered: string
+  unit_price: string | null
   target_delivery_date: string
   type: DeliveryScheduleType
   status: DeliveryScheduleStatus
@@ -95,6 +96,7 @@ export interface CreateDeliverySchedulePayload {
   customer_id: number
   product_item_id: number
   qty_ordered: number
+  unit_price?: number | null
   target_delivery_date: string
   type?: DeliveryScheduleType
   notes?: string

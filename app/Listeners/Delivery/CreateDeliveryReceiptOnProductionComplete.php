@@ -44,10 +44,11 @@ final class CreateDeliveryReceiptOnProductionComplete implements ShouldQueue
 
         $netQty = max(0.0, (float) $order->qty_produced - (float) $order->qty_rejected);
 
-        $this->deliveryService->storeReceipt(
+        $receipt = $this->deliveryService->storeReceipt(
             data: [
                 'direction' => 'outbound',
                 'customer_id' => $customerId,
+                'delivery_schedule_id' => $order->delivery_schedule_id,
                 'receipt_date' => now()->toDateString(),
                 'remarks' => "Auto-created from Production WO #{$order->id} ({$order->po_reference}) — pending warehouse confirmation.",
                 'received_by_id' => $systemUser->id,

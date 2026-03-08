@@ -39,6 +39,7 @@ final class DeliverySchedule extends Model implements Auditable
         'customer_id',
         'product_item_id',
         'qty_ordered',
+        'unit_price',
         'target_delivery_date',
         'type',
         'status',
@@ -47,6 +48,7 @@ final class DeliverySchedule extends Model implements Auditable
 
     protected $casts = [
         'qty_ordered'          => 'decimal:4',
+        'unit_price'           => 'decimal:4',
         'target_delivery_date' => 'date',
     ];
 

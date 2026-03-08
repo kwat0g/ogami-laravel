@@ -18,7 +18,8 @@ const ALLOWED_TRANSITIONS: Record<EmploymentStatus, EmploymentStatus[]> = {
   terminated: [],
 }
 
-function statusLabel(s: string) {
+function statusLabel(s: string | undefined | null) {
+  if (!s) return '—'
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 

@@ -3,6 +3,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { useManagerDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { StatusBadge } from '@/components/ui/StatusBadge'
 import { 
   Users, 
   Clock, 
@@ -20,7 +22,7 @@ import {
   Briefcase
 } from 'lucide-react'
 
-// Simple stat card - no decorative styling
+// Simple stat card using Card component
 function StatCard({
   label,
   value,
@@ -35,19 +37,21 @@ function StatCard({
   href?: string
 }) {
   const content = (
-    <div className="bg-white border border-neutral-200 rounded p-5">
-      <div className="flex items-start justify-between">
-        <Icon className="h-5 w-5 text-neutral-500" />
-        {href && (
-          <ChevronRight className="h-4 w-4 text-neutral-400" />
-        )}
+    <Card className="h-full">
+      <div className="p-5">
+        <div className="flex items-start justify-between">
+          <Icon className="h-5 w-5 text-neutral-500" />
+          {href && (
+            <ChevronRight className="h-4 w-4 text-neutral-400" />
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
+          <p className="text-sm text-neutral-600 mt-1">{label}</p>
+          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
+        </div>
       </div>
-      <div className="mt-4">
-        <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-        <p className="text-sm text-neutral-600 mt-1">{label}</p>
-        {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-      </div>
-    </div>
+    </Card>
   )
 
   if (href) {
@@ -78,7 +82,7 @@ function SimpleBarChart({ data, valueKey, labelKey }: { data: Record<string, unk
   )
 }
 
-// Alert card for pending approvals - minimal
+// Alert card for pending approvals using Card component
 function PendingAlert({ 
   count, 
   label, 
@@ -90,21 +94,22 @@ function PendingAlert({
 }) {
   if (count === 0) return null
   return (
-    <Link 
-      to={href}
-      className="flex items-center gap-4 p-4 border border-amber-200 bg-amber-50 rounded"
-    >
-      <span className="text-lg font-semibold text-amber-700">{count}</span>
-      <div className="flex-1">
-        <span className="text-sm font-medium text-neutral-800 block">{label}</span>
-        <span className="text-xs text-neutral-600">Click to review</span>
-      </div>
-      <ChevronRight className="h-4 w-4 text-neutral-400" />
+    <Link to={href}>
+      <Card className="border-amber-200 bg-amber-50 hover:border-amber-300 transition-colors">
+        <div className="p-4 flex items-center gap-4">
+          <span className="text-lg font-semibold text-amber-700">{count}</span>
+          <div className="flex-1">
+            <span className="text-sm font-medium text-neutral-800 block">{label}</span>
+            <span className="text-xs text-neutral-600">Click to review</span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-neutral-400" />
+        </div>
+      </Card>
     </Link>
   )
 }
 
-// Section card with header - minimal styling
+// Section card using Card component
 function SectionCard({ 
   title, 
   children,
@@ -115,24 +120,21 @@ function SectionCard({
   action?: { label: string; href: string }
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-neutral-900">{title}</h2>
-        {action && (
-          <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-            {action.label}
-            <ChevronRight className="h-3 w-3" />
-          </Link>
-        )}
-      </div>
-      <div className="p-4">
-        {children}
-      </div>
-    </div>
+    <Card>
+      <CardHeader action={action && (
+        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
+          {action.label}
+          <ChevronRight className="h-3 w-3" />
+        </Link>
+      )}>
+        {title}
+      </CardHeader>
+      <CardBody>{children}</CardBody>
+    </Card>
   )
 }
 
-// Simple table for recent requests
+// Simple table for recent requests using Card component
 function RecentRequestsTable({ 
   title, 
   emptyMessage,
@@ -145,22 +147,21 @@ function RecentRequestsTable({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-neutral-900">{title}</h3>
-        {href && (
-          <Link to={href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-            View all
-            <ChevronRight className="h-3 w-3" />
-          </Link>
-        )}
-      </div>
+    <Card>
+      <CardHeader action={href && (
+        <Link to={href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
+          View all
+          <ChevronRight className="h-3 w-3" />
+        </Link>
+      )}>
+        {title}
+      </CardHeader>
       <div className="divide-y divide-neutral-100">
         {children || (
           <p className="px-4 py-6 text-sm text-neutral-400 text-center">{emptyMessage}</p>
         )}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -175,18 +176,7 @@ function RequestRow({
   date: string
   status: string
 }) {
-  const statusColors: Record<string, string> = {
-    pending: 'text-amber-600',
-    submitted: 'text-amber-600',
-    head_approved: 'text-blue-600',
-    manager_checked: 'text-indigo-600',
-    ga_processed: 'text-purple-600',
-    approved: 'text-green-600',
-    rejected: 'text-red-600',
-    cancelled: 'text-neutral-500',
-  }
-  
-  const colorClass = statusColors[status] || statusColors.pending
+  const normalizedStatus = status?.toLowerCase() || 'draft'
   
   return (
     <div className="px-4 py-3 flex items-center justify-between hover:bg-neutral-50">
@@ -194,9 +184,9 @@ function RequestRow({
         <p className="text-sm text-neutral-900">{employee || 'Unknown'}</p>
         <p className="text-xs text-neutral-500">{type} • {date}</p>
       </div>
-      <span className={`text-xs font-medium ${colorClass} capitalize`}>
-        {status.replace('_', ' ')}
-      </span>
+      <StatusBadge status={normalizedStatus}>
+        {status?.replace(/_/g, ' ') || 'Unknown'}
+      </StatusBadge>
     </div>
   )
 }
@@ -216,9 +206,9 @@ export default function ManagerDashboard() {
   const analytics = stats?.analytics
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">
+      <h1 className="text-lg font-semibold text-neutral-900">
         Department Dashboard
       </h1>
 
@@ -370,20 +360,26 @@ export default function ManagerDashboard() {
                 Department vs Company Average
               </h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-                  <p className="text-xl font-semibold text-neutral-900">{analytics.comparison.dept_attendance_rate}%</p>
-                  <p className="text-xs text-neutral-600 mt-1">Your Dept</p>
-                </div>
-                <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-                  <p className="text-xl font-semibold text-neutral-900">{analytics.comparison.company_avg_attendance}%</p>
-                  <p className="text-xs text-neutral-600 mt-1">Company Avg</p>
-                </div>
-                <div className={`text-center p-3 border rounded ${analytics.comparison.vs_company_avg >= 0 ? 'bg-neutral-50 border-neutral-200' : 'bg-red-50 border-red-200'}`}>
-                  <p className={`text-xl font-semibold ${analytics.comparison.vs_company_avg >= 0 ? 'text-neutral-900' : 'text-red-600'}`}>
-                    {analytics.comparison.vs_company_avg > 0 ? '+' : ''}{analytics.comparison.vs_company_avg}%
-                  </p>
-                  <p className={`text-xs mt-1 ${analytics.comparison.vs_company_avg >= 0 ? 'text-neutral-600' : 'text-red-700'}`}>Difference</p>
-                </div>
+                <Card>
+                  <div className="text-center p-3">
+                    <p className="text-xl font-semibold text-neutral-900">{analytics.comparison.dept_attendance_rate}%</p>
+                    <p className="text-xs text-neutral-600 mt-1">Your Dept</p>
+                  </div>
+                </Card>
+                <Card>
+                  <div className="text-center p-3">
+                    <p className="text-xl font-semibold text-neutral-900">{analytics.comparison.company_avg_attendance}%</p>
+                    <p className="text-xs text-neutral-600 mt-1">Company Avg</p>
+                  </div>
+                </Card>
+                <Card className={analytics.comparison.vs_company_avg >= 0 ? '' : 'border-red-200'}>
+                  <div className={`text-center p-3 ${analytics.comparison.vs_company_avg >= 0 ? '' : 'bg-red-50'}`}>
+                    <p className={`text-xl font-semibold ${analytics.comparison.vs_company_avg >= 0 ? 'text-neutral-900' : 'text-red-600'}`}>
+                      {analytics.comparison.vs_company_avg > 0 ? '+' : ''}{analytics.comparison.vs_company_avg}%
+                    </p>
+                    <p className={`text-xs mt-1 ${analytics.comparison.vs_company_avg >= 0 ? 'text-neutral-600' : 'text-red-700'}`}>Difference</p>
+                  </div>
+                </Card>
               </div>
             </div>
           )}
@@ -393,26 +389,34 @@ export default function ManagerDashboard() {
       {/* Today's Attendance Summary */}
       <SectionCard title="Today's Attendance" action={{ label: 'View all', href: '/team/attendance' }}>
         <div className="grid grid-cols-4 gap-4">
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <UserCheck className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.present ?? 0}</p>
-            <p className="text-xs text-neutral-600">Present</p>
-          </div>
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <UserX className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.absent ?? 0}</p>
-            <p className="text-xs text-neutral-600">Absent</p>
-          </div>
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <Timer className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.late ?? 0}</p>
-            <p className="text-xs text-neutral-600">Late</p>
-          </div>
-          <div className="text-center p-3 bg-neutral-50 border border-neutral-200 rounded">
-            <Calendar className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-            <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.on_leave ?? 0}</p>
-            <p className="text-xs text-neutral-600">On Leave</p>
-          </div>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <UserCheck className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.present ?? 0}</p>
+              <p className="text-xs text-neutral-600">Present</p>
+            </div>
+          </Card>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <UserX className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.absent ?? 0}</p>
+              <p className="text-xs text-neutral-600">Absent</p>
+            </div>
+          </Card>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <Timer className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.late ?? 0}</p>
+              <p className="text-xs text-neutral-600">Late</p>
+            </div>
+          </Card>
+          <Card className="bg-neutral-50">
+            <div className="text-center p-3">
+              <Calendar className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
+              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.on_leave ?? 0}</p>
+              <p className="text-xs text-neutral-600">On Leave</p>
+            </div>
+          </Card>
         </div>
       </SectionCard>
 
@@ -449,28 +453,28 @@ export default function ManagerDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Link 
             to="/team/employees"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <Users className="h-4 w-4 text-neutral-500" />
             <span className="text-sm font-medium text-neutral-700">View Team</span>
           </Link>
           <Link 
             to="/team/attendance"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <Clock className="h-4 w-4 text-neutral-500" />
             <span className="text-sm font-medium text-neutral-700">Attendance</span>
           </Link>
           <Link 
             to="/team/leave"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <Calendar className="h-4 w-4 text-neutral-500" />
             <span className="text-sm font-medium text-neutral-700">Leave Requests</span>
           </Link>
           <Link 
             to="/team/loans"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded hover:border-neutral-300"
+            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
           >
             <FileCheck className="h-4 w-4 text-neutral-500" />
             <span className="text-sm font-medium text-neutral-700">Loan Requests</span>

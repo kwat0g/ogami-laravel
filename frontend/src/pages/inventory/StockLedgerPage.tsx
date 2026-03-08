@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { List, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { useStockLedger, useWarehouseLocations } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import StatusBadge from '@/components/ui/StatusBadge'
 import type { StockLedger } from '@/types/inventory'
 
 function resolveReferenceRoute(referenceType: string | null, ulid: string): string {
@@ -51,11 +53,6 @@ export default function StockLedgerPage(): React.ReactElement {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Stock Ledger</h1>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <select
@@ -100,67 +97,70 @@ export default function StockLedgerPage(): React.ReactElement {
 
       {!isLoading && !isError && (
         <>
-          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
-                <tr>
-                  {['Date/Time', 'Item', 'Location', 'Type', 'Qty', 'Balance After', 'Reference', 'By', 'Remarks'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {data?.data?.length === 0 && (
+          <Card>
+            <CardHeader>Stock Ledger</CardHeader>
+            <CardBody className="p-0">
+              <table className="min-w-full text-sm">
+                <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-neutral-400 text-sm">No ledger entries found.</td>
+                    {['Date/Time', 'Item', 'Location', 'Type', 'Qty', 'Balance After', 'Reference', 'By', 'Remarks'].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
+                    ))}
                   </tr>
-                )}
-                {data?.data?.map((entry) => {
-                  const qty = parseFloat(entry.quantity)
-                  const isNeg = qty < 0
-
-                  return (
-                    <tr key={entry.id} className="even:bg-neutral-100 hover:bg-neutral-50">
-                      <td className="px-4 py-3 text-neutral-500 whitespace-nowrap text-xs">
-                        {new Date(entry.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-mono text-neutral-900 font-medium text-xs">{entry.item?.item_code ?? `#${entry.item_id}`}</div>
-                        <div className="text-neutral-500 text-xs truncate max-w-32">{entry.item?.name}</div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-neutral-500">{entry.location?.code ?? `#${entry.location_id}`}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${txBadge[entry.transaction_type]}`}>
-                          {TX_LABELS[entry.transaction_type]}
-                        </span>
-                      </td>
-                      <td className={`px-4 py-3 font-semibold tabular-nums text-right ${isNeg ? 'text-red-600' : 'text-neutral-900'}`}>
-                        {isNeg ? '' : '+'}{qty.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
-                      </td>
-                      <td className="px-4 py-3 font-semibold tabular-nums text-right text-neutral-700">
-                        {parseFloat(entry.balance_after).toLocaleString('en-PH', { maximumFractionDigits: 4 })}
-                      </td>
-                      <td className="px-4 py-3 text-xs font-mono">
-                        {entry.reference_label && entry.reference_ulid
-                          ? (
-                            <Link
-                              to={resolveReferenceRoute(entry.reference_type, entry.reference_ulid)}
-                              className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2"
-                            >
-                              {entry.reference_label}
-                            </Link>
-                          )
-                          : <span className="text-neutral-400">{entry.reference_label ?? '—'}</span>
-                        }
-                      </td>
-                      <td className="px-4 py-3 text-xs text-neutral-500">{entry.created_by?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-xs text-neutral-400 max-w-32 truncate">{entry.remarks ?? '—'}</td>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {data?.data?.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-8 text-center text-neutral-400 text-sm">No ledger entries found.</td>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                  {data?.data?.map((entry) => {
+                    const qty = parseFloat(entry.quantity)
+                    const isNeg = qty < 0
+
+                    return (
+                      <tr key={entry.id} className="hover:bg-neutral-50/50 transition-colors">
+                        <td className="px-4 py-3 text-neutral-500 whitespace-nowrap text-xs">
+                          {new Date(entry.created_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-mono text-neutral-900 font-medium text-xs">{entry.item?.item_code ?? `#${entry.item_id}`}</div>
+                          <div className="text-neutral-500 text-xs truncate max-w-32">{entry.item?.name}</div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-neutral-500">{entry.location?.code ?? `#${entry.location_id}`}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge className={`whitespace-nowrap ${txBadge[entry.transaction_type]}`}>
+                            {TX_LABELS[entry.transaction_type]}
+                          </StatusBadge>
+                        </td>
+                        <td className={`px-4 py-3 font-semibold tabular-nums text-right ${isNeg ? 'text-red-600' : 'text-neutral-900'}`}>
+                          {isNeg ? '' : '+'}{qty.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
+                        </td>
+                        <td className="px-4 py-3 font-semibold tabular-nums text-right text-neutral-700">
+                          {parseFloat(entry.balance_after).toLocaleString('en-PH', { maximumFractionDigits: 4 })}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono">
+                          {entry.reference_label && entry.reference_ulid
+                            ? (
+                              <Link
+                                to={resolveReferenceRoute(entry.reference_type, entry.reference_ulid)}
+                                className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2"
+                              >
+                                {entry.reference_label}
+                              </Link>
+                            )
+                            : <span className="text-neutral-400">{entry.reference_label ?? '—'}</span>
+                          }
+                        </td>
+                        <td className="px-4 py-3 text-xs text-neutral-500">{entry.created_by?.name ?? '—'}</td>
+                        <td className="px-4 py-3 text-xs text-neutral-400 max-w-32 truncate">{entry.remarks ?? '—'}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </CardBody>
+          </Card>
 
           {data && data.meta.last_page > 1 && (
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">

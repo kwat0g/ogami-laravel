@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 
 interface StatusBadgeProps {
-  status: string
+  status?: string
   children: React.ReactNode
   className?: string
 }
@@ -56,12 +56,12 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 export function StatusBadge({ status, children, className }: StatusBadgeProps) {
-  const normalizedStatus = status.toLowerCase().replace(/-/g, ' ').replace(/_/g, ' ')
+  const normalizedStatus = status?.toLowerCase().replace(/-/g, ' ').replace(/_/g, ' ') || 'draft'
   const style = STATUS_STYLES[normalizedStatus] || STATUS_STYLES['draft']
   
   return (
     <span className={cn(
-      'inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border capitalize',
+      'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border capitalize shadow-sm',
       style,
       className
     )}>

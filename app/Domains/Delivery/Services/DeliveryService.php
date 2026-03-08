@@ -8,6 +8,7 @@ use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Delivery\Models\Shipment;
 use App\Domains\Inventory\Models\WarehouseLocation;
 use App\Domains\Inventory\Services\StockService;
+use App\Events\Delivery\ShipmentDelivered;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
@@ -39,6 +40,7 @@ final class DeliveryService implements ServiceContract
             $receipt = DeliveryReceipt::create([
                 'vendor_id' => $data['vendor_id'] ?? null,
                 'customer_id' => $data['customer_id'] ?? null,
+                'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,
                 'direction' => $data['direction'] ?? 'inbound',
                 'status' => 'draft',
                 'receipt_date' => $data['receipt_date'],
@@ -154,6 +156,10 @@ final class DeliveryService implements ServiceContract
     public function updateShipmentStatus(Shipment $shipment, string $status): Shipment
     {
         $shipment->update(['status' => $status]);
+
+        if ($status === 'delivered') {
+            event(new ShipmentDelivered($shipment->refresh()));
+        }
 
         return $shipment;
     }

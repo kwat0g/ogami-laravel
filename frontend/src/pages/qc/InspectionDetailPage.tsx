@@ -208,7 +208,7 @@ export default function InspectionDetailPage(): React.ReactElement {
         status={
           <>
             <StatusBadge status={inspection.stage}>{inspection.stage}</StatusBadge>
-            <StatusBadge status={inspection.status}>{inspection.status.replace('_', ' ')}</StatusBadge>
+            <StatusBadge status={inspection.status}>{inspection.status?.replace('_', ' ') || 'Unknown'}</StatusBadge>
           </>
         }
         actions={

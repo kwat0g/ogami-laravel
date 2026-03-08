@@ -6,6 +6,7 @@ namespace App\Domains\QC\Services;
 
 use App\Domains\QC\Models\CapaAction;
 use App\Domains\QC\Models\NonConformanceReport;
+use App\Events\QC\NonConformanceReportRaised;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -44,7 +45,11 @@ final class NcrService implements ServiceContract
             // Update NCR status on the parent inspection
             $ncr->inspection()->update(['status' => 'on_hold']);
 
-            return $ncr->load(['inspection.itemMaster', 'raisedBy']);
+            $loaded = $ncr->load(['inspection.itemMaster', 'raisedBy']);
+
+            event(new NonConformanceReportRaised($loaded));
+
+            return $loaded;
         });
     }
 
