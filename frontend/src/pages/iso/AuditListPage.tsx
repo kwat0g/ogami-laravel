@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { useAudits } from '@/hooks/useISO';
 import type { AuditStatus } from '@/types/iso';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 const STATUS_COLORS: Record<AuditStatus, string> = {
   planned: 'bg-neutral-100 text-neutral-600',
@@ -18,8 +19,9 @@ export default function AuditListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900 mb-6">Internal Audits</h1>
+      <PageHeader title="Internal Audits" />
+
+      <div className="flex items-center justify-end">
         <Link
           to="/iso/audits/new"
           className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"

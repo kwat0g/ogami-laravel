@@ -260,7 +260,10 @@ function mrqWorkflowMutation(
 
 export function useSubmitMRQ(ulid: string) {
   const qc = useQueryClient()
-  return useMutation({ mutationFn: () => mrqWorkflowMutation(ulid, 'submit', qc)() })
+  return useMutation({
+    mutationFn: (payload?: { stock_override_reason?: string }) =>
+      mrqWorkflowMutation(ulid, 'submit', qc)(payload),
+  })
 }
 
 export function useNoteMRQ(ulid: string) {

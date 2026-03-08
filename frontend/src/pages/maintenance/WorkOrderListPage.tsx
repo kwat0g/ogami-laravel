@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, List } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { useWorkOrders } from '@/hooks/useMaintenance';
 import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
 
@@ -35,15 +36,17 @@ export default function WorkOrderListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900 mb-6">Work Orders</h1>
-        <Link
-          to="/maintenance/work-orders/new"
-          className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-        >
-          <Plus size={16} /> New Work Order
-        </Link>
-      </div>
+      <PageHeader
+        title="Work Orders"
+        actions={
+          <Link
+            to="/maintenance/work-orders/new"
+            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            <Plus size={16} /> New Work Order
+          </Link>
+        }
+      />
 
       <div className="flex gap-2 flex-wrap">
         <select value={type} onChange={e => setType(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400">

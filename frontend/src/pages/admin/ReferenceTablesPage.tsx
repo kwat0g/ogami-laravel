@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 // Import all reference table components
 import TaxBracketsTable from './reference/TaxBracketsTable'
@@ -202,6 +203,8 @@ export default function ReferenceTablesPage(): JSX.Element {
   return (
     <EditModeContext.Provider value={{ isEditMode }}>
       <div className="space-y-6">
+        <PageHeader title="Reference Tables" />
+
         {/* Header with Info */}
         <div className="bg-neutral-50 border border-neutral-200 rounded p-6">
           <div className="flex items-start gap-4">
@@ -209,7 +212,6 @@ export default function ReferenceTablesPage(): JSX.Element {
               <Database className="h-8 w-8 text-neutral-600" />
             </div>
             <div className="flex-1">
-              <h1 className="text-lg font-semibold text-neutral-900 mb-2">Reference Tables</h1>
               <p className="text-neutral-600 mb-4">
                 This page manages <strong>versioned reference data with effective dates</strong>. 
                 These are multi-row datasets (tax brackets, contribution tables, wage rates) that 

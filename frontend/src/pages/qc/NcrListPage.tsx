@@ -4,6 +4,7 @@ import { AlertOctagon, AlertTriangle, Plus } from 'lucide-react'
 import { useNcrs } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { NcrSeverity, NcrStatus } from '@/types/qc'
 
 const severityBadge: Record<NcrSeverity, string> = {
@@ -38,26 +39,20 @@ export default function NcrListPage(): React.ReactElement {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
-            <AlertOctagon className="w-5 h-5 text-neutral-600" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-neutral-900 mb-6">Non-Conformance Reports</h1>
-            <p className="text-sm text-neutral-500 mt-0.5">Track quality failures and corrective actions</p>
-          </div>
-        </div>
-        {canCreate && (
-          <Link
-            to="/qc/ncrs/new"
-            className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New NCR
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Non-Conformance Reports"
+        actions={
+          canCreate ? (
+            <Link
+              to="/qc/ncrs/new"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New NCR
+            </Link>
+          ) : undefined
+        }
+      />
 
       <div className="flex flex-wrap gap-3 mb-5">
         <select
@@ -141,8 +136,8 @@ export default function NcrListPage(): React.ReactElement {
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} NCRs</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

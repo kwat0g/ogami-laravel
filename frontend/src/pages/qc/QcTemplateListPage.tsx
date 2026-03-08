@@ -3,6 +3,7 @@ import { ClipboardCheck, AlertTriangle, Plus } from 'lucide-react'
 import { useInspectionTemplates } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { InspectionStage } from '@/types/qc'
 
 const STAGE_COLORS: Record<InspectionStage, string> = {
@@ -31,25 +32,19 @@ export default function QcTemplateListPage(): React.ReactElement {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
-            <ClipboardCheck className="w-5 h-5 text-neutral-600" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-neutral-900 mb-6">Inspection Templates</h1>
-            <p className="text-sm text-neutral-500 mt-0.5">Define inspection criteria for IQC, IPQC, and OQC stages</p>
-          </div>
-        </div>
-        {canManage && (
-          <button
-            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-            onClick={() => {/* TODO: open create modal */}}
-          >
-            <Plus size={16} /> New Template
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="QC Templates"
+        actions={
+          canManage ? (
+            <button
+              className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+              onClick={() => {/* TODO: open create modal */}}
+            >
+              <Plus size={16} /> New Template
+            </button>
+          ) : undefined
+        }
+      />
 
       <div className="flex flex-wrap gap-3 mb-5">
         <select

@@ -115,6 +115,7 @@ export interface MaterialRequisition {
   mr_reference: string
   department_id: number
   purpose: string
+  remarks: string | null
   status: MaterialRequisitionStatus
   is_cancellable: boolean
   submitted_at: string | null

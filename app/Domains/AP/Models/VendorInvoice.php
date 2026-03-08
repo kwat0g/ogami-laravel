@@ -133,6 +133,11 @@ final class VendorInvoice extends Model implements Auditable
         return $this->hasMany(VendorPayment::class);
     }
 
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Procurement\Models\PurchaseOrder::class, 'purchase_order_id');
+    }
+
     // ── Computed Accessors ────────────────────────────────────────────────────
 
     /**

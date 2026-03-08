@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useStockLedger, useWarehouseLocations } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -53,6 +54,7 @@ export default function StockLedgerPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader title="Stock Ledger" />
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <select
@@ -166,8 +168,8 @@ export default function StockLedgerPage(): React.ReactElement {
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} entries</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

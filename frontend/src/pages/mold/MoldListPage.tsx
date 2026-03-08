@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Settings } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { useMolds } from '@/hooks/useMold';
 import type { MoldStatus } from '@/types/mold';
 
@@ -17,15 +18,17 @@ export default function MoldListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900 mb-6">Mold Masters</h1>
-        <Link
-          to="/mold/masters/new"
-          className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-        >
-          <Plus size={16} /> New Mold
-        </Link>
-      </div>
+      <PageHeader
+        title="Molds"
+        actions={
+          <Link
+            to="/mold/masters/new"
+            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            <Plus size={16} /> New Mold
+          </Link>
+        }
+      />
 
       <div className="flex gap-2">
         <select value={status} onChange={e => setStatus(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400">

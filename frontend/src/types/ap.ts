@@ -124,6 +124,16 @@ export interface VendorInvoice {
   updated_at: string
   // eager-loaded
   vendor?: Vendor
+  purchase_order?: {
+    id: number
+    ulid: string
+    po_reference: string
+  } | null
+  goods_receipt?: {
+    id: number
+    ulid: string
+    gr_reference: string
+  } | null
   payments?: VendorPayment[]
 }
 

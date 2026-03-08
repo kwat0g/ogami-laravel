@@ -6,7 +6,9 @@ namespace App\Listeners\QC;
 
 use App\Domains\QC\Models\CapaAction;
 use App\Events\ISO\AuditFindingCreated;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
 
 /**
  * Creates a Corrective Action (CAPA) when a major or minor ISO Audit Finding
@@ -14,9 +16,17 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  *
  * ISO-QC-001: Observations and informational notes do NOT trigger a CAPA.
  */
-final class CreateCapaOnAuditFinding implements ShouldQueue
+final class CreateCapaOnAuditFinding implements ShouldQueue, ShouldBeUnique
 {
+    use InteractsWithQueue;
+
     public string $queue = 'default';
+    public int $uniqueFor = 60;
+
+    public function uniqueId(AuditFindingCreated $event): string
+    {
+        return 'finding-capa-' . $event->finding->id;
+    }
 
     public function handle(AuditFindingCreated $event): void
     {

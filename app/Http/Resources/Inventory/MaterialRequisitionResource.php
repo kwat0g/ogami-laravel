@@ -21,6 +21,7 @@ final class MaterialRequisitionResource extends JsonResource
             'mr_reference'    => $mrq->mr_reference,
             'department_id'   => $mrq->department_id,
             'purpose'         => $mrq->purpose,
+            'remarks'         => $mrq->remarks,
             'status'          => $mrq->status,
             'is_cancellable'  => $mrq->isCancellable(),
             // SoD actor fields

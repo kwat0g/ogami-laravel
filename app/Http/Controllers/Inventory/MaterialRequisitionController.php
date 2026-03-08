@@ -55,7 +55,8 @@ final class MaterialRequisitionController extends Controller
     public function submit(Request $request, MaterialRequisition $materialRequisition): MaterialRequisitionResource
     {
         $this->authorize('update', $materialRequisition);
-        return new MaterialRequisitionResource($this->service->submit($materialRequisition, $request->user()));
+        $reason = $request->validate(['stock_override_reason' => 'nullable|string|max:500'])['stock_override_reason'] ?? null;
+        return new MaterialRequisitionResource($this->service->submit($materialRequisition, $request->user(), $reason));
     }
 
     public function note(Request $request, MaterialRequisition $materialRequisition): MaterialRequisitionResource

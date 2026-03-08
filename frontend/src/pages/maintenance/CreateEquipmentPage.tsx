@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateEquipment } from '@/hooks/useMaintenance'
 import type { EquipmentStatus } from '@/types/maintenance'
 
@@ -59,16 +59,8 @@ export default function CreateEquipmentPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
-          <Settings className="w-5 h-5 text-neutral-600" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">New Equipment</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Register a piece of equipment</p>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="New Equipment" backTo="/maintenance/equipment" />
 
       <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-lg p-6 space-y-5">
         {/* Name */}
@@ -196,7 +188,7 @@ export default function CreateEquipmentPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Save'}
           </button>

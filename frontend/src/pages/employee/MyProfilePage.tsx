@@ -399,6 +399,7 @@ export default function MyProfilePage() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <PageHeader title="My Profile" />
       {/* ── Profile Header ─────────────────────────────────────────────────────── */}
       <div className="relative mb-8">
         {/* Cover Background */}
@@ -582,7 +583,7 @@ export default function MyProfilePage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-5 py-2.5 rounded transition-colors"
+                className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:cursor-not-allowed text-white font-medium px-5 py-2.5 rounded transition-colors"
               >
                 <Check className="h-4 w-4" />
                 {isSubmitting ? 'Saving…' : 'Save Changes'}
@@ -904,7 +905,7 @@ export default function MyProfilePage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-neutral-600">Status</span>
-                  <StatusBadge label={employee.employment_status} autoVariant />
+                  <StatusBadge status={employee.employment_status}>{employee.employment_status}</StatusBadge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-neutral-600">Onboarding</span>

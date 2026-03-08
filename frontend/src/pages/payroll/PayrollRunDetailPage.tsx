@@ -61,7 +61,7 @@ function DownloadPayslipButton({ runId, detailId }: { runId: string; detailId: n
       onClick={() => void download()}
       disabled={isLoading}
       title="Download payslip PDF"
-      className="p-1 text-neutral-400 hover:text-neutral-900 disabled:opacity-40 transition-colors"
+      className="p-1 text-neutral-400 hover:text-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
     >
       {isLoading
         ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -223,14 +223,14 @@ function PayslipsTable({
             <button
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
-              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
             >
               Previous
             </button>
             <button
               disabled={page >= lastPage}
               onClick={() => onPageChange(page + 1)}
-              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+              className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
             >
               Next
             </button>
@@ -431,7 +431,7 @@ export default function PayrollRunDetailPage() {
 
   return (
     <>
-    <div>
+    <div className="max-w-7xl mx-auto">
       {/* Back nav */}
       <button
         onClick={() => navigate('/payroll/runs')}
@@ -446,7 +446,7 @@ export default function PayrollRunDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-neutral-900">{run.reference_no}</h1>
-            <StatusBadge label={run.status} autoVariant />
+            <StatusBadge status={run.status}>{run.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
             {run.run_type === 'thirteenth_month' && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">
                 13th Month
@@ -501,7 +501,7 @@ export default function PayrollRunDetailPage() {
                 onClick={() => void exportBreakdown.download()}
                 disabled={exportBreakdown.isLoading}
                 title="Full payroll breakdown with attendance, OT, tax, deductions"
-                className="flex items-center gap-2 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 bg-neutral-900 text-white hover:bg-neutral-800 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exportBreakdown.isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Table2 className="h-4 w-4" />}
                 Full Breakdown (Excel)
@@ -509,7 +509,7 @@ export default function PayrollRunDetailPage() {
               <button
                 onClick={() => void exportRegister.download()}
                 disabled={exportRegister.isLoading}
-                className="flex items-center gap-2 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exportRegister.isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Table2 className="h-4 w-4" />}
                 Export Register

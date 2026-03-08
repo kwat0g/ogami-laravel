@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, RefreshCw, ChevronRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAPInvoices } from '@/hooks/useAP'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { VendorInvoiceStatus } from '@/types/ap'
@@ -62,10 +63,11 @@ export default function APInvoicesPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader title="AP Invoices" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">AP Invoices</h1>
           <p className="text-sm text-neutral-500">Accounts payable invoice lifecycle</p>
         </div>
         <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useCashFlow } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { PeriodFilters, CFLine } from '@/types/reports'
 
 function CFSectionTable({ title, lines, total }: {
@@ -61,8 +62,9 @@ export default function CashFlowPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageHeader title="Cash Flow" />
+
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 mb-1">Cash Flow Statement</h1>
         <p className="text-sm text-neutral-500">
           Indirect method — operating, investing, financing activities
         </p>

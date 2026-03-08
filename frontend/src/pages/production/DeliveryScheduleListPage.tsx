@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Truck, AlertTriangle, Plus } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useDeliverySchedules } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -33,18 +34,20 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Delivery Schedules</h1>
-        {canCreate && (
-          <Link
-            to="/production/delivery-schedules/new"
-            className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New Schedule
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Delivery Schedules"
+        actions={
+          canCreate && (
+            <Link
+              to="/production/delivery-schedules/new"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Schedule
+            </Link>
+          )
+        }
+      />
 
       <div className="flex flex-wrap gap-3 mb-5">
         <select
@@ -130,8 +133,8 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} schedules</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

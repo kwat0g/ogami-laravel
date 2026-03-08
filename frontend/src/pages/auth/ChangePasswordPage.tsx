@@ -124,7 +124,7 @@ export default function ChangePasswordPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded transition-colors"
+            className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-5 py-2 rounded transition-colors"
           >
             <Lock className="h-4 w-4" />
             {isSubmitting ? 'Saving…' : 'Update Password'}

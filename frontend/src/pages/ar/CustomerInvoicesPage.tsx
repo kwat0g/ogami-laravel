@@ -8,6 +8,7 @@ import {
 } from '@/hooks/useAR'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { CustomerInvoice, CustomerInvoiceStatus } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -92,10 +93,11 @@ export default function CustomerInvoicesPage() {
 
   return (
     <div className="p-6 space-y-4">
+      <PageHeader title="Customer Invoices" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Customer Invoices</h1>
           <p className="text-sm text-neutral-500">Track and manage AR invoices</p>
         </div>
         <div className="flex items-center gap-2">
@@ -170,7 +172,7 @@ export default function CustomerInvoicesPage() {
                     <td className="px-3 py-2 text-neutral-900">₱{inv.total_amount.toLocaleString()}</td>
                     <td className="px-3 py-2 text-neutral-700">₱{inv.balance_due.toLocaleString()}</td>
                     <td className="px-3 py-2">
-                      <StatusBadge label={inv.status} />
+                      <StatusBadge status={inv.status}>{inv.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-3">

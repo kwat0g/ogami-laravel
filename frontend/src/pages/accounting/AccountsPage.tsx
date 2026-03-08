@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Plus, RefreshCw, ChevronRight, ChevronDown, Archive } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useChartOfAccounts,
   useCreateAccount,
@@ -79,7 +80,7 @@ function AccountRow({ account, depth, onEdit, onArchive }: AccountRowProps) {
           <AccountTypeBadge type={account.account_type} />
         </td>
         <td className="px-3 py-2">
-          <StatusBadge label={account.normal_balance} autoVariant />
+          <StatusBadge status={account.normal_balance}>{account.normal_balance}</StatusBadge>
         </td>
         <td className="px-3 py-2 text-right">
           <div className="flex items-center justify-end gap-2">
@@ -253,7 +254,7 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
@@ -329,10 +330,11 @@ export default function AccountsPage() {
 
   return (
     <div>
+      <PageHeader title="Chart of Accounts" />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Chart of Accounts</h1>
           <p className="text-sm text-neutral-500">
             {flattenAccounts(accounts).filter((a) => a.is_active).length} active accounts
           </p>
@@ -431,7 +433,7 @@ export default function AccountsPage() {
               <button
                 onClick={() => void handleArchive()}
                 disabled={archiveMutation.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {archiveMutation.isPending ? 'Archiving…' : 'Archive'}
               </button>

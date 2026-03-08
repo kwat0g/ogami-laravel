@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGeneralLedger } from '@/hooks/useReports'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { GLFilters } from '@/types/reports'
 
 // ---------------------------------------------------------------------------
@@ -66,8 +67,9 @@ export default function GeneralLedgerPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageHeader title="General Ledger" />
+
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 mb-1">General Ledger</h1>
         <p className="text-sm text-neutral-500">
           Line-by-line movement for a single account with running balance
         </p>

@@ -53,12 +53,12 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${DIRECTION_COLORS[dr.direction]}`}>
         {dr.direction}
       </span>
-      <StatusBadge label={dr.status} />
+      <StatusBadge status={dr.status}>{dr.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
     </div>
   );
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         backTo="/delivery/receipts"
         title={dr.dr_reference}

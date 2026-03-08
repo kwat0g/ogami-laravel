@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AlertTriangle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateCustomerInvoice } from '@/hooks/useAR'
 import { useCustomers } from '@/hooks/useAR'
 import { useFiscalPeriods, useChartOfAccounts } from '@/hooks/useAccounting'
@@ -115,11 +116,8 @@ export default function CustomerInvoiceFormPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900 mb-1">New Customer Invoice</h1>
-        <p className="text-sm text-neutral-500">Invoice number will be generated on approval (AR-003)</p>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="New Invoice" backTo="/ar/invoices" />
 
       {createMut.error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
@@ -314,7 +312,7 @@ export default function CustomerInvoiceFormPage() {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60"
+            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Invoice (Draft)'}
           </button>

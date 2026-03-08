@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAttendanceLogs, useCreateAttendanceLog, useUpdateAttendanceLog, useEmployeeShiftAssignments } from '@/hooks/useAttendance'
 import { useEmployeeSearch } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -246,11 +247,29 @@ export default function AttendanceListPage() {
 
   return (
     <div>
-      {/* Header */}
+      <PageHeader
+        title="Attendance"
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Manual Entry
+            </button>
+            <Link to="/hr/attendance/import"
+              className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-4 py-2 rounded transition-colors">
+              Import CSV
+            </Link>
+          </div>
+        }
+      />
+
+      {/* Header Actions */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Attendance Logs</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{data?.meta?.total ?? 0} records</p>
+          <p className="text-sm text-neutral-500">{data?.meta?.total ?? 0} records</p>
           {(filters.employee_id || searchValue || filters.search) && (
             <div className="flex items-center gap-2 mt-2">
               <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded">
@@ -268,19 +287,6 @@ export default function AttendanceListPage() {
               </button>
             </div>
           )}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Manual Entry
-          </button>
-          <Link to="/hr/attendance/import"
-            className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-4 py-2 rounded transition-colors">
-            Import CSV
-          </Link>
         </div>
       </div>
 
@@ -537,7 +543,7 @@ export default function AttendanceListPage() {
                               >
                                 <p className="font-medium text-neutral-900">{emp.full_name}</p>
                                 <p className="text-xs text-neutral-500">
-                                  {emp.employee_code} {emp.department_name && `· ${emp.department_name}`}
+                                  {emp.full_name}{emp.department_name ? ` — ${emp.department_name}` : ''}
                                 </p>
                               </button>
                             ))
@@ -654,7 +660,7 @@ export default function AttendanceListPage() {
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending || (!editingLog && !formData.employee_id)}
-                  className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 text-sm font-medium"
+                  className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                 >
                   {createMutation.isPending || updateMutation.isPending ? 'Saving...' : editingLog ? 'Update' : 'Save'}
                 </button>

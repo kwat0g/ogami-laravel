@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateDeliveryReceipt } from '@/hooks/useDelivery'
 import { useVendors } from '@/hooks/useAP'
 import { useCustomers } from '@/hooks/useAR'
@@ -91,8 +92,8 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-4xl">
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Delivery Receipt</h1>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="New Delivery Receipt" backTo="/delivery/receipts" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header */}
@@ -208,7 +209,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     type="number"
                     step="0.001"
                     min="0"
-                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none"
+                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={row.quantity_expected}
                     onChange={e => updateRow(idx, 'quantity_expected', e.target.value)}
                     required
@@ -221,7 +222,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     type="number"
                     step="0.001"
                     min="0"
-                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none"
+                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={row.quantity_received}
                     onChange={e => updateRow(idx, 'quantity_received', e.target.value)}
                     required
@@ -265,7 +266,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     type="button"
                     disabled={lineItems.length === 1}
                     onClick={() => removeRow(idx)}
-                    className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30"
+                    className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -287,7 +288,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Receipt'}
           </button>

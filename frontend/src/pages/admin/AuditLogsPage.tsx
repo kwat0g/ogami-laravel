@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, Filter, X, LogIn, LogOut, AlertTriangle, Plus, Pencil, Trash2, Eye } from 'lucide-react'
 import { useAuditLogs, type AuditLog } from '@/hooks/useAdmin'
 import { usePermission } from '@/hooks/usePermission'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -217,15 +218,10 @@ export default function AuditLogsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-6">Audit Logs</h1>
-          <p className="text-sm text-neutral-500">
-            Complete record of all system changes, logins, and data modifications.
-          </p>
-        </div>
+      <PageHeader title="Audit Logs" />
 
+      {/* Page header actions */}
+      <div className="flex items-center justify-end">
         <button
           onClick={() => void refetch()}
           disabled={isFetching}

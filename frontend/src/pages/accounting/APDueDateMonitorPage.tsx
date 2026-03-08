@@ -2,6 +2,7 @@ import { useAPInvoicesDueSoon, useAPInvoices } from '@/hooks/useAP'
 import { Link } from 'react-router-dom'
 import { RefreshCw, AlertCircle, Clock, CheckCircle } from 'lucide-react'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { VendorInvoice } from '@/types/ap'
 
 // ---------------------------------------------------------------------------
@@ -139,10 +140,11 @@ export default function APDueDateMonitorPage() {
 
   return (
     <div className="space-y-6 h-full">
+      <PageHeader title="AP Due Date Monitor" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">AP Due Date Monitor</h1>
           <p className="text-sm text-neutral-500">Real-time payables status</p>
         </div>
         <button

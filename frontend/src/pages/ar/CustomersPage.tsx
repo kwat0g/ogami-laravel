@@ -9,6 +9,7 @@ import {
 } from '@/hooks/useAR'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { Customer, CreateCustomerPayload } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -208,7 +209,7 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
             <button
               type="submit"
               disabled={isPending}
-              className="px-4 py-1.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60"
+              className="px-4 py-1.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isPending ? 'Saving…' : initial ? 'Update' : 'Create Customer'}
             </button>
@@ -232,10 +233,11 @@ export default function CustomersPage() {
 
   return (
     <div className="p-6 space-y-4">
+      <PageHeader title="Customers" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Customers</h1>
           <p className="text-sm text-neutral-500">Manage customer accounts and credit limits</p>
         </div>
         <div className="flex items-center gap-2">

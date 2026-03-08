@@ -102,10 +102,18 @@ final class MaterialRequisitionService implements ServiceContract
         }
     }
 
-    public function submit(MaterialRequisition $mrq, User $actor): MaterialRequisition
+    public function submit(MaterialRequisition $mrq, User $actor, ?string $stockOverrideReason = null): MaterialRequisition
     {
         $this->assertStatus($mrq, 'draft');
-        $mrq->update(['status' => 'submitted', 'submitted_by_id' => $actor->id, 'submitted_at' => now()]);
+        $mrq->update([
+            'status'          => 'submitted',
+            'submitted_by_id' => $actor->id,
+            'submitted_at'    => now(),
+            // Store the override reason so every approver can see why stock was short at submission
+            'remarks'         => $stockOverrideReason
+                ? '[Stock override] '.$stockOverrideReason
+                : $mrq->remarks,
+        ]);
 
         return $mrq->refresh();
     }
@@ -173,6 +181,15 @@ final class MaterialRequisitionService implements ServiceContract
         }
         $mrq->update(['status' => 'rejected', 'rejected_by_id' => $actor->id, 'rejected_at' => now(), 'rejection_reason' => $reason]);
 
+        // PROD-003: When an auto-MRQ tied to a released WO is rejected, revert the WO to
+        // draft so the planner can review and re-release (which generates a new auto-MRQ).
+        if ($mrq->production_order_id) {
+            \App\Domains\Production\Models\ProductionOrder::query()
+                ->where('id', $mrq->production_order_id)
+                ->where('status', 'released')
+                ->update(['status' => 'draft']);
+        }
+
         return $mrq->refresh();
     }
 
@@ -182,6 +199,15 @@ final class MaterialRequisitionService implements ServiceContract
             throw new DomainException('Only draft or submitted requisitions can be cancelled.', 'MRQ_NOT_CANCELLABLE', 422);
         }
         $mrq->update(['status' => 'cancelled']);
+
+        // PROD-003: Mirror reject() — when a linked WO is released and this MRQ is cancelled,
+        // revert the WO back to draft so the planner can re-release with a corrected MRQ.
+        if ($mrq->production_order_id) {
+            \App\Domains\Production\Models\ProductionOrder::query()
+                ->where('id', $mrq->production_order_id)
+                ->where('status', 'released')
+                ->update(['status' => 'draft']);
+        }
 
         return $mrq->refresh();
     }
@@ -194,8 +220,30 @@ final class MaterialRequisitionService implements ServiceContract
     {
         $this->assertStatus($mrq, 'approved');
 
+        $mrq->load('items.item');
+
+        // Pre-check ALL items before opening the transaction so the user sees every
+        // out-of-stock item at once rather than discovering them one by one.
+        $insufficient = [];
+        foreach ($mrq->items as $line) {
+            $balance = $this->stockService->currentBalance($line->item_id, $defaultLocationId);
+            if ($balance < (float) $line->qty_requested) {
+                $insufficient[] = $line->item->name ?? "Item #{$line->item_id}";
+            }
+        }
+
+        if (! empty($insufficient)) {
+            $list = implode(', ', $insufficient);
+            throw new DomainException(
+                count($insufficient) === 1
+                    ? "{$insufficient[0]} is out of stock."
+                    : "Out of stock: {$list}.",
+                'INV_INSUFFICIENT_STOCK',
+                422
+            );
+        }
+
         return DB::transaction(function () use ($mrq, $actor, $defaultLocationId): MaterialRequisition {
-            $mrq->load('items');
             foreach ($mrq->items as $line) {
                 $this->stockService->issue(
                     itemId: $line->item_id,

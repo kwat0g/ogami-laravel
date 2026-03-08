@@ -5,6 +5,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import PayslipBreakdownModal from '@/components/modals/PayslipBreakdownModal'
 import type { PayrollDetail } from '@/types/payroll'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i)
@@ -163,7 +164,7 @@ function PayslipRow({ detail, onView }: PayslipRowProps) {
             }}
             disabled={isLoading}
             title="Download PDF payslip"
-            className="inline-flex items-center gap-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-xs font-medium px-2 py-1.5 rounded transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 text-xs font-medium px-2 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading
               ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -199,9 +200,9 @@ export default function MyPayslipsPage() {
 
   return (
     <div>
+      <PageHeader title="My Payslips" />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">My Payslips</h1>
 
         <select
           value={year}

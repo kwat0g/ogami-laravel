@@ -126,6 +126,40 @@ final class StockService implements ServiceContract
     }
 
     /**
+     * Return previously issued stock back to a location (e.g. WO voided with 0 output).
+     * Creates a positive 'mrq_return' ledger entry mirroring the original issue.
+     */
+    public function returnFromMrq(
+        int $itemId,
+        int $locationId,
+        float $quantity,
+        int $mrqId,
+        User $actor,
+        ?string $remarks = null
+    ): StockLedger {
+        return DB::transaction(function () use ($itemId, $locationId, $quantity, $mrqId, $actor, $remarks): StockLedger {
+            $balance    = $this->currentBalance($itemId, $locationId);
+            $newBalance = $balance + $quantity;
+
+            $ledger = StockLedger::create([
+                'item_id'          => $itemId,
+                'location_id'      => $locationId,
+                'transaction_type' => 'mrq_return',
+                'reference_type'   => 'material_requisitions',
+                'reference_id'     => $mrqId,
+                'quantity'         => $quantity,
+                'balance_after'    => $newBalance,
+                'remarks'          => $remarks ?? 'Returned — WO voided',
+                'created_by_id'    => $actor->id,
+            ]);
+
+            $this->upsertBalance($itemId, $locationId, $newBalance);
+
+            return $ledger;
+        });
+    }
+
+    /**
      * Adjustments — manager-only direct balance corrections.
      */
     public function adjust(
@@ -167,9 +201,11 @@ final class StockService implements ServiceContract
 
     private function upsertBalance(int $itemId, int $locationId, float $newBalance): void
     {
-        StockBalance::updateOrCreate(
-            ['item_id' => $itemId, 'location_id' => $locationId],
-            ['quantity_on_hand' => $newBalance]
-        );
+        DB::table('stock_balances')
+            ->upsert(
+                [['item_id' => $itemId, 'location_id' => $locationId, 'quantity_on_hand' => $newBalance]],
+                ['item_id', 'location_id'],
+                ['quantity_on_hand'],
+            );
     }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Package, AlertTriangle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useShipments, useCreateShipment, useUpdateShipmentStatus, useDeliveryReceipts } from '@/hooks/useDelivery';
+import { PageHeader } from '@/components/ui/PageHeader';
 import type { ShipmentStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<ShipmentStatus, string> = {
@@ -91,8 +92,9 @@ export default function ShipmentsPage() {
 
   return (
     <div className="space-y-4">
+      <PageHeader title="Shipments" />
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900">Shipments</h1>
+        <div />
         <button
           type="button"
           onClick={() => setShowCreate(s => !s)}
@@ -145,7 +147,7 @@ export default function ShipmentsPage() {
           </div>
           <div className="flex justify-end gap-3 pt-1">
             <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-            <button type="submit" disabled={createMut.isPending} className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+            <button type="submit" disabled={createMut.isPending} className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed">
               {createMut.isPending ? 'Creating…' : 'Create Shipment'}
             </button>
           </div>
@@ -266,7 +268,7 @@ export default function ShipmentsPage() {
                               type="button"
                               disabled={updateStatusMut.isPending}
                               onClick={() => handleStatusUpdate(shipment.ulid, NEXT_STATUS[shipment.status]!)}
-                              className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                              className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {updateStatusMut.isPending ? 'Updating…' : `Confirm: ${NEXT_STATUS_LABEL[shipment.status]}`}
                             </button>

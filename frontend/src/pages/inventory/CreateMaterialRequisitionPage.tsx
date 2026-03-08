@@ -57,7 +57,7 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
   const items       = itemsData?.data ?? []
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <PageHeader
         title="New Material Requisition"
         backTo="/inventory/requisitions"
@@ -165,7 +165,7 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
                       min="0.0001"
                       {...register(`items.${idx}.qty_requested`, { valueAsNumber: true })}
                       placeholder="Qty"
-                      className={`w-full text-sm border rounded px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${errors.items?.[idx]?.qty_requested ? 'border-red-400' : 'border-neutral-300'}`}
+                      className={`w-full text-sm border rounded px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${errors.items?.[idx]?.qty_requested ? 'border-red-400' : 'border-neutral-300'}`}
                     />
                   </div>
 
@@ -208,7 +208,7 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Saving…' : 'Create Requisition'}
           </button>

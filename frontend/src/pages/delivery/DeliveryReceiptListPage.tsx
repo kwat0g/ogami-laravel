@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Truck } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { useDeliveryReceipts } from '@/hooks/useDelivery';
 import type { DrDirection, DrStatus } from '@/types/delivery';
 
@@ -29,15 +30,17 @@ export default function DeliveryReceiptListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900">Delivery Receipts</h1>
-        <Link
-          to="/delivery/receipts/new"
-          className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-        >
-          <Plus size={16} /> New Receipt
-        </Link>
-      </div>
+      <PageHeader
+        title="Delivery Receipts"
+        actions={
+          <Link
+            to="/delivery/receipts/new"
+            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            <Plus size={16} /> New Receipt
+          </Link>
+        }
+      />
 
       <div className="flex gap-2">
         <select value={direction} onChange={e => setDirection(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none">

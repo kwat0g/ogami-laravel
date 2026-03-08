@@ -6,7 +6,9 @@ namespace App\Listeners\QC;
 
 use App\Domains\QC\Models\CapaAction;
 use App\Events\QC\NonConformanceReportRaised;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -19,13 +21,26 @@ use Illuminate\Support\Facades\Log;
  * The auto-created CAPA has a placeholder description — QC staff must
  * update it with the actual corrective action before marking complete.
  */
-final class CreateCapaOnNcrRaised implements ShouldQueue
+final class CreateCapaOnNcrRaised implements ShouldQueue, ShouldBeUnique
 {
+    use InteractsWithQueue;
+
     public string $queue = 'default';
+    public int $uniqueFor = 60;
+
+    public function uniqueId(NonConformanceReportRaised $event): string
+    {
+        return 'ncr-capa-' . $event->ncr->id;
+    }
 
     public function handle(NonConformanceReportRaised $event): void
     {
         $ncr = $event->ncr;
+
+        // Idempotency: CAPA already issued for this NCR — skip silently.
+        if ($ncr->status === 'capa_issued') {
+            return;
+        }
 
         try {
             CapaAction::create([

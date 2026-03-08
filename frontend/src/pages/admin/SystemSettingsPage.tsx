@@ -21,6 +21,7 @@ import {
   Code2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const SETTING_GROUPS = [
   { 
@@ -209,15 +210,7 @@ export default function SystemSettingsPage() {
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-neutral-100 rounded">
-            <SettingsIcon className="h-6 w-6 text-neutral-600" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-neutral-900">System Settings</h1>
-            <p className="text-sm text-neutral-500">Configure operational parameters for the ERP system</p>
-          </div>
-        </div>
+        <PageHeader title="System Settings" />
         <SkeletonLoader rows={10} />
       </div>
     )
@@ -225,6 +218,8 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader title="System Settings" />
+
       {/* Header with Info */}
       <div className="bg-neutral-50 border border-neutral-200 rounded p-6">
         <div className="flex items-start gap-4">
@@ -232,7 +227,6 @@ export default function SystemSettingsPage() {
             <SettingsIcon className="h-8 w-8 text-neutral-700" />
           </div>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold text-neutral-900 mb-2">System Settings</h1>
             <p className="text-neutral-600 mb-4">
               This page controls <strong>application behavior and configuration parameters</strong>. 
               These are single-value settings (like timeouts, account codes, and flags) that determine 
@@ -506,7 +500,7 @@ function SettingField({ setting, value, onChange, isEdited, isEditMode }: Settin
               checked={Boolean(value)}
               onChange={(e) => isEditMode && onChange(e.target.checked)}
               disabled={!isEditMode}
-              className="w-5 h-5 text-neutral-600 rounded border-neutral-300 focus:ring-neutral-400 disabled:opacity-50"
+              className="w-5 h-5 text-neutral-600 rounded border-neutral-300 focus:ring-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <span className={cn(
               "text-sm font-medium",

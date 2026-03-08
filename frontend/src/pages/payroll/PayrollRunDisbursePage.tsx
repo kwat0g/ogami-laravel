@@ -148,7 +148,7 @@ export default function PayrollRunDisbursePage() {
                 type="button"
                 onClick={handleDisburse}
                 disabled={disburse.isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium rounded transition-colors"
+                className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
               >
                 {disburse.isPending
                   ? <><Loader2 className="h-4 w-4 animate-spin" /> Posting…</>
@@ -233,7 +233,7 @@ export default function PayrollRunDisbursePage() {
             type="button"
             onClick={handlePublish}
             disabled={publish.isPending}
-            className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium rounded transition-colors"
+            className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
           >
             {publish.isPending
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</>

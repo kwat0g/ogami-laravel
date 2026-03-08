@@ -82,7 +82,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <PageHeader
         title="New Purchase Request"
         backTo="/procurement/purchase-requests"
@@ -173,9 +173,8 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
         {/* Line Items */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between w-full">
-              <span>Line Items</span>
+          <CardHeader
+            action={
               <button
                 type="button"
                 onClick={() =>
@@ -191,7 +190,9 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                 <Plus className="w-3.5 h-3.5" />
                 Add Item
               </button>
-            </div>
+            }
+          >
+            Line Items
           </CardHeader>
           <CardBody>
             {errors.items?.root && (
@@ -212,7 +213,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                       <input
                         {...register(`items.${index}.item_description`)}
                         placeholder="Item description"
-                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       {errors.items?.[index]?.item_description && (
                         <p className="text-xs text-red-600 mt-0.5">
@@ -240,7 +241,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                         type="number"
                         step="0.001"
                         {...register(`items.${index}.quantity`)}
-                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
 
@@ -251,16 +252,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                         type="number"
                         step="0.01"
                         {...register(`items.${index}.estimated_unit_cost`)}
-                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                      />
-                    </div>
-
-                    {/* Specifications */}
-                    <div className="col-span-12">
-                      <input
-                        {...register(`items.${index}.specifications`)}
-                        placeholder="Specifications (optional)"
-                        className="w-full text-sm border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-neutral-50"
+                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
 
@@ -283,6 +275,15 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                    </div>
+
+                    {/* Specifications */}
+                    <div className="col-span-12">
+                      <input
+                        {...register(`items.${index}.specifications`)}
+                        placeholder="Specifications (optional)"
+                        className="w-full text-sm border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-neutral-50"
+                      />
                     </div>
                   </div>
                 )
@@ -313,7 +314,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Saving…' : 'Save Draft'}
           </button>

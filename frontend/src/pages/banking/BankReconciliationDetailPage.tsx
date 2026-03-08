@@ -8,6 +8,7 @@ import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import SodActionButton from '@/components/ui/SodActionButton'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonTable from '@/components/ui/SkeletonTable'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { BankTransaction } from '@/types/banking'
 
 function fmtAmt(amount: number) {
@@ -43,24 +44,23 @@ export default function BankReconciliationDetailPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       <ExecutiveReadOnlyBanner />
+
+      <PageHeader
+        title={recon.bank_account?.account_number ?? `Account #${recon.bank_account_id}`}
+        backTo="/banking/reconciliations"
+      />
 
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <Link to="/banking/reconciliations" className="text-xs text-neutral-600 hover:underline">
-            ← Bank Reconciliations
-          </Link>
-          <h1 className="mt-1 text-lg font-semibold text-neutral-900">
-            {recon.bank_account?.account_number ?? `Account #${recon.bank_account_id}`}
-          </h1>
           <p className="text-sm text-neutral-500">
             {recon.period_from} – {recon.period_to}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <StatusBadge label={recon.status} autoVariant />
+          <StatusBadge status={recon.status}>{recon.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
           {isDraft && (
             <SodActionButton
               initiatedById={recon.created_by_id}
@@ -174,7 +174,7 @@ function TransactionTable({ transactions, isDraft, onUnmatch, emptyMsg }: TxTabl
                 {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(tx.amount)}
               </td>
               <td className="px-4 py-2">
-                <StatusBadge label={tx.status} autoVariant />
+                <StatusBadge status={tx.status}>{tx.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
               </td>
               {isDraft && onUnmatch && (
                 <td className="px-4 py-2">

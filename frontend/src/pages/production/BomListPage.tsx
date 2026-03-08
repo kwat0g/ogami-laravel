@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { GitBranch, AlertTriangle, Plus, Pencil, Archive } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useBoms, useDeleteBom } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -27,18 +28,20 @@ export default function BomListPage(): React.ReactElement {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Bill of Materials</h1>
-        {canCreate && (
-          <Link
-            to="/production/boms/new"
-            className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New BOM
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Bill of Materials"
+        actions={
+          canCreate && (
+            <Link
+              to="/production/boms/new"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New BOM
+            </Link>
+          )
+        }
+      />
 
       <div className="flex flex-wrap gap-3 mb-5">
         <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
@@ -100,7 +103,7 @@ export default function BomListPage(): React.ReactElement {
                           <button
                             onClick={() => handleArchive(bom.ulid, bom.product_item?.name ?? 'BOM')}
                             disabled={deleteMut.isPending}
-                            className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-red-600 font-medium disabled:opacity-40"
+                            className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-red-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <Archive className="w-3.5 h-3.5" /> Archive
                           </button>
@@ -117,8 +120,8 @@ export default function BomListPage(): React.ReactElement {
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page}</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

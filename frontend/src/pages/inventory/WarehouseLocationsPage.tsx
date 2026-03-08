@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, AlertTriangle, X } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
 import { useWarehouseLocations, useCreateLocation, useUpdateLocation } from '@/hooks/useInventory'
 import { useDepartments } from '@/hooks/useEmployees'
@@ -71,6 +72,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader title="Warehouse Locations" />
       {/* Filter */}
       <div className="mb-5">
         <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
@@ -213,7 +215,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
+                  className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Save
                 </button>

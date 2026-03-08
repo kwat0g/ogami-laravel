@@ -84,4 +84,10 @@ final class GoodsReceipt extends Model implements Auditable
     {
         return $this->hasMany(GoodsReceiptItem::class);
     }
+
+    /** @return BelongsTo<\App\Domains\AP\Models\VendorInvoice, GoodsReceipt> */
+    public function apInvoice(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\AP\Models\VendorInvoice::class, 'ap_invoice_id');
+    }
 }

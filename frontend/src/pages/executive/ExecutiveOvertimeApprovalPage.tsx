@@ -7,6 +7,7 @@ import {
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type { OvertimeFilters } from '@/types/hr'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function ExecutiveOvertimeApprovalPage() {
   const [filters, setFilters] = useState<OvertimeFilters>({ per_page: 25 })
@@ -59,7 +60,7 @@ export default function ExecutiveOvertimeApprovalPage() {
 
   return (
     <div>
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">Executive OT Approval</h1>
+      <PageHeader title="Overtime Approvals" />
 
       {/* Info Card */}
       <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-6">
@@ -123,20 +124,20 @@ export default function ExecutiveOvertimeApprovalPage() {
                 <td className="px-4 py-3 text-neutral-600">{formatDuration(row.requested_minutes)}</td>
                 <td className="px-4 py-3 text-neutral-600 max-w-xs truncate">{row.reason}</td>
                 <td className="px-4 py-3">
-                  <StatusBadge label={row.status} />
+                  <StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                 </td>
                 <td className="px-4 py-3 flex gap-2">
                   <button
                     onClick={() => openApprove(row.id, row.requested_minutes)}
                     disabled={approve.isPending}
-                    className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                    className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Approve
                   </button>
                   <button
                     onClick={() => { setRejectId(row.id); setRejectRemarks('') }}
                     disabled={approve.isPending || reject.isPending}
-                    className="px-2 py-1 text-xs bg-neutral-600 text-white rounded hover:bg-neutral-700 disabled:opacity-50"
+                    className="px-2 py-1 text-xs bg-neutral-600 text-white rounded hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Reject
                   </button>
@@ -206,7 +207,7 @@ export default function ExecutiveOvertimeApprovalPage() {
               <button
                 onClick={submitApprove}
                 disabled={!approvedMins || approve.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Approve
               </button>
@@ -243,7 +244,7 @@ export default function ExecutiveOvertimeApprovalPage() {
                   )
                 }}
                 disabled={!rejectRemarks || reject.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Reject
               </button>

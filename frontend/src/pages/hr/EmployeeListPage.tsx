@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { EmployeeFilters, EmploymentStatus, EmploymentType } from '@/types/hr'
 
 const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
@@ -55,28 +56,17 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">
-            {isTeamView ? 'My Team' : 'All Employees'}
-          </h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
-            {data?.meta?.total ?? 0} records
-            {isTeamView && (
-              <span className="ml-2 text-xs text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded">
-                Department Only
-              </span>
-            )}
-          </p>
-        </div>
-        <Link
-          to="/hr/employees/new"
-          className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-        >
-          + Add Employee
-        </Link>
-      </div>
+      <PageHeader
+        title="Employees"
+        actions={
+          <Link
+            to="/hr/employees/new"
+            className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+          >
+            + Add Employee
+          </Link>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 flex flex-wrap gap-3">
@@ -215,7 +205,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                       {emp.employment_type?.replace('_', ' ') || '—'}
                     </td>
                     <td className="px-3 py-2">
-                      <StatusBadge label={emp.employment_status} autoVariant />
+                      <StatusBadge status={emp.employment_status}>{emp.employment_status}</StatusBadge>
                     </td>
                     <td className="px-3 py-2 text-neutral-600">
                       {emp.salary_grade_code ?? '—'}
@@ -265,14 +255,14 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
               <button
                 disabled={data.meta.current_page <= 1}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={data.meta.current_page >= data.meta.last_page}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>

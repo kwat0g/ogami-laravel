@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ClipboardCheck, AlertTriangle, Plus, Trash2, CheckCircle2, XCircle, Ban } from 'lucide-react'
+import { ArrowLeft, ClipboardCheck, AlertTriangle, Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCancelResults, useDeleteInspection, useInspection, useRecordResults } from '@/hooks/useQC'
+import { useCancelResults, useInspection, useRecordResults } from '@/hooks/useQC'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -38,7 +38,6 @@ export default function InspectionDetailPage(): React.ReactElement {
   const { data: inspection, isLoading, isError } = useInspection(ulid ?? null)
   const recordMut  = useRecordResults(ulid ?? '')
   const cancelMut  = useCancelResults(ulid ?? '')
-  const deleteMut  = useDeleteInspection()
 
   // ── Record-results form state ─────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false)
@@ -46,20 +45,6 @@ export default function InspectionDetailPage(): React.ReactElement {
   const [rows, setRows]      = useState<ResultRow[]>([])
   const [formInit, setFormInit] = useState(false)
   const [touchedQty, setTouchedQty] = useState(false)
-
-  // ── Dismiss inspection state ───────────────────────────────────────────────
-  const [showDismissConfirm, setShowDismissConfirm] = useState(false)
-
-  async function handleDismiss() {
-    if (!ulid) return
-    try {
-      await deleteMut.mutateAsync(ulid)
-      toast.success('Inspection dismissed.')
-      navigate('/qc/inspections')
-    } catch {
-      toast.error('Failed to dismiss inspection.')
-    }
-  }
 
   // ── Cancel-results form state ─────────────────────────────────────────────
   const [showCancelForm, setShowCancelForm] = useState(false)
@@ -183,12 +168,12 @@ export default function InspectionDetailPage(): React.ReactElement {
   }
 
   if (isLoading) return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <SkeletonLoader rows={8} />
     </div>
   )
   if (isError || !inspection) return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <div className="flex items-center gap-2 text-red-600 text-sm">
         <AlertTriangle className="w-4 h-4" /> Failed to load inspection.
       </div>
@@ -199,7 +184,7 @@ export default function InspectionDetailPage(): React.ReactElement {
   const hasTemplate = (inspection.template?.items?.length ?? 0) > 0
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         title={inspection.inspection_reference}
         subtitle={`${inspection.stage.toUpperCase()} Inspection`}
@@ -214,42 +199,13 @@ export default function InspectionDetailPage(): React.ReactElement {
         actions={
           <>
             {isOpen && !showForm && (
-              <>
-                <button
-                  onClick={openForm}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 transition-colors"
-                >
-                  <ClipboardCheck className="w-4 h-4" />
-                  Record Results
-                </button>
-                {!showDismissConfirm && (
-                  <button
-                    onClick={() => setShowDismissConfirm(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-300 text-sm font-medium rounded-md hover:bg-red-50 hover:border-red-400 transition-colors"
-                  >
-                    <Ban className="w-4 h-4" />
-                    Dismiss
-                  </button>
-                )}
-                {showDismissConfirm && (
-                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-md px-3 py-1.5">
-                    <span className="text-xs text-red-700 font-medium">Delete this inspection?</span>
-                    <button
-                      onClick={() => void handleDismiss()}
-                      disabled={deleteMut.isPending}
-                      className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium rounded transition-colors"
-                    >
-                      {deleteMut.isPending ? 'Deleting…' : 'Yes, Delete'}
-                    </button>
-                    <button
-                      onClick={() => setShowDismissConfirm(false)}
-                      className="inline-flex items-center gap-2 px-3 py-1 text-xs bg-white text-neutral-700 border border-neutral-300 font-medium rounded hover:bg-neutral-50 hover:border-neutral-400 transition-colors"
-                    >
-                      No
-                    </button>
-                  </div>
-                )}
-              </>
+              <button
+                onClick={openForm}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 transition-colors"
+              >
+                <ClipboardCheck className="w-4 h-4" />
+                Record Results
+              </button>
             )}
             {!isOpen && inspection.status !== 'voided' && !showCancelForm && (
               <button
@@ -321,7 +277,7 @@ export default function InspectionDetailPage(): React.ReactElement {
                 type="submit"
                 disabled={cancelMut.isPending}
                 onClick={handleCancelResults}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <XCircle className="w-4 h-4" />
                 {cancelMut.isPending ? 'Cancelling…' : 'Confirm Cancel'}
@@ -462,7 +418,7 @@ export default function InspectionDetailPage(): React.ReactElement {
                 type="submit"
                 disabled={recordMut.isPending}
                 onClick={handleSubmitResults}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ClipboardCheck className="w-4 h-4" />
                 {recordMut.isPending ? 'Saving…' : 'Submit Results'}

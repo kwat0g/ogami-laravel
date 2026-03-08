@@ -172,16 +172,30 @@ export function useSubmitLeaveRequest() {
 
 Reference: `frontend/src/hooks/useLeave.ts`
 
+**Paginated response shape**: `{ data: T[], meta: { current_page, last_page, per_page, total } }` — the pagination wrapper is `.meta`, **not** `.pagination`.
+
+**`api.ts` write cooldown**: The Axios instance in `frontend/src/lib/api.ts` silently aborts duplicate write calls (POST/PUT/PATCH/DELETE) to the same URL within 800 ms. Do not fire the same mutation URL twice in quick succession in tests or scripts.
+
+**Global QueryClient defaults**: `staleTime: 30_000`, `refetchOnWindowFocus: false`; API errors with `error_code` never retry.
+
 ### Frontend URL Identifiers
 Frontend URL params use **ULID** strings (not integer IDs): `useParams<{ ulid: string }>()`.
 
 ### Zod Schemas
 `z.coerce.number()` for all numeric IDs and monetary inputs. All schemas in `frontend/src/schemas/`.  
-Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormSchema>`.
+Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormSchema>`.  
+Only 9 of the 17 domains have schema files; other domains use inline Zod or plain TypeScript types.
+
+### Frontend Router & Stores
+- All routes are lazy-loaded in a single file `frontend/src/router/index.tsx` with a local `RequirePermission` guard component.
+- Only 2 Zustand stores exist: `authStore.ts` (auth/permissions) and `uiStore.ts` (UI state). Do not add new global stores unless necessary.
+- **AP/Vendor pages live in `pages/accounting/`**, not `pages/ap/`.
+- ESLint rule `@typescript-eslint/no-unused-vars` is `error`; prefix intentionally unused variables/args with `_` (e.g., `_event`).
 
 ### SoD (Segregation of Duties)
 Enforced backend (middleware + policy) **and** frontend via `useSodCheck(createdById)`.  
-Same user who created a record cannot approve/activate it.
+Same user who created a record cannot approve/activate it.  
+Only `admin` and `super_admin` roles bypass SoD — the `manager` role **can** be blocked.
 
 ## Build and Run Commands
 
@@ -259,7 +273,9 @@ beforeEach(function () {
 
 ### Key Conventions
 - **Always use PostgreSQL** test DB (`ogami_erp_test`) — never SQLite (stored columns, triggers)
+- **No `.env.testing`** — test DB config is locked inside `phpunit.xml` with `force="true"`, which wins over shell env vars. Never create a `.env.testing` file.
 - Monetary values in centavos: `'basic_monthly_rate' => 2_500_000` (= ₱25,000)
+- **Factory key aliases**: `hired_at` → maps to `date_hired`; `resigned_at` → maps to `separation_date` inside `PayrollTestHelper::normalizeOverrides()`. Use the helper, not raw factory calls.
 - Payroll golden suite: 24 canonical scenarios in `tests/Unit/Payroll/GoldenSuiteTest.php`
 - Reference payroll test factories: `tests/Support/PayrollTestHelper.php`
 - `RefreshDatabase` applied to Feature + Integration; pure Unit tests don't need it
@@ -387,6 +403,24 @@ TEST_DB_DATABASE=ogami_erp_test
 ### Logs
 - Laravel: `storage/logs/laravel.log`
 - Services: `storage/logs/{serve,queue,vite,reverb}.log`
+
+## Common Pitfalls & Gotchas
+
+### PHP / Backend
+- **`Money` throws on negative** — `Money::fromCentavos()` and subtraction both throw if the result is negative. Always guard before subtracting.
+- **`DomainException` has 3 mandatory args**: `message`, `errorCode`, `httpStatus`. The `httpStatus` parameter is NOT optional.
+- **`GENERATED` columns in factories**: `daily_rate` and `hourly_rate` on `employees` are `GENERATED ALWAYS AS STORED`. Never include them in INSERT/UPDATE statements or factory definitions. Use `PayrollTestHelper::normalizeOverrides()` which strips them automatically.
+- **`dept_scope` middleware** restricts queries to the authenticated user's department. Services that need to bypass it (e.g., HR managers listing all employees) must call `Employee::withoutDepartmentScope()`.
+- **Department access bypass**: only `admin`, `super_admin`, `executive`, `vice_president` automatically bypass department scoping; `manager` and `head` roles require explicit department pivot entries.
+- **`authStore.hasPermission` is strict**: `admin` has only `system.*` permissions and does NOT implicitly have HR/payroll permissions. Always check the role matrix in `RolePermissionSeeder`.
+- **PHPStan baseline**: `phpstan-baseline.neon` suppresses known false positives at level 5. Do not add `@phpstan-ignore` without checking if it belongs in the baseline.
+
+### Known Domain Exceptions (`app/Shared/Exceptions/`)
+13 specific exceptions (all extend `DomainException`): `AuthorizationException`, `ContributionTableNotFoundException`, `CreditLimitExceededException`, `DuplicatePayrollRunException`, `InsufficientLeaveBalanceException`, `InvalidStateTransitionException`, `LockedPeriodException`, `NegativeNetPayException`, `SodViolationException`, `TaxTableNotFoundException`, `UnbalancedJournalEntryException`, `ValidationException`.
+
+### Frontend
+- **`api.ts` default import**: hooks import `import api from '@/lib/api'` (default export), not `import { api }`.
+- **No legacy auth tokens**: there is no JWT or token in localStorage. Auth state lives entirely in the session cookie and `authStore`.
 
 ## Additional Resources
 

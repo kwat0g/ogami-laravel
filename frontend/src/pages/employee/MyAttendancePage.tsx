@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Clock, Calendar, Briefcase, Coffee } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -65,17 +66,16 @@ export default function MyAttendancePage() {
   }
 
   const getStatusBadge = (log: { is_absent: boolean; is_present: boolean; late_minutes: number; undertime_minutes: number }) => {
-    if (log.is_absent) return <StatusBadge label="absent" variant="error" />
-    if (log.late_minutes > 0) return <StatusBadge label="late" variant="warning" />
-    if (log.undertime_minutes > 0) return <StatusBadge label="incomplete" variant="warning" />
-    if (log.is_present) return <StatusBadge label="present" variant="success" />
-    return <StatusBadge label="pending" />
+    if (log.is_absent) return <StatusBadge status="absent">absent</StatusBadge>
+    if (log.late_minutes > 0) return <StatusBadge status="late">late</StatusBadge>
+    if (log.undertime_minutes > 0) return <StatusBadge status="incomplete">incomplete</StatusBadge>
+    if (log.is_present) return <StatusBadge status="present">present</StatusBadge>
+    return <StatusBadge status="pending">pending</StatusBadge>
   }
 
   return (
     <div>
-      {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">My Attendance</h1>
+      <PageHeader title="My Attendance" />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
@@ -184,9 +184,9 @@ export default function MyAttendancePage() {
           <span>Page {attendanceData?.meta?.current_page} of {attendanceData?.meta?.last_page}</span>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
             <button disabled={page >= (attendanceData?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
           </div>
         </div>
       )}

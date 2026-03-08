@@ -60,7 +60,7 @@ function CancelModal({
             type="button"
             disabled={reason.trim().length < 10 || loading}
             onClick={() => onConfirm(reason.trim())}
-            className="px-4 py-2 rounded text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            className="px-4 py-2 rounded text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Cancelling…' : 'Cancel PO'}
           </button>
@@ -111,7 +111,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto p-6 space-y-4">
+      <div className="max-w-7xl mx-auto p-6 space-y-4">
         <SkeletonLoader />
       </div>
     )
@@ -119,7 +119,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
 
   if (isError || !po) {
     return (
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
         <div className="flex items-center gap-3 text-red-600 bg-red-50 rounded p-4">
           <AlertTriangle className="w-5 h-5 shrink-0" />
           <p className="text-sm">Failed to load Purchase Order. It may have been deleted or you lack access.</p>
@@ -148,7 +148,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
           type="button"
           onClick={handleSend}
           disabled={sendMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
           {sendMutation.isPending ? 'Sending…' : 'Send to Vendor'}
@@ -177,13 +177,13 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
         />
       )}
 
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* ── Header ────────────────────────────────────────────────────────── */}
         <PageHeader
           title={po.po_reference}
           subtitle="Purchase Order"
           backTo="/procurement/purchase-orders"
-          status={<StatusBadge status={po.status} label={statusLabel[po.status]} />}
+          status={<StatusBadge status={po.status}>{statusLabel[po.status]}</StatusBadge>}
           actions={actions}
         />
 
@@ -211,7 +211,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
                   value={
                     <Link
                       to={`/procurement/purchase-requests/${po.purchase_request.ulid}`}
-                      className="text-neutral-700 hover:text-neutral-900 font-medium"
+                      className="text-neutral-700 hover:text-neutral-900 font-medium underline underline-offset-2"
                     >
                       {po.purchase_request.pr_reference}
                     </Link>
@@ -364,28 +364,20 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
           </CardBody>
         </Card>
 
-        {/* ── Goods receipts ────────────────────────────────────────────── */}
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
+        {/* ── Goods receipts link ────────────────────────────────────────────── */}
+        {(po.status === 'partially_received' || po.status === 'fully_received' || po.status === 'closed') && (
+          <Card>
+            <CardBody>
               <Link
                 to={`/procurement/goods-receipts?purchase_order_id=${po.id}`}
-                className="inline-block px-3 py-1.5 text-sm border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
+                className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 font-medium underline underline-offset-2"
               >
-                View Goods Receipts for this PO →
+                <PackageCheck className="w-4 h-4" />
+                View Receipts ({po.items.reduce((sum, item) => sum + (item.quantity_received || 0), 0)} items received)
               </Link>
-              {canReceive && (
-                <Link
-                  to={`/procurement/goods-receipts/new?po_ulid=${po.ulid}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-                >
-                  <PackageCheck className="w-4 h-4" />
-                  Receive Goods
-                </Link>
-              )}
-            </div>
-          </CardBody>
-        </Card>
+            </CardBody>
+          </Card>
+        )}
       </div>
     </>
   )

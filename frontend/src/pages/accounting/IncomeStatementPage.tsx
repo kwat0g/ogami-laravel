@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useIncomeStatement } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { PeriodFilters, ISSection } from '@/types/reports'
 
 function ISSection({ section, indent = false }: { section: ISSection; indent?: boolean }) {
@@ -52,8 +53,9 @@ export default function IncomeStatementPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageHeader title="Income Statement" />
+
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 mb-1">Income Statement</h1>
         <p className="text-sm text-neutral-500">
           Revenue, expenses and net income waterfall
         </p>

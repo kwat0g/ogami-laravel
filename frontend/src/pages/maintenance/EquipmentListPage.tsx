@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Wrench } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { useEquipment } from '@/hooks/useMaintenance';
 import type { EquipmentStatus } from '@/types/maintenance';
 
@@ -17,15 +18,17 @@ export default function EquipmentListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900 mb-6">Equipment</h1>
-        <Link
-          to="/maintenance/equipment/new"
-          className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-        >
-          <Plus size={16} /> Add Equipment
-        </Link>
-      </div>
+      <PageHeader
+        title="Equipment"
+        actions={
+          <Link
+            to="/maintenance/equipment/new"
+            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            <Plus size={16} /> Add Equipment
+          </Link>
+        }
+      />
 
       <div className="flex gap-2">
         <select

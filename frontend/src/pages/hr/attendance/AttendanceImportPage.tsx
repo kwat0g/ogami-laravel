@@ -35,7 +35,7 @@ export default function AttendanceImportPage() {
   }
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Import Attendance</h1>
@@ -77,7 +77,7 @@ export default function AttendanceImportPage() {
           <button
             disabled={!file || importMutation.isPending}
             onClick={handleSubmit}
-            className="px-5 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-40 transition-colors"
+            className="px-5 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {importMutation.isPending ? 'Importing…' : 'Start Import'}
           </button>

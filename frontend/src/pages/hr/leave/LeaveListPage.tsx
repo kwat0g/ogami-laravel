@@ -6,6 +6,7 @@ import { useDepartments } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { LeaveFilters } from '@/types/hr'
 import { Scale, X, ChevronDown, ChevronUp, Search } from 'lucide-react'
 
@@ -74,30 +75,26 @@ export default function LeaveListPage() {
     <div>
       <ExecutiveReadOnlyBanner />
       
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">All Leave Requests</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
-            {meta?.total ?? 0} records across all departments
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/hr/leave/balances"
-            className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Scale className="h-4 w-4" />
-            Leave Balances
-          </Link>
-          <Link
-            to="/hr/leave/new"
-            className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            + File Leave
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Leave Requests"
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              to="/hr/leave/balances"
+              className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Scale className="h-4 w-4" />
+              Leave Balances
+            </Link>
+            <Link
+              to="/hr/leave/new"
+              className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              + File Leave
+            </Link>
+          </div>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 flex flex-wrap gap-3">
@@ -258,7 +255,7 @@ export default function LeaveListPage() {
                     {row.date_from} to {row.date_to}
                   </td>
                   <td className="px-3 py-2 text-neutral-600">{row.total_days}</td>
-                  <td className="px-3 py-2"><StatusBadge label={row.status} /></td>
+                  <td className="px-3 py-2"><StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
                   <td className="px-3 py-2 text-neutral-600">
                     {row.reviewed_by ? (
                       <span className="text-green-700 font-medium">User #{row.reviewed_by}</span>
@@ -358,14 +355,14 @@ export default function LeaveListPage() {
             <button
               disabled={meta.current_page <= 1}
               onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <button
               disabled={meta.current_page >= meta.last_page}
               onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next
             </button>

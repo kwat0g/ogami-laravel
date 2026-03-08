@@ -9,7 +9,11 @@ export default function TeamEmployeeDetailPage() {
 
   const { data: employee, isLoading, isError } = useEmployee(employeeId)
 
-  if (isLoading) return <SkeletonLoader rows={12} />
+  if (isLoading) return (
+    <div className="max-w-7xl mx-auto">
+      <SkeletonLoader rows={12} />
+    </div>
+  )
 
   if (isError || !employee) {
     return (
@@ -20,11 +24,13 @@ export default function TeamEmployeeDetailPage() {
   }
 
   return (
-    <EmployeeProfileView
-      employee={employee}
-      viewContext="team"
-      backTo="/team/employees"
-      backLabel="Back to My Team"
-    />
+    <div className="max-w-7xl mx-auto">
+      <EmployeeProfileView
+        employee={employee}
+        viewContext="team"
+        backTo="/team/employees"
+        backLabel="Back to My Team"
+      />
+    </div>
   )
 }

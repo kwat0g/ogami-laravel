@@ -140,7 +140,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <PageHeader
         title="Create Purchase Order"
         backTo="/procurement/purchase-orders"
@@ -285,10 +285,10 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
               {/* Column Headers */}
               {fields.length > 0 && (
                 <div className="grid grid-cols-12 gap-2 px-3">
-                  <div className="col-span-4 text-xs font-medium text-neutral-600">Item Master <span className="text-red-500">*</span></div>
-                  <div className="col-span-2 text-xs font-medium text-neutral-600">Description</div>
+                  <div className="col-span-3 text-xs font-medium text-neutral-600">Item Master <span className="text-red-500">*</span></div>
+                  <div className="col-span-4 text-xs font-medium text-neutral-600">Description</div>
                   <div className="col-span-1 text-xs font-medium text-neutral-600">Qty</div>
-                  <div className="col-span-2 text-xs font-medium text-neutral-600">UOM</div>
+                  <div className="col-span-1 text-xs font-medium text-neutral-600">UOM</div>
                   <div className="col-span-2 text-xs font-medium text-neutral-600">Unit Price</div>
                   <div className="col-span-1" />
                 </div>
@@ -296,7 +296,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
               {fields.map((field, idx) => (
                 <div key={field.id} className="grid grid-cols-12 gap-2 items-start border border-neutral-100 rounded p-3 bg-neutral-50">
                   {/* Item Master picker — required, drives item_master_id */}
-                  <div className="col-span-4">
+                  <div className="col-span-3">
                     <Controller
                       name={`items.${idx}.item_master_id`}
                       control={control}
@@ -323,7 +323,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                     />
                     {errors.items?.[idx]?.item_master_id && <p className="text-red-500 text-xs mt-0.5">{errors.items[idx]!.item_master_id!.message}</p>}
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-4">
                     <input
                       placeholder="Description"
                       {...register(`items.${idx}.item_description`)}
@@ -337,11 +337,11 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                       name={`items.${idx}.quantity_ordered`}
                       control={control}
                       render={({ field: f }) => (
-                        <input type="number" min={1} placeholder="Qty" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
+                        <input type="number" min={1} placeholder="Qty" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                       )}
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     <Controller
                       name={`items.${idx}.unit_of_measure`}
                       control={control}
@@ -362,7 +362,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                       name={`items.${idx}.agreed_unit_cost`}
                       control={control}
                       render={({ field: f }) => (
-                        <input type="number" min={0} step="0.01" placeholder="Unit Price" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
+                        <input type="number" min={0} step="0.01" placeholder="Unit Price" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                       )}
                     />
                   </div>
@@ -403,7 +403,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Creating…' : 'Create Purchase Order'}
           </button>

@@ -44,7 +44,7 @@ export default function LeaveFormPage() {
   }
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-neutral-900">File Leave Request</h1>
         <button onClick={() => navigate('/hr/leave')} className="text-sm text-neutral-500 hover:text-neutral-700">← Back</button>
@@ -73,7 +73,7 @@ export default function LeaveFormPage() {
                 >
                   <option value="">Select employee…</option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                    <option key={emp.id} value={emp.id}>{emp.full_name}</option>
                   ))}
                 </select>
               )}
@@ -173,7 +173,7 @@ export default function LeaveFormPage() {
             <button
               type="submit"
               disabled={create.isPending || isSubmitting}
-              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {create.isPending ? 'Filing…' : 'File Leave'}
             </button>

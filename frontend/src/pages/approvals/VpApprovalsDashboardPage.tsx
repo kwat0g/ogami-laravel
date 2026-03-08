@@ -217,7 +217,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                       <td className="px-4 py-3 font-mono text-neutral-700 font-medium">
                         <Link
                           to={`/procurement/purchase-requests/${pr.ulid}`}
-                          className="hover:underline"
+                          className="underline underline-offset-2"
                         >
                           {pr.pr_reference}
                         </Link>
@@ -244,7 +244,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           <button
                             onClick={() => handleApprovePR(pr.ulid)}
                             disabled={vpApprovePR.isPending}
-                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 text-white font-medium rounded transition-colors"
+                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
                           >
                             Approve
                           </button>
@@ -329,7 +329,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           <button
                             onClick={() => handleApproveLoan(loan.ulid ?? String(loan.id))}
                             disabled={vpApproveLoan.isPending}
-                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 text-white font-medium rounded transition-colors"
+                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
                           >
                             Approve
                           </button>
@@ -417,7 +417,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                           <button
                             onClick={() => handleApproveMRQ(mrq.ulid)}
                             disabled={vpApproveMRQ.isPending}
-                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 text-white font-medium rounded transition-colors"
+                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
                           >
                             Approve
                           </button>
@@ -469,7 +469,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
               <button
                 disabled={rejectPrReason.length < 10 || rejectPR.isPending}
                 onClick={handleRejectPR}
-                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded"
+                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-medium rounded"
               >
                 {rejectPR.isPending ? 'Rejecting…' : 'Confirm Reject'}
               </button>
@@ -500,7 +500,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
               <button
                 disabled={rejectLoanRemarks.length < 5 || rejectLoan.isPending}
                 onClick={handleRejectLoan}
-                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded"
+                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-medium rounded"
               >
                 {rejectLoan.isPending ? 'Rejecting…' : 'Confirm Reject'}
               </button>
@@ -531,7 +531,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
               <button
                 disabled={rejectMrqReason.length < 10 || rejectMRQMutation.isPending}
                 onClick={handleRejectMRQ}
-                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-medium rounded"
+                className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-medium rounded"
               >
                 {rejectMRQMutation.isPending ? 'Rejecting…' : 'Confirm Reject'}
               </button>

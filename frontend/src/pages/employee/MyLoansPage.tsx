@@ -6,6 +6,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import FileLoanModal from '@/components/modals/FileLoanModal'
 import { Plus, AlertCircle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { LoanStatus } from '@/types/loan'
 
 const STATUS_FILTER_OPTIONS: { label: string; value: LoanStatus | 'all' }[] = [
@@ -83,14 +84,14 @@ export default function MyLoansPage() {
 
   return (
     <div>
+      <PageHeader title="My Loans" />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">My Loans</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           disabled={!!activeLoan}
           title={activeLoan ? `You already have an active ${activeLoan.loan_type?.name ?? 'loan'}` : undefined}
-          className="bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-flex items-center gap-2"
+          className="bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Apply for Loan
@@ -138,7 +139,7 @@ export default function MyLoansPage() {
                   <div>
                     <div className="flex items-center gap-3 mb-1">
                       <span className="font-semibold text-neutral-900">{loan.loan_type?.name ?? '—'}</span>
-                      <StatusBadge label={loan.status} />
+                      <StatusBadge status={loan.status}>{loan.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </div>
                     <p className="text-xs text-neutral-500">Loan #{loan.id} · {loan.loan_date}</p>
                   </div>
@@ -154,14 +155,14 @@ export default function MyLoansPage() {
                               })
                             }}
                             disabled={cancelLoan.isPending}
-                            className="text-xs px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
+                            className="text-xs px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {cancelLoan.isPending ? 'Cancelling…' : 'Yes, cancel'}
                           </button>
                           <button
                             onClick={() => setConfirmCancelUlid(null)}
                             disabled={cancelLoan.isPending}
-                            className="text-xs px-2.5 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50"
+                            className="text-xs px-2.5 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Keep
                           </button>
@@ -231,9 +232,9 @@ export default function MyLoansPage() {
               <span>Page {data?.meta?.current_page} of {data?.meta?.last_page}</span>
               <div className="flex gap-2">
                 <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-                  className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
+                  className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
                 <button disabled={page >= (data?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-                  className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
+                  className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
               </div>
             </div>
           )}

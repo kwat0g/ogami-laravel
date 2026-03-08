@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useItemCategories, useCreateItemCategory } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -82,7 +83,7 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 py-1.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50"
+            className="flex-1 py-1.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? 'Saving…' : 'Save'}
           </button>
@@ -102,6 +103,7 @@ export default function ItemCategoriesPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader title="Item Categories" />
       {isLoading && <SkeletonLoader rows={5} />}
 
       {!isLoading && (

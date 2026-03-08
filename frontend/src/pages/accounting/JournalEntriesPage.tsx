@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, RefreshCw, RotateCcw } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useJournalEntries,
   useFiscalPeriods,
@@ -77,7 +78,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
             }
           }}
           disabled={busy}
-          className="text-xs text-neutral-600 hover:underline disabled:opacity-50"
+          className="text-xs text-neutral-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitMutation.isPending ? 'Submitting…' : 'Submit'}
         </button>
@@ -93,7 +94,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
             }
           }}
           disabled={busy}
-          className="text-xs text-neutral-600 hover:underline disabled:opacity-50"
+          className="text-xs text-neutral-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {postMutation.isPending ? 'Posting…' : 'Post'}
         </button>
@@ -111,7 +112,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
             }
           }}
           disabled={busy}
-          className="text-xs text-neutral-600 hover:underline disabled:opacity-50 flex items-center gap-1"
+          className="text-xs text-neutral-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
         >
           <RotateCcw className="h-3 w-3" />
           {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
@@ -158,17 +159,18 @@ export default function JournalEntriesPage() {
 
   return (
     <div>
+      <PageHeader title="Journal Entries" />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Journal Entries</h1>
           <p className="text-sm text-neutral-500">{data?.meta?.total ?? entries.length} entries</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => void refetch()}
             disabled={isFetching}
-            className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-600 transition-colors disabled:opacity-40"
+            className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="Refresh"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
@@ -287,7 +289,7 @@ export default function JournalEntriesPage() {
                       <SourceTypeBadge sourceType={entry.source_type} />
                     </td>
                     <td className="px-3 py-2">
-                      <StatusBadge label={entry.status} autoVariant />
+                      <StatusBadge status={entry.status}>{entry.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums text-neutral-700">
                       {entry.lines && entry.lines.length > 0
@@ -314,13 +316,13 @@ export default function JournalEntriesPage() {
             <div className="flex gap-2">
               <button
                 disabled={data.meta.current_page <= 1}
-                className="px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={data.meta.current_page >= data.meta.last_page}
-                className="px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>

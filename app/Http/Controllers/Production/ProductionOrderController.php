@@ -41,6 +41,8 @@ final class ProductionOrderController extends Controller
     {
         $this->authorize('view', $productionOrder);
 
+        $productionOrder->loadCount(['materialRequisitions as pending_mrq_count' => fn ($q) => $q->whereNotIn('status', ['fulfilled', 'cancelled', 'rejected'])]);
+
         return new ProductionOrderResource(
             $productionOrder->load('productItem', 'bom.components.componentItem', 'createdBy', 'outputLogs.operator')
         );
@@ -72,6 +74,13 @@ final class ProductionOrderController extends Controller
         $this->authorize('cancel', $productionOrder);
 
         return new ProductionOrderResource($this->service->cancel($productionOrder));
+    }
+
+    public function void(ProductionOrder $productionOrder): ProductionOrderResource
+    {
+        $this->authorize('cancel', $productionOrder);
+
+        return new ProductionOrderResource($this->service->void($productionOrder));
     }
 
     public function logOutput(LogProductionOutputRequest $request, ProductionOrder $productionOrder): ProductionOutputLogResource

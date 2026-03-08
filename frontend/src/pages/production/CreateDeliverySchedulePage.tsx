@@ -63,7 +63,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Delivery Schedule</h1>
 
       <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
@@ -111,7 +111,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
               type="number"
               min="0.001"
               step="0.001"
-              className={`w-full border rounded px-3 py-2 text-sm ${fe('qty_ordered') ? 'border-red-400' : 'border-neutral-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm ${fe('qty_ordered') ? 'border-red-400' : 'border-neutral-300'} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               value={form.qty_ordered}
               onChange={e => set('qty_ordered', e.target.value)}
               onBlur={() => touch('qty_ordered')}
@@ -126,7 +126,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
               min="0"
               step="0.0001"
               placeholder="0.00"
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               value={form.unit_price}
               onChange={e => set('unit_price', e.target.value)}
             />
@@ -182,7 +182,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Schedule'}
           </button>

@@ -71,7 +71,7 @@ export default function LoanDetailPage() {
   ) || []
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <ExecutiveReadOnlyBanner />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -117,7 +117,7 @@ export default function LoanDetailPage() {
                             <CurrencyAmount centavos={histLoan.principal_centavos} />
                           </td>
                           <td className="px-3 py-2">
-                            <StatusBadge label={histLoan.status} />
+                            <StatusBadge status={histLoan.status}>{histLoan.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                           </td>
                         </tr>
                       ))}
@@ -151,7 +151,7 @@ export default function LoanDetailPage() {
                               <CurrencyAmount centavos={histLoan.principal_centavos} />
                             </td>
                             <td className="px-3 py-2">
-                              <StatusBadge label={histLoan.status} />
+                              <StatusBadge status={histLoan.status}>{histLoan.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                             </td>
                           </tr>
                         ))}
@@ -170,7 +170,7 @@ export default function LoanDetailPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
           <div>
             <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Status</p>
-            <StatusBadge label={loan.status} />
+            <StatusBadge status={loan.status}>{loan.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
           </div>
           <div>
             <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Loan Type</p>
@@ -382,7 +382,7 @@ export default function LoanDetailPage() {
             <button
               onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
               disabled={headNote.isPending}
-              className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 flex items-center gap-2">
+              className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
               <span>📋</span> Head Note
             </button>
           )}
@@ -391,12 +391,12 @@ export default function LoanDetailPage() {
           {canApprove && loan.status === 'pending' && (
             <>
               <button onClick={() => { setApproveDate(computeFirstDeductionDate(loan.deduction_cutoff)); setApproveRemarks(''); setShowApproveModal(true) }} disabled={approve.isPending}
-                className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 flex items-center gap-2">
+                className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 <span>✓</span> Approve (HR)
               </button>
               <button onClick={() => setShowRejectModal(true)}
                 disabled={approve.isPending || reject.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span>✕</span> Reject
               </button>
             </>
@@ -407,12 +407,12 @@ export default function LoanDetailPage() {
             <>
               <button onClick={() => setShowAccountingModal(true)}
                 disabled={accountingApprove.isPending || reject.isPending}
-                className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded flex items-center gap-2 disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span>✓</span> Approve for Disbursement (Accounting)
               </button>
               <button onClick={() => setShowRejectModal(true)}
                 disabled={accountingApprove.isPending || reject.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span>✕</span> Reject
               </button>
             </>
@@ -424,7 +424,7 @@ export default function LoanDetailPage() {
               onSuccess: () => toast.success('Funds disbursed.'),
               onError: () => toast.error('Failed to disburse funds.'),
             })} disabled={disburse.isPending}
-              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 flex items-center gap-2">
+              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
               <span>💵</span> Disburse Funds
             </button>
           )}

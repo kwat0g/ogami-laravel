@@ -47,7 +47,7 @@ export default function TeamLeavePage() {
             onError: (err) => toast.error(parseApiError(err).message),
           })}
           disabled={headApprove.isPending}
-          className="px-2.5 py-1 text-xs font-medium bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+          className="px-2.5 py-1 text-xs font-medium bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Approve
         </button>
@@ -57,7 +57,7 @@ export default function TeamLeavePage() {
           key="head-reject"
           onClick={() => setRejectId(row.id)}
           disabled={headApprove.isPending || reject.isPending}
-          className="px-2.5 py-1 text-xs font-medium border border-neutral-300 text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+          className="px-2.5 py-1 text-xs font-medium border border-neutral-300 text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Reject
         </button>
@@ -74,7 +74,7 @@ export default function TeamLeavePage() {
             onError: (err) => toast.error(parseApiError(err).message),
           })}
           disabled={managerCheck.isPending}
-          className="px-2.5 py-1 text-xs font-medium bg-neutral-800 text-white rounded-md hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+          className="px-2.5 py-1 text-xs font-medium bg-neutral-800 text-white rounded-md hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Check
         </button>
@@ -84,7 +84,7 @@ export default function TeamLeavePage() {
           key="manager-reject"
           onClick={() => setRejectId(row.id)}
           disabled={managerCheck.isPending || reject.isPending}
-          className="px-2.5 py-1 text-xs font-medium border border-neutral-300 text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+          className="px-2.5 py-1 text-xs font-medium border border-neutral-300 text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Reject
         </button>
@@ -167,7 +167,7 @@ export default function TeamLeavePage() {
                       {row.reason || '—'}
                     </div>
                   </td>
-                <td className="px-3 py-2"><StatusBadge label={row.status} /></td>
+                <td className="px-3 py-2"><StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
                 <td className="px-3 py-2 flex gap-2">
                   {getActionButtons(row)}
                 </td>
@@ -235,7 +235,7 @@ export default function TeamLeavePage() {
                   )
                 }}
                 disabled={!remarks.trim() || reject.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 rounded hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {reject.isPending ? 'Rejecting…' : 'Reject'}
               </button>

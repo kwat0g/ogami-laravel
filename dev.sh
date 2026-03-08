@@ -62,6 +62,10 @@ cd "$ROOT"
 php artisan config:clear -q
 # Cache config to avoid re-reading 50+ config files on every cold worker boot
 php artisan config:cache -q
+# Cache event→listener map so auto-discovered listeners in app/Listeners/ are
+# always registered. Without this, queued listeners (e.g. LinkGoodsReceiptToInventory,
+# CreateApInvoiceOnThreeWayMatch) silently do nothing after a config:clear.
+php artisan event:cache -q
 PHP_CLI_SERVER_WORKERS=4 php artisan serve --host=127.0.0.1 --port=8000 > "$LOG_DIR/serve.log" 2>&1 &
 LARAVEL_PID=$!
 

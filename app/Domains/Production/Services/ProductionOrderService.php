@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Production\Services;
 
 use App\Domains\Inventory\Models\WarehouseLocation;
+use App\Domains\Inventory\Models\StockLedger;
 use App\Domains\Inventory\Services\MaterialRequisitionService;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\ProductionOrder;
@@ -30,6 +31,7 @@ final class ProductionOrderService implements ServiceContract
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         $query = ProductionOrder::with('productItem', 'bom', 'createdBy', 'deliverySchedule')
+            ->withCount(['materialRequisitions as pending_mrq_count' => fn ($q) => $q->whereNotIn('status', ['fulfilled', 'cancelled', 'rejected'])])
             ->orderByDesc('id');
 
         if ($filters['with_archived'] ?? false) {
@@ -97,6 +99,20 @@ final class ProductionOrderService implements ServiceContract
             throw new DomainException('Only released orders can be started.', 'PROD_ORDER_NOT_RELEASED', 422);
         }
 
+        // Ensure all linked MRQs are fulfilled before production begins (PROD-MRQ-001).
+        $unfulfilledMrq = \App\Domains\Inventory\Models\MaterialRequisition::query()
+            ->where('production_order_id', $order->id)
+            ->whereNotIn('status', ['fulfilled', 'cancelled', 'rejected'])
+            ->exists();
+
+        if ($unfulfilledMrq) {
+            throw new DomainException(
+                'All material requisitions must be fulfilled before starting production.',
+                'PROD_MRQ_NOT_FULFILLED',
+                422,
+            );
+        }
+
         $order->update(['status' => 'in_progress']);
 
         return $order->refresh();
@@ -137,8 +153,9 @@ final class ProductionOrderService implements ServiceContract
                 }
             }
 
-            // PROD-DEL-001: Notify Delivery domain to draft an outbound DR for delivery-scheduled WOs.
-            ProductionOrderCompleted::dispatch($order);
+            // PROD-DEL-001: Notify Delivery domain AFTER the transaction commits so the
+            // queued CreateDeliveryReceiptOnProductionComplete listener reads committed data.
+            DB::afterCommit(fn () => ProductionOrderCompleted::dispatch($order->fresh()));
 
             return $order->refresh();
         });
@@ -150,9 +167,94 @@ final class ProductionOrderService implements ServiceContract
             throw new DomainException('Only draft or released orders can be cancelled.', 'PROD_ORDER_CANNOT_CANCEL', 422);
         }
 
-        $order->update(['status' => 'cancelled']);
+        return DB::transaction(function () use ($order): ProductionOrder {
+            $mrqs = \App\Domains\Inventory\Models\MaterialRequisition::query()
+                ->where('production_order_id', $order->id)
+                ->get();
 
-        return $order->refresh();
+            /** @var \App\Models\User $actor */
+            $actor = auth()->user() ?? \App\Models\User::findOrFail($order->created_by_id);
+
+            foreach ($mrqs as $mrq) {
+                if ($mrq->status === 'fulfilled') {
+                    // Reverse stock that was issued for this MRQ so inventory is restored
+                    $issueLedgers = StockLedger::query()
+                        ->where('reference_type', 'material_requisitions')
+                        ->where('reference_id', $mrq->id)
+                        ->where('transaction_type', 'issue')
+                        ->get();
+
+                    foreach ($issueLedgers as $ledger) {
+                        $this->stockService->returnFromMrq(
+                            itemId: $ledger->item_id,
+                            locationId: $ledger->location_id,
+                            quantity: abs((float) $ledger->quantity),
+                            mrqId: $mrq->id,
+                            actor: $actor,
+                            remarks: 'Returned — WO '.$order->po_reference.' cancelled',
+                        );
+                    }
+                }
+
+                if (! in_array($mrq->status, ['cancelled', 'rejected'], true)) {
+                    $mrq->update(['status' => 'cancelled']);
+                }
+            }
+
+            $order->update(['status' => 'cancelled']);
+
+            return $order->refresh();
+        });
+    }
+
+    public function void(ProductionOrder $order): ProductionOrder
+    {
+        if ($order->status !== 'in_progress') {
+            throw new DomainException('Only in-progress orders can be voided.', 'PROD_ORDER_CANNOT_VOID', 422);
+        }
+
+        if ((float) $order->qty_produced > 0) {
+            throw new DomainException('Cannot void an order that already has production output logged.', 'PROD_ORDER_HAS_OUTPUT', 422);
+        }
+
+        return DB::transaction(function () use ($order): ProductionOrder {
+            $mrqs = \App\Domains\Inventory\Models\MaterialRequisition::query()
+                ->where('production_order_id', $order->id)
+                ->get();
+
+            /** @var \App\Models\User $actor */
+            $actor = auth()->user() ?? \App\Models\User::findOrFail($order->created_by_id);
+
+            foreach ($mrqs as $mrq) {
+                if ($mrq->status === 'fulfilled') {
+                    // Reverse each issued stock line using the original ledger entries
+                    $issueLedgers = StockLedger::query()
+                        ->where('reference_type', 'material_requisitions')
+                        ->where('reference_id', $mrq->id)
+                        ->where('transaction_type', 'issue')
+                        ->get();
+
+                    foreach ($issueLedgers as $ledger) {
+                        $this->stockService->returnFromMrq(
+                            itemId: $ledger->item_id,
+                            locationId: $ledger->location_id,
+                            quantity: abs((float) $ledger->quantity),
+                            mrqId: $mrq->id,
+                            actor: $actor,
+                            remarks: 'Returned — WO '.$order->po_reference.' voided',
+                        );
+                    }
+                }
+
+                if (! in_array($mrq->status, ['cancelled', 'rejected'], true)) {
+                    $mrq->update(['status' => 'cancelled']);
+                }
+            }
+
+            $order->update(['status' => 'cancelled']);
+
+            return $order->refresh();
+        });
     }
 
     /**

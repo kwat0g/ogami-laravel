@@ -183,7 +183,7 @@ export default function PayPeriodListPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
+              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded"
             >
               {isSubmitting ? 'Creating…' : 'Create Period'}
             </button>
@@ -241,7 +241,7 @@ export default function PayPeriodListPage() {
                     <td className="px-4 py-3 text-neutral-700">{period.cutoff_start}</td>
                     <td className="px-4 py-3 text-neutral-700">{period.cutoff_end}</td>
                     <td className="px-4 py-3 text-neutral-700">{period.pay_date}</td>
-                    <td className="px-4 py-3"><StatusBadge label={period.status} /></td>
+                    <td className="px-4 py-3"><StatusBadge status={period.status}>{period.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
                     <td className="px-4 py-3">
                       {period.status === 'open' && (
                         <PermissionGuard permission={PERMISSIONS.payroll.approve}>
@@ -249,7 +249,7 @@ export default function PayPeriodListPage() {
                             type="button"
                             onClick={() => handleClose(period)}
                             disabled={close.isPending}
-                            className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 font-medium disabled:opacity-50"
+                            className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Lock className="h-3 w-3" /> Close
                           </button>
@@ -273,7 +273,7 @@ export default function PayPeriodListPage() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage(p => p - 1)}
-                  className="px-3 py-1 text-xs rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 disabled:opacity-40"
+                  className="px-3 py-1 text-xs rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   ← Prev
                 </button>
@@ -281,7 +281,7 @@ export default function PayPeriodListPage() {
                   type="button"
                   disabled={page >= (data.meta?.last_page ?? 1)}
                   onClick={() => setPage(p => p + 1)}
-                  className="px-3 py-1 text-xs rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 disabled:opacity-40"
+                  className="px-3 py-1 text-xs rounded border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Next →
                 </button>

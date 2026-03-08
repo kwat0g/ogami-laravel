@@ -18,6 +18,7 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Building2, User, Settings, CheckCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
 // ── Role badge colors ─────────────────────────────────────────────────────────
@@ -237,21 +238,7 @@ export default function UsersPage() {
 
   return (
     <div>
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-6">User Management</h1>
-          <p className="text-sm text-neutral-500">{meta?.total ?? 0} users total</p>
-        </div>
-        {canCreate && (
-          <button
-            onClick={openCreate}
-            className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            + Add User
-          </button>
-        )}
-      </div>
+      <PageHeader title="Users" />
 
       {/* ── Filters ─────────────────────────────────────────────────────── */}
       <div className="flex gap-3 mb-4">
@@ -316,7 +303,7 @@ export default function UsersPage() {
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  {isLocked(u) ? <StatusBadge label="Locked" /> : <StatusBadge label="Active" />}
+                  {isLocked(u) ? <StatusBadge status="locked">Locked</StatusBadge> : <StatusBadge status="active">Active</StatusBadge>}
                   {u.failed_login_attempts > 0 && (
                     <span className="ml-2 text-xs text-neutral-600">{u.failed_login_attempts} failed</span>
                   )}
@@ -333,7 +320,7 @@ export default function UsersPage() {
                       <button onClick={() => openRoleModal(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Role</button>
                     )}
                     {canUpdate && isLocked(u) && (
-                      <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50">Unlock</button>
+                      <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed">Unlock</button>
                     )}
                     {canDelete && (
                       <button onClick={() => handleDelete(u)} className="text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>
@@ -351,8 +338,8 @@ export default function UsersPage() {
         <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
           <span>Page {meta.current_page} of {meta.last_page} — {meta.total} total</span>
           <div className="flex gap-2">
-            <button disabled={meta.current_page <= 1} onClick={() => setFilters((f) => ({ ...f, page: f.page! - 1 }))} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
-            <button disabled={meta.current_page >= meta.last_page} onClick={() => setFilters((f) => ({ ...f, page: f.page! + 1 }))} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+            <button disabled={meta.current_page <= 1} onClick={() => setFilters((f) => ({ ...f, page: f.page! - 1 }))} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
+            <button disabled={meta.current_page >= meta.last_page} onClick={() => setFilters((f) => ({ ...f, page: f.page! + 1 }))} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
           </div>
         </div>
       )}
@@ -706,7 +693,7 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 }
 
 const inputCls     = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400'
-const btnPrimary   = 'bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded transition-colors flex items-center'
+const btnPrimary   = 'bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded transition-colors flex items-center'
 const btnSecondary = 'border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors'
 
 // ── Extract API error message ─────────────────────────────────────────────────

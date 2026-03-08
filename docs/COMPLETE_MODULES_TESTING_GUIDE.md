@@ -103,6 +103,11 @@ Bank account, vendor, customer, item categories, item masters, warehouse locatio
 
 > Required for: Purchase Orders (Scenario 1), AP invoices (Scenario 3).
 
+> **EWT prerequisite:** EWT rates are not seeded. Run this tinker command once before creating the vendor so the 2% ATC rate exists:
+> ```
+> php artisan tinker --execute="\App\Domains\AP\Models\EwtRate::create(['atc_code'=>'WI010','description'=>'Purchases of goods (suppliers)','rate'=>0.02,'effective_from'=>'2020-01-01','effective_to'=>null,'is_active'=>true]);"
+> ```
+
 1. Go to **Accounting → AP Vendors → New**
 2. Fill in:
    - **Vendor Name:** Chinatown Resins Inc.
@@ -112,8 +117,12 @@ Bank account, vendor, customer, item categories, item masters, warehouse locatio
    - **Phone:** +63 2 8888 0001
    - **Address:** 12 Resin Street, Tondo, Manila
    - **Payment Terms:** NET30
+   - **ATC Code:** WI010
+   - Check ✅ **Subject to EWT (AP-004)**
 3. Click **Save**
-4. ✅ Vendor available in PO and AP invoice dropdowns
+4. ✅ Vendor available in PO and AP invoice dropdowns; EWT badge shows **EWT Subject**
+
+> **Skipping EWT:** If you do not run the tinker command and do not check Subject to EWT, `ewt_amount` will be ₱0 on all invoices. Steps 3.2–3.5 show amounts for **both paths** (with EWT and without).
 
 ### 0.3 Create a Customer
 
@@ -370,24 +379,30 @@ Click **View →** on the ₱89,640 invoice to open the detail page, then click 
 | 4 | **Officer Review** | `officer_reviewed` |
 | 5 | **Approve** | `approved` |
 
-✅ After Approve: EWT ₱1,792.80 auto-computed (2% of ₱89,640)
-✅ GL entry auto-posted:
+✅ After Approve: GL entry auto-posted:
 - DR Materials Expense 6001 ₱89,640
 - CR Accounts Payable 2001 ₱89,640
+
+✅ **With EWT configured (step 0.2):** EWT ₱1,792.80 auto-computed (2% of ₱89,640); `ewt_amount` visible on the invoice detail page
+✅ **Without EWT:** `ewt_amount` = ₱0; `net_payable` = ₱89,640
 
 ### 3.3 Record Payment for Invoice 1
 
 1. On the `approved` ₱89,640 invoice, scroll down to the **Record Payment** section
 2. Fill in:
-   - **Amount:** 87,847.20 *(₱89,640 − 2% EWT ₱1,792.80 = net cash outflow)*
+   - **Amount (with EWT):** 87,847.20 *(₱89,640 − 2% EWT ₱1,792.80 = net cash outflow)*
+   - **Amount (without EWT):** 89,640.00
    - **Payment Date:** 2026-03-25
    - **Bank Account:** BDO *(select from dropdown)*
 3. Click **Save**
 4. ✅ Invoice status: `paid`
-5. ✅ GL entry:
+5. ✅ GL entry **with EWT:**
    - DR Accounts Payable ₱89,640
    - CR EWT Payable ₱1,792.80
    - CR Cash / Bank ₱87,847.20
+6. ✅ GL entry **without EWT:**
+   - DR Accounts Payable ₱89,640
+   - CR Cash / Bank ₱89,640
 
 ### 3.4 Push Invoice 2 (₱360) Through the 5-Step Approval Chain
 
@@ -401,13 +416,19 @@ Repeat the same 5-step process as step 3.2 for the ₱360 invoice:
 | 4 | **Officer Review** | `officer_reviewed` |
 | 5 | **Approve** | `approved` |
 
-✅ EWT ₱7.20 auto-computed
+✅ After Approve: GL entry auto-posted:
+- DR Materials Expense 6001 ₱360
+- CR Accounts Payable 2001 ₱360
+
+✅ **With EWT configured:** EWT ₱7.20 auto-computed (2% of ₱360)
+✅ **Without EWT:** `ewt_amount` = ₱0
 
 ### 3.5 Record Payment for Invoice 2
 
 1. On the `approved` ₱360 invoice, scroll to **Record Payment**
 2. Fill in:
-   - **Amount:** 352.80 *(₱360 − 2% EWT ₱7.20)*
+   - **Amount (with EWT):** 352.80 *(₱360 − 2% EWT ₱7.20)*
+   - **Amount (without EWT):** 360.00
    - **Payment Date:** 2026-03-25
    - **Bank Account:** BDO
 3. Click **Save**
@@ -434,7 +455,7 @@ Repeat the same 5-step process as step 3.2 for the ₱360 invoice:
    - **Product Item:** Plastic Container 500ml *(dropdown — finished goods only)*
    - **Qty Ordered:** 10,000
    - **Unit Price (₱):** 28.00 *(used to compute the AR invoice subtotal when the shipment is delivered)*
-   - **Target Delivery Date:** 2026-03-28
+   - **Target Delivery Date:** 2026-03-28 
    - **Type:** Local
 3. Click **Save**
 4. ✅ Status `open`; schedule visible on board
@@ -463,7 +484,7 @@ Repeat the same 5-step process as step 3.2 for the ₱360 invoice:
 2. ✅ WO status: `released`
 3. ✅ An **auto-generated Material Requisition** is created in `draft` state (e.g., `MRQ-2026-03-00001`) — this is the formal stock issuance mechanism
 
-> **The auto-MRQ must be fully approved and fulfilled before starting the WO.** This ensures materials are formally deducted from inventory before production begins.
+> ⚠️ **The auto-MRQ must be fully approved and fulfilled before starting the WO.** The system enforces this — clicking **Start Production** while any linked MRQ is not yet `fulfilled` returns a `PROD_MRQ_NOT_FULFILLED` error.
 
 #### Push the Auto-MRQ Through the Full 6-Step Approval Chain
 
@@ -515,7 +536,7 @@ Repeat the same 5-step process as step 3.2 for the ₱360 invoice:
 3. ✅ **Inventory → Stock Balances:** Plastic Container 500ml increases by **10,007 units** (10,050 produced − 43 rejected)
 4. ✅ PP Resin Natural stock decreases further (consumed per BOM)
 5. ✅ A **Draft Outbound Delivery Receipt** is auto-created and linked to the delivery schedule *(requires queue worker)*
-
+tapos hanggang dito.
 ---
 
 ## Scenario 5 — Maintenance: Equipment, Corrective WO, PM Schedule
@@ -655,6 +676,7 @@ Repeat the same 5-step process as step 3.2 for the ₱360 invoice:
    - **Qty Failed:** 50
 7. Click **Submit Results**
 8. ✅ Inspection status: `failed`; reference `INS-2026-IPQC-001`
+9. ✅ **Production → Orders:** `WO-2026-03-00001` status changes to `on_hold` *(triggered by InspectionFailed event — requires queue worker)*
 
 ### 7.2 Raise a Non-Conformance Report (NCR)
 
@@ -719,6 +741,7 @@ Repeat the same 5-step process as step 3.2 for the ₱360 invoice:
 6. **Qty Passed:** 200 · **Qty Failed:** 0
 7. Click **Submit Results**
 8. ✅ Inspection status: `passed`; reference `INS-2026-OQC-001`
+9. ✅ **Production → Orders:** `WO-2026-03-00001` status resumes to `in_progress` *(triggered by InspectionPassed event — requires queue worker)*
 
 ---
 
@@ -1014,6 +1037,10 @@ These integrations fire automatically via queued events. Verify each one after c
 | AR Payment Received → GL posted | Financial Reports → GL — DR Cash / CR AR | 9.2 |
 | VAT Period Closed → GL reclassification posted | Accounting → Journal Entries + GL 2105/2106 | 11.2 |
 | ISO Audit Finding Created → CAPA | QC/QA → CAPA (CAPA linked to finding) | 12.3 |
+| Inspection Failed → Production WO on hold | Production → Orders (WO status = `on_hold`) | 7.1 |
+| Inspection Passed → Production WO resumed | Production → Orders (WO status = `in_progress`) | 7.5 |
+| Employee Activated → Leave Balances created | Leave → Leave Balances (one balance per active leave type) | — |
+| Leave Request Approved/Rejected → Attendance correction | Attendance → Logs (correction record for the leave dates) | — |
 
 ---
 
@@ -1035,6 +1062,7 @@ These integrations fire automatically via queued events. Verify each one after c
 | Auto-MRQ not visible in Inventory → Requisitions | WO must have been Released (not just created). Refresh the page after clicking Release |
 | Production WO Mark Complete disabled | **Log Output** must be recorded first (Qty Produced must be > 0) |
 | Start Production button not visible on WO | WO must be in `released` status; Release button appears when status is `draft` |
+| Start Production returns `PROD_MRQ_NOT_FULFILLED` error | All linked MRQs must reach `fulfilled` status first — complete the full 6-step MRQ approval chain (step 4.4) |
 | NCR creation rejected | NCR requires a **Linked Inspection** — create and submit results for the IPQC inspection first (step 7.1) |
 | Close NCR button not visible | NCR must not already be `closed` or `voided`; the CAPA must be completed first is recommended but not technically blocking |
 | Inspection Record Results button not visible | Inspection must be in `open` status — if already `passed` or `failed`, results are already recorded |

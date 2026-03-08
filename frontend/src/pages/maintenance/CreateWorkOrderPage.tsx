@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Wrench } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useEquipment, useCreateWorkOrder } from '@/hooks/useMaintenance'
 import { useEmployees } from '@/hooks/useEmployees'
 import type { WorkOrderType, WorkOrderPriority } from '@/types/maintenance'
@@ -61,16 +61,8 @@ export default function CreateWorkOrderPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
-          <Wrench className="w-5 h-5 text-neutral-600" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Work Order</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Create a maintenance work order</p>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="New Work Order" backTo="/maintenance/work-orders" />
 
       <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-lg p-6 space-y-5">
         {/* Equipment */}
@@ -157,7 +149,7 @@ export default function CreateWorkOrderPage(): React.ReactElement {
             >
               <option value="">— Unassigned —</option>
               {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.position?.title ?? emp.employee_code})</option>
+                <option key={emp.id} value={emp.id}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : ''}</option>
               ))}
             </select>
           </div>
@@ -183,7 +175,7 @@ export default function CreateWorkOrderPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Work Order'}
           </button>

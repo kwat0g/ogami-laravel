@@ -18,7 +18,7 @@ final class LogProductionOutputRequest extends FormRequest
     {
         return [
             'shift'        => ['required', 'string', 'in:A,B,C'],
-            'log_date'     => ['required', 'date', 'before_or_equal:today'],
+            'log_date'     => ['required', 'date'],
             'qty_produced' => ['required', 'numeric', 'min:0.0001'],
             'qty_rejected' => ['sometimes', 'numeric', 'min:0'],
             'operator_id'  => ['required', 'integer', 'exists:employees,id'],

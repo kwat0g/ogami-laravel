@@ -75,7 +75,7 @@ export default function CreateBomPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Bill of Materials</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -161,7 +161,7 @@ export default function CreateBomPage(): React.ReactElement {
                     type="number"
                     step="0.0001"
                     min="0.0001"
-                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={row.qty_per_unit}
                     onChange={e => updateRow(idx, 'qty_per_unit', e.target.value)}
                     required
@@ -187,7 +187,7 @@ export default function CreateBomPage(): React.ReactElement {
                     step="0.01"
                     min="0"
                     max="100"
-                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                    className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={row.scrap_factor_pct}
                     onChange={e => updateRow(idx, 'scrap_factor_pct', e.target.value)}
                   />
@@ -198,7 +198,7 @@ export default function CreateBomPage(): React.ReactElement {
                     type="button"
                     disabled={components.length === 1}
                     onClick={() => removeRow(idx)}
-                    className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30"
+                    className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -220,7 +220,7 @@ export default function CreateBomPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create BOM'}
           </button>

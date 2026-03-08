@@ -254,7 +254,7 @@ export default function CreatePayrollRunPage() {
   const canProceed = !hasApiBlockers && !hasZodDateErrors && !conflictChecking
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl mx-auto">
       {/* Back */}
       <button
         onClick={() => navigate('/payroll/runs')}

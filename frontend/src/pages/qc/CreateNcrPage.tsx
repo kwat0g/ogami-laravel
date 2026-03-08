@@ -50,7 +50,7 @@ export default function CreateNcrPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
           <AlertTriangle className="w-5 h-5 text-neutral-600" />
@@ -138,7 +138,7 @@ export default function CreateNcrPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Raise NCR'}
           </button>

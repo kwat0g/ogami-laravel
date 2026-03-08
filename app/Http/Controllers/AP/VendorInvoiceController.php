@@ -80,7 +80,7 @@ final class VendorInvoiceController extends Controller
         $this->authorize('view', $apInvoice);
 
         return new VendorInvoiceResource(
-            $apInvoice->load('vendor', 'fiscalPeriod', 'payments', 'apAccount', 'expenseAccount'),
+            $apInvoice->load('vendor', 'fiscalPeriod', 'payments', 'apAccount', 'expenseAccount', 'purchaseOrder'),
         );
     }
 

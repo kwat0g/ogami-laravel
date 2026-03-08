@@ -133,13 +133,13 @@ export default function IsoAuditDetailPage(): React.ReactElement {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
+    <div className="max-w-7xl mx-auto space-y-5">
       <PageHeader
         backTo="/iso/audits"
         title={audit.audit_reference}
         subtitle={`${audit.standard} — ${audit.audit_date}`}
         icon={<ClipboardList className="w-5 h-5" />}
-        status={<StatusBadge label={audit.status} />}
+        status={<StatusBadge status={audit.status}>{audit.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
           <div className="flex items-center gap-2 shrink-0">
             {audit.status === 'planned' && (
@@ -255,7 +255,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                 <button
                   type="submit"
                   disabled={createFindingMut.isPending}
-                  className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                  className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {createFindingMut.isPending ? 'Saving…' : 'Add Finding'}
                 </button>
@@ -288,7 +288,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge label={finding.status} />
+                        <StatusBadge status={finding.status}>{finding.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -342,7 +342,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                 type="button"
                 disabled={completeMut.isPending}
                 onClick={handleComplete}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {completeMut.isPending ? 'Completing…' : 'Complete Audit'}
               </button>

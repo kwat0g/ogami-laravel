@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useCreateJournalEntry,
   useChartOfAccounts,
@@ -198,20 +199,7 @@ export default function JournalEntryFormPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">New Journal Entry</h1>
-          <p className="text-sm text-neutral-500">Create a manual journal entry</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate('/accounting/journal-entries')}
-          className="text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-300 px-4 py-2 rounded hover:bg-neutral-50 transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
+      <PageHeader title="New Journal Entry" backTo="/accounting/journal-entries" />
 
       <form onSubmit={handleSubmit}>
         {/* Header fields */}

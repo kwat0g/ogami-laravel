@@ -73,13 +73,13 @@ function EmployeeBreakdown({ runId }: { runId: string | null }) {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage(p => p - 1)}
-              className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40"
+              className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed"
             >← Prev</button>
             <button
               type="button"
               disabled={page >= (data.meta?.last_page ?? 1)}
               onClick={() => setPage(p => p + 1)}
-              className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40"
+              className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed"
             >Next →</button>
           </div>
         </div>

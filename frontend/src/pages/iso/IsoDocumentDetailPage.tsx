@@ -65,7 +65,7 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
 
   const statusBadges = (
     <div className="flex items-center gap-2">
-      <StatusBadge label={doc.status} />
+      <StatusBadge status={doc.status}>{doc.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
       {!doc.is_active && (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-400">
           Inactive
@@ -75,7 +75,7 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
   );
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         backTo="/iso/documents"
         title={doc.doc_code}

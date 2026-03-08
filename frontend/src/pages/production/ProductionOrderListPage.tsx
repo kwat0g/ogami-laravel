@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Factory, AlertTriangle, Plus } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useProductionOrders } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -30,18 +31,20 @@ export default function ProductionOrderListPage(): React.ReactElement {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Work Orders</h1>
-        {canCreate && (
-          <Link
-            to="/production/orders/new"
-            className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            New Order
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Production Orders"
+        actions={
+          canCreate && (
+            <Link
+              to="/production/orders/new"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Order
+            </Link>
+          )
+        }
+      />
 
       <div className="mb-5 flex items-center gap-3">
         <select
@@ -111,9 +114,15 @@ export default function ProductionOrderListPage(): React.ReactElement {
                     <td className="px-4 py-3 text-neutral-500 text-xs">{order.target_end_date}</td>
                     <td className="px-4 py-3">
                       {order.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[order.status]}`}>
-                        {order.status?.replace('_', ' ') || 'Unknown'}
-                      </span>
+                      {order.status === 'released' && order.mrq_pending ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                          Released — Pending MRQ
+                        </span>
+                      ) : (
+                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[order.status]}`}>
+                          {order.status?.replace('_', ' ') || 'Unknown'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Link to={`/production/orders/${order.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
@@ -129,8 +138,8 @@ export default function ProductionOrderListPage(): React.ReactElement {
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} orders</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

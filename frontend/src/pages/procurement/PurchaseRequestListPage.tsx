@@ -4,6 +4,7 @@ import { AlertTriangle, Plus } from 'lucide-react'
 import { usePurchaseRequests } from '@/hooks/usePurchaseRequests'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type {
@@ -59,6 +60,21 @@ export default function PurchaseRequestListPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader
+        title="Purchase Requests"
+        actions={
+          canCreate && (
+            <Link
+              to="/procurement/purchase-requests/new"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Request
+            </Link>
+          )
+        }
+      />
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <select
@@ -106,21 +122,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
 
       {/* Table */}
       <Card>
-        <CardHeader
-          action={
-            canCreate && (
-              <Link
-                to="/procurement/purchase-requests/new"
-                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                New Request
-              </Link>
-            )
-          }
-        >
-          Purchase Requests
-        </CardHeader>
+        <CardHeader>Purchase Requests</CardHeader>
         <CardBody className="p-0">
           <table className="min-w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
@@ -196,14 +198,14 @@ export default function PurchaseRequestListPage(): React.ReactElement {
                 <button
                   disabled={data.meta.current_page <= 1}
                   onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-                  className="text-sm px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 hover:bg-neutral-50"
+                  className="text-sm px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50"
                 >
                   Previous
                 </button>
                 <button
                   disabled={data.meta.current_page >= data.meta.last_page}
                   onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-                  className="text-sm px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 hover:bg-neutral-50"
+                  className="text-sm px-3 py-1 rounded border border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50"
                 >
                   Next
                 </button>

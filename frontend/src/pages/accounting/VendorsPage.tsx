@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useVendors,
   useCreateVendor,
@@ -92,7 +93,7 @@ function AccreditVendorButton({ vendor }: { vendor: Vendor }) {
           onError: () => toast.error('Failed to accredit vendor.'),
         })
       }
-      className="text-xs text-green-600 hover:underline flex items-center gap-1 disabled:opacity-50"
+      className="text-xs text-green-600 hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <BadgeCheck className="w-3 h-3" /> Accredit
     </button>
@@ -133,7 +134,7 @@ function SuspendVendorButton({ vendor }: { vendor: Vendor }) {
                   onSuccess: () => { toast.success('Vendor suspended.'); setOpen(false) },
                   onError: () => toast.error('Failed to suspend vendor.'),
                 })}
-                className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {suspendMut.isPending ? 'Suspending…' : 'Suspend'}
               </button>
@@ -381,7 +382,7 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
             <button
               type="submit"
               disabled={isPending}
-              className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+              className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Vendor'}
             </button>
@@ -411,10 +412,11 @@ export default function VendorsPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader title="Vendors" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Vendors</h1>
           <p className="text-sm text-neutral-500">Manage supplier records and EWT configuration</p>
         </div>
         <div className="flex items-center gap-2">

@@ -64,7 +64,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto p-6 space-y-4">
+      <div className="max-w-7xl mx-auto p-6 space-y-4">
         <SkeletonLoader />
       </div>
     )
@@ -72,7 +72,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
 
   if (isError || !gr) {
     return (
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
         <div className="flex items-center gap-3 text-red-600 bg-red-50 rounded p-4">
           <AlertTriangle className="w-5 h-5 shrink-0" />
           <p className="text-sm">Failed to load Goods Receipt. It may have been deleted or you lack access.</p>
@@ -89,7 +89,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         type="button"
         onClick={handleConfirm}
         disabled={confirmMutation.isPending || deleteMutation.isPending}
-        className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50"
+        className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ClipboardCheck className="w-4 h-4" />
         {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
@@ -98,7 +98,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         type="button"
         onClick={handleDelete}
         disabled={confirmMutation.isPending || deleteMutation.isPending}
-        className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50"
+        className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Trash2 className="w-4 h-4" />
         Cancel GR
@@ -107,7 +107,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   ) : undefined
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <PageHeader
         backTo="/procurement/goods-receipts"
@@ -115,7 +115,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         subtitle="Goods Receipt"
         actions={headerActions}
       >
-        <StatusBadge status={gr.status} />
+        <StatusBadge status={gr.status}>{gr.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
       </PageHeader>
 
       {/* ── Receipt Details ─────────────────────────────────────────────────── */}
@@ -123,42 +123,52 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         <CardHeader>Receipt Details</CardHeader>
         <CardBody>
           <InfoList columns={2}>
-            <InfoRow label="Purchase Order">
-              {gr.purchase_order ? (
-                <Link
-                  to={`/procurement/purchase-orders/${gr.purchase_order.ulid}`}
-                  className="text-neutral-700 hover:text-neutral-900 font-medium"
-                >
-                  {gr.purchase_order.po_reference}
-                </Link>
-              ) : (
-                <span className="text-neutral-800">—</span>
-              )}
-            </InfoRow>
-            <InfoRow label="Received Date">
-              {new Date(gr.received_date).toLocaleDateString('en-PH')}
-            </InfoRow>
-            <InfoRow label="Received By">
-              {gr.received_by?.name ?? '—'}
-            </InfoRow>
+            <InfoRow 
+              label="Purchase Order"
+              value={
+                gr.purchase_order ? (
+                  <Link
+                    to={`/procurement/purchase-orders/${gr.purchase_order.ulid}`}
+                    className="text-neutral-700 hover:text-neutral-900 font-medium underline underline-offset-2"
+                  >
+                    {gr.purchase_order.po_reference}
+                  </Link>
+                ) : (
+                  '—'
+                )
+              }
+            />
+            <InfoRow 
+              label="Received Date"
+              value={gr.received_date ? new Date(gr.received_date).toLocaleDateString('en-PH') : '—'}
+            />
+            <InfoRow 
+              label="Received By"
+              value={gr.received_by?.name ?? '—'}
+            />
             {gr.delivery_note_number && (
-              <InfoRow label="Delivery Note #">
-                <span className="font-mono">{gr.delivery_note_number}</span>
-              </InfoRow>
+              <InfoRow 
+                label="Delivery Note #"
+                value={<span className="font-mono">{gr.delivery_note_number}</span>}
+              />
             )}
             {gr.condition_notes && (
-              <InfoRow label="Condition Notes" fullWidth>
-                <span className="text-neutral-600 italic">{gr.condition_notes}</span>
-              </InfoRow>
+              <InfoRow 
+                label="Condition Notes" 
+                fullWidth
+                value={<span className="text-neutral-600 italic">{gr.condition_notes}</span>}
+              />
             )}
             {gr.confirmed_at && (
               <>
-                <InfoRow label="Confirmed By">
-                  {gr.confirmed_by?.name ?? '—'}
-                </InfoRow>
-                <InfoRow label="Confirmed At">
-                  {new Date(gr.confirmed_at).toLocaleDateString('en-PH')}
-                </InfoRow>
+                <InfoRow 
+                  label="Confirmed By"
+                  value={gr.confirmed_by?.name ?? '—'}
+                />
+                <InfoRow 
+                  label="Confirmed At"
+                  value={new Date(gr.confirmed_at).toLocaleDateString('en-PH')}
+                />
               </>
             )}
           </InfoList>

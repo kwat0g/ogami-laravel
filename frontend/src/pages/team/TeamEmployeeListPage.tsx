@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useTeamEmployees } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -41,10 +42,8 @@ export default function TeamEmployeeListPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">My Team</h1>
-      </div>
+      <PageHeader title="My Team" />
+
       <p className="text-sm text-neutral-500 mb-4">
         {data?.meta?.total ?? 0} members in your department
         <span className="ml-2 text-xs text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">
@@ -149,7 +148,7 @@ export default function TeamEmployeeListPage() {
                       {emp.employment_type?.replace('_', ' ') || '—'}
                     </td>
                     <td className="px-3 py-2">
-                      <StatusBadge label={emp.employment_status} autoVariant />
+                      <StatusBadge status={emp.employment_status}>{emp.employment_status}</StatusBadge>
                     </td>
                     <td className="px-3 py-2 text-neutral-600">
                       {emp.salary_grade_code ?? '—'}
@@ -189,14 +188,14 @@ export default function TeamEmployeeListPage() {
               <button
                 disabled={data.meta.current_page <= 1}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={data.meta.current_page >= data.meta.last_page}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>

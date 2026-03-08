@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { useEmployee, useEmployeeTransition } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { EmployeeProfileView } from '@/components/employee'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
@@ -92,7 +93,8 @@ export default function EmployeeDetailPage() {
   )
 
   return (
-    <div className="max-w-7xl">
+    <div className="max-w-7xl mx-auto">
+      <PageHeader title="Employee Details" backTo="/hr/employees/all" />
       <ExecutiveReadOnlyBanner permission="employees.transition" />
       <EmployeeProfileView
         employee={employee}

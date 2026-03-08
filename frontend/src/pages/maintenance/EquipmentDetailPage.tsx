@@ -168,7 +168,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
 
   const statusBadges = (
     <div className="flex items-center gap-2">
-      <StatusBadge label={eq.status} />
+      <StatusBadge status={eq.status}>{eq.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
       {!eq.is_active && (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600">
           Inactive
@@ -178,7 +178,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
   );
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         backTo="/maintenance/equipment"
         title={eq.equipment_code}
@@ -203,7 +203,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
                   type="button"
                   onClick={handleToggleActive}
                   disabled={updateMut.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {eq.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                   {eq.is_active ? 'Deactivate' : 'Activate'}
@@ -214,7 +214,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
                   type="button"
                   onClick={handleDecommission}
                   disabled={updateMut.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-red-600 border border-red-300 rounded hover:bg-red-50 disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-red-600 border border-red-300 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <PowerOff className="w-3.5 h-3.5" />
                   Decommission
@@ -298,7 +298,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
             <button
               type="submit"
               disabled={updateMut.isPending}
-              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {updateMut.isPending ? 'Saving…' : 'Save Changes'}
             </button>
@@ -372,7 +372,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
                 <button
                   type="submit"
                   disabled={storePmMut.isPending}
-                  className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                  className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {storePmMut.isPending ? 'Saving…' : 'Save'}
                 </button>

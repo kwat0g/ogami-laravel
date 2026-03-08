@@ -129,7 +129,7 @@ export default function JournalEntryDetailPage() {
 
   const statusBadges = (
     <div className="flex items-center gap-2">
-      <StatusBadge label={entry.status} autoVariant />
+      <StatusBadge status={entry.status}>{entry.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
       {entry.is_auto_posted && (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
           System
@@ -144,7 +144,7 @@ export default function JournalEntryDetailPage() {
   )
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         backTo="/accounting/journal-entries"
         title={entry.je_number ?? 'Draft Journal Entry'}
@@ -165,7 +165,7 @@ export default function JournalEntryDetailPage() {
                     }
                   }}
                   disabled={busy}
-                  className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
                 </button>
@@ -191,7 +191,7 @@ export default function JournalEntryDetailPage() {
                 <button
                   onClick={() => void handleReverse()}
                   disabled={busy}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <RotateCcw className="h-4 w-4" />
                   {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
@@ -208,7 +208,7 @@ export default function JournalEntryDetailPage() {
         <CardBody>
           <InfoList columns={2}>
             <InfoRow label="Date" value={formatDate(entry.date)} />
-            <InfoRow label="Status" value={<StatusBadge label={entry.status} autoVariant />} />
+            <InfoRow label="Status" value={<StatusBadge status={entry.status}>{entry.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>} />
             <InfoRow label="Source" value={<span className="capitalize">{entry.source_type}</span>} />
             <InfoRow label="Fiscal Period" value={entry.fiscal_period?.name ?? entry.fiscal_period_id} />
             {entry.description && <InfoRow label="Description" value={entry.description} />}

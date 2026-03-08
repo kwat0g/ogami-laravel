@@ -8,6 +8,7 @@ import {
   useDeletePosition,
 } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { Position } from '@/types/hr'
 
 interface PosFormState {
@@ -64,17 +65,7 @@ export default function PositionsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Positions</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{rows.length} positions</p>
-        </div>
-        <button onClick={openCreate}
-          className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
-          + Add Position
-        </button>
-      </div>
+      <PageHeader title="Positions" />
 
       {/* Filter by dept */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4">
@@ -113,7 +104,7 @@ export default function PositionsPage() {
                 </td>
                 <td className="px-3 py-2 flex gap-2">
                   <button onClick={() => openEdit(pos)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                  <button onClick={() => confirm('Delete this position?') && remove.mutate(pos.id, { onSuccess: () => toast.success('Position deleted.'), onError: () => toast.error('Failed to delete position.') })} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50">Delete</button>
+                  <button onClick={() => confirm('Delete this position?') && remove.mutate(pos.id, { onSuccess: () => toast.success('Position deleted.'), onError: () => toast.error('Failed to delete position.') })} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
                 </td>
               </tr>
             ))}
@@ -160,7 +151,7 @@ export default function PositionsPage() {
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
               <button onClick={handleSave} disabled={create.isPending || update.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
                 {form.id ? 'Save Changes' : 'Create'}
               </button>
             </div>

@@ -39,7 +39,7 @@ export default function LoanFormPage() {
   }
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-neutral-900">New Loan Application</h1>
         <button onClick={() => navigate('/hr/loans')} className="text-sm text-neutral-500 hover:text-neutral-700">← Back</button>
@@ -68,7 +68,7 @@ export default function LoanFormPage() {
                 >
                   <option value="">Select employee…</option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                    <option key={emp.id} value={emp.id}>{emp.full_name}</option>
                   ))}
                 </select>
               )}
@@ -153,7 +153,7 @@ export default function LoanFormPage() {
             <button
               type="submit"
               disabled={create.isPending || isSubmitting}
-              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {create.isPending ? 'Submitting…' : 'Submit Application'}
             </button>

@@ -92,7 +92,7 @@ export default function CreateInspectionPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center">
           <ClipboardCheck className="w-5 h-5 text-neutral-600" />
@@ -156,7 +156,7 @@ export default function CreateInspectionPage(): React.ReactElement {
               type="number"
               min="0.001"
               step="0.001"
-              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('qty_inspected') ? 'border-red-400' : 'border-neutral-300'}`}
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('qty_inspected') ? 'border-red-400' : 'border-neutral-300'} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               value={form.qty_inspected}
               onChange={e => set('qty_inspected', e.target.value)}
               onBlur={() => touch('qty_inspected')}
@@ -190,7 +190,7 @@ export default function CreateInspectionPage(): React.ReactElement {
             <option value="">— Select Inspector —</option>
             {employees.map(emp => (
               <option key={emp.id} value={emp.id}>
-                {emp.full_name} ({emp.employee_code}){emp.position ? ` — ${emp.position.title}` : ''}
+                {emp.full_name}{emp.position ? ` — ${emp.position.title}` : ''}
               </option>
             ))}
           </select>
@@ -218,7 +218,7 @@ export default function CreateInspectionPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Inspection'}
           </button>

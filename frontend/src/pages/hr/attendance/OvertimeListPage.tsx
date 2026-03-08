@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useOvertimeRequests } from '@/hooks/useOvertime'
 import { useDepartments } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -78,16 +79,13 @@ export default function OvertimeListPage() {
   return (
     <div>
       <ExecutiveReadOnlyBanner />
-      
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">All Overtime Requests</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
-            {meta?.total ?? 0} records across all departments
-          </p>
-        </div>
-      </div>
+      {/* Note: This page is read-only; no "New" button needed */}
+      <PageHeader title="Overtime Requests" />
+
+      {/* Records count */}
+      <p className="text-sm text-neutral-500 mb-4">
+        {meta?.total ?? 0} records across all departments
+      </p>
 
       {/* Filters */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 flex flex-wrap gap-3">
@@ -277,7 +275,7 @@ export default function OvertimeListPage() {
                         : '—'}
                     </td>
                     <td className="px-3 py-2">
-                      <StatusBadge label={row.status} />
+                      <StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </td>
                     <td className="px-3 py-2 text-neutral-600">
                       {row.approved_by ? (
@@ -378,14 +376,14 @@ export default function OvertimeListPage() {
             <button
               disabled={meta.current_page <= 1}
               onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 transition-colors"
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Previous
             </button>
             <button
               disabled={meta.current_page >= meta.last_page}
               onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 transition-colors"
+              className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>

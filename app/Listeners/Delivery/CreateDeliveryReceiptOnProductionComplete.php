@@ -7,7 +7,9 @@ namespace App\Listeners\Delivery;
 use App\Domains\Delivery\Services\DeliveryService;
 use App\Events\Production\ProductionOrderCompleted;
 use App\Models\User;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
 
 /**
  * Creates a draft outbound Delivery Receipt when a Production Order completes,
@@ -16,9 +18,17 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  * PROD-DEL-001: Completing a WO with a delivery schedule initiates the
  *               outbound delivery receipt workflow for warehouse staff.
  */
-final class CreateDeliveryReceiptOnProductionComplete implements ShouldQueue
+final class CreateDeliveryReceiptOnProductionComplete implements ShouldQueue, ShouldBeUnique
 {
+    use InteractsWithQueue;
+
     public string $queue = 'default';
+    public int $uniqueFor = 60;
+
+    public function uniqueId(ProductionOrderCompleted $event): string
+    {
+        return 'prod-dr-' . $event->order->id;
+    }
 
     public function __construct(private readonly DeliveryService $deliveryService) {}
 

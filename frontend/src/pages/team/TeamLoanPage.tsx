@@ -101,7 +101,7 @@ export default function TeamLoanPage() {
                       <CurrencyAmount centavos={loan.principal_amount} />
                     </td>
                     <td className="px-3 py-2">
-                      <StatusBadge label={loan.status} />
+                      <StatusBadge status={loan.status}>{loan.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </td>
                     <td className="px-3 py-2 text-right">
                       <CurrencyAmount centavos={loan.outstanding_balance} />
@@ -131,14 +131,14 @@ export default function TeamLoanPage() {
               <button
                 disabled={data.meta.current_page <= 1}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={data.meta.current_page >= data.meta.last_page}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>

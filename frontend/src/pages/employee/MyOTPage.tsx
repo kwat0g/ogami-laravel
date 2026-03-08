@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { parseApiError } from '@/lib/errorHandler'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -53,9 +54,9 @@ export default function MyOTPage() {
 
   return (
     <div>
+      <PageHeader title="My Overtime" />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">My Overtime</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-flex items-center gap-2"
@@ -116,7 +117,7 @@ export default function MyOTPage() {
                   <td className="px-4 py-3 text-neutral-600">
                     <div className="w-40 truncate text-sm" title={row.reason || undefined}>{row.reason || '—'}</div>
                   </td>
-                  <td className="px-4 py-3"><StatusBadge label={row.status} /></td>
+                  <td className="px-4 py-3"><StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
                   <td className="px-4 py-3 text-neutral-400">{row.created_at?.slice(0, 10) ?? '—'}</td>
                   <td className="px-4 py-3">
                     {['pending', 'pending_executive'].includes(row.status) && (
@@ -141,9 +142,9 @@ export default function MyOTPage() {
           <span>Page {otData?.meta?.current_page} of {otData?.meta?.last_page}</span>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
             <button disabled={page >= (otData?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
           </div>
         </div>
       )}

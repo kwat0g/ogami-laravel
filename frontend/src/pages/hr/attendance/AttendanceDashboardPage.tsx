@@ -111,7 +111,7 @@ export default function AttendanceDashboardPage() {
                   <td className="px-4 py-2 whitespace-nowrap">{a.log_date}</td>
                   <td className="px-4 py-2">{a.employee_name ?? `#${a.employee_id}`}</td>
                   <td className="px-4 py-2">
-                    <StatusBadge label={a.type} autoVariant />
+                    <StatusBadge status={a.type}>{a.type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                   </td>
                   <td className="px-4 py-2">{a.minutes_late ?? '—'}</td>
                 </tr>
@@ -147,7 +147,7 @@ export default function AttendanceDashboardPage() {
                     <td className="px-4 py-2 whitespace-nowrap">{ot.date}</td>
                     <td className="px-4 py-2">{ot.employee_name ?? `#${ot.employee_id}`}</td>
                     <td className="px-4 py-2">{ot.requested_minutes}</td>
-                    <td className="px-4 py-2"><StatusBadge label={ot.status} autoVariant /></td>
+                    <td className="px-4 py-2"><StatusBadge status={ot.status}>{ot.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <SodActionButton
@@ -187,7 +187,7 @@ export default function AttendanceDashboardPage() {
             </label>
             <div className="flex justify-end gap-2">
               <button onClick={() => setApprovingId(null)} className="text-sm px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-              <button onClick={() => void submitApprove()} disabled={approve.isPending} className="text-sm px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
+              <button onClick={() => void submitApprove()} disabled={approve.isPending} className="text-sm px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 {approve.isPending ? 'Approving…' : 'Confirm'}
               </button>
             </div>
@@ -211,7 +211,7 @@ export default function AttendanceDashboardPage() {
             </label>
             <div className="flex justify-end gap-2">
               <button onClick={() => setRejectId(null)} className="text-sm px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-              <button onClick={() => void submitReject()} disabled={reject.isPending} className="text-sm px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">
+              <button onClick={() => void submitReject()} disabled={reject.isPending} className="text-sm px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 {reject.isPending ? 'Rejecting…' : 'Reject'}
               </button>
             </div>

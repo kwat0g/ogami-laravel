@@ -1,5 +1,6 @@
 import { useVatLedgerList } from '@/hooks/useTax'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 // ---------------------------------------------------------------------------
 // Tax Period Summary Page — tabular view of all VAT periods
@@ -11,8 +12,8 @@ export default function TaxPeriodSummaryPage() {
 
   return (
     <div className="p-6 space-y-4">
+      <PageHeader title="Tax Period Summary" />
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 mb-1">Tax Period Summary</h1>
         <p className="text-sm text-neutral-500">VAT ledger across all fiscal periods</p>
       </div>
 

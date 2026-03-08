@@ -18,7 +18,7 @@ export const api = axios.create({
 // than once within WRITE_COOLDOWN_MS even when the server returns a 422/403.
 // Different resource IDs (e.g. /loans/1/approve vs /loans/2/approve) are
 // tracked separately so bulk approval workflows are unaffected.
-const WRITE_COOLDOWN_MS = 800
+const WRITE_COOLDOWN_MS = 1500
 const lastWriteCallAt = new Map<string, number>()
 
 api.interceptors.request.use(
@@ -45,6 +45,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Cooldown-aborted duplicate call — drop silently, no toast
+    if (axios.isCancel(error)) {
+      return Promise.reject({ __cooldown: true })
+    }
+
     if (!error.response) {
       return Promise.reject(new Error('Network error. Please check your connection.'))
     }
@@ -68,6 +73,7 @@ api.interceptors.response.use(
           duration: 5000,
         })
       })
+      return Promise.reject({ __handled: true })
     }
 
     // ── 5xx: Show server error toast ──────────────────────────────────────
@@ -78,10 +84,18 @@ api.interceptors.response.use(
           duration: 6000,
         })
       })
+      return Promise.reject({ __handled: true })
     }
 
     return Promise.reject(data ?? { success: false, message: 'An unexpected error occurred.', error_code: 'UNKNOWN' })
   },
 )
+
+/** Returns true for errors already toasted by the api interceptor (429, 5xx, cooldown). */
+export function isHandledApiError(err: unknown): boolean {
+  if (err instanceof Error) return false
+  const e = err as Record<string, unknown>
+  return e?.__handled === true || e?.__cooldown === true
+}
 
 export default api

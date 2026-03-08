@@ -42,12 +42,11 @@ final class NcrService implements ServiceContract
             // Transition inspection to on_hold
             $ncr->inspection()->update(['status' => 'on_hold']);
 
-            // Update NCR status on the parent inspection
-            $ncr->inspection()->update(['status' => 'on_hold']);
-
             $loaded = $ncr->load(['inspection.itemMaster', 'raisedBy']);
 
-            event(new NonConformanceReportRaised($loaded));
+            // Fire AFTER the transaction commits so the queued listener
+            // (CreateCapaOnNcrRaised) reads the committed NCR row.
+            DB::afterCommit(fn () => event(new NonConformanceReportRaised($loaded->fresh(['inspection.itemMaster', 'raisedBy']))));
 
             return $loaded;
         });
@@ -57,7 +56,11 @@ final class NcrService implements ServiceContract
     public function issueCapa(NonConformanceReport $ncr, array $data, int $userId): CapaAction
     {
         if (!in_array($ncr->status, ['open', 'under_review'], true)) {
-            throw new DomainException('QC_NCR_CANNOT_ISSUE_CAPA');
+            throw new DomainException(
+                message: "NCR cannot accept a CAPA in its current status '{$ncr->status}'.",
+                errorCode: 'QC_NCR_CANNOT_ISSUE_CAPA',
+                httpStatus: 422,
+            );
         }
 
         return DB::transaction(function () use ($ncr, $data, $userId) {
@@ -80,7 +83,11 @@ final class NcrService implements ServiceContract
     public function closeNcr(NonConformanceReport $ncr, int $userId): NonConformanceReport
     {
         if ($ncr->status === 'closed') {
-            throw new DomainException('QC_NCR_ALREADY_CLOSED');
+            throw new DomainException(
+                message: 'NCR is already closed.',
+                errorCode: 'QC_NCR_ALREADY_CLOSED',
+                httpStatus: 422,
+            );
         }
 
         $ncr->update([
@@ -95,7 +102,11 @@ final class NcrService implements ServiceContract
     public function completeCapaAction(CapaAction $capa): CapaAction
     {
         if ($capa->status === 'completed' || $capa->status === 'verified') {
-            throw new DomainException('QC_CAPA_ALREADY_COMPLETED');
+            throw new DomainException(
+                message: 'CAPA action is already completed or verified.',
+                errorCode: 'QC_CAPA_ALREADY_COMPLETED',
+                httpStatus: 422,
+            );
         }
 
         $capa->update([

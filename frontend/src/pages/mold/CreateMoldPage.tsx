@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useCreateMold } from '@/hooks/useMold';
 import type { MoldStatus } from '@/types/mold';
 
-const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 bg-white';
+const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
 export default function CreateMoldPage(): React.ReactElement {
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ export default function CreateMoldPage(): React.ReactElement {
   };
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button
           type="button"
@@ -150,7 +150,7 @@ export default function CreateMoldPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Creating…' : 'Create Mold'}
           </button>

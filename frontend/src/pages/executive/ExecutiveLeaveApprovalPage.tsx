@@ -10,6 +10,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { parseApiError } from '@/lib/errorHandler'
 import { toast } from 'sonner'
 import type { LeaveFilters } from '@/types/hr'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
@@ -36,7 +37,7 @@ export default function ExecutiveLeaveApprovalPage() {
 
   return (
     <div>
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">GA Leave Processing</h1>
+      <PageHeader title="Leave Approvals" />
 
       {/* Info Card */}
       <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-6">
@@ -132,7 +133,7 @@ export default function ExecutiveLeaveApprovalPage() {
                 <td className="px-4 py-3 text-neutral-600">{row.date_to}</td>
                 <td className="px-4 py-3 text-neutral-600">{row.total_days}</td>
                 <td className="px-4 py-3">
-                  <StatusBadge label={row.status} />
+                  <StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                 </td>
                 <td className="px-4 py-3 flex gap-2">
                   {row.status === 'manager_checked' && (
@@ -140,7 +141,7 @@ export default function ExecutiveLeaveApprovalPage() {
                       <button
                         onClick={() => setProcessId(row.id)}
                         disabled={gaProcess.isPending}
-                        className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Process
                       </button>
@@ -155,7 +156,7 @@ export default function ExecutiveLeaveApprovalPage() {
                           )
                         }}
                         disabled={reject.isPending}
-                        className="px-2 py-1 text-xs bg-neutral-600 text-white rounded hover:bg-neutral-700 disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-neutral-600 text-white rounded hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Reject
                       </button>
@@ -257,7 +258,7 @@ export default function ExecutiveLeaveApprovalPage() {
                   )
                 }}
                 disabled={gaProcess.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {gaProcess.isPending ? 'Processing…' : 'Submit'}
               </button>

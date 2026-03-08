@@ -7,6 +7,7 @@ import {
   useDeleteDepartment,
 } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { Department } from '@/types/hr'
 
 interface DeptFormState {
@@ -60,17 +61,7 @@ export default function DepartmentsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Departments</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{rows.length} departments</p>
-        </div>
-        <button onClick={openCreate}
-          className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
-          + Add Department
-        </button>
-      </div>
+      <PageHeader title="Departments" />
 
       {/* Table */}
       <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
@@ -138,7 +129,7 @@ export default function DepartmentsPage() {
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
               <button onClick={handleSave} disabled={create.isPending || update.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
                 {form.id ? 'Save Changes' : 'Create'}
               </button>
             </div>

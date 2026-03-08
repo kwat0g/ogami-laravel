@@ -6,6 +6,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import { useAuthStore } from '@/stores/authStore'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { LoanFilters, LoanStatus } from '@/types/hr'
 
 export default function LoanListPage() {
@@ -33,21 +34,19 @@ export default function LoanListPage() {
   return (
     <div>
       <ExecutiveReadOnlyBanner />
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Loans</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{data?.meta?.total ?? 0} records</p>
-        </div>
-        {loanBasePath === '/hr/loans' && canCreate && (
-          <Link
-            to="/hr/loans/new"
-            className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            + New Loan
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Employee Loans"
+        actions={
+          loanBasePath === '/hr/loans' && canCreate ? (
+            <Link
+              to="/hr/loans/new"
+              className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              + New Loan
+            </Link>
+          ) : undefined
+        }
+      />
 
       {/* Filters */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 flex flex-wrap gap-3">
@@ -109,7 +108,7 @@ export default function LoanListPage() {
                 <td className="px-3 py-2 text-neutral-600">{row.term_months} mos</td>
                 <td className="px-3 py-2 text-neutral-700"><CurrencyAmount centavos={row.monthly_amortization_centavos} /></td>
                 <td className="px-3 py-2 text-neutral-700"><CurrencyAmount centavos={row.outstanding_balance_centavos} /></td>
-                <td className="px-3 py-2"><StatusBadge label={row.status} /></td>
+                <td className="px-3 py-2"><StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
                 <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => navigate(`${loanBasePath}/${row.ulid}`)}
@@ -130,9 +129,9 @@ export default function LoanListPage() {
           <span>Page {data?.meta?.current_page} of {data?.meta?.last_page}</span>
           <div className="flex gap-2">
             <button disabled={(filters.page ?? 1) <= 1} onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
             <button disabled={(filters.page ?? 1) >= (data?.meta?.last_page ?? 1)} onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
           </div>
         </div>
       )}

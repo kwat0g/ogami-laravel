@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { BankAccount, CreateBankAccountPayload } from '@/types/banking'
 
 // ---------------------------------------------------------------------------
@@ -25,7 +26,7 @@ function DeleteBankAccountButton({ account }: { account: BankAccount }) {
     >
       <button
         type="button"
-        className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-50"
+        className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isPending}
       >
         Delete
@@ -150,7 +151,7 @@ function BankAccountFormModal({
 
         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
           <button type="submit" disabled={busy}
-            className="flex-1 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50">
+            className="flex-1 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed">
             {busy ? 'Saving…' : 'Save'}
           </button>
           <button type="button" onClick={onClose}
@@ -175,9 +176,9 @@ export default function BankAccountsPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageHeader title="Bank Accounts" />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Bank Accounts</h1>
           <p className="text-sm text-neutral-500">Manage bank accounts linked to GL (GL-006)</p>
         </div>
         <button

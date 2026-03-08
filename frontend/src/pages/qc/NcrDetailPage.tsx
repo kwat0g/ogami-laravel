@@ -80,7 +80,7 @@ export default function NcrDetailPage(): React.ReactElement {
   const canCloseNcr = canClose && ncr.status !== 'closed' && ncr.status !== 'voided'
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         title={ncr.ncr_reference}
         subtitle="Non-Conformance Report"
@@ -107,7 +107,7 @@ export default function NcrDetailPage(): React.ReactElement {
               <button
                 onClick={handleClose}
                 disabled={closeNcrMut.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 border border-neutral-300 text-sm font-medium rounded-md hover:bg-neutral-50 hover:border-neutral-400 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 border border-neutral-300 text-sm font-medium rounded-md hover:bg-neutral-50 hover:border-neutral-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 Close NCR
@@ -159,7 +159,7 @@ export default function NcrDetailPage(): React.ReactElement {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <StatusBadge status={capa.type}>{capa.type}</StatusBadge>
+                        <StatusBadge status={capa.type}>{capa.type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                         <span className="text-sm font-medium text-neutral-800">{capa.description}</span>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-neutral-500">
@@ -173,7 +173,7 @@ export default function NcrDetailPage(): React.ReactElement {
                         <button
                           onClick={() => completeCapa.mutate(capa.id)}
                           disabled={completeCapa.isPending}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Complete
                         </button>
@@ -254,7 +254,7 @@ export default function NcrDetailPage(): React.ReactElement {
                 type="button"
                 onClick={handleIssueCapa}
                 disabled={!capaData.description.trim() || issueCapaMut.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 rounded-md hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 rounded-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {issueCapaMut.isPending ? 'Issuing...' : 'Issue CAPA'}
               </button>

@@ -174,6 +174,11 @@ export function useCancelOrder(ulid: string) {
   return useMutation({ mutationFn: orderAction(ulid, 'cancel', qc) })
 }
 
+export function useVoidOrder(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: orderAction(ulid, 'void', qc) })
+}
+
 export function useLogOutput(ulid: string) {
   const qc = useQueryClient()
   return useMutation({

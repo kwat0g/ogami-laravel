@@ -82,14 +82,15 @@ final class InspectionService implements ServiceContract
                 'status' => $newStatus,
             ]);
 
-            // QC-001: fire event so Production domain can place linked WO on hold.
+            // QC-001/002: fire events AFTER the transaction commits so queued listeners
+            // (HoldProductionOrderOnInspectionFail, ResumeProductionOrderOnInspectionPass)
+            // read the committed inspection status, not the pre-update snapshot.
             if ($newStatus === 'failed') {
-                InspectionFailed::dispatch($inspection);
+                DB::afterCommit(fn () => InspectionFailed::dispatch($inspection->fresh()));
             }
 
-            // QC-002: passed inspection — resume a held work order if any.
             if ($newStatus === 'passed') {
-                InspectionPassed::dispatch($inspection);
+                DB::afterCommit(fn () => InspectionPassed::dispatch($inspection->fresh()));
             }
 
             return $inspection->load('results');

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useVendors, useCreateAPInvoice } from '@/hooks/useAP'
 import { useFiscalPeriods, useChartOfAccounts } from '@/hooks/useAccounting'
 import type { CreateVendorInvoicePayload } from '@/types/ap'
@@ -99,20 +99,8 @@ export default function APInvoiceFormPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded border border-neutral-300 hover:bg-neutral-50"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">New AP Invoice</h1>
-          <p className="text-sm text-neutral-500">Create a vendor invoice</p>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <PageHeader title="New AP Invoice" backTo="/accounting/ap-invoices" />
 
       {error && (
         <div className="rounded bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">{error}</div>
@@ -313,7 +301,7 @@ export default function APInvoiceFormPage() {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Creating…' : 'Create Invoice (Draft)'}
           </button>

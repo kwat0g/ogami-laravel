@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTrialBalance } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { PeriodFilters } from '@/types/reports'
 
 export default function TrialBalancePage() {
@@ -17,8 +18,9 @@ export default function TrialBalancePage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageHeader title="Trial Balance" />
+
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 mb-1">Trial Balance</h1>
         <p className="text-sm text-neutral-500">
           Debit/Credit totals per account for a given period (GL-002)
         </p>

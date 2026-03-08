@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateDocument } from '@/hooks/useISO'
 import { useEmployees } from '@/hooks/useEmployees'
 import type { DocumentType } from '@/types/iso'
@@ -64,16 +64,8 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-neutral-100 rounded flex items-center justify-center">
-          
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">New Controlled Document</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Register a document in the ISO document control system</p>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader title="New Document" backTo="/iso/documents" />
 
       <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
         {/* Title */}
@@ -138,7 +130,7 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
             >
               <option value="">— Select Owner —</option>
               {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.employee_code})</option>
+                <option key={emp.id} value={emp.id}>{emp.full_name}</option>
               ))}
             </select>
           </div>
@@ -177,7 +169,7 @@ export default function CreateIsoDocumentPage(): React.ReactElement {
           <button
             type="submit"
             disabled={createMut.isPending}
-            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Register Document'}
           </button>

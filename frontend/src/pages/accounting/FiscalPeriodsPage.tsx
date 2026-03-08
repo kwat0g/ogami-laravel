@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Plus, RefreshCw } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useFiscalPeriods,
   useCreateFiscalPeriod,
@@ -52,7 +53,7 @@ function PeriodActions({ period }: { period: FiscalPeriod }) {
           }
         }}
         disabled={busy}
-        className="text-xs text-neutral-700 hover:underline disabled:opacity-50"
+        className="text-xs text-neutral-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {openMutation.isPending ? 'Opening…' : 'Open'}
       </button>
@@ -70,7 +71,7 @@ function PeriodActions({ period }: { period: FiscalPeriod }) {
         }
       }}
       disabled={busy}
-      className="text-xs text-neutral-600 hover:underline disabled:opacity-50"
+      className="text-xs text-neutral-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {closeMutation.isPending ? 'Closing…' : 'Close'}
     </button>
@@ -148,7 +149,7 @@ function CreatePeriodModal({ open, onClose, onSave, saving }: CreateModalProps) 
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Creating…' : 'Create Period'}
             </button>
@@ -193,17 +194,18 @@ export default function FiscalPeriodsPage() {
 
   return (
     <div>
+      <PageHeader title="Fiscal Periods" />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Fiscal Periods</h1>
           <p className="text-sm text-neutral-500">{data?.meta?.total ?? periods.length} periods</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => void refetch()}
             disabled={isFetching}
-            className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-600 transition-colors disabled:opacity-40"
+            className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="Refresh"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />

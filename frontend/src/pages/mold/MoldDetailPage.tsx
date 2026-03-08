@@ -94,12 +94,12 @@ export default function MoldDetailPage() {
       {mold.is_critical && (
         <span className="rounded bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-700">Critical</span>
       )}
-      <StatusBadge label={mold.status} />
+      <StatusBadge status={mold.status}>{mold.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
     </div>
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader
         backTo="/mold/masters"
         title={mold.name}
@@ -160,7 +160,7 @@ export default function MoldDetailPage() {
           </div>
           <div className="flex justify-end gap-3 pt-1">
             <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-            <button type="submit" disabled={updateMut.isPending} className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+            <button type="submit" disabled={updateMut.isPending} className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed">
               {updateMut.isPending ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
@@ -255,7 +255,7 @@ export default function MoldDetailPage() {
                       >
                         <option value="">— Select Operator —</option>
                         {employees.map(emp => (
-                          <option key={emp.id} value={emp.user_id ?? ''}>{emp.full_name} ({emp.position?.title ?? emp.department?.name ?? emp.employee_code})</option>
+                          <option key={emp.id} value={emp.user_id ?? ''}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : emp.department?.name ? ` — ${emp.department.name}` : ''}</option>
                         ))}
                       </select>
                     )}
@@ -283,7 +283,7 @@ export default function MoldDetailPage() {
               </div>
               <div className="flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowForm(false)} className="rounded px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-100">Cancel</button>
-                <button type="submit" disabled={isSubmitting} className="rounded bg-neutral-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-60">
+                <button type="submit" disabled={isSubmitting} className="rounded bg-neutral-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed">
                   {isSubmitting ? 'Saving…' : 'Save'}
                 </button>
               </div>

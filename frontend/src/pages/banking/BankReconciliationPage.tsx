@@ -10,6 +10,7 @@ import {
   useCertifyReconciliation,
 } from '@/hooks/useBanking'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 import { SodActionButton } from '@/components/ui/SodActionButton'
 import type {
@@ -75,7 +76,7 @@ function CreateReconciliationModal({ onClose }: { onClose: () => void }) {
         ))}
         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
           <button type="submit" disabled={isPending}
-            className="flex-1 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50">
+            className="flex-1 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed">
             {isPending ? 'Creating…' : 'Create'}
           </button>
           <button type="button" onClick={onClose}
@@ -151,7 +152,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
               type="button"
               disabled={importing}
               onClick={() => importStmt({ transactions: csvLines })}
-              className="px-3 py-2 rounded border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              className="px-3 py-2 rounded border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {importing ? 'Importing…' : 'Import Statement'}
             </button>
@@ -251,7 +252,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
                 { onSuccess: () => { setSelectedBankTx(null); setJeLineId('') } }
               )
             }}
-            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50"
+            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {matching ? 'Matching…' : 'Confirm Match'}
           </button>
@@ -273,9 +274,9 @@ export default function BankReconciliationPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageHeader title="Bank Reconciliation" />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-1">Bank Reconciliation</h1>
           <p className="text-sm text-neutral-500">
             Match bank transactions to GL journal entry lines (GL-006)
           </p>

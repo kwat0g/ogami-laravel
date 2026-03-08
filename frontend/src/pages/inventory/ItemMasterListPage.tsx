@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, AlertTriangle } from 'lucide-react'
 import { useItems, useItemCategories } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/authStore'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -47,6 +48,21 @@ export default function ItemMasterListPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader
+        title="Item Master"
+        actions={
+          canCreate && (
+            <Link
+              to="/inventory/items/new"
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+            >
+              <Plus className="w-4 h-4" />
+              New Item
+            </Link>
+          )
+        }
+      />
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <input
@@ -99,21 +115,7 @@ export default function ItemMasterListPage(): React.ReactElement {
       {!isLoading && !isError && (
         <>
           <Card>
-            <CardHeader
-              action={
-                canCreate && (
-                  <Link
-                    to="/inventory/items/new"
-                    className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-                  >
-                    <Plus className="w-4 h-4" />
-                    New Item
-                  </Link>
-                )
-              }
-            >
-              Item Master
-            </CardHeader>
+            <CardHeader>Item Master</CardHeader>
             <CardBody className="p-0">
               <table className="min-w-full text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
@@ -172,14 +174,14 @@ export default function ItemMasterListPage(): React.ReactElement {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50"
+                  className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= data.meta.last_page}
-                  className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50"
+                  className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50"
                 >
                   Next
                 </button>

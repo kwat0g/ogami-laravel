@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
-import { useNavigate } from 'react-router-dom'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { useNavigate, Link } from 'react-router-dom'
 import { Plus, RefreshCw } from 'lucide-react'
 import { usePayrollRuns } from '@/hooks/usePayroll'
 import { useAuthStore } from '@/stores/authStore'
@@ -58,32 +59,33 @@ export default function PayrollRunListPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Payroll Runs</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
-            {data?.meta?.total ?? 0} runs
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => void refetch()}
-            disabled={isFetching}
-            className="p-2 rounded border border-neutral-200 hover:bg-neutral-50 text-neutral-600 transition-colors disabled:opacity-40"
-            title="Refresh"
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          </button>
-          {!isAcctgOnly && (
-            <button
-              onClick={() => navigate('/payroll/runs/new')}
+      <PageHeader
+        title="Payroll Runs"
+        actions={
+          !isAcctgOnly && (
+            <Link
+              to="/payroll/runs/new"
               className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
             >
               <Plus className="h-4 w-4" />
               New Run
-            </button>
-          )}
+            </Link>
+          )
+        }
+      />
+
+      {/* Header Actions */}
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-sm text-neutral-500">{data?.meta?.total ?? 0} runs</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => void refetch()}
+            disabled={isFetching}
+            className="p-2 rounded border border-neutral-200 hover:bg-neutral-50 text-neutral-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
@@ -166,7 +168,7 @@ export default function PayrollRunListPage() {
                       {formatDate(run.pay_date)}
                     </td>
                     <td className="px-3 py-2">
-                      <StatusBadge label={run.status} autoVariant />
+                      <StatusBadge status={run.status}>{run.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-right text-neutral-700 tabular-nums">
                       {run.status === 'cancelled' ? <span className="text-neutral-400">—</span> : run.total_employees}
@@ -206,14 +208,14 @@ export default function PayrollRunListPage() {
               <button
                 disabled={data.meta.current_page <= 1}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={data.meta.current_page >= data.meta.last_page}
                 onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-1 rounded border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50 transition-colors"
               >
                 Next
               </button>

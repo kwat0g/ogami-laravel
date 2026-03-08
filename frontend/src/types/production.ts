@@ -49,7 +49,7 @@ export interface ProductionOrder {
   id: number
   ulid: string
   po_reference: string
-  delivery_schedule?: { id: number; ds_reference: string } | null
+  delivery_schedule?: { id: number; ulid: string; ds_reference: string } | null
   product_item?: { id: number; item_code: string; name: string } | null
   bom?: Bom | null
   qty_required: string
@@ -58,6 +58,7 @@ export interface ProductionOrder {
   target_start_date: string
   target_end_date: string
   status: ProductionOrderStatus
+  mrq_pending?: boolean
   notes: string | null
   created_by?: { id: number; name: string } | null
   output_logs?: ProductionOutputLog[]

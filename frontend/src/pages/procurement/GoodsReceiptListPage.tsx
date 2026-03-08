@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, AlertTriangle } from 'lucide-react'
 import { useGoodsReceipts } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/authStore'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -28,6 +29,21 @@ export default function GoodsReceiptListPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader
+        title="Goods Receipts"
+        actions={
+          canCreate && (
+            <Link
+              to="/procurement/goods-receipts/new"
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+            >
+              <Plus className="w-4 h-4" />
+              Record Receipt
+            </Link>
+          )
+        }
+      />
+
       {/* Filters */}
       <div className="flex items-center gap-3 mb-5">
         <select
@@ -56,21 +72,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
       )}
       {!isLoading && !isError && (
         <Card>
-          <CardHeader
-            action={
-              canCreate && (
-                <Link
-                  to="/procurement/goods-receipts/new"
-                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-                >
-                  <Plus className="w-4 h-4" />
-                  Record Receipt
-                </Link>
-              )
-            }
-          >
-            Goods Receipts
-          </CardHeader>
+          <CardHeader>Goods Receipts</CardHeader>
           <CardBody className="p-0">
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
@@ -124,8 +126,8 @@ export default function GoodsReceiptListPage(): React.ReactElement {
               <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200 text-sm text-neutral-600">
                 <span>Page {data.meta.current_page} of {data.meta.last_page}</span>
                 <div className="flex gap-2">
-                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Prev</button>
-                  <button disabled={page === data.meta.last_page} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Prev</button>
+                  <button disabled={page === data.meta.last_page} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
                 </div>
               </div>
             )}

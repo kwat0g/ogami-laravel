@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, AlertTriangle } from 'lucide-react'
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/authStore'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -32,6 +33,21 @@ export default function PurchaseOrderListPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader
+        title="Purchase Orders"
+        actions={
+          canCreate && (
+            <Link
+              to="/procurement/purchase-orders/new"
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+            >
+              <Plus className="w-4 h-4" />
+              Create PO
+            </Link>
+          )
+        }
+      />
+
       {/* Filters */}
       <div className="flex items-center gap-3 mb-5">
         <select
@@ -60,21 +76,7 @@ export default function PurchaseOrderListPage(): React.ReactElement {
       )}
       {!isLoading && !isError && (
         <Card>
-          <CardHeader
-            action={
-              canCreate && (
-                <Link
-                  to="/procurement/purchase-orders/new"
-                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create PO
-                </Link>
-              )
-            }
-          >
-            Purchase Orders
-          </CardHeader>
+          <CardHeader>Purchase Orders</CardHeader>
           <CardBody className="p-0">
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
@@ -98,7 +100,18 @@ export default function PurchaseOrderListPage(): React.ReactElement {
                   <tr key={po.id} className="hover:bg-neutral-50/50 transition-colors">
                     <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{po.po_reference}</td>
                     <td className="px-4 py-3 text-neutral-700">{po.vendor?.name ?? `#${po.vendor_id}`}</td>
-                    <td className="px-4 py-3 text-neutral-600 font-mono text-xs">{po.purchase_request?.pr_reference ?? '—'}</td>
+                    <td className="px-4 py-3 text-neutral-600 font-mono text-xs">
+                      {po.purchase_request ? (
+                        <Link
+                          to={`/procurement/purchase-requests/${po.purchase_request.ulid}`}
+                          className="text-neutral-600 hover:text-neutral-900 underline underline-offset-2"
+                        >
+                          {po.purchase_request.pr_reference}
+                        </Link>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-medium text-neutral-800">
                       ₱{Number(po.total_po_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </td>
@@ -124,8 +137,8 @@ export default function PurchaseOrderListPage(): React.ReactElement {
               <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200 text-sm text-neutral-600">
                 <span>Page {data.meta.current_page} of {data.meta.last_page}</span>
                 <div className="flex gap-2">
-                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Prev</button>
-                  <button disabled={page === data.meta.last_page} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                  <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Prev</button>
+                  <button disabled={page === data.meta.last_page} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
                 </div>
               </div>
             )}

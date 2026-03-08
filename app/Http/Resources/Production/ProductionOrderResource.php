@@ -28,6 +28,7 @@ final class ProductionOrderResource extends JsonResource
             'target_start_date'    => $this->target_start_date?->toDateString(),
             'target_end_date'      => $this->target_end_date?->toDateString(),
             'status'               => $this->status,
+            'mrq_pending'          => $this->status === 'released' && ($this->pending_mrq_count ?? 0) > 0,
             'notes'                => $this->notes,
             'created_by'           => $this->whenLoaded('createdBy', fn () => [
                 'id'   => $this->createdBy->id,

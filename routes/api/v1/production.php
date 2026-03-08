@@ -33,6 +33,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::patch('orders/{productionOrder}/start',    [ProductionOrderController::class, 'start']);
         Route::patch('orders/{productionOrder}/complete', [ProductionOrderController::class, 'complete']);
         Route::patch('orders/{productionOrder}/cancel',   [ProductionOrderController::class, 'cancel']);
+        Route::patch('orders/{productionOrder}/void',     [ProductionOrderController::class, 'void']);
         Route::post('orders/{productionOrder}/output',    [ProductionOrderController::class, 'logOutput']);
     });
 });

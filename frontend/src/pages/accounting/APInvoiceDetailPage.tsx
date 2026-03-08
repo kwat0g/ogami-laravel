@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { CheckCircle, XCircle, FileText, CreditCard } from 'lucide-react'
 import {
@@ -160,13 +160,13 @@ export default function APInvoiceDetailPage() {
   const isInProgress = isPendingApproval || isHeadNoted || isManagerChecked || isOfficerReviewed
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         backTo="/accounting/ap/invoices"
         title={`AP Invoice — ${invoice.or_number ?? `#${invoice.id}`}`}
         subtitle={invoice.vendor ? `Vendor: ${invoice.vendor.name}` : undefined}
         icon={<FileText className="w-5 h-5" />}
-        status={<StatusBadge label={invoice.status} />}
+        status={<StatusBadge status={invoice.status}>{invoice.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
           <div className="flex items-center gap-2">
             {/* Submit for approval */}
@@ -176,7 +176,7 @@ export default function APInvoiceDetailPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={submit.isPending}
-                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
+                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded"
                 >
                   <FileText className="h-4 w-4" />
                   {submit.isPending ? 'Submitting…' : 'Submit for Approval'}
@@ -332,7 +332,7 @@ export default function APInvoiceDetailPage() {
               type="button"
               onClick={handleRecordPayment}
               disabled={recordPayment.isPending}
-              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
+              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded"
             >
               {recordPayment.isPending ? 'Saving…' : 'Save Payment'}
             </button>
@@ -363,7 +363,7 @@ export default function APInvoiceDetailPage() {
               type="button"
               onClick={handleReject}
               disabled={reject.isPending}
-              className="bg-white text-red-600 border border-red-300 hover:bg-red-50 disabled:opacity-50 text-sm font-medium px-4 py-2 rounded"
+              className="bg-white text-red-600 border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium px-4 py-2 rounded"
             >
               {reject.isPending ? 'Rejecting…' : 'Confirm Rejection'}
             </button>
@@ -378,86 +378,124 @@ export default function APInvoiceDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-5">
-        {/* Invoice details */}
-        <div className="col-span-2 space-y-5">
-          {/* Header card */}
-          <Card>
-            <CardHeader>Invoice Details</CardHeader>
-            <CardBody>
-              {invoice.description && (
-                <p className="text-sm text-neutral-500 mb-4">{invoice.description}</p>
+      <div className="space-y-5">
+        {/* Invoice details with Amount Summary inside */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              Invoice Details
+              {/* Source reference badges */}
+              {(invoice.goods_receipt || invoice.purchase_order) && (
+                <span className="text-xs text-neutral-500 font-normal">
+                  {invoice.goods_receipt && (
+                    <>
+                      <Link 
+                        to={`/procurement/goods-receipts/${invoice.goods_receipt.ulid}`}
+                        className="text-neutral-600 hover:text-neutral-900 underline underline-offset-2"
+                      >
+                        GR {invoice.goods_receipt.gr_reference}
+                      </Link>
+                    </>
+                  )}
+                  {invoice.purchase_order && (
+                    <>
+                      {' / '}
+                      <Link 
+                        to={`/procurement/purchase-orders/${invoice.purchase_order.ulid}`}
+                        className="text-neutral-600 hover:text-neutral-900 underline underline-offset-2"
+                      >
+                        PO {invoice.purchase_order.po_reference}
+                      </Link>
+                    </>
+                  )}
+                </span>
               )}
-              <InfoList>
-                <InfoRow label="Invoice Date" value={invoice.invoice_date} />
-                <InfoRow label="Due Date" value={invoice.due_date} />
-                {invoice.atc_code && <InfoRow label="ATC Code" value={invoice.atc_code} />}
-                {invoice.or_number && <InfoRow label="OR Number" value={invoice.or_number} />}
-                {invoice.rejection_note && <InfoRow label="Rejection Note" value={invoice.rejection_note} />}
-              </InfoList>
-            </CardBody>
-          </Card>
-
-          {/* Payments table */}
-          {invoice.payments && invoice.payments.length > 0 && (
-            <Card>
-              <CardHeader>Payment History</CardHeader>
-              <CardBody className="p-0">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-200">
-                      <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Date</th>
-                      <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Reference</th>
-                      <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Method</th>
-                      <th className="text-right pb-2 font-medium text-neutral-500 px-4 pt-3">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100">
-                    {invoice.payments.map((p) => (
-                      <tr key={p.id} className="even:bg-neutral-50 hover:bg-neutral-50">
-                        <td className="py-2 px-4">{p.payment_date}</td>
-                        <td className="py-2 px-4 text-neutral-500">{p.reference_number ?? '—'}</td>
-                        <td className="py-2 px-4 text-neutral-500">{p.payment_method ?? '—'}</td>
-                        <td className="py-2 px-4 text-right font-medium">
-                          <CurrencyAmount centavos={p.amount * 100} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardBody>
-            </Card>
-          )}
-        </div>
-
-        {/* Amount summary */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>Amount Summary</CardHeader>
-            <CardBody>
-              <dl className="space-y-2 text-sm">
-                <AmountRow label="Net Amount"  value={invoice.net_amount * 100} />
-                <AmountRow label="VAT"         value={invoice.vat_amount * 100} />
-                {invoice.ewt_amount > 0 && (
-                  <AmountRow label={`EWT (${((invoice.ewt_rate ?? 0) * 100).toFixed(0)}%)`} value={-(invoice.ewt_amount * 100)} />
-                )}
-                <div className="border-t border-neutral-200 pt-2">
-                  <AmountRow label="Net Payable" value={invoice.net_payable * 100} bold />
-                </div>
-                <AmountRow label="Total Paid"    value={invoice.total_paid * 100}  muted />
-                <AmountRow label="Balance Due"   value={invoice.balance_due * 100} highlight={invoice.balance_due > 0} />
-              </dl>
-            </CardBody>
-          </Card>
-
-          {/* Overdue badge */}
-          {invoice.is_overdue && (
-            <div className="flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm text-neutral-700">
-              <CheckCircle className="h-4 w-4 flex-shrink-0" />
-              This invoice is <span className="font-semibold">overdue</span>.
             </div>
-          )}
-        </div>
+          </CardHeader>
+          <CardBody>
+            {invoice.description && (
+              <p className="text-sm text-neutral-500 mb-4">{invoice.description}</p>
+            )}
+            
+            {/* Invoice Info - 2 column grid */}
+            <InfoList columns={2}>
+              <InfoRow label="Invoice Date" value={invoice.invoice_date} />
+              <InfoRow label="Due Date" value={invoice.due_date} />
+              {invoice.atc_code && <InfoRow label="ATC Code" value={invoice.atc_code} />}
+              {invoice.or_number && <InfoRow label="OR Number" value={invoice.or_number} />}
+            </InfoList>
+            
+            {/* Amount Summary - compact horizontal layout below */}
+            <div className="mt-4 bg-neutral-50 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-neutral-900 mb-3">Amount Summary</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                <AmountBox label="Net Amount" value={invoice.net_amount * 100} />
+                <AmountBox label="VAT" value={invoice.vat_amount * 100} />
+                {invoice.ewt_amount > 0 ? (
+                  <AmountBox label={`EWT (${((invoice.ewt_rate ?? 0) * 100).toFixed(0)}%)`} value={invoice.ewt_amount * 100} />
+                ) : (
+                  <AmountBox label="EWT" value={0} />
+                )}
+                <AmountBox label="Net Payable" value={invoice.net_payable * 100} bold />
+                <AmountBox label="Balance Due" value={invoice.balance_due * 100} highlight={invoice.balance_due > 0} />
+              </div>
+              {(invoice.total_paid ?? 0) > 0 && (
+                <div className="mt-3 pt-3 border-t border-neutral-200">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-500">Total Paid</span>
+                    <CurrencyAmount centavos={invoice.total_paid * 100} />
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {invoice.rejection_note && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg">
+                <p className="text-xs font-medium text-red-600 mb-1">Rejection Note</p>
+                <p className="text-sm text-red-700">{invoice.rejection_note}</p>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Payments table */}
+        {invoice.payments && invoice.payments.length > 0 && (
+          <Card>
+            <CardHeader>Payment History</CardHeader>
+            <CardBody className="p-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200">
+                    <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Date</th>
+                    <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Reference</th>
+                    <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Method</th>
+                    <th className="text-right pb-2 font-medium text-neutral-500 px-4 pt-3">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {invoice.payments.map((p) => (
+                    <tr key={p.id} className="even:bg-neutral-50 hover:bg-neutral-50">
+                      <td className="py-2 px-4">{p.payment_date}</td>
+                      <td className="py-2 px-4 text-neutral-500">{p.reference_number ?? '—'}</td>
+                      <td className="py-2 px-4 text-neutral-500">{p.payment_method ?? '—'}</td>
+                      <td className="py-2 px-4 text-right font-medium">
+                        <CurrencyAmount centavos={p.amount * 100} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Overdue badge */}
+        {invoice.is_overdue && (
+          <div className="flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm text-neutral-700">
+            <CheckCircle className="h-4 w-4 flex-shrink-0" />
+            This invoice is <span className="font-semibold">overdue</span>.
+          </div>
+        )}
       </div>
     </div>
   )
@@ -465,28 +503,27 @@ export default function APInvoiceDetailPage() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function AmountRow({
+function AmountBox({
   label,
   value,
   bold,
-  muted,
   highlight,
 }: {
   label: string
   value: number
   bold?: boolean
-  muted?: boolean
   highlight?: boolean
 }) {
   return (
-    <div className="flex justify-between">
-      <dt className={muted ? 'text-neutral-400' : 'text-neutral-500'}>{label}</dt>
-      <dd className={[
-        bold ? 'font-semibold' : 'font-medium',
-        highlight ? 'text-neutral-900' : muted ? 'text-neutral-400' : 'text-neutral-800',
+    <div className="text-center">
+      <div className={[
+        'font-mono tabular-nums',
+        bold ? 'font-semibold text-base' : 'font-medium text-sm',
+        highlight ? 'text-neutral-900' : 'text-neutral-800',
       ].join(' ')}>
-        <CurrencyAmount centavos={value} />
-      </dd>
+        <CurrencyAmount centavos={value} size={bold ? 'base' : 'sm'} />
+      </div>
+      <div className="text-xs text-neutral-500 mt-0.5">{label}</div>
     </div>
   )
 }

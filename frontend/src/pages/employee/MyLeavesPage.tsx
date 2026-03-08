@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { parseApiError } from '@/lib/errorHandler'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const YEARS = Array.from({ length: 3 }, (_, i) => new Date().getFullYear() - i)
 
@@ -45,9 +46,9 @@ export default function MyLeavesPage() {
 
   return (
     <div>
+      <PageHeader title="My Leaves" />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">My Leaves</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors inline-flex items-center gap-2"
@@ -128,7 +129,7 @@ export default function MyLeavesPage() {
                   <td className="px-3 py-2 text-neutral-600">{row.date_to}</td>
                   <td className="px-3 py-2 text-neutral-600">{row.total_days}</td>
                   <td className="px-3 py-2">
-                    <StatusBadge label={row.status} />
+                    <StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     {row.status === 'rejected' && row.reviewer_remarks && (
                       <p className="text-[11px] text-neutral-600 mt-0.5 leading-tight max-w-[180px]" title={row.reviewer_remarks}>
                         {row.reviewer_remarks.length > 60
@@ -161,9 +162,9 @@ export default function MyLeavesPage() {
           <span>Page {leavesData?.meta?.current_page} of {leavesData?.meta?.last_page}</span>
           <div className="flex gap-2">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Prev</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
             <button disabled={page >= (leavesData?.meta?.last_page ?? 1)} onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40">Next</button>
+              className="px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
           </div>
         </div>
       )}

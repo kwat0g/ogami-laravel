@@ -41,11 +41,7 @@ export default function CapaListPage() {
 
   return (
     <div>
-      <PageHeader
-        title="CAPA Actions"
-        subtitle="Corrective and Preventive Actions"
-        icon={<ShieldCheck className="w-5 h-5 text-neutral-600" />}
-      />
+      <PageHeader title="CAPA Actions" />
 
       {/* Tabs */}
       <div className="flex gap-1 mb-5 border-b border-neutral-200">

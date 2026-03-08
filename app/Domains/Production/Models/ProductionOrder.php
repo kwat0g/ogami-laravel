@@ -23,6 +23,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int         $bom_id
  * @property string      $qty_required
  * @property string      $qty_produced
+ * @property string      $qty_rejected
  * @property string      $target_start_date
  * @property string      $target_end_date
  * @property string      $status
@@ -54,6 +55,7 @@ final class ProductionOrder extends Model implements Auditable
     protected $casts = [
         'qty_required'      => 'decimal:4',
         'qty_produced'      => 'decimal:4',
+        'qty_rejected'      => 'decimal:4',
         'target_start_date' => 'date',
         'target_end_date'   => 'date',
     ];
@@ -81,6 +83,11 @@ final class ProductionOrder extends Model implements Auditable
     public function outputLogs(): HasMany
     {
         return $this->hasMany(ProductionOutputLog::class, 'production_order_id');
+    }
+
+    public function materialRequisitions(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Inventory\Models\MaterialRequisition::class, 'production_order_id');
     }
 
     public function progressPct(): float

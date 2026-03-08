@@ -114,7 +114,7 @@ function RejectModal({
           <button
             disabled={reason.length < 10 || isSubmitting}
             onClick={() => onConfirm(reason)}
-            className="text-sm px-4 py-2 bg-white text-red-600 border border-red-300 hover:bg-red-50 font-medium rounded disabled:opacity-50"
+            className="text-sm px-4 py-2 bg-white text-red-600 border border-red-300 hover:bg-red-50 font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Rejecting…' : 'Confirm Reject'}
           </button>
@@ -159,7 +159,7 @@ function CommentsModal({
           <button
             disabled={isSubmitting}
             onClick={() => onConfirm(comments)}
-            className="text-sm px-4 py-2 bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 font-medium rounded"
+            className="text-sm px-4 py-2 bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded"
           >
             {isSubmitting ? 'Processing…' : 'Confirm'}
           </button>
@@ -254,13 +254,13 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader
         backTo="/procurement/purchase-requests"
         title={pr.pr_reference}
         subtitle={`Requested by ${pr.requested_by?.name} · ${new Date(pr.created_at).toLocaleDateString('en-PH')}`}
         icon={<FileText className="w-5 h-5" />}
-        status={<StatusBadge label={pr.status} />}
+        status={<StatusBadge status={pr.status}>{pr.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
           <div className="flex items-center gap-2">
             {canSubmit && (
@@ -274,7 +274,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                   }
                 }}
                 disabled={submitMutation.isPending}
-                className="text-sm px-4 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-medium rounded"
+                className="text-sm px-4 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded"
               >
                 {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
               </button>
@@ -343,7 +343,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
               <button
                 onClick={handleCancel}
                 disabled={cancelMutation.isPending}
-                className="text-sm px-3 py-2 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 font-medium rounded transition-colors disabled:opacity-50"
+                className="text-sm px-3 py-2 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>

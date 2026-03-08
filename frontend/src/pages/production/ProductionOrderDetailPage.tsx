@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Factory, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -8,11 +8,14 @@ import {
   useStartOrder,
   useCompleteOrder,
   useCancelOrder,
+  useVoidOrder,
   useLogOutput,
 } from '@/hooks/useProduction'
 import { usePermission } from '@/hooks/usePermission'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
+import { isHandledApiError } from '@/lib/api'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { ProductionOrderStatus } from '@/types/production'
 
 const statusBadge: Record<ProductionOrderStatus, string> = {
@@ -35,8 +38,9 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 export default function ProductionOrderDetailPage(): React.ReactElement {
   const { ulid }  = useParams<{ ulid: string }>()
   const navigate  = useNavigate()
-  const [showLogForm, setShowLogForm] = useState(false)
-  const [logData, setLogData]         = useState({
+  const [showLogForm, setShowLogForm]   = useState(false)
+  const [showVoidConfirm, setShowVoidConfirm] = useState(false)
+  const [logData, setLogData]           = useState({
     shift: 'A' as 'A' | 'B' | 'C',
     log_date: new Date().toISOString().split('T')[0],
     qty_produced: '',
@@ -59,7 +63,10 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const startMut    = useStartOrder(ulid ?? '')
   const completeMut = useCompleteOrder(ulid ?? '')
   const cancelMut   = useCancelOrder(ulid ?? '')
+  const voidMut     = useVoidOrder(ulid ?? '')
   const logMut      = useLogOutput(ulid ?? '')
+
+  const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending
 
   const handleAction = async (action: 'release' | 'start' | 'complete' | 'cancel') => {
     if (action === 'complete' && order) {
@@ -77,8 +84,10 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       const map = { release: releaseMut, start: startMut, complete: completeMut, cancel: cancelMut }
       await map[action].mutateAsync()
       toast.success(`Work order ${action}d.`)
-    } catch {
-      toast.error(`Failed to ${action} order.`)
+    } catch (err) {
+      if (isHandledApiError(err)) return
+      const msg = (err as { message?: string })?.message
+      toast.error(msg ?? `Failed to ${action} order.`)
     }
   }
 
@@ -94,7 +103,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       })
       toast.success('Output logged.')
       setShowLogForm(false)
-    } catch {
+    } catch (err) {
+      if (isHandledApiError(err)) return
       toast.error('Failed to log output.')
     }
   }
@@ -107,7 +117,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   )
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate('/production/orders')} className="p-2 hover:bg-neutral-100 rounded">
           <ArrowLeft className="w-4 h-4 text-neutral-500" />
@@ -115,9 +125,15 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-neutral-900 font-mono">{order.po_reference}</h1>
-            <span className={`inline-flex px-2.5 py-1 rounded text-xs font-medium capitalize ${statusBadge[order.status]}`}>
-              {order.status?.replace('_', ' ') || 'Unknown'}
-            </span>
+            {order.status === 'released' && order.mrq_pending ? (
+              <span className="inline-flex px-2.5 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                Released — Pending MRQ
+              </span>
+            ) : (
+              <span className={`inline-flex px-2.5 py-1 rounded text-xs font-medium capitalize ${statusBadge[order.status]}`}>
+                {order.status?.replace('_', ' ') || 'Unknown'}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -142,7 +158,19 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           } />
           <InfoRow label="Target Start" value={order.target_start_date} />
           <InfoRow label="Target End"   value={order.target_end_date} />
-          {order.delivery_schedule && <InfoRow label="Delivery Schedule" value={order.delivery_schedule.ds_reference} />}
+          {order.delivery_schedule && (
+            <InfoRow 
+              label="Delivery Schedule" 
+              value={
+                <Link 
+                  to={`/production/delivery-schedules/${order.delivery_schedule.ulid}`}
+                  className="underline underline-offset-2 text-neutral-700 hover:text-neutral-900 font-medium"
+                >
+                  {order.delivery_schedule.ds_reference}
+                </Link>
+              } 
+            />
+          )}
           <InfoRow label="Created By" value={order.created_by?.name} />
         </dl>
       </div>
@@ -279,7 +307,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
               <button
                 onClick={handleLogOutput}
                 disabled={logMut.isPending || !logData.qty_produced}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Submit Log
               </button>
@@ -292,37 +320,66 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
         <div className="flex flex-wrap gap-2">
           {order.status === 'draft' && canRelease && (
-            <button onClick={() => handleAction('release')} disabled={releaseMut.isPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
+            <button onClick={() => handleAction('release')} disabled={anyPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
               Release
             </button>
           )}
           {order.status === 'released' && canRelease && (
-            <button onClick={() => handleAction('start')} disabled={startMut.isPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
+            <button onClick={() => handleAction('start')} disabled={anyPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
               Start Production
             </button>
           )}
-          {order.status === 'in_progress' && canComplete && (
+          {order.status === 'in_progress' && canComplete && !showLogForm && (
             <button
               onClick={() => handleAction('complete')}
-              disabled={completeMut.isPending || parseFloat(order.qty_produced) <= 0}
+              disabled={anyPending || parseFloat(order.qty_produced) <= 0}
               title={parseFloat(order.qty_produced) <= 0 ? 'Log production output before completing' : undefined}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Mark Complete
             </button>
           )}
-          {['released', 'in_progress'].includes(order.status) && canLogOutput && !showLogForm && (
+          {order.status === 'in_progress' && canLogOutput && !showLogForm && (
             <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded">
               Log Output
             </button>
           )}
           {['draft', 'released'].includes(order.status) && (
-            <button onClick={() => handleAction('cancel')} disabled={cancelMut.isPending} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded">
+            <button onClick={() => handleAction('cancel')} disabled={anyPending} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded">
               Cancel WO
+            </button>
+          )}
+          {order.status === 'in_progress' && parseFloat(order.qty_produced) === 0 && !showLogForm && (
+            <button
+              onClick={() => setShowVoidConfirm(true)}
+              disabled={voidMut.isPending}
+              className="px-4 py-2 text-sm font-medium border border-red-200 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Void WO
             </button>
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showVoidConfirm}
+        onClose={() => setShowVoidConfirm(false)}
+        onConfirm={async () => {
+          try {
+            await voidMut.mutateAsync()
+            toast.success('Work order voided.')
+            setShowVoidConfirm(false)
+          } catch (err) {
+            if (isHandledApiError(err)) return
+            toast.error('Failed to void work order.')
+          }
+        }}
+        title="Void work order?"
+        description="This work order will be cancelled and cannot be restarted."
+        confirmLabel="Void WO"
+        loading={voidMut.isPending}
+        variant="danger"
+      />
     </div>
   )
 }

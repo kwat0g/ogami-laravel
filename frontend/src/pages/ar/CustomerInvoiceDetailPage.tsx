@@ -120,7 +120,7 @@ function ReceivePaymentPanel({
             }
           }}
           disabled={payMut.isPending}
-          className="px-4 py-1.5 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-60"
+          className="px-4 py-1.5 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {payMut.isPending ? 'Saving…' : 'Record'}
         </button>
@@ -185,13 +185,13 @@ export default function CustomerInvoiceDetailPage() {
   const canWriteOff = canPay && invoice.balance_due > 0
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader
         backTo="/ar/invoices"
         title={invoice.invoice_number ?? 'Draft Invoice'}
         subtitle={invoice.customer?.name ?? `Customer #${invoice.customer_id}`}
         icon={<FileText className="w-5 h-5" />}
-        status={<StatusBadge label={invoice.status} />}
+        status={<StatusBadge status={invoice.status}>{invoice.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
       />
 
       {/* Actions */}

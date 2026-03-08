@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkOrderDetail, useStartWorkOrder, useCompleteWorkOrder } from '@/hooks/useMaintenance';
@@ -78,7 +78,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
 
   const statusBadges = (
     <div className="flex items-center gap-2">
-      <StatusBadge label={wo.status} />
+      <StatusBadge status={wo.status}>{wo.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium capitalize ${PRIORITY_COLORS[wo.priority]}`}>
         {wo.priority}
       </span>
@@ -86,7 +86,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   );
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageHeader
         backTo="/maintenance/work-orders"
         title={wo.mwo_reference}
@@ -100,7 +100,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
                 type="button"
                 onClick={() => setStartConfirm(true)}
                 disabled={startMut.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Start Work
               </button>
@@ -125,7 +125,19 @@ export default function WorkOrderDetailPage(): React.ReactElement {
           <CardBody>
             <InfoList columns={2}>
               <InfoRow label="Type" value={<span className="capitalize">{wo.type}</span>} />
-              <InfoRow label="Equipment" value={wo.equipment?.name ?? '—'} />
+              <InfoRow 
+                label="Equipment" 
+                value={
+                  wo.equipment ? (
+                    <Link 
+                      to={`/maintenance/equipment/${wo.equipment.ulid}`}
+                      className="underline underline-offset-2 text-neutral-700 hover:text-neutral-900 font-medium"
+                    >
+                      {wo.equipment.name}
+                    </Link>
+                  ) : '—'
+                } 
+              />
               <InfoRow label="Assigned To" value={wo.assigned_to?.name ?? '—'} />
               <InfoRow label="Scheduled Date" value={wo.scheduled_date ?? '—'} />
               {isCompleted && (
@@ -194,7 +206,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
             <button
               type="submit"
               disabled={completeMut.isPending}
-              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {completeMut.isPending ? 'Saving…' : 'Mark as Completed'}
             </button>

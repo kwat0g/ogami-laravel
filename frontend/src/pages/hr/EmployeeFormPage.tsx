@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { useEmployee, useCreateEmployee, useUpdateEmployee, useSalaryGrades, useDepartments, usePositions, useEmployees } from '@/hooks/useEmployees'
 import { useShifts, useAssignShift } from '@/hooks/useAttendance'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { ApiError } from '@/types/api'
 import type { CreateEmployeePayload } from '@/types/hr'
 
@@ -293,7 +294,7 @@ export default function EmployeeFormPage() {
 
   if (isEditing && employeeError) {
     return (
-      <div className="max-w-4xl">
+      <div className="max-w-4xl mx-auto">
         <button type="button" onClick={() => navigate(-1)} className="text-sm text-neutral-600 hover:underline mb-4 block">← Back</button>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 font-medium mb-1">Failed to load employee data</p>
@@ -369,19 +370,11 @@ export default function EmployeeFormPage() {
   }
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-6">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="text-sm text-neutral-600 hover:underline mb-2 block"
-        >
-          ← Back
-        </button>
-        <h1 className="text-lg font-semibold text-neutral-900">
-          {isEditing ? 'Edit Employee' : 'Add Employee'}
-        </h1>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      <PageHeader 
+        title={isEditing ? 'Edit Employee' : 'New Employee'} 
+        backTo="/hr/employees/all" 
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Personal */}

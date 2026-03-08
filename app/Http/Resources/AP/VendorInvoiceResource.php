@@ -52,6 +52,16 @@ final class VendorInvoiceResource extends JsonResource
             'updated_at' => $inv->updated_at->toIso8601String(),
             // Eager-loaded relations
             'vendor' => $this->whenLoaded('vendor', fn () => new VendorResource($inv->vendor)),
+            'purchase_order' => $this->whenLoaded('purchaseOrder', fn () => $inv->purchaseOrder ? [
+                'id' => $inv->purchaseOrder->id,
+                'ulid' => $inv->purchaseOrder->ulid,
+                'po_reference' => $inv->purchaseOrder->po_reference,
+            ] : null),
+            'goods_receipt' => ($gr = \App\Domains\Procurement\Models\GoodsReceipt::where('ap_invoice_id', $inv->id)->first()) ? [
+                'id' => $gr->id,
+                'ulid' => $gr->ulid,
+                'gr_reference' => $gr->gr_reference,
+            ] : null,
             'payments' => $this->whenLoaded('payments', fn () => $inv->payments->map(fn ($p) => [
                 'id' => $p->id,
                 'payment_date' => $p->payment_date->toDateString(),

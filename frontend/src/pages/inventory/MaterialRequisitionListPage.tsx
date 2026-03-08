@@ -4,6 +4,7 @@ import { Plus, AlertTriangle } from 'lucide-react'
 import { useMaterialRequisitions } from '@/hooks/useInventory'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type { MaterialRequisitionStatus } from '@/types/inventory'
@@ -40,6 +41,20 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
 
   return (
     <div>
+      <PageHeader
+        title="Material Requisitions"
+        actions={
+          canCreate && (
+            <Link
+              to="/inventory/requisitions/new"
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+            >
+              <Plus className="w-4 h-4" /> New Requisition
+            </Link>
+          )
+        }
+      />
+
       {/* Filter */}
       <div className="mb-5 flex items-center gap-3">
         <select
@@ -68,20 +83,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
       {!isLoading && !isError && (
         <>
           <Card>
-            <CardHeader
-              action={
-                canCreate && (
-                  <Link
-                    to="/inventory/requisitions/new"
-                    className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-                  >
-                    <Plus className="w-4 h-4" /> New Requisition
-                  </Link>
-                )
-              }
-            >
-              Material Requisitions
-            </CardHeader>
+            <CardHeader>Material Requisitions</CardHeader>
             <CardBody className="p-0">
               <table className="min-w-full text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
@@ -141,8 +143,8 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} requisitions</span>
               <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 hover:bg-neutral-50">Next</button>
+                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
+                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
               </div>
             </div>
           )}

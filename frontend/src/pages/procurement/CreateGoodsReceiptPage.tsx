@@ -100,7 +100,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <PageHeader
         title="Record Goods Receipt"
         backTo="/procurement/goods-receipts"
@@ -208,12 +208,12 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
               <div className="grid grid-cols-12 gap-2 px-3 mb-2">
                 {poUlidFromUrl ? (
                   <>
-                    <div className="col-span-3 text-xs font-medium text-neutral-600">Description</div>
+                    <div className="col-span-4 text-xs font-medium text-neutral-600">Description</div>
                     <div className="col-span-2 text-xs font-medium text-neutral-600">Qty Received</div>
                     <div className="col-span-1 text-xs font-medium text-neutral-600">UOM</div>
                     <div className="col-span-1 text-xs font-medium text-neutral-600 text-center">Pending</div>
                     <div className="col-span-2 text-xs font-medium text-neutral-600">Condition</div>
-                    <div className="col-span-3 text-xs font-medium text-neutral-600">Remarks</div>
+                    <div className="col-span-2 text-xs font-medium text-neutral-600">Remarks</div>
                   </>
                 ) : (
                   <>
@@ -239,7 +239,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                         <input type="hidden" {...register(`items.${idx}.po_item_id`)} />
 
                         {/* Description (locked) */}
-                        <div className="col-span-3">
+                        <div className="col-span-4">
                           <input
                             disabled
                             value={poItem?.item_description ?? ''}
@@ -261,7 +261,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                                 max={poItem?.quantity_pending}
                                 placeholder="Qty"
                                 {...f}
-                                className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                                className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             )}
                           />
@@ -291,14 +291,15 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                         <div className="col-span-2">
                           <select
                             {...register(`items.${idx}.condition`)}
-                            className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                            className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400 appearance-none"
+                            style={{ backgroundImage: 'none' }}
                           >
                             {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                           </select>
                         </div>
 
                         {/* Remarks (editable) */}
-                        <div className="col-span-3">
+                        <div className="col-span-2">
                           <input
                             placeholder="Remarks (optional)"
                             {...register(`items.${idx}.remarks`)}
@@ -314,7 +315,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                             name={`items.${idx}.po_item_id`}
                             control={control}
                             render={({ field: f }) => (
-                              <input type="number" placeholder="PO Item ID" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
+                              <input type="number" placeholder="PO Item ID" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             )}
                           />
                           {errors.items?.[idx]?.po_item_id && <p className="text-red-500 text-xs mt-0.5">{errors.items[idx]!.po_item_id!.message}</p>}
@@ -324,7 +325,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
                             name={`items.${idx}.quantity_received`}
                             control={control}
                             render={({ field: f }) => (
-                              <input type="number" min={0} step="0.01" placeholder="Qty" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
+                              <input type="number" min={0} step="0.01" placeholder="Qty" {...f} className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             )}
                           />
                         </div>
@@ -368,7 +369,7 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50"
+            className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Saving…' : 'Record Goods Receipt'}
           </button>

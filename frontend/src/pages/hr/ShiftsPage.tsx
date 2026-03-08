@@ -7,6 +7,7 @@ import {
   useDeleteShift,
 } from '@/hooks/useAttendance'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { ShiftSchedule } from '@/types/hr'
 
 interface ShiftForm {
@@ -99,17 +100,7 @@ export default function ShiftsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Shift Schedules</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{rows.length} shifts</p>
-        </div>
-        <button onClick={openCreate}
-          className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
-          + Add Shift
-        </button>
-      </div>
+      <PageHeader title="Shift Schedules" />
 
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -149,7 +140,7 @@ export default function ShiftsPage() {
 
             <div className="flex gap-3">
               <button onClick={() => openEdit(shift)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-              <button onClick={() => confirm('Delete this shift?') && remove.mutate(shift.id, { onSuccess: () => toast.success('Shift deleted.'), onError: () => toast.error('Failed to delete shift.') })} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50">Delete</button>
+              <button onClick={() => confirm('Delete this shift?') && remove.mutate(shift.id, { onSuccess: () => toast.success('Shift deleted.'), onError: () => toast.error('Failed to delete shift.') })} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
             </div>
           </div>
         ))}
@@ -236,7 +227,7 @@ export default function ShiftsPage() {
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
               <button onClick={handleSave} disabled={create.isPending || upd.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
                 {form.id ? 'Save Changes' : 'Create Shift'}
               </button>
             </div>

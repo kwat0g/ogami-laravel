@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { useVatLedgerList, useCloseVatPeriod } from '@/hooks/useTax'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { VatLedger } from '@/types/tax'
 
 // ---------------------------------------------------------------------------
@@ -65,8 +66,9 @@ export default function VatLedgerPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageHeader title="VAT Ledger" />
+
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 mb-1">VAT Ledger</h1>
         <p className="text-sm text-neutral-500">
           Per-period input / output / net VAT tracking (VAT-004)
         </p>
