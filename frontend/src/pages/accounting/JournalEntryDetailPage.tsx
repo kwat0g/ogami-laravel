@@ -1,7 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
-import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { RotateCcw, BookOpen } from 'lucide-react'
 import {
   useJournalEntry,
   useSubmitJournalEntry,
@@ -11,6 +10,9 @@ import {
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SodActionButton from '@/components/ui/SodActionButton'
+import PageHeader from '@/components/ui/PageHeader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import type { JournalEntryLine } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
@@ -44,7 +46,6 @@ function LinesTable({ lines }: { lines: JournalEntryLine[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <ExecutiveReadOnlyBanner />
       <table className="min-w-full text-sm">
         <thead className="bg-neutral-50 border-b border-neutral-200">
           <tr>
@@ -126,150 +127,121 @@ export default function JournalEntryDetailPage() {
     }
   }
 
+  const statusBadges = (
+    <div className="flex items-center gap-2">
+      <StatusBadge label={entry.status} autoVariant />
+      {entry.is_auto_posted && (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
+          System
+        </span>
+      )}
+      {entry.reversal_of != null && (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
+          Reversal
+        </span>
+      )}
+    </div>
+  )
+
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Back nav */}
-      <button
-        onClick={() => navigate('/accounting/journal-entries')}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 mb-6"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Journal Entries
-      </button>
-
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-neutral-900 font-mono">
-              {entry.je_number ?? <span className="text-neutral-400 font-sans text-lg">— Draft —</span>}
-            </h1>
-            <StatusBadge label={entry.status} autoVariant />
-            {entry.is_auto_posted && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
-                System
-              </span>
-            )}
-            {entry.reversal_of != null && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
-                Reversal
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-neutral-500 mt-1">{formatDate(entry.date)}</p>
-        </div>
-
-        {/* Action buttons */}
-        {!entry.is_auto_posted && (
-          <div className="flex items-center gap-2">
-            {entry.status === 'draft' && (
-              <button
-                onClick={async () => {
-                  try {
-                    await submitMutation.mutateAsync()
-                    toast.success('Journal entry submitted for approval.')
-                  } catch {
-                    toast.error('Failed to submit entry.')
-                  }
-                }}
-                disabled={busy}
-                className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50"
-              >
-                {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
-              </button>
-            )}
-            {entry.status === 'submitted' && (
-              <SodActionButton
-                initiatedById={entry.created_by}
-                label="Post"
-                onClick={async () => {
-                  try {
-                    await postMutation.mutateAsync()
-                    toast.success('Journal entry posted.')
-                  } catch {
-                    toast.error('Failed to post entry.')
-                  }
-                }}
-                isLoading={postMutation.isPending}
-                disabled={submitMutation.isPending || reverseMutation.isPending}
-                variant="primary"
-              />
-            )}
-            {entry.status === 'posted' && entry.reversal_of == null && (
-              <button
-                onClick={() => void handleReverse()}
-                disabled={busy}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50"
-              >
-                <RotateCcw className="h-4 w-4" />
-                {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Meta card */}
-      <div className="bg-white border border-neutral-200 rounded p-6 mb-4">
-        <dl className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500">Date</dt>
-            <dd className="mt-1 text-sm text-neutral-900">{formatDate(entry.date)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500">Status</dt>
-            <dd className="mt-1"><StatusBadge label={entry.status} autoVariant /></dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500">Source</dt>
-            <dd className="mt-1 text-sm text-neutral-900 capitalize">{entry.source_type}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-semibold text-neutral-500">Fiscal Period</dt>
-            <dd className="mt-1 text-sm text-neutral-900">
-              {entry.fiscal_period?.name ?? entry.fiscal_period_id}
-            </dd>
-          </div>
-          {entry.description && (
-            <div className="col-span-4">
-              <dt className="text-xs font-semibold text-neutral-500">Description</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{entry.description}</dd>
-            </div>
-          )}
-          {entry.reversal_of != null && (
-            <div>
-              <dt className="text-xs font-semibold text-neutral-500">Reversal Of</dt>
-              <dd className="mt-1">
+      <PageHeader
+        backTo="/accounting/journal-entries"
+        title={entry.je_number ?? 'Draft Journal Entry'}
+        subtitle={formatDate(entry.date)}
+        icon={<BookOpen className="w-5 h-5" />}
+        status={statusBadges}
+        actions={
+          !entry.is_auto_posted && (
+            <div className="flex items-center gap-2">
+              {entry.status === 'draft' && (
                 <button
-                  onClick={() => navigate(`/accounting/journal-entries/${entry.reversal_of_ulid}`)}
-                  className="text-sm text-neutral-600 hover:underline font-mono"
+                  onClick={async () => {
+                    try {
+                      await submitMutation.mutateAsync()
+                      toast.success('Journal entry submitted for approval.')
+                    } catch {
+                      toast.error('Failed to submit entry.')
+                    }
+                  }}
+                  disabled={busy}
+                  className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50"
                 >
-                  #{entry.reversal_of}
+                  {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
                 </button>
-              </dd>
+              )}
+              {entry.status === 'submitted' && (
+                <SodActionButton
+                  initiatedById={entry.created_by}
+                  label="Post"
+                  onClick={async () => {
+                    try {
+                      await postMutation.mutateAsync()
+                      toast.success('Journal entry posted.')
+                    } catch {
+                      toast.error('Failed to post entry.')
+                    }
+                  }}
+                  isLoading={postMutation.isPending}
+                  disabled={submitMutation.isPending || reverseMutation.isPending}
+                  variant="primary"
+                />
+              )}
+              {entry.status === 'posted' && entry.reversal_of == null && (
+                <button
+                  onClick={() => void handleReverse()}
+                  disabled={busy}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
+                </button>
+              )}
             </div>
-          )}
-          {entry.posted_at && (
-            <div>
-              <dt className="text-xs font-semibold text-neutral-500">Posted At</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{formatDate(entry.posted_at)}</dd>
-            </div>
-          )}
-        </dl>
-      </div>
-
-      {/* Lines */}
-      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
-        <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200">
-          <h2 className="text-sm font-semibold text-neutral-700">Journal Lines</h2>
-        </div>
-        {entry.lines && entry.lines.length > 0
-          ? <LinesTable lines={entry.lines} />
-          : (
-            <p className="px-4 py-8 text-center text-neutral-400 text-sm">No lines loaded.</p>
           )
         }
-      </div>
+      />
+
+      {/* Meta card */}
+      <Card className="mb-4">
+        <CardHeader>Entry Information</CardHeader>
+        <CardBody>
+          <InfoList columns={2}>
+            <InfoRow label="Date" value={formatDate(entry.date)} />
+            <InfoRow label="Status" value={<StatusBadge label={entry.status} autoVariant />} />
+            <InfoRow label="Source" value={<span className="capitalize">{entry.source_type}</span>} />
+            <InfoRow label="Fiscal Period" value={entry.fiscal_period?.name ?? entry.fiscal_period_id} />
+            {entry.description && <InfoRow label="Description" value={entry.description} />}
+            {entry.reversal_of != null && (
+              <InfoRow 
+                label="Reversal Of" 
+                value={
+                  <button
+                    onClick={() => navigate(`/accounting/journal-entries/${entry.reversal_of_ulid}`)}
+                    className="text-sm text-neutral-600 hover:underline font-mono"
+                  >
+                    #{entry.reversal_of}
+                  </button>
+                } 
+              />
+            )}
+            {entry.posted_at && <InfoRow label="Posted At" value={formatDate(entry.posted_at)} />}
+          </InfoList>
+        </CardBody>
+      </Card>
+
+      {/* Lines */}
+      <Card>
+        <CardHeader>Journal Lines</CardHeader>
+        <CardBody className="p-0">
+          {entry.lines && entry.lines.length > 0
+            ? <LinesTable lines={entry.lines} />
+            : (
+              <p className="px-4 py-8 text-center text-neutral-400 text-sm">No lines loaded.</p>
+            )
+          }
+        </CardBody>
+      </Card>
     </div>
   )
 }

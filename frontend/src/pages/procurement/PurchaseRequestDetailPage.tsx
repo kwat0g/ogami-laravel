@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, AlertTriangle, CheckCircle2, XCircle, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, CheckCircle2, XCircle, ShoppingCart, FileText } from 'lucide-react'
 import {
   usePurchaseRequest,
   useSubmitPurchaseRequest,
@@ -15,19 +15,11 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { SodActionButton } from '@/components/ui/SodActionButton'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import StatusBadge from '@/components/ui/StatusBadge'
+import PageHeader from '@/components/ui/PageHeader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import type { PurchaseRequestStatus } from '@/types/procurement'
-
-const statusBadgeClass: Record<PurchaseRequestStatus, string> = {
-  draft:          'bg-neutral-100 text-neutral-600',
-  submitted:      'bg-neutral-100 text-neutral-700',
-  noted:          'bg-neutral-100 text-neutral-700',
-  checked:        'bg-neutral-100 text-neutral-700',
-  reviewed:       'bg-neutral-100 text-neutral-700',
-  approved:       'bg-neutral-200 text-neutral-800',
-  rejected:       'bg-neutral-100 text-neutral-400',
-  cancelled:      'bg-neutral-100 text-neutral-400',
-  converted_to_po: 'bg-neutral-200 text-neutral-800',
-}
 
 // ── Approval stage component ──────────────────────────────────────────────────
 
@@ -115,14 +107,14 @@ function RejectModal({
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50"
+            className="text-sm px-4 py-2 bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             disabled={reason.length < 10 || isSubmitting}
             onClick={() => onConfirm(reason)}
-            className="text-sm px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium rounded"
+            className="text-sm px-4 py-2 bg-white text-red-600 border border-red-300 hover:bg-red-50 font-medium rounded disabled:opacity-50"
           >
             {isSubmitting ? 'Rejecting…' : 'Confirm Reject'}
           </button>
@@ -160,14 +152,14 @@ function CommentsModal({
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50"
+            className="text-sm px-4 py-2 bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
           >
             Cancel
           </button>
           <button
             disabled={isSubmitting}
             onClick={() => onConfirm(comments)}
-            className="text-sm px-4 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-medium rounded"
+            className="text-sm px-4 py-2 bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 font-medium rounded"
           >
             {isSubmitting ? 'Processing…' : 'Confirm'}
           </button>
@@ -262,42 +254,14 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
-      {/* Back + Header */}
-      <div>
-        <Link
-          to="/procurement/purchase-requests"
-          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 mb-3"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Purchase Requests
-        </Link>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-neutral-900 font-mono">{pr.pr_reference}</h1>
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${statusBadgeClass[pr.status]}`}
-              >
-                {pr.status.replace(/_/g, ' ')}
-              </span>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                  pr.urgency === 'critical' ? 'bg-red-100 text-red-700' :
-                  pr.urgency === 'urgent'   ? 'bg-orange-100 text-orange-700' :
-                  'bg-neutral-100 text-neutral-500'
-                }`}
-              >
-                {pr.urgency}
-              </span>
-            </div>
-            <p className="text-sm text-neutral-500 mt-1">
-              Requested by <strong>{pr.requested_by?.name}</strong> ·{' '}
-              {new Date(pr.created_at).toLocaleDateString('en-PH')}
-            </p>
-          </div>
-
-          {/* Action Buttons */}
+    <div className="max-w-5xl mx-auto space-y-6">
+      <PageHeader
+        backTo="/procurement/purchase-requests"
+        title={pr.pr_reference}
+        subtitle={`Requested by ${pr.requested_by?.name} · ${new Date(pr.created_at).toLocaleDateString('en-PH')}`}
+        icon={<FileText className="w-5 h-5" />}
+        status={<StatusBadge label={pr.status} />}
+        actions={
           <div className="flex items-center gap-2">
             {canSubmit && (
               <button
@@ -369,7 +333,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
             {(canNote || canCheck || canReview || canVpApprove) && (
               <button
                 onClick={() => setPendingAction('reject')}
-                className="text-sm px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded transition-colors"
+                className="text-sm px-3 py-2 bg-white text-red-600 border border-red-300 hover:bg-red-50 font-medium rounded transition-colors"
               >
                 Reject
               </button>
@@ -379,14 +343,14 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
               <button
                 onClick={handleCancel}
                 disabled={cancelMutation.isPending}
-                className="text-sm px-3 py-2 border border-neutral-300 text-neutral-600 hover:bg-neutral-50 font-medium rounded transition-colors"
+                className="text-sm px-3 py-2 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 font-medium rounded transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
             )}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Rejection notice */}
       {pr.status === 'rejected' && (
@@ -408,117 +372,127 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
         {/* Main content — 2/3 */}
         <div className="col-span-2 space-y-6">
           {/* Details */}
-          <div className="bg-white border border-neutral-200 rounded p-6 space-y-4">
-            <h2 className="text-sm font-medium text-neutral-700">Request Details</h2>
-            <div>
-              <p className="text-xs text-neutral-500">Justification</p>
-              <p className="text-sm text-neutral-800 mt-1">{pr.justification}</p>
-            </div>
-            {pr.notes && (
-              <div>
-                <p className="text-xs text-neutral-500">Notes</p>
-                <p className="text-sm text-neutral-700 mt-1">{pr.notes}</p>
-              </div>
-            )}
-          </div>
+          <Card>
+            <CardHeader>Request Details</CardHeader>
+            <CardBody>
+              <InfoList>
+                <InfoRow label="Justification" value={pr.justification} />
+                {pr.notes && <InfoRow label="Notes" value={pr.notes} />}
+                <InfoRow 
+                  label="Urgency" 
+                  value={
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      pr.urgency === 'critical' ? 'bg-red-100 text-red-700' :
+                      pr.urgency === 'urgent'   ? 'bg-orange-100 text-orange-700' :
+                      'bg-neutral-100 text-neutral-500'
+                    }`}>
+                      {pr.urgency}
+                    </span>
+                  } 
+                />
+              </InfoList>
+            </CardBody>
+          </Card>
 
           {/* Line Items */}
-          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
-            <div className="px-6 py-4 border-b border-neutral-200">
-              <h2 className="text-sm font-medium text-neutral-700">Line Items</h2>
-            </div>
-            <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50">
-                <tr>
-                  {['Description', 'UoM', 'Qty', 'Unit Cost', 'Total', 'Specs'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {pr.items.map((item) => (
-                  <tr key={item.id}>
-                    <td className="px-4 py-3 text-neutral-800">{item.item_description}</td>
-                    <td className="px-4 py-3 text-neutral-600">{item.unit_of_measure}</td>
-                    <td className="px-4 py-3 text-neutral-700">{item.quantity}</td>
-                    <td className="px-4 py-3 text-neutral-700">
-                      ₱{item.estimated_unit_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-neutral-800">
-                      ₱{item.estimated_total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500 text-xs">{item.specifications ?? '—'}</td>
+          <Card>
+            <CardHeader>Line Items</CardHeader>
+            <CardBody className="p-0">
+              <table className="min-w-full text-sm">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    {['Description', 'UoM', 'Qty', 'Unit Cost', 'Total', 'Specs'].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-neutral-50 border-t border-neutral-200">
-                <tr>
-                  <td colSpan={4} className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">
-                    Total Estimated Cost
-                  </td>
-                  <td className="px-4 py-3 font-bold text-neutral-900">
-                    ₱{pr.total_estimated_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {pr.items.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-4 py-3 text-neutral-800">{item.item_description}</td>
+                      <td className="px-4 py-3 text-neutral-600">{item.unit_of_measure}</td>
+                      <td className="px-4 py-3 text-neutral-700">{item.quantity}</td>
+                      <td className="px-4 py-3 text-neutral-700">
+                        ₱{item.estimated_unit_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-neutral-800">
+                        ₱{item.estimated_total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-neutral-500 text-xs">{item.specifications ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-neutral-50 border-t border-neutral-200">
+                  <tr>
+                    <td colSpan={4} className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">
+                      Total Estimated Cost
+                    </td>
+                    <td className="px-4 py-3 font-bold text-neutral-900">
+                      ₱{pr.total_estimated_cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </CardBody>
+          </Card>
         </div>
 
         {/* Approval Timeline — 1/3 */}
         <div className="space-y-4">
-          <div className="bg-white border border-neutral-200 rounded p-6">
-            <h2 className="text-sm font-medium text-neutral-700 mb-4">Approval Timeline</h2>
-            <div className="space-y-4">
-              <ApprovalStage
-                label="1. Submitted by Staff"
-                actor={pr.submitted_by}
-                timestamp={pr.submitted_at}
-                comments={null}
-                isDone={!!pr.submitted_at}
-              />
-              <ApprovalStage
-                label="2. Noted by Head"
-                actor={pr.noted_by}
-                timestamp={pr.noted_at}
-                comments={pr.noted_comments}
-                isDone={!!pr.noted_at}
-              />
-              <ApprovalStage
-                label="3. Checked by Manager"
-                actor={pr.checked_by}
-                timestamp={pr.checked_at}
-                comments={pr.checked_comments}
-                isDone={!!pr.checked_at}
-              />
-              <ApprovalStage
-                label="4. Reviewed by Officer"
-                actor={pr.reviewed_by}
-                timestamp={pr.reviewed_at}
-                comments={pr.reviewed_comments}
-                isDone={!!pr.reviewed_at}
-              />
-              <ApprovalStage
-                label="5. Approved by VP"
-                actor={pr.vp_approved_by}
-                timestamp={pr.vp_approved_at}
-                comments={pr.vp_comments}
-                isDone={!!pr.vp_approved_at}
-              />
-              {pr.converted_to_po_id && (
+          <Card>
+            <CardHeader>Approval Timeline</CardHeader>
+            <CardBody>
+              <div className="space-y-4">
                 <ApprovalStage
-                  label="6. Converted to PO"
-                  actor={null}
-                  timestamp={pr.converted_at}
+                  label="1. Submitted by Staff"
+                  actor={pr.submitted_by}
+                  timestamp={pr.submitted_at}
                   comments={null}
-                  isDone={true}
+                  isDone={!!pr.submitted_at}
                 />
-              )}
-            </div>
-          </div>
+                <ApprovalStage
+                  label="2. Noted by Head"
+                  actor={pr.noted_by}
+                  timestamp={pr.noted_at}
+                  comments={pr.noted_comments}
+                  isDone={!!pr.noted_at}
+                />
+                <ApprovalStage
+                  label="3. Checked by Manager"
+                  actor={pr.checked_by}
+                  timestamp={pr.checked_at}
+                  comments={pr.checked_comments}
+                  isDone={!!pr.checked_at}
+                />
+                <ApprovalStage
+                  label="4. Reviewed by Officer"
+                  actor={pr.reviewed_by}
+                  timestamp={pr.reviewed_at}
+                  comments={pr.reviewed_comments}
+                  isDone={!!pr.reviewed_at}
+                />
+                <ApprovalStage
+                  label="5. Approved by VP"
+                  actor={pr.vp_approved_by}
+                  timestamp={pr.vp_approved_at}
+                  comments={pr.vp_comments}
+                  isDone={!!pr.vp_approved_at}
+                />
+                {pr.converted_to_po_id && (
+                  <ApprovalStage
+                    label="6. Converted to PO"
+                    actor={null}
+                    timestamp={pr.converted_at}
+                    comments={null}
+                    isDone={true}
+                  />
+                )}
+              </div>
+            </CardBody>
+          </Card>
         </div>
       </div>
 

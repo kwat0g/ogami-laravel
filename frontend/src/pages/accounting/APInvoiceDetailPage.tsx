@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, CheckCircle, XCircle, FileText, CreditCard } from 'lucide-react'
+import { CheckCircle, XCircle, FileText, CreditCard } from 'lucide-react'
 import {
   useAPInvoice,
   useSubmitAPInvoice,
@@ -20,6 +19,8 @@ import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import PageHeader from '@/components/ui/PageHeader'
 import PermissionGuard from '@/components/ui/PermissionGuard'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import { PERMISSIONS } from '@/lib/permissions'
 
 export default function APInvoiceDetailPage() {
@@ -49,9 +50,8 @@ export default function APInvoiceDetailPage() {
   if (isError || !invoice) {
     return (
       <div className="text-sm text-red-600 mt-4">
-      <ExecutiveReadOnlyBanner />
         Invoice not found or you do not have access.{' '}
-        <Link to="/accounting/ap/invoices" className="text-neutral-600 underline">Back to list</Link>
+        <button onClick={() => navigate('/accounting/ap/invoices')} className="text-neutral-600 underline">Back to list</button>
       </div>
     )
   }
@@ -160,21 +160,13 @@ export default function APInvoiceDetailPage() {
   const isInProgress = isPendingApproval || isHeadNoted || isManagerChecked || isOfficerReviewed
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-1">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="text-sm text-neutral-500 hover:text-neutral-700 flex items-center gap-1"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-      </div>
-
+    <div className="max-w-5xl mx-auto">
       <PageHeader
+        backTo="/accounting/ap/invoices"
         title={`AP Invoice — ${invoice.or_number ?? `#${invoice.id}`}`}
         subtitle={invoice.vendor ? `Vendor: ${invoice.vendor.name}` : undefined}
+        icon={<FileText className="w-5 h-5" />}
+        status={<StatusBadge label={invoice.status} />}
         actions={
           <div className="flex items-center gap-2">
             {/* Submit for approval */}
@@ -250,7 +242,7 @@ export default function APInvoiceDetailPage() {
                 <button
                   type="button"
                   onClick={() => setShowRejectForm(!showRejectForm)}
-                  className="inline-flex items-center gap-1.5 border border-neutral-300 text-neutral-700 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded"
+                  className="inline-flex items-center gap-1.5 bg-white text-red-600 border border-red-300 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded"
                 >
                   <XCircle className="h-4 w-4" />
                   Reject
@@ -277,7 +269,7 @@ export default function APInvoiceDetailPage() {
 
       {/* Payment form */}
       {showPaymentForm && (
-        <div className="mb-5 bg-neutral-50 border border-neutral-200 rounded p-4 space-y-3">
+        <div className="mb-5 bg-white border border-neutral-200 rounded p-4 space-y-3">
           <p className="text-sm font-medium text-neutral-800">Record Payment</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -347,7 +339,7 @@ export default function APInvoiceDetailPage() {
             <button
               type="button"
               onClick={() => { setShowPaymentForm(false); setPayAmount(''); setPayAmountError(''); setPayRef(''); setPayMethod('') }}
-              className="border border-neutral-300 text-neutral-600 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-50"
+              className="bg-white text-neutral-700 border border-neutral-300 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-50"
             >
               Cancel
             </button>
@@ -357,7 +349,7 @@ export default function APInvoiceDetailPage() {
 
       {/* Reject form */}
       {showRejectForm && (
-        <div className="mb-5 bg-neutral-50 border border-neutral-200 rounded p-4 space-y-3">
+        <div className="mb-5 bg-white border border-neutral-200 rounded p-4 space-y-3">
           <p className="text-sm font-medium text-neutral-800">Rejection Note</p>
           <textarea
             value={rejectNote}
@@ -371,14 +363,14 @@ export default function APInvoiceDetailPage() {
               type="button"
               onClick={handleReject}
               disabled={reject.isPending}
-              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded"
+              className="bg-white text-red-600 border border-red-300 hover:bg-red-50 disabled:opacity-50 text-sm font-medium px-4 py-2 rounded"
             >
               {reject.isPending ? 'Rejecting…' : 'Confirm Rejection'}
             </button>
             <button
               type="button"
               onClick={() => { setShowRejectForm(false); setRejectNote('') }}
-              className="border border-neutral-300 text-neutral-600 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-50"
+              className="bg-white text-neutral-700 border border-neutral-300 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-50"
             >
               Cancel
             </button>
@@ -390,94 +382,73 @@ export default function APInvoiceDetailPage() {
         {/* Invoice details */}
         <div className="col-span-2 space-y-5">
           {/* Header card */}
-          <div className="bg-white rounded border border-neutral-200 p-5">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-sm font-semibold text-neutral-800 mb-1">Invoice Details</h3>
-                {invoice.description && (
-                  <p className="text-sm text-neutral-500">{invoice.description}</p>
-                )}
-              </div>
-              <StatusBadge label={invoice.status} />
-            </div>
-
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <dt className="text-neutral-500">Invoice Date</dt>
-              <dd className="font-medium text-neutral-900">{invoice.invoice_date}</dd>
-
-              <dt className="text-neutral-500">Due Date</dt>
-              <dd className="font-medium text-neutral-900">{invoice.due_date}</dd>
-
-              {invoice.atc_code && (
-                <>
-                  <dt className="text-neutral-500">ATC Code</dt>
-                  <dd className="font-medium text-neutral-900">{invoice.atc_code}</dd>
-                </>
+          <Card>
+            <CardHeader>Invoice Details</CardHeader>
+            <CardBody>
+              {invoice.description && (
+                <p className="text-sm text-neutral-500 mb-4">{invoice.description}</p>
               )}
-
-              {invoice.or_number && (
-                <>
-                  <dt className="text-neutral-500">OR Number</dt>
-                  <dd className="font-medium text-neutral-900">{invoice.or_number}</dd>
-                </>
-              )}
-
-              {invoice.rejection_note && (
-                <>
-                  <dt className="text-neutral-500">Rejection Note</dt>
-                  <dd className="font-medium text-neutral-700">{invoice.rejection_note}</dd>
-                </>
-              )}
-            </dl>
-          </div>
+              <InfoList>
+                <InfoRow label="Invoice Date" value={invoice.invoice_date} />
+                <InfoRow label="Due Date" value={invoice.due_date} />
+                {invoice.atc_code && <InfoRow label="ATC Code" value={invoice.atc_code} />}
+                {invoice.or_number && <InfoRow label="OR Number" value={invoice.or_number} />}
+                {invoice.rejection_note && <InfoRow label="Rejection Note" value={invoice.rejection_note} />}
+              </InfoList>
+            </CardBody>
+          </Card>
 
           {/* Payments table */}
           {invoice.payments && invoice.payments.length > 0 && (
-            <div className="bg-white rounded border border-neutral-200 p-5">
-              <h3 className="text-sm font-semibold text-neutral-800 mb-4">Payment History</h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-200">
-                    <th className="text-left pb-2 font-medium text-neutral-500">Date</th>
-                    <th className="text-left pb-2 font-medium text-neutral-500">Reference</th>
-                    <th className="text-left pb-2 font-medium text-neutral-500">Method</th>
-                    <th className="text-right pb-2 font-medium text-neutral-500">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {invoice.payments.map((p) => (
-                    <tr key={p.id} className="even:bg-neutral-100 hover:bg-neutral-50">
-                      <td className="py-2">{p.payment_date}</td>
-                      <td className="py-2 text-neutral-500">{p.reference_number ?? '—'}</td>
-                      <td className="py-2 text-neutral-500">{p.payment_method ?? '—'}</td>
-                      <td className="py-2 text-right font-medium">
-                        <CurrencyAmount centavos={p.amount * 100} />
-                      </td>
+            <Card>
+              <CardHeader>Payment History</CardHeader>
+              <CardBody className="p-0">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-200">
+                      <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Date</th>
+                      <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Reference</th>
+                      <th className="text-left pb-2 font-medium text-neutral-500 px-4 pt-3">Method</th>
+                      <th className="text-right pb-2 font-medium text-neutral-500 px-4 pt-3">Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {invoice.payments.map((p) => (
+                      <tr key={p.id} className="even:bg-neutral-50 hover:bg-neutral-50">
+                        <td className="py-2 px-4">{p.payment_date}</td>
+                        <td className="py-2 px-4 text-neutral-500">{p.reference_number ?? '—'}</td>
+                        <td className="py-2 px-4 text-neutral-500">{p.payment_method ?? '—'}</td>
+                        <td className="py-2 px-4 text-right font-medium">
+                          <CurrencyAmount centavos={p.amount * 100} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardBody>
+            </Card>
           )}
         </div>
 
         {/* Amount summary */}
         <div className="space-y-4">
-          <div className="bg-white rounded border border-neutral-200 p-5">
-            <h3 className="text-sm font-semibold text-neutral-800 mb-4">Amount Summary</h3>
-            <dl className="space-y-2 text-sm">
-              <AmountRow label="Net Amount"  value={invoice.net_amount * 100} />
-              <AmountRow label="VAT"         value={invoice.vat_amount * 100} />
-              {invoice.ewt_amount > 0 && (
-                <AmountRow label={`EWT (${((invoice.ewt_rate ?? 0) * 100).toFixed(0)}%)`} value={-(invoice.ewt_amount * 100)} />
-              )}
-              <div className="border-t border-neutral-200 pt-2">
-                <AmountRow label="Net Payable" value={invoice.net_payable * 100} bold />
-              </div>
-              <AmountRow label="Total Paid"    value={invoice.total_paid * 100}  muted />
-              <AmountRow label="Balance Due"   value={invoice.balance_due * 100} highlight={invoice.balance_due > 0} />
-            </dl>
-          </div>
+          <Card>
+            <CardHeader>Amount Summary</CardHeader>
+            <CardBody>
+              <dl className="space-y-2 text-sm">
+                <AmountRow label="Net Amount"  value={invoice.net_amount * 100} />
+                <AmountRow label="VAT"         value={invoice.vat_amount * 100} />
+                {invoice.ewt_amount > 0 && (
+                  <AmountRow label={`EWT (${((invoice.ewt_rate ?? 0) * 100).toFixed(0)}%)`} value={-(invoice.ewt_amount * 100)} />
+                )}
+                <div className="border-t border-neutral-200 pt-2">
+                  <AmountRow label="Net Payable" value={invoice.net_payable * 100} bold />
+                </div>
+                <AmountRow label="Total Paid"    value={invoice.total_paid * 100}  muted />
+                <AmountRow label="Balance Due"   value={invoice.balance_due * 100} highlight={invoice.balance_due > 0} />
+              </dl>
+            </CardBody>
+          </Card>
 
           {/* Overdue badge */}
           {invoice.is_overdue && (
