@@ -1,17 +1,30 @@
 #!/usr/bin/env python3
 """
-Ogami ERP — quick production update via pexpect SSH.
+Ogami ERP — production update via pexpect SSH.
 
-Use this after pushing bug fixes or new features to main.
+Runs the full local → remote pipeline:
+  1. Build the React frontend (pnpm build)
+  2. Commit any changed build artefacts in public/build/ to git
+  3. Push to origin/main
+  4. SSH into the VPS and pull + migrate + restart
+
+This guarantees that every `python3 update.py` leaves production
+100 % in sync with local — no leftover stale JS bundles.
+
 Does NOT touch OS packages, nginx, certbot, PostgreSQL, or Redis.
 
 Usage:
     python3 update.py
 """
 
+import os
+import subprocess
 import pexpect
 import sys
 import time
+
+# Absolute path of the repo root (the directory this file lives in)
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # ── Configuration (must match deploy.py) ─────────────────────────────────────
 HOST    = "45.151.155.64"
@@ -29,6 +42,32 @@ def banner(msg: str) -> None:
 
 def step(msg: str) -> None:
     print(f"\n\033[33m>>> {msg[:140]}\033[0m", flush=True)
+
+
+def local(cmd: str, cwd: str | None = None, timeout: int = 180) -> None:
+    """Run a local shell command, stream output live, abort on non-zero exit."""
+    step(cmd)
+    result = subprocess.run(
+        cmd,
+        shell=True,
+        cwd=cwd or REPO_ROOT,
+        timeout=timeout,
+    )
+    if result.returncode != 0:
+        print(f"\n\033[31m✗ Command failed (exit {result.returncode}): {cmd}\033[0m", flush=True)
+        sys.exit(result.returncode)
+
+
+def local_output(cmd: str, cwd: str | None = None) -> str:
+    """Run a local command and return its stripped stdout (no live stream)."""
+    result = subprocess.run(
+        cmd,
+        shell=True,
+        cwd=cwd or REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
 
 
 class VPS:
@@ -68,10 +107,46 @@ class VPS:
 def update() -> None:
     banner("Ogami ERP — Production Update")
 
+    # ══════════════════════════════════════════════════════════════
+    #  LOCAL PHASE — build, commit, push
+    # ══════════════════════════════════════════════════════════════
+
+    # ── L1. Build the React frontend ─────────────────────────────
+    banner("L1 — Build React frontend (pnpm build)")
+    frontend_dir = os.path.join(REPO_ROOT, "frontend")
+    local("pnpm build", cwd=frontend_dir, timeout=300)
+
+    # ── L2. Stage ALL local changes (src + built assets) ─────────
+    banner("L2 — Stage & commit all local changes")
+    step("git add -A")
+    subprocess.run("git add -A", shell=True, cwd=REPO_ROOT)
+
+    # Check if there is anything to commit
+    diff = local_output("git status --porcelain", cwd=REPO_ROOT)
+    if diff:
+        # Build a commit message that mentions changed source files (max 5)
+        changed_files = [line.strip() for line in diff.splitlines() if line.strip()]
+        summary = ", ".join(f.split()[-1] for f in changed_files[:5])
+        if len(changed_files) > 5:
+            summary += f" (+{len(changed_files) - 5} more)"
+        commit_msg = f"deploy: sync local changes — {summary}"
+        local(f'git commit -m "{commit_msg}"', cwd=REPO_ROOT)
+    else:
+        print("  \033[36mNothing new to commit — working tree already clean.\033[0m", flush=True)
+
+    # ── L3. Push to origin/main ───────────────────────────────────
+    banner("L3 — Push to origin/main")
+    local("git push origin main", cwd=REPO_ROOT, timeout=60)
+    local("git log --oneline -3", cwd=REPO_ROOT)
+
+    # ══════════════════════════════════════════════════════════════
+    #  REMOTE PHASE — pull + migrate + restart
+    # ══════════════════════════════════════════════════════════════
+
     vps = VPS()
 
-    # ── 1. Pull latest code ───────────────────────────────────────────────────
-    banner("1/5 — Pull latest code")
+    # ── R1. Pull latest code ─────────────────────────────────────────────────
+    banner("R1 — Pull latest code (VPS)")
     vps.run(
         f"cd {APP_DIR} && "
         "git fetch --all 2>&1 && "
@@ -79,8 +154,8 @@ def update() -> None:
     )
     vps.run(f"cd {APP_DIR} && git log --oneline -5")
 
-        # ── 1.5. Configure WebSocket proxy + fix Reverb public env ──────────────
-    banner("1.5/5 — Nginx WebSocket proxy + Reverb env")
+    # ── R1.5. Configure WebSocket proxy + fix Reverb public env ────────────────
+    banner("R1.5 — Nginx WebSocket proxy + Reverb env")
 
     # Update REVERB_HOST/PORT/SCHEME in production .env so SpaController
     # injects the correct wss://ogamiph.dev config into the HTML at runtime
@@ -116,20 +191,20 @@ def update() -> None:
         timeout=30,
     )
 
-        # ── 2. Composer (only if composer.lock changed) ───────────────────────────
-    banner("2/5 — Composer install")
+    # ── R2. Composer install ─────────────────────────────────────────────────
+    banner("R2 — Composer install")
     vps.run(
         f"cd {APP_DIR} && "
         "composer install --no-dev --optimize-autoloader 2>&1 | tail -5",
         timeout=180,
     )
 
-    # ── 3. Database migrations ────────────────────────────────────────────────
-    banner("3/5 — Migrations")
+    # ── R3. Database migrations ──────────────────────────────────────────────
+    banner("R3 — Migrations")
     vps.run(f"cd {APP_DIR} && php artisan migrate --force 2>&1", timeout=120)
 
-    # ── 4. Rebuild Laravel caches ─────────────────────────────────────────────
-    banner("4/5 — Rebuild caches")
+    # ── R4. Rebuild Laravel caches ───────────────────────────────────────────
+    banner("R4 — Rebuild caches")
     vps.run(
         f"cd {APP_DIR} && "
         "php artisan cache:clear && "        # flush Redis runtime cache
@@ -143,8 +218,8 @@ def update() -> None:
         f"chown -R www-data:www-data {APP_DIR}/storage {APP_DIR}/bootstrap/cache"
     )
 
-    # ── 5. Restart queue workers ──────────────────────────────────────────────
-    banner("5/5 — Restart workers")
+    # ── R5. Restart queue workers ────────────────────────────────────────────
+    banner("R5 — Restart workers")
     # horizon:terminate does a graceful restart (finishes current jobs first)
     vps.run(f"cd {APP_DIR} && php artisan horizon:terminate 2>&1 || true")
     time.sleep(3)
@@ -157,6 +232,7 @@ def update() -> None:
     banner("Verification")
     time.sleep(2)
     vps.run(f"curl -sk https://{DOMAIN}/api/health 2>&1", timeout=15)
+    vps.run(f"cd {APP_DIR} && git log --oneline -3")
 
     vps.close()
 
