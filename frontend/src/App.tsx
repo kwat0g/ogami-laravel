@@ -29,11 +29,15 @@ function SystemRestoreOverlay() {
   const [done, setDone]         = useState(false)   // false=restoring, true=done
   const seenRestoring           = useRef(false)
   const redirectScheduled       = useRef(false)
+  // Safety net: if the overlay has been visible for 3 minutes and the server
+  // never returns a clean status (e.g. temporary outage after restore), auto-dismiss.
+  const visibleSince            = useRef<number | null>(null)
 
   // Instant overlay when Reverb broadcasts SystemRestoreStarting
   useEffect(() => {
     if (wsFlag) {
       seenRestoring.current = true
+      if (!visibleSince.current) visibleSince.current = Date.now()
       setDone(false)
       setVisible(true)
     }
@@ -74,6 +78,7 @@ function SystemRestoreOverlay() {
           // Also set the uiStore flag so the 401 interceptor knows to hold off
           // on doing a hard page-reload; the overlay will handle the redirect.
           seenRestoring.current = true
+          if (!visibleSince.current) visibleSince.current = Date.now()
           useUiStore.getState().setSystemRestore(true)
           setDone(false)
           setVisible(true)
@@ -83,13 +88,25 @@ function SystemRestoreOverlay() {
           useUiStore.getState().setSystemRestore(true)
           scheduleRedirect()
         } else if (!in_progress && seenRestoring.current) {
-          // Fallback: TTL expired before the 'done' phase was caught
+          // Fallback: TTL expired before the 'done' phase was caught.
+          // Dismiss the overlay and redirect if not already on login.
           useUiStore.getState().setSystemRestore(false)
           if (!window.location.pathname.startsWith('/login')) {
             window.location.replace('/login')
+          } else {
+            // Already on /login (race: redirect happened before done phase) — just dismiss.
+            setVisible(false)
           }
         }
       } catch { /* network hiccup — retry on next tick */ }
+
+      // Safety net: if the overlay has been showing for >3 min and we still
+      // can't get a clean status (server outage / stale state), force-dismiss.
+      if (visibleSince.current && Date.now() - visibleSince.current > 3 * 60_000) {
+        useUiStore.getState().setSystemRestore(false)
+        visibleSince.current = null
+        setVisible(false)
+      }
     }
 
     void check()
