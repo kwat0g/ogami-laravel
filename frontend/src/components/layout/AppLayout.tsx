@@ -529,7 +529,7 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50">
 
-      {/* Desktop Sidebar */
+      {/* Desktop Sidebar */}
       <aside
         className="hidden lg:flex flex-shrink-0 bg-white border-r border-neutral-200 flex-col relative z-20 transition-all duration-200"
         style={{ width: isSidebarExpanded ? 230 : 64 }}
