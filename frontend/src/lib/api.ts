@@ -57,12 +57,18 @@ api.interceptors.response.use(
     const status = error.response.status as number
     const data   = error.response.data as ApiError
 
-    // ── 401: Clear auth state if no active user session ──────────────────
+    // ── 401: Session expired or wiped (e.g. after a DB restore) ─────────
+    // Clear auth state and redirect to login for every 401, UNLESS we are
+    // already on the login page (which would cause an infinite redirect loop
+    // from the pre-login /auth/me probe that always returns 401).
     if (status === 401) {
       import('@/stores/authStore').then(({ useAuthStore }) => {
-        if (useAuthStore.getState().user) return
         useAuthStore.getState().clearAuth()
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.replace('/login')
+        }
       })
+      return Promise.reject({ __handled: true })
     }
 
     // ── 429: Rate limit hit — show warning toast ──────────────────────────

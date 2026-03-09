@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   Archive,
@@ -28,9 +29,10 @@ import { cn } from '@/lib/utils'
 interface RestoreModalProps {
   file: BackupFile
   onClose: () => void
+  onRestored: () => void
 }
 
-function RestoreModal({ file, onClose }: RestoreModalProps): React.ReactElement {
+function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.ReactElement {
   const [typed, setTyped]       = useState('')
   const restoreMutation          = useRestoreBackup()
   const canConfirm               = typed === 'CONFIRM'
@@ -39,10 +41,7 @@ function RestoreModal({ file, onClose }: RestoreModalProps): React.ReactElement 
     try {
       const result = await restoreMutation.mutateAsync({ filename: file.filename, confirm: 'CONFIRM' })
       toast.success(result.message)
-      onClose()
-      // Force a full reload so the restored DB state is reflected and the
-      // current user (whose session was wiped) is redirected to login.
-      setTimeout(() => { window.location.href = '/login' }, 1500)
+      onRestored()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'Restore failed. Check server logs.'
@@ -161,6 +160,24 @@ function AgeBadge({ days }: { days: number }): React.ReactElement {
 
 export default function BackupPage(): React.ReactElement {
   const [restoreTarget, setRestoreTarget] = useState<BackupFile | null>(null)
+  const [countdown, setCountdown]         = useState<number | null>(null)
+  const queryClient = useQueryClient()
+
+  const handleRestored = useCallback(() => {
+    setRestoreTarget(null)
+    // Nuke all cached API data so nothing stale is served after re-login.
+    queryClient.clear()
+    let remaining = 10
+    setCountdown(remaining)
+    const interval = setInterval(() => {
+      remaining -= 1
+      setCountdown(remaining)
+      if (remaining <= 0) {
+        clearInterval(interval)
+        window.location.replace('/login')
+      }
+    }, 1000)
+  }, [queryClient])
 
   const { data: backups, isLoading: backupsLoading, refetch: refetchBackups } = useBackups()
   const { data: status,  isLoading: statusLoading  }                          = useBackupStatus()
@@ -366,7 +383,35 @@ export default function BackupPage(): React.ReactElement {
         <RestoreModal
           file={restoreTarget}
           onClose={() => setRestoreTarget(null)}
+          onRestored={handleRestored}
         />
+      )}
+
+      {/* ── Post-restore countdown overlay (blocks all interaction) ──────── */}
+      {countdown !== null && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center space-y-5">
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-neutral-900">Database Restored Successfully</h2>
+              <p className="text-sm text-neutral-500 mt-1">
+                All sessions have been invalidated. Redirecting to login&nbsp;in…
+              </p>
+            </div>
+            <div className="text-5xl font-bold text-neutral-900 tabular-nums">{countdown}</div>
+            <div className="w-full bg-neutral-100 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="bg-green-500 h-full rounded-full transition-all duration-1000 ease-linear"
+                style={{ width: `${(countdown / 10) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-neutral-400">
+              Please wait for this countdown before logging back in to ensure all data is fully available.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   )
