@@ -21,6 +21,7 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getEcho } from '@/lib/echo'
+import { useUiStore } from '@/stores/uiStore'
 
 interface PayrollStatusPayload {
   run_id: number
@@ -35,6 +36,7 @@ interface NotificationPayload {
 
 export function useRealtimeEvents(userId: number | null | undefined): void {
   const qc = useQueryClient()
+  const setSystemRestore = useUiStore((s) => s.setSystemRestore)
 
   useEffect(() => {
     if (!userId) return
@@ -42,7 +44,13 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
     const echo = getEcho()
     if (!echo) return // Reverb not configured — skip WS, polling is the fallback
 
-    // ── 1. Domain events on private-user.{id} ────────────────────────────────
+    // ── 0. Public system channel — no auth required ───────────────────────────
+    // Fires when an admin initiates a DB restore so all users get a warning overlay.
+    const systemCh = echo
+      .channel('system')
+      .listen('.system.restore.starting', () => {
+        setSystemRestore(true)
+      })
     const userCh = echo
       .private(`user.${userId}`)
       // Leave events → invalidate the leave list + unread badge
@@ -102,6 +110,8 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
 
     return () => {
       // Clean up listeners but leave the WS connection alive for re-use
+      systemCh.stopListening('.system.restore.starting')
+      echo.leave('system')
       userCh
         .stopListening('.leave.filed')
         .stopListening('.leave.decided')
@@ -110,5 +120,5 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
       echo.leave(`user.${userId}`)
       echo.leave(`App.Models.User.${userId}`)
     }
-  }, [userId, qc])
+  }, [userId, qc, setSystemRestore])
 }

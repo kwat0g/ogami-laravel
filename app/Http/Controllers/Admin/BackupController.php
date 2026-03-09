@@ -262,6 +262,16 @@ final class BackupController extends Controller
             @rename($newest, $safetyPath);
         }
 
+        // ── Notify all connected users that a restore is about to begin ───────
+        // ShouldBroadcastNow fires synchronously (no queue), so the WebSocket
+        // message reaches every browser before we wipe the DB.
+        // The 2-second sleep gives Reverb time to push the event to all clients.
+        event(new \App\Events\System\SystemRestoreStarting(
+            filename:    $validated['filename'],
+            initiatedBy: Auth::user()->email ?? 'unknown',
+        ));
+        sleep(2);
+
         // ── Wipe production schema ────────────────────────────────────────────
         try {
             DB::statement('DROP SCHEMA public CASCADE;');

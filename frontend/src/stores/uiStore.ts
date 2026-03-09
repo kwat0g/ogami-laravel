@@ -30,6 +30,10 @@ interface UiState {
 
   /** Returns true if the given modal is currently open. */
   isModalOpen: (id: string) => boolean
+
+  /** Set to true when a system DB restore is in progress. Shows a blocking overlay for all users. */
+  systemRestoreInProgress: boolean
+  setSystemRestore: (v: boolean) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -47,4 +51,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   openModal:   (id) => set({ activeModal: id }),
   closeModal:  ()   => set({ activeModal: null }),
   isModalOpen: (id) => get().activeModal === id,
+
+  systemRestoreInProgress: false,
+  setSystemRestore: (v) => set({ systemRestoreInProgress: v }),
 }))
