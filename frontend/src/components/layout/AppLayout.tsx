@@ -487,6 +487,37 @@ export default function AppLayout() {
   const { clearAuth, hasPermission, hasRole } = useAuthStore()
   const queryClient = useQueryClient()
   const systemRestoreInProgress = useUiStore((s) => s.systemRestoreInProgress)
+
+  // ── Restore status polling (independent of Reverb / WebSockets) ────────────
+  // Polls the public /api/v1/system/restore-status endpoint every 5 s using
+  // native fetch (not axios) so it is completely isolated from the auth system
+  // and works even after sessions are wiped.
+  //
+  //  in_progress = true  → show blocking overlay for everyone
+  //  in_progress = false → if we previously saw true, the restore just finished
+  //                        → force logout immediately (don't wait for 401 poll)
+  const _seenRestoreInProgress = useRef(false)
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await fetch('/api/v1/system/restore-status')
+        if (!res.ok) return
+        const { in_progress } = await res.json() as { in_progress: boolean }
+        if (in_progress) {
+          _seenRestoreInProgress.current = true
+          useUiStore.getState().setSystemRestore(true)
+        } else if (_seenRestoreInProgress.current) {
+          // Restore just completed — force everyone to login immediately
+          queryClient.clear()
+          useAuthStore.getState().clearAuth()
+          window.location.replace('/login')
+        }
+      } catch { /* network hiccup — next tick will retry */ }
+    }
+    void check()
+    const id = setInterval(() => { void check() }, 5_000)
+    return () => clearInterval(id)
+  }, [queryClient])
   
   // Sidebar collapse state - persist in localStorage
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {

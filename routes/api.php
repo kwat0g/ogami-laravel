@@ -32,6 +32,15 @@ Route::get('health', function () {
     return response()->json($body, $healthy ? 200 : 503);
 })->middleware('throttle:api-health')->name('health');
 
+// ── System restore status (public, no auth — survives session wipe) ────────────
+// Reads a Redis Cache key set by BackupController before/after a DB restore.
+// The frontend polls this every 5 s to show a warning overlay and auto-logout.
+Route::get('v1/system/restore-status', function () {
+    return response()->json([
+        'in_progress' => (bool) \Illuminate\Support\Facades\Cache::get('system.restore_in_progress', false),
+    ]);
+})->middleware('throttle:60,1')->name('system.restore-status');
+
 Route::prefix('v1')->name('v1.')->group(function () {
     // ── Auth ────────────────────────────────────────────────────────────────
     // Auth routes keep their own brute-force throttle (AuthService.php)

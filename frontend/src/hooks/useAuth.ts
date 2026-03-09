@@ -25,10 +25,10 @@ export function useAuth() {
     refetchOnMount: false,
     // Re-validate session when the user returns to the tab (catches post-restore logouts)
     refetchOnWindowFocus: true,
-    // Background poll every 90 seconds as a fallback for users not connected to
-    // Reverb — ensures session wipes (e.g. after DB restore) are detected quickly
-    // even for idle users. The api.ts 401 interceptor then redirects to /login.
-    refetchInterval: 90_000,
+    // Background poll every 15 seconds as a fallback when Reverb is not running
+    // and the user is idle (no page-level queries firing).
+    // The api.ts 401 interceptor then does window.location.replace('/login').
+    refetchInterval: 15_000,
   })
 
   useEffect(() => {

@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -175,6 +176,11 @@ final class BackupController extends Controller
         // time limit for this request only so it is not killed by php-fpm's
         // max_execution_time (default 30 s) before the work finishes.
         set_time_limit(0);
+
+        // Signal to all polling clients that a restore is in progress.
+        // Stored in Redis (not the DB) so it survives schema drop + restore.
+        // TTL 30 min is a safety cap; it is cleared explicitly on completion.
+        Cache::put('system.restore_in_progress', true, 1800);
 
         // Locate the archive on disk
         $archivePath = $this->findArchiveByFilename($validated['filename']);
@@ -347,6 +353,9 @@ final class BackupController extends Controller
         } catch (\Throwable) {
             Log::warning('[BackupRestore] Could not flush Redis sessions after restore.');
         }
+
+        // Clear the in-progress flag now that the restore is done.
+        Cache::forget('system.restore_in_progress');
 
         // Notify all still-connected WebSocket clients to redirect to /login.
         // This covers idle users who would not otherwise get a 401 response.
