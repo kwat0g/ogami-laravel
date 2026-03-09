@@ -40,9 +40,9 @@ $WITH_REVERB && echo -e "${CYAN}Reverb: enabled${RESET}"
 # Each entry: "container-name|host-port|service-label"
 # If the host port is already bound (e.g. by ogami_postgres from docker-compose)
 # we skip starting the named container so there's no bind conflict.
-declare -A SERVICE_PORT=( [ogami-pg-test]=5432 [ogami-redis-test]=6379 )
+declare -A SERVICE_PORT=( [ogami_postgres]=5432 [ogami_redis]=6379 )
 
-for container in ogami-pg-test ogami-redis-test; do
+for container in ogami_postgres ogami_redis; do
   port="${SERVICE_PORT[$container]}"
   # Check if ANY container is already binding this port
   if docker ps --format '{{.Ports}}' | grep -q ":${port}->"; then
