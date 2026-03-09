@@ -17,6 +17,14 @@
  *
  * On unmount (logout / navigation), channels are left and the Echo connection
  * is reused for the next auth session (disconnectEcho() is called on logout).
+ *
+ * Reconnect recovery:
+ *   When the WebSocket drops and reconnects, the 'connected' event fires and
+ *   the notification cache is invalidated to catch up on any missed events.
+ *
+ * Visibility recovery:
+ *   When the tab regains focus, notifications are invalidated so the badge
+ *   and panel are immediately up-to-date without waiting for the poll cycle.
  */
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -63,7 +71,48 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
     }
   }, [qc, setSystemRestore])
 
-  // ── 2. Per-user private channels ─────────────────────────────────────────
+  // ── 2. Reconnect recovery — catch up on notifications after WS drops ─────
+  // 'connected' fires both on initial connect and on every successful reconnect.
+  // We skip the very first connection (page load) and only invalidate on
+  // subsequent reconnects so we don't double-fetch on mount.
+  useEffect(() => {
+    if (!userId) return
+
+    const echo = getEcho()
+    if (!echo) return
+
+    let hasConnectedOnce = false
+    const onConnected = () => {
+      if (hasConnectedOnce) {
+        // Reconnected after a drop — fetch any notifications missed during disconnect
+        void qc.invalidateQueries({ queryKey: ['notifications'] })
+      }
+      hasConnectedOnce = true
+    }
+
+    const conn = (echo.connector as { pusher: { connection: { bind: (e: string, fn: () => void) => void; unbind: (e: string, fn: () => void) => void } } }).pusher.connection
+    conn.bind('connected', onConnected)
+
+    return () => {
+      conn.unbind('connected', onConnected)
+    }
+  }, [userId, qc])
+
+  // ── 3. Visibility recovery — refresh badge when user returns to tab ───────
+  useEffect(() => {
+    if (!userId) return
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void qc.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [userId, qc])
+
+  // ── 4. Per-user private channels ─────────────────────────────────────────
   useEffect(() => {
     if (!userId) return
 

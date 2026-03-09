@@ -57,14 +57,13 @@ export function useUnreadCount() {
       const res = await api.get<{ count: number }>('/notifications/unread-count')
       return res.data
     },
-    // Keep data fresh for the full polling cycle — prevents stale-on-mount
-    // refetches in the 2min window between polls.
-    staleTime: 2 * 60_000,
-    // WS push handles real-time updates; this is a backstop poll.
-    refetchInterval: 2 * 60_000,
+    // Keep data fresh for the poll cycle.
+    staleTime: 60_000,
+    // WS push handles real-time updates; this is a 60s backstop if WS drops.
+    refetchInterval: 60_000,
     refetchIntervalInBackground: false,
-    // Window-focus refetching removed: global default is false and WS events
-    // handle real-time badge updates. The 2min poll covers the fallback case.
+    // Refetch badge immediately when the user returns to the tab.
+    refetchOnWindowFocus: true,
   })
 }
 

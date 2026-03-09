@@ -77,6 +77,12 @@ export function getEcho(): Echo<'reverb'> | null {
     forceTLS: scheme === 'https',
     enabledTransports: ['ws', 'wss'],
     disableStats: true,
+    // Send a ping after 30 s of inactivity (Pusher default is 120 s).
+    // This keeps the connection alive through proxies and detects drops 4×
+    // faster so reconnect and cache invalidation happen sooner.
+    activityTimeout: 30_000,
+    // Wait 10 s for a pong before declaring disconnect (Pusher default is 30 s).
+    pongTimeout: 10_000,
     // Session-cookie auth — Reverb uses the same /broadcasting/auth endpoint
   })
 
