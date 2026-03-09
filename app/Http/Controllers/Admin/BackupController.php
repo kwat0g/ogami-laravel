@@ -272,10 +272,16 @@ final class BackupController extends Controller
         // ShouldBroadcastNow fires synchronously (no queue), so the WebSocket
         // message reaches every browser before we wipe the DB.
         // The 2-second sleep gives Reverb time to push the event to all clients.
-        event(new \App\Events\System\SystemRestoreStarting(
-            filename:    $validated['filename'],
-            initiatedBy: Auth::user()->email ?? 'unknown',
-        ));
+        // Wrapped in try/catch: a Reverb/Pusher HTTP error must never abort the
+        // restore — the polling-based overlay handles the missing broadcast.
+        try {
+            event(new \App\Events\System\SystemRestoreStarting(
+                filename:    $validated['filename'],
+                initiatedBy: Auth::user()->email ?? 'unknown',
+            ));
+        } catch (\Throwable) {
+            Log::warning('[BackupRestore] Could not broadcast SystemRestoreStarting — continuing restore.');
+        }
         sleep(2);
 
         // ── Wipe production schema ────────────────────────────────────────────
