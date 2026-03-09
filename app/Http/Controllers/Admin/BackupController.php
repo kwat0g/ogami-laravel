@@ -151,6 +151,26 @@ final class BackupController extends Controller
             'confirm'  => ['required', 'in:CONFIRM'],
         ]);
 
+        try {
+            return $this->doRestore($request, $validated);
+        } catch (\Throwable $e) {
+            Log::error('[BackupRestore] Unhandled exception during restore', [
+                'error'    => $e->getMessage(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+                'filename' => $validated['filename'] ?? null,
+            ]);
+
+            return response()->json([
+                'success'    => false,
+                'error_code' => 'RESTORE_EXCEPTION',
+                'message'    => 'Restore failed unexpectedly: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function doRestore(Request $request, array $validated): JsonResponse
+    {
         // Locate the archive on disk
         $archivePath = $this->findArchiveByFilename($validated['filename']);
 
@@ -169,31 +189,10 @@ final class BackupController extends Controller
         $password = (string) $dbConfig['password'];
         $prodDb   = (string) $dbConfig['database'];
 
-        // ── Safety backup ─────────────────────────────────────────────────────
-        $safetyExitCode = Artisan::call('backup:run', ['--only-db' => true]);
-        if ($safetyExitCode !== 0) {
-            return response()->json([
-                'success'    => false,
-                'error_code' => 'SAFETY_BACKUP_FAILED',
-                'message'    => 'Could not create a safety backup of the current database. Restore aborted to protect your data.',
-                'detail'     => substr(Artisan::output(), -1000),
-            ], 500);
-        }
-
-        // Rename the safety backup so it's clearly labelled as pre-restore
-        $safetyFiles = $this->getAllBackupFiles();
-        if (! empty($safetyFiles)) {
-            $newest      = $safetyFiles[0];
-            $restoreSlug = preg_replace('/[^a-zA-Z0-9_\-]/', '_', pathinfo($validated['filename'], PATHINFO_FILENAME));
-            $labelledName = 'pre-restore--' . $restoreSlug . '--' . basename($newest);
-            @rename($newest, dirname($newest) . '/' . $labelledName);
-        }
-
-        // ── Extract archive ───────────────────────────────────────────────────
+        // ── Extract + validate archive FIRST (before taking any safety backup) ─
         $extractDir = storage_path('app/backup-temp/restore-ui-'.now()->format('YmdHis'));
         File::ensureDirectoryExists($extractDir);
 
-        // Pass archive password if encryption is configured
         $archivePassword = config('backup.backup.password');
         $passwordFlag    = ($archivePassword !== null && $archivePassword !== '')
             ? '-P '.escapeshellarg((string) $archivePassword).' '
@@ -206,12 +205,11 @@ final class BackupController extends Controller
             return response()->json([
                 'success'    => false,
                 'error_code' => 'EXTRACT_FAILED',
-                'message'    => 'Failed to extract backup archive. If the archive is password-protected, verify BACKUP_ARCHIVE_PASSWORD matches what was set when the backup was created.',
+                'message'    => 'Failed to extract backup archive.',
                 'detail'     => substr($unzip->output(), -1000),
             ], 500);
         }
 
-        // Locate SQL dump inside the archive
         $sqlFiles = File::glob("{$extractDir}/**/*.sql") ?: File::glob("{$extractDir}/*.sql");
         $gzFiles  = File::glob("{$extractDir}/**/*.sql.gz") ?: File::glob("{$extractDir}/*.sql.gz");
         $sqlFile  = null;
@@ -235,9 +233,31 @@ final class BackupController extends Controller
             ], 422);
         }
 
+        // ── Safety backup (only after archive is confirmed valid) ─────────────
+        $safetyExitCode = Artisan::call('backup:run', ['--only-db' => true]);
+        if ($safetyExitCode !== 0) {
+            File::deleteDirectory($extractDir);
+
+            return response()->json([
+                'success'    => false,
+                'error_code' => 'SAFETY_BACKUP_FAILED',
+                'message'    => 'Could not create a safety backup of the current database. Restore aborted to protect your data.',
+                'detail'     => substr(Artisan::output(), -1000),
+            ], 500);
+        }
+
+        // Rename the safety backup so it is clearly labelled
+        $safetyPath = null;
+        $safetyFiles = $this->getAllBackupFiles();
+        if (! empty($safetyFiles)) {
+            $newest      = $safetyFiles[0];
+            $restoreSlug = preg_replace('/[^a-zA-Z0-9_\-]/', '_', pathinfo($validated['filename'], PATHINFO_FILENAME));
+            $labelledName = 'pre-restore--'.$restoreSlug.'--'.basename($newest);
+            $safetyPath   = dirname($newest).'/'.$labelledName;
+            @rename($newest, $safetyPath);
+        }
+
         // ── Wipe production schema ────────────────────────────────────────────
-        // Drop and recreate the public schema so every table, sequence, index
-        // is removed before the restore. This avoids duplicate-object errors.
         try {
             DB::statement('DROP SCHEMA public CASCADE;');
             DB::statement('CREATE SCHEMA public;');
@@ -245,6 +265,10 @@ final class BackupController extends Controller
             DB::statement('GRANT ALL ON SCHEMA public TO public;');
         } catch (\Throwable $e) {
             File::deleteDirectory($extractDir);
+            // Rename safety backup back to a normal name so it is easy to find
+            if ($safetyPath !== null && file_exists($safetyPath)) {
+                @rename($safetyPath, str_replace('pre-restore--'.$restoreSlug.'--', 'aborted-restore--', $safetyPath));
+            }
 
             return response()->json([
                 'success'    => false,
@@ -264,7 +288,7 @@ final class BackupController extends Controller
             return response()->json([
                 'success'    => false,
                 'error_code' => 'RESTORE_FAILED',
-                'message'    => 'Database restore failed with errors. A safety backup was taken before this attempt; use it to recover.',
+                'message'    => 'Database restore failed. A safety backup was taken before this attempt — use it to recover.',
                 'detail'     => substr($restoreResult->output(), -2000),
             ], 500);
         }
