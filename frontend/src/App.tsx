@@ -26,11 +26,9 @@ import { useUiStore } from '@/stores/uiStore'
 function SystemRestoreOverlay() {
   const wsFlag = useUiStore((s) => s.systemRestoreInProgress)
   const [visible, setVisible]   = useState(false)
-  const [done, setDone]         = useState(false)   // false=restoring, true=done
+  const [done, setDone]         = useState(false)
   const seenRestoring           = useRef(false)
   const redirectScheduled       = useRef(false)
-  // Safety net: if the overlay has been visible for 3 minutes and the server
-  // never returns a clean status (e.g. temporary outage after restore), auto-dismiss.
   const visibleSince            = useRef<number | null>(null)
 
   // Instant overlay when Reverb broadcasts SystemRestoreStarting

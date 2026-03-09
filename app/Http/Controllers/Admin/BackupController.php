@@ -50,8 +50,9 @@ final class BackupController extends Controller
             'filename'    => basename($path),
             'size_bytes'  => filesize($path),
             'size_human'  => $this->humanFileSize((int) filesize($path)),
-            'created_at'  => date('Y-m-d H:i:s', (int) filemtime($path)),
+            'created_at'  => date('M j, Y g:i A', (int) filemtime($path)),
             'age_days'    => (int) floor((time() - (int) filemtime($path)) / 86400),
+            'type'        => $this->getBackupType(basename($path)),
         ], $files);
 
         return response()->json(['data' => array_values($data)]);
@@ -77,7 +78,7 @@ final class BackupController extends Controller
                 'latest_backup' => $latest ? [
                     'filename'   => basename($latest),
                     'size_human' => $this->humanFileSize((int) filesize($latest)),
-                    'created_at' => date('Y-m-d H:i:s', (int) filemtime($latest)),
+                    'created_at' => date('M j, Y g:i A', (int) filemtime($latest)),
                     'age_days'   => (int) floor((time() - (int) filemtime($latest)) / 86400),
                 ] : null,
             ],
@@ -96,6 +97,8 @@ final class BackupController extends Controller
     {
         abort_unless(Auth::user()->can('system.manage_backups'), 403, 'Insufficient permissions.');
 
+        $filesBeforeRun = $this->getAllBackupFiles();
+
         $exitCode = Artisan::call('backup:run', ['--only-db' => true]);
         $output   = Artisan::output();
 
@@ -113,16 +116,50 @@ final class BackupController extends Controller
             'by_user'    => Auth::user()->email,
         ]);
 
-        $files  = $this->getAllBackupFiles();
-        $latest = $files[0] ?? null;
+        // Rename the spatie-generated archive to a human-readable filename.
+        $filesAfterRun = $this->getAllBackupFiles();
+        $newFiles      = array_values(array_diff($filesAfterRun, $filesBeforeRun));
+        $newest        = $newFiles[0] ?? ($filesAfterRun[0] ?? null);
+
+        if ($newest !== null) {
+            $readable = now()->format('M-d-Y_H-i-s');
+            $newName  = 'ogami-erp-backup-'.$readable.'.zip';
+            $newPath  = dirname($newest).'/'.$newName;
+            if (@rename($newest, $newPath)) {
+                $newest = $newPath;
+            }
+        }
+
+        // Verify the archive with 7z (supports AES-256 used by spatie).
+        // unzip 6.x cannot handle AES-256 encrypted zips (PK compat v5.1).
+        if ($newest !== null) {
+            $archivePassword = config('backup.backup.password');
+            $testPassFlag    = ($archivePassword !== null && $archivePassword !== '')
+                ? '-p'.escapeshellarg((string) $archivePassword).' '
+                : '';
+            $testResult = Process::timeout(60)->run("7z t {$testPassFlag}\"{$newest}\" 2>&1");
+            // Retry without password in case encryption was skipped on this run
+            if ($testResult->failed() && $testPassFlag !== '') {
+                $testResult = Process::timeout(60)->run("7z t \"{$newest}\" 2>&1");
+            }
+            if ($testResult->failed()) {
+                @unlink($newest);
+                return response()->json([
+                    'success'    => false,
+                    'error_code' => 'BACKUP_CORRUPTED',
+                    'message'    => 'Backup was created but failed integrity check — the archive is unreadable. Check the BACKUP_ARCHIVE_PASSWORD setting.',
+                    'detail'     => substr($testResult->output(), -500),
+                ], 500);
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Backup completed successfully.',
-            'data'    => $latest ? [
-                'filename'   => basename($latest),
-                'size_human' => $this->humanFileSize((int) filesize($latest)),
-                'created_at' => date('Y-m-d H:i:s', (int) filemtime($latest)),
+            'data'    => $newest ? [
+                'filename'   => basename($newest),
+                'size_human' => $this->humanFileSize((int) filesize($newest)),
+                'created_at' => date('M j, Y g:i A', (int) filemtime($newest)),
             ] : null,
         ]);
     }
@@ -155,6 +192,11 @@ final class BackupController extends Controller
         try {
             return $this->doRestore($request, $validated);
         } catch (\Throwable $e) {
+            // Clear the in-progress flag so the maintenance modal dismisses.
+            // Use 'done' only if the schema may have already been dropped so
+            // clients are redirected to login; otherwise just forget the flag.
+            Cache::forget('system.restore_in_progress');
+
             Log::error('[BackupRestore] Unhandled exception during restore', [
                 'error'    => $e->getMessage(),
                 'file'     => $e->getFile(),
@@ -177,12 +219,7 @@ final class BackupController extends Controller
         // max_execution_time (default 30 s) before the work finishes.
         set_time_limit(0);
 
-        // Signal to all polling clients that a restore is in progress.
-        // Stored in Redis (not the DB) so it survives schema drop + restore.
-        // TTL 30 min is a safety cap; it is cleared explicitly on completion.
-        Cache::put('system.restore_in_progress', true, 1800);
-
-        // Locate the archive on disk
+        // ── Locate archive (no DB / cache changes yet) ────────────────────────
         $archivePath = $this->findArchiveByFilename($validated['filename']);
 
         if ($archivePath === null) {
@@ -200,16 +237,26 @@ final class BackupController extends Controller
         $password = (string) $dbConfig['password'];
         $prodDb   = (string) $dbConfig['database'];
 
-        // ── Extract + validate archive FIRST (before taking any safety backup) ─
+        // ── Extract + validate archive FIRST (before touching anything) ───────
         $extractDir = storage_path('app/backup-temp/restore-ui-'.now()->format('YmdHis'));
         File::ensureDirectoryExists($extractDir);
 
         $archivePassword = config('backup.backup.password');
         $passwordFlag    = ($archivePassword !== null && $archivePassword !== '')
-            ? '-P '.escapeshellarg((string) $archivePassword).' '
+            ? '-p'.escapeshellarg((string) $archivePassword).' '
             : '';
 
-        $unzip = Process::timeout(120)->run("unzip -o {$passwordFlag}\"{$archivePath}\" -d \"{$extractDir}\" 2>&1");
+        // Use 7z for extraction: unlike unzip 6.x it supports AES-256 (PK compat v5.1)
+        // which is what PHP's ZipArchive uses when BACKUP_ARCHIVE_PASSWORD is set.
+        $unzip = Process::timeout(120)->run("7z x {$passwordFlag}-o\"{$extractDir}\" \"{$archivePath}\" 2>&1");
+
+        // Retry without password in case this particular archive was created without encryption.
+        if ($unzip->failed() && $passwordFlag !== '') {
+            File::deleteDirectory($extractDir);
+            File::ensureDirectoryExists($extractDir);
+            $unzip = Process::timeout(120)->run("7z x -o\"{$extractDir}\" \"{$archivePath}\" 2>&1");
+        }
+
         if ($unzip->failed()) {
             File::deleteDirectory($extractDir);
 
@@ -244,10 +291,23 @@ final class BackupController extends Controller
             ], 422);
         }
 
+        // ── Archive is valid — now signal all clients that restore is starting ─
+        // Only set this flag AFTER the archive passes validation so that
+        // pre-flight failures (file not found, bad zip, no SQL) never show
+        // the maintenance modal. Stored in Redis so it survives schema drop.
+        Cache::put('system.restore_in_progress', true, 1800);
+
         // ── Safety backup (only after archive is confirmed valid) ─────────────
+        // Snapshot files BEFORE the backup runs so we can reliably identify the
+        // newly created archive afterward — even when the restore target itself
+        // has a recent mtime that could cause it to rank as "newest".
+        $filesBeforeSafety = $this->getAllBackupFiles();
+
         $safetyExitCode = Artisan::call('backup:run', ['--only-db' => true]);
         if ($safetyExitCode !== 0) {
             File::deleteDirectory($extractDir);
+            // DB is still intact — clear the flag so the modal is dismissed.
+            Cache::forget('system.restore_in_progress');
 
             return response()->json([
                 'success'    => false,
@@ -257,14 +317,31 @@ final class BackupController extends Controller
             ], 500);
         }
 
-        // Rename the safety backup so it is clearly labelled
-        $safetyPath = null;
-        $safetyFiles = $this->getAllBackupFiles();
-        if (! empty($safetyFiles)) {
-            $newest      = $safetyFiles[0];
-            $restoreSlug = preg_replace('/[^a-zA-Z0-9_\-]/', '_', pathinfo($validated['filename'], PATHINFO_FILENAME));
-            $labelledName = 'pre-restore--'.$restoreSlug.'--'.basename($newest);
-            $safetyPath   = dirname($newest).'/'.$labelledName;
+        // Rename the safety backup so it is clearly labelled.
+        // Identify the newly created file by comparing before/after snapshots.
+        // This is far more reliable than getAllBackupFiles()[0] because it is
+        // immune to mtime collisions with the restore target (e.g. when restoring
+        // a pre-restore/safety file whose mtime equals the new backup's mtime).
+        $safetyPath       = null;
+        $filesAfterSafety = $this->getAllBackupFiles();
+        $newFiles         = array_values(array_diff($filesAfterSafety, $filesBeforeSafety));
+        $newest           = $newFiles[0] ?? null;
+
+        // Fallback: if the snapshot diff found nothing (unlikely — e.g. NFS mtime
+        // granularity), pick the newest file that is NOT the restore target.
+        if ($newest === null) {
+            foreach ($filesAfterSafety as $candidate) {
+                if (basename($candidate) !== basename($archivePath)) {
+                    $newest = $candidate;
+                    break;
+                }
+            }
+        }
+
+        if ($newest !== null) {
+            $safetyTimestamp = now()->format('M-d-Y_H-i-s');
+            $labelledName    = 'safety-'.$safetyTimestamp.'-before-restore.zip';
+            $safetyPath      = dirname($newest).'/'.$labelledName;
             @rename($newest, $safetyPath);
         }
 
@@ -292,9 +369,11 @@ final class BackupController extends Controller
             DB::statement('GRANT ALL ON SCHEMA public TO public;');
         } catch (\Throwable $e) {
             File::deleteDirectory($extractDir);
-            // Rename safety backup back to a normal name so it is easy to find
+            // DB is still intact (DROP failed) — clear the flag so the modal dismisses.
+            Cache::forget('system.restore_in_progress');
             if ($safetyPath !== null && file_exists($safetyPath)) {
-                @rename($safetyPath, str_replace('pre-restore--'.$restoreSlug.'--', 'aborted-restore--', $safetyPath));
+                $abortedName = str_replace('safety-', 'safety-aborted-', basename($safetyPath));
+                @rename($safetyPath, dirname($safetyPath).'/'.$abortedName);
             }
 
             return response()->json([
@@ -312,10 +391,15 @@ final class BackupController extends Controller
         File::deleteDirectory($extractDir);
 
         if ($restoreResult->failed() && str_contains($restoreResult->output(), 'ERROR:')) {
+            // Schema was already dropped — the DB is in a broken state.
+            // Set the flag to 'done' so the overlay redirects everyone to login
+            // (the app cannot function until the safety backup is restored).
+            Cache::put('system.restore_in_progress', 'done', 30);
+
             return response()->json([
                 'success'    => false,
                 'error_code' => 'RESTORE_FAILED',
-                'message'    => 'Database restore failed. A safety backup was taken before this attempt — use it to recover.',
+                'message'    => 'Database restore failed after the schema was reset. Use the safety backup to recover. All users have been directed to log in.',
                 'detail'     => substr($restoreResult->output(), -2000),
             ], 500);
         }
@@ -441,6 +525,25 @@ final class BackupController extends Controller
         usort($files, fn ($a, $b) => filemtime($b) <=> filemtime($a));
 
         return $files;
+    }
+
+    /**
+     * Derives the backup type from the filename.
+     *   'safety'  → created automatically before a restore operation
+     *   'regular' → Spatie-scheduled or manual on-demand backup
+     */
+    private function getBackupType(string $filename): string
+    {
+        // New naming: safety-{timestamp}-before-restore.zip / safety-aborted-...
+        if (str_starts_with($filename, 'safety-')) {
+            return 'safety';
+        }
+        // Legacy naming from older versions: pre-restore--...zip / aborted-restore--...zip
+        if (str_starts_with($filename, 'pre-restore--') || str_starts_with($filename, 'aborted-restore--')) {
+            return 'safety';
+        }
+
+        return 'regular';
     }
 
     /** Finds an archive by its basename. Returns null if not found or path escapes storage dir. */

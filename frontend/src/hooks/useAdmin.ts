@@ -344,6 +344,8 @@ export interface BackupFile {
   size_human: string
   created_at: string
   age_days:   number
+  /** 'safety' = auto-created before a restore; 'regular' = scheduled or on-demand */
+  type:       'safety' | 'regular'
 }
 
 export interface BackupStatus {

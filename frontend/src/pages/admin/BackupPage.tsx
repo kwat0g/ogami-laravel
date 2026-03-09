@@ -10,6 +10,7 @@ import {
   Clock,
   Database,
   HardDrive,
+  Shield,
 } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -148,6 +149,106 @@ function AgeBadge({ days }: { days: number }): React.ReactElement {
   )
 }
 
+// ─── Type badge ───────────────────────────────────────────────────────────────
+
+function TypeBadge({ type }: { type: 'safety' | 'regular' }): React.ReactElement {
+  if (type === 'safety') {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+        <Shield className="h-3 w-3" />
+        Safety
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+      <Archive className="h-3 w-3" />
+      Regular
+    </span>
+  )
+}
+
+// ─── Backup section ───────────────────────────────────────────────────────────
+
+interface BackupSectionProps {
+  title:     string
+  files:     BackupFile[]
+  onRestore: (file: BackupFile) => void
+}
+
+function BackupSection({ title, files, onRestore }: BackupSectionProps): React.ReactElement {
+  if (files.length === 0) return <></>
+  return (
+    <>
+      {/* Section label */}
+      <div className="px-4 py-2 bg-neutral-50 border-b border-neutral-100 flex items-center gap-2">
+        {files[0].type === 'safety'
+          ? <Shield className="h-3.5 w-3.5 text-amber-500" />
+          : <Archive className="h-3.5 w-3.5 text-sky-500" />}
+        <span className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">{title}</span>
+        <span className="ml-auto text-xs text-neutral-400">
+          {files.length} {files.length === 1 ? 'file' : 'files'}
+        </span>
+      </div>
+
+      {files.map((file) => (
+        <div
+          key={file.filename}
+          className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-start px-4 py-3 hover:bg-neutral-50 transition-colors border-b border-neutral-100 last:border-b-0"
+        >
+          {/* Filename + badge */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Archive className="h-4 w-4 text-neutral-400 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-mono text-neutral-700 truncate" title={file.filename}>
+                {file.filename}
+              </span>
+            </div>
+            <div className="mt-1 pl-6">
+              <TypeBadge type={file.type} />
+            </div>
+          </div>
+
+          {/* Size */}
+          <span className="text-sm text-neutral-500 text-right whitespace-nowrap pt-0.5">
+            {file.size_human}
+          </span>
+
+          {/* Date */}
+          <span className="text-sm text-neutral-500 text-right whitespace-nowrap pt-0.5">
+            {file.created_at}
+          </span>
+
+          {/* Age */}
+          <div className="text-center pt-0.5">
+            <AgeBadge days={file.age_days} />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-center gap-2 pt-0.5">
+            <a
+              href={backupDownloadUrl(file.filename)}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
+              title="Download backup"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </a>
+            <button
+              onClick={() => onRestore(file)}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
+              title="Restore from this backup"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Restore
+            </button>
+          </div>
+        </div>
+      ))}
+    </>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function BackupPage(): React.ReactElement {
@@ -156,6 +257,9 @@ export default function BackupPage(): React.ReactElement {
   const { data: backups, isLoading: backupsLoading, refetch: refetchBackups } = useBackups()
   const { data: status,  isLoading: statusLoading  }                          = useBackupStatus()
   const triggerMutation = useTriggerBackup()
+
+  const regularBackups = backups?.filter(f => f.type === 'regular') ?? []
+  const safetyBackups  = backups?.filter(f => f.type === 'safety')  ?? []
 
   const handleTriggerBackup = async () => {
     const tid = toast.loading('Creating backup… this may take up to 30 seconds.')
@@ -291,7 +395,7 @@ export default function BackupPage(): React.ReactElement {
         ) : (
           <div className="divide-y divide-neutral-100">
             {/* Header row */}
-            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-4 py-2.5 bg-neutral-50 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-4 py-2.5 bg-neutral-50 text-xs font-medium text-neutral-500 uppercase tracking-wide border-b border-neutral-100">
               <span>Filename</span>
               <span className="text-right">Size</span>
               <span className="text-right">Created</span>
@@ -299,55 +403,16 @@ export default function BackupPage(): React.ReactElement {
               <span className="text-center">Actions</span>
             </div>
 
-            {backups.map((file) => (
-              <div
-                key={file.filename}
-                className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 hover:bg-neutral-50 transition-colors"
-              >
-                {/* Filename */}
-                <div className="min-w-0 flex items-center gap-2">
-                  <Archive className="h-4 w-4 text-neutral-400 flex-shrink-0" />
-                  <span className="text-sm font-mono text-neutral-700 truncate" title={file.filename}>
-                    {file.filename}
-                  </span>
-                </div>
-
-                {/* Size */}
-                <span className="text-sm text-neutral-500 text-right whitespace-nowrap">
-                  {file.size_human}
-                </span>
-
-                {/* Date */}
-                <span className="text-sm text-neutral-500 text-right whitespace-nowrap">
-                  {file.created_at}
-                </span>
-
-                {/* Age */}
-                <div className="text-center">
-                  <AgeBadge days={file.age_days} />
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-center gap-2">
-                  <a
-                    href={backupDownloadUrl(file.filename)}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
-                    title="Download backup"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Download
-                  </a>
-                  <button
-                    onClick={() => setRestoreTarget(file)}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
-                    title="Restore from this backup"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Restore
-                  </button>
-                </div>
-              </div>
-            ))}
+            <BackupSection
+              title="Regular Backups"
+              files={regularBackups}
+              onRestore={setRestoreTarget}
+            />
+            <BackupSection
+              title="Safety Backups"
+              files={safetyBackups}
+              onRestore={setRestoreTarget}
+            />
           </div>
         )}
       </div>
