@@ -48,6 +48,9 @@ function SystemRestoreOverlay() {
       setDone(true)
       setVisible(true)
       setTimeout(() => {
+        // Unblock the 401 interceptor BEFORE navigating so any in-flight
+        // auth requests that were suppressed can proceed normally afterwards.
+        useUiStore.getState().setSystemRestore(false)
         if (!window.location.pathname.startsWith('/login')) {
           window.location.replace('/login')
         } else {
@@ -67,16 +70,21 @@ function SystemRestoreOverlay() {
         }
 
         if (in_progress && !completed) {
-          // Actively restoring — show maintenance overlay
+          // Actively restoring — show maintenance overlay.
+          // Also set the uiStore flag so the 401 interceptor knows to hold off
+          // on doing a hard page-reload; the overlay will handle the redirect.
           seenRestoring.current = true
+          useUiStore.getState().setSystemRestore(true)
           setDone(false)
           setVisible(true)
         } else if (in_progress && completed) {
           // Restore done; 15 s window still open — transition to success overlay
           seenRestoring.current = true
+          useUiStore.getState().setSystemRestore(true)
           scheduleRedirect()
         } else if (!in_progress && seenRestoring.current) {
           // Fallback: TTL expired before the 'done' phase was caught
+          useUiStore.getState().setSystemRestore(false)
           if (!window.location.pathname.startsWith('/login')) {
             window.location.replace('/login')
           }

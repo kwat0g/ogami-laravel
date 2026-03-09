@@ -61,8 +61,22 @@ api.interceptors.response.use(
     // Clear auth state and redirect to login for every 401, UNLESS we are
     // already on the login page (which would cause an infinite redirect loop
     // from the pre-login /auth/me probe that always returns 401).
+    //
+    // Special case — DB restore: when a restore is in progress, the
+    // SystemRestoreOverlay (App.tsx) manages the redirect after showing the
+    // "Restore Complete" modal.  Doing a hard window.location.replace here
+    // would kill the overlay and the toast before the user can read them.
+    // We check uiStore instead of the cache endpoint to avoid an extra
+    // round-trip on every 401.
     if (status === 401) {
-      import('@/stores/authStore').then(({ useAuthStore }) => {
+      void Promise.all([
+        import('@/stores/authStore'),
+        import('@/stores/uiStore'),
+      ]).then(([{ useAuthStore }, { useUiStore }]) => {
+        if (useUiStore.getState().systemRestoreInProgress) {
+          // Overlay is handling the redirect — suppress the hard page reload.
+          return
+        }
         useAuthStore.getState().clearAuth()
         if (!window.location.pathname.startsWith('/login')) {
           window.location.replace('/login')
