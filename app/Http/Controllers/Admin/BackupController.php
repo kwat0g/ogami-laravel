@@ -171,6 +171,11 @@ final class BackupController extends Controller
 
     private function doRestore(Request $request, array $validated): JsonResponse
     {
+        // Backup + restore can take several minutes. Remove the PHP execution
+        // time limit for this request only so it is not killed by php-fpm's
+        // max_execution_time (default 30 s) before the work finishes.
+        set_time_limit(0);
+
         // Locate the archive on disk
         $archivePath = $this->findArchiveByFilename($validated['filename']);
 
