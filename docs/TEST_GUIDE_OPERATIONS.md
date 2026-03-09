@@ -392,6 +392,26 @@ Repeat the same 5 steps as 3.2:
 
 ---
 
+### 4.3.5 Add HDPE Resin Black Stock (Required Before MRQ Fulfillment)
+
+> **This step is mandatory.** Only PP Resin Natural was procured in Scenario 1. The BOM also requires HDPE Resin Black, and the MRQ fulfill step pre-checks **all** line items at once — a zero balance on HDPE Resin Black will block fulfillment with an `INV_INSUFFICIENT_STOCK` error before any stock moves.
+
+**How much is needed:** 10,000 × 0.0008 kg/unit × 1.02 (2% scrap) = **8.16 kg**. Add 20 kg to leave a comfortable surplus.
+
+1. Go to **Inventory → Stock Balances**
+2. Locate **HDPE Resin Black** in the list (it will show 0 kg or may not appear if no transactions have ever occurred)
+   - If the item is not visible, use the **Item** search/filter at the top of the table to find it
+3. Click the **Adjust** button on the HDPE Resin Black row
+4. Fill in the adjustment form:
+   - **New Quantity:** `20` *(the actual quantity — not the difference; 20 kg is well above the 8.16 kg the MRQ will request)*
+   - **Remarks:** `Initial stock load for March production run`
+5. Click **Adjust**
+
+✅ HDPE Resin Black: **20 kg** at WH-A1
+✅ Stock Ledger shows a new **Adjustment** entry for HDPE Resin Black
+
+---
+
 ### 4.4 Push the Auto-MRQ Through the Full 6-Step Approval Chain
 
 1. Go to **Inventory → Requisitions** — find the new MRQ (status `draft`, Purpose references `WO-2026-03-00001`)
@@ -703,6 +723,7 @@ After completing all 8 scenarios, verify these summary points:
 | Check | Expected |
 |-------|----------|
 | PP Resin Natural stock | ~300 kg (500 received − ~200 issued via MRQ) |
+| HDPE Resin Black stock | ~11.84 kg (20 added via adjustment − 8.16 issued via MRQ) |
 | Plastic Container 500ml stock | 7 pcs (10,007 produced − 10,000 delivered) |
 | AP Invoice 1 (₱89,640) | Status `paid` · Balance Due ₱0 |
 | AP Invoice 2 (₱360) | Status `paid` · Balance Due ₱0 |

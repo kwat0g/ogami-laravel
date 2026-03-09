@@ -357,30 +357,7 @@ export default function BackupPage(): React.ReactElement {
         <RestoreModal
           file={restoreTarget}
           onClose={() => setRestoreTarget(null)}
-          onRestored={handleRestored}
         />
-      )}
-
-      {/* ── Post-restore countdown overlay ─────────────────────────────────── */}
-      {countdown !== null && (
-        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-neutral-200 shadow-floating w-full max-w-md p-6 text-center">
-            <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="h-6 w-6 text-neutral-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-neutral-900 mb-2">System Maintenance</h2>
-            <p className="text-sm text-neutral-600 mb-4">
-              An administrator is restoring the database. All sessions will be invalidated once the restore is complete.
-            </p>
-            <p className="text-sm text-neutral-500 mb-6">
-              You will be redirected to the login page automatically.
-            </p>
-            <div className="rounded-lg bg-neutral-50 border border-neutral-200 px-4 py-3 flex items-center justify-center gap-2">
-              <RefreshCw className="h-4 w-4 text-neutral-500 animate-spin" />
-              <span className="text-sm text-neutral-600">Please wait, do not close this tab...</span>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )
