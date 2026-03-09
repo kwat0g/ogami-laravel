@@ -3,10 +3,11 @@
 Ogami ERP — production update via pexpect SSH.
 
 Runs the full local → remote pipeline:
-  1. Build the React frontend (pnpm build)
-  2. Commit any changed build artefacts in public/build/ to git
-  3. Push to origin/main
-  4. SSH into the VPS and pull + migrate + restart
+  1. Type-check the frontend (tsc --noEmit) — aborts on TS errors
+  2. Build the React frontend (pnpm build) — aborts on build errors
+  3. Commit any changed build artefacts in public/build/ to git
+  4. Push to origin/main
+  5. SSH into the VPS and pull + migrate + restart
 
 This guarantees that every `python3 update.py` leaves production
 100 % in sync with local — no leftover stale JS bundles.
@@ -112,9 +113,10 @@ def update() -> None:
     # ══════════════════════════════════════════════════════════════
 
     # ── L1. Build the React frontend ─────────────────────────────
-    banner("L1 — Build React frontend (pnpm build)")
+    banner("L1 — Build React frontend (typecheck + pnpm build)")
     frontend_dir = os.path.join(REPO_ROOT, "frontend")
-    local("pnpm build", cwd=frontend_dir, timeout=300)
+    local("pnpm typecheck", cwd=frontend_dir, timeout=120)   # abort on TS errors
+    local("pnpm build", cwd=frontend_dir, timeout=300)        # abort on build errors
 
     # ── L2. Stage ALL local changes (src + built assets) ─────────
     banner("L2 — Stage & commit all local changes")
