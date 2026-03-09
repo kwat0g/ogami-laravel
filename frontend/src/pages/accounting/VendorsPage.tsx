@@ -286,20 +286,20 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Phone</label>
+              <input
+                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
+                value={form.phone ?? ''}
+                onChange={e => setForm(f => ({ ...f, phone: e.target.value || null }))}
+              />
+            </div>
+            <div className="col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
               <input
                 type="email"
                 className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.email ?? ''}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value || null }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Phone</label>
-              <input
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
-                value={form.phone ?? ''}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value || null }))}
               />
             </div>
             <div className="col-span-2">

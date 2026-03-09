@@ -168,12 +168,11 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-neutral-700">Email</span>
+              <span className="text-sm font-medium text-neutral-700">Contact Person</span>
               <input
-                type="email"
                 className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
-                value={form.email ?? ''}
-                onChange={(e) => set('email', e.target.value || null)}
+                value={form.contact_person ?? ''}
+                onChange={(e) => set('contact_person', e.target.value || null)}
               />
             </label>
             <label className="block">
@@ -185,11 +184,12 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
               />
             </label>
             <label className="col-span-2 block">
-              <span className="text-sm font-medium text-neutral-700">Contact Person</span>
+              <span className="text-sm font-medium text-neutral-700">Email</span>
               <input
+                type="email"
                 className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
-                value={form.contact_person ?? ''}
-                onChange={(e) => set('contact_person', e.target.value || null)}
+                value={form.email ?? ''}
+                onChange={(e) => set('email', e.target.value || null)}
               />
             </label>
             <label className="col-span-2 block">
