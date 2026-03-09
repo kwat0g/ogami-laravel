@@ -105,6 +105,8 @@ export interface CreateCustomerInvoicePayload {
   due_date: string
   subtotal: number
   vat_amount?: number
+  // VAT-001: required when vat_amount > 0
+  or_number?: string | null
   vat_exemption_reason?: string | null
   description?: string | null
   // AR-002: credit limit override (requires permission)

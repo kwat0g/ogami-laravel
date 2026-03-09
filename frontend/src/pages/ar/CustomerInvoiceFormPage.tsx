@@ -70,6 +70,7 @@ export default function CustomerInvoiceFormPage() {
     due_date: new Date().toISOString().slice(0, 10),
     subtotal: 0,
     vat_amount: 0,
+    or_number: null,
     vat_exemption_reason: null,
     description: null,
   })
@@ -94,6 +95,7 @@ export default function CustomerInvoiceFormPage() {
     if (!form.invoice_date) e.invoice_date = 'Invoice date is required.'
     if (!form.due_date) e.due_date = 'Due date is required.'
     if (!form.subtotal || form.subtotal <= 0) e.subtotal = 'Must be greater than 0.'
+    if ((form.vat_amount ?? 0) > 0 && !form.or_number) e.or_number = 'Official receipt (OR) number is required when VAT is charged.'
     return e
   }, [form])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
@@ -273,6 +275,26 @@ export default function CustomerInvoiceFormPage() {
             />
           </label>
         </div>
+
+        {/* VAT-001: OR number required when VAT > 0 */}
+        {(form.vat_amount ?? 0) > 0 && (
+          <label className="block">
+            <span className="text-sm font-medium text-neutral-700">
+              Official Receipt (OR) Number <span className="text-red-500">*</span>
+            </span>
+            <input
+              type="text"
+              maxLength={50}
+              placeholder="e.g. OR-2026-00123"
+              className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('or_number') ? 'border-red-400' : 'border-neutral-300'}`}
+              value={form.or_number ?? ''}
+              onChange={(e) => set('or_number', e.target.value || null)}
+              onBlur={() => touch('or_number')}
+              required
+            />
+            {fe('or_number') && <p className="mt-1 text-xs text-red-600">{fe('or_number')}</p>}
+          </label>
+        )}
 
         {/* Total preview */}
         <div className="rounded bg-neutral-50 border border-neutral-200 px-4 py-3 text-sm">

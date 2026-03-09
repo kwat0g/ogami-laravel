@@ -657,7 +657,7 @@ Repeat the same 5 steps as 3.2:
 ✅ Status: `delivered`
 ✅ Delivery Schedule status updates to `delivered`
 ✅ A **Draft Customer Invoice** for Ace Hardware Philippines is auto-created *(requires queue worker)*
-
+// QUEUE WORK DIDN'T WORK
 ---
 
 ## Scenario 8 — Accounts Receivable: Invoice Approval and Collection
