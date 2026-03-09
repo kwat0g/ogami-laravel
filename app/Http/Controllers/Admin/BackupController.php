@@ -354,8 +354,14 @@ final class BackupController extends Controller
             Log::warning('[BackupRestore] Could not flush Redis sessions after restore.');
         }
 
-        // Clear the in-progress flag now that the restore is done.
-        Cache::forget('system.restore_in_progress');
+        // Keep the in-progress flag alive for 15 s after the restore completes so
+        // that slow-polling clients (2 s interval) are guaranteed to catch the
+        // 'done' state before the key expires.  The frontend detects the 'done'
+        // value, transitions to a "Restore complete — redirecting" overlay, and
+        // calls window.location.replace('/login') after a short countdown.
+        // Using a short TTL (rather than Cache::forget) closes the race window
+        // where the poll checked JUST before the flag was cleared and missed it.
+        Cache::put('system.restore_in_progress', 'done', 15);
 
         // Notify all still-connected WebSocket clients to redirect to /login.
         // This covers idle users who would not otherwise get a 401 response.

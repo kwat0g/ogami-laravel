@@ -33,11 +33,18 @@ Route::get('health', function () {
 })->middleware('throttle:api-health')->name('health');
 
 // ── System restore status (public, no auth — survives session wipe) ────────────
-// Reads a Redis Cache key set by BackupController before/after a DB restore.
-// The frontend polls this every 5 s to show a warning overlay and auto-logout.
+// Reads a Cache key set by BackupController before/after a DB restore.
+// The frontend polls this every 2 s to show a warning overlay and auto-logout.
+//
+// Response shape:
+//   { "in_progress": true,  "completed": false }  — restore actively running
+//   { "in_progress": true,  "completed": true  }  — done, 15 s visibility window
+//   { "in_progress": false, "completed": false }  — nothing in progress
 Route::get('v1/system/restore-status', function () {
+    $status = \Illuminate\Support\Facades\Cache::get('system.restore_in_progress', false);
     return response()->json([
-        'in_progress' => (bool) \Illuminate\Support\Facades\Cache::get('system.restore_in_progress', false),
+        'in_progress' => $status !== false,
+        'completed'   => $status === 'done',
     ]);
 })->middleware('throttle:60,1')->name('system.restore-status');
 
