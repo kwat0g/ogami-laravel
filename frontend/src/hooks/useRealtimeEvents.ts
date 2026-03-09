@@ -22,7 +22,6 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getEcho } from '@/lib/echo'
 import { useUiStore } from '@/stores/uiStore'
-import { useAuthStore } from '@/stores/authStore'
 
 interface PayrollStatusPayload {
   run_id: number
@@ -52,11 +51,8 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
         setSystemRestore(true)
       })
       .listen('.system.restore.completed', () => {
-        // Force everyone to /login so they re-authenticate against the restored DB.
-        // Clear query cache and auth state first so no stale data is served.
-        qc.clear()
-        useAuthStore.getState().clearAuth()
-        window.location.replace('/login')
+        // Signal completion — SystemRestoreOverlay in App.tsx handles the redirect.
+        setSystemRestore(false)
       })
 
     return () => {

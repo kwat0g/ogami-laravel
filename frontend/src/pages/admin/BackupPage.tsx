@@ -1,13 +1,12 @@
-import { useState, useCallback } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import {
   Archive,
+  CheckCircle2,
   Download,
   RefreshCw,
   RotateCcw,
   AlertTriangle,
-  CheckCircle2,
   Clock,
   Database,
   HardDrive,
@@ -29,10 +28,9 @@ import { cn } from '@/lib/utils'
 interface RestoreModalProps {
   file: BackupFile
   onClose: () => void
-  onRestored: () => void
 }
 
-function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.ReactElement {
+function RestoreModal({ file, onClose }: RestoreModalProps): React.ReactElement {
   const [typed, setTyped]       = useState('')
   const restoreMutation          = useRestoreBackup()
   const canConfirm               = typed === 'CONFIRM'
@@ -41,7 +39,7 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
     try {
       const result = await restoreMutation.mutateAsync({ filename: file.filename, confirm: 'CONFIRM' })
       toast.success(result.message)
-      onRestored()
+      onClose()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'Restore failed. Check server logs.'
@@ -51,11 +49,11 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-floating w-full max-w-md">
         {/* Header */}
         <div className="flex items-start gap-3 p-5 border-b border-neutral-200">
-          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center">
+            <AlertTriangle className="h-5 w-5 text-neutral-600" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-neutral-900">Restore Production Database</h2>
@@ -65,9 +63,9 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
 
         {/* Body */}
         <div className="p-5 space-y-4">
-          <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800 space-y-1">
-            <p className="font-medium">⚠ What will happen:</p>
-            <ul className="list-disc list-inside space-y-0.5 text-red-700">
+          <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-3 text-sm text-neutral-700 space-y-1">
+            <p className="font-medium text-neutral-900">What will happen:</p>
+            <ul className="list-disc list-inside space-y-0.5 text-neutral-600">
               <li>A safety backup of the current database will be created first</li>
               <li>All current production data will be <strong>permanently replaced</strong></li>
               <li>All active user sessions will be invalidated</li>
@@ -75,8 +73,8 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
             </ul>
           </div>
 
-          <div className="rounded-md bg-neutral-50 border border-neutral-200 p-3 text-sm">
-            <p className="text-neutral-600 mb-1">Restoring from:</p>
+          <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-3 text-sm">
+            <p className="text-neutral-500 mb-1">Restoring from:</p>
             <p className="font-mono text-neutral-900 text-xs break-all">{file.filename}</p>
             <p className="text-neutral-500 text-xs mt-1">{file.size_human} &mdash; {file.created_at}</p>
           </div>
@@ -90,7 +88,7 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               placeholder="CONFIRM"
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:border-neutral-400"
               autoComplete="off"
               autoFocus
             />
@@ -102,7 +100,7 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
           <button
             onClick={onClose}
             disabled={restoreMutation.isPending}
-            className="px-3 py-2 text-sm rounded-md border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-40"
+            className="px-4 py-2 text-sm rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-40"
           >
             Cancel
           </button>
@@ -110,9 +108,9 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
             onClick={handleRestore}
             disabled={!canConfirm || restoreMutation.isPending}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 text-sm rounded-md font-medium transition-colors',
+              'flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg font-medium transition-colors',
               canConfirm && !restoreMutation.isPending
-                ? 'bg-red-600 text-white hover:bg-red-700'
+                ? 'bg-neutral-900 text-white hover:bg-neutral-800'
                 : 'bg-neutral-100 text-neutral-400 cursor-not-allowed',
             )}
           >
@@ -137,19 +135,13 @@ function RestoreModal({ file, onClose, onRestored }: RestoreModalProps): React.R
 // ─── Age badge ────────────────────────────────────────────────────────────────
 
 function AgeBadge({ days }: { days: number }): React.ReactElement {
-  const color =
-    days === 0 ? 'bg-green-100 text-green-700'
-    : days <= 2 ? 'bg-blue-100 text-blue-700'
-    : days <= 7 ? 'bg-yellow-100 text-yellow-700'
-    : 'bg-neutral-100 text-neutral-600'
-
   const label =
     days === 0 ? 'Today'
     : days === 1 ? '1 day ago'
     : `${days} days ago`
 
   return (
-    <span className={cn('inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full', color)}>
+    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
       <Clock className="h-3 w-3" />
       {label}
     </span>
@@ -160,24 +152,6 @@ function AgeBadge({ days }: { days: number }): React.ReactElement {
 
 export default function BackupPage(): React.ReactElement {
   const [restoreTarget, setRestoreTarget] = useState<BackupFile | null>(null)
-  const [countdown, setCountdown]         = useState<number | null>(null)
-  const queryClient = useQueryClient()
-
-  const handleRestored = useCallback(() => {
-    setRestoreTarget(null)
-    // Nuke all cached API data so nothing stale is served after re-login.
-    queryClient.clear()
-    let remaining = 10
-    setCountdown(remaining)
-    const interval = setInterval(() => {
-      remaining -= 1
-      setCountdown(remaining)
-      if (remaining <= 0) {
-        clearInterval(interval)
-        window.location.replace('/login')
-      }
-    }, 1000)
-  }, [queryClient])
 
   const { data: backups, isLoading: backupsLoading, refetch: refetchBackups } = useBackups()
   const { data: status,  isLoading: statusLoading  }                          = useBackupStatus()
@@ -208,7 +182,7 @@ export default function BackupPage(): React.ReactElement {
           <button
             onClick={handleTriggerBackup}
             disabled={triggerMutation.isPending}
-            className="flex items-center gap-2 px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {triggerMutation.isPending ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -223,9 +197,9 @@ export default function BackupPage(): React.ReactElement {
       {/* ── Status cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {/* Total backups */}
-        <div className="bg-white rounded-lg border border-neutral-200 p-4 flex items-center gap-3">
-          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
-            <HardDrive className="h-4.5 w-4.5 text-blue-600" />
+        <div className="bg-white rounded-xl border border-neutral-200 p-4 flex items-center gap-3 shadow-subtle">
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center">
+            <HardDrive className="h-4.5 w-4.5 text-neutral-600" />
           </div>
           <div>
             <p className="text-xs text-neutral-500">Total backups</p>
@@ -238,9 +212,9 @@ export default function BackupPage(): React.ReactElement {
         </div>
 
         {/* Latest backup */}
-        <div className="bg-white rounded-lg border border-neutral-200 p-4 flex items-center gap-3">
-          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-green-50 flex items-center justify-center">
-            <CheckCircle2 className="h-4.5 w-4.5 text-green-600" />
+        <div className="bg-white rounded-xl border border-neutral-200 p-4 flex items-center gap-3 shadow-subtle">
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center">
+            <CheckCircle2 className="h-4.5 w-4.5 text-neutral-600" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-neutral-500">Latest backup</p>
@@ -255,9 +229,9 @@ export default function BackupPage(): React.ReactElement {
         </div>
 
         {/* Age of latest */}
-        <div className="bg-white rounded-lg border border-neutral-200 p-4 flex items-center gap-3">
-          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-yellow-50 flex items-center justify-center">
-            <Clock className="h-4.5 w-4.5 text-yellow-600" />
+        <div className="bg-white rounded-xl border border-neutral-200 p-4 flex items-center gap-3 shadow-subtle">
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center">
+            <Clock className="h-4.5 w-4.5 text-neutral-600" />
           </div>
           <div>
             <p className="text-xs text-neutral-500">Last backup</p>
@@ -275,11 +249,11 @@ export default function BackupPage(): React.ReactElement {
       </div>
 
       {/* ── Restore warning ────────────────────────────────────────────────── */}
-      <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 p-4 flex gap-3">
-        <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-amber-800">
-          <p className="font-medium mb-1">Before restoring:</p>
-          <ul className="list-disc list-inside space-y-0.5 text-amber-700">
+      <div className="mb-6 rounded-xl bg-neutral-50 border border-neutral-200 p-4 flex gap-3">
+        <AlertTriangle className="h-5 w-5 text-neutral-500 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-neutral-700">
+          <p className="font-medium text-neutral-900 mb-1">Before restoring:</p>
+          <ul className="list-disc list-inside space-y-0.5 text-neutral-600">
             <li>A safety backup of the current database is always taken automatically before restore begins</li>
             <li>Restore replaces <strong>all</strong> production data — transactions, employees, payroll records</li>
             <li>All active sessions are invalidated; everyone must log in again after restore</li>
@@ -289,7 +263,7 @@ export default function BackupPage(): React.ReactElement {
       </div>
 
       {/* ── Backup table ───────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-subtle">
         <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-neutral-500" />
@@ -297,7 +271,7 @@ export default function BackupPage(): React.ReactElement {
           </div>
           <button
             onClick={() => refetchBackups()}
-            className="flex items-center gap-1.5 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-neutral-200 rounded-lg bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh
@@ -348,25 +322,25 @@ export default function BackupPage(): React.ReactElement {
                   {file.created_at}
                 </span>
 
-                {/* Age badge */}
-                <div className="flex justify-center">
+                {/* Age */}
+                <div className="text-center">
                   <AgeBadge days={file.age_days} />
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1.5 justify-center">
+                <div className="flex items-center justify-center gap-2">
                   <a
                     href={backupDownloadUrl(file.filename)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
                     title="Download backup"
-                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
                   >
                     <Download className="h-3.5 w-3.5" />
                     Download
                   </a>
                   <button
                     onClick={() => setRestoreTarget(file)}
-                    title="Restore this backup to production"
-                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-colors"
+                    title="Restore from this backup"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                     Restore
@@ -383,35 +357,7 @@ export default function BackupPage(): React.ReactElement {
         <RestoreModal
           file={restoreTarget}
           onClose={() => setRestoreTarget(null)}
-          onRestored={handleRestored}
         />
-      )}
-
-      {/* ── Post-restore countdown overlay (blocks all interaction) ──────── */}
-      {countdown !== null && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center space-y-5">
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-neutral-900">Database Restored Successfully</h2>
-              <p className="text-sm text-neutral-500 mt-1">
-                All sessions have been invalidated. Redirecting to login&nbsp;in…
-              </p>
-            </div>
-            <div className="text-5xl font-bold text-neutral-900 tabular-nums">{countdown}</div>
-            <div className="w-full bg-neutral-100 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-green-500 h-full rounded-full transition-all duration-1000 ease-linear"
-                style={{ width: `${(countdown / 10) * 100}%` }}
-              />
-            </div>
-            <p className="text-xs text-neutral-400">
-              Please wait for this countdown before logging back in to ensure all data is fully available.
-            </p>
-          </div>
-        </div>
       )}
     </div>
   )

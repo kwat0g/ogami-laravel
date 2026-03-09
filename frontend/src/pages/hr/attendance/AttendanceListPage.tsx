@@ -268,26 +268,7 @@ export default function AttendanceListPage() {
 
       {/* Header Actions */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-sm text-neutral-500">{data?.meta?.total ?? 0} records</p>
-          {(filters.employee_id || searchValue || filters.search) && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-sm text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded">
-                Filtered by: {searchValue || filters.search || `Employee #${filters.employee_id}`}
-              </span>
-              <button
-                onClick={() => {
-                  setFilters((f) => ({ ...f, employee_id: undefined, search: undefined, page: 1 }))
-                  setSearchValue('')
-                  setUserModifiedSearch(false)
-                }}
-                className="text-xs text-neutral-500 hover:text-red-600 underline"
-              >
-                Clear filter
-              </button>
-            </div>
-          )}
-        </div>
+        <p className="text-sm text-neutral-500">{data?.meta?.total ?? 0} records</p>
       </div>
 
       {/* Filters */}

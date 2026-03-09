@@ -6,7 +6,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
-import { useUiStore } from '@/stores/uiStore'
 import { useRealtimeEvents } from '@/hooks/useRealtimeEvents'
 import { disconnectEcho } from '@/lib/echo'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -42,8 +41,6 @@ import {
   Settings,
   Truck,
   ShieldCheck,
-  AlertTriangle,
-  RefreshCw,
 } from 'lucide-react'
 
 interface NavChild {
@@ -486,39 +483,7 @@ export default function AppLayout() {
   const { isAuthenticated, isLoading, user } = useAuth()
   const { clearAuth, hasPermission, hasRole } = useAuthStore()
   const queryClient = useQueryClient()
-  const systemRestoreInProgress = useUiStore((s) => s.systemRestoreInProgress)
 
-  // ── Restore status polling (independent of Reverb / WebSockets) ────────────
-  // Polls the public /api/v1/system/restore-status endpoint every 5 s using
-  // native fetch (not axios) so it is completely isolated from the auth system
-  // and works even after sessions are wiped.
-  //
-  //  in_progress = true  → show blocking overlay for everyone
-  //  in_progress = false → if we previously saw true, the restore just finished
-  //                        → force logout immediately (don't wait for 401 poll)
-  const _seenRestoreInProgress = useRef(false)
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch('/api/v1/system/restore-status')
-        if (!res.ok) return
-        const { in_progress } = await res.json() as { in_progress: boolean }
-        if (in_progress) {
-          _seenRestoreInProgress.current = true
-          useUiStore.getState().setSystemRestore(true)
-        } else if (_seenRestoreInProgress.current) {
-          // Restore just completed — force everyone to login immediately
-          queryClient.clear()
-          useAuthStore.getState().clearAuth()
-          window.location.replace('/login')
-        }
-      } catch { /* network hiccup — next tick will retry */ }
-    }
-    void check()
-    const id = setInterval(() => { void check() }, 5_000)
-    return () => clearInterval(id)
-  }, [queryClient])
-  
   // Sidebar collapse state - persist in localStorage
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar-collapsed')
@@ -564,31 +529,7 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50">
 
-      {/* ── System restore blocking overlay (all users) ────────────────── */}
-      {systemRestoreInProgress && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center space-y-5">
-            <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
-              <AlertTriangle className="h-8 w-8 text-amber-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-neutral-900">System Maintenance</h2>
-              <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
-                An administrator is restoring the database. All sessions will be
-                invalidated once the restore is complete.
-              </p>
-              <p className="text-sm font-medium text-amber-700 mt-2">
-                You will be redirected to the login page automatically.
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-2 text-sm text-neutral-600 bg-neutral-50 rounded-lg p-3 border border-neutral-200">
-              <RefreshCw className="h-4 w-4 animate-spin text-neutral-400" />
-              <span>Please wait, do not close this tab…</span>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar */
       <aside
         className="hidden lg:flex flex-shrink-0 bg-white border-r border-neutral-200 flex-col relative z-20 transition-all duration-200"
         style={{ width: isSidebarExpanded ? 230 : 64 }}
