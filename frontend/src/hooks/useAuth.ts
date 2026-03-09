@@ -53,7 +53,17 @@ export function useAuth() {
     // the setAuth() useEffect hasn't run yet (runs after render). Without
     // this guard, RequirePermission renders with an empty store and redirects
     // to /403 for one cycle before the store is set.
-    isLoading: query.isLoading || (query.isSuccess && !user),
+    //
+    // Guard: only treat as loading when this is the absolute first-ever fetch
+    // (neither dataUpdatedAt nor errorUpdatedAt have been set yet). TQ v5
+    // resets status → 'pending' on any refetch where data === undefined, so
+    // plain query.isLoading flickers to true on every window-focus refetch
+    // and refetchInterval tick while on the login page — unmounting <Outlet />
+    // and wiping the form. Checking both timestamps ensures background
+    // refetches after any prior response never show the skeleton.
+    isLoading:
+      (query.isLoading && query.dataUpdatedAt === 0 && query.errorUpdatedAt === 0)
+      || (query.isSuccess && !user),
     isAuthenticated: !!(user ?? query.data),
   }
 }
