@@ -276,14 +276,27 @@ final class BackupController extends Controller
             'timestamp'  => now()->toIso8601String(),
         ]);
 
-        // Flush all Redis sessions so every user is forced to log in again.
-        // Session keys end with the 40-char alphanumeric session ID; other keys
-        // (Horizon, Pulse, cache) always contain colons or other separators.
-        // Note: PhpRedis auto-applies the prefix to keys() patterns AND del() args,
-        // so keys() returns fully-prefixed strings and del() needs them stripped.
+        // Flush every Redis session so all users (including the current admin)
+        // are forced to log in again with the restored data.
+        //
+        // We MUST invalidate the current request session BEFORE the Redis scan,
+        // because Laravel's session middleware re-saves the session after the
+        // controller returns — so deleting it mid-request is not enough for the
+        // current user. Invalidating here marks it as deleted; the middleware
+        // will then write a brand-new, unauthenticated session instead.
+        try {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        } catch (\Throwable) {
+            Log::warning('[BackupRestore] Could not invalidate current session after restore.');
+        }
+
+        // Delete all other sessions from Redis.
+        // PhpRedis auto-applies the prefix, so keys() returns fully-prefixed
+        // strings while del() expects the bare (un-prefixed) key names.
         try {
             $redisPrefix = config('database.redis.options.prefix', '');
-            $allKeys     = \Illuminate\Support\Facades\Redis::keys('*'); // already prefixed
+            $allKeys     = \Illuminate\Support\Facades\Redis::keys('*');
             $stripped    = array_filter(
                 array_map(fn (string $k) => substr($k, strlen($redisPrefix)), $allKeys),
                 static fn (string $bare): bool =>
@@ -293,7 +306,6 @@ final class BackupController extends Controller
                 \Illuminate\Support\Facades\Redis::del(array_values($stripped));
             }
         } catch (\Throwable) {
-            // Non-fatal — log but don't fail the restore response
             Log::warning('[BackupRestore] Could not flush Redis sessions after restore.');
         }
 
