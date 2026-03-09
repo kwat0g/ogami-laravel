@@ -40,6 +40,13 @@ $WITH_REVERB && echo -e "${CYAN}Reverb: enabled${RESET}"
 # Each entry: "container-name|host-port|service-label"
 # If the host port is already bound (e.g. by ogami_postgres from docker-compose)
 # we skip starting the named container so there's no bind conflict.
+# ── Kill any stale dev processes from previous sessions ──────────────────────
+pkill -f "artisan serve"    2>/dev/null || true
+pkill -f "artisan reverb"   2>/dev/null || true
+pkill -f "artisan queue:work" 2>/dev/null || true
+pkill -f "vite"             2>/dev/null || true
+sleep 0.5
+
 declare -A SERVICE_PORT=( [ogami_postgres]=5432 [ogami_redis]=6379 )
 
 for container in ogami_postgres ogami_redis; do
