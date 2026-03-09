@@ -50,6 +50,9 @@ function SystemRestoreOverlay() {
       setTimeout(() => {
         if (!window.location.pathname.startsWith('/login')) {
           window.location.replace('/login')
+        } else {
+          // Already on /login — just dismiss the overlay
+          setVisible(false)
         }
       }, 3_000)
     }
