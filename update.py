@@ -12,8 +12,6 @@ Usage:
 import pexpect
 import sys
 import time
-import subprocess
-import os
 
 # ── Configuration (must match deploy.py) ─────────────────────────────────────
 HOST    = "45.151.155.64"
@@ -67,21 +65,8 @@ class VPS:
         self.c.close()
 
 
-def switch_env(target: str) -> None:
-    """Switch local .env using env.py."""
-    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "env.py")
-    result = subprocess.run([sys.executable, script, target], capture_output=False)
-    if result.returncode != 0:
-        print(f"\033[31m  ✘ Failed to switch env to '{target}'. Aborting.\033[0m")
-        sys.exit(1)
-
-
 def update() -> None:
     banner("Ogami ERP — Production Update")
-
-    # Switch local .env to production before doing anything
-    banner("0/5 — Switch local env → production")
-    switch_env("production")
 
     vps = VPS()
 
@@ -174,10 +159,6 @@ def update() -> None:
     vps.run(f"curl -sk https://{DOMAIN}/api/health 2>&1", timeout=15)
 
     vps.close()
-
-    # Switch local .env back to local development
-    banner("Switch local env → local")
-    switch_env("local")
 
     banner("UPDATE COMPLETE")
     print(f"  URL    : https://{DOMAIN}")
