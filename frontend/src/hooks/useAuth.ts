@@ -23,6 +23,12 @@ export function useAuth() {
     retry: false,
     // Prevent re-fetching when components mount/unmount
     refetchOnMount: false,
+    // Re-validate session when the user returns to the tab (catches post-restore logouts)
+    refetchOnWindowFocus: true,
+    // Background poll every 90 seconds as a fallback for users not connected to
+    // Reverb — ensures session wipes (e.g. after DB restore) are detected quickly
+    // even for idle users. The api.ts 401 interceptor then redirects to /login.
+    refetchInterval: 90_000,
   })
 
   useEffect(() => {

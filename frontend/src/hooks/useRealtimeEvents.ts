@@ -22,6 +22,7 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getEcho } from '@/lib/echo'
 import { useUiStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 
 interface PayrollStatusPayload {
   run_id: number
@@ -38,19 +39,41 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
   const qc = useQueryClient()
   const setSystemRestore = useUiStore((s) => s.setSystemRestore)
 
+  // ── Public system channel — subscribed for ALL authenticated users ────────
+  // Must be outside the userId guard so the restore-completed redirect fires
+  // even if userId resolves slightly after mount.
   useEffect(() => {
-    if (!userId) return
-
     const echo = getEcho()
-    if (!echo) return // Reverb not configured — skip WS, polling is the fallback
+    if (!echo) return
 
-    // ── 0. Public system channel — no auth required ───────────────────────────
-    // Fires when an admin initiates a DB restore so all users get a warning overlay.
     const systemCh = echo
       .channel('system')
       .listen('.system.restore.starting', () => {
         setSystemRestore(true)
       })
+      .listen('.system.restore.completed', () => {
+        // Force everyone to /login so they re-authenticate against the restored DB.
+        // Clear query cache and auth state first so no stale data is served.
+        qc.clear()
+        useAuthStore.getState().clearAuth()
+        window.location.replace('/login')
+      })
+
+    return () => {
+      systemCh
+        .stopListening('.system.restore.starting')
+        .stopListening('.system.restore.completed')
+      echo.leave('system')
+    }
+  }, [qc, setSystemRestore])
+
+  // ── 2. Per-user private channels ─────────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return
+
+    const echo = getEcho()
+    if (!echo) return
+
     const userCh = echo
       .private(`user.${userId}`)
       // Leave events → invalidate the leave list + unread badge
@@ -66,52 +89,40 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
       .listen('.payroll.status_changed', (e: PayrollStatusPayload) => {
         void qc.invalidateQueries({ queryKey: ['notifications'] })
         void qc.invalidateQueries({ queryKey: ['payroll-runs'] })
-        // If the user has this specific run open, refresh it immediately
         void qc.invalidateQueries({ queryKey: ['payroll-run', String(e.run_id)] })
       })
 
-    // ── 2. Laravel Notification broadcast on App.Models.User.{id} ────────────
-    // Fired by any Notification class that includes the 'broadcast' channel.
-    // We inspect the notification type to invalidate the right domain query keys.
+    // Laravel Notification broadcast on App.Models.User.{id}
     const notifCh = echo
       .private(`App.Models.User.${userId}`)
       .notification((notif: NotificationPayload) => {
-        // Always refresh the notifications badge/list
         void qc.invalidateQueries({ queryKey: ['notifications'] })
 
-        // Invalidate domain-specific queries based on notification type
         const type = notif?.type ?? ''
 
         if (type.includes('Loan')) {
           void qc.invalidateQueries({ queryKey: ['loans'] })
           void qc.invalidateQueries({ queryKey: ['team-loans'] })
         }
-
         if (type.includes('Overtime')) {
           void qc.invalidateQueries({ queryKey: ['overtime-requests'] })
           void qc.invalidateQueries({ queryKey: ['team-overtime-requests'] })
         }
-
         if (type.includes('Leave')) {
           void qc.invalidateQueries({ queryKey: ['leave-requests'] })
           void qc.invalidateQueries({ queryKey: ['team-leave-requests'] })
           void qc.invalidateQueries({ queryKey: ['leave-balances'] })
           void qc.invalidateQueries({ queryKey: ['leave-calendar'] })
         }
-
         if (type.includes('VendorInvoice')) {
           void qc.invalidateQueries({ queryKey: ['ap-invoices'] })
         }
-
         if (type.includes('Payroll')) {
           void qc.invalidateQueries({ queryKey: ['payroll-runs'] })
         }
       })
 
     return () => {
-      // Clean up listeners but leave the WS connection alive for re-use
-      systemCh.stopListening('.system.restore.starting')
-      echo.leave('system')
       userCh
         .stopListening('.leave.filed')
         .stopListening('.leave.decided')
@@ -120,5 +131,6 @@ export function useRealtimeEvents(userId: number | null | undefined): void {
       echo.leave(`user.${userId}`)
       echo.leave(`App.Models.User.${userId}`)
     }
-  }, [userId, qc, setSystemRestore])
+  }, [userId, qc])
 }
+

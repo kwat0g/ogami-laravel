@@ -348,6 +348,18 @@ final class BackupController extends Controller
             Log::warning('[BackupRestore] Could not flush Redis sessions after restore.');
         }
 
+        // Notify all still-connected WebSocket clients to redirect to /login.
+        // This covers idle users who would not otherwise get a 401 response.
+        // ShouldBroadcastNow fires via Redis pub/sub (no DB required), so it
+        // works correctly even after the schema was dropped and rebuilt.
+        try {
+            event(new \App\Events\System\SystemRestoreCompleted(
+                filename: $validated['filename'],
+            ));
+        } catch (\Throwable) {
+            Log::warning('[BackupRestore] Could not broadcast SystemRestoreCompleted.');
+        }
+
         return response()->json([
             'success' => true,
             'message' => "Database successfully restored from '{$validated['filename']}'. All users have been logged out.",
