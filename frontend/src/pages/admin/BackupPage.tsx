@@ -40,6 +40,9 @@ function RestoreModal({ file, onClose }: RestoreModalProps): React.ReactElement 
       const result = await restoreMutation.mutateAsync({ filename: file.filename, confirm: 'CONFIRM' })
       toast.success(result.message)
       onClose()
+      // Force a full reload so the restored DB state is reflected and the
+      // current user (whose session was wiped) is redirected to login.
+      setTimeout(() => { window.location.href = '/login' }, 1500)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'Restore failed. Check server logs.'

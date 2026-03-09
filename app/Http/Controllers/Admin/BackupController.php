@@ -180,6 +180,15 @@ final class BackupController extends Controller
             ], 500);
         }
 
+        // Rename the safety backup so it's clearly labelled as pre-restore
+        $safetyFiles = $this->getAllBackupFiles();
+        if (! empty($safetyFiles)) {
+            $newest      = $safetyFiles[0];
+            $restoreSlug = preg_replace('/[^a-zA-Z0-9_\-]/', '_', pathinfo($validated['filename'], PATHINFO_FILENAME));
+            $labelledName = 'pre-restore--' . $restoreSlug . '--' . basename($newest);
+            @rename($newest, dirname($newest) . '/' . $labelledName);
+        }
+
         // ── Extract archive ───────────────────────────────────────────────────
         $extractDir = storage_path('app/backup-temp/restore-ui-'.now()->format('YmdHis'));
         File::ensureDirectoryExists($extractDir);
@@ -267,9 +276,30 @@ final class BackupController extends Controller
             'timestamp'  => now()->toIso8601String(),
         ]);
 
+        // Flush all Redis sessions so every user is forced to log in again.
+        // Session keys end with the 40-char alphanumeric session ID; other keys
+        // (Horizon, Pulse, cache) always contain colons or other separators.
+        // Note: PhpRedis auto-applies the prefix to keys() patterns AND del() args,
+        // so keys() returns fully-prefixed strings and del() needs them stripped.
+        try {
+            $redisPrefix = config('database.redis.options.prefix', '');
+            $allKeys     = \Illuminate\Support\Facades\Redis::keys('*'); // already prefixed
+            $stripped    = array_filter(
+                array_map(fn (string $k) => substr($k, strlen($redisPrefix)), $allKeys),
+                static fn (string $bare): bool =>
+                    (bool) preg_match('/[a-zA-Z0-9]{40}$/', $bare) && ! str_contains($bare, ':'),
+            );
+            if (! empty($stripped)) {
+                \Illuminate\Support\Facades\Redis::del(array_values($stripped));
+            }
+        } catch (\Throwable) {
+            // Non-fatal — log but don't fail the restore response
+            Log::warning('[BackupRestore] Could not flush Redis sessions after restore.');
+        }
+
         return response()->json([
             'success' => true,
-            'message' => "Database successfully restored from '{$validated['filename']}'. All users need to log in again.",
+            'message' => "Database successfully restored from '{$validated['filename']}'. All users have been logged out.",
         ]);
     }
 
