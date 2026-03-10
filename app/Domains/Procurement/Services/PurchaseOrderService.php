@@ -183,7 +183,7 @@ final class PurchaseOrderService implements ServiceContract
         $vendor = Vendor::findOrFail($poData['vendor_id']);
         $vendor->assertAccredited();
 
-        return DB::transaction(function () use ($po, $poData, $itemUpdates, $vendor, $actor): PurchaseOrder {
+        return DB::transaction(function () use ($po, $poData, $itemUpdates, $vendor): PurchaseOrder {
             $po->update([
                 'vendor_id'        => $vendor->id,
                 'delivery_date'    => $poData['delivery_date']    ?? null,

@@ -19,6 +19,16 @@ const ALLOWED_TRANSITIONS: Record<EmploymentStatus, EmploymentStatus[]> = {
   terminated: [],
 }
 
+// Color coding for status transitions
+const transitionColors: Record<EmploymentStatus, string> = {
+  active:     'bg-green-600 text-white hover:bg-green-700',
+  on_leave:   'bg-blue-600 text-white hover:bg-blue-700',
+  suspended:  'bg-amber-600 text-white hover:bg-amber-700',
+  resigned:   'bg-red-600 text-white hover:bg-red-700',
+  terminated: 'bg-red-600 text-white hover:bg-red-700',
+  draft:      'bg-neutral-600 text-white hover:bg-neutral-700',
+}
+
 function statusLabel(s: string | undefined | null) {
   if (!s) return '—'
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -80,7 +90,7 @@ export default function EmployeeDetailPage() {
                 <button
                   disabled={isSodBlocked}
                   title={isSodBlocked ? activateReason : undefined}
-                  className="px-3 py-2 text-xs border border-neutral-300 rounded text-neutral-700 hover:bg-neutral-50 transition-colors capitalize disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`px-3 py-2 text-xs rounded transition-colors capitalize disabled:opacity-50 disabled:cursor-not-allowed ${transitionColors[state]}`}
                 >
                   → {statusLabel(state)}
                 </button>

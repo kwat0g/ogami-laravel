@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AR\CustomerController;
+use App\Http\Controllers\AR\CustomerCreditNoteController;
 use App\Http\Controllers\AR\CustomerInvoiceController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,4 +63,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('invoices/{customerInvoice}/write-off', [CustomerInvoiceController::class, 'writeOff'])
         ->middleware('throttle:api-action')
         ->name('ar-invoices.write-off');
+
+    // ── AR Credit / Debit Notes ───────────────────────────────────────────────
+    Route::get('credit-notes', [CustomerCreditNoteController::class, 'index'])
+        ->name('customer-credit-notes.index');
+
+    Route::post('credit-notes', [CustomerCreditNoteController::class, 'store'])
+        ->middleware('throttle:api-action')
+        ->name('customer-credit-notes.store');
+
+    Route::get('credit-notes/{customerCreditNote}', [CustomerCreditNoteController::class, 'show'])
+        ->name('customer-credit-notes.show');
+
+    Route::patch('credit-notes/{customerCreditNote}/post', [CustomerCreditNoteController::class, 'post'])
+        ->middleware(['sod:customer_credit_notes,post', 'throttle:api-action'])
+        ->name('customer-credit-notes.post');
 });

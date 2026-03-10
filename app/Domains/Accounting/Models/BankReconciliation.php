@@ -7,6 +7,7 @@ namespace App\Domains\Accounting\Models;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -39,7 +40,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class BankReconciliation extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid;
+    use AuditableTrait, HasPublicUlid, SoftDeletes;
 
     protected $table = 'bank_reconciliations';
 

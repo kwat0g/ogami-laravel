@@ -12,4 +12,5 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/molds/{moldMaster}', [MoldController::class, 'update']);
     Route::post('/molds/{moldMaster}/shots', [MoldController::class, 'logShots'])
         ->middleware('throttle:60,1');
+    Route::patch('/molds/{moldMaster}/retire', [MoldController::class, 'retire']);
 });

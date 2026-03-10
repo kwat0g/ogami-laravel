@@ -25,6 +25,36 @@ parameters:
 			path: app/Console/Commands/VerifyBackupCommand.php
 
 		-
+			message: '#^Method App\\Domains\\AP\\Models\\Vendor\:\:vendorItems\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\AP\\Models\\VendorItem, App\\Domains\\AP\\Models\\Vendor\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\AP\\Models\\VendorItem, \$this\(App\\Domains\\AP\\Models\\Vendor\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/AP/Models/Vendor.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Domains\\AP\\Models\\VendorFulfillmentNote\>\:\:withTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Domains/AP/Models/VendorFulfillmentNote.php
+
+		-
+			message: '#^Method App\\Domains\\AP\\Models\\VendorFulfillmentNote\:\:purchaseOrder\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Procurement\\Models\\PurchaseOrder, App\\Domains\\AP\\Models\\VendorFulfillmentNote\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Procurement\\Models\\PurchaseOrder, \$this\(App\\Domains\\AP\\Models\\VendorFulfillmentNote\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/AP/Models/VendorFulfillmentNote.php
+
+		-
+			message: '#^Method App\\Domains\\AP\\Models\\VendorFulfillmentNote\:\:vendorUser\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\AP\\Models\\VendorFulfillmentNote\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\AP\\Models\\VendorFulfillmentNote\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/AP/Models/VendorFulfillmentNote.php
+
+		-
+			message: '#^Method App\\Domains\\AP\\Models\\VendorItem\:\:vendor\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\AP\\Models\\Vendor, App\\Domains\\AP\\Models\\VendorItem\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\AP\\Models\\Vendor, \$this\(App\\Domains\\AP\\Models\\VendorItem\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/AP/Models/VendorItem.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ap_account_id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -200,6 +230,42 @@ parameters:
 			path: app/Domains/Attendance/Services/OvertimeRequestService.php
 
 		-
+			message: '#^Method App\\Domains\\CRM\\Models\\Ticket\:\:assignedTo\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\CRM\\Models\\Ticket\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\CRM\\Models\\Ticket\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/CRM/Models/Ticket.php
+
+		-
+			message: '#^Method App\\Domains\\CRM\\Models\\Ticket\:\:clientUser\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\CRM\\Models\\Ticket\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\CRM\\Models\\Ticket\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/CRM/Models/Ticket.php
+
+		-
+			message: '#^Method App\\Domains\\CRM\\Models\\Ticket\:\:customer\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\AR\\Models\\Customer, App\\Domains\\CRM\\Models\\Ticket\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\AR\\Models\\Customer, \$this\(App\\Domains\\CRM\\Models\\Ticket\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/CRM/Models/Ticket.php
+
+		-
+			message: '#^Method App\\Domains\\CRM\\Models\\Ticket\:\:messages\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\CRM\\Models\\TicketMessage, App\\Domains\\CRM\\Models\\Ticket\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\CRM\\Models\\TicketMessage, \$this\(App\\Domains\\CRM\\Models\\Ticket\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/CRM/Models/Ticket.php
+
+		-
+			message: '#^Method App\\Domains\\CRM\\Models\\TicketMessage\:\:author\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\CRM\\Models\\TicketMessage\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\CRM\\Models\\TicketMessage\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/CRM/Models/TicketMessage.php
+
+		-
+			message: '#^Method App\\Domains\\CRM\\Models\\TicketMessage\:\:ticket\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\CRM\\Models\\Ticket, App\\Domains\\CRM\\Models\\TicketMessage\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\CRM\\Models\\Ticket, \$this\(App\\Domains\\CRM\\Models\\TicketMessage\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/CRM/Models/TicketMessage.php
+
+		-
 			message: '#^Method App\\Domains\\HR\\Models\\Employee\:\:supervisor\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Employee, App\\Domains\\HR\\Models\\Employee\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Employee, \$this\(App\\Domains\\HR\\Models\\Employee\)\>\.$#'
 			identifier: return.type
 			count: 1
@@ -233,12 +299,6 @@ parameters:
 			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Domains/ISO/Services/ISOService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\ControlledDocument\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 3
 			path: app/Domains/ISO/Services/ISOService.php
 
 		-
@@ -321,6 +381,12 @@ parameters:
 
 		-
 			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:notedBy\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Domains/Inventory/Models/MaterialRequisition.php
+
+		-
+			message: '#^Method App\\Domains\\Inventory\\Models\\MaterialRequisition\:\:productionOrder\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Production\\Models\\ProductionOrder, App\\Domains\\Inventory\\Models\\MaterialRequisition\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\Production\\Models\\ProductionOrder, \$this\(App\\Domains\\Inventory\\Models\\MaterialRequisition\)\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Domains/Inventory/Models/MaterialRequisition.php
@@ -440,52 +506,10 @@ parameters:
 			path: app/Domains/Leave/Services/LeaveRequestService.php
 
 		-
-			message: '#^Access to an undefined property App\\Domains\\Maintenance\\Models\\MaintenanceWorkOrder\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Maintenance/Services/MaintenanceService.php
-
-		-
 			message: '#^Class App\\Shared\\Exceptions\\DomainException constructor invoked with 1 parameter, 3\-5 required\.$#'
 			identifier: arguments.count
 			count: 2
 			path: app/Domains/Maintenance/Services/MaintenanceService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$current_shots\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Mold/Models/MoldMaster.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$max_shots\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Mold/Models/MoldMaster.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$current_shots\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Mold/Services/MoldService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$max_shots\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Mold/Services/MoldService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$mold_code\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Mold/Services/MoldService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Mold\\Models\\MoldMaster\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/Mold/Services/MoldService.php
 
 		-
 			message: '#^Instanceof between Illuminate\\Support\\Carbon and DateTimeInterface will always evaluate to true\.$#'
@@ -690,24 +714,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Domains/QC/Services/InspectionTemplateService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/QC/Services/NcrService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\NonConformanceReport\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/QC/Services/NcrService.php
-
-		-
-			message: '#^Class App\\Shared\\Exceptions\\DomainException constructor invoked with 1 parameter, 3\-5 required\.$#'
-			identifier: arguments.count
-			count: 3
-			path: app/Domains/QC/Services/NcrService.php
 
 		-
 			message: '#^Instantiated class App\\Exceptions\\DomainException not found\.$#'
@@ -1022,6 +1028,24 @@ parameters:
 			path: app/Http/Controllers/Payroll/PayrollRunController.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$audit_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/QC/NcrController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Domains\\QC\\Models\\CapaAction\>\:\:transform\(\) expects callable\(App\\Domains\\QC\\Models\\CapaAction, int\)\: App\\Domains\\QC\\Models\\CapaAction, Closure\(App\\Domains\\QC\\Models\\CapaAction\)\: array\{id\: int, ulid\: string, type\: string, description\: string, due_date\: string\|null, status\: string, completed_at\: string\|null, ncr_id\: int\|null, audit_finding_id\: int\|null, ncr_reference\: string\|null, audit_reference\: mixed, assigned_to\: array\{id\: int, name\: string\}\|null\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/QC/NcrController.php
+
+		-
+			message: '#^Method App\\Domains\\AP\\Services\\VendorItemService\:\:update\(\) invoked with 3 parameters, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Http/Controllers/VendorPortal/VendorPortalController.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1048,7 +1072,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Http/Resources/AP/VendorInvoiceResource.php
 
 		-
@@ -1064,7 +1088,19 @@ parameters:
 			path: app/Http/Resources/AP/VendorInvoiceResource.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$po_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reference_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AP/VendorInvoiceResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ulid\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/AP/VendorInvoiceResource.php
@@ -1772,6 +1808,12 @@ parameters:
 			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
 
 		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$labor_hours\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$mwo_reference\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2164,7 +2206,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\Production\\ProductionOrderResource\:\:\$status\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Http/Resources/Production/ProductionOrderResource.php
 
 		-
@@ -2390,98 +2432,20 @@ parameters:
 			path: app/Http/Resources/QC/InspectionTemplateResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$completed_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$due_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\CapaAction\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
 			message: '#^Access to an undefined property App\\Domains\\QC\\Models\\Inspection\:\:\$inspection_reference\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/QC/NcrResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$closed_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$deleted_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$ncr_reference\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$severity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\QC\\NcrResource\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/QC/NcrResource.php
-
-		-
-			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{id\: int, ulid\: string, type\: mixed, description\: mixed, due_date\: mixed, status\: mixed, assigned_to\: array\{id\: int, name\: string\}\|null, completed_at\: mixed\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, ulid\: string, type\: mixed, description\: mixed, due_date\: mixed, status\: mixed, assigned_to\: array\{id\: int, name\: string\}\|null, completed_at\: mixed\}\>\.$#'
+			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{id\: int, ulid\: string, type\: string, description\: string, due_date\: string\|null, status\: string, assigned_to\: array\{id\: int, name\: string\}\|null, completed_at\: string\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, ulid\: string, type\: string, description\: string, due_date\: string\|null, status\: string, assigned_to\: array\{id\: int, name\: string\}\|null, completed_at\: string\|null\}\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Http/Resources/QC/NcrResource.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Domains\\QC\\Models\\CapaAction\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Resources/QC/NcrResource.php
 
@@ -2514,6 +2478,24 @@ parameters:
 			identifier: argument.unresolvableType
 			count: 2
 			path: app/Jobs/AP/SendApDueDateAlertJob.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$customer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/AR/CreateCustomerInvoiceOnShipmentDelivered.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$deliverySchedule\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/AR/CreateCustomerInvoiceOnShipmentDelivered.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/AR/CreateCustomerInvoiceOnShipmentDelivered.php
 
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'

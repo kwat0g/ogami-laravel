@@ -17,13 +17,37 @@ use OwenIt\Auditing\Contracts\Auditable;
 /**
  * Material Requisition — 5-stage SoD (Staff → Head → Manager → Officer → VP).
  *
- * @property int $id
- * @property string $ulid
- * @property string $mr_reference
- * @property int $requested_by_id
- * @property int $department_id
- * @property string $purpose
- * @property string $status draft|submitted|noted|checked|reviewed|approved|rejected|cancelled|fulfilled
+ * @property int                             $id
+ * @property string                          $ulid
+ * @property string                          $mr_reference
+ * @property int                             $requested_by_id
+ * @property int|null                        $department_id
+ * @property int|null                        $production_order_id
+ * @property string                          $purpose
+ * @property string                          $status             draft|submitted|noted|checked|reviewed|approved|rejected|cancelled|fulfilled
+ * @property string|null                     $remarks
+ * @property int|null                        $submitted_by_id
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property int|null                        $noted_by_id
+ * @property \Illuminate\Support\Carbon|null $noted_at
+ * @property string|null                     $noted_comments
+ * @property int|null                        $checked_by_id
+ * @property \Illuminate\Support\Carbon|null $checked_at
+ * @property string|null                     $checked_comments
+ * @property int|null                        $reviewed_by_id
+ * @property \Illuminate\Support\Carbon|null $reviewed_at
+ * @property string|null                     $reviewed_comments
+ * @property int|null                        $vp_approved_by_id
+ * @property \Illuminate\Support\Carbon|null $vp_approved_at
+ * @property string|null                     $vp_comments
+ * @property int|null                        $rejected_by_id
+ * @property \Illuminate\Support\Carbon|null $rejected_at
+ * @property string|null                     $rejection_reason
+ * @property int|null                        $fulfilled_by_id
+ * @property \Illuminate\Support\Carbon|null $fulfilled_at
+ * @property \Illuminate\Support\Carbon      $created_at
+ * @property \Illuminate\Support\Carbon      $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  */
 final class MaterialRequisition extends Model implements Auditable
 {
@@ -38,6 +62,7 @@ final class MaterialRequisition extends Model implements Auditable
         'production_order_id',
         'purpose',
         'status',
+        'remarks',
         'submitted_by_id', 'submitted_at',
         'noted_by_id', 'noted_at', 'noted_comments',
         'checked_by_id', 'checked_at', 'checked_comments',

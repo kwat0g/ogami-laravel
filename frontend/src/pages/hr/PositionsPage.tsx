@@ -9,6 +9,7 @@ import {
 } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { Position } from '@/types/hr'
 
 interface PosFormState {
@@ -45,8 +46,18 @@ export default function PositionsPage() {
   }
   const closeForm = () => setForm(null)
 
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
   const set = (field: keyof PosFormState, value: unknown) =>
     setForm((f) => f ? { ...f, [field]: value } : f)
+
+  const confirmDelete = () => {
+    if (!deleteId) return
+    remove.mutate(deleteId, { 
+      onSuccess: () => { toast.success('Position deleted.'); setDeleteId(null) }, 
+      onError: () => toast.error('Failed to delete position.') 
+    })
+  }
 
   const handleSave = () => {
     if (!form) return
@@ -104,13 +115,25 @@ export default function PositionsPage() {
                 </td>
                 <td className="px-3 py-2 flex gap-2">
                   <button onClick={() => openEdit(pos)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                  <button onClick={() => confirm('Delete this position?') && remove.mutate(pos.id, { onSuccess: () => toast.success('Position deleted.'), onError: () => toast.error('Failed to delete position.') })} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+                  <button onClick={() => setDeleteId(pos.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Position?"
+        description="This action cannot be undone. Any employees assigned to this position will need to be reassigned."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={remove.isPending}
+      />
 
       {/* Modal */}
       {form !== null && (

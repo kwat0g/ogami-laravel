@@ -8,6 +8,8 @@ use App\Domains\Maintenance\Models\Equipment;
 use App\Domains\Maintenance\Models\MaintenanceWorkOrder;
 use App\Domains\Maintenance\Services\MaintenanceService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Maintenance\AddMaintenancePartRequest;
+use App\Http\Requests\Maintenance\CompleteWorkOrderRequest;
 use App\Http\Requests\Maintenance\StoreEquipmentRequest;
 use App\Http\Requests\Maintenance\StoreMaintenanceWorkOrderRequest;
 use App\Http\Requests\Maintenance\StorePmScheduleRequest;
@@ -79,17 +81,33 @@ final class MaintenanceController extends Controller
         return new MaintenanceWorkOrderResource($this->service->startWorkOrder($maintenanceWorkOrder));
     }
 
-    public function completeWorkOrder(Request $request, MaintenanceWorkOrder $maintenanceWorkOrder): MaintenanceWorkOrderResource
+    public function completeWorkOrder(CompleteWorkOrderRequest $request, MaintenanceWorkOrder $maintenanceWorkOrder): MaintenanceWorkOrderResource
     {
         $this->authorize('update', $maintenanceWorkOrder);
-        $data = $request->validate([
-            'completion_notes'       => 'required|string',
-            'labor_hours'            => 'nullable|numeric|min:0',
-            'actual_completion_date' => 'nullable|date',
-        ]);
+        $data = $request->validated();
         return new MaintenanceWorkOrderResource(
-            $this->service->completeWorkOrder($maintenanceWorkOrder, $data)
+            $this->service->completeWorkOrder($maintenanceWorkOrder, $data, $request->user())
         );
+    }
+
+    // ── Work Order Parts ────────────────────────────────────────────────────
+
+    public function indexParts(MaintenanceWorkOrder $maintenanceWorkOrder): JsonResponse
+    {
+        $this->authorize('view', $maintenanceWorkOrder);
+        $parts = $maintenanceWorkOrder->spareParts()->with(['item', 'location'])->get();
+        return response()->json(['data' => $parts]);
+    }
+
+    public function addPart(AddMaintenancePartRequest $request, MaintenanceWorkOrder $maintenanceWorkOrder): JsonResponse
+    {
+        $this->authorize('update', $maintenanceWorkOrder);
+
+        $validated = $request->validated();
+
+        $part = $this->service->addPart($maintenanceWorkOrder, $validated, $request->user()->id);
+
+        return response()->json(['data' => $part->load(['item', 'location'])], 201);
     }
 
     // ── PM Schedules ─────────────────────────────────────────────────────────

@@ -55,7 +55,7 @@ class Handler extends ExceptionHandler
         return parent::render($request, $e);
     }
 
-    private function renderApiException(Request $request, Throwable $e): JsonResponse
+    private function renderApiException(Request $request, Throwable $e): JsonResponse|\Symfony\Component\HttpFoundation\Response
     {
         // ── Domain-specific exceptions ────────────────────────────────────────
         if ($e instanceof SodViolationException) {

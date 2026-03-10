@@ -51,4 +51,17 @@ final class MoldController extends Controller
         $log = $this->service->logShots($moldMaster, $request->validated(), $request->user()->id);
         return response()->json(['data' => $log], 201);
     }
+
+    public function retire(Request $request, MoldMaster $moldMaster): JsonResponse
+    {
+        $this->authorize('update', $moldMaster);
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $mold = $this->service->retire($moldMaster, $validated['reason'] ?? '');
+
+        return response()->json(['data' => $mold]);
+    }
 }

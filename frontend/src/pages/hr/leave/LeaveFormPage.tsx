@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useLeaveTypes, useCreateLeaveRequest } from '@/hooks/useLeave'
 import { useEmployees } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { leaveRequestSchema, type LeaveRequestFormValues } from '@/schemas/leave'
 
 export default function LeaveFormPage() {
@@ -45,10 +46,7 @@ export default function LeaveFormPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">File Leave Request</h1>
-        <button onClick={() => navigate('/hr/leave')} className="text-sm text-neutral-500 hover:text-neutral-700">← Back</button>
-      </div>
+      <PageHeader title="File Leave Request" backTo="/hr/leave" />
 
       <div className="bg-white border border-neutral-200 rounded-lg p-6">
         {create.isError && (

@@ -8,6 +8,7 @@ import {
 } from '@/hooks/useLeave'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { parseApiError } from '@/lib/errorHandler'
 import { toast } from 'sonner'
 import type { LeaveFilters, LeaveRequest } from '@/types/hr'
@@ -21,6 +22,8 @@ export default function TeamLeavePage() {
 
   const [filters, setFilters] = useState<LeaveFilters>({ per_page: 25 })
   const [rejectId, setRejectId] = useState<number | null>(null)
+  const [approveId, setApproveId] = useState<number | null>(null)
+  const [checkId, setCheckId] = useState<number | null>(null)
   const [remarks, setRemarks] = useState('')
 
   const { data, isLoading, isError } = useTeamLeaveRequests(filters)
@@ -42,12 +45,9 @@ export default function TeamLeavePage() {
       buttons.push(
         <button
           key="head-approve"
-          onClick={() => headApprove.mutate({ id: row.id }, {
-            onSuccess: () => toast.success('Request approved by dept head.'),
-            onError: (err) => toast.error(parseApiError(err).message),
-          })}
+          onClick={() => setApproveId(row.id)}
           disabled={headApprove.isPending}
-          className="px-2.5 py-1 text-xs font-medium bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-2.5 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Approve
         </button>
@@ -57,7 +57,7 @@ export default function TeamLeavePage() {
           key="head-reject"
           onClick={() => setRejectId(row.id)}
           disabled={headApprove.isPending || reject.isPending}
-          className="px-2.5 py-1 text-xs font-medium border border-neutral-300 text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-2.5 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Reject
         </button>
@@ -69,10 +69,7 @@ export default function TeamLeavePage() {
       buttons.push(
         <button
           key="manager-check"
-          onClick={() => managerCheck.mutate({ id: row.id }, {
-            onSuccess: () => toast.success('Request checked by plant manager.'),
-            onError: (err) => toast.error(parseApiError(err).message),
-          })}
+          onClick={() => setCheckId(row.id)}
           disabled={managerCheck.isPending}
           className="px-2.5 py-1 text-xs font-medium bg-neutral-800 text-white rounded-md hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -84,7 +81,7 @@ export default function TeamLeavePage() {
           key="manager-reject"
           onClick={() => setRejectId(row.id)}
           disabled={managerCheck.isPending || reject.isPending}
-          className="px-2.5 py-1 text-xs font-medium border border-neutral-300 text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-2.5 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Reject
         </button>
@@ -200,6 +197,40 @@ export default function TeamLeavePage() {
         </div>
       )}
 
+      {/* Approve Confirmation */}
+      <ConfirmDialog
+        open={approveId !== null}
+        onClose={() => setApproveId(null)}
+        onConfirm={() => {
+          if (!approveId) return
+          headApprove.mutate({ id: approveId }, {
+            onSuccess: () => { toast.success('Request approved by dept head.'); setApproveId(null) },
+            onError: (err) => toast.error(parseApiError(err).message),
+          })
+        }}
+        title="Approve Leave Request"
+        description="Are you sure you want to approve this leave request? The employee will be notified."
+        confirmLabel="Approve"
+        loading={headApprove.isPending}
+      />
+
+      {/* Check Confirmation */}
+      <ConfirmDialog
+        open={checkId !== null}
+        onClose={() => setCheckId(null)}
+        onConfirm={() => {
+          if (!checkId) return
+          managerCheck.mutate({ id: checkId }, {
+            onSuccess: () => { toast.success('Request checked by plant manager.'); setCheckId(null) },
+            onError: (err) => toast.error(parseApiError(err).message),
+          })
+        }}
+        title="Check Leave Request"
+        description="Are you sure you want to mark this leave request as checked?"
+        confirmLabel="Check"
+        loading={managerCheck.isPending}
+      />
+
       {/* Reject Modal */}
       {rejectId && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -235,7 +266,7 @@ export default function TeamLeavePage() {
                   )
                 }}
                 disabled={!remarks.trim() || reject.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {reject.isPending ? 'Rejecting…' : 'Reject'}
               </button>

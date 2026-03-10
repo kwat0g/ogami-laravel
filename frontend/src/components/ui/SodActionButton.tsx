@@ -13,13 +13,15 @@ interface SodActionButtonProps {
   /** Additional disabled condition beyond SoD (e.g. wrong status). */
   disabled?: boolean
   /** Tailwind variant class string. Defaults to primary blue styling. */
-  variant?: 'primary' | 'danger' | 'warning' | 'ghost'
+  variant?: 'primary' | 'success' | 'danger' | 'warning' | 'ghost'
   className?: string
 }
 
 const variantClasses: Record<NonNullable<SodActionButtonProps['variant']>, string> = {
   primary:
     'bg-neutral-900 text-white hover:bg-neutral-800 disabled:bg-neutral-300 focus:ring-neutral-400',
+  success:
+    'bg-green-600 text-white hover:bg-green-700 disabled:bg-green-300 focus:ring-green-500',
   danger:
     'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 focus:ring-red-500',
   warning:

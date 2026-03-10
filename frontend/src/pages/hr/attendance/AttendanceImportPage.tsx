@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useImportAttendance } from '@/hooks/useAttendance'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface ImportResult {
   imported: number
@@ -9,6 +10,7 @@ interface ImportResult {
 }
 
 export default function AttendanceImportPage() {
+  const navigate = useNavigate()
   const importMutation = useImportAttendance()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -36,13 +38,11 @@ export default function AttendanceImportPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Import Attendance</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Upload a CSV file from your biometric/time-keeping device.</p>
-        </div>
-        <Link to="/hr/attendance" className="text-sm text-neutral-500 hover:text-neutral-700">← Back</Link>
-      </div>
+      <PageHeader
+        title="Import Attendance"
+        subtitle="Upload a CSV file from your biometric/time-keeping device."
+        backTo="/hr/attendance"
+      />
 
       {/* Drop zone */}
       <div

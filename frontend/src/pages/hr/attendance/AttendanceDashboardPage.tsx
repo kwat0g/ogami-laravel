@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAttendanceDashboard } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
-import PageHeader from '@/components/ui/PageHeader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import SkeletonTable from '@/components/ui/SkeletonTable'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SodActionButton from '@/components/ui/SodActionButton'
@@ -49,14 +49,14 @@ export default function AttendanceDashboardPage() {
   }
 
   if (isLoading) return (
-    <div className="p-6 space-y-6">
+    <div>
       <PageHeader title="Attendance Dashboard" />
       <SkeletonTable rows={6} cols={5} />
     </div>
   )
 
   if (isError) return (
-    <div className="p-6">
+    <div>
       <PageHeader title="Attendance Dashboard" />
       <p className="text-red-600 text-sm mt-4">Failed to load attendance dashboard.</p>
     </div>
@@ -67,7 +67,7 @@ export default function AttendanceDashboardPage() {
   const stats     = data?.period_stats
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <ExecutiveReadOnlyBanner />
       <PageHeader title="Attendance Dashboard" />
 
@@ -153,6 +153,7 @@ export default function AttendanceDashboardPage() {
                         <SodActionButton
                           initiatedById={(ot as { created_by_id: number }).created_by_id}
                           label="Approve"
+                          variant="success"
                           onClick={() => { setApprovingId(ot.id); setApprovedMins(String(ot.requested_minutes)) }}
                         />
                         <button

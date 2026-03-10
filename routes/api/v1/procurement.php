@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Procurement\GoodsReceiptController;
 use App\Http\Controllers\Procurement\PurchaseOrderController;
 use App\Http\Controllers\Procurement\PurchaseRequestController;
+use App\Http\Controllers\Procurement\VendorRfqController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -123,5 +124,36 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{goodsReceipt}', [GoodsReceiptController::class, 'destroy'])
             ->middleware('throttle:api-action')
             ->name('destroy');
+    });
+
+    // ── Vendor RFQs ──────────────────────────────────────────────────────────
+    Route::prefix('rfqs')->name('rfqs.')->group(function () {
+        Route::get('/', [VendorRfqController::class, 'index'])->name('index');
+
+        Route::post('/', [VendorRfqController::class, 'store'])
+            ->middleware('throttle:api-action')
+            ->name('store');
+
+        Route::get('/{vendorRfq}', [VendorRfqController::class, 'show'])->name('show');
+
+        Route::post('/{vendorRfq}/send', [VendorRfqController::class, 'send'])
+            ->middleware('throttle:api-action')
+            ->name('send');
+
+        Route::post('/{vendorRfq}/vendors/{vendor}/quote', [VendorRfqController::class, 'receiveQuote'])
+            ->middleware('throttle:api-action')
+            ->name('receive-quote');
+
+        Route::post('/{vendorRfq}/vendors/{vendor}/decline', [VendorRfqController::class, 'recordDecline'])
+            ->middleware('throttle:api-action')
+            ->name('record-decline');
+
+        Route::post('/{vendorRfq}/close', [VendorRfqController::class, 'close'])
+            ->middleware('throttle:api-action')
+            ->name('close');
+
+        Route::post('/{vendorRfq}/cancel', [VendorRfqController::class, 'cancel'])
+            ->middleware('throttle:api-action')
+            ->name('cancel');
     });
 });

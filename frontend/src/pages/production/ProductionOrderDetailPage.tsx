@@ -18,6 +18,8 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { ProductionOrderStatus } from '@/types/production'
 
+type ConfirmAction = 'release' | 'start' | 'complete' | 'cancel' | null
+
 const statusBadge: Record<ProductionOrderStatus, string> = {
   draft:       'bg-neutral-100 text-neutral-600',
   released:    'bg-neutral-200 text-neutral-800',
@@ -68,6 +70,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
   const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending
 
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
+
   const handleAction = async (action: 'release' | 'start' | 'complete' | 'cancel') => {
     if (action === 'complete' && order) {
       const produced  = parseFloat(order.qty_produced)
@@ -80,14 +84,20 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         if (!ok) return
       }
     }
+    setConfirmAction(action)
+  }
+
+  const executeAction = async () => {
+    if (!confirmAction) return
     try {
       const map = { release: releaseMut, start: startMut, complete: completeMut, cancel: cancelMut }
-      await map[action].mutateAsync()
-      toast.success(`Work order ${action}d.`)
+      await map[confirmAction].mutateAsync()
+      toast.success(`Work order ${confirmAction}d.`)
+      setConfirmAction(null)
     } catch (err) {
       if (isHandledApiError(err)) return
       const msg = (err as { message?: string })?.message
-      toast.error(msg ?? `Failed to ${action} order.`)
+      toast.error(msg ?? `Failed to ${confirmAction} order.`)
     }
   }
 
@@ -345,7 +355,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
             </button>
           )}
           {['draft', 'released'].includes(order.status) && (
-            <button onClick={() => handleAction('cancel')} disabled={anyPending} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded">
+            <button onClick={() => handleAction('cancel')} disabled={anyPending} className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded">
               Cancel WO
             </button>
           )}
@@ -360,6 +370,30 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           )}
         </div>
       </div>
+
+      {/* Action Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={executeAction}
+        title={`${confirmAction?.charAt(0).toUpperCase()}${confirmAction?.slice(1)} work order?`}
+        description={
+          confirmAction === 'release' ? 'This will release the work order to production.' :
+          confirmAction === 'start' ? 'This will mark the work order as in progress.' :
+          confirmAction === 'complete' ? 'This will mark the work order as completed.' :
+          confirmAction === 'cancel' ? 'This will cancel the work order.' :
+          'Are you sure you want to proceed?'
+        }
+        confirmLabel={confirmAction ? `${confirmAction.charAt(0).toUpperCase()}${confirmAction.slice(1)}` : 'Confirm'}
+        loading={
+          confirmAction === 'release' ? releaseMut.isPending :
+          confirmAction === 'start' ? startMut.isPending :
+          confirmAction === 'complete' ? completeMut.isPending :
+          confirmAction === 'cancel' ? cancelMut.isPending :
+          false
+        }
+        variant={confirmAction === 'cancel' ? 'warning' : 'primary'}
+      />
 
       <ConfirmDialog
         open={showVoidConfirm}

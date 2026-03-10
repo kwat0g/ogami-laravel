@@ -13,6 +13,7 @@ use App\Http\Controllers\Accounting\Reports\GeneralLedgerController;
 use App\Http\Controllers\Accounting\Reports\IncomeStatementController;
 use App\Http\Controllers\Accounting\Reports\TrialBalanceController;
 use App\Http\Controllers\AP\VendorController;
+use App\Http\Controllers\AP\VendorCreditNoteController;
 use App\Http\Controllers\AP\VendorInvoiceController;
 use App\Http\Controllers\AP\VendorItemController;
 use Illuminate\Support\Facades\Route;
@@ -146,6 +147,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('ap/invoices/{apInvoice}/payments', [VendorInvoiceController::class, 'recordPayment'])
         ->name('ap-invoices.record-payment');
+
+    // ── AP Credit / Debit Notes ───────────────────────────────────────────────
+    Route::get('ap/credit-notes', [VendorCreditNoteController::class, 'index'])
+        ->name('vendor-credit-notes.index');
+
+    Route::post('ap/credit-notes', [VendorCreditNoteController::class, 'store'])
+        ->middleware('throttle:api-action')
+        ->name('vendor-credit-notes.store');
+
+    Route::get('ap/credit-notes/{vendorCreditNote}', [VendorCreditNoteController::class, 'show'])
+        ->name('vendor-credit-notes.show');
+
+    Route::patch('ap/credit-notes/{vendorCreditNote}/post', [VendorCreditNoteController::class, 'post'])
+        ->middleware(['sod:vendor_credit_notes,post', 'throttle:api-action'])
+        ->name('vendor-credit-notes.post');
 
     // ── Financial Reports (GL-001 to GL-005) ─────────────────────────────────
     Route::get('reports/gl', GeneralLedgerController::class)

@@ -21,4 +21,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::patch('/work-orders/{maintenanceWorkOrder}/start', [MaintenanceController::class, 'startWorkOrder']);
         Route::patch('/work-orders/{maintenanceWorkOrder}/complete', [MaintenanceController::class, 'completeWorkOrder']);
     });
+
+    // Work Order Parts (C1: Maintenance ↔ Inventory spare parts)
+    Route::get('/work-orders/{maintenanceWorkOrder}/parts', [MaintenanceController::class, 'indexParts']);
+    Route::post('/work-orders/{maintenanceWorkOrder}/parts', [MaintenanceController::class, 'addPart']);
 });

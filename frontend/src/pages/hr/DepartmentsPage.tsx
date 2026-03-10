@@ -8,6 +8,7 @@ import {
 } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { Department } from '@/types/hr'
 
 interface DeptFormState {
@@ -47,10 +48,18 @@ export default function DepartmentsPage() {
     }
   }
 
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
   const handleDelete = (id: number) => {
-    if (confirm('Delete this department?')) {
-      remove.mutate(id, { onSuccess: () => toast.success('Department deleted.'), onError: () => toast.error('Failed to delete department.') })
-    }
+    setDeleteId(id)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteId) return
+    remove.mutate(deleteId, { 
+      onSuccess: () => { toast.success('Department deleted.'); setDeleteId(null) }, 
+      onError: () => toast.error('Failed to delete department.') 
+    })
   }
 
   const set = (field: keyof DeptFormState, value: unknown) =>
@@ -96,6 +105,18 @@ export default function DepartmentsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Department?"
+        description="This action cannot be undone. Any employees assigned to this department will need to be reassigned."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={remove.isPending}
+      />
 
       {/* Modal */}
       {form !== null && (

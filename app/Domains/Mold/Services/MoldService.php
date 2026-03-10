@@ -8,6 +8,7 @@ use App\Domains\Maintenance\Services\MaintenanceService;
 use App\Domains\Mold\Models\MoldMaster;
 use App\Domains\Mold\Models\MoldShotLog;
 use App\Shared\Contracts\ServiceContract;
+use App\Shared\Exceptions\DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class MoldService implements ServiceContract
@@ -41,6 +42,14 @@ final class MoldService implements ServiceContract
     /** @param array<string,mixed> $data */
     public function logShots(MoldMaster $mold, array $data, int $userId): MoldShotLog
     {
+        if ($mold->status !== 'active') {
+            throw new DomainException(
+                message: "Cannot log shots on a mold with status '{$mold->status}'. Only active molds accept shot logs.",
+                errorCode: 'MOLD_NOT_ACTIVE',
+                httpStatus: 422,
+            );
+        }
+
         /** @var MoldShotLog $log */
         $log = $mold->shotLogs()->create([
             'shot_count'         => $data['shot_count'],
@@ -71,5 +80,23 @@ final class MoldService implements ServiceContract
         }
 
         return $log;
+    }
+
+    public function retire(MoldMaster $mold, string $reason): MoldMaster
+    {
+        if ($mold->status === 'retired') {
+            throw new DomainException(
+                message: 'Mold is already retired.',
+                errorCode: 'MOLD_ALREADY_RETIRED',
+                httpStatus: 422,
+            );
+        }
+
+        $mold->update([
+            'status'    => 'retired',
+            'is_active' => false,
+        ]);
+
+        return $mold->fresh();
     }
 }

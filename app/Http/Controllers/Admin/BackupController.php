@@ -134,13 +134,14 @@ final class BackupController extends Controller
         // unzip 6.x cannot handle AES-256 encrypted zips (PK compat v5.1).
         if ($newest !== null) {
             $archivePassword = config('backup.backup.password');
-            $testPassFlag    = ($archivePassword !== null && $archivePassword !== '')
-                ? '-p'.escapeshellarg((string) $archivePassword).' '
-                : '';
-            $testResult = Process::timeout(60)->run("7z t {$testPassFlag}\"{$newest}\" 2>&1");
+            $testPassArg     = ($archivePassword !== null && $archivePassword !== '')
+                ? '-p'.(string) $archivePassword
+                : null;
+            $testCmd    = array_values(array_filter(['7z', 't', $testPassArg, $newest]));
+            $testResult = Process::timeout(60)->run($testCmd);
             // Retry without password in case encryption was skipped on this run
-            if ($testResult->failed() && $testPassFlag !== '') {
-                $testResult = Process::timeout(60)->run("7z t \"{$newest}\" 2>&1");
+            if ($testResult->failed() && $testPassArg !== null) {
+                $testResult = Process::timeout(60)->run(['7z', 't', $newest]);
             }
             if ($testResult->failed()) {
                 @unlink($newest);
@@ -242,19 +243,20 @@ final class BackupController extends Controller
         File::ensureDirectoryExists($extractDir);
 
         $archivePassword = config('backup.backup.password');
-        $passwordFlag    = ($archivePassword !== null && $archivePassword !== '')
-            ? '-p'.escapeshellarg((string) $archivePassword).' '
-            : '';
+        $passwordArg     = ($archivePassword !== null && $archivePassword !== '')
+            ? '-p'.(string) $archivePassword
+            : null;
 
         // Use 7z for extraction: unlike unzip 6.x it supports AES-256 (PK compat v5.1)
         // which is what PHP's ZipArchive uses when BACKUP_ARCHIVE_PASSWORD is set.
-        $unzip = Process::timeout(120)->run("7z x {$passwordFlag}-o\"{$extractDir}\" \"{$archivePath}\" 2>&1");
+        $unzipCmd = array_values(array_filter(['7z', 'x', $passwordArg, "-o{$extractDir}", $archivePath]));
+        $unzip    = Process::timeout(120)->run($unzipCmd);
 
         // Retry without password in case this particular archive was created without encryption.
-        if ($unzip->failed() && $passwordFlag !== '') {
+        if ($unzip->failed() && $passwordArg !== null) {
             File::deleteDirectory($extractDir);
             File::ensureDirectoryExists($extractDir);
-            $unzip = Process::timeout(120)->run("7z x -o\"{$extractDir}\" \"{$archivePath}\" 2>&1");
+            $unzip = Process::timeout(120)->run(['7z', 'x', "-o{$extractDir}", $archivePath]);
         }
 
         if ($unzip->failed()) {

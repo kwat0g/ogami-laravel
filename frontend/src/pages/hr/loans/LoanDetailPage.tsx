@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useLoan,
   useLoanSchedule,
@@ -73,14 +74,11 @@ export default function LoanDetailPage() {
   return (
     <div className="max-w-7xl mx-auto">
       <ExecutiveReadOnlyBanner />
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">{loan.loan_type?.name ?? 'Loan Application'}</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{loan.employee?.full_name ?? `Employee #${loan.employee_id}`}{loan.reference_no ? ` · ${loan.reference_no}` : ''}</p>
-        </div>
-        <button onClick={() => navigate(loanListPath)} className="text-sm text-neutral-500 hover:text-neutral-700">← Back</button>
-      </div>
+      <PageHeader
+        title={loan.loan_type?.name ?? 'Loan Application'}
+        subtitle={`${loan.employee?.full_name ?? `Employee #${loan.employee_id}`}${loan.reference_no ? ` · ${loan.reference_no}` : ''}`}
+        backTo={loanListPath}
+      />
 
       {/* Employee Loan History Alert */}
       {hasLoanHistory && (

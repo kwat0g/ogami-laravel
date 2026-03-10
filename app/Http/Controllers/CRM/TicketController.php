@@ -8,6 +8,11 @@ use App\Domains\CRM\Models\Ticket;
 use App\Domains\CRM\Policies\TicketPolicy;
 use App\Domains\CRM\Services\TicketService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CRM\AssignTicketRequest;
+use App\Http\Requests\CRM\ReopenTicketRequest;
+use App\Http\Requests\CRM\ReplyTicketRequest;
+use App\Http\Requests\CRM\ResolveTicketRequest;
+use App\Http\Requests\CRM\StoreTicketRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,29 +41,33 @@ final class TicketController extends Controller
 
     // ── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Ticket $ticket): JsonResponse
+    public function show(Request $request, Ticket $ticket): JsonResponse
     {
         $this->authorize('view', $ticket);
 
-        $ticket->load(['customer', 'assignedTo', 'clientUser', 'messages.author']);
+        $isClientUser = $request->user()?->hasRole('client');
+
+        // Internal notes must NEVER be visible to client portal users.
+        $ticket->load([
+            'customer',
+            'assignedTo',
+            'clientUser',
+            'messages' => fn ($q) => $q
+                ->when($isClientUser, fn ($q2) => $q2->where('is_internal', false))
+                ->with('author')
+                ->orderBy('created_at'),
+        ]);
 
         return response()->json(['data' => $ticket]);
     }
 
     // ── Create ───────────────────────────────────────────────────────────────
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreTicketRequest $request): JsonResponse
     {
         $this->authorize('create', Ticket::class);
 
-        $validated = $request->validate([
-            'subject'         => ['required', 'string', 'max:200'],
-            'description'     => ['required', 'string', 'min:10'],
-            'type'            => ['required', 'in:complaint,inquiry,request'],
-            'priority'        => ['in:low,normal,high,critical'],
-            'customer_id'     => ['nullable', 'integer', 'exists:customers,id'],
-            'client_user_id'  => ['nullable', 'integer', 'exists:users,id'],
-        ]);
+        $validated = $request->validated();
 
         $ticket = $this->service->open($validated, $request->user());
 
@@ -67,14 +76,11 @@ final class TicketController extends Controller
 
     // ── Reply ────────────────────────────────────────────────────────────────
 
-    public function reply(Request $request, Ticket $ticket): JsonResponse
+    public function reply(ReplyTicketRequest $request, Ticket $ticket): JsonResponse
     {
         $this->authorize('reply', $ticket);
 
-        $validated = $request->validate([
-            'body'        => ['required', 'string', 'min:1'],
-            'is_internal' => ['boolean'],
-        ]);
+        $validated = $request->validated();
 
         // Clients cannot post internal notes
         $isInternal = $request->user()->hasRole('client') ? false : (bool) ($validated['is_internal'] ?? false);
@@ -86,13 +92,11 @@ final class TicketController extends Controller
 
     // ── Assign ───────────────────────────────────────────────────────────────
 
-    public function assign(Request $request, Ticket $ticket): JsonResponse
+    public function assign(AssignTicketRequest $request, Ticket $ticket): JsonResponse
     {
         $this->authorize('assign', Ticket::class);
 
-        $validated = $request->validate([
-            'assigned_to_id' => ['required', 'integer', 'exists:users,id'],
-        ]);
+        $validated = $request->validated();
 
         $ticket = $this->service->assign($ticket, $request->user(), $validated['assigned_to_id']);
 
@@ -101,13 +105,11 @@ final class TicketController extends Controller
 
     // ── Resolve ──────────────────────────────────────────────────────────────
 
-    public function resolve(Request $request, Ticket $ticket): JsonResponse
+    public function resolve(ResolveTicketRequest $request, Ticket $ticket): JsonResponse
     {
         $this->authorize('resolve', $ticket);
 
-        $validated = $request->validate([
-            'resolution_note' => ['nullable', 'string', 'max:2000'],
-        ]);
+        $validated = $request->validated();
 
         $ticket = $this->service->resolve($ticket, $request->user(), $validated['resolution_note'] ?? '');
 
@@ -127,13 +129,11 @@ final class TicketController extends Controller
 
     // ── Reopen ───────────────────────────────────────────────────────────────
 
-    public function reopen(Request $request, Ticket $ticket): JsonResponse
+    public function reopen(ReopenTicketRequest $request, Ticket $ticket): JsonResponse
     {
         $this->authorize('reopen', $ticket);
 
-        $validated = $request->validate([
-            'reason' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
         $ticket = $this->service->reopen($ticket, $request->user(), $validated['reason'] ?? '');
 

@@ -4,7 +4,8 @@ import { useLeaveBalances, useCreateLeaveBalance } from '@/hooks/useLeave'
 import { useDepartments, useEmployees } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import { ChevronDown, ChevronRight, Search, X, Info, Calendar, Plus, AlertCircle, ArrowLeft } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { ChevronDown, ChevronRight, Search, X, Info, Calendar, Plus, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
@@ -140,35 +141,26 @@ export default function LeaveBalancesPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <button
-            onClick={() => navigate('/hr/leave')}
-            className="text-sm text-neutral-600 hover:underline mb-2 flex items-center gap-1"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Leave Requests
-          </button>
-          <h1 className="text-lg font-semibold text-neutral-900">Leave Balances</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
-            {meta?.total ?? 0} employees • Showing {employees.length} per page
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowGrantModal(true)}
-            className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Grant Special Leave
-          </button>
-          <div className="flex items-center gap-2 text-sm text-neutral-600 bg-neutral-100 px-3 py-2 rounded">
-            <Calendar className="h-4 w-4" />
-            <span>Auto-managed</span>
+      <PageHeader
+        title="Leave Balances"
+        subtitle={`${meta?.total ?? 0} employees • Showing ${employees.length} per page`}
+        backTo="/hr/leave"
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowGrantModal(true)}
+              className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Grant Special Leave
+            </button>
+            <div className="flex items-center gap-2 text-sm text-neutral-600 bg-neutral-100 px-3 py-2 rounded">
+              <Calendar className="h-4 w-4" />
+              <span>Auto-managed</span>
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Info Banner */}
       <div className="mb-4 bg-neutral-50 border border-neutral-200 rounded-lg p-4">

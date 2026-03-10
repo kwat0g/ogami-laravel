@@ -297,10 +297,11 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
       isInitialMount.current = false
       return
     }
-    if (!isCurrentSection && open) {
+    if (!isCurrentSection) {
       setOpen(false)
     }
-  }, [isCurrentSection, open])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCurrentSection])
 
   if (section.permission && !hasPermission(section.permission)) return null
   if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null

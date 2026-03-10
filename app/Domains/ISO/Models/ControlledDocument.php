@@ -12,6 +12,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int         $id
+ * @property string      $ulid
+ * @property string      $title
+ * @property string|null $category
+ * @property string      $document_type
+ * @property int|null    $owner_id
+ * @property string      $current_version
+ * @property string      $status
+ * @property \Carbon\Carbon|null $effective_date
+ * @property \Carbon\Carbon|null $review_date
+ * @property bool        $is_active
+ * @property int|null    $created_by_id
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 final class ControlledDocument extends Model implements AuditableContract
 {
     use Auditable, HasPublicUlid, SoftDeletes;

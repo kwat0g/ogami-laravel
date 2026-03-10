@@ -6,6 +6,7 @@ namespace App\Domains\Procurement\Services;
 
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Models\PurchaseRequestItem;
+use App\Domains\HR\Models\Department;
 use App\Models\User;
 use App\Notifications\Procurement\PurchaseRequestStatusNotification;
 use App\Shared\Contracts\ServiceContract;
@@ -196,6 +197,40 @@ final class PurchaseRequestService implements ServiceContract
     public function budgetCheck(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
+
+        // ── Real budget enforcement ───────────────────────────────────────────
+        /** @var Department|null $dept */
+        $dept = Department::find($pr->department_id);
+        if ($dept !== null && $dept->annual_budget_centavos > 0) {
+            $startMonth = (int) $dept->fiscal_year_start_month;
+            $now        = now();
+            $fyStart    = $now->copy()->month($startMonth)->startOfMonth();
+            if ($fyStart->gt($now)) {
+                $fyStart->subYear();
+            }
+
+            $ytdSpend = (int) PurchaseRequest::where('department_id', $pr->department_id)
+                ->where('id', '!=', $pr->id)
+                ->whereIn('status', ['budget_checked', 'vp_approved'])
+                ->where('created_at', '>=', $fyStart)
+                ->sum('total_estimated_cost');
+
+            $prAmount = (int) $pr->total_estimated_cost;
+
+            if (($ytdSpend + $prAmount) > $dept->annual_budget_centavos) {
+                $fmt = fn (int $c) => '₱' . number_format($c / 100, 2);
+                throw new DomainException(
+                    message: sprintf(
+                        'Budget exceeded. Department budget: %s. YTD spend: %s. This PR: %s.',
+                        $fmt($dept->annual_budget_centavos),
+                        $fmt($ytdSpend),
+                        $fmt($prAmount),
+                    ),
+                    errorCode: 'PR_BUDGET_EXCEEDED',
+                    httpStatus: 422,
+                );
+            }
+        }
 
         $pr->update([
             'status'                   => 'budget_checked',

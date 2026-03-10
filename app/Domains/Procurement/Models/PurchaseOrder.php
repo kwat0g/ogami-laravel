@@ -21,7 +21,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string      $ulid
  * @property string      $po_reference   PO-YYYY-MM-NNNNN
  * @property int         $purchase_request_id
- * @property int         $vendor_id
+ * @property int|null    $vendor_id
  * @property string      $po_date
  * @property string      $delivery_date
  * @property string      $payment_terms

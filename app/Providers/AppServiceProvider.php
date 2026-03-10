@@ -9,25 +9,33 @@ use App\Domains\Accounting\Models\BankReconciliation;
 use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
+use App\Domains\Accounting\Models\RecurringJournalTemplate;
 use App\Domains\Accounting\Policies\BankAccountPolicy;
 use App\Domains\Accounting\Policies\BankReconciliationPolicy;
 use App\Domains\Accounting\Policies\ChartOfAccountPolicy;
 use App\Domains\Accounting\Policies\FiscalPeriodPolicy;
 use App\Domains\Accounting\Policies\JournalEntryPolicy;
+use App\Domains\Accounting\Policies\RecurringJournalTemplatePolicy;
 use App\Domains\AP\Models\Vendor;
+use App\Domains\AP\Models\VendorCreditNote;
 use App\Domains\AP\Models\VendorInvoice;
+use App\Domains\AP\Policies\VendorCreditNotePolicy;
 use App\Domains\AP\Policies\VendorInvoicePolicy;
 use App\Domains\AP\Policies\VendorPolicy;
 use App\Domains\AR\Models\Customer;
+use App\Domains\AR\Models\CustomerCreditNote;
 use App\Domains\AR\Models\CustomerInvoice;
+use App\Domains\AR\Policies\CustomerCreditNotePolicy;
 use App\Domains\AR\Policies\CustomerInvoicePolicy;
 use App\Domains\AR\Policies\CustomerPolicy;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseRequest;
+use App\Domains\Procurement\Models\VendorRfq;
 use App\Domains\Procurement\Policies\GoodsReceiptPolicy;
 use App\Domains\Procurement\Policies\PurchaseOrderPolicy;
 use App\Domains\Procurement\Policies\PurchaseRequestPolicy;
+use App\Domains\Procurement\Policies\VendorRfqPolicy;
 use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\Attendance\Models\OvertimeRequest;
 use App\Domains\Attendance\Policies\AttendanceLogPolicy;
@@ -96,11 +104,15 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ChartOfAccount::class, ChartOfAccountPolicy::class);
         Gate::policy(FiscalPeriod::class, FiscalPeriodPolicy::class);
         Gate::policy(JournalEntry::class, JournalEntryPolicy::class);
+        Gate::policy(RecurringJournalTemplate::class, RecurringJournalTemplatePolicy::class);
         Gate::policy(Vendor::class, VendorPolicy::class);
         Gate::policy(VendorInvoice::class, VendorInvoicePolicy::class);
+        Gate::policy(VendorCreditNote::class, VendorCreditNotePolicy::class);
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(CustomerInvoice::class, CustomerInvoicePolicy::class);
+        Gate::policy(CustomerCreditNote::class, CustomerCreditNotePolicy::class);
         Gate::policy(VatLedger::class, \App\Domains\Tax\Policies\VatLedgerPolicy::class);
+        Gate::policy(\App\Domains\Tax\Models\BirFiling::class, \App\Domains\Tax\Policies\BirFilingPolicy::class);
         Gate::policy(BankAccount::class, BankAccountPolicy::class);
         Gate::policy(BankReconciliation::class, BankReconciliationPolicy::class);
         Gate::policy(PayrollRun::class, \App\Domains\Payroll\Policies\PayrollRunPolicy::class);
@@ -109,6 +121,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(PurchaseRequest::class, PurchaseRequestPolicy::class);
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
         Gate::policy(GoodsReceipt::class, GoodsReceiptPolicy::class);
+        Gate::policy(VendorRfq::class, VendorRfqPolicy::class);
 
         // ── Inventory + Production + QC + Maintenance + Mold + Delivery + ISO policies
         Gate::policy(\App\Domains\Inventory\Models\ItemMaster::class, \App\Domains\Inventory\Policies\ItemMasterPolicy::class);
@@ -123,6 +136,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Domains\Delivery\Models\DeliveryReceipt::class, \App\Domains\Delivery\Policies\DeliveryPolicy::class);
         Gate::policy(\App\Domains\ISO\Models\ControlledDocument::class, \App\Domains\ISO\Policies\ISOPolicy::class);
         Gate::policy(\App\Domains\ISO\Models\InternalAudit::class, \App\Domains\ISO\Policies\ISOPolicy::class);
+        Gate::policy(\App\Domains\FixedAssets\Models\FixedAsset::class, \App\Domains\FixedAssets\Policies\FixedAssetPolicy::class);
+        Gate::policy(\App\Domains\Budget\Models\CostCenter::class, \App\Domains\Budget\Policies\BudgetPolicy::class);
+        Gate::policy(\App\Domains\Budget\Models\AnnualBudget::class, \App\Domains\Budget\Policies\BudgetPolicy::class);
 
         // ── Observer registrations ───────────────────────────────────────────
         // PayrollRun → GL auto-post when status transitions to 'approved'.

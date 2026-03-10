@@ -12,6 +12,23 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int                                  $id
+ * @property string                               $ulid
+ * @property int|null                             $delivery_receipt_id
+ * @property string|null                          $carrier
+ * @property string|null                          $tracking_number
+ * @property \Illuminate\Support\Carbon|null      $shipped_at
+ * @property \Illuminate\Support\Carbon|null      $estimated_arrival
+ * @property \Illuminate\Support\Carbon|null      $actual_arrival
+ * @property string|null                          $status
+ * @property string|null                          $notes
+ * @property bool                                 $ar_invoice_created
+ * @property int|null                             $created_by_id
+ * @property \Illuminate\Support\Carbon           $created_at
+ * @property \Illuminate\Support\Carbon           $updated_at
+ * @property \Illuminate\Support\Carbon|null      $deleted_at
+ */
 final class Shipment extends Model implements AuditableContract
 {
     use Auditable, HasPublicUlid, SoftDeletes;

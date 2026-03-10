@@ -6,11 +6,13 @@ namespace App\Domains\ISO\Services;
 
 use App\Domains\ISO\Models\AuditFinding;
 use App\Domains\ISO\Models\ControlledDocument;
+use App\Domains\ISO\Models\DocumentRevision;
 use App\Domains\ISO\Models\InternalAudit;
 use App\Events\ISO\AuditFindingCreated;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 final class ISOService implements ServiceContract
 {
@@ -121,13 +123,27 @@ final class ISOService implements ServiceContract
         return $doc;
     }
 
-    public function approveDocument(ControlledDocument $doc): ControlledDocument
+    public function approveDocument(ControlledDocument $doc, int $userId): ControlledDocument
     {
         if ($doc->status !== 'under_review') {
             throw new DomainException('Document must be under review to approve.', 'ISO_DOC_NOT_UNDER_REVIEW', 422);
         }
-        $doc->update(['status' => 'approved']);
-        return $doc;
+
+        return DB::transaction(function () use ($doc, $userId): ControlledDocument {
+            $doc->update(['status' => 'approved']);
+
+            // Record each approval as an immutable revision snapshot.
+            DocumentRevision::create([
+                'controlled_document_id' => $doc->id,
+                'version'                => $doc->current_version,
+                'change_summary'         => 'Document approved.',
+                'revised_by_id'          => $doc->created_by_id,
+                'approved_by_id'         => $userId,
+                'approved_at'            => now(),
+            ]);
+
+            return $doc->fresh();
+        });
     }
 
     public function obsoleteDocument(ControlledDocument $doc): ControlledDocument

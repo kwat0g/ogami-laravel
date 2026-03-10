@@ -90,4 +90,14 @@ final class GoodsReceipt extends Model implements Auditable
     {
         return $this->belongsTo(\App\Domains\AP\Models\VendorInvoice::class, 'ap_invoice_id');
     }
+
+    /**
+     * True when one or more GR line items have no linked item_master_id.
+     * These items will be skipped by the auto-receive stock listener and need
+     * manual resolution by the Warehouse Head.
+     */
+    public function hasUnlinkedItems(): bool
+    {
+        return $this->items->contains(fn ($item) => $item->item_master_id === null);
+    }
 }

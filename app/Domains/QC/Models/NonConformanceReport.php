@@ -12,6 +12,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int                                  $id
+ * @property string                               $ulid
+ * @property string                               $ncr_reference
+ * @property int                                  $inspection_id
+ * @property string                               $title
+ * @property string                               $description
+ * @property string                               $severity
+ * @property string                               $status
+ * @property int|null                             $raised_by_id
+ * @property \Illuminate\Support\Carbon|null      $closed_at
+ * @property int|null                             $closed_by_id
+ * @property \Illuminate\Support\Carbon           $created_at
+ * @property \Illuminate\Support\Carbon           $updated_at
+ * @property \Illuminate\Support\Carbon|null      $deleted_at
+ */
 final class NonConformanceReport extends Model implements AuditableContract
 {
     use HasPublicUlid, Auditable, SoftDeletes;

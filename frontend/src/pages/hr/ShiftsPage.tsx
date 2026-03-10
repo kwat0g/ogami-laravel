@@ -8,6 +8,7 @@ import {
 } from '@/hooks/useAttendance'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { ShiftSchedule } from '@/types/hr'
 
 interface ShiftForm {
@@ -64,6 +65,7 @@ export default function ShiftsPage() {
 
   const [form, setForm]         = useState<ShiftForm | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [deleteId, setDeleteId]   = useState<number | null>(null)
 
   const rows = data?.data ?? []
 
@@ -140,11 +142,29 @@ export default function ShiftsPage() {
 
             <div className="flex gap-3">
               <button onClick={() => openEdit(shift)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-              <button onClick={() => confirm('Delete this shift?') && remove.mutate(shift.id, { onSuccess: () => toast.success('Shift deleted.'), onError: () => toast.error('Failed to delete shift.') })} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+              <button onClick={() => setDeleteId(shift.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (!deleteId) return
+          remove.mutate(deleteId, { 
+            onSuccess: () => { toast.success('Shift deleted.'); setDeleteId(null) }, 
+            onError: () => toast.error('Failed to delete shift.') 
+          })
+        }}
+        title="Delete Shift?"
+        description="This action cannot be undone. Any employees assigned to this shift will need to be reassigned."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={remove.isPending}
+      />
 
       {/* Modal */}
       {form !== null && (

@@ -52,6 +52,7 @@ class ManufacturingEmployeeSeeder extends Seeder
         $this->seedEmployees();
         $this->seedUserAccounts();
         $this->seedUserEmployeeLinks();
+        $this->seedMultiDepartmentAccess();
         $this->seedShiftAssignments();
 
         $this->command->info('✓ Manufacturing employee accounts seeded.');
@@ -216,6 +217,67 @@ class ManufacturingEmployeeSeeder extends Seeder
                 'updated_at'        => now(),
             ]);
         }
+    }
+
+    // ── Multi-department access ──────────────────────────────────────────
+
+    /**
+     * Grant cross-department visibility to roles that need it.
+     *
+     * - Vice President: needs ALL departments so the approvals queue surfaces
+     *   requests from every department (vice_president is NOT auto-exempt from
+     *   dept_scope middleware — only executive/admin/super_admin bypass it).
+     *
+     * - Plant Manager: oversees Production, QC, Mold, Warehouse, PPC,
+     *   Maintenance and ISO — all plant operations departments.
+     *
+     * Uses insertOrIgnore so this is safe to re-run on existing data.
+     */
+    private function seedMultiDepartmentAccess(): void
+    {
+        // All 13 department codes
+        $allDeptCodes = ['HR', 'IT', 'ACCTG', 'PROD', 'SALES', 'EXEC', 'PLANT', 'QC', 'MOLD', 'WH', 'PPC', 'MAINT', 'ISO'];
+
+        // Plant-operations departments (Plant Manager scope)
+        $plantDeptCodes = ['PROD', 'QC', 'MOLD', 'WH', 'PPC', 'MAINT', 'ISO'];
+
+        $deptIds = DB::table('departments')
+            ->whereIn('code', $allDeptCodes)
+            ->pluck('id', 'code');
+
+        $grants = [
+            'vp@ogamierp.local'           => $allDeptCodes,
+            'plant.manager@ogamierp.local' => $plantDeptCodes,
+        ];
+
+        $grantCount = 0;
+        foreach ($grants as $email => $deptCodes) {
+            $userId = DB::table('users')->where('email', $email)->value('id');
+            if (! $userId) {
+                $this->command->warn("  Multi-dept skip: {$email} not found.");
+                continue;
+            }
+
+            foreach ($deptCodes as $code) {
+                $deptId = $deptIds[$code] ?? null;
+                if (! $deptId) {
+                    continue;
+                }
+
+                $inserted = DB::table('user_department_access')->insertOrIgnore([
+                    'user_id'       => $userId,
+                    'department_id' => $deptId,
+                    'is_primary'    => false,
+                    'created_at'    => now(),
+                    'updated_at'    => now(),
+                ]);
+                $grantCount += $inserted;
+            }
+        }
+
+        $this->command->info("\u2713 Multi-department access granted ({$grantCount} new entries).");
+        $this->command->info('  vp@ogamierp.local         → all 13 departments');
+        $this->command->info('  plant.manager@ogamierp.local → PROD, QC, MOLD, WH, PPC, MAINT, ISO');
     }
 
     // ── Data tables ───────────────────────────────────────────────────────────
@@ -415,6 +477,18 @@ class ManufacturingEmployeeSeeder extends Seeder
                 'philhealth' => '01-300000007-7', 'pagibig' => '3007-3007-3007',
                 'bank_name' => 'UnionBank', 'bank_account_no' => '5001000007',
             ],
+            // ── Production Staff (self-service test account) ───────────────────
+            [
+                'code' => 'EMP-2026-0023', 'first_name' => 'Pedro',       'last_name' => 'dela Cruz',
+                'dob' => '1995-06-15', 'gender' => 'male', 'civil_status' => 'SINGLE', 'dependents' => 0,
+                'bir_status' => 'S', 'personal_email' => 'pedro.delacruz@email.com', 'phone' => '09151110001',
+                'address' => '10 Rizal St., Biñan, Laguna',
+                'dept' => 'PROD', 'pos' => 'PROD-OP', 'sg' => 'SG-05',
+                'hired' => '2023-06-01', 'salary' => 4200000,
+                'sss' => '33-4000001-1', 'tin' => '950-001-001-000',
+                'philhealth' => '01-400000001-1', 'pagibig' => '4001-4001-4001',
+                'bank_name' => 'BDO', 'bank_account_no' => '4001000001',
+            ],
         ];
     }
 
@@ -439,6 +513,7 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['email' => 'processing.head@ogamierp.local', 'name' => 'Eliza Navarro',        'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'qcqa.head@ogamierp.local',       'name' => 'Rhodora Salazar',      'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'iso.head@ogamierp.local',        'name' => 'Bernard Pineda',       'password' => 'Head@123456789!',  'role' => 'head'],
+            ['email' => 'prod.staff@ogamierp.local',        'name' => 'Pedro dela Cruz',       'password' => 'Staff@123456789!', 'role' => 'staff'],
         ];
     }
 
@@ -463,6 +538,7 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['email' => 'processing.head@ogamierp.local',    'code' => 'EMP-2026-0020'],
             ['email' => 'qcqa.head@ogamierp.local',          'code' => 'EMP-2026-0021'],
             ['email' => 'iso.head@ogamierp.local',           'code' => 'EMP-2026-0022'],
+            ['email' => 'prod.staff@ogamierp.local',           'code' => 'EMP-2026-0023'],
         ];
     }
 
@@ -487,6 +563,7 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['processing.head@ogamierp.local',    'Head@123456789!',  'head',           'Processing Head'],
             ['qcqa.head@ogamierp.local',          'Head@123456789!',  'head',           'QC/QA Head'],
             ['iso.head@ogamierp.local',           'Head@123456789!',  'head',           'Management System Head'],
+            ['prod.staff@ogamierp.local',           'Staff@123456789!', 'staff',          'Production Operator'],
         ];
     }
 }

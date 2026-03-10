@@ -58,6 +58,14 @@ Schedule::command('backup:run --only-db')
 // Weekly cleanup — remove backups that no longer satisfy the retention policy.
 Schedule::command('backup:clean')->weekly()->at('03:00');
 
+// ── CRM: SLA breach detection ─────────────────────────────────────────────────
+// Runs every 15 minutes. Sets sla_breached_at on tickets that have passed their
+// SLA deadline without being resolved or closed.
+Schedule::command('crm:mark-sla-breaches')
+    ->everyFifteenMinutes()
+    ->name('crm.sla-breach-check')
+    ->withoutOverlapping();
+
 // ── Backup integrity verification ────────────────────────────────────────────
 // Weekly on Sundays at 04:00 AM — after the Sunday backup:clean run.
 // Restores latest backup to ogami_erp_restore_test, runs GoldenSuiteTest.

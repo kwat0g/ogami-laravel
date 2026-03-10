@@ -13,6 +13,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/documents/{controlledDocument}', [ISOController::class, 'updateDocument']);
     Route::patch('/documents/{controlledDocument}/submit-for-review', [ISOController::class, 'submitDocumentForReview']);
     Route::patch('/documents/{controlledDocument}/approve', [ISOController::class, 'approveDocument']);
+    Route::get('/documents/{controlledDocument}/revisions', [ISOController::class, 'documentRevisions']);
 
     // Internal Audits
     Route::get('/audits', [ISOController::class, 'indexAudits']);

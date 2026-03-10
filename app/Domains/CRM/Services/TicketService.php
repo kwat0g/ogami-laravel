@@ -73,6 +73,8 @@ final class TicketService implements ServiceContract
     public function open(array $data, User $actor): Ticket
     {
         return DB::transaction(function () use ($data, $actor): Ticket {
+            $priority = $data['priority'] ?? 'normal';
+
             $ticket = Ticket::create([
                 'customer_id'    => $data['customer_id'] ?? null,
                 'client_user_id' => $actor->hasRole('client') ? $actor->id : ($data['client_user_id'] ?? null),
@@ -80,9 +82,10 @@ final class TicketService implements ServiceContract
                 'subject'        => $data['subject'],
                 'description'    => $data['description'],
                 'type'           => $data['type'],
-                'priority'       => $data['priority'] ?? 'normal',
+                'priority'       => $priority,
                 'status'         => 'open',
                 'assigned_to_id' => null,
+                'sla_due_at'     => now()->addHours(Ticket::slaHoursForPriority($priority)),
             ]);
 
             // Auto-post opening description as first message
@@ -126,6 +129,10 @@ final class TicketService implements ServiceContract
             } else {
                 if ($ticket->status === 'open') {
                     $ticket->update(['status' => 'in_progress']);
+                }
+                // Record first staff response for SLA tracking
+                if (! $isInternal && $ticket->first_response_at === null) {
+                    $ticket->update(['first_response_at' => now()]);
                 }
             }
 

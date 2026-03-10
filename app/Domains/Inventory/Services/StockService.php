@@ -7,6 +7,7 @@ namespace App\Domains\Inventory\Services;
 use App\Domains\Inventory\Models\LotBatch;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\StockLedger;
+use App\Events\Inventory\LowStockDetected;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
@@ -120,6 +121,14 @@ final class StockService implements ServiceContract
             ]);
 
             $this->upsertBalance($itemId, $locationId, $newBalance);
+
+            // Fire low-stock alert when balance hits or drops below reorder point
+            $item = \App\Domains\Inventory\Models\ItemMaster::find($itemId);
+            if ($item !== null && $newBalance <= (float) $item->reorder_point) {
+                DB::afterCommit(
+                    fn () => event(new LowStockDetected($item, $newBalance, $locationId))
+                );
+            }
 
             return $ledger;
         });

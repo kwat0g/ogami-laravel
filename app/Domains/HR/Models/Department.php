@@ -17,6 +17,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $parent_department_id
  * @property int|null $plant_id
  * @property string|null $cost_center_code
+ * @property int $annual_budget_centavos
+ * @property int $fiscal_year_start_month
  * @property bool $is_active
  */
 final class Department extends Model implements Auditable
@@ -31,6 +33,8 @@ final class Department extends Model implements Auditable
         'parent_department_id',
         'plant_id',
         'cost_center_code',
+        'annual_budget_centavos',
+        'fiscal_year_start_month',
         'is_active',
         'permission_profile_role',
         'custom_permissions',

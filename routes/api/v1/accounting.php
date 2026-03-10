@@ -7,6 +7,7 @@ use App\Http\Controllers\Accounting\BankReconciliationController;
 use App\Http\Controllers\Accounting\ChartOfAccountController;
 use App\Http\Controllers\Accounting\FiscalPeriodController;
 use App\Http\Controllers\Accounting\JournalEntryController;
+use App\Http\Controllers\Accounting\RecurringJournalTemplateController;
 use App\Http\Controllers\Accounting\Reports\BalanceSheetController;
 use App\Http\Controllers\Accounting\Reports\CashFlowController;
 use App\Http\Controllers\Accounting\Reports\GeneralLedgerController;
@@ -83,6 +84,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::delete('journal-entries/{journalEntry}', [JournalEntryController::class, 'cancel'])
         ->name('journal-entries.cancel');
+
+    // ── Recurring Journal Entry Templates (GL-REC-001/002) ────────────────────
+    Route::get('recurring-templates', [RecurringJournalTemplateController::class, 'index'])
+        ->name('recurring-templates.index');
+    Route::post('recurring-templates', [RecurringJournalTemplateController::class, 'store'])
+        ->middleware('throttle:api-action')
+        ->name('recurring-templates.store');
+    Route::get('recurring-templates/{recurringJournalTemplate}', [RecurringJournalTemplateController::class, 'show'])
+        ->name('recurring-templates.show');
+    Route::put('recurring-templates/{recurringJournalTemplate}', [RecurringJournalTemplateController::class, 'update'])
+        ->middleware('throttle:api-action')
+        ->name('recurring-templates.update');
+    Route::patch('recurring-templates/{recurringJournalTemplate}/toggle', [RecurringJournalTemplateController::class, 'toggle'])
+        ->middleware('throttle:api-action')
+        ->name('recurring-templates.toggle');
+    Route::delete('recurring-templates/{recurringJournalTemplate}', [RecurringJournalTemplateController::class, 'destroy'])
+        ->name('recurring-templates.destroy');
 
     // ── Vendors (AP-002, AP-004, AP-011) ─────────────────────────────────────
     Route::get('vendors', [VendorController::class, 'index'])->name('vendors.index');

@@ -45,7 +45,7 @@ final class TicketPolicy
 
     public function assign(User $user): bool
     {
-        return $user->hasPermission('crm.tickets.assign');
+        return $user->hasPermissionTo('crm.tickets.assign');
     }
 
     public function resolve(User $user): bool
@@ -55,7 +55,7 @@ final class TicketPolicy
 
     public function close(User $user): bool
     {
-        return $user->hasPermission('crm.tickets.close');
+        return $user->hasPermissionTo('crm.tickets.close');
     }
 
     public function reopen(User $user, Ticket $ticket): bool

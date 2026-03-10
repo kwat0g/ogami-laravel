@@ -12,6 +12,24 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int         $id
+ * @property string      $ulid
+ * @property string      $mold_code
+ * @property string      $name
+ * @property string|null $description
+ * @property int         $cavity_count
+ * @property string|null $material
+ * @property string|null $location
+ * @property int|null    $max_shots
+ * @property int         $current_shots
+ * @property string      $status         active|under_maintenance|retired|inactive
+ * @property bool        $is_active
+ * @property int|null    $created_by_id
+ * @property \Carbon\Carbon|null $last_maintenance_at
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
+ */
 final class MoldMaster extends Model implements AuditableContract
 {
     use HasPublicUlid, Auditable, SoftDeletes;

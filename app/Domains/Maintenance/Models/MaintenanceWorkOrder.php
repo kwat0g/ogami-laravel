@@ -7,10 +7,33 @@ namespace App\Domains\Maintenance\Models;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int $id
+ * @property string $ulid
+ * @property int $equipment_id
+ * @property int|null $mold_master_id
+ * @property string $type
+ * @property string $priority
+ * @property string $status
+ * @property string $title
+ * @property string|null $description
+ * @property int|null $reported_by_id
+ * @property int|null $assigned_to_id
+ * @property int $created_by_id
+ * @property \Illuminate\Support\Carbon|null $scheduled_date
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property string|null $completion_notes
+ * @property float|null $labor_hours
+ * @property string|null $mwo_reference
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ */
 final class MaintenanceWorkOrder extends Model implements AuditableContract
 {
     use HasPublicUlid, Auditable, SoftDeletes;
@@ -62,5 +85,11 @@ final class MaintenanceWorkOrder extends Model implements AuditableContract
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+    }
+
+    /** @return HasMany<WorkOrderPart, $this> */
+    public function spareParts(): HasMany
+    {
+        return $this->hasMany(WorkOrderPart::class, 'work_order_id');
     }
 }

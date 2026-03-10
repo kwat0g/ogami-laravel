@@ -404,28 +404,9 @@ class RolePermissionSeeder extends Seeder
             'procurement.purchase-request.check',
             'procurement.purchase-order.view',
             'vendors.view',
-            // Inventory (Step 3 checker for MRQ)
-            'inventory.items.view', 'inventory.items.create', 'inventory.items.edit',
-            'inventory.locations.view', 'inventory.locations.manage',
-            'inventory.stock.view', 'inventory.adjustments.create',
+            // Inventory (Step 3 checker for MRQ — view context only; no warehouse operations)
+            'inventory.items.view', 'inventory.locations.view', 'inventory.stock.view',
             'inventory.mrq.view', 'inventory.mrq.check',
-            // Production / PPC (Manager: full control)
-            'production.bom.view', 'production.bom.manage',
-            'production.delivery-schedule.view', 'production.delivery-schedule.manage',
-            'production.orders.view', 'production.orders.create',
-            'production.orders.release', 'production.orders.complete', 'production.orders.log_output',
-            // QC / QA (Manager: full)
-            'qc.templates.view', 'qc.templates.manage',
-            'qc.inspections.view', 'qc.inspections.create',
-            'qc.ncr.view', 'qc.ncr.create', 'qc.ncr.close',
-            // Maintenance (Manager: full)
-            'maintenance.view', 'maintenance.manage',
-            // Mold (Manager: full)
-            'mold.view', 'mold.manage', 'mold.log_shots',
-            // Delivery / Logistics (Manager: full)
-            'delivery.view', 'delivery.manage',
-            // ISO / IATF (Manager: full)
-            'iso.view', 'iso.manage', 'iso.audit',
             // Payroll
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
             'payroll.view_runs', 'payroll.manage_pay_periods',
@@ -654,8 +635,8 @@ class RolePermissionSeeder extends Seeder
             'vendors.view',
             // Inventory (view for shipment context)
             'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
-            // Loans
-            'loans.view_own', 'loans.apply', 'loans.officer_review',
+            // Loans (own only — per company flow, ImpEx Officer is not a loan reviewer)
+            'loans.view_own', 'loans.apply',
             // Employee view
             'employees.view',
             // Self-service

@@ -6,7 +6,7 @@ This document provides essential information for AI coding agents working on the
 
 **Ogami ERP** is a comprehensive Enterprise Resource Planning system for manufacturing businesses in the Philippines (HR, payroll, accounting, production, QC, procurement, ISO compliance). Laravel 11 backend + React 18 SPA, backed by PostgreSQL 16.
 
-### Domains (17 total — all under `app/Domains/`)
+### Domains (20 total — all under `app/Domains/`)
 
 | Domain | Key Models | Route file |
 |--------|------------|------------|
@@ -15,18 +15,21 @@ This document provides essential information for AI coding agents working on the
 | **Leave** | `LeaveRequest`, `LeaveBalance`, `LeaveType` | `routes/api/v1/leave.php` |
 | **Payroll** | `PayrollRun`, `PayrollDetail`, `PayrollAdjustment` | `routes/api/v1/payroll.php` |
 | **Loan** | `Loan`, `LoanAmortizationSchedule` | `routes/api/v1/loans.php` |
-| **Accounting** | `ChartOfAccount`, `JournalEntry`, `JournalEntryLine`, `BankAccount` | `routes/api/v1/accounting.php` |
-| **AP** | `Vendor`, `VendorInvoice`, `VendorPayment` | `routes/api/v1/finance.php` |
-| **AR** | `Customer`, `CustomerInvoice`, `CustomerPayment` | `routes/api/v1/ar.php` |
-| **Tax** | `VatLedger` | `routes/api/v1/tax.php` |
+| **Accounting** | `ChartOfAccount`, `JournalEntry`, `JournalEntryLine`, `BankAccount`, `RecurringJournalTemplate` | `routes/api/v1/accounting.php` |
+| **AP** | `Vendor`, `VendorInvoice`, `VendorPayment`, `VendorItem`, `VendorFulfillmentNote`, `VendorCreditNote`, `VendorRfq` | `routes/api/v1/finance.php` |
+| **AR** | `Customer`, `CustomerInvoice`, `CustomerPayment`, `CustomerCreditNote` | `routes/api/v1/ar.php` |
+| **Tax** | `VatLedger`, `BirFiling` | `routes/api/v1/tax.php` |
 | **Inventory** | `ItemMaster`, `StockLedger`, `MaterialRequisition` | `routes/api/v1/inventory.php` |
-| **Procurement** | `PurchaseRequest`, `PurchaseOrder`, `GoodsReceipt` | `routes/api/v1/procurement.php` |
+| **Procurement** | `PurchaseRequest`, `PurchaseOrder`, `GoodsReceipt`, `VendorRfq`, `VendorRfqVendor` | `routes/api/v1/procurement.php` |
 | **Production** | `ProductionOrder`, `BillOfMaterials`, `DeliverySchedule` | `routes/api/v1/production.php` |
 | **QC** | `Inspection`, `NonConformanceReport`, `CapaAction` | `routes/api/v1/qc.php` |
-| **Maintenance** | `Equipment`, `MaintenanceWorkOrder`, `PmSchedule` | `routes/api/v1/maintenance.php` |
+| **Maintenance** | `Equipment`, `MaintenanceWorkOrder`, `PmSchedule`, `MaintenanceWorkOrderPart` | `routes/api/v1/maintenance.php` |
 | **Mold** | `MoldMaster`, `MoldShotLog` | `routes/api/v1/mold.php` |
 | **Delivery** | `Shipment`, `DeliveryReceipt`, `Vehicle` | `routes/api/v1/delivery.php` |
 | **ISO** | `ControlledDocument`, `InternalAudit`, `AuditFinding` | `routes/api/v1/iso.php` |
+| **CRM** | `Ticket`, `TicketMessage` | `routes/api/v1/crm.php` |
+| **FixedAssets** _(new)_ | `FixedAsset`, `FixedAssetCategory`, `AssetDepreciationEntry`, `AssetDisposal` | `routes/api/v1/fixed_assets.php` |
+| **Budget** _(new)_ | `CostCenter`, `AnnualBudget` | `routes/api/v1/budget.php` |
 
 ## Technology Stack
 
@@ -42,7 +45,7 @@ This document provides essential information for AI coding agents working on the
 
 ```
 app/
-  Domains/<Domain>/          # 17 domain modules
+  Domains/<Domain>/          # 18 domain modules
     Models/                  # Eloquent models
     Services/                # Domain services (implement ServiceContract)
     Policies/                # Laravel policies
@@ -64,11 +67,13 @@ database/seeders/            # 25 seeders with strict ordering (see Seeder Order
 frontend/src/
   hooks/                     # TanStack Query wrappers (one file per domain)
   pages/<domain>/            # Page components
+  pages/vendor-portal/       # Vendor self-service portal pages
+  pages/client-portal/       # Client ticket portal pages
   schemas/<domain>.ts        # Zod validation schemas
-  types/<domain>.ts          # TypeScript interfaces
+  types/<domain>.ts          # TypeScript interfaces (crm.ts added)
   lib/api.ts                 # Axios instance (baseURL /api/v1, withCredentials)
   lib/permissions.ts         # Typed Spatie permission constants
-routes/api/v1/               # 23 domain route files
+routes/api/v1/               # 27 domain route files (incl. crm.php, vendor-portal.php, fixed_assets.php, budget.php)
 tests/
   Feature/<Domain>/          # HTTP endpoint tests
   Unit/                      # Value objects, payroll computation (golden suite)
@@ -174,7 +179,7 @@ Reference: `frontend/src/hooks/useLeave.ts`
 
 **Paginated response shape**: `{ data: T[], meta: { current_page, last_page, per_page, total } }` — the pagination wrapper is `.meta`, **not** `.pagination`.
 
-**`api.ts` write cooldown**: The Axios instance in `frontend/src/lib/api.ts` silently aborts duplicate write calls (POST/PUT/PATCH/DELETE) to the same URL within 800 ms. Do not fire the same mutation URL twice in quick succession in tests or scripts.
+**`api.ts` write cooldown**: The Axios instance in `frontend/src/lib/api.ts` silently aborts duplicate write calls (POST/PUT/PATCH/DELETE) to the same URL within 1500 ms. Do not fire the same mutation URL twice in quick succession in tests or scripts.
 
 **Global QueryClient defaults**: `staleTime: 30_000`, `refetchOnWindowFocus: false`; API errors with `error_code` never retry.
 
@@ -184,7 +189,7 @@ Frontend URL params use **ULID** strings (not integer IDs): `useParams<{ ulid: s
 ### Zod Schemas
 `z.coerce.number()` for all numeric IDs and monetary inputs. All schemas in `frontend/src/schemas/`.  
 Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormSchema>`.  
-Only 9 of the 17 domains have schema files; other domains use inline Zod or plain TypeScript types.
+Only 9 of the 18 domains have schema files; other domains use inline Zod or plain TypeScript types.
 
 ### Frontend Router & Stores
 - All routes are lazy-loaded in a single file `frontend/src/router/index.tsx` with a local `RequirePermission` guard component.
@@ -356,10 +361,10 @@ Reference: `app/Jobs/Payroll/ProcessPayrollBatch.php`
 
 ## API Structure
 
-All routes under `/api/v1/` via `routes/api.php` which includes 23 domain route files from `routes/api/v1/`.  
+All routes under `/api/v1/` via `routes/api.php` which includes 25 domain route files from `routes/api/v1/`.  
 All endpoints require `auth:sanctum`. Write throttle: 60/min; Read throttle: 120/min.
 
-Key prefixes: `hr`, `leave`, `loans`, `attendance`, `payroll`, `accounting`, `ar`, `tax`, `procurement`, `inventory`, `production`, `qc`, `maintenance`, `mold`, `delivery`, `iso`, `reports`, `employee`, `admin`, `notifications`, `dashboard`, `auth`
+Key prefixes: `hr`, `leave`, `loans`, `attendance`, `payroll`, `accounting`, `ar`, `tax`, `procurement`, `inventory`, `production`, `qc`, `maintenance`, `mold`, `delivery`, `iso`, `crm`, `vendor-portal`, `reports`, `employee`, `admin`, `notifications`, `dashboard`, `auth`, `fixed-assets`, `budget`
 
 API responses always use `JsonResource` — data is wrapped: `{ "data": { ... } }` or `{ "data": [...] }`.  
 Error responses: `{ "success": false, "error_code": "DOMAIN_ERROR_CODE", "message": "..." }`.
@@ -418,6 +423,16 @@ TEST_DB_DATABASE=ogami_erp_test
 ### Known Domain Exceptions (`app/Shared/Exceptions/`)
 13 specific exceptions (all extend `DomainException`): `AuthorizationException`, `ContributionTableNotFoundException`, `CreditLimitExceededException`, `DuplicatePayrollRunException`, `InsufficientLeaveBalanceException`, `InvalidStateTransitionException`, `LockedPeriodException`, `NegativeNetPayException`, `SodViolationException`, `TaxTableNotFoundException`, `UnbalancedJournalEntryException`, `ValidationException`.
 
+### HasPublicUlid Requires SoftDeletes
+Every model that uses the `HasPublicUlid` trait **must** also use `SoftDeletes`. The trait's `resolveRouteBindingQuery()` calls `withTrashed()` which only exists when `SoftDeletes` is present. Omitting it causes a PHPStan `withTrashed() not found on Builder` error at level 5.
+
+### Cost Center FK on JournalEntryLines
+`journal_entry_lines.cost_center_id` was originally `unsignedInteger` (int4). Migration `000011` widened it to `bigint` and added a proper `FOREIGN KEY` to `cost_centers.id`. Any pre-existing data needed no changes (values were all NULL or valid).
+
+### New Artisan Commands (2026-03-11)
+- `assets:depreciate-monthly` — runs straight-line / double-declining depreciation for all active fixed assets in a given fiscal period; safe to re-run (skips already-processed periods via unique constraint)
+- `journals:generate-recurring` — materialises all active recurring journal templates due today or earlier; advances `next_run_date` automatically
+
 ### Frontend
 - **`api.ts` default import**: hooks import `import api from '@/lib/api'` (default export), not `import { api }`.
 - **No legacy auth tokens**: there is no JWT or token in localStorage. Auth state lives entirely in the session cookie and `authStore`.
@@ -425,3 +440,4 @@ TEST_DB_DATABASE=ogami_erp_test
 ## Additional Resources
 
 - **Some Instruction and Prompts**: `.github/`
+- **Full implementation audit**: `AUDIT_REPORT.md`

@@ -11,6 +11,25 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
+/**
+ * @property int                             $id
+ * @property string                          $ulid
+ * @property int|null                        $ncr_id
+ * @property int|null                        $audit_finding_id
+ * @property string                          $type
+ * @property string                          $description
+ * @property \Illuminate\Support\Carbon|null $due_date
+ * @property int|null                        $assigned_to_id
+ * @property string                          $status
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property int|null                        $verified_by_id
+ * @property \Illuminate\Support\Carbon|null $verified_at
+ * @property string|null                     $evidence_note
+ * @property int|null                        $created_by_id
+ * @property \Illuminate\Support\Carbon      $created_at
+ * @property \Illuminate\Support\Carbon      $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ */
 final class CapaAction extends Model implements AuditableContract
 {
     use HasPublicUlid, Auditable, SoftDeletes;

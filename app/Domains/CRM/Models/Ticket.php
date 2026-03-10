@@ -28,6 +28,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string      $status             open|in_progress|pending_client|resolved|closed
  * @property int|null    $assigned_to_id
  * @property \Carbon\Carbon|null $resolved_at
+ * @property \Carbon\Carbon|null $sla_due_at
+ * @property \Carbon\Carbon|null $first_response_at
+ * @property \Carbon\Carbon|null $sla_breached_at
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
  */
@@ -48,11 +51,47 @@ final class Ticket extends Model implements Auditable
         'status',
         'assigned_to_id',
         'resolved_at',
+        'sla_due_at',
+        'first_response_at',
+        'sla_breached_at',
     ];
 
     protected $casts = [
-        'resolved_at' => 'datetime',
+        'resolved_at'       => 'datetime',
+        'sla_due_at'        => 'datetime',
+        'first_response_at' => 'datetime',
+        'sla_breached_at'   => 'datetime',
     ];
+
+    /**
+     * Map ticket priority to SLA hours.
+     * Critical = 4 h, High = 24 h, Normal = 48 h, Low = 120 h.
+     */
+    public static function slaHoursForPriority(string $priority): int
+    {
+        return match ($priority) {
+            'critical' => 4,
+            'high'     => 24,
+            'low'      => 120,
+            default    => 48,  // normal
+        };
+    }
+
+    /** True when the ticket has breached its SLA deadline. */
+    public function isSlaBreached(): bool
+    {
+        if ($this->sla_breached_at !== null) {
+            return true;
+        }
+        if ($this->sla_due_at === null) {
+            return false;
+        }
+        if (in_array($this->status, ['resolved', 'closed'], true)) {
+            return false;
+        }
+
+        return now()->gt($this->sla_due_at);
+    }
 
     // ── Relations ────────────────────────────────────────────────────────────
 

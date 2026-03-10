@@ -9,7 +9,7 @@
 ## Project at a Glance
 
 **Ogami ERP** — Manufacturing ERP for Philippine businesses. **Laravel 11 + React 18 SPA + PostgreSQL 16.**
-17 domain modules under `app/Domains/`, 23 API route files under `routes/api/v1/`.
+18 domain modules under `app/Domains/`, 25 API route files under `routes/api/v1/`.
 
 ```
 app/Domains/<Domain>/    Models/ Services/ Policies/ StateMachines/ Pipeline/
@@ -19,9 +19,11 @@ app/Shared/Exceptions/           # DomainException base + 13 specific exceptions
 frontend/src/
   hooks/          # TanStack Query wrappers — one file per domain
   pages/<domain>/ # page components
-  schemas/        # Zod schemas (9 of 17 domains)
-  types/          # TypeScript interfaces
-  lib/api.ts      # Axios default export, withCredentials, 800ms write cooldown
+  pages/vendor-portal/ # vendor self-service portal
+  pages/client-portal/ # client ticket portal
+  schemas/        # Zod schemas (9 of 18 domains)
+  types/          # TypeScript interfaces (incl. crm.ts)
+  lib/api.ts      # Axios default export, withCredentials, 1500ms write cooldown
 tests/
   Unit/ Feature/ Integration/ Arch/ Support/PayrollTestHelper.php
 ```
@@ -86,7 +88,7 @@ Same user who created a record cannot approve it. Enforced in policy + middlewar
 `authStore.hasPermission()` is strict. `admin` has only `system.*` permissions. It does **not** implicitly hold HR, payroll, or other domain permissions.
 
 ### api.ts Write Cooldown
-The Axios instance silently drops duplicate POST/PUT/PATCH/DELETE to the same URL within 800 ms. Do not fire the same mutation twice in quick succession in tests or scripts.
+The Axios instance silently drops duplicate POST/PUT/PATCH/DELETE to the same URL within 1500 ms. Do not fire the same mutation twice in quick succession in tests or scripts.
 
 ## Architecture Rules (auto-enforced in Arch suite)
 

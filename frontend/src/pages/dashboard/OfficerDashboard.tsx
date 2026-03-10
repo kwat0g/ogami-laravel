@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useOfficerDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {
   FileText,
   ChevronRight,
@@ -32,19 +33,21 @@ function StatCard({
   href?: string
 }) {
   const content = (
-    <div className="bg-white border border-neutral-200 rounded p-4">
-      <div className="flex items-start justify-between">
-        <Icon className="h-5 w-5 text-neutral-500" />
-        {href && (
-          <ChevronRight className="h-4 w-4 text-neutral-400" />
-        )}
+    <Card className="h-full">
+      <div className="p-5">
+        <div className="flex items-start justify-between">
+          <Icon className="h-5 w-5 text-neutral-500" />
+          {href && (
+            <ChevronRight className="h-4 w-4 text-neutral-400" />
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
+          <p className="text-sm text-neutral-600 mt-1">{label}</p>
+          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
+        </div>
       </div>
-      <div className="mt-3">
-        <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-        <p className="text-sm text-neutral-600 mt-1">{label}</p>
-        {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-      </div>
-    </div>
+    </Card>
   )
   if (href) return <Link to={href} className="block">{content}</Link>
   return content
@@ -62,37 +65,37 @@ function SectionCard({
   action?: { label: string; href: string }
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded">
-      <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+    <Card>
+      <CardHeader action={action && (
+        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
+          {action.label}
+          <ChevronRight className="h-3 w-3" />
+        </Link>
+      )}>
         <div className="flex items-center gap-2">
           {Icon && <Icon className="h-4 w-4 text-neutral-500" />}
-          <h2 className="text-sm font-medium text-neutral-900">{title}</h2>
+          {title}
         </div>
-        {action && (
-          <Link to={action.href} className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1">
-            {action.label}
-            <ChevronRight className="h-3 w-3" />
-          </Link>
-        )}
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
+      </CardHeader>
+      <CardBody>{children}</CardBody>
+    </Card>
   )
 }
 
 function PendingAlert({ count, label, href }: { count: number; label: string; href: string }) {
   if (count === 0) return null
   return (
-    <Link
-      to={href}
-      className="flex items-center gap-4 p-4 border border-amber-200 bg-amber-50 rounded"
-    >
-      <span className="text-lg font-semibold text-amber-700">{count}</span>
-      <div className="flex-1">
-        <span className="text-sm font-medium text-neutral-800 block">{label}</span>
-        <span className="text-xs text-neutral-600">Click to review</span>
-      </div>
-      <ChevronRight className="h-4 w-4 text-neutral-400" />
+    <Link to={href}>
+      <Card className="border-amber-200 bg-amber-50 hover:border-amber-300 transition-colors">
+        <div className="p-4 flex items-center gap-4">
+          <span className="text-lg font-semibold text-amber-700">{count}</span>
+          <div className="flex-1">
+            <span className="text-sm font-medium text-neutral-800 block">{label}</span>
+            <span className="text-xs text-neutral-600">Click to review</span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-neutral-400" />
+        </div>
+      </Card>
     </Link>
   )
 }
@@ -122,18 +125,20 @@ export default function OfficerDashboard() {
   const payroll  = stats?.payroll
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">
+      <h1 className="text-lg font-semibold text-neutral-900">
         Officer Dashboard
       </h1>
 
       {/* Error banner */}
       {error && (
-        <div className="border border-red-200 bg-red-50 rounded p-4 flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <span className="text-sm text-red-700">Failed to load dashboard data. Please refresh.</span>
-        </div>
+        <Card className="border-red-200">
+          <div className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span className="text-sm text-red-700">Failed to load dashboard data. Please refresh.</span>
+          </div>
+        </Card>
       )}
 
       {/* Accounting KPIs */}
@@ -216,15 +221,17 @@ export default function OfficerDashboard() {
 
       {/* Next pay date reminder */}
       {payroll?.next_pay_date && (
-        <div className="border border-green-200 bg-green-50 rounded p-4 flex items-center gap-3">
-          <CalendarCheck className="h-5 w-5 text-green-600 shrink-0" />
-          <span className="text-sm text-green-800">
-            Next payroll date:{' '}
-            <span className="font-semibold">
-              {new Date(payroll.next_pay_date).toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <Card className="border-green-200 bg-green-50">
+          <div className="p-4 flex items-center gap-3">
+            <CalendarCheck className="h-5 w-5 text-green-600 shrink-0" />
+            <span className="text-sm text-green-800">
+              Next payroll date:{' '}
+              <span className="font-semibold">
+                {new Date(payroll.next_pay_date).toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
             </span>
-          </span>
-        </div>
+          </div>
+        </Card>
       )}
     </div>
   )

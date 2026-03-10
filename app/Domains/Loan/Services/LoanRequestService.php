@@ -877,22 +877,55 @@ final class LoanRequestService implements ServiceContract
 
     /**
      * LN-003/LN-004: Government loan eligibility.
-     * NOTE: Full implementation deferred to Phase 1C when payroll_government_contributions table exists.
-     * Currently this is a stub that passes all employees — it will be wired up
-     * once `payroll_government_contributions` is populated by the payroll engine.
      *
-     * @phpstan-ignore void.pure
+     * SSS Loan    — requires ≥ 36 months of posted SSS contributions.
+     * Pag-IBIG Loan — requires ≥ 24 months of posted Pag-IBIG contributions.
+     *
+     * Eligibility is determined from `payroll_government_contributions` which is
+     * populated by the payroll engine starting Sprint 2.2. Employees with no
+     * payroll history automatically fail the check for government loan types.
      */
     private function assertGovernmentLoanEligibility(Employee $employee, LoanType $loanType): void
     {
-        // Eligibility checks are only applicable to government loan types
         if ($loanType->category !== 'government') {
             return;
         }
 
-        // TODO (Phase-1C): Implement LN-003 SSS ≥ 36 months check
-        // TODO (Phase-1C): Implement LN-004 Pag-IBIG ≥ 24 months check
-        // Currently passes all employees — will be gated once payroll_government_contributions is seeded.
+        $code = strtoupper($loanType->code);
+
+        if (str_contains($code, 'SSS')) {
+            $months = DB::table('payroll_government_contributions')
+                ->where('employee_id', $employee->id)
+                ->where('sss_ee_centavos', '>', 0)
+                ->whereNotNull('contribution_period')
+                ->distinct()
+                ->count('contribution_period');
+
+            if ($months < 36) {
+                throw new DomainException(
+                    message: "Employee does not meet SSS loan eligibility: requires 36 posted SSS contribution months, found {$months}.",
+                    errorCode: 'LN_003_SSS_ELIGIBILITY',
+                    httpStatus: 422,
+                );
+            }
+        }
+
+        if (str_contains($code, 'PAGIBIG') || str_contains($code, 'PAG_IBIG')) {
+            $months = DB::table('payroll_government_contributions')
+                ->where('employee_id', $employee->id)
+                ->where('pagibig_ee_centavos', '>', 0)
+                ->whereNotNull('contribution_period')
+                ->distinct()
+                ->count('contribution_period');
+
+            if ($months < 24) {
+                throw new DomainException(
+                    message: "Employee does not meet Pag-IBIG loan eligibility: requires 24 posted Pag-IBIG contribution months, found {$months}.",
+                    errorCode: 'LN_004_PAGIBIG_ELIGIBILITY',
+                    httpStatus: 422,
+                );
+            }
+        }
     }
 
     /**

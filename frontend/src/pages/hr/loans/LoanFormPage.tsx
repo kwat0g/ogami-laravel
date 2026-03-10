@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useLoanTypes, useCreateLoan } from '@/hooks/useLoans'
 import { useEmployees } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { loanApplicationSchema, type LoanApplicationFormValues } from '@/schemas/loan'
 
 export default function LoanFormPage() {
@@ -40,10 +41,7 @@ export default function LoanFormPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">New Loan Application</h1>
-        <button onClick={() => navigate('/hr/loans')} className="text-sm text-neutral-500 hover:text-neutral-700">← Back</button>
-      </div>
+      <PageHeader title="New Loan Application" backTo="/hr/loans" />
 
       <div className="bg-white border border-neutral-200 rounded-lg p-6">
         {create.isError && (

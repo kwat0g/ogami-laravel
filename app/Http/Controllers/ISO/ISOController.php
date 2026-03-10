@@ -110,13 +110,22 @@ final class ISOController extends Controller
         );
     }
 
-    public function approveDocument(ControlledDocument $controlledDocument): ControlledDocumentResource
+    public function approveDocument(Request $request, ControlledDocument $controlledDocument): ControlledDocumentResource
     {
         $this->authorize('update', $controlledDocument);
 
         return new ControlledDocumentResource(
-            $this->service->approveDocument($controlledDocument)
+            $this->service->approveDocument($controlledDocument, $request->user()->id)
         );
+    }
+
+    public function documentRevisions(ControlledDocument $controlledDocument): JsonResponse
+    {
+        $this->authorize('view', $controlledDocument);
+
+        $revisions = $controlledDocument->revisions()->with(['revisedBy', 'approvedBy'])->get();
+
+        return response()->json(['data' => $revisions]);
     }
 
     public function closeFinding(AuditFinding $auditFinding): JsonResponse

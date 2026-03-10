@@ -51,6 +51,14 @@ final class GoodsReceiptResource extends JsonResource
                 $this->whenLoaded('items')
             ),
 
+            // Warning flag: true when one or more items have no item_master_id.
+            // Those items will be skipped by auto-receive and must be resolved manually.
+            'has_unlinked_items' => $this->whenLoaded(
+                'items',
+                fn () => $gr->hasUnlinkedItems(),
+                false,
+            ),
+
             'deleted_at' => $gr->deleted_at?->toIso8601String(),
             'created_at' => $gr->created_at?->toIso8601String(),
             'updated_at' => $gr->updated_at?->toIso8601String(),
