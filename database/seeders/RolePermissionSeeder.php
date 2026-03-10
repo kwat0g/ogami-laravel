@@ -132,6 +132,7 @@ class RolePermissionSeeder extends Seeder
         'procurement.purchase-request.note',
         'procurement.purchase-request.check',
         'procurement.purchase-request.review',
+        'procurement.purchase-request.budget-check',
         'procurement.purchase-order.view',
         'procurement.purchase-order.create',
         'procurement.purchase-order.manage',
@@ -559,8 +560,9 @@ class RolePermissionSeeder extends Seeder
             // Loans (v1 accounting approval + v2 Step 3 reviewer)
             'loans.view_own', 'loans.view_department', 'loans.accounting_approve',
             'loans.officer_review',
-            // Procurement (Step 3 reviewer + PO management)
+            // Procurement (Step 3 reviewer + budget check + PO management)
             'procurement.purchase-request.view', 'procurement.purchase-request.review',
+            'procurement.purchase-request.budget-check',
             'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
             'procurement.goods-receipt.view',
             // Inventory (Step 4 reviewer for MRQ + stock management)

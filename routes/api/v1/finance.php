@@ -14,6 +14,7 @@ use App\Http\Controllers\Accounting\Reports\IncomeStatementController;
 use App\Http\Controllers\Accounting\Reports\TrialBalanceController;
 use App\Http\Controllers\AP\VendorController;
 use App\Http\Controllers\AP\VendorInvoiceController;
+use App\Http\Controllers\AP\VendorItemController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -86,6 +87,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('vendors/{vendor}', [VendorController::class, 'show'])->name('vendors.show');
     Route::put('vendors/{vendor}', [VendorController::class, 'update'])->name('vendors.update');
     Route::delete('vendors/{vendor}', [VendorController::class, 'destroy'])->name('vendors.destroy');
+
+    // ── Vendor Items (catalog per vendor) ────────────────────────────────────
+    Route::prefix('vendors/{vendor}/items')->name('vendor-items.')->group(function () {
+        Route::get('/', [VendorItemController::class, 'index'])->name('index');
+        Route::post('/', [VendorItemController::class, 'store'])
+            ->middleware('throttle:api-action')->name('store');
+        Route::put('/{vendorItem}', [VendorItemController::class, 'update'])
+            ->middleware('throttle:api-action')->name('update');
+        Route::delete('/{vendorItem}', [VendorItemController::class, 'destroy'])
+            ->middleware('throttle:api-action')->name('destroy');
+        Route::post('/import', [VendorItemController::class, 'import'])
+            ->middleware('throttle:api-action')->name('import');
+    });
 
     // ── AP Invoices (AP-001 to AP-011) ───────────────────────────────────────
     // AP operational dashboard: totals by status, overdue summary, aging buckets

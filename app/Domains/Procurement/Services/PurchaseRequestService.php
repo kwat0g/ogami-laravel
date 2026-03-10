@@ -60,9 +60,9 @@ final class PurchaseRequestService implements ServiceContract
      */
     public function update(PurchaseRequest $pr, array $data, array $items): PurchaseRequest
     {
-        if ($pr->status !== 'draft') {
+        if (! in_array($pr->status, ['draft', 'returned'], true)) {
             throw new DomainException(
-                message: 'Only draft Purchase Requests can be edited.',
+                message: 'Only draft or returned Purchase Requests can be edited.',
                 errorCode: 'PR_NOT_EDITABLE',
                 httpStatus: 422,
             );
@@ -88,7 +88,13 @@ final class PurchaseRequestService implements ServiceContract
 
     public function submit(PurchaseRequest $pr, User $actor): PurchaseRequest
     {
-        $this->assertStatus($pr, 'draft', 'PR_NOT_DRAFT');
+        if (! in_array($pr->status, ['draft', 'returned'], true)) {
+            throw new DomainException(
+                message: "Purchase Request must be in 'draft' or 'returned' status to submit (current: '{$pr->status}').",
+                errorCode: 'PR_NOT_DRAFT',
+                httpStatus: 422,
+            );
+        }
 
         if ($pr->items()->count() === 0) {
             throw new DomainException(
@@ -181,13 +187,67 @@ final class PurchaseRequestService implements ServiceContract
 
         return $refreshed;
     }
+    // ── Budget-check (Accounting Officer — after 'reviewed') ───────────────────────────
 
+    public function budgetCheck(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
+    {
+        $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
+
+        $pr->update([
+            'status'                   => 'budget_checked',
+            'budget_checked_by_id'     => $actor->id,
+            'budget_checked_at'        => now(),
+            'budget_checked_comments'  => $comments,
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        // Notify VP — PR is ready for final approval
+        User::permission('approvals.vp.approve')
+            ->where('id', '!=', $actor->id)
+            ->each(fn (User $u) => $u->notify(
+                new PurchaseRequestStatusNotification($refreshed, 'budget_checked', $actor->name, $comments ?: null)
+            ));
+
+        return $refreshed;
+    }
+
+    // ── Return for revision (Accounting Officer sends back to requester) ────────────
+
+    public function returnForRevision(PurchaseRequest $pr, User $actor, string $reason): PurchaseRequest
+    {
+        $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
+
+        if (trim($reason) === '') {
+            throw new DomainException(
+                message: 'A return reason is required.',
+                errorCode: 'PR_RETURN_REASON_REQUIRED',
+                httpStatus: 422,
+            );
+        }
+
+        $pr->update([
+            'status'       => 'returned',
+            'returned_by_id' => $actor->id,
+            'returned_at'  => now(),
+            'return_reason' => $reason,
+        ]);
+
+        $refreshed = $pr->refresh();
+
+        // Notify the requester so they know to revise and resubmit
+        if ($refreshed->requestedBy !== null) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'returned', $actor->name, $reason));
+        }
+
+        return $refreshed;
+    }
     // ── VP Approve (SOD-014) ─────────────────────────────────────────────────
 
     public function vpApprove(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
-        $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
-        $this->assertSod($actor, $pr->reviewed_by_id ?? 0, 'SOD-014', 'VP cannot be the same person who reviewed the PR.');
+        $this->assertStatus($pr, 'budget_checked', 'PR_NOT_BUDGET_CHECKED');
+        $this->assertSod($actor, $pr->budget_checked_by_id ?? 0, 'SOD-014', 'VP cannot be the same person who budget-checked the PR.');
 
         $pr->update([
             'status' => 'approved',

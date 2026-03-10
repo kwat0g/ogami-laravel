@@ -17,6 +17,7 @@ use Illuminate\Auth\Access\HandlesAuthorization;
  *   procurement.purchase-request.note      (Head)
  *   procurement.purchase-request.check     (Manager)
  *   procurement.purchase-request.review    (Officer)
+ *   procurement.purchase-request.budget-check (Accounting Officer)
  *   approvals.vp.approve                   (VP — shared with loans)
  */
 final class PurchaseRequestPolicy
@@ -51,13 +52,13 @@ final class PurchaseRequestPolicy
     public function update(User $user, PurchaseRequest $pr): bool
     {
         return $user->hasPermissionTo('procurement.purchase-request.create')
-            && $pr->status === 'draft';
+            && in_array($pr->status, ['draft', 'returned'], true);
     }
 
     public function submit(User $user, PurchaseRequest $pr): bool
     {
         return $user->hasPermissionTo('procurement.purchase-request.create')
-            && $pr->status === 'draft'
+            && in_array($pr->status, ['draft', 'returned'], true)
             && $pr->requested_by_id === $user->id;
     }
 
@@ -85,30 +86,46 @@ final class PurchaseRequestPolicy
             && $user->id !== $pr->checked_by_id;
     }
 
-    /** VP final approval — SOD-014: VP cannot be the reviewer. */
-    public function vpApprove(User $user, PurchaseRequest $pr): bool
+    /** Accounting Officer budget-checks the reviewed PR. */
+    public function budgetCheck(User $user, PurchaseRequest $pr): bool
     {
-        return $user->hasPermissionTo('approvals.vp.approve')
+        return $user->hasPermissionTo('procurement.purchase-request.budget-check')
             && $pr->status === 'reviewed'
             && $user->id !== $pr->reviewed_by_id;
     }
 
-    /** Reject — allowed by the actor who is responsible for the current stage. */
+    /** Accounting Officer returns the PR for revision (requester must redo from draft). */
+    public function returnForRevision(User $user, PurchaseRequest $pr): bool
+    {
+        return $user->hasPermissionTo('procurement.purchase-request.budget-check')
+            && $pr->status === 'reviewed';
+    }
+
+    /** VP final approval — SOD-014: VP cannot be the budget checker. */
+    public function vpApprove(User $user, PurchaseRequest $pr): bool
+    {
+        return $user->hasPermissionTo('approvals.vp.approve')
+            && $pr->status === 'budget_checked'
+            && $user->id !== $pr->budget_checked_by_id;
+    }
+
+    /** Reject — allowed by the actor responsible for the current stage. */
     public function reject(User $user, PurchaseRequest $pr): bool
     {
         return match ($pr->status) {
-            'submitted' => $user->hasPermissionTo('procurement.purchase-request.note'),
-            'noted'     => $user->hasPermissionTo('procurement.purchase-request.check'),
-            'checked'   => $user->hasPermissionTo('procurement.purchase-request.review'),
-            'reviewed'  => $user->hasPermissionTo('approvals.vp.approve'),
-            default     => false,
+            'submitted'      => $user->hasPermissionTo('procurement.purchase-request.note'),
+            'noted'          => $user->hasPermissionTo('procurement.purchase-request.check'),
+            'checked'        => $user->hasPermissionTo('procurement.purchase-request.review'),
+            'reviewed'       => $user->hasPermissionTo('procurement.purchase-request.budget-check'),
+            'budget_checked' => $user->hasPermissionTo('approvals.vp.approve'),
+            default          => false,
         };
     }
 
     public function cancel(User $user, PurchaseRequest $pr): bool
     {
         return $user->hasPermissionTo('procurement.purchase-request.create')
-            && in_array($pr->status, ['draft', 'submitted'], true)
+            && in_array($pr->status, ['draft', 'submitted', 'returned'], true)
             && $pr->requested_by_id === $user->id;
     }
 }

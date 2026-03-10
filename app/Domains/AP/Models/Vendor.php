@@ -84,6 +84,12 @@ final class Vendor extends Model implements Auditable
         return $this->hasMany(VendorPayment::class, 'vendor_id');
     }
 
+    /** @return HasMany<VendorItem, Vendor> */
+    public function vendorItems(): HasMany
+    {
+        return $this->hasMany(VendorItem::class, 'vendor_id');
+    }
+
     // ── Business helpers ─────────────────────────────────────────────────────
 
     /** AP-002: vendor must be active to accept new invoices. */

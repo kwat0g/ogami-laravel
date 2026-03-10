@@ -55,6 +55,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->middleware('throttle:api-action')
             ->name('vp-approve');
 
+        Route::post('/{purchaseRequest}/budget-check', [PurchaseRequestController::class, 'budgetCheck'])
+            ->middleware('throttle:api-action')
+            ->name('budget-check');
+
+        Route::post('/{purchaseRequest}/return', [PurchaseRequestController::class, 'returnForRevision'])
+            ->middleware('throttle:api-action')
+            ->name('return');
+
         Route::post('/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])
             ->middleware('throttle:api-action')
             ->name('reject');

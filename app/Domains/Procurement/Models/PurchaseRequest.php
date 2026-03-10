@@ -24,7 +24,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string      $urgency        normal|urgent|critical
  * @property string      $justification
  * @property string|null $notes
- * @property string      $status         draft|submitted|noted|checked|reviewed|approved|rejected|cancelled|converted_to_po
+ * @property string      $status         draft|submitted|noted|checked|reviewed|budget_checked|returned|approved|rejected|cancelled|converted_to_po
  * @property int|null    $submitted_by_id
  * @property \Carbon\Carbon|null $submitted_at
  * @property int|null    $noted_by_id
@@ -39,6 +39,12 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null    $vp_approved_by_id
  * @property \Carbon\Carbon|null $vp_approved_at
  * @property string|null $vp_comments
+ * @property int|null    $budget_checked_by_id
+ * @property \Carbon\Carbon|null $budget_checked_at
+ * @property string|null $budget_checked_comments
+ * @property int|null    $returned_by_id
+ * @property \Carbon\Carbon|null $returned_at
+ * @property string|null $return_reason
  * @property int|null    $rejected_by_id
  * @property \Carbon\Carbon|null $rejected_at
  * @property string|null $rejection_reason
@@ -75,6 +81,12 @@ final class PurchaseRequest extends Model implements Auditable
         'vp_approved_by_id',
         'vp_approved_at',
         'vp_comments',
+        'budget_checked_by_id',
+        'budget_checked_at',
+        'budget_checked_comments',
+        'returned_by_id',
+        'returned_at',
+        'return_reason',
         'rejected_by_id',
         'rejected_at',
         'rejection_reason',
@@ -89,9 +101,11 @@ final class PurchaseRequest extends Model implements Auditable
         'noted_at'       => 'datetime',
         'checked_at'     => 'datetime',
         'reviewed_at'    => 'datetime',
-        'vp_approved_at' => 'datetime',
-        'rejected_at'    => 'datetime',
-        'converted_at'   => 'datetime',
+        'vp_approved_at'      => 'datetime',
+        'budget_checked_at'  => 'datetime',
+        'returned_at'        => 'datetime',
+        'rejected_at'        => 'datetime',
+        'converted_at'       => 'datetime',
     ];
 
     // ── Relations ────────────────────────────────────────────────────────────
@@ -139,6 +153,18 @@ final class PurchaseRequest extends Model implements Auditable
     }
 
     /** @return BelongsTo<\App\Models\User, PurchaseRequest> */
+    public function budgetCheckedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'budget_checked_by_id');
+    }
+
+    /** @return BelongsTo<\App\Models\User, PurchaseRequest> */
+    public function returnedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'returned_by_id');
+    }
+
+    /** @return BelongsTo<\App\Models\User, PurchaseRequest> */
     public function rejectedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by_id');
@@ -148,7 +174,8 @@ final class PurchaseRequest extends Model implements Auditable
 
     public function isEditable(): bool
     {
-        return $this->status === 'draft';
+        // returned PRs can be revised by the requester (treated as draft)
+        return in_array($this->status, ['draft', 'returned'], true);
     }
 
     public function isCancellable(): bool
