@@ -20,7 +20,7 @@ PLAN FIRST.
 
 9. Accounting - List of Transaction (or the AP Invoice it already like this?) : PR request other transaction that involves financial should be visible here and all details of that should show like the order, items qty, total payment, there the accounting will approve it for budget or allocate the budget. (should we insert this between the process of PR and PO since the budget should be approve first before the order or proceeding of that transaction? i need your suggestion)
 
-10. Reduce accounting complexity, accounting should be only approve those transaction that required a approval, etc. Don't make it too complexity.
+10. Reduce accounting sub-modules complexity like fiscal, account charts remove them if needed or other approach, accounting should be only approve those transaction that required a approval, etc. Don't make it too complexity.
 
 11. CRM module for CRM Manager or Head (reply to those complaint and other works).
 

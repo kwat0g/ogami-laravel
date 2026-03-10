@@ -1,8 +1,10 @@
 # Ogami ERP — Copilot Workspace Instructions
 
 > Full project documentation: [AGENTS.md](../AGENTS.md)
+> Backend rules: [.github/instructions/backend.instructions.md](instructions/backend.instructions.md) (`applyTo: app/**`)
 > Frontend rules: [.github/instructions/frontend.instructions.md](instructions/frontend.instructions.md) (`applyTo: frontend/src/**`)
 > Test rules: [.github/instructions/tests.instructions.md](instructions/tests.instructions.md) (`applyTo: tests/**`)
+> Migration rules: [.github/instructions/migrations.instructions.md](instructions/migrations.instructions.md) (`applyTo: database/migrations/**`)
 
 ## Project at a Glance
 
@@ -140,3 +142,18 @@ Each step: `final class`, invokable `(PayrollComputationContext $ctx, Closure $n
 
 All in `app/Shared/Exceptions/` (all extend `DomainException`):
 `AuthorizationException` · `ContributionTableNotFoundException` · `CreditLimitExceededException` · `DuplicatePayrollRunException` · `InsufficientLeaveBalanceException` · `InvalidStateTransitionException` · `LockedPeriodException` · `NegativeNetPayException` · `SodViolationException` · `TaxTableNotFoundException` · `UnbalancedJournalEntryException` · `ValidationException`
+
+## Available Prompts
+
+Use `/new-domain <DomainName>` to scaffold a complete domain module (migration, model, service, controller, policy, route, and optional frontend hook).
+
+Use `/run-domain-tests <Domain|all>` to run the correct Pest suites for a domain (Feature + Integration + golden suite for Payroll).
+
+## Available Skills
+
+| Skill | When to invoke |
+|-------|---------------|
+| `payroll-debugger` | Pipeline step produces wrong amounts, net pay is negative, deductions off |
+| `migration-writer` | Creating or altering tables — PgSQL patterns (generated columns, CHECK constraints, SHA-256 hashes) |
+| `code-reviewer` | Security audit, performance review, PR review |
+| `debugger` | Systematic root-cause analysis for errors/crashes |
