@@ -424,7 +424,4 @@ TEST_DB_DATABASE=ogami_erp_test
 
 ## Additional Resources
 
-- **System Summary**: `docs/SYSTEM_SUMMARY.md`
-- **Testing Guide**: `docs/TESTING_GUIDE.md`
-- **Phase Documentation**: `docs/documentations/`
-- **Workflow Guides**: `docs/guides/`
+- **Some Instruction and Prompts**: `.github/`
