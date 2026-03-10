@@ -44,9 +44,11 @@ import {
 
 interface NavChild {
   label: string
-  href: string
+  href?: string
   permission?: string
   end?: boolean
+  /** When true, renders as a non-clickable section header instead of a link. */
+  divider?: boolean
 }
 
 interface NavSection {
@@ -120,13 +122,13 @@ const SECTIONS: NavSection[] = [
       { label: 'Loan Approvals',     href: '/accounting/loans',               permission: 'loans.accounting_approve' },
       { label: 'VAT Ledger',         href: '/accounting/vat-ledger',          permission: 'reports.vat' },
       { label: 'Tax Summary',        href: '/accounting/tax-summary',         permission: 'reports.vat' },
-      { label: '─ Financial Reports', href: '/accounting/gl',                 permission: 'journal_entries.view' },
+      { label: 'Financial Reports',  divider: true },
       { label: 'General Ledger',     href: '/accounting/gl',                  permission: 'journal_entries.view' },
       { label: 'Trial Balance',      href: '/accounting/trial-balance',       permission: 'reports.financial_statements' },
       { label: 'Balance Sheet',      href: '/accounting/balance-sheet',       permission: 'reports.financial_statements' },
       { label: 'Income Statement',   href: '/accounting/income-statement',    permission: 'reports.financial_statements' },
       { label: 'Cash Flow',          href: '/accounting/cash-flow',           permission: 'reports.financial_statements' },
-      { label: '─ Banking',          href: '/banking/accounts',               permission: 'bank_accounts.view' },
+      { label: 'Banking',            divider: true },
       { label: 'Bank Accounts',      href: '/banking/accounts',               permission: 'bank_accounts.view' },
       { label: 'Reconciliations',    href: '/banking/reconciliations',        permission: 'bank_reconciliations.view' },
     ],
@@ -285,10 +287,12 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
   const isInitialMount = useRef(true)
 
   const visibleChildren = section.children.filter(
-    (c) => !c.permission || hasPermission(c.permission),
+    (c) => c.divider || !c.permission || hasPermission(c.permission),
   )
 
-  const isCurrentSection = visibleChildren.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))
+  const isCurrentSection = visibleChildren
+    .filter((c) => !c.divider)
+    .some((c) => pathname === c.href || pathname.startsWith(c.href! + '/'))
   const [open, setOpen] = useState(isCurrentSection)
 
   // Auto-collapse when navigating away from this section (but not on initial mount)
@@ -328,12 +332,18 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
       </button>
 
       {open && (
-        <div className="relative ml-4 mt-0.5 space-y-0.5 pl-3 border-l-2 border-neutral-200">
-          {visibleChildren.map((child) => (
-            <NavLink key={child.href} to={child.href} end={child.end} className={linkStyle}>
-              {child.label}
-            </NavLink>
-          ))}
+        <div className="relative ml-4 mt-0.5 pl-3 border-l-2 border-neutral-200">
+          {visibleChildren.map((child) =>
+            child.divider ? (
+              <p key={child.label} className="px-2.5 pt-2.5 pb-0.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                {child.label}
+              </p>
+            ) : (
+              <NavLink key={child.href} to={child.href!} end={child.end} className={linkStyle}>
+                {child.label}
+              </NavLink>
+            )
+          )}
         </div>
       )}
     </div>
@@ -345,22 +355,36 @@ function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSe
   const { pathname } = useLocation()
   const Icon = section.icon
   const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
   if (section.permission && !hasPermission(section.permission)) return null
   if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
 
   const visibleChildren = section.children.filter(
-    (c) => !c.permission || hasPermission(c.permission),
+    (c) => c.divider || !c.permission || hasPermission(c.permission),
   )
 
-  const isCurrentSection = visibleChildren.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))
+  const linkChildren = visibleChildren.filter((c) => !c.divider)
+  const isCurrentSection = linkChildren.some((c) => pathname === c.href || pathname.startsWith(c.href! + '/'))
 
-  if (visibleChildren.length === 0) return null
+  if (linkChildren.length === 0) return null
 
   return (
-    <div className="relative mb-1">
+    <div className="relative mb-1" ref={containerRef}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((o) => !o)}
         className={`w-full flex items-center justify-center p-2 rounded-md transition-all duration-150 ${
           isCurrentSection ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
         }`}
@@ -370,19 +394,25 @@ function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSe
       </button>
 
       {open && (
-        <div className="absolute left-full top-0 ml-2 w-52 bg-white rounded border border-neutral-200 shadow-md py-2 z-50">
-          <p className="px-3 py-1.5 text-xs font-medium text-neutral-400">{section.label}</p>
-          {visibleChildren.map((child) => (
-            <NavLink
-              key={child.href}
-              to={child.href}
-              end={child.end}
-              className="block px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
-              onClick={() => setOpen(false)}
-            >
-              {child.label}
-            </NavLink>
-          ))}
+        <div className="absolute left-full top-0 ml-2 w-52 bg-white rounded border border-neutral-200 shadow-md py-1 z-50">
+          <p className="px-3 py-2 text-xs font-semibold text-neutral-500 border-b border-neutral-100">{section.label}</p>
+          {visibleChildren.map((child) =>
+            child.divider ? (
+              <p key={child.label} className="px-3 pt-2 pb-0.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                {child.label}
+              </p>
+            ) : (
+              <NavLink
+                key={child.href}
+                to={child.href!}
+                end={child.end}
+                className="block px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+                onClick={() => setOpen(false)}
+              >
+                {child.label}
+              </NavLink>
+            )
+          )}
         </div>
       )}
     </div>

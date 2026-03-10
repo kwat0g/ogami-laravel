@@ -8,8 +8,24 @@ export function useTickets(filters: TicketFilters = {}) {
   return useQuery({
     queryKey: ['crm-tickets', filters],
     queryFn: async () => {
-      const { data } = await api.get<{ data: Ticket[]; meta: { current_page: number; last_page: number; per_page: number; total: number } }>('/crm/tickets', { params: filters })
-      return data
+      // Backend returns a raw Laravel paginator (current_page / total at root level,
+      // not nested under meta). Normalise to the standard { data, meta } shape.
+      const { data } = await api.get<{
+        data: Ticket[]
+        current_page: number
+        last_page: number
+        per_page: number
+        total: number
+      }>('/crm/tickets', { params: filters })
+      return {
+        data: data.data,
+        meta: {
+          current_page: data.current_page,
+          last_page: data.last_page,
+          per_page: data.per_page,
+          total: data.total,
+        },
+      }
     },
   })
 }

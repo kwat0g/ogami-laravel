@@ -94,7 +94,7 @@ export default function TicketListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {data?.data.map(ticket => (
+              {(data?.data ?? []).map(ticket => (
                 <tr key={ticket.ulid} className="hover:bg-neutral-50 transition-colors">
                   <td className="px-4 py-3 text-sm font-mono">
                     <Link to={`/crm/tickets/${ticket.ulid}`} className="text-neutral-700 hover:underline">
@@ -117,7 +117,7 @@ export default function TicketListPage() {
                   <td className="px-4 py-3 text-sm text-neutral-500">{new Date(ticket.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
-              {data?.data.length === 0 && (
+              {(data?.data?.length ?? 0) === 0 && !isLoading && (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-500">No tickets found.</td></tr>
               )}
             </tbody>
