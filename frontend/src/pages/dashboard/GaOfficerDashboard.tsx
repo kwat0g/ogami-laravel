@@ -85,7 +85,7 @@ function PendingBadge({ count, label, href }: { count: number; label: string; hr
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function GaOfficerDashboard(): React.ReactElement {
-  const { user } = useAuth()
+  useAuth()
   const { data: stats, isLoading } = useHeadDashboardStats()
 
   if (isLoading) return <SkeletonLoader rows={8} />

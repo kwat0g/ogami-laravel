@@ -13,8 +13,8 @@ import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import PageHeader from '@/components/ui/PageHeader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-import { InfoRow, InfoList } from '@/components/ui/InfoRow'
-import type { CustomerInvoiceStatus, ReceivePaymentPayload, WriteOffPayload } from '@/types/ar'
+import { InfoRow } from '@/components/ui/InfoRow'
+import type { ReceivePaymentPayload, WriteOffPayload } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
 // Receive Payment Panel
@@ -172,7 +172,7 @@ function WriteOffSection({ invoiceId }: { invoiceId: string }) {
 
 export default function CustomerInvoiceDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
-  const navigate = useNavigate()
+  const _navigate = useNavigate()
   const invoiceId = id ?? null
   const { data: invoice, isLoading } = useCustomerInvoice(invoiceId)
   const approveMut = useApproveCustomerInvoice()

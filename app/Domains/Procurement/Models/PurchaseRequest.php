@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Models;
 
+use App\Domains\HR\Models\Department;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
@@ -168,6 +169,12 @@ final class PurchaseRequest extends Model implements Auditable
     public function rejectedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by_id');
+    }
+
+    /** @return BelongsTo<Department, PurchaseRequest> */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

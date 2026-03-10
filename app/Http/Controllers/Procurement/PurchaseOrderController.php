@@ -102,4 +102,34 @@ final class PurchaseOrderController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Purchase Order cancelled.']);
     }
+
+    /**
+     * Assign vendor + map line items for an auto-created PO draft (Phase 4).
+     * Only valid when vendor_id is null (auto-created from VP-approved PR).
+     */
+    public function assignVendor(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    {
+        $this->authorize('manage', $purchaseOrder);
+
+        $validated = $request->validate([
+            'vendor_id'              => ['required', 'integer', 'exists:vendors,id'],
+            'delivery_date'          => ['nullable', 'date'],
+            'payment_terms'          => ['nullable', 'string', 'max:100'],
+            'delivery_address'       => ['nullable', 'string'],
+            'notes'                  => ['nullable', 'string'],
+            'items'                  => ['required', 'array', 'min:1'],
+            'items.*.po_item_id'     => ['required', 'integer'],
+            'items.*.item_master_id' => ['nullable', 'integer', 'exists:item_masters,id'],
+            'items.*.agreed_unit_cost' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $po = $this->service->finalizeVendorAssignment(
+            $purchaseOrder,
+            $validated,
+            $validated['items'],
+            auth()->user(),
+        );
+
+        return new PurchaseOrderResource($po->load(['vendor', 'purchaseRequest', 'items']));
+    }
 }

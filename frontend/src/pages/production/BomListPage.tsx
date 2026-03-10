@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { GitBranch, AlertTriangle, Plus, Pencil, Archive } from 'lucide-react'
+import { AlertTriangle, Plus, Pencil, Archive } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useBoms, useDeleteBom } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'

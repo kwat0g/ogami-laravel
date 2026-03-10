@@ -8,10 +8,8 @@ import {
   Users, 
   AlertCircle, 
   Shield,
-  Activity,
   Lock,
   Database,
-  Server,
   Settings,
   FileText,
   UserCheck,
@@ -85,7 +83,7 @@ function SectionCard({
 }
 
 export default function AdminDashboard() {
-  const { user } = useAuth()
+  useAuth()
   const { data: stats, isLoading } = useAdminDashboardStats()
 
   if (isLoading) {

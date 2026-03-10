@@ -17,7 +17,6 @@ import {
   DollarSign,
   BookOpen,
   BarChart3,
-  Landmark,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -110,40 +109,26 @@ const SECTIONS: NavSection[] = [
     permission: 'chart_of_accounts.view',
     roles: ['officer'],
     children: [
-      { label: 'Chart of Accounts', href: '/accounting/accounts', permission: 'chart_of_accounts.view' },
-      { label: 'Fiscal Periods', href: '/accounting/fiscal-periods', permission: 'fiscal_periods.view' },
-      { label: 'Journal Entries', href: '/accounting/journal-entries', permission: 'journal_entries.view' },
-      { label: 'AP Vendors', href: '/accounting/vendors', permission: 'vendors.view' },
-      { label: 'AP Invoices', href: '/accounting/ap/invoices', permission: 'vendor_invoices.view' },
-      { label: 'AP Due Monitor', href: '/accounting/ap/monitor', permission: 'vendor_invoices.view' },
-      { label: 'AR Customers', href: '/ar/customers', permission: 'customers.view' },
-      { label: 'AR Invoices', href: '/ar/invoices', permission: 'customer_invoices.view' },
-      { label: 'Loan Approvals', href: '/accounting/loans', permission: 'loans.accounting_approve' },
-      { label: 'VAT Ledger', href: '/accounting/vat-ledger', permission: 'reports.vat' },
-      { label: 'Tax Summary', href: '/accounting/tax-summary', permission: 'reports.vat' },
-    ],
-  },
-  {
-    label: 'Financial Reports',
-    icon: BarChart3,
-    permission: 'reports.financial_statements',
-    roles: ['officer', 'executive', 'vice_president'],
-    children: [
-      { label: 'General Ledger',    href: '/accounting/gl',               permission: 'journal_entries.view' },
-      { label: 'Trial Balance',     href: '/accounting/trial-balance',     permission: 'reports.financial_statements' },
-      { label: 'Balance Sheet',     href: '/accounting/balance-sheet',     permission: 'reports.financial_statements' },
-      { label: 'Income Statement',  href: '/accounting/income-statement',  permission: 'reports.financial_statements' },
-      { label: 'Cash Flow',         href: '/accounting/cash-flow',         permission: 'reports.financial_statements' },
-    ],
-  },
-  {
-    label: 'Banking',
-    icon: Landmark,
-    permission: 'bank_accounts.view',
-    roles: ['officer'],
-    children: [
-      { label: 'Bank Accounts', href: '/banking/accounts', permission: 'bank_accounts.view' },
-      { label: 'Reconciliations', href: '/banking/reconciliations', permission: 'bank_reconciliations.view' },
+      { label: 'Chart of Accounts',  href: '/accounting/accounts',           permission: 'chart_of_accounts.view' },
+      { label: 'Fiscal Periods',     href: '/accounting/fiscal-periods',      permission: 'fiscal_periods.view' },
+      { label: 'Journal Entries',    href: '/accounting/journal-entries',     permission: 'journal_entries.view' },
+      { label: 'AP Vendors',         href: '/accounting/vendors',             permission: 'vendors.view' },
+      { label: 'AP Invoices',        href: '/accounting/ap/invoices',         permission: 'vendor_invoices.view' },
+      { label: 'AP Due Monitor',     href: '/accounting/ap/monitor',          permission: 'vendor_invoices.view' },
+      { label: 'AR Customers',       href: '/ar/customers',                   permission: 'customers.view' },
+      { label: 'AR Invoices',        href: '/ar/invoices',                    permission: 'customer_invoices.view' },
+      { label: 'Loan Approvals',     href: '/accounting/loans',               permission: 'loans.accounting_approve' },
+      { label: 'VAT Ledger',         href: '/accounting/vat-ledger',          permission: 'reports.vat' },
+      { label: 'Tax Summary',        href: '/accounting/tax-summary',         permission: 'reports.vat' },
+      { label: '─ Financial Reports', href: '/accounting/gl',                 permission: 'journal_entries.view' },
+      { label: 'General Ledger',     href: '/accounting/gl',                  permission: 'journal_entries.view' },
+      { label: 'Trial Balance',      href: '/accounting/trial-balance',       permission: 'reports.financial_statements' },
+      { label: 'Balance Sheet',      href: '/accounting/balance-sheet',       permission: 'reports.financial_statements' },
+      { label: 'Income Statement',   href: '/accounting/income-statement',    permission: 'reports.financial_statements' },
+      { label: 'Cash Flow',          href: '/accounting/cash-flow',           permission: 'reports.financial_statements' },
+      { label: '─ Banking',          href: '/banking/accounts',               permission: 'bank_accounts.view' },
+      { label: 'Bank Accounts',      href: '/banking/accounts',               permission: 'bank_accounts.view' },
+      { label: 'Reconciliations',    href: '/banking/reconciliations',        permission: 'bank_reconciliations.view' },
     ],
   },
   {
@@ -246,6 +231,14 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
+    label: 'CRM',
+    icon: Users,
+    permission: 'crm.tickets.view',
+    children: [
+      { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
+    ],
+  },
+  {
     label: 'VP Approvals',
     icon: ClipboardList,
     permission: 'loans.vp_approve',
@@ -307,7 +300,7 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
     if (!isCurrentSection && open) {
       setOpen(false)
     }
-  }, [isCurrentSection])
+  }, [isCurrentSection, open])
 
   if (section.permission && !hasPermission(section.permission)) return null
   if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null

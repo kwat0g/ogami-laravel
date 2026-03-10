@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCreateDeliverySchedule } from '@/hooks/useProduction'
 import { useCustomers } from '@/hooks/useAR'

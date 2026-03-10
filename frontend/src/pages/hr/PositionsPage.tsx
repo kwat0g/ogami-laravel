@@ -38,7 +38,7 @@ export default function PositionsPage() {
   const deptList = depts?.data ?? []
   const rows     = data?.data ?? []
 
-  const openCreate = () => { setForm(emptyForm()); setFormError(null) }
+  const _openCreate = () => { setForm(emptyForm()); setFormError(null) }
   const openEdit   = (pos: Position) => {
     setForm({ id: pos.id, code: pos.code ?? '', title: pos.title, department_id: pos.department_id ?? undefined, pay_grade: pos.pay_grade ?? '', description: pos.description ?? '', is_active: pos.is_active })
     setFormError(null)

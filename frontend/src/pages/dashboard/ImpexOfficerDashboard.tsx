@@ -68,7 +68,7 @@ function QuickLink({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function ImpexOfficerDashboard(): React.ReactElement {
-  const { user } = useAuth()
+  useAuth()
   const { data: receiptsData,  isLoading: loadingReceipts }  = useDeliveryReceipts({ status: 'pending',   per_page: '1' })
   const { data: shipmentsData, isLoading: loadingShipments } = useShipments({ status: 'in_transit', per_page: '1' })
 

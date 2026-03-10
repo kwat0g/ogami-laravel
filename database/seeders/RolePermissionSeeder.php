@@ -139,6 +139,18 @@ class RolePermissionSeeder extends Seeder
         'procurement.goods-receipt.view',
         'procurement.goods-receipt.create',
         'procurement.goods-receipt.confirm',
+        // Vendor Portal
+        'vendor_portal.view_orders',
+        'vendor_portal.update_fulfillment',
+        'vendor_portal.manage_items',
+        'vendor_portal.view_receipts',
+        // CRM
+        'crm.tickets.view',
+        'crm.tickets.create',
+        'crm.tickets.reply',
+        'crm.tickets.manage',
+        'crm.tickets.assign',
+        'crm.tickets.close',
         // Inventory / Warehouse
         'inventory.items.view',
         'inventory.items.create',
@@ -334,6 +346,8 @@ class RolePermissionSeeder extends Seeder
         $impexOfficer       = Role::findOrCreate('impex_officer',        self::GUARD);
         $head          = Role::findOrCreate('head',           self::GUARD);
         $staff         = Role::findOrCreate('staff',          self::GUARD);
+        $vendor        = Role::findOrCreate('vendor',         self::GUARD);
+        $client        = Role::findOrCreate('client',         self::GUARD);
 
         // Note: The rename migration (2026_03_05_000001) already renamed the
         //   old hr_manager → manager, accounting_manager → officer, supervisor → head.
@@ -755,6 +769,21 @@ class RolePermissionSeeder extends Seeder
 
         // ── Super Admin — ALL permissions (for full-system testing) ──────────
         $superAdmin->syncPermissions(Permission::all());
+
+        // ── Vendor Portal — external vendor user access ───────────────────────
+        $vendor->syncPermissions([
+            'vendor_portal.view_orders',
+            'vendor_portal.update_fulfillment',
+            'vendor_portal.manage_items',
+            'vendor_portal.view_receipts',
+        ]);
+
+        // ── Client Portal — external client/customer user access ─────────────
+        $client->syncPermissions([
+            'crm.tickets.view',
+            'crm.tickets.create',
+            'crm.tickets.reply',
+        ]);
 
         // ── Bootstrap admin user (only system account; no employee record needed) ──
         $adminUser = \App\Models\User::firstOrCreate(

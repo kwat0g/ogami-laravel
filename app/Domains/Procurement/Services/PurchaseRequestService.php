@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Notification;
 
 final class PurchaseRequestService implements ServiceContract
 {
+    public function __construct(
+        private readonly PurchaseOrderService $purchaseOrderService,
+    ) {}
+
     // ── Store (draft) ────────────────────────────────────────────────────────
 
     /**
@@ -262,14 +266,19 @@ final class PurchaseRequestService implements ServiceContract
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null));
         }
 
-        // PR-008: Notify Purchasing Officers so they can raise the corresponding PO.
+        // PR-008: Notify Purchasing Officers so they can assign vendor and finalize the auto-created PO.
         User::permission('procurement.purchase-order.create')
             ->where('id', '!=', $actor->id)
             ->each(fn (User $u) => $u->notify(
                 new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null)
             ));
 
-        return $refreshed;
+        // Phase-4: Auto-create a PO draft (vendor_id = null) for Purchasing Officer to finalize.
+        $refreshed->loadMissing('items');
+        $this->purchaseOrderService->autoCreateFromPr($refreshed);
+
+        // Re-fresh after PR status was updated to converted_to_po inside autoCreateFromPr
+        return $refreshed->refresh();
     }
 
     // ── Reject ───────────────────────────────────────────────────────────────

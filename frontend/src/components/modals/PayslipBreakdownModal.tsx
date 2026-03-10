@@ -1,7 +1,7 @@
 import { usePayslipDetail } from '@/hooks/useEmployeeSelf'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
-import { X, Calendar, Clock, Briefcase, TrendingUp, MinusCircle, Wallet, Building2 } from 'lucide-react'
+import { X, Clock, Briefcase, TrendingUp, MinusCircle, Wallet, Building2 } from 'lucide-react'
 
 interface Props {
   detailId: number | null

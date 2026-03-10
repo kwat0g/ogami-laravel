@@ -15,7 +15,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
-import type { AuditStatus, FindingSeverity, FindingType, FindingStatus } from '@/types/iso';
+import type { FindingSeverity, FindingType } from '@/types/iso';
 
 const SEVERITY_COLORS: Record<FindingSeverity, string> = {
   minor: 'bg-neutral-100 text-neutral-600',

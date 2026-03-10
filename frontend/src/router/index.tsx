@@ -237,6 +237,23 @@ const ExecutiveOvertimeApprovalPage = lazy(() => import('@/pages/executive/Execu
 // Employee self-service — profile
 const MyProfilePage = lazy(() => import('@/pages/employee/MyProfilePage'))
 
+// Vendor Portal
+const VendorPortalLayout         = lazy(() => import('@/pages/vendor-portal/VendorPortalLayout'))
+const VendorPortalDashboardPage  = lazy(() => import('@/pages/vendor-portal/VendorPortalDashboardPage'))
+const VendorOrdersPage           = lazy(() => import('@/pages/vendor-portal/VendorOrdersPage'))
+const VendorOrderDetailPage      = lazy(() => import('@/pages/vendor-portal/VendorOrderDetailPage'))
+const VendorItemsPage            = lazy(() => import('@/pages/vendor-portal/VendorItemsPage'))
+
+// CRM — Staff pages
+const TicketListPage   = lazy(() => import('@/pages/crm/TicketListPage'))
+const TicketDetailPage = lazy(() => import('@/pages/crm/TicketDetailPage'))
+
+// Client Portal
+const ClientPortalLayout        = lazy(() => import('@/pages/client-portal/ClientPortalLayout'))
+const ClientTicketsPage         = lazy(() => import('@/pages/client-portal/ClientTicketsPage'))
+const ClientTicketDetailPage    = lazy(() => import('@/pages/client-portal/ClientTicketDetailPage'))
+const ClientNewTicketPage       = lazy(() => import('@/pages/client-portal/ClientNewTicketPage'))
+
 const withSuspense = (node: React.ReactNode) => (
   <Suspense fallback={<SkeletonLoader rows={6} />}>{node}</Suspense>
 )
@@ -456,7 +473,37 @@ export const router = createBrowserRouter([
       { path: '/admin/users', element: withSuspense(guard('system.manage_users', <UsersPage />)) },
       { path: '/admin/settings', element: withSuspense(guard('system.edit_settings', <SystemSettingsPage />)) },
       { path: '/admin/audit-logs', element: withSuspense(guard('system.view_audit_log', <AuditLogsPage />)) },
-      { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },      { path: '/admin/backup', element: withSuspense(guard('system.manage_backups', <BackupPage />)) },    ],
+      { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },      { path: '/admin/backup', element: withSuspense(guard('system.manage_backups', <BackupPage />)) },
+
+      // ── CRM — Staff portal ────────────────────────────────────────────────
+      { path: '/crm/tickets',        element: withSuspense(guard('crm.tickets.view', <TicketListPage />)) },
+      { path: '/crm/tickets/:ulid',  element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
+    ],
+  },
+
+  // ── Vendor Portal (standalone layout, vendor role only) ──────────────────
+  {
+    path: '/vendor-portal',
+    element: <Suspense fallback={null}><VendorPortalLayout /></Suspense>,
+    children: [
+      { index: true, element: <Navigate to="/vendor-portal/dashboard" replace /> },
+      { path: 'dashboard', element: withSuspense(<VendorPortalDashboardPage />) },
+      { path: 'orders',    element: withSuspense(<VendorOrdersPage />) },
+      { path: 'orders/:ulid', element: withSuspense(<VendorOrderDetailPage />) },
+      { path: 'items',     element: withSuspense(<VendorItemsPage />) },
+    ],
+  },
+
+  // ── Client Portal (standalone layout, client role only) ──────────────────
+  {
+    path: '/client-portal',
+    element: <Suspense fallback={null}><ClientPortalLayout /></Suspense>,
+    children: [
+      { index: true, element: <Navigate to="/client-portal/tickets" replace /> },
+      { path: 'tickets',         element: withSuspense(<ClientTicketsPage />) },
+      { path: 'tickets/new',     element: withSuspense(<ClientNewTicketPage />) },
+      { path: 'tickets/:ulid',   element: withSuspense(<ClientTicketDetailPage />) },
+    ],
   },
 
   // ── Utility pages ────────────────────────────────────────────────────────

@@ -1,170 +1,206 @@
-Plan: Ogami ERP — Role Refactor + Procurement Module
-The plan executes across 4 sprints (~8 weeks for core work, ~18 weeks total) split into two major tasks: Task 1 replaces the 6-role model with a 7-role hierarchy aligned to the actual organizational chart (supervisor→head, hr_manager→manager, accounting_manager→officer, new vice_president). Task 2 adds a full Procurement module (PR → PO → GR → AP auto-creation) with the same 5-stage SoD approval chain. All changes are non-breaking: existing role assignments migrate automatically via FK (role_id), existing v1 loans continue on the old chain via workflow_version discriminator, and existing AP vendors are extended — not replaced.
-
-TASK 1 — Role Refactor
-Sprint 1, Phase A — Database + Backend (Days 1–4)
-DB snapshot before any migration: pg_dump ogami_erp to a timestamped file
-
-Create migration 2026_03_05_000001_rename_roles_v2.php — renames supervisor→head, hr_manager→manager, accounting_manager→officer directly in the roles table via DB UPDATE; model_has_roles pivots survive untouched because they reference role_id (FK), not the name string
-
-Create migration 2026_03_05_000002_add_vice_president_role.php — insertOrIgnore of a single vice_president row into roles
-
-Create migration 2026_03_05_000002_rename_roles_in_dept_permission_profiles.php — three UPDATE statements on department_permission_profiles.role (varchar, not enum — no ALTER TYPE needed)
-
-Update RolePermissionSeeder.php:
-
-Replace all 6 Role::findOrCreate() calls with the 7-role set ($admin, $executive, $vicePresident, $manager, $officer, $head, $staff)
-Remove the Role::where('name','manager')->delete() guard — manager is now a real role
-Rename all $supervisor->syncPermissions, $hrManager->syncPermissions, $accountingManager->syncPermissions variable references
-Add $vicePresident->syncPermissions(...) block with the permission list from 1B
-Add 4 new permission slugs to PERMISSIONS constant: loans.head_note, loans.manager_check, loans.officer_review, loans.vp_approve
-Update DepartmentPermissionProfileSeeder.php — replace all 'supervisor', 'hr_manager', 'accounting_manager' string literals; update the cache-flush foreach array (line ~547) to ['manager', 'officer', 'head', 'vice_president']
-
-Update SampleDataSeeder.php line 302 — syncRoles(['supervisor']) → syncRoles(['head'])
-
-Update DepartmentPermissionService.php line 195 — roles array: ['manager', 'hr_manager', 'accounting_manager', 'supervisor'] → ['manager', 'officer', 'head', 'vice_president']; same change in DepartmentPermissionServiceV3.php line 197
-
-Update EmployeePolicy.php line 74 — hasAnyRole(['hr_manager','accounting_manager','supervisor']) → hasAnyRole(['manager','officer','head'])
-
-Update LoanPolicy.php — update supervisorReview permission slug to loans.head_note; update status check from supervisor_approved to head_noted
-
-Add migration for overtime_requests.requester_role CHECK constraint: drop + re-add with ('staff','head','manager','officer','vice_president')
-
-Update OvertimeRequestService.php — replace old ternary for requester_role with a match(true) expression covering all 5 new role names
-
-Audit with grep -rl "'supervisor'\|\"supervisor\"" app/ routes/ — fix all remaining references before proceeding
-
-Sprint 1, Phase B — Loan Workflow v2 (Days 5–7)
-Create migration 2026_03_05_000003_add_5stage_approval_to_loans.php:
-
-Drop + re-add loans_status_check with the full status set (v1 + v2)
-Add workflow_version smallint default 1 to loans
-Add 12 new nullable columns: head_noted_by/at/remarks, manager_checked_by/at/remarks, officer_reviewed_by/at/remarks, vp_approved_by/at/remarks
-Add 4 SoD DB CHECK constraints (chk_sod_loan_head through chk_sod_loan_vp)
-Update LoanRequestService.php:
-
-Set workflow_version = 2 in store() for all new loans
-Add 4 new service methods: headNote(), managerCheck(), officerReview(), vpApprove()
-Add private helpers assertWorkflowVersion() and assertStatus()
-Add 4 new gate methods to LoanPolicy.php: headNote, managerCheck, officerReview, vpApprove — each checks permission slug + workflow_version + status + SoD actor ID
-
-Add 4 new controller methods to LoanController.php: headNote, managerCheck, officerReview, vpApprove
-
-Add 4 new PATCH routes to loans.php: {loan}/head-note, {loan}/manager-check, {loan}/officer-review, {loan}/vp-approve
-
-Update LoanResource.php — expose new v2 actor/timestamp fields
-
-Update Loan.php — add 4 new belongsTo relations: headNotedBy, managerCheckedBy, officerReviewedBy, vpApprovedBy
-
-Sprint 1, Phase C — Frontend (Days 7–9)
-Update api.ts — add AppRole union type (admin | executive | vice_president | manager | officer | head | staff); change AuthUser.roles from string[] to AppRole[]
-
-Update hr.ts line 169 — requester_role union: replace 'supervisor' with 'head', add 'officer' and 'vice_president'
-
-Update authStore.ts:
-
-Rename isSupervisor() → isHead(), check 'head'
-Update isManager() array → ['manager', 'officer', 'vice_president']
-Add isOfficer() and isVicePresident() methods
-Update hasDepartmentAccess() bypass → ['admin', 'executive', 'vice_president']
-Update AuthState interface to reflect all renamed/added methods
-Update usePermission.ts — rename useIsSupervisor export → useIsHead; add useIsOfficer, useIsVicePresident exports
-
-Update UsersPage.tsx lines 24–31 — replace roleBadgeClass Record entries for the 3 renamed roles; add vice_president: 'bg-amber-100 text-amber-700'
-
-Update AppLayout.tsx — add VP Pending Approvals nav section gated by loans.vp_approve permission
-
-Update useDashboard.ts — rename SupervisorDashboardStats → HeadDashboardStats, useSupervisorDashboardStats → useHeadDashboardStats, URL /dashboard/supervisor → /dashboard/head
-
-Update useLeave.ts line 175 — URL supervisor-approve → head-approve
-
-Update useOvertime.ts line 120 — URL supervisor-endorse → head-endorse
-
-Update auth.setup.ts — rename supervisorUser → headUser, add fixtures for officer and vice_president roles
-
-Update useSodCheck.test.ts lines 19, 39, 46, 60, 67 — roles: ['supervisor'] → roles: ['head']
-
-Sprint 1, Phase D — Backend Route Aliases (Day 9)
-Add route aliases to attendance.php and leave.php: head-endorse / head-approve alongside old URLs (keep old aliases for 1 release cycle, then remove)
-
-Add GET /api/v1/dashboard/head to dashboard.php, pointing to the same controller action as the old supervisor endpoint
-
-TASK 2 — Procurement Module
-Sprint 2, Phase A — Vendor Extension (Days 1–2)
-Create migration 2026_03_05_000004_add_procurement_fields_to_vendors.php — add accreditation_status, accreditation_notes, bank_name, bank_account_no, bank_account_name, payment_terms to the existing vendors table (Vendor.php); do NOT create a new vendors table
-
-Add accredit and suspend PATCH routes on the existing /api/v1/ap/vendors resource
-
-Update the existing AP Vendors frontend page — add accreditation status column and bank fields to the vendor form; do not create a duplicate page
-
-Sprint 2, Phase B — Purchase Request (Days 3–9)
-Create app/Domains/Procurement/ domain folder following the same folder layout as AP
-
-Create PurchaseMigration — purchase_requests, purchase_request_items tables; purchase_request_seq sequence; trg_pr_total trigger that updates total_estimated_cost; 4 SoD DB CHECK constraints (SOD-011 through SOD-014); status CHECK with all 8 states
-
-Create PurchaseRequest, PurchaseRequestItem Eloquent models — HasPublicUlid trait (consistent with employee routing pattern), belongsTo relations, HasMany items
-
-Create PurchaseRequestService implementing ServiceContract — methods: store(), submit(), note(), check(), review(), vpApprove(), reject(), cancel(); each asserts correct status + SoD actor checks; store() auto-generates pr_reference from sequence
-
-Create PurchaseRequestPolicy — gate methods matching each service action; permission slugs: procurement.purchase-request.view, create, note, check, review; VP reuses approvals.vp.approve
-
-Create PurchaseRequestController and PurchaseRequestItemController under app/Http/Controllers/Procurement/
-
-Create StorePurchaseRequestRequest, UpdatePurchaseRequestRequest Form Requests with Zod-equivalent validation (min 20 chars justification, at least 1 item, qty > 0, cost > 0)
-
-Create PurchaseRequestResource, PurchaseRequestItemResource API Resources
-
-Add procurement route file routes/api/v1/procurement.php and include it in api.php — 11 endpoints as listed in the plan (GET list, POST create, GET detail, PATCH edit, POST submit/note/check/review/vp-approve/reject/cancel)
-
-Register all new procurement permission slugs in RolePermissionSeeder.php and assign: staff gets create/submit, head gets note, manager gets check, officer gets review, vp gets vp_approve
-
-Frontend — Create 3 new pages under frontend/src/pages/procurement/:
-
-PurchaseRequestListPage — TanStack Table with status/department/urgency filters
-CreatePurchaseRequestPage — React Hook Form with dynamic line items array (React Hook Form useFieldArray), Zod schema, total auto-sum
-PurchaseRequestDetailPage — read-only items table, approval timeline component, SodActionButton at each stage
-Sprint 3 — Purchase Order + Goods Receipt (Days 1–10)
-Create purchase_orders, purchase_order_items tables — trg_po_total trigger; quantity_pending as GENERATED ALWAYS AS (quantity_ordered - quantity_received) STORED; status CHECK
-
-Create PurchaseOrder, PurchaseOrderItem models, PurchaseOrderService, PurchaseOrderPolicy, PurchaseOrderController, Form Requests, Resources — same domain structure as PR; service's store() validates that the source PR is in approved status
-
-Create goods_receipts, goods_receipt_items tables; goods_receipt_seq sequence
-
-Create GoodsReceipt, GoodsReceiptItem models, GoodsReceiptService, GoodsReceiptPolicy, GoodsReceiptController — confirm() method calls three-way match logic, updates PO item quantity_received, transitions PO status
-
-Create ThreeWayMatchService under app/Domains/Procurement/Services/ — validates PR approved + PO sent + quantities reconcile, marks three_way_match_passed = true, triggers AP invoice auto-creation
-
-Frontend — PurchaseOrderListPage, CreatePurchaseOrderPage (selects from approved PRs, select vendor), GoodsReceiptCreatePage (linked to PO, dynamic items per PO line)
-
-Sprint 4 — AP Auto-Creation + VP Dashboard (Days 1–10)
-Add createFromPo(PurchaseOrder $po, GoodsReceipt $gr): ApInvoice method to existing app/Domains/AP/Services/ApInvoiceService.php — auto-creates draft AP invoice; sets source = 'auto_procurement'; existing SOD-009 still applies when Officer routes it for approval
-
-Create frontend/src/pages/approvals/VpApprovalsDashboardPage.tsx — tabbed view aggregating items awaiting VP sign-off (Purchase Requests in reviewed status + Loans in officer_reviewed status); gated by approvals.vp.view
-
-Add procurement notification events — fire Laravel Notification on each state transition (in-app + email); follow existing notification pattern in Notifications
-
-Add Playwright E2E test: Staff creates PR → Head notes → Manager checks → Officer reviews → VP approves → Purchasing Officer creates PO → Warehouse Head confirms GR → AP invoice auto-created
-
-Verification
-After Sprint 1:
-
-
-php artisan migratephp artisan db:seed --class=RolePermissionSeederphp artisan db:seed --class=DepartmentPermissionProfileSeeder./vendor/bin/pest --testsuite=Feature,Unitcd frontend && pnpm typecheck && pnpm testcd frontend && pnpm e2e
-All 7 roles exist in DB. Spot-check 5 former-supervisor users now carry head. v1 loans still approve via PATCH /loans/{ulid}/approve.
-
-After Sprint 2–4:
-
-
-./vendor/bin/pest --testsuite=Integrationcd frontend && pnpm e2e
-Full PR→PO→GR→AP invoice E2E passes. SOD-011–014 blocked at all 4 stages. VP dashboard shows pending items.
-
-Static analysis after all changes:
-
-
-./vendor/bin/phpstan analyse./vendor/bin/pintcd frontend && pnpm typecheck && pnpm e2e
-Decisions
-workflow_version discriminator: v1 loans keep their old 3-stage chain (pending→supervisor_approved→approved); only loans created after migration use the 5-stage v2 chain. This avoids mid-flight data corruption.
-No duplicate vendors table: Procurement reuses Vendor.php — additive migration only
-bank_account_no (not _number): matches existing codebase convention in the AP domain
-SoD matrix unchanged: The sod_conflict_matrix in system_settings uses permission slugs, not role names — no update needed
-Implied modules (Inventory, Production, QC, Mold, Maintenance, ISO/IATF, Delivery): Not implemented in this plan; scoped as Sprints 5–18 and require user interviews with domain owners before schema design begins
+# Plan: Ogami ERP — needs.md Feature Roadmap
+
+## What Already Exists
+
+| Feature | Status |
+|---|---|
+| PR 5-stage approval (Staff→Head→Manager→Officer→VP) | ✅ Complete |
+| PO creation (manual, from approved PR) | ✅ Complete |
+| GoodsReceipt + ThreeWayMatch | ✅ Complete |
+| Vendor CRUD + accreditation | ✅ Complete |
+| VendorInvoice approval chain | ✅ Complete |
+| AR: Customer, CustomerInvoice, CustomerPayment | ✅ Complete |
+| barryvdh/dompdf + maatwebsite/excel installed | ✅ Available |
+| Roles: manager, officer, head, staff, vp, purchasing_officer | ✅ Complete |
+| Vendor item catalog (`vendor_items`) | ❌ Missing |
+| Vendor portal (vendor login + order management) | ❌ Missing |
+| PR PDF export | ❌ Missing |
+| Accounting budget-check step in PR chain | ❌ Missing |
+| Auto-create PO draft on VP approval | ❌ Missing |
+| CRM domain (tickets, client portal) | ❌ Missing |
+| Role-based dashboards | ❌ Missing |
+| Accounting sidebar simplification | ❌ Missing |
+
+## Decisions
+
+- **Vendor auth**: `vendor` role in existing `users` table; add `vendor_id` FK column to `users`
+- **Accounting step**: Insert between `reviewed` (Officer) and `approved` (VP) — new statuses `budget_checked` (pass) and `returned` (needs revision)
+- **Returned PR flow**: PR → `returned` → creator edits draft → resubmits → restarts full chain
+- **Auto PO**: VP approval fires auto-create of PO draft (status `draft`, no vendor); Purchasing Officer assigns vendor → picks items from `vendor_items` catalog → finalizes
+- **Accounting simplify**: COA, FiscalPeriods, JE (manual), BankAccounts, BankRecon → System Settings sidebar group; Accounting main role: AP Invoices + PR Budget Approval
+- **CRM**: Full domain with `client` role in `users` table, `client_id` FK to AR `customers`
+
+## Phase 1: Vendor Item Catalog (prerequisite for Portal and PO)
+
+1. Migration: `create_vendor_items_table` — ULID PK, `vendor_id` FK, `item_code`, `item_name`, `description`, `unit_of_measure`, `unit_price` (decimal centavos), `is_active`, timestamps, soft deletes
+2. Model: `app/Domains/AP/Models/VendorItem.php` — `final class`, `HasPublicUlid`, `SoftDeletes`; `belongsTo(Vendor::class)`; `Vendor` gains `hasMany(VendorItem::class)`
+3. Service method: `VendorService::importItems(Vendor $vendor, array $rows)` — wraps in `DB::transaction()`; supports upsert by `item_code`
+4. Controller: `VendorItemController` — `index()`, `store()`, `update()`, `destroy()`, `import()` (Excel/CSV via `maatwebsite/excel`)
+5. Route: new `vendor-items` resource under `/finance/vendors/{vendor}/items` in `routes/api/v1/accounting.php`
+6. Frontend: `frontend/src/hooks/useVendorItems.ts` + `VendorItemsTab` inside `VendorDetailPage` (tab component); CSV import modal
+
+**Parallel with Phase 1**: Phase 3 (PDF) — no dependencies
+
+## Phase 2: PR Workflow — Accounting Budget Check
+
+*Depends on nothing; independent of Phase 1*
+
+1. Migration: add columns to `purchase_requests`: `budget_checked_by_id`, `budget_checked_at`, `budget_checked_comments`, `returned_by_id`, `returned_at`, `return_reason`
+2. Migration: alter `status` CHECK constraint to include `budget_checked | returned` values (ALTER TABLE ... DROP CONSTRAINT ... ADD CONSTRAINT)
+3. `PurchaseRequestService`: add `budgetCheck(PurchaseRequest $pr, User $actor, string $comments)` and `returnForRevision(PurchaseRequest $pr, User $actor, string $reason)` methods
+   - `budgetCheck`: asserts status = `reviewed`; transitions → `budget_checked`; notifies VP
+   - `returnForRevision`: asserts status = `reviewed`; transitions → `returned`; notifies requester
+   - When PR status = `returned` → `update()` and `submit()` must allow re-edit (treat like draft)
+4. `PurchaseRequestPolicy`: add `budgetCheck()` and `returnForRevision()` methods — requires `vendor_invoices.approve` permission (Accounting Officer)
+5. `PurchaseRequestController`: add `budgetCheck()` and `returnForRevision()` action methods
+6. Update `vpApprove()` — now asserts status = `budget_checked` (not `reviewed`)
+7. Routes: add `POST /{purchaseRequest}/budget-check` and `POST /{purchaseRequest}/return` to procurement.php
+8. Add permission: `procurement.purchase-request.budget-check` → assign to `officer` role in RolePermissionSeeder
+9. Frontend: update `PurchaseRequestDetailPage.tsx` — add Budget Check button (Accounting Officer visible), Return button, return reason modal; update status badge map and approval timeline
+
+## Phase 3: PR PDF Export
+
+*Can run in parallel with Phase 2*
+
+1. Blade view: `resources/views/procurement/purchase-request-pdf.blade.php` — company header, PR details table, items table with totals, approval signatures section
+2. `PurchaseRequestController::pdf(PurchaseRequest $pr)` — uses `barryvdh/dompdf` via `Pdf::loadView()`; returns PDF stream with `Content-Disposition: inline`
+3. Route: `GET /purchase-requests/{purchaseRequest}/pdf` in `procurement.php`
+4. Frontend: "Print / Export PDF" button on `PurchaseRequestDetailPage.tsx` — opens `/api/v1/procurement/purchase-requests/{ulid}/pdf` in new tab
+
+## Phase 4: Auto-Create PO Draft on VP Approval
+
+*Depends on Phase 2 (VP now approves from `budget_checked` status)*
+
+1. In `PurchaseRequestService::vpApprove()`: after setting PR to `approved`, call `PurchaseOrderService::autoCreateFromPr(PurchaseRequest $pr): PurchaseOrder`
+2. `PurchaseOrderService::autoCreateFromPr()` — creates PO with:
+   - `status = draft`, `vendor_id = null` (pending assignment)
+   - Items cloned from PR items: `item_description`, `unit_of_measure`, `quantity_ordered = quantity`, `agreed_unit_cost = estimated_unit_cost`
+   - `item_master_id = null` initially (Purchasing Officer maps via vendor catalog)
+3. Frontend: `PurchaseOrderDetailPage.tsx` — when `vendor_id` is null, show "Assign Vendor & Items" mode:
+   - Vendor dropdown (accredited vendors)
+   - On vendor select: load `vendor_items` for that vendor; show mapping UI to link each PO line item to a vendor catalog item
+   - "Finalize PO" button saves vendor + item links + pricing
+
+## Phase 5: Vendor Portal
+
+*Depends on Phase 1 (vendor_items) and Phase 4 (PO auto-create)*
+
+**Backend:**
+1. Migration: add `vendor_id` (nullable FK → vendors) to `users` table
+2. `RolePermissionSeeder`: add `vendor` role with permissions: `vendor_portal.view_orders`, `vendor_portal.update_fulfillment`, `vendor_portal.manage_items`, `vendor_portal.view_receipts`
+3. Migration: `create_vendor_fulfillment_notes_table` — `purchase_order_id`, `vendor_user_id`, `note_type` (`in_transit|delivered|partial`), `notes`, `items` (JSON: po_item_id, qty_delivered), timestamps
+4. `VendorFulfillmentService implements ServiceContract`:
+   - `markInTransit(PurchaseOrder $po, User $vendorUser)`
+   - `markDelivered(PurchaseOrder $po, User $vendorUser, array $items)`: creates `VendorFulfillmentNote`; if qty_delivered < qty_ordered for any item, records partial; auto-creates GR draft for receiving staff to confirm
+   - `adjustPOForPartial(PurchaseOrder $po, array $unfulfilledItems)`: reduces `quantity_ordered` on PO items, recalculates `total_po_amount`
+5. Vendor-scoped middleware: `vendor.scope` — ensures authenticated user has `vendor` role and all data is scoped to `users.vendor_id`
+6. API routes: `routes/api/v1/vendor-portal.php` — `GET /vendor-portal/orders`, `POST /vendor-portal/orders/{po}/in-transit`, `POST /vendor-portal/orders/{po}/deliver`, `GET/POST /vendor-portal/items`
+
+**Frontend:**
+7. Separate route group in `router/index.tsx`: `/vendor-portal/*`
+8. `VendorPortalLayout.tsx` — simplified sidebar: Dashboard, Orders, Items
+9. Pages: `VendorPortalDashboardPage`, `VendorOrdersPage`, `VendorOrderDetailPage` (fulfillment actions), `VendorItemsPage`
+10. `frontend/src/hooks/useVendorPortal.ts`
+
+## Phase 6: Accounting Sidebar Simplification
+
+*Independent; frontend-only for most of it*
+
+1. Frontend: update `frontend/src/router/index.tsx` — move Chart of Accounts, Fiscal Periods, Journal Entries (new), Bank Accounts, Bank Reconciliation under `/settings/accounting/*` (System Settings sidebar group)
+2. Accounting sidebar (officer-visible) keeps: AP Invoices, PR Budget Approval queue, Vendors, Financial Reports
+3. Add "Pending Budget Approvals" to the accounting dashboard: query PRs with status = `reviewed` (awaiting officer's budget check)
+4. Backend: no model/service changes needed; confirm all moved routes still work under the new path if needed (likely just frontend navigation changes)
+
+## Phase 7: Role-based Dashboards
+
+*Depends on no other phase; can be parallel*
+
+1. Backend: `GET /dashboard` (already in `routes/api/v1/`) — extend to return role-appropriate widget data:
+   - `staff`: my PRs, leave balance, attendance summary
+   - `head`: team pending approvals (leave, OT, PR notes)
+   - `manager`: full HR stats (headcount, payroll run status)
+   - `officer` (Accounting): AP aging, pending budget approvals, open JEs
+   - `purchasing_officer`: pending PO drafts, open GRs
+   - `plant_manager`: production orders, QC NCRs open, maintenance work orders
+   - `executive/vp`: financial summary, pending VP approvals
+2. Frontend: `DashboardPage.tsx` — role-based widget grid using `authStore.hasRole()`; separate widget components per domain area
+
+## Phase 8: CRM Module
+
+*Independent – can be built in parallel with other phases*
+
+**Backend:**
+1. Migration: `create_crm_tickets_table` — ULID PK, `customer_id` FK (→ AR customers), `client_user_id` FK (→ users), `subject`, `description`, `type` (`complaint|inquiry|request`), `priority` (`low|normal|high|critical`), `status` (`open|in_progress|pending_client|resolved|closed`), `assigned_to_id` FK (→ users), `resolved_at`, timestamps, soft deletes
+2. Migration: `create_crm_ticket_messages_table` — `ticket_id`, `author_id` FK (→ users), `body`, `is_internal` (boolean — hides from client view), timestamps
+3. Migration: add `client_id` (nullable FK → AR customers) to `users` table
+4. `app/Domains/CRM/Models/Ticket.php` + `TicketMessage.php`
+5. `app/Domains/CRM/Services/TicketService implements ServiceContract`: `open()`, `reply()`, `assign()`, `resolve()`, `close()`, `reopen()`
+6. `app/Domains/CRM/Policies/TicketPolicy`: permissions `crm.tickets.view | create | manage | assign | close`
+7. Controller: `app/Http/Controllers/CRM/TicketController.php`
+8. Add `client` role to `RolePermissionSeeder` with: `crm.tickets.view | create | reply`; add `crm_manager` and `crm_head` roles (or assign to existing officer/head roles with CRM permissions)
+9. Routes: `routes/api/v1/crm.php` — standard CRUD + `POST /{ticket}/reply`, `PATCH /{ticket}/assign`, `PATCH /{ticket}/resolve`, `PATCH /{ticket}/close`
+10. Register route file in `routes/api.php`
+
+**Frontend:**
+11. `frontend/src/hooks/useCRM.ts`
+12. Client portal pages under `/client-portal/*` in router
+13. CRM staff pages under `/crm/*`: TicketListPage, TicketDetailPage (with thread view), assign modal
+14. `types/crm.ts`, `schemas/crm.ts`
+
+## Relevant Files to Create or Modify
+
+| File | Action |
+|---|---|
+| `database/migrations/*_create_vendor_items_table.php` | Create |
+| `database/migrations/*_add_budget_check_to_purchase_requests.php` | Create |
+| `database/migrations/*_add_vendor_id_to_users.php` | Create |
+| `database/migrations/*_create_vendor_fulfillment_notes_table.php` | Create |
+| `database/migrations/*_create_crm_tickets_table.php` | Create |
+| `database/migrations/*_create_crm_ticket_messages_table.php` | Create |
+| `database/migrations/*_add_client_id_to_users.php` | Create |
+| `app/Domains/AP/Models/VendorItem.php` | Create |
+| `app/Domains/AP/Models/Vendor.php` | Modify (add hasMany vendorItems) |
+| `app/Domains/AP/Services/VendorService.php` | Modify (add importItems) |
+| `app/Domains/AP/Services/VendorItemService.php` | Create |
+| `app/Http/Controllers/AP/VendorItemController.php` | Create |
+| `app/Domains/Procurement/Services/PurchaseRequestService.php` | Modify (budgetCheck, returnForRevision; update vpApprove trigger) |
+| `app/Domains/Procurement/Services/PurchaseOrderService.php` | Modify (add autoCreateFromPr) |
+| `app/Domains/Procurement/Policies/PurchaseRequestPolicy.php` | Modify (add budgetCheck, returnForRevision) |
+| `app/Http/Controllers/Procurement/PurchaseRequestController.php` | Modify (add budgetCheck, returnForRevision, pdf actions) |
+| `app/Http/Controllers/Procurement/PurchaseOrderController.php` | Modify (add vendor assignment finalize action) |
+| `resources/views/procurement/purchase-request-pdf.blade.php` | Create |
+| `app/Domains/AP/Models/VendorFulfillmentNote.php` | Create |
+| `app/Domains/AP/Services/VendorFulfillmentService.php` | Create |
+| `app/Http/Controllers/VendorPortal/VendorPortalController.php` | Create |
+| `routes/api/v1/vendor-portal.php` | Create |
+| `routes/api/v1/crm.php` | Create |
+| `app/Domains/CRM/Models/Ticket.php` | Create |
+| `app/Domains/CRM/Models/TicketMessage.php` | Create |
+| `app/Domains/CRM/Services/TicketService.php` | Create |
+| `app/Domains/CRM/Policies/TicketPolicy.php` | Create |
+| `app/Http/Controllers/CRM/TicketController.php` | Create |
+| `database/seeders/RolePermissionSeeder.php` | Modify (vendor, client, crm_manager roles + new permissions) |
+| `frontend/src/hooks/useVendorItems.ts` | Create |
+| `frontend/src/hooks/useVendorPortal.ts` | Create |
+| `frontend/src/hooks/useCRM.ts` | Create |
+| `frontend/src/pages/accounting/VendorItemsTab.tsx` | Create |
+| `frontend/src/pages/procurement/PurchaseRequestDetailPage.tsx` | Modify |
+| `frontend/src/pages/procurement/CreatePurchaseOrderPage.tsx` | Modify |
+| `frontend/src/pages/vendor-portal/*.tsx` | Create (4 pages) |
+| `frontend/src/pages/crm/*.tsx` | Create (3 pages) |
+| `frontend/src/pages/client-portal/*.tsx` | Create (2 pages) |
+| `frontend/src/router/index.tsx` | Modify (new portal routes + settings route migration) |
+| `frontend/src/types/crm.ts` | Create |
+| `frontend/src/types/vendor.ts` | Modify (add VendorItem) |
+
+## Verification
+
+1. Run `./vendor/bin/pest --testsuite=Feature` after each phase — ensure no regressions
+2. Phase 2: test PR chain — submit → note → check → review → budget_check (officer) → vp_approve; also test return flow; also test rejection at budget_check stage
+3. Phase 3: hit `GET /api/v1/procurement/purchase-requests/{ulid}/pdf` — verify PDF renders with items
+4. Phase 4: VP approve triggers auto-PO creation; check PO exists with `vendor_id = null` and items cloned
+5. Phase 5: Create vendor user (role=vendor, vendor_id=X); log in; mark PO as in-transit; mark delivered (partial); verify GR draft auto-created; internal user confirms GR; check PO qty adjusted
+6. Phase 7: Log in as `officer` role; verify `/dashboard` shows AP aging + pending budget PRs
+7. Phase 8: Create `client` user; log in via `/client-portal`; open ticket; CRM staff replies; client sees reply (non-internal only)
+8. Run `cd frontend && pnpm typecheck && pnpm lint` after all frontend changes
+9. Run `./vendor/bin/phpstan analyse` — ensure level 5 passes

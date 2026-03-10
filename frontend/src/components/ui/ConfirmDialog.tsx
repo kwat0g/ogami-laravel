@@ -21,7 +21,7 @@ export default function ConfirmDialog({
   description,
   confirmLabel = 'Confirm',
   loading = false,
-  variant = 'danger',
+  _variant = 'danger',
 }: ConfirmDialogProps) {
   if (!open) return null
 

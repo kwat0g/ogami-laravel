@@ -69,7 +69,7 @@ function QuickLink({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function PurchasingOfficerDashboard(): React.ReactElement {
-  const { user } = useAuth()
+  useAuth()
   const { data: prData,  isLoading: loadingPR } = usePurchaseRequests({ status: 'submitted', per_page: 1 })
   const { data: poData,  isLoading: loadingPO } = usePurchaseOrders({ status: 'draft',     per_page: 1 })
   const { data: sentPO,  isLoading: loadingSent } = usePurchaseOrders({ status: 'sent',   per_page: 1 })

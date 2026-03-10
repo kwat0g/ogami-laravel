@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ClipboardCheck, AlertTriangle, Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react'
+import { ClipboardCheck, AlertTriangle, Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCancelResults, useInspection, useRecordResults } from '@/hooks/useQC'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -18,13 +18,13 @@ interface ResultRow {
   remarks: string
 }
 
-const stageBadge: Record<InspectionStage, string> = {
+const _stageBadge: Record<InspectionStage, string> = {
   iqc:  'bg-neutral-100 text-neutral-700',
   ipqc: 'bg-neutral-100 text-neutral-700',
   oqc:  'bg-neutral-100 text-neutral-700',
 }
 
-const statusBadge: Record<InspectionStatus, string> = {
+const _statusBadge: Record<InspectionStatus, string> = {
   open:    'bg-neutral-100 text-neutral-600',
   passed:  'bg-neutral-100 text-neutral-700',
   failed:  'bg-neutral-100 text-neutral-700',
@@ -34,7 +34,7 @@ const statusBadge: Record<InspectionStatus, string> = {
 
 export default function InspectionDetailPage(): React.ReactElement {
   const { ulid }   = useParams<{ ulid: string }>()
-  const navigate   = useNavigate()
+  const _navigate   = useNavigate()
   const { data: inspection, isLoading, isError } = useInspection(ulid ?? null)
   const recordMut  = useRecordResults(ulid ?? '')
   const cancelMut  = useCancelResults(ulid ?? '')

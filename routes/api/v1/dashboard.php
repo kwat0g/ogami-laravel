@@ -1766,6 +1766,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->where('status', 'checked')
             ->count();
 
+        $pendingPRBudgetCheck = DB::table('purchase_requests')
+            ->where('status', 'reviewed')
+            ->count();
+
         $openPOs = DB::table('purchase_orders')
             ->whereIn('status', ['sent', 'partially_received'])
             ->count();
@@ -1808,9 +1812,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 'bank_recon_due'            => $bankReconDue,
             ],
             'procurement' => [
-                'pending_pr_review' => $pendingPRReview,
-                'open_pos'          => $openPOs,
-                'pending_gr'        => $pendingGR,
+                'pending_pr_review'        => $pendingPRReview,
+                'pending_pr_budget_check'  => $pendingPRBudgetCheck,
+                'open_pos'                 => $openPOs,
+                'pending_gr'               => $pendingGR,
             ],
             'delivery' => [
                 'inbound_draft'        => $inboundDraft,
@@ -1824,5 +1829,68 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ]),
             fn ($resp) => ($_ttl > 0 ? Cache::put($_cacheKey, $resp->getData(true), $_ttl) : null));
     })->name('dashboard.officer')->can('journal_entries.view');
+
+    // Purchasing Officer Dashboard
+    // GET /api/v1/dashboard/purchasing-officer
+    // ─────────────────────────────────────────────────────────────────────────
+    Route::get('purchasing-officer', function (Request $request) {
+        $user = $request->user();
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_cacheKey = 'dash.purchasing_officer.'.$user->id.'.'.now()->format('Y-m-d-H');
+        if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
+            return response()->json($cached);
+        }
+
+        $draftPRs = DB::table('purchase_requests')
+            ->where('status', 'draft')
+            ->count();
+
+        $submittedPRs = DB::table('purchase_requests')
+            ->whereIn('status', ['submitted', 'checked'])
+            ->count();
+
+        $pendingBudgetCheck = DB::table('purchase_requests')
+            ->where('status', 'reviewed')
+            ->count();
+
+        $openPOs = DB::table('purchase_orders')
+            ->whereIn('status', ['sent', 'partially_received'])
+            ->count();
+
+        $pendingGR = DB::table('purchase_orders')
+            ->where('status', 'sent')
+            ->count();
+
+        $vendorsActive = DB::table('vendors')
+            ->where('status', 'active')
+            ->count();
+
+        $topVendors = DB::table('purchase_orders')
+            ->select('vendors.name', DB::raw('COUNT(purchase_orders.id) as po_count'))
+            ->join('vendors', 'vendors.id', '=', 'purchase_orders.vendor_id')
+            ->whereIn('purchase_orders.status', ['sent', 'partially_received', 'received'])
+            ->whereNull('purchase_orders.deleted_at')
+            ->groupBy('vendors.id', 'vendors.name')
+            ->orderByDesc('po_count')
+            ->limit(5)
+            ->get();
+
+        return tap(response()->json([
+            'purchase_requests' => [
+                'draft'               => $draftPRs,
+                'submitted'           => $submittedPRs,
+                'pending_budget_check'=> $pendingBudgetCheck,
+            ],
+            'purchase_orders' => [
+                'open'       => $openPOs,
+                'pending_gr' => $pendingGR,
+            ],
+            'vendors' => [
+                'active'     => $vendorsActive,
+                'top_5'      => $topVendors,
+            ],
+        ]),
+            fn ($resp) => ($_ttl > 0 ? Cache::put($_cacheKey, $resp->getData(true), $_ttl) : null));
+    })->name('dashboard.purchasing-officer')->can('procurement.purchase-request.view');
 
 });

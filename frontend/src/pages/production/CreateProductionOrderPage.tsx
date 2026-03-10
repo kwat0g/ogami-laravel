@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Factory } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   useBoms,
@@ -24,11 +23,14 @@ export default function CreateProductionOrderPage(): React.ReactElement {
   })
   // Only use BOM results when an item is actually selected — prevents the query
   // from returning all BOMs (global list) before a product is chosen
-  const boms = selectedItemId ? (bomsData?.data ?? []) : []
+  const boms = useMemo(
+    () => selectedItemId ? (bomsData?.data ?? []) : [],
+    [selectedItemId, bomsData]
+  )
 
   // Auto-select BOM when only one active BOM exists for the chosen item
   useEffect(() => {
-    if (selectedItemId && boms.length === 1) set('bom_id', boms[0].id)
+    if (selectedItemId && boms.length === 1) setForm(prev => ({ ...prev, bom_id: boms[0].id }))
   }, [boms, selectedItemId])
 
   const { data: dsData } = useDeliverySchedules({ status: 'open', per_page: 200 })

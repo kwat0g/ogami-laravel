@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, AlertTriangle, CheckCircle2, XCircle, ShoppingCart, FileText } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, XCircle, ShoppingCart, FileText } from 'lucide-react'
 import {
   usePurchaseRequest,
   useSubmitPurchaseRequest,
@@ -19,8 +19,6 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import PageHeader from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
-import type { PurchaseRequestStatus } from '@/types/procurement'
-
 // ── Approval stage component ──────────────────────────────────────────────────
 
 function ApprovalStage({

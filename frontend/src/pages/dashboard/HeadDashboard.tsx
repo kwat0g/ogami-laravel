@@ -4,12 +4,10 @@ import { useHeadDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import {
   Users,
-  Clock,
   CalendarOff,
   ChevronRight,
   CheckCircle,
   AlertCircle,
-  FileCheck,
   Timer,
   DollarSign,
   Wrench,
@@ -99,7 +97,7 @@ function PendingAlert({ count, label, href }: { count: number; label: string; hr
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function HeadDashboard() {
-  const { user } = useAuth()
+  useAuth()
   const { data: stats, isLoading, error } = useHeadDashboardStats()
 
   if (isLoading) return <SkeletonLoader rows={8} />

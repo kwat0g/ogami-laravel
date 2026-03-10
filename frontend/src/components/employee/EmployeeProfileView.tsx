@@ -15,7 +15,6 @@ import {
   Clock,
   UserCircle,
   BadgeCheck,
-  AlertCircle,
   Users,
   Plus,
   FileText,
@@ -679,7 +678,7 @@ export default function EmployeeProfileView({
                 const pct = totalEntitlement > 0
                   ? Math.min((balance.balance / totalEntitlement) * 100, 100)
                   : balance.balance > 0 ? 100 : 0
-                const isEmpty = balance.balance <= 0 && totalEntitlement > 0
+                const _isEmpty = balance.balance <= 0 && totalEntitlement > 0
                 const isEventBased = totalEntitlement === 0
 
                 return (

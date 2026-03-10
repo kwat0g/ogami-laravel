@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertOctagon, AlertTriangle, Plus } from 'lucide-react'
+import { AlertTriangle, Plus } from 'lucide-react'
 import { useNcrs } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'

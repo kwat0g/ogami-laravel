@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Truck, AlertTriangle, Plus } from 'lucide-react'
+import { AlertTriangle, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useDeliverySchedules } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'

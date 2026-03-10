@@ -43,6 +43,8 @@ class User extends Authenticatable implements Auditable
         'email',
         'password',
         'department_id',
+        'vendor_id',
+        'client_id',
         'last_login_at',
         'failed_login_attempts',
         'locked_until',
@@ -114,6 +116,22 @@ class User extends Authenticatable implements Auditable
     public function employee(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(\App\Domains\HR\Models\Employee::class);
+    }
+
+    /**
+     * The vendor account linked to this user (set for vendor portal users).
+     */
+    public function vendor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\AP\Models\Vendor::class);
+    }
+
+    /**
+     * The customer account linked to this user (set for client portal users).
+     */
+    public function customer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\AR\Models\Customer::class, 'client_id');
     }
 
     /**

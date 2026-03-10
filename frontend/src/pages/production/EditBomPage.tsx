@@ -23,7 +23,7 @@ export default function EditBomPage(): React.ReactElement {
 
   const { data: itemsData } = useItems({ per_page: 500 })
   const items = itemsData?.data ?? []
-  const finishedGoods = items.filter(i => i.type === 'finished_good')
+  const _finishedGoods = items.filter(i => i.type === 'finished_good')
   const rawMaterials  = items.filter(i => i.type !== 'finished_good')
 
   const [version, setVersion]       = useState('')

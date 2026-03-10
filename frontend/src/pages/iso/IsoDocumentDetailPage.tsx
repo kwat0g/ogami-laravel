@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
-import type { DocumentStatus, DocumentType } from '@/types/iso';
+import type { DocumentType } from '@/types/iso';
 
 const TYPE_LABELS: Record<DocumentType, string> = {
   procedure: 'Procedure',

@@ -107,7 +107,7 @@ export function useApproveDocument() {
 export function useCloseFinding() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ findingUlid, auditUlid }: { findingUlid: string; auditUlid: string }) =>
+    mutationFn: ({ findingUlid, auditUlid: _auditUlid }: { findingUlid: string; auditUlid: string }) =>
       api.patch(`/iso/audit-findings/${findingUlid}/close`).then(r => r.data),
     onSuccess: (_d, { auditUlid }) => {
       qc.invalidateQueries({ queryKey: ['iso-audits'] });

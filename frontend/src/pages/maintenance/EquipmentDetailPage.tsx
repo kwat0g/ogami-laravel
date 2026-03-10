@@ -20,7 +20,7 @@ interface ConfirmState {
   onConfirm: () => void;
 }
 
-const STATUS_LABEL: Record<string, string> = {
+const _STATUS_LABEL: Record<string, string> = {
   operational: 'Operational',
   under_maintenance: 'Under Maintenance',
   decommissioned: 'Decommissioned',

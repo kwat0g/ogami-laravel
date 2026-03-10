@@ -4,6 +4,7 @@ use App\Infrastructure\Middleware\DepartmentScopeMiddleware;
 use App\Infrastructure\Middleware\EnsureJsonApiMiddleware;
 use App\Infrastructure\Middleware\SecurityHeadersMiddleware;
 use App\Infrastructure\Middleware\SodMiddleware;
+use App\Infrastructure\Middleware\VendorScopeMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'sod' => SodMiddleware::class,
             'dept_scope' => DepartmentScopeMiddleware::class,
+            'vendor_scope' => VendorScopeMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         ]);

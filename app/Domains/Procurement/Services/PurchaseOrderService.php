@@ -152,4 +152,109 @@ final class PurchaseOrderService implements ServiceContract
 
         return 'PO-' . now()->format('Y-m') . '-' . $num;
     }
+
+    // ── Finalize vendor assignment (Phase 4) ─────────────────────────────────
+
+    /**
+     * Assign a vendor to an auto-created PO draft and map each PO line
+     * to a VendorItem from the vendor's catalog.
+     *
+     * @param  array<string, mixed>           $poData    vendor_id, delivery_date, payment_terms, etc.
+     * @param  list<array<string, mixed>>     $itemUpdates  [{ po_item_id, item_master_id?, vendor_item_id?, agreed_unit_cost }]
+     */
+    public function finalizeVendorAssignment(PurchaseOrder $po, array $poData, array $itemUpdates, User $actor): PurchaseOrder
+    {
+        if ($po->status !== 'draft') {
+            throw new DomainException(
+                message: "Only draft POs can have their vendor assigned (current: '{$po->status}').",
+                errorCode: 'PO_NOT_DRAFT',
+                httpStatus: 422,
+            );
+        }
+
+        if ($po->vendor_id !== null) {
+            throw new DomainException(
+                message: 'This PO already has a vendor assigned.',
+                errorCode: 'PO_VENDOR_ALREADY_SET',
+                httpStatus: 422,
+            );
+        }
+
+        $vendor = Vendor::findOrFail($poData['vendor_id']);
+        $vendor->assertAccredited();
+
+        return DB::transaction(function () use ($po, $poData, $itemUpdates, $vendor, $actor): PurchaseOrder {
+            $po->update([
+                'vendor_id'        => $vendor->id,
+                'delivery_date'    => $poData['delivery_date']    ?? null,
+                'payment_terms'    => $poData['payment_terms']    ?? null,
+                'delivery_address' => $poData['delivery_address'] ?? null,
+                'notes'            => $poData['notes']            ?? $po->notes,
+            ]);
+
+            foreach ($itemUpdates as $upd) {
+                $poItem = PurchaseOrderItem::where('purchase_order_id', $po->id)
+                    ->findOrFail($upd['po_item_id']);
+
+                $poItem->update([
+                    'item_master_id'   => $upd['item_master_id']  ?? $poItem->item_master_id,
+                    'agreed_unit_cost' => $upd['agreed_unit_cost'] ?? $poItem->agreed_unit_cost,
+                ]);
+            }
+
+            return $po->refresh();
+        });
+    }
+
+    // ── Auto-create from approved PR ─────────────────────────────────────────
+
+    /**
+     * Called by PurchaseRequestService::vpApprove() after PR is approved.
+     *
+     * Creates a PO draft with vendor_id = null and item_master_id = null.
+     * The Purchasing Officer will later assign the vendor and map items from the vendor catalog.
+     */
+    public function autoCreateFromPr(PurchaseRequest $pr): PurchaseOrder
+    {
+        return DB::transaction(function () use ($pr): PurchaseOrder {
+            $reference = $this->generateReference();
+
+            $po = PurchaseOrder::create([
+                'po_reference'        => $reference,
+                'purchase_request_id' => $pr->id,
+                'vendor_id'           => null,  // to be assigned by Purchasing Officer
+                'po_date'             => now()->toDateString(),
+                'delivery_date'       => null,
+                'payment_terms'       => null,
+                'delivery_address'    => null,
+                'notes'               => "Auto-created from approved PR {$pr->pr_reference}.",
+                'status'              => 'draft',
+                'total_po_amount'     => 0,
+                'created_by_id'       => $pr->vp_approved_by_id,
+            ]);
+
+            foreach ($pr->items as $index => $prItem) {
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $po->id,
+                    'pr_item_id'        => $prItem->id,
+                    'item_master_id'    => null,   // Purchasing Officer maps via vendor catalog
+                    'item_description'  => $prItem->item_description,
+                    'unit_of_measure'   => $prItem->unit_of_measure,
+                    'quantity_ordered'  => $prItem->quantity,
+                    'agreed_unit_cost'  => $prItem->estimated_unit_cost,
+                    'quantity_received' => 0,
+                    'line_order'        => $index + 1,
+                ]);
+            }
+
+            // Mark the PR as converted so it cannot spawn a second PO
+            $pr->update([
+                'status'             => 'converted_to_po',
+                'converted_to_po_id' => $po->id,
+                'converted_at'       => now(),
+            ]);
+
+            return $po->refresh();
+        });
+    }
 }

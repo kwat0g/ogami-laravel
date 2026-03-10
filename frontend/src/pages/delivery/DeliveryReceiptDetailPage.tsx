@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
-import type { DrDirection, DrStatus } from '@/types/delivery';
+import type { DrDirection } from '@/types/delivery';
 
 const DIRECTION_COLORS: Record<DrDirection, string> = {
   inbound: 'bg-neutral-100 text-neutral-700',

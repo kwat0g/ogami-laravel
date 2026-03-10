@@ -31,7 +31,7 @@ export default function DepartmentsPage() {
 
   const rows = data?.data ?? []
 
-  const openCreate = () => { setForm(emptyForm()); setFormError(null) }
+  const _openCreate = () => { setForm(emptyForm()); setFormError(null) }
   const openEdit   = (dept: Department) => { setForm({ id: dept.id, code: dept.code, name: dept.name, cost_center_code: dept.cost_center_code ?? '', is_active: dept.is_active }); setFormError(null) }
   const closeForm  = () => setForm(null)
 

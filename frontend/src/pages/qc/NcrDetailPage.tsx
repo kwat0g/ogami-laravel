@@ -10,9 +10,9 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
-import type { NcrSeverity, NcrStatus, CapaStatus } from '@/types/qc'
+import type { CapaStatus } from '@/types/qc'
 
-const capaStatusBadge: Record<CapaStatus, string> = {
+const _capaStatusBadge: Record<CapaStatus, string> = {
   open:        'bg-neutral-50 text-neutral-500 border-neutral-200',
   in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
   completed:   'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -21,7 +21,7 @@ const capaStatusBadge: Record<CapaStatus, string> = {
 
 export default function NcrDetailPage(): React.ReactElement {
   const { ulid }    = useParams<{ ulid: string }>()
-  const navigate    = useNavigate()
+  const _navigate    = useNavigate()
   const [showCapaForm, setShowCapaForm] = useState(false)
   const [capaData, setCapaData]         = useState({
     type:           'corrective' as 'corrective' | 'preventive',

@@ -70,6 +70,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{purchaseRequest}/cancel', [PurchaseRequestController::class, 'cancel'])
             ->middleware('throttle:api-action')
             ->name('cancel');
+
+        Route::get('/{purchaseRequest}/pdf', [PurchaseRequestController::class, 'pdf'])
+            ->name('pdf');
     });
 
     // ── Purchase Orders ──────────────────────────────────────────────────────
@@ -91,6 +94,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{purchaseOrder}/send', [PurchaseOrderController::class, 'send'])
             ->middleware('throttle:api-action')
             ->name('send');
+
+        Route::post('/{purchaseOrder}/assign-vendor', [PurchaseOrderController::class, 'assignVendor'])
+            ->middleware('throttle:api-action')
+            ->name('assign-vendor');
 
         Route::post('/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
             ->middleware('throttle:api-action')

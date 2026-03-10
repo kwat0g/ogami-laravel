@@ -1,10 +1,8 @@
 import { Link } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
 import { useExecutiveDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { 
   Users, 
-  AlertCircle, 
   Building,
   TrendingUp,
   TrendingDown,
@@ -13,7 +11,6 @@ import {
   Calendar,
   Activity,
   ChevronRight,
-  BarChart3
 } from 'lucide-react'
 
 // Simple stat card - no decorative styling

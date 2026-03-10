@@ -69,7 +69,7 @@ function InvoiceCard({ invoice, variant }: { invoice: VendorInvoice; variant: 'o
 function Column({
   title,
   icon,
-  color,
+  color: _color,
   invoices,
   isLoading,
   variant,

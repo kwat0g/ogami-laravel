@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, AlertTriangle, CheckCircle2, Send, XCircle, PackageCheck } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Send, XCircle, PackageCheck } from 'lucide-react'
 import {
   usePurchaseOrder,
   useSendPurchaseOrder,
@@ -74,7 +74,7 @@ function CancelModal({
 
 export default function PurchaseOrderDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>()
-  const navigate  = useNavigate()
+  const _navigate  = useNavigate()
 
   const { data: po, isLoading, isError } = usePurchaseOrder(ulid ?? null)
 

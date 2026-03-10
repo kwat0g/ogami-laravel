@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { ShieldCheck, Plus } from 'lucide-react'
+import { ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCapaActions, useCompleteCapaAction } from '@/hooks/useQC'
 import type { CapaAction, CapaStatus } from '@/types/qc'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { Card, CardBody } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 

@@ -67,7 +67,7 @@ export default function ShiftsPage() {
 
   const rows = data?.data ?? []
 
-  const openCreate = () => { setForm(emptyForm()); setFormError(null) }
+  const _openCreate = () => { setForm(emptyForm()); setFormError(null) }
   const openEdit   = (s: ShiftSchedule) => { setForm(shiftFromExisting(s)); setFormError(null) }
   const closeForm  = () => setForm(null)
 

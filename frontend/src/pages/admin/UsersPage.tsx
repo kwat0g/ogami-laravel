@@ -80,7 +80,7 @@ const ROLES_WITHOUT_EMPLOYEE = ['admin', 'executive']
 export default function UsersPage() {
   const { hasPermission } = useAuthStore()
 
-  const canCreate     = hasPermission('system.manage_users')
+  const _canCreate     = hasPermission('system.manage_users')
   const canUpdate     = hasPermission('system.manage_users')
   const canDelete     = hasPermission('system.manage_users')
   const canAssignRole = hasPermission('system.assign_roles')
@@ -117,7 +117,7 @@ export default function UsersPage() {
   )
 
   // ── Wizard helpers ────────────────────────────────────────────────────────
-  const openCreate = () => { setWizard(emptyWizard()); setWizardError(null) }
+  const _openCreate = () => { setWizard(emptyWizard()); setWizardError(null) }
   const closeWizard = () => { setWizard(null); setWizardError(null) }
   const setWizardField = <K extends keyof WizardState>(k: K, v: WizardState[K]) =>
     setWizard((w) => w ? { ...w, [k]: v } : w)

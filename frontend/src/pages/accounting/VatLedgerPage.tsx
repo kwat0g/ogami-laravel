@@ -10,7 +10,7 @@ import type { VatLedger } from '@/types/tax'
 // VAT Summary Card
 // ---------------------------------------------------------------------------
 
-function VatCard({ label, amount, highlight }: { label: string; amount: number; highlight?: 'green' | 'red' | 'blue' }) {
+function VatCard({ label, amount, highlight: _highlight }: { label: string; amount: number; highlight?: 'green' | 'red' | 'blue' }) {
   // Neutral styling regardless of highlight
   return (
     <div className="rounded border border-neutral-200 bg-neutral-50 p-4">

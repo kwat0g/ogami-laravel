@@ -111,7 +111,7 @@ function MetricRow({ label, value, href }: { label: string; value: number; href?
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function OfficerDashboard() {
-  const { user } = useAuth()
+  useAuth()
   const { data: stats, isLoading, error } = useOfficerDashboardStats()
 
   if (isLoading) return <SkeletonLoader rows={8} />

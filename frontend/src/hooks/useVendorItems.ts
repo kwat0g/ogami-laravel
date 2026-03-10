@@ -37,7 +37,7 @@ export interface CreateVendorItemPayload {
   is_active?: boolean
 }
 
-export interface UpdateVendorItemPayload extends Partial<CreateVendorItemPayload> {}
+export type UpdateVendorItemPayload = Partial<CreateVendorItemPayload>
 
 export interface ImportVendorItemsPayload {
   items: Array<{

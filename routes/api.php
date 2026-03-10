@@ -71,6 +71,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::prefix('notifications')->name('notifications.')->group(base_path('routes/api/v1/notifications.php'));
         Route::prefix('dashboard')->name('dashboard.')->group(base_path('routes/api/v1/dashboard.php'));
         Route::prefix('procurement')->name('procurement.')->group(base_path('routes/api/v1/procurement.php'));
+            Route::prefix('vendor-portal')->name('vendor-portal.')->group(base_path('routes/api/v1/vendor-portal.php'));
         Route::prefix('inventory')->name('inventory.')->group(base_path('routes/api/v1/inventory.php'));
         Route::prefix('production')->name('production.')->group(base_path('routes/api/v1/production.php'));
         Route::prefix('qc')->name('qc.')->group(base_path('routes/api/v1/qc.php'));
@@ -78,5 +79,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::prefix('mold')->name('mold.')->group(base_path('routes/api/v1/mold.php'));
         Route::prefix('delivery')->name('delivery.')->group(base_path('routes/api/v1/delivery.php'));
         Route::prefix('iso')->name('iso.')->group(base_path('routes/api/v1/iso.php'));
+        Route::prefix('crm')->name('crm.')->group(base_path('routes/api/v1/crm.php'));
     });
 });

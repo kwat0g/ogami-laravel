@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, AlertTriangle, CheckCircle2, ClipboardCheck, Trash2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Trash2 } from 'lucide-react'
 import {
   useGoodsReceipt,
   useConfirmGoodsReceipt,
@@ -11,7 +11,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
-import type { GoodsReceiptStatus, GoodsReceiptCondition } from '@/types/procurement'
+import type { GoodsReceiptCondition } from '@/types/procurement'
 
 const conditionBadgeClass: Record<GoodsReceiptCondition, string> = {
   good:     'bg-neutral-100 text-neutral-700',

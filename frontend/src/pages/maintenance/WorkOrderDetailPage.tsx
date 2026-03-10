@@ -9,7 +9,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
-import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
+import type { WorkOrderPriority } from '@/types/maintenance';
 
 const PRIORITY_COLORS: Record<WorkOrderPriority, string> = {
   low:      'bg-neutral-100 text-neutral-500',

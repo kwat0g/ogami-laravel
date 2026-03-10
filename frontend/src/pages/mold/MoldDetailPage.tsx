@@ -9,14 +9,13 @@ import { toast } from 'sonner';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
-import { InfoRow, InfoList } from '@/components/ui/InfoRow';
 import type { LogShotsPayload, MoldStatus } from '@/types/mold';
 
 const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 bg-white';
 
 export default function MoldDetailPage() {
   const { ulid } = useParams<{ ulid: string }>();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { data, isLoading } = useMold(ulid ?? '');
   const logShots = useLogShots(ulid ?? '');
   const updateMut = useUpdateMold(ulid ?? '');

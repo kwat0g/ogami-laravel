@@ -96,6 +96,12 @@ final class PurchaseOrder extends Model implements Auditable
         return $this->hasMany(GoodsReceipt::class);
     }
 
+    /** @return HasMany<\App\Domains\AP\Models\VendorFulfillmentNote, PurchaseOrder> */
+    public function fulfillmentNotes(): HasMany
+    {
+        return $this->hasMany(\App\Domains\AP\Models\VendorFulfillmentNote::class)->orderBy('created_at', 'desc');
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     public function canReceiveGoods(): bool

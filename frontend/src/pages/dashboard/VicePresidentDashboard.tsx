@@ -103,7 +103,7 @@ function formatCurrency(centavos: number): string {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function VicePresidentDashboard() {
-  const { user } = useAuth()
+  useAuth()
   const { data: stats, isLoading, error } = useVicePresidentDashboardStats()
 
   if (isLoading) return <SkeletonLoader rows={8} />
