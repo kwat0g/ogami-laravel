@@ -73,6 +73,18 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Structured JSON logging for production log aggregation.
+        // Enable via LOG_STACK=daily,json or LOG_CHANNEL=json
+        // Machine-parseable output suitable for ELK, Datadog, CloudWatch, etc.
+        'json' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel-json.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'formatter' => \Monolog\Formatter\JsonFormatter::class,
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

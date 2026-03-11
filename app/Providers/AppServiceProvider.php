@@ -58,6 +58,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use App\Infrastructure\Boot\ValidateEnvironment;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -74,6 +75,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ── Environment validation — fail early on missing config ────────────
+        ValidateEnvironment::check();
         // ── Production safety: block destructive DB commands ─────────────────
         // Prevents `migrate:fresh`, `migrate:reset`, and `db:wipe` from ever
         // running against the production database. This is the final hard stop
