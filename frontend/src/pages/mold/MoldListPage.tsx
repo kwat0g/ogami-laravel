@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Settings } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useMolds } from '@/hooks/useMold';
+import { useAuthStore } from '@/stores/authStore';
 import type { MoldStatus } from '@/types/mold';
 
 const STATUS_COLORS: Record<MoldStatus, string> = {
@@ -15,18 +16,21 @@ export default function MoldListPage() {
   const [status, setStatus] = useState('');
   const [withArchived, setWithArchived] = useState(false);
   const { data, isLoading } = useMolds({ ...(status ? { status } : {}), ...(withArchived ? { with_archived: true } : {}) });
+  const canManage = useAuthStore(s => s.hasPermission('mold.manage'));
 
   return (
     <div className="space-y-4">
       <PageHeader
         title="Molds"
         actions={
-          <Link
-            to="/mold/masters/new"
-            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            <Plus size={16} /> New Mold
-          </Link>
+          canManage ? (
+            <Link
+              to="/mold/masters/new"
+              className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+            >
+              <Plus size={16} /> New Mold
+            </Link>
+          ) : undefined
         }
       />
 

@@ -263,6 +263,19 @@ export default function APInvoiceDetailPage() {
                 </button>
               </PermissionGuard>
             )}
+
+            {/* Download BIR Form 2307 — available when EWT applies and invoice is approved/paid */}
+            {(invoice.ewt_amount > 0) && ['approved', 'partially_paid', 'paid'].includes(invoice.status) && (
+              <a
+                href={`/api/v1/accounting/ap/invoices/${invoice.ulid ?? invoice.id}/form-2307`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded"
+              >
+                <FileText className="h-4 w-4" />
+                Form 2307
+              </a>
+            )}
           </div>
         }
       />

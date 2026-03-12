@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { ArrowLeft, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Package, ShieldAlert, ShieldCheck, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   useProductionOrder,
@@ -10,6 +10,9 @@ import {
   useCancelOrder,
   useVoidOrder,
   useLogOutput,
+  useStockCheck,
+  useForceRelease,
+  type StockCheckItem,
 } from '@/hooks/useProduction'
 import { usePermission } from '@/hooks/usePermission'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
@@ -51,6 +54,12 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     remarks: '',
   })
 
+  // ── Stock Check + QC Override state ──────────────────────────────────────
+  const [showStockModal, setShowStockModal] = useState(false)
+  const [stockItems, setStockItems] = useState<StockCheckItem[]>([])
+  const [showQcOverrideModal, setShowQcOverrideModal] = useState(false)
+  const [qcErrorMessage, setQcErrorMessage] = useState('')
+
   const { data: order, isLoading, isError } = useProductionOrder(ulid ?? null)
   const { data: departmentsData } = useDepartments()
   const prodDeptId = departmentsData?.data?.find(d => d.code === 'PROD')?.id
@@ -60,19 +69,49 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const canRelease    = usePermission('production.orders.release')
   const canComplete   = usePermission('production.orders.complete')
   const canLogOutput  = usePermission('production.orders.log_output')
+  const canQcOverride = usePermission('production.qc-override')
 
-  const releaseMut  = useReleaseOrder(ulid ?? '')
-  const startMut    = useStartOrder(ulid ?? '')
-  const completeMut = useCompleteOrder(ulid ?? '')
-  const cancelMut   = useCancelOrder(ulid ?? '')
-  const voidMut     = useVoidOrder(ulid ?? '')
-  const logMut      = useLogOutput(ulid ?? '')
+  const releaseMut    = useReleaseOrder(ulid ?? '')
+  const startMut      = useStartOrder(ulid ?? '')
+  const completeMut   = useCompleteOrder(ulid ?? '')
+  const cancelMut     = useCancelOrder(ulid ?? '')
+  const voidMut       = useVoidOrder(ulid ?? '')
+  const logMut        = useLogOutput(ulid ?? '')
+  const stockCheckQ   = useStockCheck(ulid ?? null)
+  const forceRelease  = useForceRelease(ulid ?? '')
 
   const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
 
+  // ── PROD-001: Pre-release stock check flow ──────────────────────────────
+  const handleReleaseClick = async () => {
+    // Always do a stock check first for draft orders
+    try {
+      const result = await stockCheckQ.refetch()
+      const items = result.data ?? []
+      setStockItems(items)
+
+      const allSufficient = items.length === 0 || items.every(i => i.sufficient)
+      if (allSufficient) {
+        // Stock is OK — go straight to confirm dialog
+        setConfirmAction('release')
+      } else {
+        // Show stock shortage modal
+        setShowStockModal(true)
+      }
+    } catch {
+      // If stock check fails, still allow release attempt
+      setConfirmAction('release')
+    }
+  }
+
   const handleAction = async (action: 'release' | 'start' | 'complete' | 'cancel') => {
+    if (action === 'release') {
+      await handleReleaseClick()
+      return
+    }
+
     if (action === 'complete' && order) {
       const produced  = parseFloat(order.qty_produced)
       const required  = parseFloat(order.qty_required)
@@ -87,6 +126,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     setConfirmAction(action)
   }
 
+  // ── PROD-002: Handle release with QC gate error detection ───────────────
   const executeAction = async () => {
     if (!confirmAction) return
     try {
@@ -95,9 +135,29 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       toast.success(`Work order ${confirmAction}d.`)
       setConfirmAction(null)
     } catch (err) {
+      setConfirmAction(null)
+      // PROD-002: Detect QC gate blocked error
+      const apiErr = err as { response?: { data?: { error_code?: string; message?: string } } }
+      if (apiErr?.response?.data?.error_code === 'PROD_QC_GATE_BLOCKED') {
+        setQcErrorMessage(apiErr.response.data.message ?? 'Release blocked by failed QC inspections.')
+        setShowQcOverrideModal(true)
+        return
+      }
       if (isHandledApiError(err)) return
       const msg = (err as { message?: string })?.message
       toast.error(msg ?? `Failed to ${confirmAction} order.`)
+    }
+  }
+
+  // ── PROD-002: Force release with QC override ───────────────────────────
+  const handleForceRelease = async () => {
+    try {
+      await forceRelease.mutateAsync()
+      toast.success('Work order released (QC override applied).')
+      setShowQcOverrideModal(false)
+    } catch (err) {
+      if (isHandledApiError(err)) return
+      toast.error('Force release failed.')
     }
   }
 
@@ -330,8 +390,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
         <div className="flex flex-wrap gap-2">
           {order.status === 'draft' && canRelease && (
-            <button onClick={() => handleAction('release')} disabled={anyPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-              Release
+            <button onClick={() => handleAction('release')} disabled={anyPending || stockCheckQ.isFetching} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
+              {stockCheckQ.isFetching ? 'Checking stock…' : 'Release'}
             </button>
           )}
           {order.status === 'released' && canRelease && (
@@ -371,6 +431,114 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         </div>
       </div>
 
+      {/* ── PROD-001: Stock Check Modal ──────────────────────────────────────── */}
+      {showStockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-200">
+              <Package className="w-5 h-5 text-amber-600" />
+              <h3 className="text-base font-semibold text-neutral-900">Stock Availability Check</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-neutral-600 mb-4">
+                Some BOM components have insufficient stock. The release will attempt to deduct materials — if stock is truly insufficient, it will fail.
+              </p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200">
+                    <th className="text-left text-xs font-medium text-neutral-500 py-2">Component</th>
+                    <th className="text-right text-xs font-medium text-neutral-500 py-2">Required</th>
+                    <th className="text-right text-xs font-medium text-neutral-500 py-2">Available</th>
+                    <th className="text-center text-xs font-medium text-neutral-500 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {stockItems.map((item) => (
+                    <tr key={item.component_item_id}>
+                      <td className="py-2 text-neutral-800">{item.item_name}</td>
+                      <td className="py-2 text-right tabular-nums">{item.required_qty.toLocaleString('en-PH', { maximumFractionDigits: 4 })} {item.unit_of_measure}</td>
+                      <td className="py-2 text-right tabular-nums">{item.available_qty.toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                      <td className="py-2 text-center">
+                        {item.sufficient ? (
+                          <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500 mx-auto" />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-lg">
+              <button
+                onClick={() => setShowStockModal(false)}
+                className="px-4 py-2 text-sm text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowStockModal(false)
+                  setConfirmAction('release')
+                }}
+                className="px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white rounded"
+              >
+                Release Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PROD-002: QC Override Modal ───────────────────────────────────────── */}
+      {showQcOverrideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-200">
+              <ShieldAlert className="w-5 h-5 text-red-600" />
+              <h3 className="text-base font-semibold text-neutral-900">QC Gate Blocked</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-neutral-700 mb-3">{qcErrorMessage}</p>
+              {canQcOverride ? (
+                <div className="bg-amber-50 border border-amber-200 rounded p-3">
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-amber-800">
+                      You have the <strong>QC Override</strong> permission. You may force-release this order despite the failed inspections.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded p-3">
+                  <p className="text-sm text-red-700">
+                    You do not have permission to override QC blocks. Contact a user with the <strong>QC Override</strong> permission, or resolve the failed inspection(s) first.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-lg">
+              <button
+                onClick={() => setShowQcOverrideModal(false)}
+                className="px-4 py-2 text-sm text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-100"
+              >
+                {canQcOverride ? 'Cancel' : 'Close'}
+              </button>
+              {canQcOverride && (
+                <button
+                  onClick={handleForceRelease}
+                  disabled={forceRelease.isPending}
+                  className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {forceRelease.isPending ? 'Releasing…' : 'Override QC & Release'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Action Confirmation Dialog */}
       <ConfirmDialog
         open={confirmAction !== null}
@@ -378,7 +546,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         onConfirm={executeAction}
         title={`${confirmAction?.charAt(0).toUpperCase()}${confirmAction?.slice(1)} work order?`}
         description={
-          confirmAction === 'release' ? 'This will release the work order to production.' :
+          confirmAction === 'release' ? 'This will release the work order to production and deduct BOM materials from inventory.' :
           confirmAction === 'start' ? 'This will mark the work order as in progress.' :
           confirmAction === 'complete' ? 'This will mark the work order as completed.' :
           confirmAction === 'cancel' ? 'This will cancel the work order.' :

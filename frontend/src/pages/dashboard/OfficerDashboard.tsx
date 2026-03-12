@@ -1,50 +1,58 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { useOfficerDashboardStats } from '@/hooks/useDashboard'
+import { useAccountingDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {
   FileText,
   ChevronRight,
   DollarSign,
-  Truck,
-  ClipboardList,
   ShoppingCart,
   BookOpen,
   Landmark,
   AlertCircle,
   CalendarCheck,
-  Package,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  CreditCard,
+  ArrowUpRight,
+  BarChart3,
+  Wallet,
 } from 'lucide-react'
 
 // ── Reusable components ───────────────────────────────────────────────────────
 
-function StatCard({
+function KpiCard({
   label,
   value,
   sub,
   icon: Icon,
   href,
+  trend,
 }: {
   label: string
   value: string | number
   sub?: string
   icon: React.ComponentType<{ className?: string }>
   href?: string
+  trend?: 'up' | 'down' | 'neutral'
 }) {
   const content = (
-    <Card className="h-full">
+    <Card className="h-full hover:shadow-md transition-shadow">
       <div className="p-5">
         <div className="flex items-start justify-between">
-          <Icon className="h-5 w-5 text-neutral-500" />
-          {href && (
-            <ChevronRight className="h-4 w-4 text-neutral-400" />
-          )}
+          <div className="p-2 rounded-lg bg-neutral-100">
+            <Icon className="h-4 w-4 text-neutral-600" />
+          </div>
+          {trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
+          {trend === 'down' && <TrendingDown className="h-4 w-4 text-red-500" />}
+          {href && !trend && <ArrowUpRight className="h-4 w-4 text-neutral-400" />}
         </div>
-        <div className="mt-4">
-          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-          <p className="text-sm text-neutral-600 mt-1">{label}</p>
-          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
+        <div className="mt-3">
+          <p className="text-2xl font-bold text-neutral-900 tracking-tight">{value}</p>
+          <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
+          {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
         </div>
       </div>
     </Card>
@@ -53,45 +61,29 @@ function StatCard({
   return content
 }
 
-function SectionCard({
-  title,
-  icon: Icon,
-  children,
-  action,
-}: {
-  title: string
-  icon?: React.ComponentType<{ className?: string }>
-  children: React.ReactNode
-  action?: { label: string; href: string }
-}) {
+function SectionTitle({ title, action }: { title: string; action?: { label: string; href: string } }) {
   return (
-    <Card>
-      <CardHeader action={action && (
-        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-          {action.label}
-          <ChevronRight className="h-3 w-3" />
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-sm font-semibold text-neutral-800 uppercase tracking-wide">{title}</h2>
+      {action && (
+        <Link to={action.href} className="text-xs text-neutral-500 hover:text-neutral-800 flex items-center gap-1">
+          {action.label} <ChevronRight className="h-3 w-3" />
         </Link>
-      )}>
-        <div className="flex items-center gap-2">
-          {Icon && <Icon className="h-4 w-4 text-neutral-500" />}
-          {title}
-        </div>
-      </CardHeader>
-      <CardBody>{children}</CardBody>
-    </Card>
+      )}
+    </div>
   )
 }
 
-function PendingAlert({ count, label, href }: { count: number; label: string; href: string }) {
+function ActionItem({ count, label, href, urgent }: { count: number; label: string; href: string; urgent?: boolean }) {
   if (count === 0) return null
   return (
     <Link to={href}>
-      <Card className="border-amber-200 bg-amber-50 hover:border-amber-300 transition-colors">
+      <Card className={`${urgent ? 'border-amber-200 bg-amber-50/50' : 'border-neutral-200'} hover:shadow-sm transition-all`}>
         <div className="p-4 flex items-center gap-4">
-          <span className="text-lg font-semibold text-amber-700">{count}</span>
+          <div className={`text-xl font-bold ${urgent ? 'text-amber-600' : 'text-neutral-800'}`}>{count}</div>
           <div className="flex-1">
-            <span className="text-sm font-medium text-neutral-800 block">{label}</span>
-            <span className="text-xs text-neutral-600">Click to review</span>
+            <p className="text-sm font-medium text-neutral-800">{label}</p>
+            <p className="text-xs text-neutral-500">Click to review</p>
           </div>
           <ChevronRight className="h-4 w-4 text-neutral-400" />
         </div>
@@ -100,38 +92,54 @@ function PendingAlert({ count, label, href }: { count: number; label: string; hr
   )
 }
 
-function MetricRow({ label, value, href }: { label: string; value: number; href?: string }) {
-  const content = (
-    <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-neutral-600">{label}</span>
-      <span className={`text-sm font-semibold ${value > 0 ? 'text-amber-600' : 'text-neutral-400'}`}>{value}</span>
+function AgingBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
+  const pct = total > 0 ? Math.min((value / total) * 100, 100) : 0
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-neutral-600">{label}</span>
+        <span className="font-semibold text-neutral-800">{value}</span>
+      </div>
+      <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
     </div>
   )
-  if (href && value > 0) return <Link to={href} className="block hover:bg-neutral-50 rounded px-1">{content}</Link>
-  return <div className="px-1">{content}</div>
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function OfficerDashboard() {
   useAuth()
-  const { data: stats, isLoading, error } = useOfficerDashboardStats()
+  const { data: stats, isLoading, error } = useAccountingDashboardStats()
 
   if (isLoading) return <SkeletonLoader rows={8} />
 
-  const acctg    = stats?.accounting
-  const proc     = stats?.procurement
-  const delivery = stats?.delivery
-  const payroll  = stats?.payroll
+  const p    = stats?.pending_approvals
+  const fin  = stats?.financial_summary
+  const an   = stats?.analytics
+  const fp   = stats?.current_fiscal_period
+
+  const totalApAging = (an?.ap_aging?.current ?? 0) + (an?.ap_aging?.['1_30_days'] ?? 0) +
+                       (an?.ap_aging?.['31_60_days'] ?? 0) + (an?.ap_aging?.over_60_days ?? 0)
+  const totalArAging = (an?.ar_aging?.current ?? 0) + (an?.ar_aging?.['1_30_days'] ?? 0) +
+                       (an?.ar_aging?.['31_60_days'] ?? 0) + (an?.ar_aging?.over_60_days ?? 0)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900">
-        Officer Dashboard
-      </h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-neutral-900">Accounting Dashboard</h1>
+          {fp && (
+            <p className="text-sm text-neutral-500 mt-0.5">
+              Fiscal Period: <span className="font-medium text-neutral-700">{fp.name}</span>
+              {' '}({fp.date_from} — {fp.date_to})
+            </p>
+          )}
+        </div>
+      </div>
 
-      {/* Error banner */}
       {error && (
         <Card className="border-red-200">
           <div className="p-4 flex items-center gap-3">
@@ -141,97 +149,211 @@ export default function OfficerDashboard() {
         </Card>
       )}
 
-      {/* Accounting KPIs */}
+      {/* Action Items — what needs attention NOW */}
+      {(p?.total ?? 0) > 0 && (
+        <div>
+          <SectionTitle title="Requires Your Action" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <ActionItem count={p?.journal_entries ?? 0} label="Journal Entries to Post" href="/accounting/journal-entries" urgent />
+            <ActionItem count={p?.vendor_invoices ?? 0} label="AP Invoices to Approve" href="/accounting/ap/invoices" urgent />
+            <ActionItem count={p?.loans_for_accounting ?? 0} label="Loans Pending Review" href="/accounting/loans" urgent />
+            <ActionItem count={p?.payroll_for_review ?? 0} label="Payroll Runs to Approve" href="/payroll/runs" urgent />
+          </div>
+        </div>
+      )}
+
+      {/* Financial KPIs */}
       <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Accounting</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatCard label="Vendor Invoices Pending" value={acctg?.pending_vendor_invoices ?? 0} icon={FileText}   href="/ap/invoices" />
-          <StatCard label="Customer Invoices Pending" value={acctg?.pending_customer_invoices ?? 0} icon={FileText} href="/ar/invoices" />
-          <StatCard label="Journal Entries to Post" value={acctg?.journal_entries_to_post ?? 0} icon={BookOpen}   href="/accounting/journal-entries" />
-          <StatCard label="Bank Recon Due" value={acctg?.bank_recon_due ?? 0} icon={Landmark} href="/accounting/bank-reconciliation" />
+        <SectionTitle title="Financial Overview" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard
+            label="Pending AP Invoices"
+            value={fin?.pending_vendor_invoices ?? 0}
+            icon={FileText}
+            href="/accounting/ap/invoices"
+          />
+          <KpiCard
+            label="Pending AR Invoices"
+            value={fin?.pending_customer_invoices ?? 0}
+            icon={CreditCard}
+            href="/ar/invoices"
+          />
+          <KpiCard
+            label="Unreconciled Banks"
+            value={fin?.unreconciled_bank_accounts ?? 0}
+            icon={Landmark}
+            href="/banking/reconciliations"
+          />
+          <KpiCard
+            label="Cash Position"
+            value={an?.cash_position?.total_balance != null
+              ? `₱${(an.cash_position.total_balance / 100).toLocaleString('en-PH', { minimumFractionDigits: 0 })}`
+              : '—'}
+            sub={`${an?.cash_position?.account_count ?? 0} bank account(s)`}
+            icon={Wallet}
+            href="/banking/accounts"
+          />
         </div>
       </div>
 
-      {/* Pending alerts */}
-      <div className="space-y-3">
-        <PendingAlert count={acctg?.journal_entries_to_post ?? 0} label="Journal entries awaiting posting" href="/accounting/journal-entries" />
-        <PendingAlert count={proc?.pending_pr_review ?? 0} label="Purchase requests for your review" href="/procurement/purchase-requests" />
-        <PendingAlert count={payroll?.runs_pending_acctg_approval ?? 0} label="Payroll runs pending accounting approval" href="/payroll/runs" />
-      </div>
-
-      {/* Procurement + Delivery side by side */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SectionCard title="Procurement" icon={ShoppingCart} action={{ label: 'Purchase Requests', href: '/procurement/purchase-requests' }}>
-          <div className="divide-y divide-neutral-100">
-            <MetricRow label="Purchase Requests to Review" value={proc?.pending_pr_review ?? 0} href="/procurement/purchase-requests" />
-            <MetricRow label="Open Purchase Orders"        value={proc?.open_pos ?? 0}           href="/procurement/purchase-orders" />
-            <MetricRow label="Pending Goods Receipts"      value={proc?.pending_gr ?? 0}         href="/procurement/goods-receipts" />
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Delivery" icon={Truck} action={{ label: 'Delivery List', href: '/delivery' }}>
-          <div className="divide-y divide-neutral-100">
-            <MetricRow label="Inbound Drafts"   value={delivery?.inbound_draft ?? 0}       href="/delivery?type=inbound" />
-            <MetricRow label="Outbound Drafts"  value={delivery?.outbound_draft ?? 0}      href="/delivery?type=outbound" />
-            <MetricRow label="In-Transit Shipments" value={delivery?.in_transit_shipments ?? 0} href="/delivery?status=in_transit" />
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* Payroll + Inventory side by side */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SectionCard title="Payroll" icon={DollarSign} action={{ label: 'Payroll Runs', href: '/payroll/runs' }}>
-          <div className="divide-y divide-neutral-100">
-            <MetricRow label="Runs Pending Acctg Approval" value={payroll?.runs_pending_acctg_approval ?? 0} href="/payroll/runs" />
-            <div className="flex items-center justify-between py-2 px-1">
-              <span className="text-sm text-neutral-600">Next Pay Date</span>
-              <span className="text-sm font-medium text-neutral-900">
-                {payroll?.next_pay_date
-                  ? new Date(payroll.next_pay_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
-                  : '—'}
-              </span>
+      {/* AP & AR Aging side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader action={
+            <Link to="/accounting/ap/aging-report" className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 flex items-center gap-1">
+              Full Report <ChevronRight className="h-3 w-3" />
+            </Link>
+          }>
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-4 w-4 text-red-500" />
+              AP Aging Summary
             </div>
-          </div>
-        </SectionCard>
+          </CardHeader>
+          <CardBody>
+            {an?.ap_aging ? (
+              <div className="space-y-3">
+                <AgingBar label="Current" value={an.ap_aging.current} total={totalApAging} color="bg-green-400" />
+                <AgingBar label="1–30 days" value={an.ap_aging['1_30_days']} total={totalApAging} color="bg-yellow-400" />
+                <AgingBar label="31–60 days" value={an.ap_aging['31_60_days']} total={totalApAging} color="bg-orange-400" />
+                <AgingBar label="Over 60 days" value={an.ap_aging.over_60_days} total={totalApAging} color="bg-red-500" />
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-400 text-center py-6">No AP aging data available</p>
+            )}
+          </CardBody>
+        </Card>
 
-        <SectionCard title="Quick Navigation" icon={ClipboardList}>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: 'AP Invoices',     href: '/ap/invoices',                       icon: FileText },
-              { label: 'AR Invoices',     href: '/ar/invoices',                       icon: FileText },
-              { label: 'Journal Entries', href: '/accounting/journal-entries',        icon: BookOpen },
-              { label: 'Inventory MRQ',   href: '/inventory/mrqs',                    icon: Package },
-              { label: 'PO List',         href: '/procurement/purchase-orders',       icon: ShoppingCart },
-              { label: 'Delivery',        href: '/delivery',                          icon: Truck },
-              { label: 'Payroll',         href: '/payroll/runs',                      icon: DollarSign },
-              { label: 'Bank Recon',      href: '/accounting/bank-reconciliation',   icon: Landmark },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className="flex items-center gap-2 p-2 rounded border border-neutral-200 hover:bg-neutral-50"
-              >
-                <link.icon className="h-4 w-4 text-neutral-500 shrink-0" />
-                <span className="text-xs text-neutral-700">{link.label}</span>
-              </Link>
-            ))}
-          </div>
-        </SectionCard>
+        <Card>
+          <CardHeader action={
+            <Link to="/ar/aging-report" className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 flex items-center gap-1">
+              Full Report <ChevronRight className="h-3 w-3" />
+            </Link>
+          }>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              AR Aging Summary
+            </div>
+          </CardHeader>
+          <CardBody>
+            {an?.ar_aging ? (
+              <div className="space-y-3">
+                <AgingBar label="Current" value={an.ar_aging.current} total={totalArAging} color="bg-green-400" />
+                <AgingBar label="1–30 days" value={an.ar_aging['1_30_days']} total={totalArAging} color="bg-yellow-400" />
+                <AgingBar label="31–60 days" value={an.ar_aging['31_60_days']} total={totalArAging} color="bg-orange-400" />
+                <AgingBar label="Over 60 days" value={an.ar_aging.over_60_days} total={totalArAging} color="bg-red-500" />
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-400 text-center py-6">No AR aging data available</p>
+            )}
+          </CardBody>
+        </Card>
       </div>
 
-      {/* Next pay date reminder */}
-      {payroll?.next_pay_date && (
-        <Card className="border-green-200 bg-green-50">
-          <div className="p-4 flex items-center gap-3">
-            <CalendarCheck className="h-5 w-5 text-green-600 shrink-0" />
-            <span className="text-sm text-green-800">
-              Next payroll date:{' '}
-              <span className="font-semibold">
-                {new Date(payroll.next_pay_date).toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </span>
-            </span>
-          </div>
+      {/* Revenue vs Expenses Trend + Top Expenses */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-neutral-500" />
+              Revenue vs Expenses (Monthly)
+            </div>
+          </CardHeader>
+          <CardBody>
+            {an?.revenue_vs_expense && an.revenue_vs_expense.length > 0 ? (
+              <div className="space-y-2">
+                {an.revenue_vs_expense.slice(-6).map((m) => (
+                  <div key={m.month} className="flex items-center gap-3">
+                    <span className="text-xs text-neutral-500 w-16 shrink-0">{m.month}</span>
+                    <div className="flex-1 flex gap-1">
+                      <div className="h-4 bg-green-200 rounded-sm" style={{ width: `${Math.max(1, (m.revenue / Math.max(m.revenue, m.expenses, 1)) * 100)}%` }} title={`Revenue: ₱${(m.revenue / 100).toLocaleString()}`} />
+                    </div>
+                    <span className={`text-xs font-semibold ${m.net > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {m.net > 0 ? '+' : ''}₱{(m.net / 100).toLocaleString('en-PH', { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-400 text-center py-6">No revenue data available yet</p>
+            )}
+          </CardBody>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-neutral-500" />
+              Top Expense Categories
+            </div>
+          </CardHeader>
+          <CardBody>
+            {an?.top_expense_categories && an.top_expense_categories.length > 0 ? (
+              <div className="space-y-3">
+                {an.top_expense_categories.slice(0, 5).map((cat, i) => {
+                  const maxVal = an.top_expense_categories![0].total
+                  const pct = maxVal > 0 ? (cat.total / maxVal) * 100 : 0
+                  return (
+                    <div key={i} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-neutral-700 font-medium">{cat.name}</span>
+                        <span className="text-neutral-500">₱{(cat.total / 100).toLocaleString('en-PH', { maximumFractionDigits: 0 })}</span>
+                      </div>
+                      <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-neutral-400 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-400 text-center py-6">No expense data available yet</p>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Quick Navigation */}
+      <div>
+        <SectionTitle title="Quick Navigation" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Journal Entries',  href: '/accounting/journal-entries',  icon: BookOpen },
+            { label: 'AP Invoices',      href: '/accounting/ap/invoices',     icon: FileText },
+            { label: 'AR Invoices',      href: '/ar/invoices',                icon: CreditCard },
+            { label: 'Bank Accounts',    href: '/banking/accounts',           icon: Landmark },
+            { label: 'Vendors',          href: '/accounting/vendors',         icon: Users },
+            { label: 'Customers',        href: '/ar/customers',               icon: Users },
+            { label: 'Payroll Runs',     href: '/payroll/runs',               icon: DollarSign },
+            { label: 'Purchase Orders',  href: '/procurement/purchase-orders', icon: ShoppingCart },
+          ].map((link) => (
+            <Link
+              key={link.href}
+              to={link.href}
+              className="flex items-center gap-2.5 p-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-all"
+            >
+              <link.icon className="h-4 w-4 text-neutral-500 shrink-0" />
+              <span className="text-sm text-neutral-700 font-medium">{link.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Active Payroll Banner */}
+      {stats?.active_payroll && (
+        <Link to={`/payroll/runs/${stats.active_payroll.ulid}`}>
+          <Card className="border-blue-200 bg-blue-50/50 hover:shadow-sm transition-all">
+            <div className="p-4 flex items-center gap-3">
+              <CalendarCheck className="h-5 w-5 text-blue-600 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900">Active Payroll Run</p>
+                <p className="text-xs text-blue-700">
+                  {stats.active_payroll.reference_number} — Status: {stats.active_payroll.status?.replace(/_/g, ' ')}
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-blue-400" />
+            </div>
+          </Card>
+        </Link>
       )}
     </div>
   )

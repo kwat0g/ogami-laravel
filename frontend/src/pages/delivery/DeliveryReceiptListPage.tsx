@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Truck } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useDeliveryReceipts } from '@/hooks/useDelivery';
+import { useAuthStore } from '@/stores/authStore';
 import type { DrDirection, DrStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<DrStatus, string> = {
@@ -20,6 +21,7 @@ export default function DeliveryReceiptListPage() {
   const [direction, setDirection] = useState('');
   const [status, setStatus] = useState('');
   const [withArchived, setWithArchived] = useState(false);
+  const canManage = useAuthStore(s => s.hasPermission('delivery.manage'));
 
   const params: Record<string, string | boolean> = {};
   if (direction) params.direction = direction;
@@ -33,12 +35,14 @@ export default function DeliveryReceiptListPage() {
       <PageHeader
         title="Delivery Receipts"
         actions={
-          <Link
-            to="/delivery/receipts/new"
-            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            <Plus size={16} /> New Receipt
-          </Link>
+          canManage ? (
+            <Link
+              to="/delivery/receipts/new"
+              className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+            >
+              <Plus size={16} /> New Receipt
+            </Link>
+          ) : undefined
         }
       />
 

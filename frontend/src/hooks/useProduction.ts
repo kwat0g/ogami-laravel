@@ -195,3 +195,37 @@ export function useDeleteBom() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['boms'] }),
   })
 }
+
+// ── PROD-001: Pre-release Stock Check ────────────────────────────────────────
+
+export interface StockCheckItem {
+  component_item_id: number
+  item_name: string
+  unit_of_measure: string
+  required_qty: number
+  available_qty: number
+  sufficient: boolean
+}
+
+export function useStockCheck(ulid: string | null) {
+  return useQuery({
+    queryKey: ['stock-check', ulid],
+    queryFn: async () => {
+      const res = await api.get<{ data: StockCheckItem[] }>(`/production/orders/${ulid}/stock-check`)
+      return res.data.data
+    },
+    enabled: false, // only fetch on demand
+  })
+}
+
+// ── PROD-002: Force Release (QC Override) ────────────────────────────────────
+
+export function useForceRelease(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api.patch(`/production/orders/${ulid}/release`, { force_release: true }).then(() => {
+        qc.invalidateQueries({ queryKey: ['production-orders'] })
+      }),
+  })
+}

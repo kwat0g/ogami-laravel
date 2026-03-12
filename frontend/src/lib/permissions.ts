@@ -26,7 +26,7 @@ function perms<R extends string, A extends string>(
 export const PERMISSIONS = {
   // ── HR Employee ──────────────────────────────────────────────────────────
   employees: perms('employees', [
-    'view', 'view_full_record', 'view_salary',
+    'view', 'view_team', 'view_full_record', 'view_salary',
     'view_unmasked_gov_ids', 'view_masked_gov_ids',
     'create', 'update', 'update_salary',
     'activate', 'suspend', 'terminate',
@@ -44,7 +44,7 @@ export const PERMISSIONS = {
 
   // ── Overtime ─────────────────────────────────────────────────────────────
   overtime: perms('overtime', [
-    'view', 'submit', 'approve', 'reject',
+    'view', 'submit', 'approve', 'reject', 'supervise', 'executive_approve',
     // legacy aliases
     'create', 'update',
   ]),
@@ -52,10 +52,11 @@ export const PERMISSIONS = {
   // ── Leave ────────────────────────────────────────────────────────────────
   leaves: perms('leaves', [
     'view_own', 'view_team', 'file_own', 'file_on_behalf',
-    'cancel', 'approve', 'reject',
+    'cancel', 'head_approve', 'manager_check', 'ga_process', 'vp_note',
+    'approve', 'reject',
     'adjust_balance', 'configure_types', 'trigger_sil_monetization',
     // legacy aliases
-    'view', 'create',
+    'view', 'create', 'supervise', 'executive_approve',
   ]),
 
   leave_balances: perms('leave_balances', ['view', 'adjust']),
@@ -65,6 +66,8 @@ export const PERMISSIONS = {
     'view_own', 'view_department', 'apply',
     'supervisor_review', 'hr_approve', 'accounting_approve',
     'view_ln007_log', 'configure_types',
+    // v2 5-stage approval chain
+    'head_note', 'manager_check', 'officer_review', 'vp_approve',
     // legacy aliases
     'view', 'create', 'update', 'approve', 'reject',
   ]),
@@ -77,6 +80,7 @@ export const PERMISSIONS = {
     'review_breakdown', 'flag_employee',
     'submit_for_hr', 'hr_approve', 'hr_return',
     'acctg_approve', 'acctg_reject',
+    'vp_approve',
     'disburse', 'download_bank_file',
     'publish', 'view_deduction_trace',
     'download_register', 'gov_reports',
@@ -100,7 +104,7 @@ export const PERMISSIONS = {
   fiscal_periods:    perms('fiscal_periods',    ['view', 'manage']),
 
   // ── AP ───────────────────────────────────────────────────────────────────
-  vendors:         perms('vendors',         ['view', 'manage', 'archive']),
+  vendors:         perms('vendors',         ['view', 'manage', 'archive', 'accredit', 'suspend']),
   vendor_invoices: perms('vendor_invoices', [
     'view', 'create', 'update', 'submit',
     'approve', 'reject', 'record_payment', 'cancel', 'export',
@@ -129,6 +133,73 @@ export const PERMISSIONS = {
     'manage_rate_tables', 'manage_holidays', 'manage_ewt_atc',
     'reopen_fiscal_period', 'view_audit_log',
     'view_horizon', 'view_pulse', 'manage_backups',
+  ]),
+
+  // ── HR ───────────────────────────────────────────────────────────────────
+  hr: perms('hr', ['full_access']),
+
+  // ── Procurement ──────────────────────────────────────────────────────────
+  procurement: {
+    purchase_request: perms('procurement.purchase-request', [
+      'view', 'create', 'note', 'check', 'review', 'budget-check',
+    ]),
+    purchase_order: perms('procurement.purchase-order', [
+      'view', 'create', 'manage',
+    ]),
+    goods_receipt: perms('procurement.goods-receipt', [
+      'view', 'create', 'confirm',
+    ]),
+  },
+
+  // ── Inventory ────────────────────────────────────────────────────────────
+  inventory: {
+    items: perms('inventory.items', ['view', 'create', 'edit']),
+    locations: perms('inventory.locations', ['view', 'manage']),
+    stock: perms('inventory.stock', ['view']),
+    adjustments: perms('inventory.adjustments', ['create']),
+    mrq: perms('inventory.mrq', ['view', 'create', 'note', 'check', 'review', 'vp_approve', 'fulfill']),
+  },
+
+  // ── Production / PPC ─────────────────────────────────────────────────────
+  production: {
+    bom: perms('production.bom', ['view', 'manage']),
+    delivery_schedule: perms('production.delivery-schedule', ['view', 'manage']),
+    orders: perms('production.orders', ['view', 'create', 'release', 'complete', 'log_output']),
+    qc_override: 'production.qc-override' as const,
+  },
+
+  // ── QC / QA ──────────────────────────────────────────────────────────────
+  qc: {
+    templates: perms('qc.templates', ['view', 'manage']),
+    inspections: perms('qc.inspections', ['view', 'create']),
+    ncr: perms('qc.ncr', ['view', 'create', 'close']),
+  },
+
+  // ── Maintenance ──────────────────────────────────────────────────────────
+  maintenance: perms('maintenance', ['view', 'manage']),
+
+  // ── Mold ─────────────────────────────────────────────────────────────────
+  mold: perms('mold', ['view', 'manage', 'log_shots']),
+
+  // ── Delivery / Logistics ─────────────────────────────────────────────────
+  delivery: perms('delivery', ['view', 'manage']),
+
+  // ── ISO / IATF ───────────────────────────────────────────────────────────
+  iso: perms('iso', ['view', 'manage', 'audit']),
+
+  // ── CRM ──────────────────────────────────────────────────────────────────
+  crm: {
+    tickets: perms('crm.tickets', ['view', 'create', 'reply', 'manage', 'assign', 'close']),
+  },
+
+  // ── VP Approvals ─────────────────────────────────────────────────────────
+  approvals: {
+    vp: perms('approvals.vp', ['view', 'approve']),
+  },
+
+  // ── Vendor Portal ────────────────────────────────────────────────────────
+  vendor_portal: perms('vendor_portal', [
+    'view_orders', 'update_fulfillment', 'manage_items', 'view_receipts',
   ]),
 } as const
 

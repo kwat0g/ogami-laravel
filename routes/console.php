@@ -89,3 +89,38 @@ Schedule::command('horizon:snapshot')->everyFiveMinutes();
 // Pulse records data in a streaming buffer; this schedule flushes it to the
 // pulse_aggregates table for dashboard display.
 Schedule::command('pulse:check')->everyMinute();
+
+// ── AR: Overdue invoice notifications ────────────────────────────────────────
+// Runs daily at 08:30 AM. Checks for overdue invoices and notifies relevant users.
+Schedule::command('ar:check-overdue')
+    ->dailyAt('08:30')
+    ->name('ar.check-overdue')
+    ->withoutOverlapping();
+
+// ── Maintenance: Auto-generate PM work orders ────────────────────────────────
+// Runs daily at 06:00 AM. Creates preventive maintenance work orders from due schedules.
+Schedule::command('maintenance:generate-pm-work-orders')
+    ->dailyAt('06:00')
+    ->name('maintenance.auto-pm')
+    ->withoutOverlapping();
+
+// ── Mold: Shot count threshold alerts ────────────────────────────────────────
+// Runs daily at 06:30 AM. Checks molds approaching max shot count.
+Schedule::command('mold:check-shot-counts')
+    ->dailyAt('06:30')
+    ->name('mold.shot-alerts')
+    ->withoutOverlapping();
+
+// ── Inventory: Reorder point alerts ──────────────────────────────────────────
+// Runs daily at 07:00 AM. Notifies when stock falls below reorder point.
+Schedule::command('inventory:check-reorder-points')
+    ->dailyAt('07:00')
+    ->name('inventory.reorder-alerts')
+    ->withoutOverlapping();
+
+// ── Fixed Assets: Monthly depreciation ───────────────────────────────────────
+// Runs on the 1st of each month at 03:00 AM. Posts depreciation entries + JEs.
+Schedule::command('assets:depreciate-monthly')
+    ->monthlyOn(1, '03:00')
+    ->name('assets.depreciate-monthly')
+    ->withoutOverlapping();

@@ -81,6 +81,93 @@ final class BudgetService implements ServiceContract
         });
     }
 
+    // ── Approval Workflow ─────────────────────────────────────────────────────
+
+    /**
+     * Submit a budget line for VP approval (draft → submitted).
+     */
+    public function submitBudget(AnnualBudget $budget, User $actor): AnnualBudget
+    {
+        if ($budget->status !== 'draft' && $budget->status !== 'rejected') {
+            throw new \App\Shared\Exceptions\DomainException(
+                'Only draft or rejected budgets can be submitted.',
+                'BUDGET_INVALID_STATUS',
+                422,
+            );
+        }
+
+        return DB::transaction(function () use ($budget, $actor): AnnualBudget {
+            $budget->update([
+                'status'          => 'submitted',
+                'submitted_by_id' => $actor->id,
+                'submitted_at'    => now(),
+                'approved_by_id'  => null,
+                'approved_at'     => null,
+                'approval_remarks' => null,
+            ]);
+
+            return $budget->fresh();
+        });
+    }
+
+    /**
+     * VP approves a submitted budget line (submitted → approved).
+     */
+    public function approveBudget(AnnualBudget $budget, User $actor, ?string $remarks = null): AnnualBudget
+    {
+        if ($budget->status !== 'submitted') {
+            throw new \App\Shared\Exceptions\DomainException(
+                'Only submitted budgets can be approved.',
+                'BUDGET_INVALID_STATUS',
+                422,
+            );
+        }
+
+        if ($budget->submitted_by_id === $actor->id) {
+            throw new \App\Shared\Exceptions\DomainException(
+                'The submitter cannot also approve the budget (SOD).',
+                'SOD_VIOLATION',
+                403,
+            );
+        }
+
+        return DB::transaction(function () use ($budget, $actor, $remarks): AnnualBudget {
+            $budget->update([
+                'status'           => 'approved',
+                'approved_by_id'   => $actor->id,
+                'approved_at'      => now(),
+                'approval_remarks' => $remarks,
+            ]);
+
+            return $budget->fresh();
+        });
+    }
+
+    /**
+     * VP rejects a submitted budget line (submitted → rejected).
+     */
+    public function rejectBudget(AnnualBudget $budget, User $actor, ?string $remarks = null): AnnualBudget
+    {
+        if ($budget->status !== 'submitted') {
+            throw new \App\Shared\Exceptions\DomainException(
+                'Only submitted budgets can be rejected.',
+                'BUDGET_INVALID_STATUS',
+                422,
+            );
+        }
+
+        return DB::transaction(function () use ($budget, $actor, $remarks): AnnualBudget {
+            $budget->update([
+                'status'           => 'rejected',
+                'approved_by_id'   => $actor->id,
+                'approved_at'      => now(),
+                'approval_remarks' => $remarks,
+            ]);
+
+            return $budget->fresh();
+        });
+    }
+
     // ── Budget Utilisation ────────────────────────────────────────────────────
 
     /**

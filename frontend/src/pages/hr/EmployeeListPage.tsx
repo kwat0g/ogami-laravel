@@ -5,7 +5,6 @@ import { useEmployees, useTeamEmployees, useDepartments } from '@/hooks/useEmplo
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
-import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import { PageHeader } from '@/components/ui/PageHeader'
 import type { EmployeeFilters, EmploymentStatus, EmploymentType } from '@/types/hr'
 
@@ -35,6 +34,12 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
 
   const { data: deptsData } = useDepartments()
   const departments = deptsData?.data ?? []
+  
+  // Calculate summary stats
+  const employees = data?.data ?? []
+  const activeCount = employees.filter(e => e.employment_status === 'active').length
+  const onLeaveCount = employees.filter(e => e.employment_status === 'on_leave').length
+  const totalPayroll = employees.reduce((sum, e) => sum + (e.basic_monthly_rate || 0), 0)
 
   const handleSearch = () => {
     setFilters((f) => ({ ...f, search: searchValue || undefined, page: 1 }))
@@ -67,6 +72,30 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
           </Link>
         }
       />
+
+      {/* Summary Stats */}
+      {!isLoading && employees.length > 0 && (
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Employees</p>
+            <p className="text-2xl font-bold text-blue-700 mt-1">{employees.length}</p>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Active</p>
+            <p className="text-2xl font-bold text-emerald-700 mt-1">{activeCount}</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">On Leave</p>
+            <p className="text-2xl font-bold text-amber-700 mt-1">{onLeaveCount}</p>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">Total Monthly Payroll</p>
+            <p className="text-xl font-bold text-purple-700 font-mono mt-1">
+              ₱{(totalPayroll / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4 flex flex-wrap gap-3">
@@ -211,7 +240,9 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                       {emp.salary_grade_code ?? '—'}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <CurrencyAmount centavos={emp.basic_monthly_rate} />
+                      <span className="font-mono font-bold text-emerald-700">
+                        ₱{(emp.basic_monthly_rate / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
                     </td>
                     <td className="px-3 py-2 text-neutral-600">
                       {emp.date_hired

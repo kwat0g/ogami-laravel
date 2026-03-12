@@ -110,6 +110,38 @@ export function useHeadNoteLoan() {
   })
 }
 
+// ── Manager Check (v2 Stage 2) ───────────────────────────────────────────────
+
+export function useManagerCheckLoan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, remarks }: { id: string; remarks?: string }) => {
+      const res = await api.patch<{ data: Loan }>(`/loans/${id}/manager-check`, { remarks })
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['loans'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-loans'] })
+    },
+  })
+}
+
+// ── Officer Review (v2 Stage 3) ──────────────────────────────────────────────
+
+export function useOfficerReviewLoan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, remarks }: { id: string; remarks?: string }) => {
+      const res = await api.patch<{ data: Loan }>(`/loans/${id}/officer-review`, { remarks })
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['loans'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-loans'] })
+    },
+  })
+}
+
 // ── Approve ───────────────────────────────────────────────────────────────────
 
 export function useApproveLoan() {

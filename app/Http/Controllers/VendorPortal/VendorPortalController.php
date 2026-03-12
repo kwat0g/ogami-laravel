@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\VendorPortal;
 
+use App\Domains\Accounting\Models\ChartOfAccount;
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\AP\Models\Vendor;
+use App\Domains\AP\Models\VendorInvoice;
+use App\Domains\AP\Services\EwtService;
 use App\Domains\AP\Services\VendorFulfillmentService;
 use App\Domains\AP\Services\VendorItemService;
+use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Http\Controllers\Controller;
+use App\Imports\VendorItemImport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * VendorPortalController — vendor-facing endpoints for order management.
@@ -23,6 +31,7 @@ final class VendorPortalController extends Controller
     public function __construct(
         private readonly VendorFulfillmentService $fulfillmentService,
         private readonly VendorItemService $itemService,
+        private readonly EwtService $ewtService,
     ) {}
 
     // ── Orders ───────────────────────────────────────────────────────────────
@@ -177,6 +186,153 @@ final class VendorPortalController extends Controller
         $updated = $this->itemService->update($vendorItem, $validated, $request->user());
 
         return response()->json(['data' => $updated]);
+    }
+
+    /**
+     * POST /vendor-portal/items/import
+     * Bulk import items from CSV or Excel file.
+     *
+     * Expected columns: item_code, item_name, description, unit_of_measure, unit_price, is_active
+     */
+    public function importItems(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,xlsx,xls,txt', 'max:5120'],
+        ]);
+
+        $vendorId = app('vendor_scope.vendor_id');
+        $vendor = Vendor::findOrFail($vendorId);
+
+        $import = new VendorItemImport();
+        Excel::import($import, $request->file('file'));
+
+        $result = $this->itemService->importRows($vendor, $import->getRows(), $request->user());
+
+        return response()->json([
+            'message' => "Import complete. {$result['created']} created, {$result['updated']} updated.",
+            'data'    => $result,
+        ]);
+    }
+
+    // ── Goods Receipts ───────────────────────────────────────────────────────
+
+    /**
+     * GET /vendor-portal/goods-receipts
+     * List goods receipts for POs belonging to this vendor.
+     */
+    public function goodsReceipts(Request $request): JsonResponse
+    {
+        $vendorId = app('vendor_scope.vendor_id');
+
+        $receipts = GoodsReceipt::with(['purchaseOrder'])
+            ->whereHas('purchaseOrder', fn ($q) => $q->where('vendor_id', $vendorId))
+            ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return response()->json($receipts);
+    }
+
+    // ── Invoices ─────────────────────────────────────────────────────────────
+
+    /**
+     * GET /vendor-portal/invoices
+     * List AP invoices belonging to this vendor.
+     */
+    public function invoices(Request $request): JsonResponse
+    {
+        $vendorId = app('vendor_scope.vendor_id');
+
+        $invoices = VendorInvoice::where('vendor_id', $vendorId)
+            ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return response()->json($invoices);
+    }
+
+    /**
+     * POST /vendor-portal/invoices
+     * Submit a vendor invoice linked to a confirmed Goods Receipt.
+     *
+     * The vendor provides: invoice details (date, due date, net amount, VAT, OR number).
+     * GL accounts are auto-resolved; internal staff will review and approve.
+     */
+    public function storeInvoice(Request $request): JsonResponse
+    {
+        $vendorId = app('vendor_scope.vendor_id');
+        $vendor = Vendor::with('ewtRate')->findOrFail($vendorId);
+
+        $validated = $request->validate([
+            'goods_receipt_id' => ['required', 'integer'],
+            'invoice_date'     => ['required', 'date'],
+            'due_date'         => ['required', 'date', 'after_or_equal:invoice_date'],
+            'net_amount'       => ['required', 'numeric', 'min:0.01'],
+            'vat_amount'       => ['nullable', 'numeric', 'min:0'],
+            'or_number'        => ['nullable', 'string', 'max:50'],
+            'description'      => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        // Ensure the GR belongs to a PO owned by this vendor
+        $gr = GoodsReceipt::with('purchaseOrder')
+            ->where('id', $validated['goods_receipt_id'])
+            ->firstOrFail();
+
+        if ((int) $gr->purchaseOrder->vendor_id !== $vendorId) {
+            abort(403, 'This Goods Receipt does not belong to your vendor account.');
+        }
+
+        if ($gr->status !== 'confirmed') {
+            abort(422, 'Invoice can only be submitted against a confirmed Goods Receipt.');
+        }
+
+        if ($gr->ap_invoice_created) {
+            abort(422, 'An invoice has already been created for this Goods Receipt.');
+        }
+
+        // Auto-resolve GL accounts
+        $apAccount = ChartOfAccount::where('code', '2001')->first();
+        $expenseAccount = ChartOfAccount::where('code', '6001')->first();
+        $fiscalPeriod = FiscalPeriod::open()->latest('date_from')->first();
+
+        if ($fiscalPeriod === null) {
+            abort(422, 'No open fiscal period — please contact your accounting department.');
+        }
+
+        $vatAmount = (float) ($validated['vat_amount'] ?? 0.00);
+        $netAmount = (float) $validated['net_amount'];
+        $invoiceDate = Carbon::parse($validated['invoice_date']);
+
+        $ewtAmount = $vendor->is_ewt_subject
+            ? $this->ewtService->computeForInvoice($vendor, $netAmount, $invoiceDate)
+            : 0.00;
+
+        $invoice = VendorInvoice::create([
+            'vendor_id'          => $vendor->id,
+            'fiscal_period_id'   => $fiscalPeriod->id,
+            'ap_account_id'      => $apAccount?->id,
+            'expense_account_id' => $expenseAccount?->id,
+            'invoice_date'       => $validated['invoice_date'],
+            'due_date'           => $validated['due_date'],
+            'net_amount'         => $netAmount,
+            'vat_amount'         => $vatAmount,
+            'ewt_amount'         => $ewtAmount,
+            'ewt_rate'           => $vendor->is_ewt_subject ? $vendor->ewtRate?->rate : null,
+            'atc_code'           => $vendor->is_ewt_subject ? $vendor->atc_code : null,
+            'or_number'          => $validated['or_number'] ?? null,
+            'description'        => $validated['description'] ?? "Vendor-submitted invoice for GR {$gr->gr_reference}",
+            'source'             => 'vendor_portal',
+            'purchase_order_id'  => $gr->purchaseOrder->id,
+            'status'             => 'draft',
+            'created_by'         => $request->user()->id,
+        ]);
+
+        $gr->update(['ap_invoice_created' => true]);
+
+        return response()->json([
+            'message' => 'Invoice submitted successfully. It will be reviewed by accounting.',
+            'data'    => $invoice,
+        ], 201);
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────

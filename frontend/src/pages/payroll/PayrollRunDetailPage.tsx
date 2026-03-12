@@ -30,6 +30,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import SodActionButton from '@/components/ui/SodActionButton'
+import ManagePayrollAdjustmentsModal from '@/components/modals/ManagePayrollAdjustmentsModal'
 import type { PayrollDetail } from '@/types/payroll'
 
 // ---------------------------------------------------------------------------
@@ -329,6 +330,7 @@ export default function PayrollRunDetailPage() {
   const [activeTab, setActiveTab]   = useState<Tab>('payslips')
   const [detailPage, setDetailPage] = useState(1)
   const [traceDetail, setTraceDetail] = useState<import('@/types/payroll').PayrollDetail | null>(null)
+  const [isAdjustmentsModalOpen, setIsAdjustmentsModalOpen] = useState(false)
 
   // Auto-poll while processing
   const isPolling = (status?: string) =>
@@ -483,6 +485,16 @@ export default function PayrollRunDetailPage() {
                 Lock Run
               </button>
             </ConfirmDestructiveDialog>
+          )}
+
+          {isDraft && (
+             <button
+               onClick={() => setIsAdjustmentsModalOpen(true)}
+               className="flex items-center gap-2 border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors"
+             >
+               <Banknote className="h-4 w-4" />
+               Adjustments
+             </button>
           )}
 
           {isCompleted && (
@@ -710,6 +722,13 @@ export default function PayrollRunDetailPage() {
         </div>
       </div>
     )}
+
+    {/* Adjustments Modal */}
+    <ManagePayrollAdjustmentsModal
+      runId={runId!}
+      isOpen={isAdjustmentsModalOpen}
+      onClose={() => setIsAdjustmentsModalOpen(false)}
+    />
   </>
   )
 }

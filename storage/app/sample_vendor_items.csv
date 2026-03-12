@@ -1,0 +1,21 @@
+item_code,item_name,description,unit_of_measure,unit_price,is_active
+PP-RESIN-001,PP Resin (Polypropylene),Premium grade polypropylene resin for injection molding,kg,85.50,1
+PE-RESIN-002,PE Resin (Polyethylene),High-density polyethylene resin for blow molding,kg,72.00,1
+ABS-RESIN-003,ABS Resin,Acrylonitrile Butadiene Styrene resin for durable parts,kg,120.00,1
+NYLON-004,Nylon 6/6,Engineering-grade nylon for high-stress components,kg,195.00,1
+COLORANT-BLK,Black Masterbatch Colorant,Universal black colorant for plastics,kg,210.00,1
+COLORANT-WHT,White Masterbatch Colorant,Titanium dioxide based white colorant,kg,185.00,1
+MOLD-OIL-001,Mold Release Agent (Spray),Silicone-based mold release spray 500mL,pcs,350.00,1
+STEEL-PLATE-01,Steel Plate 4x8 (1.5mm),Cold rolled steel sheet 4ft x 8ft x 1.5mm,pcs,2850.00,1
+STEEL-ROUND-02,Steel Round Bar (25mm),Round bar 25mm diameter x 6m length,pcs,1450.00,1
+BOLT-M10-HEX,Hex Bolt M10x40 (Stainless),Stainless steel hex bolt M10 x 40mm,pcs,12.50,1
+NUT-M10-HEX,Hex Nut M10 (Stainless),Stainless steel hex nut M10,pcs,5.75,1
+BEARING-6205,Ball Bearing 6205-2RS,Deep groove ball bearing 25x52x15mm,pcs,285.00,1
+VBELT-A68,V-Belt A68,Industrial V-belt type A size 68,pcs,450.00,1
+HYD-OIL-68,Hydraulic Oil ISO 68,Anti-wear hydraulic oil 20L pail,pail,1850.00,1
+GREASE-EP2,EP2 Lithium Grease,Multipurpose lithium grease 16kg pail,pail,2200.00,1
+FILTER-OIL-001,Oil Filter Element,Hydraulic system oil filter cartridge,pcs,680.00,1
+PACK-CARTON-SM,Corrugated Carton (Small),Single-wall carton 12x10x8 inches,pcs,18.50,1
+PACK-CARTON-LG,Corrugated Carton (Large),Double-wall carton 24x18x16 inches,pcs,42.00,1
+STRETCH-WRAP,Stretch Wrap Film,500mm x 300m stretch film roll,roll,320.00,1
+LABEL-BARCODE,Barcode Label Roll,Thermal transfer label 50x25mm 5000pcs/roll,roll,650.00,1

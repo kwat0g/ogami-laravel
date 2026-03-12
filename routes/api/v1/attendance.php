@@ -160,4 +160,91 @@ Route::middleware('auth:sanctum')->group(function () {
 
         return response()->noContent();
     })->name('shift-assignments.destroy');
+
+    // ── Attendance Summary Report ────────────────────────────────────────────
+    Route::get('summary', function (Request $request): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()->can('attendance.view_team') || $request->user()->can('hr.full_access'), 403);
+
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to   = $request->input('to', now()->toDateString());
+
+        $query = \App\Domains\Attendance\Models\AttendanceLog::query()
+            ->whereBetween('work_date', [$from, $to])
+            ->with('employee:id,first_name,last_name,department_id,employee_code');
+
+        if ($request->filled('department_id')) {
+            $deptId = (int) $request->input('department_id');
+            $query->whereHas('employee', fn ($q) => $q->where('department_id', $deptId));
+        }
+
+        $rows = $query->get()
+            ->groupBy('employee_id')
+            ->map(function ($logs, $employeeId) {
+                $emp = $logs->first()->employee;
+                return [
+                    'employee_id'       => $employeeId,
+                    'employee_code'     => $emp->employee_code ?? '',
+                    'employee_name'     => trim(($emp->first_name ?? '') . ' ' . ($emp->last_name ?? '')),
+                    'days_present'      => $logs->where('is_present', true)->count(),
+                    'days_absent'       => $logs->where('is_absent', true)->count(),
+                    'days_rest'         => $logs->where('is_rest_day', true)->count(),
+                    'days_holiday'      => $logs->where('is_holiday', true)->count(),
+                    'total_worked_min'  => $logs->sum('worked_minutes'),
+                    'total_late_min'    => $logs->sum('late_minutes'),
+                    'total_ut_min'      => $logs->sum('undertime_minutes'),
+                    'total_ot_min'      => $logs->sum('overtime_minutes'),
+                    'total_nd_min'      => $logs->sum('night_diff_minutes'),
+                ];
+            })
+            ->values();
+
+        return response()->json(['data' => $rows, 'from' => $from, 'to' => $to]);
+    })->name('summary');
+
+    // ── DTR Export (CSV download) ─────────────────────────────────────────────
+    Route::get('dtr-export', function (Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {
+        abort_unless($request->user()->can('attendance.view_team') || $request->user()->can('hr.full_access'), 403);
+
+        $employeeId = $request->integer('employee_id');
+        abort_if($employeeId === 0, 422, 'employee_id is required.');
+
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to   = $request->input('to', now()->endOfMonth()->toDateString());
+
+        $employee = Employee::findOrFail($employeeId);
+        $logs = \App\Domains\Attendance\Models\AttendanceLog::where('employee_id', $employeeId)
+            ->whereBetween('work_date', [$from, $to])
+            ->orderBy('work_date')
+            ->get();
+
+        $filename = "DTR_{$employee->employee_code}_{$from}_to_{$to}.csv";
+
+        return response()->streamDownload(function () use ($logs, $employee) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Daily Time Record — ' . trim($employee->first_name . ' ' . $employee->last_name) . ' (' . $employee->employee_code . ')']);
+            fputcsv($out, []);
+            fputcsv($out, ['Date', 'Time In', 'Time Out', 'Worked (hrs)', 'Late (min)', 'Undertime (min)', 'OT (min)', 'Night Diff (min)', 'Present', 'Absent', 'Rest Day', 'Holiday', 'Remarks']);
+
+            foreach ($logs as $log) {
+                fputcsv($out, [
+                    $log->work_date->toDateString(),
+                    $log->time_in ?? '',
+                    $log->time_out ?? '',
+                    round($log->worked_minutes / 60, 2),
+                    $log->late_minutes,
+                    $log->undertime_minutes,
+                    $log->overtime_minutes,
+                    $log->night_diff_minutes,
+                    $log->is_present ? 'Yes' : 'No',
+                    $log->is_absent ? 'Yes' : 'No',
+                    $log->is_rest_day ? 'Yes' : 'No',
+                    $log->is_holiday ? ($log->holiday_type ?? 'Yes') : 'No',
+                    $log->remarks ?? '',
+                ]);
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    })->name('dtr-export');
 });

@@ -238,3 +238,94 @@ export function useReverseJournalEntry(id: string) {
     },
   })
 }
+
+// ===========================================================================
+// Recurring Journal Templates
+// ===========================================================================
+
+export interface RecurringJournalTemplate {
+  id: number
+  ulid: string
+  description: string
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+  next_run_date: string
+  is_active: boolean
+  lines: { account_id: number; debit_centavos: number; credit_centavos: number; description: string }[]
+  created_at: string
+}
+
+export function useRecurringTemplates() {
+  return useQuery({
+    queryKey: ['recurring-templates'],
+    queryFn: async () => {
+      const res = await api.get<{ data: RecurringJournalTemplate[] }>('/accounting/recurring-templates')
+      return res.data.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+export function useRecurringTemplate(id: string | null) {
+  return useQuery({
+    queryKey: ['recurring-templates', id],
+    queryFn: async () => {
+      const res = await api.get<{ data: RecurringJournalTemplate }>(`/accounting/recurring-templates/${id}`)
+      return res.data.data
+    },
+    enabled: id !== null,
+    staleTime: 60_000,
+  })
+}
+
+export function useCreateRecurringTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const res = await api.post<{ data: RecurringJournalTemplate }>('/accounting/recurring-templates', payload)
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recurring-templates'] })
+    },
+  })
+}
+
+export function useUpdateRecurringTemplate(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const res = await api.put<{ data: RecurringJournalTemplate }>(`/accounting/recurring-templates/${id}`, payload)
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recurring-templates'] })
+      qc.invalidateQueries({ queryKey: ['recurring-templates', id] })
+    },
+  })
+}
+
+export function useToggleRecurringTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.patch<{ data: RecurringJournalTemplate }>(`/accounting/recurring-templates/${id}/toggle`)
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recurring-templates'] })
+    },
+  })
+}
+
+export function useDeleteRecurringTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/accounting/recurring-templates/${id}`)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recurring-templates'] })
+    },
+  })
+}
+

@@ -345,3 +345,46 @@ export function useAttendanceDashboard() {
     refetchIntervalInBackground: false,
   })
 }
+
+// ── Attendance Summary Report ─────────────────────────────────────────────────
+
+export interface AttendanceSummaryRow {
+  employee_id: number
+  employee_code: string
+  employee_name: string
+  days_present: number
+  days_absent: number
+  days_rest: number
+  days_holiday: number
+  total_worked_min: number
+  total_late_min: number
+  total_ut_min: number
+  total_ot_min: number
+  total_nd_min: number
+}
+
+export function useAttendanceSummary(params: { from?: string; to?: string; department_id?: number } = {}) {
+  return useQuery({
+    queryKey: ['attendance-summary', params],
+    queryFn: async () => {
+      const res = await api.get<{ data: AttendanceSummaryRow[]; from: string; to: string }>('/attendance/summary', { params })
+      return res.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+// ── DTR CSV export (triggers browser download) ────────────────────────────────
+
+export async function downloadDtr(employeeId: number, from: string, to: string): Promise<void> {
+  const res = await api.get('/attendance/dtr-export', {
+    params: { employee_id: employeeId, from, to },
+    responseType: 'blob',
+  })
+  const url = URL.createObjectURL(res.data as Blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `DTR_${employeeId}_${from}_to_${to}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}

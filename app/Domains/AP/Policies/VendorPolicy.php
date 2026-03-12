@@ -65,4 +65,10 @@ final class VendorPolicy
     {
         return $user->hasPermissionTo('vendors.suspend');
     }
+
+    /** Provision a vendor portal user account — admin / system user management only. */
+    public function provisionAccount(User $user, Vendor $vendor): bool
+    {
+        return $user->hasPermissionTo('system.manage_users');
+    }
 }

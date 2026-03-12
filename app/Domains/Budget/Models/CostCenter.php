@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * @property int $id
@@ -31,10 +32,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, AnnualBudget> $budgets
  * @property-read User $createdBy
  */
-final class CostCenter extends Model
+final class CostCenter extends Model implements Auditable
 {
     use HasPublicUlid;
     use SoftDeletes;
+    use \OwenIt\Auditing\Auditable;
 
     protected $table = 'cost_centers';
 

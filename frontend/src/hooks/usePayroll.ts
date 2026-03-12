@@ -18,6 +18,7 @@ import type {
   AcctgApprovePayload,
   PublishPayload,
   PayrollRunExclusion,
+  PayrollAdjustment,
 } from '@/types/payroll'
 
 // ---------------------------------------------------------------------------
@@ -286,6 +287,17 @@ export function useCancelPayrollRun(runId: string) {
 // ---------------------------------------------------------------------------
 // Add / remove adjustments
 // ---------------------------------------------------------------------------
+
+export function usePayrollAdjustments(runId: string) {
+  return useQuery({
+    queryKey: ['payroll-adjustments', runId],
+    queryFn: async () => {
+      const res = await api.get<{ data: PayrollAdjustment[] }>(`/payroll/runs/${runId}/adjustments`)
+      return res.data
+    },
+    enabled: !!runId,
+  })
+}
 
 export function useCreateAdjustment(runId: string) {
   const queryClient = useQueryClient()
@@ -739,6 +751,31 @@ export function useAcctgApprove(runId: string) {
     mutationFn: async (payload: AcctgApprovePayload) => {
       const res = await api.post<{ message: string; run: PayrollRun }>(
         `/payroll/runs/${runId}/acctg-approve`,
+        payload,
+      )
+      return res.data
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['payroll-runs', runId], data.run)
+      void queryClient.invalidateQueries({ queryKey: ['payroll-runs'] })
+      void queryClient.invalidateQueries({ queryKey: ['payroll-approvals', runId] })
+    },
+  })
+}
+
+// ── Step 7b: VP Final Approval ────────────────────────────────────────────────
+
+export interface VpApprovePayload {
+  checkboxes_checked?: string[]
+  comments?: string | null
+}
+
+export function useVpApprovePayroll(runId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: VpApprovePayload) => {
+      const res = await api.post<{ message: string; run: PayrollRun }>(
+        `/payroll/runs/${runId}/vp-approve`,
         payload,
       )
       return res.data

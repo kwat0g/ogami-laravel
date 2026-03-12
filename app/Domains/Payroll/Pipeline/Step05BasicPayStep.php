@@ -37,6 +37,27 @@ final class Step05BasicPayStep
             );
         }
 
+        // GAP-2: Deduct proportional pay for tardiness and undertime
+        // Formula: (minutes / 60) × hourly_rate_centavos
+        if ($ctx->daysLateMinutes > 0) {
+            $ctx->lateDeductionCentavos = (int) round(
+                ($ctx->daysLateMinutes / 60) * $ctx->hourlyRateCentavos,
+                0,
+                PHP_ROUND_HALF_UP,
+            );
+        }
+
+        if ($ctx->undertimeMinutes > 0) {
+            $ctx->undertimeDeductionCentavos = (int) round(
+                ($ctx->undertimeMinutes / 60) * $ctx->hourlyRateCentavos,
+                0,
+                PHP_ROUND_HALF_UP,
+            );
+        }
+
+        $totalLateUtDeduction = $ctx->lateDeductionCentavos + $ctx->undertimeDeductionCentavos;
+        $ctx->basicPayCentavos = max(0, $ctx->basicPayCentavos - $totalLateUtDeduction);
+
         return $next($ctx);
     }
 }

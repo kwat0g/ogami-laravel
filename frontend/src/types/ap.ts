@@ -5,7 +5,11 @@
 export type VendorInvoiceStatus =
   | 'draft'
   | 'pending_approval'
+  | 'head_noted'
+  | 'manager_checked'
+  | 'officer_reviewed'
   | 'approved'
+  | 'rejected'
   | 'partially_paid'
   | 'paid'
   | 'deleted'

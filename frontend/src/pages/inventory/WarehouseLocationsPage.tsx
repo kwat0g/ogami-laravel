@@ -9,6 +9,7 @@ import { useWarehouseLocations, useCreateLocation, useUpdateLocation } from '@/h
 import { useDepartments } from '@/hooks/useEmployees'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { useAuthStore } from '@/stores/authStore'
 import type { WarehouseLocation } from '@/types/inventory'
 
 const schema = z.object({
@@ -25,6 +26,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
   const [showForm, setShowForm]             = useState(false)
   const [editing, setEditing]               = useState<WarehouseLocation | null>(null)
   const [showInactive, setShowInactive]     = useState(false)
+  const canManage = useAuthStore(s => s.hasPermission('inventory.locations.manage'))
 
   const { data: locations, isLoading, isError } = useWarehouseLocations({
     is_active: showInactive ? undefined : true,
@@ -97,12 +99,14 @@ export default function WarehouseLocationsPage(): React.ReactElement {
         <Card>
           <CardHeader
             action={
-              <button
-                onClick={openCreate}
-                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-              >
-                <Plus className="w-4 h-4" /> New Location
-              </button>
+              canManage && (
+                <button
+                  onClick={openCreate}
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+                >
+                  <Plus className="w-4 h-4" /> New Location
+                </button>
+              )
             }
           >
             Warehouse Locations
@@ -137,9 +141,11 @@ export default function WarehouseLocationsPage(): React.ReactElement {
                         : <StatusBadge className="bg-neutral-100 text-neutral-500">Inactive</StatusBadge>}
                     </td>
                     <td className="px-4 py-3">
-                      <button onClick={() => openEdit(loc)} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
-                        Edit
-                      </button>
+                      {canManage && (
+                        <button onClick={() => openEdit(loc)} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

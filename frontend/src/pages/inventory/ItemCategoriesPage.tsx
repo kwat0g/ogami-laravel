@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { useItemCategories, useCreateItemCategory } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { useAuthStore } from '@/stores/authStore'
 import type { ItemCategory } from '@/types/inventory'
 
 // ---------------------------------------------------------------------------
@@ -100,6 +101,7 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
 export default function ItemCategoriesPage(): React.ReactElement {
   const { data: categories, isLoading } = useItemCategories()
   const [showForm, setShowForm] = useState(false)
+  const canCreate = useAuthStore(s => s.hasPermission('inventory.items.create'))
 
   return (
     <div>
@@ -110,14 +112,16 @@ export default function ItemCategoriesPage(): React.ReactElement {
         <Card>
           <CardHeader
             action={
-              <button
-                type="button"
-                onClick={() => setShowForm(true)}
-                className="flex items-center gap-2 px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-              >
-                <Plus className="w-4 h-4" />
-                New Category
-              </button>
+              canCreate && (
+                <button
+                  type="button"
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Category
+                </button>
+              )
             }
           >
             Item Categories

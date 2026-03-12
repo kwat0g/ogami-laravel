@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useImportAttendance } from '@/hooks/useAttendance'
 import { PageHeader } from '@/components/ui/PageHeader'
 
@@ -10,7 +9,6 @@ interface ImportResult {
 }
 
 export default function AttendanceImportPage() {
-  const navigate = useNavigate()
   const importMutation = useImportAttendance()
   const fileInputRef = useRef<HTMLInputElement>(null)
 

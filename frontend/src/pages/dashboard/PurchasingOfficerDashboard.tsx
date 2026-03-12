@@ -10,65 +10,85 @@ import {
   Package,
   Truck,
   Building2,
-  BarChart3,
   ChevronRight,
-  PlusCircle,
+  ArrowUpRight,
+  AlertCircle,
+  CheckCircle2,
   Archive,
 } from 'lucide-react'
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function StatCard({
+function KpiCard({
   label,
   value,
   sub,
   icon: Icon,
   href,
+  alert,
 }: {
   label: string
   value: number | string
   sub?: string
   icon: React.ComponentType<{ className?: string }>
   href: string
+  alert?: boolean
 }) {
   return (
     <Link to={href}>
-      <Card className="h-full hover:border-neutral-300 transition-colors">
-        <div className="p-5 flex items-start gap-4">
-          <Icon className="h-5 w-5 text-neutral-500 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-            <p className="text-sm text-neutral-600 mt-0.5">{label}</p>
-            {sub && <p className="text-xs text-neutral-500 mt-0.5">{sub}</p>}
+      <Card className={`h-full hover:shadow-md transition-all ${alert ? 'border-amber-200 bg-amber-50/30' : ''}`}>
+        <div className="p-5">
+          <div className="flex items-start justify-between">
+            <div className={`p-2 rounded-lg ${alert ? 'bg-amber-100' : 'bg-neutral-100'}`}>
+              <Icon className={`h-4 w-4 ${alert ? 'text-amber-600' : 'text-neutral-600'}`} />
+            </div>
+            <ArrowUpRight className="h-4 w-4 text-neutral-400" />
           </div>
-          <ChevronRight className="h-4 w-4 text-neutral-300 mt-1 shrink-0" />
+          <div className="mt-3">
+            <p className={`text-2xl font-bold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
+            <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
+            {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
+          </div>
         </div>
       </Card>
     </Link>
   )
 }
 
-function QuickLink({
+function PipelineStep({ label, count, active }: { label: string; count: number; active?: boolean }) {
+  return (
+    <div className={`flex-1 text-center p-3 rounded-lg ${active ? 'bg-amber-50 border border-amber-200' : 'bg-neutral-50 border border-neutral-200'}`}>
+      <p className={`text-xl font-bold ${active && count > 0 ? 'text-amber-700' : 'text-neutral-900'}`}>{count}</p>
+      <p className="text-xs text-neutral-500 mt-0.5">{label}</p>
+    </div>
+  )
+}
+
+function ModuleLink({
   href,
   label,
   icon: Icon,
+  desc,
 }: {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
+  desc?: string
 }) {
   return (
     <Link
       to={href}
-      className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle transition-colors"
+      className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-lg hover:bg-neutral-50 hover:border-neutral-300 transition-all"
     >
-      <Icon className="h-4 w-4 text-neutral-500" />
-      <span className="text-sm font-medium text-neutral-700">{label}</span>
+      <div className="p-1.5 rounded bg-neutral-100">
+        <Icon className="h-4 w-4 text-neutral-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-neutral-700">{label}</p>
+        {desc && <p className="text-xs text-neutral-400 truncate">{desc}</p>}
+      </div>
+      <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0" />
     </Link>
   )
 }
-
-// ── Main Component ────────────────────────────────────────────────────────────
 
 export default function PurchasingOfficerDashboard(): React.ReactElement {
   useAuth()
@@ -85,53 +105,113 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
   const sentPOs    = (sentPO as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900">
-        Purchasing
-      </h1>
-
-      {/* Procurement Stats */}
       <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Procurement Overview</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard
-            label="Pending Purchase Requests"
-            value={pendingPRs}
-            sub="Awaiting your review"
-            icon={ClipboardList}
-            href="/procurement/purchase-requests"
-          />
-          <StatCard
-            label="Draft Purchase Orders"
-            value={draftPOs}
-            sub="Not yet sent to vendor"
-            icon={ShoppingCart}
-            href="/procurement/purchase-orders"
-          />
-          <StatCard
-            label="Sent Purchase Orders"
-            value={sentPOs}
-            sub="Awaiting vendor fulfillment"
-            icon={Truck}
-            href="/procurement/purchase-orders"
-          />
-        </div>
+        <h1 className="text-xl font-bold text-neutral-900">Purchasing Dashboard</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">Manage purchase requests, orders, vendor relationships, and goods receipts</p>
       </div>
 
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          <QuickLink href="/procurement/purchase-requests"     label="Purchase Requests"   icon={ClipboardList} />
-          <QuickLink href="/procurement/purchase-orders"       label="Purchase Orders"     icon={ShoppingCart}  />
-          <QuickLink href="/procurement/purchase-orders/new"    label="New Purchase Order" icon={PlusCircle}    />
-          <QuickLink href="/procurement/goods-receipts"        label="Goods Receipts"      icon={Archive}       />
-          <QuickLink href="/accounting/vendors"                label="Vendors"             icon={Building2}     />
-          <QuickLink href="/inventory/items"                   label="Inventory Items"     icon={Package}       />
-          <QuickLink href="/inventory/stock"                   label="Stock Levels"        icon={BarChart3}     />
-          <QuickLink href="/delivery"                          label="Delivery"            icon={Truck}         />
-        </div>
+      {/* Action Alert */}
+      {pendingPRs > 0 && (
+        <Link to="/procurement/purchase-requests">
+          <Card className="border-amber-200 bg-amber-50/50 hover:shadow-sm transition-all">
+            <div className="p-4 flex items-center gap-4">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-800">{pendingPRs} Purchase Request{pendingPRs > 1 ? 's' : ''} Awaiting Review</p>
+                <p className="text-xs text-amber-600">Submitted by department heads and managers</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-amber-400" />
+            </div>
+          </Card>
+        </Link>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KpiCard
+          label="Pending PRs"
+          value={pendingPRs}
+          sub="Awaiting your review"
+          icon={ClipboardList}
+          href="/procurement/purchase-requests"
+          alert={pendingPRs > 0}
+        />
+        <KpiCard
+          label="Draft POs"
+          value={draftPOs}
+          sub="Not yet sent to vendor"
+          icon={ShoppingCart}
+          href="/procurement/purchase-orders"
+          alert={draftPOs > 0}
+        />
+        <KpiCard
+          label="Sent POs"
+          value={sentPOs}
+          sub="Awaiting vendor fulfillment"
+          icon={Truck}
+          href="/procurement/purchase-orders"
+        />
+      </div>
+
+      {/* Procurement Pipeline Visual */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4 text-neutral-500" />
+            Procurement Pipeline
+          </div>
+        </CardHeader>
+        <CardBody>
+          <div className="flex items-center gap-2">
+            <PipelineStep label="PR Submitted" count={pendingPRs} active={pendingPRs > 0} />
+            <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0" />
+            <PipelineStep label="PO Draft" count={draftPOs} active={draftPOs > 0} />
+            <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0" />
+            <PipelineStep label="PO Sent" count={sentPOs} active={sentPOs > 0} />
+            <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0" />
+            <PipelineStep label="Received" count={0} />
+            <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Modules */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-neutral-500" />
+              Procurement
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-2">
+              <ModuleLink href="/procurement/purchase-requests" label="Purchase Requests" icon={ClipboardList} desc="Review and approve PRs" />
+              <ModuleLink href="/procurement/purchase-orders" label="Purchase Orders" icon={ShoppingCart} desc="Create and manage POs" />
+              <ModuleLink href="/procurement/goods-receipts" label="Goods Receipts" icon={Archive} desc="Receive and inspect deliveries" />
+              <ModuleLink href="/procurement/rfqs" label="Requests for Quotation" icon={ClipboardList} desc="Send RFQs to vendors" />
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-neutral-500" />
+              Vendor & Inventory
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-2">
+              <ModuleLink href="/accounting/vendors" label="Vendors" icon={Building2} desc="Manage vendor profiles and accreditation" />
+              <ModuleLink href="/inventory/items" label="Inventory Items" icon={Package} desc="View item master data" />
+              <ModuleLink href="/inventory/stock" label="Stock Levels" icon={Package} desc="Current stock balances" />
+              <ModuleLink href="/delivery" label="Delivery Tracking" icon={Truck} desc="Inbound delivery status" />
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   )

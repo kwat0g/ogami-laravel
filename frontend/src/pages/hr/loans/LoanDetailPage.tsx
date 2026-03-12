@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
@@ -10,6 +10,9 @@ import {
   useAccountingApproveLoan,
   useDisburseLoan,
   useHeadNoteLoan,
+  useManagerCheckLoan,
+  useOfficerReviewLoan,
+  useVpApproveLoan,
 } from '@/hooks/useLoans'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -20,16 +23,16 @@ import { toast } from 'sonner'
 
 export default function LoanDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
-  const navigate = useNavigate()
   const location = useLocation()
   const loanListPath = location.pathname.startsWith('/accounting') ? '/accounting/loans' : '/hr/loans'
   const { hasPermission } = useAuthStore()
   const canApprove = hasPermission('loans.approve')
   const canAccountingApprove = hasPermission('loans.accounting_approve')
   const canDisburse = hasPermission('loans.accounting_approve') || hasPermission('loans.hr_approve')
-  const canReject = hasPermission('loans.reject') || hasPermission('loans.approve')
   const canHeadNote = hasPermission('loans.head_note')
-  const _ = canReject
+  const canManagerCheck = hasPermission('loans.manager_check')
+  const canOfficerReview = hasPermission('loans.officer_review')
+  const canVpApprove = hasPermission('loans.vp_approve')
   const loanId = id ?? null
   const { data: loan, isLoading, isError } = useLoan(loanId)
   const { data: schedule, isLoading: schedLoading } = useLoanSchedule(loanId)
@@ -40,6 +43,9 @@ export default function LoanDetailPage() {
   const reject = useRejectLoan()
   const disburse = useDisburseLoan()
   const headNote = useHeadNoteLoan()
+  const managerCheck = useManagerCheckLoan()
+  const officerReview = useOfficerReviewLoan()
+  const vpApprove = useVpApproveLoan()
 
   const computeFirstDeductionDate = (cutoff: '1st' | '2nd'): string => {
     const now = new Date()
@@ -58,6 +64,12 @@ export default function LoanDetailPage() {
   const [accountingRemarks, setAccountingRemarks] = useState('')
   const [showHeadNoteModal, setShowHeadNoteModal] = useState(false)
   const [headNoteRemarks, setHeadNoteRemarks] = useState('')
+  const [showManagerCheckModal, setShowManagerCheckModal] = useState(false)
+  const [managerCheckRemarks, setManagerCheckRemarks] = useState('')
+  const [showOfficerReviewModal, setShowOfficerReviewModal] = useState(false)
+  const [officerReviewRemarks, setOfficerReviewRemarks] = useState('')
+  const [showVpApproveModal, setShowVpApproveModal] = useState(false)
+  const [vpApproveRemarks, setVpApproveRemarks] = useState('')
 
   if (isLoading) return <SkeletonLoader rows={8} />
   if (isError || !loan) return <div className="text-red-600 text-sm mt-4">Failed to load loan details.</div>
@@ -216,207 +228,337 @@ export default function LoanDetailPage() {
 
         {/* Approval Timeline */}
         <div className="mt-6 pt-6 border-t border-neutral-100">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-4">Timeline</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Step 0: Department Head Note */}
-            {(() => {
-              const isNoted = !!loan.head_noted_by
-              const isPending = !isNoted && loan.status === 'pending'
-              return (
-                <div className={`p-4 rounded-lg border ${
-                  isNoted ? 'bg-amber-50 border-amber-200'
-                  : isPending ? 'bg-amber-50 border-amber-200'
-                  : 'bg-neutral-50 border-neutral-200'
-                }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`w-3 h-3 rounded-full ${
-                      isNoted ? 'bg-amber-500'
-                      : isPending ? 'bg-amber-400 animate-pulse'
-                      : 'bg-neutral-300'
-                    }`} />
-                    <span className="text-sm font-medium text-neutral-900">0. Dept Head Note</span>
-                  </div>
-                  {isNoted ? (
-                    <>
-                      <p className="text-xs text-neutral-600">Noted by User #{loan.head_noted_by}</p>
-                      <p className="text-xs text-neutral-500">{loan.head_noted_at?.slice(0, 10)}</p>
-                      {loan.head_remarks && (
-                        <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.head_remarks}&rdquo;</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xs text-neutral-500">{isPending ? 'Awaiting Dept Head note' : 'Not required / skipped'}</p>
-                  )}
-                </div>
-              )
-            })()}
-            {/* Step 1: HR Approval */}
-            {(() => {
-              const isRejected = loan.status === 'rejected' && !!loan.approved_by
-              const isApproved = !!loan.approved_by && !isRejected
-              return (
-                <div className={`p-4 rounded-lg border ${
-                  isRejected ? 'bg-red-50 border-red-200'
-                  : isApproved ? 'bg-green-50 border-green-200'
-                  : loan.status === 'pending' ? 'bg-amber-50 border-amber-200'
-                  : 'bg-neutral-50 border-neutral-200'
-                }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`w-3 h-3 rounded-full ${
-                      isRejected ? 'bg-red-500'
-                      : isApproved ? 'bg-green-500'
-                      : loan.status === 'pending' ? 'bg-amber-400 animate-pulse'
-                      : 'bg-neutral-300'
-                    }`} />
-                    <span className="text-sm font-medium text-neutral-900">1. HR Manager Approval</span>
-                  </div>
-                  {isRejected ? (
-                    <>
-                      <p className="text-xs text-red-700 font-medium">Rejected</p>
-                      <p className="text-xs text-neutral-600">{loan.approver_name ?? `User #${loan.approved_by}`}</p>
-                      <p className="text-xs text-neutral-500">{loan.approved_at?.slice(0, 10)}</p>
-                      {loan.approver_remarks && (
-                        <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.approver_remarks}&rdquo;</p>
-                      )}
-                    </>
-                  ) : isApproved ? (
-                    <>
-                      <p className="text-xs text-neutral-600">Approved by {loan.approver_name ?? `User #${loan.approved_by}`}</p>
-                      <p className="text-xs text-neutral-500">{loan.approved_at?.slice(0, 10)}</p>
-                      {loan.approver_remarks && (
-                        <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.approver_remarks}&rdquo;</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xs text-neutral-500">{loan.status === 'pending' ? 'Awaiting HR Manager review' : 'Not yet reviewed'}</p>
-                  )}
-                </div>
-              )
-            })()}
+          <h3 className="text-sm font-semibold text-neutral-900 mb-4">
+            Timeline {loan.workflow_version === 2 && <span className="text-xs font-normal text-neutral-500 ml-1">(v2 workflow)</span>}
+          </h3>
 
-            {/* Step 2: Accounting Approval */}
-            {(() => {
-              const terminal = loan.status === 'rejected' || loan.status === 'cancelled'
-              const isApproved = !!loan.accounting_approved_by
-              const isPending = !terminal && !isApproved && loan.status === 'approved'
-              return (
-                <div className={`p-4 rounded-lg border ${
-                  terminal ? 'bg-neutral-50 border-neutral-200'
-                  : isApproved ? 'bg-green-50 border-green-200'
-                  : isPending ? 'bg-amber-50 border-amber-200'
-                  : 'bg-neutral-50 border-neutral-200'
-                }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`w-3 h-3 rounded-full ${
-                      terminal ? 'bg-neutral-300'
-                      : isApproved ? 'bg-green-500'
-                      : isPending ? 'bg-amber-400 animate-pulse'
-                      : 'bg-neutral-300'
-                    }`} />
-                    <span className="text-sm font-medium text-neutral-900">2. Accounting Approval</span>
+          {/* ── v2 Timeline ── */}
+          {loan.workflow_version === 2 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* v2 Step 1: Dept Head Note */}
+              {(() => {
+                const isDone = !!loan.head_noted_by
+                const isPending = !isDone && loan.status === 'pending'
+                return (
+                  <div className={`p-4 rounded-lg border ${isDone ? 'bg-green-50 border-green-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${isDone ? 'bg-green-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">1. Dept Head Note</span>
+                    </div>
+                    {isDone ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Noted by User #{loan.head_noted_by}</p>
+                        <p className="text-xs text-neutral-500">{loan.head_noted_at?.slice(0, 10)}</p>
+                        {loan.head_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.head_remarks}&rdquo;</p>}
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{isPending ? 'Awaiting Dept Head' : 'Pending'}</p>
+                    )}
                   </div>
-                  {isApproved ? (
-                    <>
-                      <p className="text-xs text-neutral-600">Approved by {loan.accounting_approver_name ?? `User #${loan.accounting_approved_by}`}</p>
-                      <p className="text-xs text-neutral-500">{loan.accounting_approved_at?.slice(0, 10)}</p>
-                      {loan.accounting_remarks && (
-                        <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.accounting_remarks}&rdquo;</p>
-                      )}
-                      {loan.journal_entry_id && (
-                        <p className="text-xs text-neutral-600 mt-2 font-medium">GL Entry: JE #{loan.journal_entry_id}</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xs text-neutral-500">
-                      {terminal ? 'N/A' : isPending ? 'Ready for Accounting review' : 'Waiting for HR approval'}
-                    </p>
-                  )}
-                </div>
-              )
-            })()}
+                )
+              })()}
 
-            {/* Step 3: Disbursement */}
-            {(() => {
-              const terminal = loan.status === 'rejected' || loan.status === 'cancelled'
-              const isDisbursed = !!loan.disbursed_at
-              const isPending = !terminal && !isDisbursed && loan.status === 'ready_for_disbursement'
-              return (
-                <div className={`p-4 rounded-lg border ${
-                  terminal ? 'bg-neutral-50 border-neutral-200'
-                  : isDisbursed ? 'bg-green-50 border-green-200'
-                  : isPending ? 'bg-amber-50 border-amber-200'
-                  : 'bg-neutral-50 border-neutral-200'
-                }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`w-3 h-3 rounded-full ${
-                      terminal ? 'bg-neutral-300'
-                      : isDisbursed ? 'bg-green-500'
-                      : isPending ? 'bg-amber-400 animate-pulse'
-                      : 'bg-neutral-300'
-                    }`} />
-                    <span className="text-sm font-medium text-neutral-900">3. Fund Disbursement</span>
+              {/* v2 Step 2: Manager Check */}
+              {(() => {
+                const isDone = !!loan.manager_checked_by
+                const isPending = !isDone && loan.status === 'head_noted'
+                return (
+                  <div className={`p-4 rounded-lg border ${isDone ? 'bg-green-50 border-green-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${isDone ? 'bg-green-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">2. Manager Check</span>
+                    </div>
+                    {isDone ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Checked by User #{loan.manager_checked_by}</p>
+                        <p className="text-xs text-neutral-500">{loan.manager_checked_at?.slice(0, 10)}</p>
+                        {loan.manager_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.manager_remarks}&rdquo;</p>}
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{isPending ? 'Awaiting Manager' : 'Pending'}</p>
+                    )}
                   </div>
-                  {isDisbursed ? (
-                    <>
-                      <p className="text-xs text-neutral-600">Disbursed by {loan.disbursed_by ? `User #${loan.disbursed_by}` : '—'}</p>
-                      <p className="text-xs text-neutral-500">{loan.disbursed_at?.slice(0, 10)}</p>
-                      <p className="text-xs text-green-700 mt-2 font-medium">✓ Funds released to employee</p>
-                    </>
-                  ) : (
-                    <p className="text-xs text-neutral-500">
-                      {terminal ? 'N/A' : isPending ? 'Ready for disbursement' : 'Waiting for accounting approval'}
-                    </p>
-                  )}
-                </div>
-              )
-            })()}
-          </div>
+                )
+              })()}
+
+              {/* v2 Step 3: Officer Review */}
+              {(() => {
+                const isDone = !!loan.officer_reviewed_by
+                const isPending = !isDone && loan.status === 'manager_checked'
+                return (
+                  <div className={`p-4 rounded-lg border ${isDone ? 'bg-green-50 border-green-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${isDone ? 'bg-green-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">3. Accounting Review</span>
+                    </div>
+                    {isDone ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Reviewed by User #{loan.officer_reviewed_by}</p>
+                        <p className="text-xs text-neutral-500">{loan.officer_reviewed_at?.slice(0, 10)}</p>
+                        {loan.officer_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.officer_remarks}&rdquo;</p>}
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{isPending ? 'Awaiting Accounting Officer' : 'Pending'}</p>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* v2 Step 4: VP Approve */}
+              {(() => {
+                const isDone = !!loan.vp_approved_by
+                const isPending = !isDone && loan.status === 'officer_reviewed'
+                return (
+                  <div className={`p-4 rounded-lg border ${isDone ? 'bg-green-50 border-green-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${isDone ? 'bg-green-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">4. VP Approval</span>
+                    </div>
+                    {isDone ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Approved by User #{loan.vp_approved_by}</p>
+                        <p className="text-xs text-neutral-500">{loan.vp_approved_at?.slice(0, 10)}</p>
+                        {loan.vp_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.vp_remarks}&rdquo;</p>}
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{isPending ? 'Awaiting VP' : 'Pending'}</p>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* v2 Step 5: Disbursement */}
+              {(() => {
+                const terminal = loan.status === 'rejected' || loan.status === 'cancelled'
+                const isDisbursed = !!loan.disbursed_at
+                const isPending = !terminal && !isDisbursed && loan.status === 'ready_for_disbursement'
+                return (
+                  <div className={`p-4 rounded-lg border ${terminal ? 'bg-neutral-50 border-neutral-200' : isDisbursed ? 'bg-green-50 border-green-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${terminal ? 'bg-neutral-300' : isDisbursed ? 'bg-green-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">5. Disbursement</span>
+                    </div>
+                    {isDisbursed ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Disbursed by {loan.disbursed_by ? `User #${loan.disbursed_by}` : '—'}</p>
+                        <p className="text-xs text-neutral-500">{loan.disbursed_at?.slice(0, 10)}</p>
+                        <p className="text-xs text-green-700 mt-2 font-medium">✓ Funds released</p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{terminal ? 'N/A' : isPending ? 'Ready to disburse' : 'Awaiting VP approval'}</p>
+                    )}
+                  </div>
+                )
+              })()}
+            </div>
+          ) : (
+            /* ── v1 Timeline ── */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* v1 Step 0: Department Head Note */}
+              {(() => {
+                const isNoted = !!loan.head_noted_by
+                const isPending = !isNoted && loan.status === 'pending'
+                return (
+                  <div className={`p-4 rounded-lg border ${isNoted ? 'bg-amber-50 border-amber-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${isNoted ? 'bg-amber-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">0. Dept Head Note</span>
+                    </div>
+                    {isNoted ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Noted by User #{loan.head_noted_by}</p>
+                        <p className="text-xs text-neutral-500">{loan.head_noted_at?.slice(0, 10)}</p>
+                        {loan.head_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.head_remarks}&rdquo;</p>}
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{isPending ? 'Awaiting Dept Head note' : 'Not required / skipped'}</p>
+                    )}
+                  </div>
+                )
+              })()}
+              {/* v1 Step 1: HR Approval */}
+              {(() => {
+                const isRejected = loan.status === 'rejected' && !!loan.approved_by
+                const isApproved = !!loan.approved_by && !isRejected
+                return (
+                  <div className={`p-4 rounded-lg border ${isRejected ? 'bg-red-50 border-red-200' : isApproved ? 'bg-green-50 border-green-200' : loan.status === 'pending' ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${isRejected ? 'bg-red-500' : isApproved ? 'bg-green-500' : loan.status === 'pending' ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">1. HR Manager Approval</span>
+                    </div>
+                    {isRejected ? (
+                      <>
+                        <p className="text-xs text-red-700 font-medium">Rejected</p>
+                        <p className="text-xs text-neutral-600">{loan.approver_name ?? `User #${loan.approved_by}`}</p>
+                        <p className="text-xs text-neutral-500">{loan.approved_at?.slice(0, 10)}</p>
+                        {loan.approver_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.approver_remarks}&rdquo;</p>}
+                      </>
+                    ) : isApproved ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Approved by {loan.approver_name ?? `User #${loan.approved_by}`}</p>
+                        <p className="text-xs text-neutral-500">{loan.approved_at?.slice(0, 10)}</p>
+                        {loan.approver_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.approver_remarks}&rdquo;</p>}
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{loan.status === 'pending' ? 'Awaiting HR Manager review' : 'Not yet reviewed'}</p>
+                    )}
+                  </div>
+                )
+              })()}
+              {/* v1 Step 2: Accounting Approval */}
+              {(() => {
+                const terminal = loan.status === 'rejected' || loan.status === 'cancelled'
+                const isApproved = !!loan.accounting_approved_by
+                const isPending = !terminal && !isApproved && loan.status === 'approved'
+                return (
+                  <div className={`p-4 rounded-lg border ${terminal ? 'bg-neutral-50 border-neutral-200' : isApproved ? 'bg-green-50 border-green-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${terminal ? 'bg-neutral-300' : isApproved ? 'bg-green-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">2. Accounting Approval</span>
+                    </div>
+                    {isApproved ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Approved by {loan.accounting_approver_name ?? `User #${loan.accounting_approved_by}`}</p>
+                        <p className="text-xs text-neutral-500">{loan.accounting_approved_at?.slice(0, 10)}</p>
+                        {loan.accounting_remarks && <p className="text-xs text-neutral-500 mt-1 italic">&ldquo;{loan.accounting_remarks}&rdquo;</p>}
+                        {loan.journal_entry_id && <p className="text-xs text-neutral-600 mt-2 font-medium">GL Entry: JE #{loan.journal_entry_id}</p>}
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{terminal ? 'N/A' : isPending ? 'Ready for Accounting review' : 'Waiting for HR approval'}</p>
+                    )}
+                  </div>
+                )
+              })()}
+              {/* v1 Step 3: Disbursement */}
+              {(() => {
+                const terminal = loan.status === 'rejected' || loan.status === 'cancelled'
+                const isDisbursed = !!loan.disbursed_at
+                const isPending = !terminal && !isDisbursed && loan.status === 'ready_for_disbursement'
+                return (
+                  <div className={`p-4 rounded-lg border ${terminal ? 'bg-neutral-50 border-neutral-200' : isDisbursed ? 'bg-green-50 border-green-200' : isPending ? 'bg-amber-50 border-amber-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-3 h-3 rounded-full ${terminal ? 'bg-neutral-300' : isDisbursed ? 'bg-green-500' : isPending ? 'bg-amber-400 animate-pulse' : 'bg-neutral-300'}`} />
+                      <span className="text-sm font-medium text-neutral-900">3. Fund Disbursement</span>
+                    </div>
+                    {isDisbursed ? (
+                      <>
+                        <p className="text-xs text-neutral-600">Disbursed by {loan.disbursed_by ? `User #${loan.disbursed_by}` : '—'}</p>
+                        <p className="text-xs text-neutral-500">{loan.disbursed_at?.slice(0, 10)}</p>
+                        <p className="text-xs text-green-700 mt-2 font-medium">✓ Funds released to employee</p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{terminal ? 'N/A' : isPending ? 'Ready for disbursement' : 'Waiting for accounting approval'}</p>
+                    )}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="mt-6 flex flex-wrap gap-3">
-          {/* Department Head Actions */}
-          {canHeadNote && loan.status === 'pending' && (
-            <button
-              onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
-              disabled={headNote.isPending}
-              className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-              <span>📋</span> Head Note
-            </button>
-          )}
-
-          {/* HR Manager Actions */}
-          {canApprove && loan.status === 'pending' && (
+          {/* ── v2 workflow actions ── */}
+          {loan.workflow_version === 2 && (
             <>
-              <button onClick={() => { setApproveDate(computeFirstDeductionDate(loan.deduction_cutoff)); setApproveRemarks(''); setShowApproveModal(true) }} disabled={approve.isPending}
-                className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                <span>✓</span> Approve (HR)
-              </button>
-              <button onClick={() => setShowRejectModal(true)}
-                disabled={approve.isPending || reject.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span>✕</span> Reject
-              </button>
+              {/* v2 Stage 1: Dept Head Note */}
+              {canHeadNote && loan.status === 'pending' && (
+                <button
+                  onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
+                  disabled={headNote.isPending}
+                  className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <span>📋</span> Head Note
+                </button>
+              )}
+
+              {/* v2 Stage 2: Manager Check */}
+              {canManagerCheck && loan.status === 'head_noted' && (
+                <button
+                  onClick={() => { setManagerCheckRemarks(''); setShowManagerCheckModal(true) }}
+                  disabled={managerCheck.isPending}
+                  className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <span>✓</span> Manager Check
+                </button>
+              )}
+
+              {/* v2 Stage 3: Officer Review */}
+              {canOfficerReview && loan.status === 'manager_checked' && (
+                <button
+                  onClick={() => { setOfficerReviewRemarks(''); setShowOfficerReviewModal(true) }}
+                  disabled={officerReview.isPending}
+                  className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <span>✓</span> Accounting Review
+                </button>
+              )}
+
+              {/* v2 Stage 4: VP Approve */}
+              {canVpApprove && loan.status === 'officer_reviewed' && (
+                <button
+                  onClick={() => { setVpApproveRemarks(''); setShowVpApproveModal(true) }}
+                  disabled={vpApprove.isPending}
+                  className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <span>✓</span> VP Approve
+                </button>
+              )}
+
+              {/* Reject (any pending v2 step) */}
+              {(loan.status === 'pending' || loan.status === 'head_noted' || loan.status === 'manager_checked' || loan.status === 'officer_reviewed') && (
+                <button onClick={() => setShowRejectModal(true)}
+                  disabled={reject.isPending}
+                  className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <span>✕</span> Reject
+                </button>
+              )}
             </>
           )}
 
-          {/* Accounting Manager Actions */}
-          {canAccountingApprove && loan.status === 'approved' && (
+          {/* ── v1 workflow actions ── */}
+          {loan.workflow_version !== 2 && (
             <>
-              <button onClick={() => setShowAccountingModal(true)}
-                disabled={accountingApprove.isPending || reject.isPending}
-                className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span>✓</span> Approve for Disbursement (Accounting)
-              </button>
-              <button onClick={() => setShowRejectModal(true)}
-                disabled={accountingApprove.isPending || reject.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span>✕</span> Reject
-              </button>
+              {/* Head Note (optional in v1) */}
+              {canHeadNote && loan.status === 'pending' && (
+                <button
+                  onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
+                  disabled={headNote.isPending}
+                  className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <span>📋</span> Head Note
+                </button>
+              )}
+
+              {/* HR Manager Actions */}
+              {canApprove && loan.status === 'pending' && (
+                <>
+                  <button onClick={() => { setApproveDate(computeFirstDeductionDate(loan.deduction_cutoff)); setApproveRemarks(''); setShowApproveModal(true) }} disabled={approve.isPending}
+                    className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>✓</span> Approve (HR)
+                  </button>
+                  <button onClick={() => setShowRejectModal(true)}
+                    disabled={approve.isPending || reject.isPending}
+                    className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>✕</span> Reject
+                  </button>
+                </>
+              )}
+
+              {/* Accounting Manager Actions */}
+              {canAccountingApprove && loan.status === 'approved' && (
+                <>
+                  <button onClick={() => setShowAccountingModal(true)}
+                    disabled={accountingApprove.isPending || reject.isPending}
+                    className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>✓</span> Approve for Disbursement (Accounting)
+                  </button>
+                  <button onClick={() => setShowRejectModal(true)}
+                    disabled={accountingApprove.isPending || reject.isPending}
+                    className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>✕</span> Reject
+                  </button>
+                </>
+              )}
             </>
           )}
 
-          {/* Disbursement Action */}
+          {/* Disbursement Action (both v1 and v2) */}
           {canDisburse && loan.status === 'ready_for_disbursement' && (
             <button onClick={() => disburse.mutate(loan.ulid, {
               onSuccess: () => toast.success('Funds disbursed.'),
@@ -619,6 +761,122 @@ export default function LoanDetailPage() {
                 className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-40"
               >
                 Confirm Approval
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manager Check Modal (v2) */}
+      {showManagerCheckModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-neutral-200 p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold text-neutral-900 mb-2">Manager Check — Loan Application</h2>
+            <p className="text-sm text-neutral-600 mb-4">
+              Review the loan application and add your endorsement before forwarding to Accounting for review.
+            </p>
+            <label className="block text-xs font-medium text-neutral-700 mb-1">Remarks (optional)</label>
+            <textarea
+              value={managerCheckRemarks}
+              onChange={(e) => setManagerCheckRemarks(e.target.value)}
+              placeholder="Add remarks or recommendations..."
+              rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => setShowManagerCheckModal(false)} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">
+                Cancel
+              </button>
+              <button
+                disabled={managerCheck.isPending}
+                onClick={() => managerCheck.mutate(
+                  { id: loan.ulid, remarks: managerCheckRemarks || undefined },
+                  {
+                    onSuccess: () => { toast.success('Manager check recorded.'); setShowManagerCheckModal(false) },
+                    onError: () => toast.error('Failed to record manager check.'),
+                  }
+                )}
+                className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-40"
+              >
+                {managerCheck.isPending ? 'Submitting…' : 'Confirm Check'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Officer Review Modal (v2) */}
+      {showOfficerReviewModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-neutral-200 p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold text-neutral-900 mb-2">Accounting Review — Loan Application</h2>
+            <p className="text-sm text-neutral-600 mb-4">
+              Review the loan terms and verify financial eligibility before forwarding to VP for final approval.
+              This step generates the amortization schedule upon VP approval.
+            </p>
+            <label className="block text-xs font-medium text-neutral-700 mb-1">Remarks (optional)</label>
+            <textarea
+              value={officerReviewRemarks}
+              onChange={(e) => setOfficerReviewRemarks(e.target.value)}
+              placeholder="Add accounting remarks..."
+              rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => setShowOfficerReviewModal(false)} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">
+                Cancel
+              </button>
+              <button
+                disabled={officerReview.isPending}
+                onClick={() => officerReview.mutate(
+                  { id: loan.ulid, remarks: officerReviewRemarks || undefined },
+                  {
+                    onSuccess: () => { toast.success('Accounting review completed.'); setShowOfficerReviewModal(false) },
+                    onError: () => toast.error('Failed to complete accounting review.'),
+                  }
+                )}
+                className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-40"
+              >
+                {officerReview.isPending ? 'Submitting…' : 'Confirm Review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VP Approve Modal (v2) */}
+      {showVpApproveModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-neutral-200 p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold text-neutral-900 mb-2">VP Final Approval — Loan Application</h2>
+            <p className="text-sm text-neutral-600 mb-4">
+              This is the final approval step. Approving will generate the amortization schedule
+              and mark the loan as ready for disbursement.
+            </p>
+            <label className="block text-xs font-medium text-neutral-700 mb-1">Remarks (optional)</label>
+            <textarea
+              value={vpApproveRemarks}
+              onChange={(e) => setVpApproveRemarks(e.target.value)}
+              placeholder="Add VP remarks..."
+              rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => setShowVpApproveModal(false)} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">
+                Cancel
+              </button>
+              <button
+                disabled={vpApprove.isPending}
+                onClick={() => vpApprove.mutate(
+                  { id: loan.ulid, remarks: vpApproveRemarks || undefined },
+                  {
+                    onSuccess: () => { toast.success('Loan approved by VP. Ready for disbursement.'); setShowVpApproveModal(false) },
+                    onError: () => toast.error('Failed to approve loan.'),
+                  }
+                )}
+                className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-40"
+              >
+                {vpApprove.isPending ? 'Approving…' : 'Confirm VP Approval'}
               </button>
             </div>
           </div>

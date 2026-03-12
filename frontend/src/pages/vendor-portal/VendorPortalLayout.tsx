@@ -1,12 +1,14 @@
 import { Outlet } from 'react-router-dom'
 import { Link, useLocation } from 'react-router-dom'
-import { Package, ShoppingCart, LayoutDashboard } from 'lucide-react'
+import { Package, ShoppingCart, LayoutDashboard, ClipboardCheck, FileText } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
 const NAV_ITEMS = [
-  { to: '/vendor-portal/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/vendor-portal/orders',    label: 'My Orders',  icon: ShoppingCart },
-  { to: '/vendor-portal/items',     label: 'My Catalog', icon: Package },
+  { to: '/vendor-portal/dashboard',      label: 'Dashboard',       icon: LayoutDashboard },
+  { to: '/vendor-portal/orders',         label: 'My Orders',       icon: ShoppingCart },
+  { to: '/vendor-portal/goods-receipts', label: 'Goods Receipts',  icon: ClipboardCheck },
+  { to: '/vendor-portal/invoices',       label: 'Invoices',        icon: FileText },
+  { to: '/vendor-portal/items',          label: 'My Catalog',      icon: Package },
 ]
 
 export default function VendorPortalLayout(): React.ReactElement {

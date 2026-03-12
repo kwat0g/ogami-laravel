@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, List } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useWorkOrders } from '@/hooks/useMaintenance';
+import { useAuthStore } from '@/stores/authStore';
 import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
 
 const PRIORITY_COLORS: Record<WorkOrderPriority, string> = {
@@ -25,6 +26,7 @@ export default function WorkOrderListPage() {
   const [type, setType] = useState('');
   const [priority, setPriority] = useState('');
   const [withArchived, setWithArchived] = useState(false);
+  const canManage = useAuthStore(s => s.hasPermission('maintenance.manage'));
 
   const params: Record<string, string | boolean> = {};
   if (status) params.status = status;
@@ -39,12 +41,14 @@ export default function WorkOrderListPage() {
       <PageHeader
         title="Work Orders"
         actions={
-          <Link
-            to="/maintenance/work-orders/new"
-            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            <Plus size={16} /> New Work Order
-          </Link>
+          canManage ? (
+            <Link
+              to="/maintenance/work-orders/new"
+              className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+            >
+              <Plus size={16} /> New Work Order
+            </Link>
+          ) : undefined
         }
       />
 

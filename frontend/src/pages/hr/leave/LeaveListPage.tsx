@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { Link } from 'react-router-dom'
+import { useAuthStore } from '@/stores/authStore'
 import { useLeaveRequests } from '@/hooks/useLeave'
 import { useDepartments } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -13,6 +14,8 @@ import { Scale, X, ChevronDown, ChevronUp, Search } from 'lucide-react'
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
 export default function LeaveListPage() {
+  const { hasPermission } = useAuthStore()
+  const canFileOnBehalf = hasPermission('leaves.file_on_behalf')
   const [filters, setFilters] = useState<LeaveFilters>({ per_page: 15, page: 1 })
   const [expandedRow, setExpandedRow] = useState<number | null>(null)
   
@@ -86,12 +89,14 @@ export default function LeaveListPage() {
               <Scale className="h-4 w-4" />
               Leave Balances
             </Link>
-            <Link
-              to="/hr/leave/new"
-              className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              + File Leave
-            </Link>
+            {canFileOnBehalf && (
+              <Link
+                to="/hr/leave/new"
+                className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                + File Leave
+              </Link>
+            )}
           </div>
         }
       />

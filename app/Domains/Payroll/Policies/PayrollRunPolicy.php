@@ -59,6 +59,7 @@ final class PayrollRunPolicy
             'payroll.hr_return',
             'payroll.acctg_approve',
             'payroll.acctg_reject',
+            'payroll.vp_approve',
             'payroll.disburse',
             'payroll.publish',
             'payroll.recall',
@@ -89,7 +90,7 @@ final class PayrollRunPolicy
         }
 
         // Allow HR and Accounting to view during all workflow states
-        if ($user->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve', 'payroll.acctg_approve', 'payroll.approve', 'payroll.post'])) {
+        if ($user->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve', 'payroll.acctg_approve', 'payroll.vp_approve', 'payroll.approve', 'payroll.post'])) {
             return true;
         }
 
@@ -198,6 +199,20 @@ final class PayrollRunPolicy
         return $this->accountingReject($user, $run);
     }
 
+    /**
+     * Step 7b: VP final approval.
+     * SOD-008: VP must NOT be the user who initiated the run.
+     */
+    public function vpApprove(User $user, PayrollRun $run): bool
+    {
+        if (! $user->hasPermissionTo('payroll.vp_approve')) {
+            return false;
+        }
+
+        // SOD-008: initiator cannot also do VP approval
+        return (int) $user->id !== (int) $run->created_by;
+    }
+
     /** Step 8a: post GL + generate bank file — Finance Manager */
     public function disburse(User $user, PayrollRun $run): bool
     {
@@ -246,7 +261,7 @@ final class PayrollRunPolicy
         }
 
         // Available from HR_APPROVED (Step 7) onwards - so user can export even after disbursement
-        return in_array($run->status, ['HR_APPROVED', 'ACCTG_APPROVED', 'DISBURSED', 'PUBLISHED'], true);
+        return in_array($run->status, ['HR_APPROVED', 'ACCTG_APPROVED', 'VP_APPROVED', 'DISBURSED', 'PUBLISHED'], true);
     }
 
     /**
@@ -261,7 +276,7 @@ final class PayrollRunPolicy
         }
 
         // Available from COMPUTED onwards
-        return in_array($run->status, ['COMPUTED', 'REVIEW', 'SUBMITTED', 'HR_APPROVED', 'ACCTG_APPROVED', 'DISBURSED', 'PUBLISHED'], true);
+        return in_array($run->status, ['COMPUTED', 'REVIEW', 'SUBMITTED', 'HR_APPROVED', 'ACCTG_APPROVED', 'VP_APPROVED', 'DISBURSED', 'PUBLISHED'], true);
     }
 
     // ── Legacy aliases kept for backward-compat ───────────────────────────────

@@ -208,3 +208,42 @@ export function useCancelPurchaseRequest() {
     },
   })
 }
+
+// ── Budget Check ────────────────────────────────────────────────────────────
+
+export function useBudgetCheckPurchaseRequest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ulid, payload }: { ulid: string; payload: PrActionPayload }) => {
+      const res = await api.post<{ data: PurchaseRequest }>(
+        `/procurement/purchase-requests/${ulid}/budget-check`,
+        payload,
+      )
+      return res.data.data
+    },
+    onSuccess: (pr) => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+      qc.setQueryData(['purchase-requests', pr.ulid], pr)
+    },
+  })
+}
+
+// ── Return for Revision ─────────────────────────────────────────────────────
+
+export function useReturnPurchaseRequest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ulid, payload }: { ulid: string; payload: { reason: string } }) => {
+      const res = await api.post<{ data: PurchaseRequest }>(
+        `/procurement/purchase-requests/${ulid}/return`,
+        payload,
+      )
+      return res.data.data
+    },
+    onSuccess: (pr) => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+      qc.setQueryData(['purchase-requests', pr.ulid], pr)
+    },
+  })
+}
+

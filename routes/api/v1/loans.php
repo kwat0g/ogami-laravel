@@ -52,4 +52,36 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Payment recording
     Route::post('{loan}/payments', [LoanController::class, 'recordPayment'])->name('payments.store');
+
+    // ── Loan SOA Export (CSV) ────────────────────────────────────────────────
+    Route::get('{loan}/soa-export', function (\App\Domains\Loan\Models\Loan $loan): \Symfony\Component\HttpFoundation\StreamedResponse {
+        $loan->load(['employee', 'loanType', 'amortizationSchedule']);
+        $schedule = $loan->amortizationSchedule->sortBy('installment_no');
+        $employeeName = ($loan->employee->first_name ?? '') . ' ' . ($loan->employee->last_name ?? '');
+
+        return response()->streamDownload(function () use ($loan, $schedule, $employeeName) {
+            $out = fopen('php://output', 'w');
+            if ($out === false) return;
+            // Header info
+            fputcsv($out, ['LOAN STATEMENT OF ACCOUNT']);
+            fputcsv($out, ['Employee', $employeeName]);
+            fputcsv($out, ['Loan Type', $loan->loanType?->name ?? '—']);
+            fputcsv($out, ['Principal', number_format((float) $loan->principal_amount, 2)]);
+            fputcsv($out, ['Status', $loan->status]);
+            fputcsv($out, []);
+            fputcsv($out, ['#', 'Due Date', 'Amortization', 'Principal', 'Interest', 'Paid Amount', 'Balance']);
+            foreach ($schedule as $s) {
+                fputcsv($out, [
+                    $s->installment_no,
+                    $s->due_date,
+                    number_format((float) ($s->amortization_amount ?? 0), 2),
+                    number_format((float) ($s->principal_component ?? 0), 2),
+                    number_format((float) ($s->interest_component ?? 0), 2),
+                    number_format((float) ($s->paid_amount ?? 0), 2),
+                    number_format((float) ($s->running_balance ?? 0), 2),
+                ]);
+            }
+            fclose($out);
+        }, "loan_soa_{$loan->id}_" . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+    })->name('soa-export');
 });

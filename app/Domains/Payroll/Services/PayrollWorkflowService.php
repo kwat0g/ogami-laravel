@@ -181,8 +181,8 @@ final class PayrollWorkflowService implements ServiceContract
     }
 
     /**
-     * Step 6: Accounting Manager final approval.
-     * Transitions SUBMITTED|HR_APPROVED → ACCTG_APPROVED.
+     * Step 7: Accounting Manager approval.
+     * Transitions HR_APPROVED → ACCTG_APPROVED.
      * Enforces SOD-007.
      *
      * @param array{
@@ -223,14 +223,14 @@ final class PayrollWorkflowService implements ServiceContract
             $this->stateMachine->transition($run, 'ACCTG_APPROVED');
         });
 
-        // Notify initiator + HR approver
+        // Notify initiator + HR approver that accounting has approved, VP review needed
         try {
-            $notify = User::whereIn('id', array_filter([
+            $acctgManagers = User::whereIn('id', array_filter([
                 $run->initiated_by_id,
                 $run->hr_approved_by_id,
             ]))->get();
             $notif = new PayrollApprovedNotification($run, 'ACCOUNTING');
-            Notification::send($notify, $notif);
+            Notification::send($acctgManagers, $notif);
         } catch (\Throwable) {
         }
 
@@ -289,8 +289,66 @@ final class PayrollWorkflowService implements ServiceContract
     }
 
     /**
+     * Step 7b: VP final approval.
+     * Transitions ACCTG_APPROVED → VP_APPROVED.
+     * Enforces SOD-008: VP who approves cannot be the same person who initiated.
+     *
+     * @param array{
+     *   checkboxes_checked?: string[],
+     *   comments?: string|null,
+     * } $data
+     *
+     * @throws SodViolationException
+     */
+    public function vpApprove(PayrollRun $run, int $approverId, array $data): PayrollRun
+    {
+        // Idempotent — already VP-approved
+        if (strtoupper((string) $run->status) === 'VP_APPROVED') {
+            return $run;
+        }
+
+        if ($run->initiated_by_id && $approverId === (int) $run->initiated_by_id) {
+            throw new SodViolationException(
+                'SOD-008: The VP who approves cannot be the same person who initiated this run.',
+            );
+        }
+
+        DB::transaction(function () use ($run, $approverId, $data) {
+            $run->vp_approved_by_id = $approverId;
+            $run->vp_approved_at = now();
+            $run->save();
+
+            PayrollRunApproval::create([
+                'payroll_run_id' => $run->id,
+                'stage' => 'VP_REVIEW',
+                'action' => 'APPROVED',
+                'actor_id' => $approverId,
+                'comments' => $data['comments'] ?? null,
+                'checkboxes_checked' => $data['checkboxes_checked'] ?? [],
+                'acted_at' => now(),
+            ]);
+
+            $this->stateMachine->transition($run, 'VP_APPROVED');
+        });
+
+        // Notify initiator, HR approver, and Accounting approver
+        try {
+            $notify = User::whereIn('id', array_filter([
+                $run->initiated_by_id,
+                $run->hr_approved_by_id,
+                $run->acctg_approved_by_id,
+            ]))->get();
+            $notif = new PayrollApprovedNotification($run, 'VP');
+            Notification::send($notify, $notif);
+        } catch (\Throwable) {
+        }
+
+        return $run->fresh();
+    }
+
+    /**
      * Step 8a: Disburse — generate bank file, post GL, generate payslip PDFs.
-     * Transitions ACCTG_APPROVED → DISBURSED.
+     * Transitions VP_APPROVED → DISBURSED.
      */
     public function disburse(PayrollRun $run): PayrollRun
     {

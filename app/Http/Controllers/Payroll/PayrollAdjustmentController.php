@@ -18,6 +18,21 @@ use Illuminate\Http\Request;
 final class PayrollAdjustmentController extends Controller
 {
     /**
+     * GET /api/v1/payroll/runs/{payrollRun}/adjustments
+     */
+    public function index(Request $request, PayrollRun $payrollRun): JsonResponse
+    {
+        $adjustments = $payrollRun->adjustments()
+            ->with('employee:id,first_name,last_name,employee_code')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return PayrollAdjustmentResource::collection($adjustments)
+            ->response()
+            ->setStatusCode(200);
+    }
+
+    /**
      * POST /api/v1/payroll/runs/{payrollRun}/adjustments
      */
     public function store(StorePayrollAdjustmentRequest $request, PayrollRun $payrollRun): JsonResponse

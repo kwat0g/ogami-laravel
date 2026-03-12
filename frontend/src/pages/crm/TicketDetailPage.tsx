@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Ticket } from 'lucide-react'
 import { useTicket, useReplyToTicket, useAssignTicket, useResolveTicket, useCloseTicket, useReopenTicket } from '@/hooks/useCRM'
-
-const statusBadge: Record<string, string> = {
-  open: 'bg-neutral-100 text-neutral-700',
-  in_progress: 'bg-yellow-100 text-yellow-800',
-  resolved: 'bg-neutral-200 text-neutral-800',
-  closed: 'bg-neutral-100 text-neutral-600',
-}
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import StatusBadge from '@/components/ui/StatusBadge'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 export default function TicketDetailPage() {
   const { ulid = '' } = useParams<{ ulid: string }>()
@@ -27,8 +25,15 @@ export default function TicketDetailPage() {
   const [reopenReason, setReopenReason] = useState('')
   const [activePanel, setActivePanel] = useState<'reply' | 'assign' | 'resolve' | 'reopen' | null>(null)
 
-  if (isLoading) return <div className="p-8 text-center text-neutral-500">Loading…</div>
-  if (!ticket) return <div className="p-8 text-center text-neutral-500">Ticket not found.</div>
+  if (isLoading) return <SkeletonLoader rows={6} />
+  if (!ticket) return (
+    <div className="max-w-4xl mx-auto py-16 text-center">
+      <p className="text-neutral-500">Ticket not found.</p>
+      <button onClick={() => navigate('/crm/tickets')} className="btn-secondary mt-4">
+        Back to Tickets
+      </button>
+    </div>
+  )
 
   async function submitReply() {
     if (!replyBody.trim()) return
@@ -66,70 +71,85 @@ export default function TicketDetailPage() {
   const canReopen = ['resolved', 'closed'].includes(ticket.status)
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Back */}
-      <button onClick={() => navigate('/crm/tickets')} className="text-sm text-neutral-500 hover:text-neutral-700 mb-4">&larr; Back to tickets</button>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <PageHeader
+        title={ticket.subject}
+        subtitle={`Ticket #${ticket.ticket_number}`}
+        backTo="/crm/tickets"
+        icon={<Ticket className="w-5 h-5 text-neutral-600" />}
+        status={
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge status={ticket.status}>{ticket.status.replace('_', ' ')}</StatusBadge>
+            <StatusBadge status={ticket.priority}>{ticket.priority}</StatusBadge>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border capitalize shadow-sm bg-neutral-50 text-neutral-700 border-neutral-200">
+              {ticket.type}
+            </span>
+          </div>
+        }
+      />
 
-      {/* Header */}
-      <div className="bg-white rounded border border-neutral-200 p-6 mb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="text-sm font-mono text-neutral-400 mb-1">{ticket.ticket_number}</div>
-            <h1 className="text-xl font-bold text-neutral-900 mb-2">{ticket.subject}</h1>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className={`px-2 py-0.5 rounded-full font-medium capitalize ${statusBadge[ticket.status]}`}>
-                {ticket.status.replace('_', ' ')}
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 capitalize">{ticket.priority}</span>
-              <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 capitalize">{ticket.type}</span>
+      {/* Ticket Info */}
+      <Card>
+        <CardBody>
+          <div className="grid grid-cols-3 gap-4 text-sm mb-4">
+            <div>
+              <span className="text-neutral-500">Created:</span>{' '}
+              <span className="text-neutral-900">{new Date(ticket.created_at).toLocaleDateString()}</span>
             </div>
+            {ticket.assignedTo && (
+              <div>
+                <span className="text-neutral-500">Assigned:</span>{' '}
+                <span className="text-neutral-900">{ticket.assignedTo.name}</span>
+              </div>
+            )}
+            {ticket.customer && (
+              <div>
+                <span className="text-neutral-500">Customer:</span>{' '}
+                <span className="text-neutral-900">{ticket.customer.name}</span>
+              </div>
+            )}
           </div>
-          <div className="text-right text-sm text-neutral-500 shrink-0">
-            <div>Created {new Date(ticket.created_at).toLocaleDateString()}</div>
-            {ticket.assignedTo && <div className="mt-1">Assigned: <strong>{ticket.assignedTo.name}</strong></div>}
-            {ticket.customer && <div className="mt-1">Customer: <strong>{ticket.customer.name}</strong></div>}
-          </div>
-        </div>
 
-        <div className="mt-4 p-4 bg-neutral-50 rounded text-sm text-neutral-700 whitespace-pre-wrap">
-          {ticket.description}
-        </div>
-
-        {ticket.resolution_note && (
-          <div className="mt-4 p-4 bg-neutral-50 border border-neutral-200 rounded">
-            <div className="text-xs font-semibold text-neutral-700 mb-1">Resolution Note</div>
-            <div className="text-sm text-neutral-900">{ticket.resolution_note}</div>
+          <div className="p-4 bg-neutral-50 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap border border-neutral-100">
+            {ticket.description}
           </div>
-        )}
-      </div>
+
+          {ticket.resolution_note && (
+            <div className="mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-100">
+              <div className="text-xs font-semibold text-emerald-800 mb-1">Resolution Note</div>
+              <div className="text-sm text-emerald-900">{ticket.resolution_note}</div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2">
         {canReply && (
           <button onClick={() => setActivePanel(activePanel === 'reply' ? null : 'reply')}
-            className="px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800">
+            className="btn-primary">
             Reply
           </button>
         )}
         <button onClick={() => setActivePanel(activePanel === 'assign' ? null : 'assign')}
-          className="px-4 py-2 bg-neutral-100 text-neutral-800 text-sm rounded hover:bg-neutral-200">
+          className="btn-secondary">
           Assign
         </button>
         {canResolve && (
           <button onClick={() => setActivePanel(activePanel === 'resolve' ? null : 'resolve')}
-            className="px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800">
+            className="btn-primary">
             Resolve
           </button>
         )}
         {canClose && (
           <button onClick={submitClose} disabled={closeMutation.isPending}
-            className="px-4 py-2 bg-neutral-500 text-white text-sm rounded hover:bg-neutral-600">
+            className="btn-secondary">
             {closeMutation.isPending ? 'Closing…' : 'Close'}
           </button>
         )}
         {canReopen && (
           <button onClick={() => setActivePanel(activePanel === 'reopen' ? null : 'reopen')}
-            className="px-4 py-2 bg-neutral-700 text-white text-sm rounded hover:bg-neutral-600">
+            className="btn-secondary">
             Reopen
           </button>
         )}
@@ -137,93 +157,103 @@ export default function TicketDetailPage() {
 
       {/* Action Panels */}
       {activePanel === 'reply' && (
-        <div className="bg-white rounded border border-neutral-200 p-4 mb-4">
-          <h3 className="font-semibold text-sm mb-2">Add Reply</h3>
-          <textarea
-            value={replyBody}
-            onChange={e => setReplyBody(e.target.value)}
-            placeholder="Type your reply…"
-            rows={4}
-            className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
-          />
-          <div className="flex items-center justify-between mt-2">
-            <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
-              <input type="checkbox" checked={isInternal} onChange={e => setIsInternal(e.target.checked)} />
-              Internal note (not visible to client)
-            </label>
-            <button onClick={submitReply} disabled={replyMutation.isPending || !replyBody.trim()}
-              className="px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-50">
-              {replyMutation.isPending ? 'Sending…' : 'Send Reply'}
-            </button>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>Add Reply</CardHeader>
+          <CardBody>
+            <textarea
+              value={replyBody}
+              onChange={e => setReplyBody(e.target.value)}
+              placeholder="Type your reply…"
+              rows={4}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none"
+            />
+            <div className="flex items-center justify-between mt-3">
+              <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
+                <input type="checkbox" checked={isInternal} onChange={e => setIsInternal(e.target.checked)} className="rounded border-neutral-300" />
+                Internal note (not visible to client)
+              </label>
+              <button onClick={submitReply} disabled={replyMutation.isPending || !replyBody.trim()}
+                className="btn-primary disabled:opacity-50">
+                {replyMutation.isPending ? 'Sending…' : 'Send Reply'}
+              </button>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {activePanel === 'assign' && (
-        <div className="bg-white rounded border border-neutral-200 p-4 mb-4">
-          <h3 className="font-semibold text-sm mb-2">Assign Ticket</h3>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={assigneeId}
-              onChange={e => setAssigneeId(e.target.value)}
-              placeholder="User ID"
-              className="px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 w-32"
-            />
-            <button onClick={submitAssign} disabled={assignMutation.isPending || !assigneeId}
-              className="px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-50">
-              {assignMutation.isPending ? 'Assigning…' : 'Assign'}
-            </button>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>Assign Ticket</CardHeader>
+          <CardBody>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={assigneeId}
+                onChange={e => setAssigneeId(e.target.value)}
+                placeholder="User ID"
+                className="px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none w-32"
+              />
+              <button onClick={submitAssign} disabled={assignMutation.isPending || !assigneeId}
+                className="btn-primary disabled:opacity-50">
+                {assignMutation.isPending ? 'Assigning…' : 'Assign'}
+              </button>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {activePanel === 'resolve' && (
-        <div className="bg-white rounded border border-neutral-200 p-4 mb-4">
-          <h3 className="font-semibold text-sm mb-2">Resolve Ticket</h3>
-          <textarea
-            value={resolutionNote}
-            onChange={e => setResolutionNote(e.target.value)}
-            placeholder="Optional resolution note…"
-            rows={3}
-            className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
-          />
-          <button onClick={submitResolve} disabled={resolveMutation.isPending}
-            className="mt-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-50">
-            {resolveMutation.isPending ? 'Resolving…' : 'Mark Resolved'}
-          </button>
-        </div>
+        <Card>
+          <CardHeader>Resolve Ticket</CardHeader>
+          <CardBody>
+            <textarea
+              value={resolutionNote}
+              onChange={e => setResolutionNote(e.target.value)}
+              placeholder="Optional resolution note…"
+              rows={3}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none"
+            />
+            <button onClick={submitResolve} disabled={resolveMutation.isPending}
+              className="mt-3 btn-primary disabled:opacity-50">
+              {resolveMutation.isPending ? 'Resolving…' : 'Mark Resolved'}
+            </button>
+          </CardBody>
+        </Card>
       )}
 
       {activePanel === 'reopen' && (
-        <div className="bg-white rounded border border-neutral-200 p-4 mb-4">
-          <h3 className="font-semibold text-sm mb-2">Reopen Ticket</h3>
-          <input
-            type="text"
-            value={reopenReason}
-            onChange={e => setReopenReason(e.target.value)}
-            placeholder="Reason for reopening (optional)…"
-            className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
-          />
-          <button onClick={submitReopen} disabled={reopenMutation.isPending}
-            className="mt-2 px-4 py-2 bg-neutral-700 text-white text-sm rounded hover:bg-neutral-600 disabled:opacity-50">
-            {reopenMutation.isPending ? 'Reopening…' : 'Reopen'}
-          </button>
-        </div>
+        <Card>
+          <CardHeader>Reopen Ticket</CardHeader>
+          <CardBody>
+            <input
+              type="text"
+              value={reopenReason}
+              onChange={e => setReopenReason(e.target.value)}
+              placeholder="Reason for reopening (optional)…"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
+            />
+            <button onClick={submitReopen} disabled={reopenMutation.isPending}
+              className="mt-3 btn-secondary disabled:opacity-50">
+              {reopenMutation.isPending ? 'Reopening…' : 'Reopen'}
+            </button>
+          </CardBody>
+        </Card>
       )}
 
       {/* Message Thread */}
       <div className="space-y-3">
         <h2 className="font-semibold text-sm text-neutral-700 uppercase tracking-wide">Conversation</h2>
         {ticket.messages?.length === 0 && (
-          <div className="bg-white rounded border border-neutral-200 p-6 text-center text-sm text-neutral-400">No messages yet.</div>
+          <Card>
+            <div className="p-8 text-center text-sm text-neutral-400">No messages yet.</div>
+          </Card>
         )}
         {ticket.messages?.map(msg => (
-          <div key={msg.id} className={`rounded border border-neutral-200 p-4 ${msg.is_internal ? 'bg-yellow-50 border-yellow-200' : 'bg-white'}`}>
+          <div key={msg.id} className={`rounded-xl border p-4 ${msg.is_internal ? 'bg-amber-50 border-amber-200' : 'bg-white border-neutral-200'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-medium text-sm">{msg.author?.name ?? 'Unknown'}</span>
-              <div className="flex items-center gap-2 text-xs text-neutral-400">
-                {msg.is_internal && <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded-full">Internal</span>}
+              <span className="font-medium text-sm text-neutral-900">{msg.author?.name ?? 'Unknown'}</span>
+              <div className="flex items-center gap-2 text-xs text-neutral-500">
+                {msg.is_internal && <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs">Internal</span>}
                 {new Date(msg.created_at).toLocaleString()}
               </div>
             </div>

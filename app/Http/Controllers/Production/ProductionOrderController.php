@@ -48,11 +48,29 @@ final class ProductionOrderController extends Controller
         );
     }
 
-    public function release(ProductionOrder $productionOrder): ProductionOrderResource
+    public function release(Request $request, ProductionOrder $productionOrder): ProductionOrderResource
     {
         $this->authorize('release', $productionOrder);
 
-        return new ProductionOrderResource($this->service->release($productionOrder));
+        $options = [];
+        if ($request->boolean('force_release')) {
+            // PROD-002: Only users with production.qc-override can force-release
+            if (!$request->user()?->can('production.qc-override')) {
+                abort(403, 'You do not have permission to override QC blocks.');
+            }
+            $options['force_release'] = true;
+        }
+
+        return new ProductionOrderResource($this->service->release($productionOrder, $options));
+    }
+
+    public function stockCheck(ProductionOrder $productionOrder): JsonResponse
+    {
+        $this->authorize('view', $productionOrder);
+
+        return response()->json([
+            'data' => $this->service->stockCheck($productionOrder),
+        ]);
     }
 
     public function start(ProductionOrder $productionOrder): ProductionOrderResource

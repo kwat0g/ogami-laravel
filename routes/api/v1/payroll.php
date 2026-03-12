@@ -121,6 +121,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('sod:payroll,acctg_approve')  // checks payroll.initiate (SOD-006)
         ->name('runs.acctg-approve');
 
+    // ── Workflow v1.0 — Step 7b: VP Final Approval ────────────────────────────
+    Route::post('runs/{payrollRun}/vp-approve', [PayrollRunController::class, 'vpApprove'])
+        ->middleware(['sod:payroll,vp_approve', 'throttle:api-action'])  // checks payroll.initiate (SOD-008)
+        ->name('runs.vp-approve');
+
     // ── Workflow v1.0 — Step 8: Disbursement ──────────────────────────────────
     Route::post('runs/{payrollRun}/disburse', [PayrollRunController::class, 'disburse'])
         ->name('runs.disburse');
@@ -155,6 +160,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('can:exportBreakdown,payrollRun');
 
     // ── Payroll Adjustments ───────────────────────────────────────────────────
+    Route::get('runs/{payrollRun}/adjustments', [PayrollAdjustmentController::class, 'index'])
+        ->name('runs.adjustments.index');
+
     Route::post('runs/{payrollRun}/adjustments', [PayrollAdjustmentController::class, 'store'])
         ->name('runs.adjustments.store');
 

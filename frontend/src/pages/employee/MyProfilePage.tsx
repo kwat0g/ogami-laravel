@@ -33,6 +33,8 @@ import { useMyProfile, useUpdateMyProfile, type UpdateProfilePayload } from '@/h
 import { SkeletonLoader } from '@/components/ui'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { parseApiError } from '@/lib/errorHandler'
 
 // ── Edit schema (only the fields we allow self-service) ───────────────────────
 
@@ -285,16 +287,15 @@ function DocumentStatusCard() {
           >
             <div className="flex items-center gap-3">
               {doc.status === 'verified' ? (
-                <FileCheck className="h-4 w-4 text-neutral-700" />
+                <FileCheck className="h-4 w-4 text-emerald-600" />
               ) : (
-                <Clock4 className="h-4 w-4 text-neutral-500" />
+                <Clock4 className="h-4 w-4 text-amber-500" />
               )}
               <span className="text-sm text-neutral-700">{doc.name}</span>
             </div>
-            <StatusBadge
-              label={doc.status === 'verified' ? 'Verified' : 'Pending'}
-              variant={doc.status === 'verified' ? 'success' : 'warning'}
-            />
+            <StatusBadge status={doc.status === 'verified' ? 'approved' : 'pending'}>
+              {doc.status === 'verified' ? 'Verified' : 'Pending'}
+            </StatusBadge>
           </div>
         ))}
       </div>
@@ -504,11 +505,10 @@ export default function MyProfilePage() {
                 Contact Information
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  label="Personal Email"
-                  error={errors.personal_email?.message}
-                  htmlFor="personal_email"
-                >
+                <div>
+                  <label htmlFor="personal_email" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Personal Email
+                  </label>
                   <input
                     id="personal_email"
                     type="email"
@@ -516,26 +516,29 @@ export default function MyProfilePage() {
                     placeholder="your@email.com"
                     {...register('personal_email')}
                   />
-                </FormField>
-                <FormField
-                  label="Personal Phone"
-                  error={errors.personal_phone?.message}
-                  htmlFor="personal_phone"
-                >
+                  {errors.personal_email && (
+                    <p className="mt-1 text-xs text-red-600">{errors.personal_email.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="personal_phone" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Personal Phone
+                  </label>
                   <input
                     id="personal_phone"
                     className={inputCls}
                     placeholder="+63 912 345 6789"
                     {...register('personal_phone')}
                   />
-                </FormField>
+                  {errors.personal_phone && (
+                    <p className="mt-1 text-xs text-red-600">{errors.personal_phone.message}</p>
+                  )}
+                </div>
               </div>
-              <FormField
-                label="Present Address"
-                error={errors.present_address?.message}
-                htmlFor="present_address"
-                className="mt-4"
-              >
+              <div className="mt-4">
+                <label htmlFor="present_address" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Present Address
+                </label>
                 <textarea
                   id="present_address"
                   rows={3}
@@ -543,7 +546,10 @@ export default function MyProfilePage() {
                   placeholder="Your current address"
                   {...register('present_address')}
                 />
-              </FormField>
+                {errors.present_address && (
+                  <p className="mt-1 text-xs text-red-600">{errors.present_address.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="border-t border-neutral-100" />
@@ -555,26 +561,34 @@ export default function MyProfilePage() {
                 Bank Information
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Bank Name" error={errors.bank_name?.message} htmlFor="bank_name">
+                <div>
+                  <label htmlFor="bank_name" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Bank Name
+                  </label>
                   <input
                     id="bank_name"
                     className={inputCls}
                     placeholder="e.g., BDO, BPI, Metrobank"
                     {...register('bank_name')}
                   />
-                </FormField>
-                <FormField
-                  label="Bank Account Number"
-                  error={errors.bank_account_no?.message}
-                  htmlFor="bank_account_no"
-                >
+                  {errors.bank_name && (
+                    <p className="mt-1 text-xs text-red-600">{errors.bank_name.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="bank_account_no" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Bank Account Number
+                  </label>
                   <input
                     id="bank_account_no"
                     className={inputCls}
                     placeholder="Your account number"
                     {...register('bank_account_no')}
                   />
-                </FormField>
+                  {errors.bank_account_no && (
+                    <p className="mt-1 text-xs text-red-600">{errors.bank_account_no.message}</p>
+                  )}
+                </div>
               </div>
             </div>
 

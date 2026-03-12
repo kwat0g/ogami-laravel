@@ -24,7 +24,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('manager', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.mgr.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -292,7 +292,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('supervisor', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.sup.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -521,7 +521,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('hr', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.hr.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -735,7 +735,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('accounting', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.acctg.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -993,7 +993,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $user = $request->user();
 
         abort_unless($user->can('system.manage_users'), 403, 'Insufficient permissions.');
-        $_ttl = min((int) env('DASHBOARD_CACHE_TTL', 0), 30);
+        $_ttl = min((int) env('DASHBOARD_CACHE_TTL', 120), 30);
         $_cacheKey = 'dash.admin.'.now()->format('Y-m-d-H-i');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -1126,7 +1126,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ]);
         }
 
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.staff.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -1356,7 +1356,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('executive', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.exec.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -1614,7 +1614,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('vp', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.vp.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -1733,7 +1733,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('officer', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.officer.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);
@@ -1835,7 +1835,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
     Route::get('purchasing-officer', function (Request $request) {
         $user = $request->user();
-        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 0);
+        $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.purchasing_officer.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
             return response()->json($cached);

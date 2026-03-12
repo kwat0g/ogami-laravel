@@ -58,6 +58,26 @@ export function useVendor(id: number | null) {
   })
 }
 
+/** Fetch a vendor's item catalog for PR creation dropdown. */
+export function useVendorItems(vendorId: number | null) {
+  return useQuery({
+    queryKey: ['vendor-items', vendorId],
+    queryFn: async () => {
+      const res = await api.get<{ data: Array<{
+        id: number
+        item_code: string
+        name: string
+        unit_of_measure: string
+        unit_price_centavos: number
+        is_active: boolean
+      }> }>(`/accounting/vendors/${vendorId}/items`, { params: { is_active: true, per_page: 500 } })
+      return res.data.data
+    },
+    enabled: vendorId !== null && vendorId > 0,
+    staleTime: 30_000,
+  })
+}
+
 export function useCreateVendor() {
   const qc = useQueryClient()
   return useMutation({
@@ -67,6 +87,20 @@ export function useCreateVendor() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vendors'] })
+    },
+  })
+}
+
+/** Provision a vendor portal user account (admin only). Returns { email, password }. */
+export function useProvisionVendorAccount(vendorId: number) {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.post<{
+        success: boolean
+        message: string
+        data: { user_id: number; email: string; password: string; role: string }
+      }>(`/accounting/vendors/${vendorId}/provision-account`)
+      return res.data.data
     },
   })
 }
@@ -271,5 +305,64 @@ export function useRecordPayment(invoiceId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ap-invoices'] })
     },
+  })
+}
+
+// ===========================================================================
+// AP Aging Report
+// ===========================================================================
+
+export interface ApAgingRow {
+  vendor_id: number
+  vendor_name: string
+  current: number
+  '1_30': number
+  '31_60': number
+  '61_90': number
+  over_90: number
+  total: number
+}
+
+export function useApAgingReport(asOfDate?: string) {
+  return useQuery({
+    queryKey: ['ap-aging-report', asOfDate],
+    queryFn: async () => {
+      const res = await api.get<{ data: ApAgingRow[]; as_of_date: string }>('/accounting/ap/aging-report', {
+        params: asOfDate ? { as_of_date: asOfDate } : {},
+      })
+      return res.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+// ===========================================================================
+// Check Voucher
+// ===========================================================================
+
+export interface CheckVoucherData {
+  voucher_number: string
+  payment_date: string
+  payment_method: string
+  reference_number: string
+  check_number: string | null
+  amount: number
+  vendor_name: string
+  vendor_address: string
+  vendor_tin: string
+  invoice_number: string
+  invoice_date: string | null
+  description: string
+  prepared_by: string
+}
+
+export function useCheckVoucher(paymentId: number | null) {
+  return useQuery({
+    queryKey: ['check-voucher', paymentId],
+    queryFn: async () => {
+      const res = await api.get<{ data: CheckVoucherData }>(`/accounting/ap/check-voucher/${paymentId}`)
+      return res.data.data
+    },
+    enabled: paymentId !== null,
   })
 }

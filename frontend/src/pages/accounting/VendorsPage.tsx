@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff } from 'lucide-react'
+import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, UserPlus, Copy, CheckCheck } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useVendors,
@@ -9,7 +10,9 @@ import {
   useArchiveVendor,
   useAccreditVendor,
   useSuspendVendor,
+  useProvisionVendorAccount,
 } from '@/hooks/useAP'
+
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { Vendor, CreateVendorPayload, VendorAccreditationStatus } from '@/types/ap'
@@ -18,29 +21,7 @@ import type { Vendor, CreateVendorPayload, VendorAccreditationStatus } from '@/t
 // Helpers
 // ---------------------------------------------------------------------------
 
-function StatusBadge({ active }: { active: boolean }) {
-  return active ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
-      <CheckCircle className="w-3 h-3" /> Active
-    </span>
-  ) : (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">
-      Inactive
-    </span>
-  )
-}
 
-function EwtBadge({ subject }: { subject: boolean }) {
-  return subject ? (
-    <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
-      EWT Subject
-    </span>
-  ) : (
-    <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-400">
-      No EWT
-    </span>
-  )
-}
 
 function ArchiveVendorButton({ vendor }: { vendor: Vendor }) {
   const archiveMut = useArchiveVendor(vendor.id)
@@ -144,6 +125,86 @@ function SuspendVendorButton({ vendor }: { vendor: Vendor }) {
       )}
     </>
   )
+}
+
+// ---------------------------------------------------------------------------
+// Create Portal Account Button (Admin only)
+// ---------------------------------------------------------------------------
+
+function CreatePortalAccountButton({ vendor }: { vendor: Vendor }) {
+  const provisionMut = useProvisionVendorAccount(vendor.id)
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const handleProvision = async (): Promise<void> => {
+    try {
+      const result = await provisionMut.mutateAsync()
+      setCredentials({ email: result.email, password: result.password })
+      toast.success('Portal account created!')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to create account.'
+      toast.error(msg)
+    }
+  }
+
+  const handleCopy = (): void => {
+    if (!credentials) return
+    navigator.clipboard.writeText(`Email: ${credentials.email}\nPassword: ${credentials.password}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <>
+      <button
+        onClick={handleProvision}
+        disabled={provisionMut.isPending}
+        className="text-xs text-neutral-600 hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <UserPlus className="w-3 h-3" />
+        {provisionMut.isPending ? 'Creating…' : 'Create Account'}
+      </button>
+
+      {credentials && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded border border-neutral-200 w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-base font-semibold text-neutral-900">Vendor Portal Credentials</h3>
+            <p className="text-sm text-neutral-500">
+              Share these credentials with <strong>{vendor.name}</strong>. The password cannot be retrieved later.
+            </p>
+            <div className="bg-neutral-50 rounded p-3 space-y-2 font-mono text-sm">
+              <div><span className="text-neutral-500">Email:</span> <span className="text-neutral-900 font-medium">{credentials.email}</span></div>
+              <div><span className="text-neutral-500">Password:</span> <span className="text-neutral-900 font-medium">{credentials.password}</span></div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
+              >
+                {copied ? <><CheckCheck className="w-3.5 h-3.5 text-green-600" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+              </button>
+              <button
+                onClick={() => setCredentials(null)}
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Admin-only wrapper: only renders for admin users + accredited vendors
+// ---------------------------------------------------------------------------
+
+function AdminOnlyPortalAccountButton({ vendor }: { vendor: Vendor }) {
+  const isAdmin = useAuthStore((s) => s.hasRole('admin'))
+  if (!isAdmin || vendor.accreditation_status !== 'accredited') return null
+  return <CreatePortalAccountButton vendor={vendor} />
 }
 
 // ---------------------------------------------------------------------------
@@ -409,10 +470,42 @@ export default function VendorsPage() {
   })
 
   const vendors = data?.data ?? []
+  
+  // Calculate summary stats
+  const activeVendors = vendors.filter(v => v.is_active).length
+  const accreditedVendors = vendors.filter(v => v.accreditation_status === 'accredited').length
+  const ewtVendors = vendors.filter(v => v.is_ewt_subject).length
+
+  const canManage = useAuthStore((s) => s.hasPermission('vendors.manage'))
+  const canAccredit = useAuthStore((s) => s.hasPermission('vendors.accredit'))
+  const canSuspend = useAuthStore((s) => s.hasPermission('vendors.suspend'))
+  const canArchive = useAuthStore((s) => s.hasPermission('vendors.archive'))
 
   return (
     <div className="space-y-6">
       <PageHeader title="Vendors" />
+
+      {/* Summary Stats */}
+      {!isLoading && vendors.length > 0 && (
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Vendors</p>
+            <p className="text-2xl font-bold text-blue-700 mt-1">{vendors.length}</p>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Active</p>
+            <p className="text-2xl font-bold text-emerald-700 mt-1">{activeVendors}</p>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">Accredited</p>
+            <p className="text-2xl font-bold text-purple-700 mt-1">{accreditedVendors}</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">EWT Subject</p>
+            <p className="text-2xl font-bold text-amber-700 mt-1">{ewtVendors}</p>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -423,12 +516,14 @@ export default function VendorsPage() {
           <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50">
             <RefreshCw className="w-4 h-4 text-neutral-500" />
           </button>
-          <button
-            onClick={() => { setEditing(null); setShowForm(true) }}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
-          >
-            <Plus className="w-4 h-4" /> Add Vendor
-          </button>
+          {canManage && (
+            <button
+              onClick={() => { setEditing(null); setShowForm(true) }}
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+            >
+              <Plus className="w-4 h-4" /> Add Vendor
+            </button>
+          )}
         </div>
       </div>
 
@@ -471,29 +566,64 @@ export default function VendorsPage() {
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {vendors.map(vendor => (
-                <tr key={vendor.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
-                  <td className="px-3 py-2 font-medium text-neutral-900">
-                    {vendor.name}
+                <tr key={vendor.id} className={`even:bg-neutral-100 hover:bg-neutral-50 transition-colors ${
+                  !vendor.is_active ? 'opacity-60' : ''
+                }`}>
+                  <td className="px-3 py-2">
+                    <span className={`font-semibold ${vendor.is_active ? 'text-neutral-900' : 'text-neutral-500'}`}>
+                      {vendor.name}
+                    </span>
                     {vendor.contact_person && (
                       <div className="text-xs text-neutral-400 font-normal">{vendor.contact_person}</div>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-neutral-600">{vendor.tin ?? '—'}</td>
-                  <td className="px-3 py-2 text-neutral-500 font-mono text-xs">{vendor.atc_code ?? '—'}</td>
-                  <td className="px-3 py-2"><EwtBadge subject={vendor.is_ewt_subject} /></td>
-                  <td className="px-3 py-2"><StatusBadge active={vendor.is_active} /></td>
-                  <td className="px-3 py-2"><AccreditationBadge status={vendor.accreditation_status ?? 'pending'} /></td>
+                  <td className="px-3 py-2 font-mono text-xs text-neutral-600">{vendor.tin ?? '—'}</td>
+                  <td className="px-3 py-2">
+                    {vendor.atc_code ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 font-mono">
+                        {vendor.atc_code}
+                      </span>
+                    ) : (
+                      <span className="text-neutral-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    {vendor.is_ewt_subject ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                        EWT Subject
+                      </span>
+                    ) : (
+                      <span className="text-neutral-400 text-xs">No EWT</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    {vendor.is_active ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+                        <CheckCircle className="w-3 h-3" /> Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">
+                        Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    <AccreditationBadge status={vendor.accreditation_status ?? 'pending'} />
+                  </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => { setEditing(vendor); setShowForm(true) }}
-                        className="text-xs text-neutral-600 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <AccreditVendorButton vendor={vendor} />
-                      <SuspendVendorButton vendor={vendor} />
-                      {vendor.is_active && <ArchiveVendorButton vendor={vendor} />}
+                      {canManage && (
+                        <button
+                          onClick={() => { setEditing(vendor); setShowForm(true) }}
+                          className="text-xs text-neutral-600 hover:underline"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canAccredit && <AccreditVendorButton vendor={vendor} />}
+                      {canSuspend && <SuspendVendorButton vendor={vendor} />}
+                      {canArchive && vendor.is_active && <ArchiveVendorButton vendor={vendor} />}
+                      <AdminOnlyPortalAccountButton vendor={vendor} />
                     </div>
                   </td>
                 </tr>

@@ -47,4 +47,43 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('requisitions/{materialRequisition}/reject', [MaterialRequisitionController::class, 'reject'])->middleware('throttle:api-action');
     Route::patch('requisitions/{materialRequisition}/cancel', [MaterialRequisitionController::class, 'cancel'])->middleware('throttle:api-action');
     Route::patch('requisitions/{materialRequisition}/fulfill', [MaterialRequisitionController::class, 'fulfill'])->middleware('throttle:api-action');
+
+    // ── Inventory Valuation Report ───────────────────────────────────────────
+    Route::get('reports/valuation', function (): \Illuminate\Http\JsonResponse {
+        $rows = \Illuminate\Support\Facades\DB::table('stock_balances')
+            ->join('item_masters', 'stock_balances.item_id', '=', 'item_masters.id')
+            ->leftJoin('item_categories', 'item_masters.category_id', '=', 'item_categories.id')
+            ->leftJoin('warehouse_locations', 'stock_balances.location_id', '=', 'warehouse_locations.id')
+            ->where('stock_balances.quantity', '>', 0)
+            ->select(
+                'item_masters.id as item_id',
+                'item_masters.item_code',
+                'item_masters.name as item_name',
+                \Illuminate\Support\Facades\DB::raw("coalesce(item_categories.name, 'Uncategorized') as category"),
+                'warehouse_locations.name as location',
+                'item_masters.uom',
+                'stock_balances.quantity',
+                'item_masters.unit_cost',
+                \Illuminate\Support\Facades\DB::raw('round(stock_balances.quantity * coalesce(item_masters.unit_cost, 0), 2) as total_value'),
+            )
+            ->orderBy('item_categories.name')
+            ->orderBy('item_masters.name')
+            ->get();
+
+        // Group by category for summary
+        $byCategory = $rows->groupBy('category')->map(fn ($items, $cat) => [
+            'category'    => $cat,
+            'item_count'  => $items->count(),
+            'total_qty'   => $items->sum('quantity'),
+            'total_value' => round($items->sum('total_value'), 2),
+        ])->values();
+
+        $grandTotal = round($rows->sum('total_value'), 2);
+
+        return response()->json([
+            'data'        => $rows,
+            'by_category' => $byCategory,
+            'grand_total' => $grandTotal,
+        ]);
+    })->name('reports.valuation');
 });

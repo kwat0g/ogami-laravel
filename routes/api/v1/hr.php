@@ -156,4 +156,91 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         return response()->noContent();
     })->name('positions.destroy');
+
+    // ── HR Reports ───────────────────────────────────────────────────────────
+
+    Route::prefix('reports')->middleware('permission:hr.full_access')->group(function () {
+
+        // Headcount by department
+        Route::get('headcount', function (): \Illuminate\Http\JsonResponse {
+            $rows = \Illuminate\Support\Facades\DB::table('employees')
+                ->join('departments', 'employees.department_id', '=', 'departments.id')
+                ->select(
+                    'departments.id as department_id',
+                    'departments.code as department_code',
+                    'departments.name as department_name',
+                    \Illuminate\Support\Facades\DB::raw("count(*) as total"),
+                    \Illuminate\Support\Facades\DB::raw("sum(case when employees.employment_status = 'active' and employees.is_active then 1 else 0 end) as active"),
+                    \Illuminate\Support\Facades\DB::raw("sum(case when employees.employment_status = 'on_leave' then 1 else 0 end) as on_leave"),
+                    \Illuminate\Support\Facades\DB::raw("sum(case when employees.employment_status in ('resigned','terminated') then 1 else 0 end) as separated"),
+                )
+                ->groupBy('departments.id', 'departments.code', 'departments.name')
+                ->orderByDesc('total')
+                ->get();
+
+            return response()->json(['data' => $rows]);
+        })->name('reports.headcount');
+
+        // Turnover (last 12 months)
+        Route::get('turnover', function (): \Illuminate\Http\JsonResponse {
+            $months = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $start = now()->subMonths($i)->startOfMonth();
+                $end   = now()->subMonths($i)->endOfMonth();
+                $label = now()->subMonths($i)->format('M Y');
+
+                $hires = \Illuminate\Support\Facades\DB::table('employees')
+                    ->whereBetween('date_hired', [$start, $end])->count();
+                $terms = \Illuminate\Support\Facades\DB::table('employees')
+                    ->whereNotNull('separation_date')
+                    ->whereBetween('separation_date', [$start, $end])->count();
+
+                $months[] = ['month' => $label, 'hires' => $hires, 'terminations' => $terms, 'net' => $hires - $terms];
+            }
+
+            // Overall turnover rate
+            $startOfYear = now()->startOfYear();
+            $headcountAtStart = \Illuminate\Support\Facades\DB::table('employees')
+                ->where('date_hired', '<', $startOfYear)
+                ->where(fn ($q) => $q->whereNull('separation_date')->orWhere('separation_date', '>=', $startOfYear))
+                ->count();
+            $totalSeps = \Illuminate\Support\Facades\DB::table('employees')
+                ->whereNotNull('separation_date')
+                ->whereYear('separation_date', now()->year)->count();
+            $turnoverRate = $headcountAtStart > 0 ? round(($totalSeps / $headcountAtStart) * 100, 1) : 0;
+
+            return response()->json(['data' => $months, 'turnover_rate_ytd' => $turnoverRate]);
+        })->name('reports.turnover');
+
+        // Upcoming birthdays
+        Route::get('birthdays', function (Request $request): \Illuminate\Http\JsonResponse {
+            $days = $request->integer('days', 30);
+            $today = now();
+
+            $employees = \Illuminate\Support\Facades\DB::table('employees')
+                ->join('departments', 'employees.department_id', '=', 'departments.id')
+                ->where('employees.is_active', true)
+                ->whereNotNull('employees.birth_date')
+                ->select(
+                    'employees.id', 'employees.employee_code',
+                    \Illuminate\Support\Facades\DB::raw("concat(employees.first_name, ' ', employees.last_name) as full_name"),
+                    'employees.birth_date', 'departments.name as department',
+                )
+                ->get()
+                ->map(function ($e) use ($today) {
+                    $bd = \Carbon\Carbon::parse($e->birth_date);
+                    $next = $bd->copy()->year($today->year);
+                    if ($next->lt($today)) $next->addYear();
+                    $e->days_until = (int) $today->diffInDays($next, false);
+                    $e->age = $today->year - $bd->year - ($next->year > $today->year ? 0 : ($today->lt($bd->copy()->year($today->year)) ? 1 : 0));
+                    return $e;
+                })
+                ->filter(fn ($e) => $e->days_until >= 0 && $e->days_until <= $days)
+                ->sortBy('days_until')
+                ->values();
+
+            return response()->json(['data' => $employees]);
+        })->name('reports.birthdays');
+    });
 });
+

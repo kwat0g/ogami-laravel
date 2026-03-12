@@ -105,7 +105,7 @@ class DepartmentPermissionTemplateSeeder extends Seeder
                     'journal_entries.submit', 'journal_entries.post', 'journal_entries.reverse', 'journal_entries.export',
                     'chart_of_accounts.view', 'chart_of_accounts.manage',
                     'fiscal_periods.view', 'fiscal_periods.manage',
-                    'vendors.view', 'vendors.manage', 'vendors.archive',
+                    'vendors.view',
                     'vendor_invoices.view', 'vendor_invoices.create', 'vendor_invoices.update',
                     'vendor_invoices.submit', 'vendor_invoices.approve', 'vendor_invoices.reject',
                     'vendor_invoices.record_payment', 'vendor_invoices.cancel', 'vendor_invoices.export',

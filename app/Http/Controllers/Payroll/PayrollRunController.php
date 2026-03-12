@@ -738,12 +738,38 @@ final class PayrollRunController extends Controller
         if ($action === 'APPROVED') {
             $run = $this->workflowService->acctgApprove($payrollRun, (int) $request->user()->id, $request->validated());
 
-            return response()->json(['message' => 'Accounting Manager approved. Ready for disbursement.', 'run' => new PayrollRunResource($run)]);
+            return response()->json(['message' => 'Accounting Manager approved. Forwarded to VP for final approval.', 'run' => new PayrollRunResource($run)]);
         }
 
         $run = $this->workflowService->acctgReject($payrollRun, (int) $request->user()->id, $request->validated('rejection_reason'));
 
         return response()->json(['message' => 'Payroll run permanently rejected. Must restart from Step 1.', 'run' => new PayrollRunResource($run)]);
+    }
+
+    /**
+     * POST /api/v1/payroll/runs/{id}/vp-approve
+     * Step 7b: VP final approval.
+     */
+    public function vpApprove(Request $request, PayrollRun $payrollRun): JsonResponse
+    {
+        $this->authorize('vpApprove', $payrollRun);
+
+        $validated = $request->validate([
+            'checkboxes_checked' => ['array'],
+            'checkboxes_checked.*' => ['string'],
+            'comments' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $run = $this->workflowService->vpApprove(
+            $payrollRun,
+            (int) $request->user()->id,
+            $validated,
+        );
+
+        return response()->json([
+            'message' => 'VP approved. Payroll is now ready for disbursement.',
+            'run' => new PayrollRunResource($run),
+        ]);
     }
 
     /**

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, XCircle, ShoppingCart, FileText } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, XCircle, ShoppingCart, FileText, Download } from 'lucide-react'
 import {
   usePurchaseRequest,
   useSubmitPurchaseRequest,
   useNotePurchaseRequest,
   useCheckPurchaseRequest,
   useReviewPurchaseRequest,
+  useBudgetCheckPurchaseRequest,
   useVpApprovePurchaseRequest,
   useRejectPurchaseRequest,
   useCancelPurchaseRequest,
+  useReturnPurchaseRequest,
 } from '@/hooks/usePurchaseRequests'
 import { useAuthStore } from '@/stores/authStore'
 import { SodActionButton } from '@/components/ui/SodActionButton'
@@ -176,16 +178,18 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
 
   const { data: pr, isLoading, isError } = usePurchaseRequest(ulid ?? null)
 
-  const submitMutation  = useSubmitPurchaseRequest()
-  const noteMutation    = useNotePurchaseRequest()
-  const checkMutation   = useCheckPurchaseRequest()
-  const reviewMutation  = useReviewPurchaseRequest()
-  const vpMutation      = useVpApprovePurchaseRequest()
-  const rejectMutation  = useRejectPurchaseRequest()
-  const cancelMutation  = useCancelPurchaseRequest()
+  const submitMutation      = useSubmitPurchaseRequest()
+  const noteMutation        = useNotePurchaseRequest()
+  const checkMutation       = useCheckPurchaseRequest()
+  const reviewMutation      = useReviewPurchaseRequest()
+  const budgetCheckMutation = useBudgetCheckPurchaseRequest()
+  const vpMutation          = useVpApprovePurchaseRequest()
+  const rejectMutation      = useRejectPurchaseRequest()
+  const cancelMutation      = useCancelPurchaseRequest()
+  const returnMutation      = useReturnPurchaseRequest()
 
   const [pendingAction, setPendingAction] = useState<
-    null | 'note' | 'check' | 'review' | 'vp-approve' | 'reject'
+    null | 'note' | 'check' | 'review' | 'budget-check' | 'vp-approve' | 'reject' | 'return'
   >(null)
 
   if (isLoading) return <SkeletonLoader rows={10} />
@@ -199,28 +203,46 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
   }
 
   // ── Permission checks ────────────────────────────────────────────────────
-  const canSubmit  = hasPermission('procurement.purchase-request.create') && pr.status === 'draft'
-  const canNote    = hasPermission('procurement.purchase-request.note')   && pr.status === 'submitted'
-  const canCheck   = hasPermission('procurement.purchase-request.check')  && pr.status === 'noted'
-  const canReview  = hasPermission('procurement.purchase-request.review') && pr.status === 'checked'
-  const canVpApprove = hasPermission('approvals.vp.approve')              && pr.status === 'reviewed'
-  const canCreatePo  = hasPermission('procurement.purchase-order.create') && pr.status === 'approved'
-  const isOwner    = user?.id === pr.requested_by_id
-  const canCancel  = isOwner && pr.isCancellable
+  const canSubmit      = hasPermission('procurement.purchase-request.create') && pr.status === 'draft'
+  const canNote        = hasPermission('procurement.purchase-request.note')   && pr.status === 'submitted'
+  const canCheck       = hasPermission('procurement.purchase-request.check')  && pr.status === 'noted'
+  const canReview      = hasPermission('procurement.purchase-request.review') && pr.status === 'checked'
+  const canBudgetCheck = hasPermission('procurement.purchase-request.budget-check') && pr.status === 'reviewed'
+  const canVpApprove   = hasPermission('approvals.vp.approve')               && pr.status === 'budget_checked'
+  const canCreatePo    = hasPermission('procurement.purchase-order.create')   && pr.status === 'approved'
+  const isOwner        = user?.id === pr.requested_by_id
+  const canCancel      = isOwner && pr.isCancellable
+  const canReturn      = (canNote || canCheck || canReview || canBudgetCheck || canVpApprove)
+                         && !['draft', 'approved', 'rejected', 'cancelled', 'converted_to_po'].includes(pr.status)
 
   const handleAction = async (
-    action: 'note' | 'check' | 'review' | 'vp-approve',
+    action: 'note' | 'check' | 'review' | 'budget-check' | 'vp-approve',
     comments: string,
   ): Promise<void> => {
     const payload = { ulid: pr.ulid, payload: { comments } }
     try {
-      if (action === 'note')       await noteMutation.mutateAsync(payload)
-      if (action === 'check')      await checkMutation.mutateAsync(payload)
-      if (action === 'review')     await reviewMutation.mutateAsync(payload)
-      if (action === 'vp-approve') await vpMutation.mutateAsync(payload)
+      if (action === 'note')         await noteMutation.mutateAsync(payload)
+      if (action === 'check')        await checkMutation.mutateAsync(payload)
+      if (action === 'review')       await reviewMutation.mutateAsync(payload)
+      if (action === 'budget-check') await budgetCheckMutation.mutateAsync(payload)
+      if (action === 'vp-approve')   await vpMutation.mutateAsync(payload)
       toast.success('Action completed successfully.')
     } catch {
       toast.error('Action failed. Please try again.')
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
+  const handleReturn = async (reason: string): Promise<void> => {
+    try {
+      await returnMutation.mutateAsync({
+        ulid: pr.ulid,
+        payload: { reason },
+      })
+      toast.success('Purchase Request returned for revision.')
+    } catch {
+      toast.error('Return failed. Please try again.')
     } finally {
       setPendingAction(null)
     }
@@ -261,6 +283,16 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
         status={<StatusBadge status={pr.status}>{pr.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
           <div className="flex items-center gap-2">
+            {/* PDF Export — always visible */}
+            <a
+              href={`/api/v1/procurement/purchase-requests/${pr.ulid}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 font-medium rounded transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export PDF
+            </a>
             {canSubmit && (
               <button
                 onClick={async () => {
@@ -318,6 +350,16 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
               />
             )}
 
+            {canBudgetCheck && (
+              <SodActionButton
+                initiatedById={pr.reviewed_by_id}
+                label="Budget Check"
+                onClick={() => setPendingAction('budget-check')}
+                isLoading={budgetCheckMutation.isPending}
+                variant="primary"
+              />
+            )}
+
             {canVpApprove && (
               <SodActionButton
                 initiatedById={pr.reviewed_by_id}
@@ -328,7 +370,16 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
               />
             )}
 
-            {(canNote || canCheck || canReview || canVpApprove) && (
+            {canReturn && (
+              <button
+                onClick={() => setPendingAction('return')}
+                className="text-sm px-3 py-2 bg-white text-amber-600 border border-amber-300 hover:bg-amber-50 font-medium rounded transition-colors"
+              >
+                Return for Revision
+              </button>
+            )}
+
+            {(canNote || canCheck || canReview || canBudgetCheck || canVpApprove) && (
               <button
                 onClick={() => setPendingAction('reject')}
                 className="text-sm px-3 py-2 bg-white text-red-600 border border-red-300 hover:bg-red-50 font-medium rounded transition-colors"
@@ -473,7 +524,14 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                   isDone={!!pr.reviewed_at}
                 />
                 <ApprovalStage
-                  label="5. Approved by VP"
+                  label="5. Budget Checked"
+                  actor={pr.budget_checked_by}
+                  timestamp={pr.budget_checked_at}
+                  comments={pr.budget_checked_comments}
+                  isDone={!!pr.budget_checked_at}
+                />
+                <ApprovalStage
+                  label="6. Approved by VP"
                   actor={pr.vp_approved_by}
                   timestamp={pr.vp_approved_at}
                   comments={pr.vp_comments}
@@ -481,7 +539,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                 />
                 {pr.converted_to_po_id && (
                   <ApprovalStage
-                    label="6. Converted to PO"
+                    label="7. Converted to PO"
                     actor={null}
                     timestamp={pr.converted_at}
                     comments={null}
@@ -495,20 +553,30 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
       </div>
 
       {/* Modals */}
-      {pendingAction && pendingAction !== 'reject' && (
+      {pendingAction && !['reject', 'return'].includes(pendingAction) && (
         <CommentsModal
           actionLabel={
-            pendingAction === 'note'       ? 'Note (Acknowledge) Purchase Request' :
-            pendingAction === 'check'      ? 'Check (Verify) Purchase Request' :
-            pendingAction === 'review'     ? 'Review Purchase Request' :
-                                             'Final Approve Purchase Request'
+            pendingAction === 'note'         ? 'Note (Acknowledge) Purchase Request' :
+            pendingAction === 'check'        ? 'Check (Verify) Purchase Request' :
+            pendingAction === 'review'       ? 'Review Purchase Request' :
+            pendingAction === 'budget-check' ? 'Budget Check Purchase Request' :
+                                               'Final Approve Purchase Request'
           }
-          onConfirm={(comments) => handleAction(pendingAction as 'note' | 'check' | 'review' | 'vp-approve', comments)}
+          onConfirm={(comments) => handleAction(pendingAction as 'note' | 'check' | 'review' | 'budget-check' | 'vp-approve', comments)}
           onClose={() => setPendingAction(null)}
           isSubmitting={
             noteMutation.isPending || checkMutation.isPending ||
-            reviewMutation.isPending || vpMutation.isPending
+            reviewMutation.isPending || budgetCheckMutation.isPending || vpMutation.isPending
           }
+        />
+      )}
+
+      {pendingAction === 'return' && (
+        <RejectModal
+          stage={pr.status}
+          onConfirm={handleReturn}
+          onClose={() => setPendingAction(null)}
+          isSubmitting={returnMutation.isPending}
         />
       )}
 

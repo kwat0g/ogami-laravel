@@ -31,7 +31,7 @@ final class Step01SnapshotsStep
         $ctx->payBasis = $ctx->employee->pay_basis;
         $ctx->isMinimumWageEarner = $this->tax->isMinimumWageEarner(
             $ctx->basicMonthlyCentavos,
-            'NCR',
+            $ctx->employee->region ?? config('ogami.default_region', 'NCR'),
             $ctx->run->cutoff_end,
         );
 

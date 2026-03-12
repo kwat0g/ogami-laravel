@@ -66,4 +66,39 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Monthly calendar view — approved requests + public holidays by department
     Route::get('calendar', [LeaveRequestController::class, 'calendar'])->name('calendar');
+
+    // ── Leave Export (CSV) ───────────────────────────────────────────────────
+    Route::get('export', function (\Illuminate\Http\Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {
+        $query = \Illuminate\Support\Facades\DB::table('leave_requests')
+            ->join('employees', 'leave_requests.employee_id', '=', 'employees.id')
+            ->join('leave_types', 'leave_requests.leave_type_id', '=', 'leave_types.id')
+            ->select(
+                'employees.employee_code',
+                \Illuminate\Support\Facades\DB::raw("concat(employees.first_name, ' ', employees.last_name) as full_name"),
+                'leave_types.name as leave_type',
+                'leave_requests.start_date',
+                'leave_requests.end_date',
+                'leave_requests.total_days',
+                'leave_requests.status',
+                'leave_requests.created_at',
+            );
+
+        if ($request->filled('date_from')) $query->where('leave_requests.start_date', '>=', $request->input('date_from'));
+        if ($request->filled('date_to')) $query->where('leave_requests.end_date', '<=', $request->input('date_to'));
+        if ($request->filled('department_id')) {
+            $query->where('employees.department_id', $request->input('department_id'));
+        }
+
+        $rows = $query->orderBy('leave_requests.start_date', 'desc')->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            if ($out === false) return;
+            fputcsv($out, ['Employee Code', 'Name', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Status', 'Filed On']);
+            foreach ($rows as $r) {
+                fputcsv($out, [$r->employee_code, $r->full_name, $r->leave_type, $r->start_date, $r->end_date, $r->total_days, $r->status, $r->created_at]);
+            }
+            fclose($out);
+        }, 'leave_report_' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+    })->middleware('permission:hr.full_access')->name('export');
 });

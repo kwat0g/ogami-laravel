@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useLeaveBalances, useCreateLeaveBalance } from '@/hooks/useLeave'
 import { useDepartments, useEmployees } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -42,7 +41,6 @@ export default function LeaveBalancesPage() {
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
-  const navigate = useNavigate()
   
   // Special Leave Grant Modal
   const [showGrantModal, setShowGrantModal] = useState(false)

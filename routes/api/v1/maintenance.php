@@ -25,4 +25,39 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Work Order Parts (C1: Maintenance ↔ Inventory spare parts)
     Route::get('/work-orders/{maintenanceWorkOrder}/parts', [MaintenanceController::class, 'indexParts']);
     Route::post('/work-orders/{maintenanceWorkOrder}/parts', [MaintenanceController::class, 'addPart']);
+
+    // ── Work Order Export (CSV) ──────────────────────────────────────────────
+    Route::get('/work-orders/export', function (\Illuminate\Http\Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {
+        $query = \Illuminate\Support\Facades\DB::table('maintenance_work_orders')
+            ->leftJoin('equipment', 'maintenance_work_orders.equipment_id', '=', 'equipment.id')
+            ->select(
+                'maintenance_work_orders.id',
+                'maintenance_work_orders.title',
+                'maintenance_work_orders.type',
+                'maintenance_work_orders.priority',
+                'maintenance_work_orders.status',
+                'equipment.name as equipment_name',
+                'equipment.asset_tag',
+                'maintenance_work_orders.scheduled_date',
+                'maintenance_work_orders.completed_at',
+                'maintenance_work_orders.created_at',
+            );
+
+        if ($request->filled('status')) $query->where('maintenance_work_orders.status', $request->input('status'));
+        if ($request->filled('type')) $query->where('maintenance_work_orders.type', $request->input('type'));
+        if ($request->filled('date_from')) $query->where('maintenance_work_orders.scheduled_date', '>=', $request->input('date_from'));
+        if ($request->filled('date_to')) $query->where('maintenance_work_orders.scheduled_date', '<=', $request->input('date_to'));
+
+        $rows = $query->orderBy('maintenance_work_orders.scheduled_date', 'desc')->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            if ($out === false) return;
+            fputcsv($out, ['ID', 'Title', 'Type', 'Priority', 'Status', 'Equipment', 'Asset Tag', 'Scheduled', 'Completed', 'Created']);
+            foreach ($rows as $r) {
+                fputcsv($out, [$r->id, $r->title, $r->type, $r->priority, $r->status, $r->equipment_name, $r->asset_tag, $r->scheduled_date, $r->completed_at, $r->created_at]);
+            }
+            fclose($out);
+        }, 'work_orders_' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+    })->name('work-orders.export');
 });

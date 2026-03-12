@@ -5,11 +5,12 @@
 > Frontend rules: [.github/instructions/frontend.instructions.md](instructions/frontend.instructions.md) (`applyTo: frontend/src/**`)
 > Test rules: [.github/instructions/tests.instructions.md](instructions/tests.instructions.md) (`applyTo: tests/**`)
 > Migration rules: [.github/instructions/migrations.instructions.md](instructions/migrations.instructions.md) (`applyTo: database/migrations/**`)
+> Fixed Assets rules: [.github/instructions/fixed-assets.instructions.md](instructions/fixed-assets.instructions.md) (`applyTo: app/Domains/FixedAssets/**`)
 
 ## Project at a Glance
 
 **Ogami ERP** — Manufacturing ERP for Philippine businesses. **Laravel 11 + React 18 SPA + PostgreSQL 16.**
-18 domain modules under `app/Domains/`, 25 API route files under `routes/api/v1/`.
+20 domain modules under `app/Domains/`, 27 API route files under `routes/api/v1/`.
 
 ```
 app/Domains/<Domain>/    Models/ Services/ Policies/ StateMachines/ Pipeline/
@@ -159,3 +160,11 @@ Use `/run-domain-tests <Domain|all>` to run the correct Pest suites for a domain
 | `migration-writer` | Creating or altering tables — PgSQL patterns (generated columns, CHECK constraints, SHA-256 hashes) |
 | `code-reviewer` | Security audit, performance review, PR review |
 | `debugger` | Systematic root-cause analysis for errors/crashes |
+| `fullstack-developer` | Building or debugging full-stack features spanning Laravel + React |
+| `visualization-expert` | Choosing chart types, designing dashboards, Recharts patterns |
+| `budget-planner` | Cost center setup, annual budget lines, approval workflow, utilisation analysis, spend guard integration |
+
+## New Artisan Commands (2026-03-11)
+
+- `php artisan assets:depreciate-monthly` — runs straight-line / double-declining depreciation for all active fixed assets in a fiscal period; idempotent (skips already-processed periods via unique constraint)
+- `php artisan journals:generate-recurring` — materialises all active recurring journal templates due today or earlier; advances `next_run_date` automatically

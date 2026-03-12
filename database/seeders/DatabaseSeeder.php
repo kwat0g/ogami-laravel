@@ -50,6 +50,7 @@ class DatabaseSeeder extends Seeder
             // ── Department permission profiles (v2) ───────────────────────────
             // Must run AFTER DepartmentPositionSeeder (requires departments to exist)
             DepartmentPermissionProfileSeeder::class,
+            DepartmentPermissionTemplateSeeder::class,
             // ── Transactional sample data ─────────────────────────────────────
             // Must come last — depends on employees, leave_types, COA, fiscal_periods
             SampleDataSeeder::class,

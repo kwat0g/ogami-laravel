@@ -40,6 +40,7 @@ import {
   Settings,
   Truck,
   ShieldCheck,
+  Landmark,
 } from 'lucide-react'
 
 interface NavChild {
@@ -93,13 +94,14 @@ const SECTIONS: NavSection[] = [
       { label: 'Departments', href: '/hr/departments', permission: 'hr.full_access' },
       { label: 'Positions', href: '/hr/positions', permission: 'hr.full_access' },
       { label: 'Shifts', href: '/hr/shifts', permission: 'hr.full_access' },
+      { label: 'HR Reports', href: '/hr/reports', permission: 'hr.full_access' },
     ],
   },
   {
     label: 'Payroll',
     icon: DollarSign,
     permission: 'payroll.view_runs',
-    roles: ['manager', 'officer'],
+    roles: ['manager', 'officer', 'vice_president'],
     children: [
       { label: 'Payroll Runs', href: '/payroll/runs', permission: 'payroll.view_runs' },
       { label: 'Pay Periods', href: '/payroll/periods', permission: 'payroll.manage_pay_periods' },
@@ -109,28 +111,86 @@ const SECTIONS: NavSection[] = [
     label: 'Accounting',
     icon: BookOpen,
     permission: 'chart_of_accounts.view',
+    // officer = full write, executive/vice_president/head = view-only (children gated individually)
+    roles: ['officer', 'executive', 'vice_president', 'head'],
+    children: [
+      { label: 'Chart of Accounts',   href: '/accounting/accounts',            permission: 'chart_of_accounts.view' },
+      { label: 'Journal Entries',      href: '/accounting/journal-entries',     permission: 'journal_entries.view' },
+      { label: 'General Ledger',       href: '/accounting/gl',                  permission: 'journal_entries.view' },
+      { label: 'Loan Approvals',       href: '/accounting/loans',               permission: 'loans.accounting_approve' },
+      { label: 'Recurring Templates',  href: '/accounting/recurring-templates', permission: 'journal_entries.view' },
+    ],
+  },
+  {
+    label: 'Payables (AP)',
+    icon: FileText,
+    permission: 'vendors.view',
+    // officer = full AP, purchasing_officer = vendor lifecycle, impex_officer = vendor view
+    // executive/vice_president/head/manager = view-only (invoices children self-gate)
+    roles: ['officer', 'executive', 'vice_president', 'purchasing_officer', 'impex_officer', 'head', 'manager'],
+    children: [
+      { label: 'Vendors',       href: '/accounting/vendors',          permission: 'vendors.view' },
+      { label: 'Invoices',      href: '/accounting/ap/invoices',      permission: 'vendor_invoices.view' },
+      { label: 'Credit Notes',  href: '/accounting/ap/credit-notes',  permission: 'vendor_invoices.view' },
+    ],
+  },
+  {
+    label: 'Receivables (AR)',
+    icon: Wallet,
+    permission: 'customers.view',
+    // officer = full write, executive/vice_president/head = view-only
+    roles: ['officer', 'executive', 'vice_president', 'head'],
+    children: [
+      { label: 'Customers',     href: '/ar/customers',       permission: 'customers.view' },
+      { label: 'Invoices',      href: '/ar/invoices',        permission: 'customer_invoices.view' },
+      { label: 'Credit Notes',  href: '/ar/credit-notes',    permission: 'customer_invoices.view' },
+    ],
+  },
+  {
+    label: 'Banking',
+    icon: Landmark,
+    permission: 'bank_accounts.view',
     roles: ['officer'],
     children: [
-      { label: 'Chart of Accounts',  href: '/accounting/accounts',           permission: 'chart_of_accounts.view' },
-      { label: 'Fiscal Periods',     href: '/accounting/fiscal-periods',      permission: 'fiscal_periods.view' },
-      { label: 'Journal Entries',    href: '/accounting/journal-entries',     permission: 'journal_entries.view' },
-      { label: 'AP Vendors',         href: '/accounting/vendors',             permission: 'vendors.view' },
-      { label: 'AP Invoices',        href: '/accounting/ap/invoices',         permission: 'vendor_invoices.view' },
-      { label: 'AP Due Monitor',     href: '/accounting/ap/monitor',          permission: 'vendor_invoices.view' },
-      { label: 'AR Customers',       href: '/ar/customers',                   permission: 'customers.view' },
-      { label: 'AR Invoices',        href: '/ar/invoices',                    permission: 'customer_invoices.view' },
-      { label: 'Loan Approvals',     href: '/accounting/loans',               permission: 'loans.accounting_approve' },
-      { label: 'VAT Ledger',         href: '/accounting/vat-ledger',          permission: 'reports.vat' },
-      { label: 'Tax Summary',        href: '/accounting/tax-summary',         permission: 'reports.vat' },
-      { label: 'Financial Reports',  divider: true },
-      { label: 'General Ledger',     href: '/accounting/gl',                  permission: 'journal_entries.view' },
-      { label: 'Trial Balance',      href: '/accounting/trial-balance',       permission: 'reports.financial_statements' },
-      { label: 'Balance Sheet',      href: '/accounting/balance-sheet',       permission: 'reports.financial_statements' },
-      { label: 'Income Statement',   href: '/accounting/income-statement',    permission: 'reports.financial_statements' },
-      { label: 'Cash Flow',          href: '/accounting/cash-flow',           permission: 'reports.financial_statements' },
-      { label: 'Banking',            divider: true },
-      { label: 'Bank Accounts',      href: '/banking/accounts',               permission: 'bank_accounts.view' },
-      { label: 'Reconciliations',    href: '/banking/reconciliations',        permission: 'bank_reconciliations.view' },
+      { label: 'Bank Accounts',   href: '/banking/accounts',          permission: 'bank_accounts.view' },
+      { label: 'Reconciliations', href: '/banking/reconciliations',   permission: 'bank_reconciliations.view' },
+    ],
+  },
+  {
+    label: 'Financial Reports',
+    icon: BarChart3,
+    permission: 'reports.financial_statements',
+    roles: ['officer', 'executive', 'vice_president'],
+    children: [
+      { label: 'Trial Balance',     href: '/accounting/trial-balance',    permission: 'reports.financial_statements' },
+      { label: 'Balance Sheet',     href: '/accounting/balance-sheet',    permission: 'reports.financial_statements' },
+      { label: 'Income Statement',  href: '/accounting/income-statement', permission: 'reports.financial_statements' },
+      { label: 'Cash Flow',         href: '/accounting/cash-flow',        permission: 'reports.financial_statements' },
+      { label: 'AP Aging',          href: '/accounting/ap/aging-report',  permission: 'vendor_invoices.view' },
+      { label: 'AR Aging',          href: '/ar/aging-report',             permission: 'customer_invoices.view' },
+      { label: 'VAT Ledger',        href: '/accounting/vat-ledger',       permission: 'reports.vat' },
+      { label: 'Tax Summary',       href: '/accounting/tax-summary',      permission: 'reports.vat' },
+    ],
+  },
+  {
+    label: 'Fixed Assets',
+    icon: Landmark,
+    permission: 'chart_of_accounts.view',
+    roles: ['officer'],
+    children: [
+      { label: 'Asset Register', href: '/fixed-assets',             permission: 'chart_of_accounts.view' },
+      { label: 'Categories',    href: '/fixed-assets/categories',  permission: 'chart_of_accounts.view' },
+      { label: 'Disposals',     href: '/fixed-assets/disposals',   permission: 'chart_of_accounts.view' },
+    ],
+  },
+  {
+    label: 'Budget',
+    icon: TrendingUp,
+    permission: 'budget.view',
+    children: [
+      { label: 'Cost Centers',    href: '/budget/cost-centers', permission: 'budget.view' },
+      { label: 'Budget Lines',    href: '/budget/lines',        permission: 'budget.view' },
+      { label: 'Budget vs Actual', href: '/budget/vs-actual',   permission: 'budget.view' },
     ],
   },
   {
@@ -160,7 +220,8 @@ const SECTIONS: NavSection[] = [
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders',   href: '/procurement/purchase-orders',   permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts',    href: '/procurement/goods-receipts',    permission: 'procurement.goods-receipt.view' },
-      { label: 'Vendors',           href: '/accounting/vendors',            permission: 'vendors.view' },
+      { label: 'RFQs',              href: '/procurement/rfqs',               permission: 'procurement.purchase-request.view' },
+      { label: 'Analytics',          href: '/procurement/analytics',          permission: 'procurement.purchase-order.view' },
     ],
   },
   {
@@ -174,27 +235,34 @@ const SECTIONS: NavSection[] = [
       { label: 'Stock Balances',      href: '/inventory/stock',           permission: 'inventory.stock.view' },
       { label: 'Stock Ledger',        href: '/inventory/ledger',          permission: 'inventory.stock.view' },
       { label: 'Requisitions',        href: '/inventory/requisitions',    permission: 'inventory.mrq.view' },
+      { label: 'Stock Adjustments',  href: '/inventory/adjustments',     permission: 'inventory.adjustments.create' },
+      { label: 'Valuation',          href: '/inventory/valuation',       permission: 'inventory.stock.view' },
+
     ],
   },
   {
     label: 'Production',
     icon: Factory,
     permission: 'production.orders.view',
+    roles: ['plant_manager', 'production_manager', 'head'],
     children: [
       { label: 'Bill of Materials',   href: '/production/boms',                 permission: 'production.bom.view' },
       { label: 'Delivery Schedules',  href: '/production/delivery-schedules',   permission: 'production.delivery-schedule.view' },
       { label: 'Work Orders',         href: '/production/orders',               permission: 'production.orders.view' },
+      { label: 'Cost Analysis',      href: '/production/cost-analysis',        permission: 'production.orders.view' },
     ],
   },
   {
     label: 'QC / QA',
     icon: ClipboardCheck,
     permission: 'qc.inspections.view',
+    roles: ['plant_manager', 'qc_manager', 'head'],
     children: [
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
       { label: 'NCR',         href: '/qc/ncrs',        permission: 'qc.ncr.view' },
       { label: 'CAPA',        href: '/qc/capa',        permission: 'qc.ncr.view' },
       { label: 'Templates',   href: '/qc/templates',   permission: 'qc.templates.view' },
+      { label: 'Defect Rate', href: '/qc/defect-rate', permission: 'qc.inspections.view' },
     ],
   },
   {
@@ -236,8 +304,10 @@ const SECTIONS: NavSection[] = [
     label: 'CRM',
     icon: Users,
     permission: 'crm.tickets.view',
+    roles: ['crm_manager'],
     children: [
-      { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
+      { label: 'CRM Dashboard',   href: '/crm/dashboard', permission: 'crm.tickets.view' },
+      { label: 'Support Tickets', href: '/crm/tickets',    permission: 'crm.tickets.view' },
     ],
   },
   {
@@ -262,6 +332,7 @@ const ADMIN_SECTION: NavSection = {
     { label: 'Users', href: '/admin/users', permission: 'system.manage_users' },
     { label: 'System Settings', href: '/admin/settings', permission: 'system.edit_settings' },
     { label: 'Reference Tables', href: '/admin/reference-tables', permission: 'system.edit_settings' },
+    { label: 'Fiscal Periods', href: '/accounting/fiscal-periods', permission: 'fiscal_periods.view' },
     { label: 'Audit Logs', href: '/admin/audit-logs', permission: 'system.view_audit_log' },
     { label: 'Backup & Restore', href: '/admin/backup', permission: 'system.manage_backups' },
   ],
@@ -304,7 +375,6 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
     if (!isCurrentSection) {
       setOpen(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCurrentSection])
 
   if (section.permission && !hasPermission(section.permission)) return null

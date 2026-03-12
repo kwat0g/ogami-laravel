@@ -38,4 +38,17 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
     Route::get('utilisation/{costCenter}', [BudgetController::class, 'utilisation'])
         ->middleware('permission:budget.view')
         ->name('utilisation');
+
+    // ── Approval Workflow ────────────────────────────────────────────────────
+    Route::patch('lines/{annualBudget}/submit', [BudgetController::class, 'submitBudget'])
+        ->middleware(['permission:budget.manage', 'throttle:api-action'])
+        ->name('lines.submit');
+
+    Route::patch('lines/{annualBudget}/approve', [BudgetController::class, 'approveBudget'])
+        ->middleware(['permission:budget.approve', 'throttle:api-action'])
+        ->name('lines.approve');
+
+    Route::patch('lines/{annualBudget}/reject', [BudgetController::class, 'rejectBudget'])
+        ->middleware(['permission:budget.approve', 'throttle:api-action'])
+        ->name('lines.reject');
 });

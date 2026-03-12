@@ -34,6 +34,7 @@ export default function ItemMasterListPage(): React.ReactElement {
   const [withArchived, setWithArchived] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.items.create')
+  const canEdit   = hasPermission('inventory.items.edit')
 
   const { data: categories } = useItemCategories()
   const { data, isLoading, isError } = useItems({
@@ -155,9 +156,13 @@ export default function ItemMasterListPage(): React.ReactElement {
                           : <StatusBadge className="bg-neutral-100 text-neutral-500">Inactive</StatusBadge>}
                       </td>
                       <td className="px-4 py-3">
-                        <Link to={`/inventory/items/${item.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
-                          Edit →
-                        </Link>
+                        {canEdit ? (
+                          <Link to={`/inventory/items/${item.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
+                            Edit →
+                          </Link>
+                        ) : (
+                          <span className="text-neutral-400 text-xs italic">View Only</span>
+                        )}
                       </td>
                     </tr>
                   ))}

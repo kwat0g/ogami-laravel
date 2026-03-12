@@ -1,47 +1,84 @@
 import { Link } from 'react-router-dom'
+import { Plus, Ticket } from 'lucide-react'
 import { useTickets } from '@/hooks/useCRM'
-
-const statusBadge: Record<string, string> = {
-  open: 'bg-neutral-100 text-neutral-700',
-  in_progress: 'bg-yellow-100 text-yellow-800',
-  resolved: 'bg-neutral-200 text-neutral-800',
-  closed: 'bg-neutral-100 text-neutral-600',
-}
+import { PageHeader } from '@/components/ui/PageHeader'
+import StatusBadge from '@/components/ui/StatusBadge'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default function ClientTicketsPage() {
   const { data, isLoading } = useTickets({ per_page: 20 })
+  
+  const tickets = data?.data ?? []
+  const openCount = tickets.filter(t => t.status === 'open').length
+  const inProgressCount = tickets.filter(t => t.status === 'in_progress').length
+  const resolvedCount = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">My Support Tickets</h1>
-        <Link to="/client-portal/tickets/new" className="px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 text-sm font-medium">
-          Submit New Ticket
-        </Link>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="My Support Tickets"
+        icon={<Ticket className="w-5 h-5 text-neutral-600" />}
+        actions={
+          <Link to="/client-portal/tickets/new" className="btn-primary">
+            <Plus className="w-3.5 h-3.5" /> Submit New Ticket
+          </Link>
+        }
+      />
+
+      {/* Summary Stats */}
+      {!isLoading && tickets.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Open</p>
+            <p className="text-2xl font-bold text-blue-700 mt-1">{openCount}</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">In Progress</p>
+            <p className="text-2xl font-bold text-amber-700 mt-1">{inProgressCount}</p>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Resolved</p>
+            <p className="text-2xl font-bold text-emerald-700 mt-1">{resolvedCount}</p>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
-        <div className="text-center text-neutral-500 py-12">Loading…</div>
+        <SkeletonLoader rows={4} />
+      ) : (data?.data ?? []).length === 0 ? (
+        <EmptyState
+          title="No tickets yet"
+          description="Submit your first ticket to get support."
+          action={
+            <Link to="/client-portal/tickets/new" className="btn-primary">
+              <Plus className="w-3.5 h-3.5" /> Submit Ticket
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-3">
-          {data?.data.length === 0 && (
-            <div className="bg-white rounded border border-neutral-200 p-8 text-center text-neutral-400">
-              No tickets yet. <Link to="/client-portal/tickets/new" className="text-neutral-700 hover:underline">Submit your first ticket</Link>.
-            </div>
-          )}
-          {data?.data.map(ticket => (
+          {tickets.map(ticket => (
             <Link key={ticket.ulid} to={`/client-portal/tickets/${ticket.ulid}`}
-              className="block bg-white rounded border border-neutral-200 p-4 hover:border-neutral-300 hover:shadow-sm transition-all">
+              className={`block bg-white rounded-xl border p-4 hover:shadow-sm transition-all ${
+                ticket.status === 'open' ? 'border-blue-200 hover:border-blue-300' :
+                ticket.status === 'in_progress' ? 'border-amber-200 hover:border-amber-300' :
+                'border-neutral-200 hover:border-neutral-300'
+              }`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs font-mono text-neutral-400 mb-0.5">{ticket.ticket_number}</div>
-                  <div className="font-medium text-neutral-900">{ticket.subject}</div>
+                  <div className={`font-semibold ${
+                    ticket.priority === 'critical' ? 'text-red-700' : 
+                    ticket.status === 'resolved' ? 'text-emerald-700' :
+                    'text-neutral-900'
+                  }`}>{ticket.subject}</div>
                   <div className="text-sm text-neutral-500 mt-0.5 capitalize">{ticket.type}</div>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${statusBadge[ticket.status]}`}>
+                  <StatusBadge status={ticket.status}>
                     {ticket.status.replace('_', ' ')}
-                  </span>
+                  </StatusBadge>
                   <span className="text-xs text-neutral-400">{new Date(ticket.created_at).toLocaleDateString()}</span>
                 </div>
               </div>

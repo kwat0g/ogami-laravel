@@ -37,7 +37,7 @@ export function useSubmitLeaveRequest() {
 
 **Global QueryClient defaults**: `staleTime: 30_000`, `refetchOnWindowFocus: false`. API errors with `error_code` in the response never retry.
 
-**Write cooldown**: `api.ts` silently aborts duplicate POST/PUT/PATCH/DELETE calls to the same URL within 800 ms. Do not fire the same mutation twice in quick succession.
+**Write cooldown**: `api.ts` silently aborts duplicate POST/PUT/PATCH/DELETE calls to the same URL within 1500 ms. Do not fire the same mutation twice in quick succession.
 
 ## Types & Schemas
 

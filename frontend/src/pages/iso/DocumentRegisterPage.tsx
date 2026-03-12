@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, FileText } from 'lucide-react';
 import { useDocuments } from '@/hooks/useISO';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { useAuthStore } from '@/stores/authStore';
 import type { DocumentStatus } from '@/types/iso';
 
 const STATUS_COLORS: Record<DocumentStatus, string> = {
@@ -16,6 +17,7 @@ export default function DocumentRegisterPage() {
   const [status, setStatus] = useState('');
   const [docType, setDocType] = useState('');
   const [withArchived, setWithArchived] = useState(false);
+  const canManage = useAuthStore(s => s.hasPermission('iso.manage'));
 
   const params: Record<string, string | boolean> = {};
   if (status) params.status = status;
@@ -29,12 +31,14 @@ export default function DocumentRegisterPage() {
       <PageHeader title="Document Register" />
       <div className="flex items-center justify-between">
         <div />
-        <Link
-          to="/iso/documents/new"
-          className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-        >
-          <Plus size={16} /> New Document
-        </Link>
+        {canManage && (
+          <Link
+            to="/iso/documents/new"
+            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            <Plus size={16} /> New Document
+          </Link>
+        )}
       </div>
 
       <div className="flex gap-2 flex-wrap">

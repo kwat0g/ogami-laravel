@@ -108,4 +108,35 @@ final class BudgetController extends Controller
             ],
         ]);
     }
+
+    // ── Approval Workflow ────────────────────────────────────────────────────
+
+    public function submitBudget(Request $request, AnnualBudget $annualBudget): JsonResponse
+    {
+        $this->authorize('create', AnnualBudget::class);
+
+        $updated = $this->service->submitBudget($annualBudget, $request->user());
+
+        return response()->json(['data' => $updated->load('account')]);
+    }
+
+    public function approveBudget(Request $request, AnnualBudget $annualBudget): JsonResponse
+    {
+        $this->authorize('approve', AnnualBudget::class);
+
+        $remarks = $request->input('remarks');
+        $updated = $this->service->approveBudget($annualBudget, $request->user(), $remarks);
+
+        return response()->json(['data' => $updated->load('account')]);
+    }
+
+    public function rejectBudget(Request $request, AnnualBudget $annualBudget): JsonResponse
+    {
+        $this->authorize('approve', AnnualBudget::class);
+
+        $remarks = $request->input('remarks');
+        $updated = $this->service->rejectBudget($annualBudget, $request->user(), $remarks);
+
+        return response()->json(['data' => $updated->load('account')]);
+    }
 }

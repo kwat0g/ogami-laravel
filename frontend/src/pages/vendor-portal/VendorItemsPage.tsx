@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { Plus, Pencil } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Plus, Pencil, Upload } from 'lucide-react'
 import {
   useVendorPortalItems,
   useCreateVendorPortalItem,
   useUpdateVendorPortalItem,
+  useImportVendorPortalItems,
   type VendorPortalItem,
 } from '@/hooks/useVendorPortal'
 import { toast } from 'sonner'
@@ -26,6 +27,23 @@ export default function VendorItemsPage(): React.ReactElement {
   const { data: items, isLoading } = useVendorPortalItems(!showAll)
   const create = useCreateVendorPortalItem()
   const update = useUpdateVendorPortalItem()
+  const importItems = useImportVendorPortalItems()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    importItems.mutate(file, {
+      onSuccess: (result) => {
+        toast.success(result.message)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      },
+      onError: () => {
+        toast.error('Import failed. Check your file format.')
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      },
+    })
+  }
 
   function openCreate() {
     setEditing(null)
@@ -85,6 +103,21 @@ export default function VendorItemsPage(): React.ReactElement {
             />
             Show inactive
           </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            onChange={handleImport}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importItems.isPending}
+            className="flex items-center gap-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded-md px-3 py-1.5 hover:bg-neutral-50 disabled:opacity-50"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            {importItems.isPending ? 'Importing…' : 'Import CSV'}
+          </button>
           <button
             onClick={openCreate}
             className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800"

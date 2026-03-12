@@ -200,6 +200,10 @@ class RolePermissionSeeder extends Seeder
         'iso.audit',
         'approvals.vp.view',
         'approvals.vp.approve',
+        // Budget
+        'budget.view',
+        'budget.manage',
+        'budget.approve',
         // Payroll
         'payroll.view_own_payslip',
         'payroll.download_own_payslip',
@@ -288,6 +292,10 @@ class RolePermissionSeeder extends Seeder
         'reports.ar_aging',
         'reports.vat',
         'reports.bank_reconciliation',
+        // Payroll VP
+        'payroll.vp_approve',
+        // Production QC
+        'production.qc-override',
         // Self-service
         'self.view_profile',
         'self.submit_profile_update',
@@ -348,6 +356,7 @@ class RolePermissionSeeder extends Seeder
         $staff         = Role::findOrCreate('staff',          self::GUARD);
         $vendor        = Role::findOrCreate('vendor',         self::GUARD);
         $client        = Role::findOrCreate('client',         self::GUARD);
+        $crmManager    = Role::findOrCreate('crm_manager',    self::GUARD);
 
         // Note: The rename migration (2026_03_05_000001) already renamed the
         //   old hr_manager → manager, accounting_manager → officer, supervisor → head.
@@ -360,6 +369,7 @@ class RolePermissionSeeder extends Seeder
             'system.manage_rate_tables', 'system.manage_holidays', 'system.manage_ewt_atc',
             'system.reopen_fiscal_period', 'system.view_audit_log',
             'system.view_horizon', 'system.view_pulse', 'system.manage_backups',
+            'vendors.view', // Added so Admin can access the Vendors page to provision portal accounts
         ]);
 
         // ── Executive — read-only across all modules + executive approvals ─────────────────────────
@@ -372,7 +382,9 @@ class RolePermissionSeeder extends Seeder
             'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
             'vendors.view', 'vendor_invoices.view', 'customers.view', 'customer_invoices.view',
             'reports.financial_statements', 'reports.gl', 'reports.trial_balance',
-            'reports.ap_aging', 'reports.bank_reconciliation',
+            'reports.ap_aging', 'reports.ar_aging', 'reports.bank_reconciliation',
+            // Budget (view-only)
+            'budget.view',
             'self.view_profile', 'self.view_attendance',
         ]);
 
@@ -397,8 +409,10 @@ class RolePermissionSeeder extends Seeder
             'leave_balances.view', 'leave_balances.adjust', 'leave_balances.manage',
             // Loans (v1 + v2 Step 2 checker)
             'loans.view_own', 'loans.view_department', 'loans.apply',
-            'loans.hr_approve', 'loans.accounting_approve', 'loans.view_ln007_log', 'loans.configure_types',
+            'loans.hr_approve', 'loans.view_ln007_log', 'loans.configure_types',
             'loans.manager_check',
+            // Budget (view-only)
+            'budget.view',
             // Procurement (Step 2 checker)
             'procurement.purchase-request.view', 'procurement.purchase-request.create',
             'procurement.purchase-request.check',
@@ -440,6 +454,7 @@ class RolePermissionSeeder extends Seeder
             'production.delivery-schedule.view', 'production.delivery-schedule.manage',
             'production.orders.view', 'production.orders.create',
             'production.orders.release', 'production.orders.complete', 'production.orders.log_output',
+            'production.qc-override',
             // QC / QA (full)
             'qc.templates.view', 'qc.templates.manage',
             'qc.inspections.view', 'qc.inspections.create',
@@ -493,6 +508,7 @@ class RolePermissionSeeder extends Seeder
             'qc.templates.view', 'qc.templates.manage',
             'qc.inspections.view', 'qc.inspections.create',
             'qc.ncr.view', 'qc.ncr.create', 'qc.ncr.close',
+            'production.qc-override',
             // Inventory — view only (items & stock for QC context)
             'inventory.items.view', 'inventory.stock.view',
             // Self-service
@@ -555,6 +571,8 @@ class RolePermissionSeeder extends Seeder
             // Loans (v1 accounting approval + v2 Step 3 reviewer)
             'loans.view_own', 'loans.view_department', 'loans.accounting_approve',
             'loans.officer_review',
+            // Budget (full management)
+            'budget.view', 'budget.manage',
             // Procurement (Step 3 reviewer + budget check + PO management)
             'procurement.purchase-request.view', 'procurement.purchase-request.review',
             'procurement.purchase-request.budget-check',
@@ -611,8 +629,8 @@ class RolePermissionSeeder extends Seeder
             'inventory.mrq.view', 'inventory.mrq.review',
             // Delivery (view — inbound receipts)
             'delivery.view',
-            // Loans
-            'loans.view_own', 'loans.apply', 'loans.officer_review',
+            // Loans (own only — PO does not review loans)
+            'loans.view_own', 'loans.apply',
             // Employee view
             'employees.view',
             // Self-service
@@ -705,6 +723,10 @@ class RolePermissionSeeder extends Seeder
             'approvals.vp.view', 'approvals.vp.approve',
             // Loans v2 final approval
             'loans.vp_approve',
+            // Budget (approve only)
+            'budget.view', 'budget.approve',
+            // Payroll VP approval
+            'payroll.vp_approve',
             // Procurement VP approval
             'procurement.purchase-request.view',
             'procurement.purchase-order.view',
@@ -737,12 +759,13 @@ class RolePermissionSeeder extends Seeder
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
             'attendance.view_own',
             'overtime.view', 'overtime.submit',
-            // Inventory (Staff creates MRQ)
+            // Inventory (Staff creates MRQ + view for sidebar navigation)
+            'inventory.items.view', 'inventory.stock.view',
             'inventory.mrq.view', 'inventory.mrq.create',
             // Production (Staff: log output)
             'production.orders.view', 'production.orders.log_output',
-            // Mold (Staff: log shots)
-            'mold.log_shots',
+            // Mold (Staff: view for navigation + log shots)
+            'mold.view', 'mold.log_shots',
             // Legacy
             'payslips.view', 'payslips.download', 'leaves.view', 'leaves.create',
             'leave_balances.view', 'loans.view', 'attendance.view',
@@ -764,6 +787,18 @@ class RolePermissionSeeder extends Seeder
             'crm.tickets.view',
             'crm.tickets.create',
             'crm.tickets.reply',
+        ]);
+
+        // ── CRM Manager — manages support tickets, assigns agents, closes tickets ──
+        $crmManager->syncPermissions([
+            'crm.tickets.view', 'crm.tickets.create', 'crm.tickets.reply',
+            'crm.tickets.manage', 'crm.tickets.assign', 'crm.tickets.close',
+            // Self-service
+            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
+            'attendance.view_own', 'overtime.view', 'overtime.submit',
+            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
+            'loans.view_own', 'loans.apply',
+            'payroll.view_own_payslip', 'payroll.download_own_payslip',
         ]);
 
         // ── Bootstrap admin user (only system account; no employee record needed) ──

@@ -121,8 +121,8 @@ export default function PayrollRunAcctgReviewPage() {
         action: 'APPROVED',
         checkboxes_checked: CHECKLIST_ITEMS.filter((_, i) => checked[i]),
       })
-      toast.success('Accounting approval recorded. Ready for disbursement.')
-      navigate(`/payroll/runs/${runId}/disburse`)
+      toast.success('Accounting approval recorded. Forwarded to VP for final approval.')
+      navigate(`/payroll/runs/${runId}/vp-review`)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       toast.error(msg ?? 'Approval failed.')
@@ -367,7 +367,7 @@ export default function PayrollRunAcctgReviewPage() {
           >
             {acctgApprove.isPending
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
-              : <><ThumbsUp className="h-4 w-4" /> Approve & Proceed to Disburse <ArrowRight className="h-4 w-4" /></>
+              : <><ThumbsUp className="h-4 w-4" /> Approve & Forward to VP <ArrowRight className="h-4 w-4" /></>
             }
           </button>
         )}

@@ -3,9 +3,10 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, AlertTriangle } from 'lucide-react'
 import { useCreatePurchaseRequest } from '@/hooks/usePurchaseRequests'
 import { useDepartments } from '@/hooks/useEmployees'
+import { useVendors, useVendorItems } from '@/hooks/useAP'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import type { PurchaseRequestUrgency } from '@/types/procurement'
@@ -15,6 +16,8 @@ const UOM_OPTIONS = ['pcs', 'kg', 'g', 'L', 'mL', 'm', 'cm', 'box', 'roll', 'set
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
 const itemSchema = z.object({
+  is_custom:           z.boolean().default(false),
+  vendor_item_id:      z.coerce.number().nullable().default(null),
   item_description:    z.string().min(1, 'Description is required'),
   unit_of_measure:     z.string().min(1, 'Unit is required'),
   quantity:            z.coerce.number().gt(0, 'Must be > 0'),
@@ -23,6 +26,7 @@ const itemSchema = z.object({
 })
 
 const schema = z.object({
+  vendor_id:      z.coerce.number().int().positive('Vendor is required'),
   department_id:  z.coerce.number().int().positive('Department is required'),
   urgency:        z.enum(['normal', 'urgent', 'critical']).default('normal'),
   justification:  z.string().min(20, 'Justification must be at least 20 characters'),
@@ -45,34 +49,79 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: 'onBlur',
     defaultValues: {
       urgency: 'normal',
-      items: [{ item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0 }],
+      vendor_id: 0,
+      items: [{ is_custom: false, vendor_item_id: null, item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0 }],
     },
   })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
 
-  // Live total computation
+  // Watch form values
+  const watchedVendorId = watch('vendor_id')
   const items = watch('items')
+
+  // Fetch vendors and vendor items
+  const { data: vendorData } = useVendors({ is_active: true, per_page: 200 })
+  const vendors = vendorData?.data ?? []
+  const { data: vendorItems, isLoading: loadingItems } = useVendorItems(
+    watchedVendorId > 0 ? watchedVendorId : null,
+  )
+
+  // Live total computation
   const grandTotal = items.reduce((sum, item) => {
     const qty  = Number(item.quantity)  || 0
     const cost = Number(item.estimated_unit_cost) || 0
     return sum + qty * cost
   }, 0)
 
+  // Handle vendor item selection — auto-fill description, UoM, price
+  const handleVendorItemSelect = (index: number, vendorItemId: number): void => {
+    const vendorItem = vendorItems?.find(vi => vi.id === vendorItemId)
+    if (!vendorItem) return
+
+    setValue(`items.${index}.vendor_item_id`, vendorItem.id)
+    setValue(`items.${index}.item_description`, `${vendorItem.item_code} — ${vendorItem.name}`)
+    setValue(`items.${index}.unit_of_measure`, vendorItem.unit_of_measure)
+    setValue(`items.${index}.estimated_unit_cost`, vendorItem.unit_price_centavos / 100)
+  }
+
+  // Toggle custom item mode
+  const toggleCustom = (index: number, isCustom: boolean): void => {
+    setValue(`items.${index}.is_custom`, isCustom)
+    if (isCustom) {
+      setValue(`items.${index}.vendor_item_id`, null)
+    } else {
+      // Reset fields when switching back to catalog
+      setValue(`items.${index}.item_description`, '')
+      setValue(`items.${index}.unit_of_measure`, '')
+      setValue(`items.${index}.estimated_unit_cost`, 0)
+      setValue(`items.${index}.vendor_item_id`, null)
+    }
+  }
+
   const onSubmit = async (values: FormValues): Promise<void> => {
     try {
       const pr = await createPR.mutateAsync({
+        vendor_id:     values.vendor_id,
         department_id: values.department_id,
         urgency:       values.urgency as PurchaseRequestUrgency,
         justification: values.justification,
         notes:         values.notes,
-        items:         values.items,
+        items:         values.items.map(item => ({
+          vendor_item_id:      item.vendor_item_id,
+          item_description:    item.item_description,
+          unit_of_measure:     item.unit_of_measure,
+          quantity:            item.quantity,
+          estimated_unit_cost: item.estimated_unit_cost,
+          specifications:      item.specifications,
+        })),
       })
       toast.success(`Purchase Request ${pr.pr_reference} created as draft.`)
       navigate(`/procurement/purchase-requests/${pr.ulid}`)
@@ -94,7 +143,33 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
           <CardHeader>Request Details</CardHeader>
           <CardBody>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                {/* Vendor (required — first selection) */}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Vendor <span className="text-red-500">*</span>
+                  </label>
+                  <Controller
+                    control={control}
+                    name="vendor_id"
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        onChange={e => field.onChange(Number(e.target.value))}
+                        className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                      >
+                        <option value="">— Select Vendor —</option>
+                        {vendors.map(v => (
+                          <option key={v.id} value={v.id}>{v.company_name} ({v.code})</option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                  {errors.vendor_id && (
+                    <p className="text-xs text-red-600 mt-1">{errors.vendor_id.message}</p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Department <span className="text-red-500">*</span>
@@ -179,6 +254,8 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                 type="button"
                 onClick={() =>
                   append({
+                    is_custom: false,
+                    vendor_item_id: null,
                     item_description: '',
                     unit_of_measure: '',
                     quantity: 1,
@@ -193,112 +270,179 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
             }
           >
             Line Items
+            {watchedVendorId > 0 && vendorItems && (
+              <span className="ml-2 text-xs font-normal text-neutral-400">
+                ({vendorItems.length} items in vendor catalog)
+              </span>
+            )}
           </CardHeader>
           <CardBody>
-            {errors.items?.root && (
-              <p className="text-xs text-red-600 mb-3">{errors.items.root.message}</p>
-            )}
-
-            <div className="space-y-3">
-              {fields.map((field, index) => {
-                const qty  = Number(items[index]?.quantity)  || 0
-                const cost = Number(items[index]?.estimated_unit_cost) || 0
-                const lineTotal = qty * cost
-
-                return (
-                  <div key={field.id} className="grid grid-cols-12 gap-2 items-start bg-neutral-50 rounded p-3">
-                    {/* Description */}
-                    <div className="col-span-4">
-                      {index === 0 && <p className="text-xs text-neutral-500 mb-1">Description *</p>}
-                      <input
-                        {...register(`items.${index}.item_description`)}
-                        placeholder="Item description"
-                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      {errors.items?.[index]?.item_description && (
-                        <p className="text-xs text-red-600 mt-0.5">
-                          {errors.items[index]?.item_description?.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* UoM */}
-                    <div className="col-span-1">
-                      {index === 0 && <p className="text-xs text-neutral-500 mb-1">UoM *</p>}
-                      <select
-                        {...register(`items.${index}.unit_of_measure`)}
-                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                      >
-                        <option value="">—</option>
-                        {UOM_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
-                      </select>
-                    </div>
-
-                    {/* Quantity */}
-                    <div className="col-span-2">
-                      {index === 0 && <p className="text-xs text-neutral-500 mb-1">Qty *</p>}
-                      <input
-                        type="number"
-                        step="0.001"
-                        {...register(`items.${index}.quantity`)}
-                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                    </div>
-
-                    {/* Unit Cost */}
-                    <div className="col-span-2">
-                      {index === 0 && <p className="text-xs text-neutral-500 mb-1">Unit Cost *</p>}
-                      <input
-                        type="number"
-                        step="0.01"
-                        {...register(`items.${index}.estimated_unit_cost`)}
-                        className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                    </div>
-
-                    {/* Line Total */}
-                    <div className="col-span-2">
-                      {index === 0 && <p className="text-xs text-neutral-500 mb-1">Est. Total</p>}
-                      <div className="text-sm text-neutral-700 font-medium py-1.5 px-2">
-                        ₱{lineTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                      </div>
-                    </div>
-
-                    {/* Remove */}
-                    <div className="col-span-1 flex items-end justify-center pb-1">
-                      {index === 0 && <p className="text-xs text-neutral-500 mb-1 opacity-0">—</p>}
-                      <button
-                        type="button"
-                        disabled={fields.length === 1}
-                        onClick={() => remove(index)}
-                        className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Specifications */}
-                    <div className="col-span-12">
-                      <input
-                        {...register(`items.${index}.specifications`)}
-                        placeholder="Specifications (optional)"
-                        className="w-full text-sm border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-neutral-50"
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Grand Total */}
-            <div className="flex justify-end mt-4 pt-4 border-t border-neutral-200">
-              <div className="text-right">
-                <p className="text-xs text-neutral-500">Total Estimated Cost</p>
-                <p className="text-xl font-bold text-neutral-900 mt-0.5">
-                  ₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                </p>
+            {!watchedVendorId || watchedVendorId <= 0 ? (
+              <div className="flex items-center gap-2 text-amber-600 text-sm py-6 justify-center">
+                <AlertTriangle className="w-4 h-4" />
+                Please select a vendor first to load their item catalog.
               </div>
-            </div>
+            ) : loadingItems ? (
+              <div className="text-sm text-neutral-400 py-6 text-center">Loading vendor items…</div>
+            ) : (
+              <>
+                {errors.items?.root && (
+                  <p className="text-xs text-red-600 mb-3">{errors.items.root.message}</p>
+                )}
+
+                <div className="space-y-3">
+                  {fields.map((field, index) => {
+                    const isCustom = items[index]?.is_custom ?? false
+                    const qty  = Number(items[index]?.quantity)  || 0
+                    const cost = Number(items[index]?.estimated_unit_cost) || 0
+                    const lineTotal = qty * cost
+
+                    return (
+                      <div key={field.id} className="bg-neutral-50 rounded p-3 space-y-2">
+                        {/* Custom toggle + item selection row */}
+                        <div className="flex items-center gap-3 mb-1">
+                          <label className="inline-flex items-center gap-1.5 text-xs text-neutral-500 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={isCustom}
+                              onChange={e => toggleCustom(index, e.target.checked)}
+                              className="rounded border-neutral-300 text-neutral-600 focus:ring-neutral-400"
+                            />
+                            Custom item (not in catalog)
+                          </label>
+                          {isCustom && (
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
+                              <AlertTriangle className="w-3 h-3" />
+                              Custom item — not in vendor catalog
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-12 gap-2 items-start">
+                          {/* Item selection or description */}
+                          <div className="col-span-4">
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">{isCustom ? 'Description *' : 'Vendor Item *'}</p>}
+                            {isCustom ? (
+                              <>
+                                <input
+                                  {...register(`items.${index}.item_description`)}
+                                  placeholder="Item description"
+                                  className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                                />
+                                {errors.items?.[index]?.item_description && (
+                                  <p className="text-xs text-red-600 mt-0.5">
+                                    {errors.items[index]?.item_description?.message}
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              <select
+                                value={items[index]?.vendor_item_id ?? ''}
+                                onChange={e => handleVendorItemSelect(index, Number(e.target.value))}
+                                className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                              >
+                                <option value="">— Select Item —</option>
+                                {vendorItems?.map(vi => (
+                                  <option key={vi.id} value={vi.id}>
+                                    {vi.item_code} — {vi.name} (₱{(vi.unit_price_centavos / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })})
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+
+                          {/* UoM */}
+                          <div className="col-span-1">
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">UoM *</p>}
+                            {isCustom ? (
+                              <select
+                                {...register(`items.${index}.unit_of_measure`)}
+                                className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                              >
+                                <option value="">—</option>
+                                {UOM_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                              </select>
+                            ) : (
+                              <div className="text-sm text-neutral-600 py-1.5 px-2 bg-neutral-100 rounded">
+                                {items[index]?.unit_of_measure || '—'}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quantity */}
+                          <div className="col-span-2">
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Qty *</p>}
+                            <input
+                              type="number"
+                              step="0.001"
+                              {...register(`items.${index}.quantity`)}
+                              className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          </div>
+
+                          {/* Unit Cost */}
+                          <div className="col-span-2">
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Unit Cost *</p>}
+                            {isCustom ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                {...register(`items.${index}.estimated_unit_cost`)}
+                                className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                            ) : (
+                              <div className="text-sm text-neutral-700 font-medium py-1.5 px-2 bg-neutral-100 rounded">
+                                ₱{cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Line Total */}
+                          <div className="col-span-2">
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Est. Total</p>}
+                            <div className="text-sm text-neutral-700 font-medium py-1.5 px-2">
+                              ₱{lineTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </div>
+                          </div>
+
+                          {/* Remove */}
+                          <div className="col-span-1 flex items-end justify-center pb-1">
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1 opacity-0">—</p>}
+                            <button
+                              type="button"
+                              disabled={fields.length === 1}
+                              onClick={() => remove(index)}
+                              className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Specifications */}
+                        <div>
+                          <input
+                            {...register(`items.${index}.specifications`)}
+                            placeholder="Specifications (optional)"
+                            className="w-full text-sm border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-neutral-50"
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Grand Total */}
+                <div className="flex justify-end mt-4 pt-4 border-t border-neutral-200">
+                  <div className="text-right">
+                    <p className="text-xs text-neutral-500">Total Estimated Cost</p>
+                    <p className="text-xl font-bold text-neutral-900 mt-0.5">
+                      ₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </CardBody>
         </Card>
 

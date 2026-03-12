@@ -89,14 +89,20 @@ final class VendorService implements ServiceContract
         return $vendor->fresh();
     }
 
-    /** Suspend a vendor — blocks creation of new Purchase Orders. */
+    /** Suspend a vendor — blocks creation of new Purchase Orders and locks any linked portal account. */
     public function suspend(Vendor $vendor, string $reason): Vendor
     {
-        $vendor->update([
-            'accreditation_status' => 'suspended',
-            'accreditation_notes'  => $reason,
-        ]);
+        return DB::transaction(function () use ($vendor, $reason): Vendor {
+            $vendor->update([
+                'accreditation_status' => 'suspended',
+                'accreditation_notes'  => $reason,
+            ]);
 
-        return $vendor->fresh();
+            // Lock the vendor portal user account so they cannot log in while suspended.
+            \App\Models\User::where('vendor_id', $vendor->id)
+                ->update(['locked_until' => now()->addYears(10)]);
+
+            return $vendor->fresh();
+        });
     }
 }

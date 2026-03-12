@@ -24,6 +24,7 @@ export type PurchaseRequestStatus =
   | 'noted'
   | 'checked'
   | 'reviewed'
+  | 'budget_checked'
   | 'approved'
   | 'rejected'
   | 'cancelled'
@@ -89,6 +90,11 @@ export interface PurchaseRequest {
   reviewed_at: string | null
   reviewed_comments: string | null
   reviewed_by: { id: number; name: string } | null
+
+  budget_checked_by_id: number | null
+  budget_checked_at: string | null
+  budget_checked_comments: string | null
+  budget_checked_by: { id: number; name: string } | null
 
   vp_approved_by_id: number | null
   vp_approved_at: string | null

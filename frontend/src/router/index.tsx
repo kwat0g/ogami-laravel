@@ -63,6 +63,7 @@ const PayrollRunComputingPage = lazy(() => import('@/pages/payroll/PayrollRunCom
 const PayrollRunReviewPage = lazy(() => import('@/pages/payroll/PayrollRunReviewPage'))
 const PayrollRunHrReviewPage = lazy(() => import('@/pages/payroll/PayrollRunHrReviewPage'))
 const PayrollRunAcctgReviewPage = lazy(() => import('@/pages/payroll/PayrollRunAcctgReviewPage'))
+const PayrollRunVpReviewPage = lazy(() => import('@/pages/payroll/PayrollRunVpReviewPage'))
 const PayrollRunDisbursePage = lazy(() => import('@/pages/payroll/PayrollRunDisbursePage'))
 
 // Accounting domain
@@ -107,6 +108,7 @@ const BankReconciliationDetailPage = lazy(() => import('@/pages/banking/BankReco
 const AttendanceListPage = lazy(() => import('@/pages/hr/attendance/AttendanceListPage'))
 const AttendanceImportPage = lazy(() => import('@/pages/hr/attendance/AttendanceImportPage'))
 const AttendanceDashboardPage = lazy(() => import('@/pages/hr/attendance/AttendanceDashboardPage'))
+const AttendanceSummaryPage   = lazy(() => import('@/pages/hr/attendance/AttendanceSummaryPage'))
 const OvertimeListPage = lazy(() => import('@/pages/hr/attendance/OvertimeListPage'))
 
 // HR — Leave
@@ -124,6 +126,7 @@ const LoanDetailPage = lazy(() => import('@/pages/hr/loans/LoanDetailPage'))
 const DepartmentsPage = lazy(() => import('@/pages/hr/DepartmentsPage'))
 const PositionsPage = lazy(() => import('@/pages/hr/PositionsPage'))
 const ShiftsPage = lazy(() => import('@/pages/hr/ShiftsPage'))
+const HRReportsPage = lazy(() => import('@/pages/hr/HRReportsPage'))
 
 // Team Management (department-scoped)
 const TeamEmployeeListPage = lazy(() => import('@/pages/team/TeamEmployeeListPage'))
@@ -143,6 +146,7 @@ const MyAttendancePage = lazy(() => import('@/pages/employee/MyAttendancePage'))
 // Admin
 const UsersPage = lazy(() => import('@/pages/admin/UsersPage'))
 const SystemSettingsPage = lazy(() => import('@/pages/admin/SystemSettingsPage'))
+const GlobalSearchPage = lazy(() => import('@/pages/GlobalSearchPage'))
 const AuditLogsPage = lazy(() => import('@/pages/admin/AuditLogsPage'))
 const ReferenceTablesPage = lazy(() => import('@/pages/admin/ReferenceTablesPage'))
 const BackupPage = lazy(() => import('@/pages/admin/BackupPage'))
@@ -160,6 +164,7 @@ const PurchaseOrderDetailPage   = lazy(() => import('@/pages/procurement/Purchas
 const GoodsReceiptListPage      = lazy(() => import('@/pages/procurement/GoodsReceiptListPage'))
 const CreateGoodsReceiptPage    = lazy(() => import('@/pages/procurement/CreateGoodsReceiptPage'))
 const GoodsReceiptDetailPage    = lazy(() => import('@/pages/procurement/GoodsReceiptDetailPage'))
+const ProcurementAnalyticsPage  = lazy(() => import('@/pages/procurement/ProcurementAnalyticsPage'))
 
 // Inventory
 const ItemCategoriesPage               = lazy(() => import('@/pages/inventory/ItemCategoriesPage'))
@@ -168,6 +173,9 @@ const ItemMasterFormPage               = lazy(() => import('@/pages/inventory/It
 const WarehouseLocationsPage           = lazy(() => import('@/pages/inventory/WarehouseLocationsPage'))
 const StockBalancePage                 = lazy(() => import('@/pages/inventory/StockBalancePage'))
 const StockLedgerPage                  = lazy(() => import('@/pages/inventory/StockLedgerPage'))
+const StockAdjustmentsPage             = lazy(() => import('@/pages/inventory/StockAdjustmentsPage'))
+const InventoryValuationPage           = lazy(() => import('@/pages/inventory/InventoryValuationPage'))
+const PhysicalCountPage                = lazy(() => import('@/pages/inventory/PhysicalCountPage'))
 const MaterialRequisitionListPage      = lazy(() => import('@/pages/inventory/MaterialRequisitionListPage'))
 const CreateMaterialRequisitionPage    = lazy(() => import('@/pages/inventory/CreateMaterialRequisitionPage'))
 const MaterialRequisitionDetailPage    = lazy(() => import('@/pages/inventory/MaterialRequisitionDetailPage'))
@@ -181,6 +189,7 @@ const CreateDeliverySchedulePage     = lazy(() => import('@/pages/production/Cre
 const ProductionOrderListPage        = lazy(() => import('@/pages/production/ProductionOrderListPage'))
 const CreateProductionOrderPage      = lazy(() => import('@/pages/production/CreateProductionOrderPage'))
 const ProductionOrderDetailPage      = lazy(() => import('@/pages/production/ProductionOrderDetailPage'))
+const ProductionCostPage             = lazy(() => import('@/pages/production/ProductionCostPage'))
 
 // Delivery
 const DeliveryReceiptListPage         = lazy(() => import('@/pages/delivery/DeliveryReceiptListPage'))
@@ -220,6 +229,7 @@ const NcrListPage                    = lazy(() => import('@/pages/qc/NcrListPage
 const NcrDetailPage                  = lazy(() => import('@/pages/qc/NcrDetailPage'))
 const QcTemplateListPage             = lazy(() => import('@/pages/qc/QcTemplateListPage'))
 const CapaListPage                   = lazy(() => import('@/pages/qc/CapaListPage'))
+const QcDefectRatePage               = lazy(() => import('@/pages/qc/QcDefectRatePage'))
 
 // VP Approvals
 const VpApprovalsDashboardPage = lazy(() => import('@/pages/approvals/VpApprovalsDashboardPage'))
@@ -243,10 +253,37 @@ const VendorPortalDashboardPage  = lazy(() => import('@/pages/vendor-portal/Vend
 const VendorOrdersPage           = lazy(() => import('@/pages/vendor-portal/VendorOrdersPage'))
 const VendorOrderDetailPage      = lazy(() => import('@/pages/vendor-portal/VendorOrderDetailPage'))
 const VendorItemsPage            = lazy(() => import('@/pages/vendor-portal/VendorItemsPage'))
+const VendorGoodsReceiptsPage    = lazy(() => import('@/pages/vendor-portal/VendorGoodsReceiptsPage'))
+const VendorInvoicesPage         = lazy(() => import('@/pages/vendor-portal/VendorInvoicesPage'))
 
 // CRM — Staff pages
-const TicketListPage   = lazy(() => import('@/pages/crm/TicketListPage'))
-const TicketDetailPage = lazy(() => import('@/pages/crm/TicketDetailPage'))
+const TicketListPage      = lazy(() => import('@/pages/crm/TicketListPage'))
+const TicketDetailPage    = lazy(() => import('@/pages/crm/TicketDetailPage'))
+const CrmDashboardPage    = lazy(() => import('@/pages/crm/CrmDashboardPage'))
+
+// Budget domain
+const CostCentersPage = lazy(() => import('@/pages/budget/CostCentersPage'))
+const BudgetLinesPage = lazy(() => import('@/pages/budget/BudgetLinesPage'))
+const BudgetVsActualPage = lazy(() => import('@/pages/budget/BudgetVsActualPage'))
+
+// Fixed Assets domain
+const FixedAssetsPage          = lazy(() => import('@/pages/fixed-assets/FixedAssetsPage'))
+const FixedAssetDetailPage     = lazy(() => import('@/pages/fixed-assets/FixedAssetDetailPage'))
+const FixedAssetCategoriesPage = lazy(() => import('@/pages/fixed-assets/FixedAssetCategoriesPage'))
+const AssetDisposalPage        = lazy(() => import('@/pages/fixed-assets/AssetDisposalPage'))
+
+// Recurring Templates
+const RecurringTemplatesPage = lazy(() => import('@/pages/accounting/RecurringTemplatesPage'))
+
+// Credit Notes
+const VendorCreditNotesPage   = lazy(() => import('@/pages/accounting/VendorCreditNotesPage'))
+const ApAgingReportPage       = lazy(() => import('@/pages/accounting/ApAgingReportPage'))
+const CustomerCreditNotesPage = lazy(() => import('@/pages/ar/CustomerCreditNotesPage'))
+const ArAgingReportPage       = lazy(() => import('@/pages/ar/ArAgingReportPage'))
+
+// Vendor RFQs
+const VendorRfqListPage   = lazy(() => import('@/pages/procurement/VendorRfqListPage'))
+const VendorRfqDetailPage = lazy(() => import('@/pages/procurement/VendorRfqDetailPage'))
 
 // Client Portal
 const ClientPortalLayout        = lazy(() => import('@/pages/client-portal/ClientPortalLayout'))
@@ -286,6 +323,7 @@ export const router = createBrowserRouter([
       { path: '/hr/attendance', element: withSuspense(guard('hr.full_access', <AttendanceListPage />)) },
       { path: '/hr/attendance/import', element: withSuspense(guard('hr.full_access', <AttendanceImportPage />)) },
       { path: '/hr/attendance/dashboard', element: withSuspense(guard('hr.full_access', <AttendanceDashboardPage />)) },
+      { path: '/hr/attendance/summary',   element: withSuspense(guard('attendance.view_team', <AttendanceSummaryPage />)) },
       { path: '/hr/overtime', element: withSuspense(guard('hr.full_access', <OvertimeListPage />)) },
 
       // HR — Leave
@@ -303,6 +341,7 @@ export const router = createBrowserRouter([
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
+      { path: '/hr/reports', element: withSuspense(guard('hr.full_access', <HRReportsPage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },
@@ -337,6 +376,7 @@ export const router = createBrowserRouter([
       { path: '/payroll/runs/:ulid/review', element: withSuspense(guard('payroll.view_runs', <PayrollRunReviewPage />)) },
       { path: '/payroll/runs/:ulid/hr-review', element: withSuspense(guard('payroll.hr_approve', <PayrollRunHrReviewPage />)) },
       { path: '/payroll/runs/:ulid/acctg-review', element: withSuspense(guard('payroll.acctg_approve', <PayrollRunAcctgReviewPage />)) },
+      { path: '/payroll/runs/:ulid/vp-review', element: withSuspense(guard('payroll.vp_approve', <PayrollRunVpReviewPage />)) },
       { path: '/payroll/runs/:ulid/disburse', element: withSuspense(guard('payroll.view_runs', <PayrollRunDisbursePage />)) },
       { path: '/payroll/periods', element: withSuspense(guard('payroll.manage_pay_periods', <PayPeriodListPage />)) },
 
@@ -353,12 +393,14 @@ export const router = createBrowserRouter([
       { path: '/accounting/ap/invoices/new', element: withSuspense(guard('vendor_invoices.create', <APInvoiceFormPage />)) },
       { path: '/accounting/ap/invoices/:ulid', element: withSuspense(guard('vendor_invoices.view', <APInvoiceDetailPage />)) },
       { path: '/accounting/ap/monitor', element: withSuspense(guard('vendor_invoices.view', <APDueDateMonitorPage />)) },
+      { path: '/accounting/ap/aging-report', element: withSuspense(guard('vendor_invoices.view', <ApAgingReportPage />)) },
 
       // ── AR domain ─────────────────────────────────────────────────────────
       { path: '/ar/customers', element: withSuspense(guard('customers.view', <CustomersPage />)) },
       { path: '/ar/invoices', element: withSuspense(guard('customer_invoices.view', <CustomerInvoicesPage />)) },
       { path: '/ar/invoices/new', element: withSuspense(guard('customer_invoices.create', <CustomerInvoiceFormPage />)) },
       { path: '/ar/invoices/:ulid', element: withSuspense(guard('customer_invoices.view', <CustomerInvoiceDetailPage />)) },
+      { path: '/ar/aging-report',    element: withSuspense(guard('customer_invoices.view', <ArAgingReportPage />)) },
 
       // ── Accounting — Loan Approvals ──────────────────────────────────────
       { path: '/accounting/loans', element: withSuspense(guard('loans.accounting_approve', <LoanListPage />)) },
@@ -404,18 +446,22 @@ export const router = createBrowserRouter([
       { path: '/procurement/goods-receipts', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptListPage />)) },
       { path: '/procurement/goods-receipts/new', element: withSuspense(guard('procurement.goods-receipt.create', <CreateGoodsReceiptPage />)) },
       { path: '/procurement/goods-receipts/:ulid', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptDetailPage />)) },
+      { path: '/procurement/analytics', element: withSuspense(guard('procurement.purchase-order.view', <ProcurementAnalyticsPage />)) },
 
       // ── Inventory domain ──────────────────────────────────────────────────
-      { path: '/inventory/categories', element: withSuspense(<ItemCategoriesPage />) },
+      { path: '/inventory/categories', element: withSuspense(guard('inventory.items.view', <ItemCategoriesPage />)) },
       { path: '/inventory/items', element: withSuspense(guard('inventory.items.view', <ItemMasterListPage />)) },
       { path: '/inventory/items/new', element: withSuspense(guard('inventory.items.create', <ItemMasterFormPage />)) },
       { path: '/inventory/items/:ulid', element: withSuspense(guard('inventory.items.edit', <ItemMasterFormPage />)) },
       { path: '/inventory/locations', element: withSuspense(guard('inventory.locations.view', <WarehouseLocationsPage />)) },
       { path: '/inventory/stock', element: withSuspense(guard('inventory.stock.view', <StockBalancePage />)) },
       { path: '/inventory/ledger', element: withSuspense(guard('inventory.stock.view', <StockLedgerPage />)) },
+      { path: '/inventory/adjustments', element: withSuspense(guard('inventory.adjustments.create', <StockAdjustmentsPage />)) },
       { path: '/inventory/requisitions', element: withSuspense(guard('inventory.mrq.view', <MaterialRequisitionListPage />)) },
       { path: '/inventory/requisitions/new', element: withSuspense(guard('inventory.mrq.create', <CreateMaterialRequisitionPage />)) },
       { path: '/inventory/requisitions/:ulid', element: withSuspense(guard('inventory.mrq.view', <MaterialRequisitionDetailPage />)) },
+      { path: '/inventory/valuation', element: withSuspense(guard('inventory.stock.view', <InventoryValuationPage />)) },
+      { path: '/inventory/physical-count', element: withSuspense(guard('inventory.adjustments.create', <PhysicalCountPage />)) },
 
       // ── Production / PPC ──────────────────────────────────────────────────
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
@@ -426,6 +472,7 @@ export const router = createBrowserRouter([
       { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
       { path: '/production/orders/new', element: withSuspense(guard('production.orders.create', <CreateProductionOrderPage />)) },
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
+      { path: '/production/cost-analysis', element: withSuspense(guard('production.orders.view', <ProductionCostPage />)) },
 
       // ── QC / QA ────────────────────────────────────────────────────
       { path: '/qc/inspections', element: withSuspense(guard('qc.inspections.view', <InspectionListPage />)) },
@@ -436,6 +483,7 @@ export const router = createBrowserRouter([
       { path: '/qc/ncrs/:ulid', element: withSuspense(guard('qc.ncr.view', <NcrDetailPage />)) },
       { path: '/qc/templates', element: withSuspense(guard('qc.templates.view', <QcTemplateListPage />)) },
       { path: '/qc/capa',      element: withSuspense(guard('qc.ncr.view',       <CapaListPage />)) },
+      { path: '/qc/defect-rate', element: withSuspense(guard('qc.inspections.view', <QcDefectRatePage />)) },
 
       // ── Maintenance ───────────────────────────────────────────────────────
       { path: '/maintenance/equipment', element: withSuspense(guard('maintenance.view', <EquipmentListPage />)) },
@@ -472,12 +520,36 @@ export const router = createBrowserRouter([
       // ── Admin ──────────────────────────────────────────────────────────────
       { path: '/admin/users', element: withSuspense(guard('system.manage_users', <UsersPage />)) },
       { path: '/admin/settings', element: withSuspense(guard('system.edit_settings', <SystemSettingsPage />)) },
+      { path: '/search', element: withSuspense(<GlobalSearchPage />) },
       { path: '/admin/audit-logs', element: withSuspense(guard('system.view_audit_log', <AuditLogsPage />)) },
       { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },      { path: '/admin/backup', element: withSuspense(guard('system.manage_backups', <BackupPage />)) },
 
       // ── CRM — Staff portal ────────────────────────────────────────────────
+      { path: '/crm/dashboard',      element: withSuspense(guard('crm.tickets.view', <CrmDashboardPage />)) },
       { path: '/crm/tickets',        element: withSuspense(guard('crm.tickets.view', <TicketListPage />)) },
       { path: '/crm/tickets/:ulid',  element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
+
+      // ── Budget ────────────────────────────────────────────────────────────
+      { path: '/budget/cost-centers', element: withSuspense(guard('budget.view', <CostCentersPage />)) },
+      { path: '/budget/lines',        element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
+      { path: '/budget/vs-actual',    element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
+
+      // ── Fixed Assets ──────────────────────────────────────────────────────
+      { path: '/fixed-assets',             element: withSuspense(guard('chart_of_accounts.view', <FixedAssetsPage />)) },
+      { path: '/fixed-assets/categories',  element: withSuspense(guard('chart_of_accounts.view', <FixedAssetCategoriesPage />)) },
+      { path: '/fixed-assets/disposals',    element: withSuspense(guard('chart_of_accounts.view', <AssetDisposalPage />)) },
+      { path: '/fixed-assets/:ulid',       element: withSuspense(guard('chart_of_accounts.view', <FixedAssetDetailPage />)) },
+
+      // ── Recurring Journal Templates ────────────────────────────────────────
+      { path: '/accounting/recurring-templates', element: withSuspense(guard('journal_entries.view', <RecurringTemplatesPage />)) },
+
+      // ── Credit Notes ──────────────────────────────────────────────────────
+      { path: '/accounting/ap/credit-notes', element: withSuspense(guard('vendor_invoices.view', <VendorCreditNotesPage />)) },
+      { path: '/ar/credit-notes',            element: withSuspense(guard('customer_invoices.view', <CustomerCreditNotesPage />)) },
+
+      // ── Vendor RFQs ───────────────────────────────────────────────────────
+      { path: '/procurement/rfqs',        element: withSuspense(guard('procurement.purchase-request.view', <VendorRfqListPage />)) },
+      { path: '/procurement/rfqs/:ulid',  element: withSuspense(guard('procurement.purchase-request.view', <VendorRfqDetailPage />)) },
     ],
   },
 
@@ -491,6 +563,8 @@ export const router = createBrowserRouter([
       { path: 'orders',    element: withSuspense(<VendorOrdersPage />) },
       { path: 'orders/:ulid', element: withSuspense(<VendorOrderDetailPage />) },
       { path: 'items',     element: withSuspense(<VendorItemsPage />) },
+      { path: 'goods-receipts', element: withSuspense(<VendorGoodsReceiptsPage />) },
+      { path: 'invoices', element: withSuspense(<VendorInvoicesPage />) },
     ],
   },
 

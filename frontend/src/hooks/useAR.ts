@@ -199,3 +199,31 @@ export function useDueSoonInvoices(days = 7) {
     staleTime: 60_000,
   })
 }
+
+// ===========================================================================
+// AR Aging Report
+// ===========================================================================
+
+export interface ArAgingRow {
+  customer_id: number
+  customer_name: string
+  current: number
+  '1_30': number
+  '31_60': number
+  '61_90': number
+  over_90: number
+  total: number
+}
+
+export function useArAgingReport(asOfDate?: string) {
+  return useQuery({
+    queryKey: ['ar-aging-report', asOfDate],
+    queryFn: async () => {
+      const res = await api.get<{ data: ArAgingRow[]; as_of_date: string }>('/ar/aging-report', {
+        params: asOfDate ? { as_of_date: asOfDate } : {},
+      })
+      return res.data
+    },
+    staleTime: 60_000,
+  })
+}

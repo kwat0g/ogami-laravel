@@ -43,4 +43,33 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('capa',                                   [NcrController::class, 'capaIndex']);
     Route::patch('capa/{capaAction}/complete',         [NcrController::class, 'completeCapa'])
         ->middleware('throttle:30,1');
+
+    // ── QC Defect Rate Analytics ─────────────────────────────────────────────
+    Route::get('reports/defect-rate', function (): \Illuminate\Http\JsonResponse {
+        $months = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $start = now()->subMonths($i)->startOfMonth();
+            $end   = now()->subMonths($i)->endOfMonth();
+            $label = now()->subMonths($i)->format('M Y');
+
+            $total  = \Illuminate\Support\Facades\DB::table('inspections')->whereBetween('created_at', [$start, $end])->count();
+            $passed = \Illuminate\Support\Facades\DB::table('inspections')->whereBetween('created_at', [$start, $end])->where('status', 'passed')->count();
+            $failed = \Illuminate\Support\Facades\DB::table('inspections')->whereBetween('created_at', [$start, $end])->where('status', 'failed')->count();
+
+            $defectRate = $total > 0 ? round(($failed / $total) * 100, 1) : 0;
+
+            $months[] = ['month' => $label, 'total' => $total, 'passed' => $passed, 'failed' => $failed, 'defect_rate' => $defectRate];
+        }
+
+        // Top defect categories from NCRs
+        $topDefects = \Illuminate\Support\Facades\DB::table('non_conformance_reports')
+            ->select('defect_category', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->whereNotNull('defect_category')
+            ->groupBy('defect_category')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['data' => $months, 'top_defects' => $topDefects]);
+    })->name('reports.defect-rate');
 });

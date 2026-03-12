@@ -9,65 +9,76 @@ import {
   ClipboardList,
   Building2,
   Ship,
-  MapPin,
   ChevronRight,
   Archive,
   BarChart3,
+  ArrowUpRight,
+  AlertCircle,
 } from 'lucide-react'
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function StatCard({
+function KpiCard({
   label,
   value,
   sub,
   icon: Icon,
   href,
+  alert,
 }: {
   label: string
   value: number | string
   sub?: string
   icon: React.ComponentType<{ className?: string }>
   href: string
+  alert?: boolean
 }) {
   return (
     <Link to={href}>
-      <Card className="h-full hover:border-neutral-300 transition-colors">
-        <div className="p-5 flex items-start gap-4">
-          <Icon className="h-5 w-5 text-neutral-500 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-            <p className="text-sm text-neutral-600 mt-0.5">{label}</p>
-            {sub && <p className="text-xs text-neutral-500 mt-0.5">{sub}</p>}
+      <Card className={`h-full hover:shadow-md transition-all ${alert ? 'border-amber-200 bg-amber-50/30' : ''}`}>
+        <div className="p-5">
+          <div className="flex items-start justify-between">
+            <div className={`p-2 rounded-lg ${alert ? 'bg-amber-100' : 'bg-neutral-100'}`}>
+              <Icon className={`h-4 w-4 ${alert ? 'text-amber-600' : 'text-neutral-600'}`} />
+            </div>
+            <ArrowUpRight className="h-4 w-4 text-neutral-400" />
           </div>
-          <ChevronRight className="h-4 w-4 text-neutral-300 mt-1 shrink-0" />
+          <div className="mt-3">
+            <p className={`text-2xl font-bold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
+            <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
+            {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
+          </div>
         </div>
       </Card>
     </Link>
   )
 }
 
-function QuickLink({
+function ModuleLink({
   href,
   label,
   icon: Icon,
+  desc,
 }: {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
+  desc?: string
 }) {
   return (
     <Link
       to={href}
-      className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle transition-colors"
+      className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-lg hover:bg-neutral-50 hover:border-neutral-300 transition-all"
     >
-      <Icon className="h-4 w-4 text-neutral-500" />
-      <span className="text-sm font-medium text-neutral-700">{label}</span>
+      <div className="p-1.5 rounded bg-neutral-100">
+        <Icon className="h-4 w-4 text-neutral-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-neutral-700">{label}</p>
+        {desc && <p className="text-xs text-neutral-400 truncate">{desc}</p>}
+      </div>
+      <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0" />
     </Link>
   )
 }
-
-// ── Main Component ────────────────────────────────────────────────────────────
 
 export default function ImpexOfficerDashboard(): React.ReactElement {
   useAuth()
@@ -78,57 +89,93 @@ export default function ImpexOfficerDashboard(): React.ReactElement {
 
   if (isLoading) return <SkeletonLoader rows={8} />
 
-  const pendingReceipts   = (receiptsData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
-  const activeShipments   = (shipmentsData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const pendingReceipts = (receiptsData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const activeShipments = (shipmentsData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900">
-        Import / Export
-      </h1>
-
-      {/* Delivery Stats */}
       <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Delivery Overview</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard
-            label="Pending Inbound Receipts"
-            value={pendingReceipts}
-            sub="Awaiting confirmation"
-            icon={Archive}
-            href="/delivery/receipts"
-          />
-          <StatCard
-            label="Active Shipments"
-            value={activeShipments}
-            sub="Currently in transit"
-            icon={Ship}
-            href="/delivery/shipments"
-          />
-          <StatCard
-            label="Deliveries Managed"
-            value="—"
-            sub="View full delivery log"
-            icon={MapPin}
-            href="/delivery"
-          />
-        </div>
+        <h1 className="text-xl font-bold text-neutral-900">Import / Export Dashboard</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">Manage inbound receipts, outbound shipments, and delivery logistics</p>
       </div>
 
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          <QuickLink href="/delivery"                     label="Delivery"              icon={Truck}         />
-          <QuickLink href="/delivery/receipts"            label="Inbound Receipts"      icon={Archive}       />
-          <QuickLink href="/delivery/shipments"           label="Shipments"             icon={Ship}          />
-          <QuickLink href="/procurement/purchase-orders"  label="Purchase Orders"       icon={ClipboardList} />
-          <QuickLink href="/procurement/goods-receipts"   label="Goods Receipts"        icon={Package}       />
-          <QuickLink href="/accounting/vendors"           label="Vendors"               icon={Building2}     />
-          <QuickLink href="/inventory/stock"              label="Stock Levels"          icon={BarChart3}     />
-          <QuickLink href="/inventory/items"              label="Inventory Items"       icon={Package}       />
-        </div>
+      {/* Pending Alert */}
+      {pendingReceipts > 0 && (
+        <Link to="/delivery/receipts">
+          <Card className="border-amber-200 bg-amber-50/50 hover:shadow-sm transition-all">
+            <div className="p-4 flex items-center gap-4">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-800">{pendingReceipts} Inbound Receipt{pendingReceipts > 1 ? 's' : ''} Pending Confirmation</p>
+                <p className="text-xs text-amber-600">Goods arrived but not yet confirmed in system</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-amber-400" />
+            </div>
+          </Card>
+        </Link>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KpiCard
+          label="Pending Receipts"
+          value={pendingReceipts}
+          sub="Awaiting confirmation"
+          icon={Archive}
+          href="/delivery/receipts"
+          alert={pendingReceipts > 0}
+        />
+        <KpiCard
+          label="In-Transit Shipments"
+          value={activeShipments}
+          sub="Currently in transit"
+          icon={Ship}
+          href="/delivery/shipments"
+        />
+        <KpiCard
+          label="Delivery Operations"
+          value="—"
+          sub="View full delivery log"
+          icon={Truck}
+          href="/delivery"
+        />
+      </div>
+
+      {/* Module Navigation */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Truck className="h-4 w-4 text-neutral-500" />
+              Delivery Operations
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-2">
+              <ModuleLink href="/delivery/receipts" label="Inbound Receipts" icon={Archive} desc="Confirm received goods and materials" />
+              <ModuleLink href="/delivery/shipments" label="Outbound Shipments" icon={Ship} desc="Track shipments to customers" />
+              <ModuleLink href="/procurement/goods-receipts" label="Goods Receipts" icon={Package} desc="Match received goods to POs" />
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-neutral-500" />
+              Procurement & Inventory
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-2">
+              <ModuleLink href="/procurement/purchase-orders" label="Purchase Orders" icon={ClipboardList} desc="Track vendor purchase orders" />
+              <ModuleLink href="/accounting/vendors" label="Vendors" icon={Building2} desc="Vendor profiles and contacts" />
+              <ModuleLink href="/inventory/stock" label="Stock Levels" icon={BarChart3} desc="Current inventory balances" />
+              <ModuleLink href="/inventory/items" label="Inventory Items" icon={Package} desc="Item master catalog" />
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   )

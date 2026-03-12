@@ -41,4 +41,38 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
     Route::post('{fixedAsset}/dispose', [FixedAssetController::class, 'dispose'])
         ->middleware('throttle:api-action')
         ->name('dispose');
+
+    // ── Depreciation Schedule Export (CSV) ───────────────────────────────────
+    Route::get('depreciation-export', function (): \Symfony\Component\HttpFoundation\StreamedResponse {
+        $rows = \Illuminate\Support\Facades\DB::table('asset_depreciation_entries')
+            ->join('fixed_assets', 'asset_depreciation_entries.fixed_asset_id', '=', 'fixed_assets.id')
+            ->select(
+                'fixed_assets.asset_code',
+                'fixed_assets.name as asset_name',
+                'asset_depreciation_entries.fiscal_period',
+                'asset_depreciation_entries.depreciation_amount',
+                'asset_depreciation_entries.accumulated_depreciation',
+                'asset_depreciation_entries.book_value',
+                'asset_depreciation_entries.created_at',
+            )
+            ->orderBy('fixed_assets.asset_code')
+            ->orderBy('asset_depreciation_entries.fiscal_period')
+            ->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            if ($out === false) return;
+            fputcsv($out, ['Asset Code', 'Asset Name', 'Period', 'Depreciation', 'Accumulated', 'Book Value', 'Processed']);
+            foreach ($rows as $r) {
+                fputcsv($out, [
+                    $r->asset_code, $r->asset_name, $r->fiscal_period,
+                    number_format((float) $r->depreciation_amount, 2),
+                    number_format((float) $r->accumulated_depreciation, 2),
+                    number_format((float) $r->book_value, 2),
+                    $r->created_at,
+                ]);
+            }
+            fclose($out);
+        }, 'depreciation_schedule_' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+    })->name('depreciation-export');
 });

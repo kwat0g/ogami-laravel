@@ -101,6 +101,11 @@ final class PayrollComputationContext implements ServiceContract
 
     public int $basicPayCentavos = 0;
 
+    /** Late/undertime deduction applied against basic pay (GAP-2). */
+    public int $lateDeductionCentavos = 0;
+
+    public int $undertimeDeductionCentavos = 0;
+
     public int $overtimePayCentavos = 0;
 
     public int $holidayPayCentavos = 0;
