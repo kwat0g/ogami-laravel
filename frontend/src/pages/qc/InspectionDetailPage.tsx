@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ClipboardCheck, AlertTriangle, Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCancelResults, useInspection, useRecordResults } from '@/hooks/useQC'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -35,9 +36,12 @@ const _statusBadge: Record<InspectionStatus, string> = {
 export default function InspectionDetailPage(): React.ReactElement {
   const { ulid }   = useParams<{ ulid: string }>()
   const _navigate   = useNavigate()
+  const { hasPermission } = useAuthStore()
   const { data: inspection, isLoading, isError } = useInspection(ulid ?? null)
   const recordMut  = useRecordResults(ulid ?? '')
   const cancelMut  = useCancelResults(ulid ?? '')
+
+  const canEdit = hasPermission('qc.inspections.create')
 
   // ── Record-results form state ─────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false)
@@ -198,7 +202,7 @@ export default function InspectionDetailPage(): React.ReactElement {
         }
         actions={
           <>
-            {isOpen && !showForm && (
+            {isOpen && !showForm && canEdit && (
               <button
                 onClick={openForm}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 transition-colors"
@@ -207,7 +211,7 @@ export default function InspectionDetailPage(): React.ReactElement {
                 Record Results
               </button>
             )}
-            {!isOpen && inspection.status !== 'voided' && !showCancelForm && (
+            {!isOpen && inspection.status !== 'voided' && !showCancelForm && canEdit && (
               <button
                 onClick={() => setShowCancelForm(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-300 text-sm font-medium rounded-md hover:bg-red-50 hover:border-red-400 transition-colors"

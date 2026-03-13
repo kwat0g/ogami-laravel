@@ -43,7 +43,7 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
         ->name('dispose');
 
     // ── Depreciation Schedule Export (CSV) ───────────────────────────────────
-    Route::get('depreciation-export', function (): \Symfony\Component\HttpFoundation\StreamedResponse {
+    Route::get('depreciation-export', function (): \Symfony\Component\HttpFoundation\StreamedResponse {        abort_unless(auth()->user()?->hasPermissionTo('fixed_assets.view'), 403, 'Unauthorized');
         $rows = \Illuminate\Support\Facades\DB::table('asset_depreciation_entries')
             ->join('fixed_assets', 'asset_depreciation_entries.fixed_asset_id', '=', 'fixed_assets.id')
             ->select(

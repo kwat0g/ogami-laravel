@@ -7,6 +7,7 @@ import {
   type VendorPortalInvoice,
   type VendorPortalGoodsReceipt,
 } from '@/hooks/useVendorPortal'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 
 const defaultForm = {
@@ -26,6 +27,7 @@ export default function VendorInvoicesPage(): React.ReactElement {
   const { data: invoicesData, isLoading } = useVendorInvoices()
   const { data: grData } = useVendorGoodsReceipts()
   const create = useCreateVendorInvoice()
+  const canSubmitInvoice = useAuthStore((s) => s.hasPermission('vendor_portal.update_fulfillment'))
 
   const invoices: VendorPortalInvoice[] = invoicesData?.data ?? []
   const eligibleGRs: VendorPortalGoodsReceipt[] = (grData?.data ?? []).filter(
@@ -71,18 +73,20 @@ export default function VendorInvoicesPage(): React.ReactElement {
           <h1 className="text-2xl font-bold text-neutral-900">Invoices</h1>
           <p className="text-sm text-neutral-500">Submit and track invoices for confirmed deliveries.</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          disabled={eligibleGRs.length === 0}
-          className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={eligibleGRs.length === 0 ? 'No confirmed GRs without an invoice' : undefined}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Submit Invoice
-        </button>
+        {canSubmitInvoice && (
+          <button
+            onClick={() => setShowForm(true)}
+            disabled={eligibleGRs.length === 0}
+            className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={eligibleGRs.length === 0 ? 'No confirmed GRs without an invoice' : undefined}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Submit Invoice
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {showForm && canSubmitInvoice && (
         <div className="bg-white border border-neutral-200 rounded-lg p-5 mb-6">
           <h2 className="text-sm font-semibold text-neutral-800 mb-4">New Invoice</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">

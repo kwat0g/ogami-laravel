@@ -151,7 +151,7 @@ export default function StockBalancePage(): React.ReactElement {
                       </tr>
 
                       {/* Inline adjustment panel */}
-                      {isActiveRow && (
+                      {isActiveRow && canAdjust && (
                         <tr key={`${bal.item_id}-${bal.location_id}-adjust`}>
                           <td colSpan={8} className="px-4 py-4 bg-neutral-50 border-t border-neutral-200">
                             <div className="flex flex-wrap items-start gap-4">

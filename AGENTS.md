@@ -45,7 +45,7 @@ This document provides essential information for AI coding agents working on the
 
 ```
 app/
-  Domains/<Domain>/          # 18 domain modules
+  Domains/<Domain>/          # 20 domain modules
     Models/                  # Eloquent models
     Services/                # Domain services (implement ServiceContract)
     Policies/                # Laravel policies
@@ -189,7 +189,7 @@ Frontend URL params use **ULID** strings (not integer IDs): `useParams<{ ulid: s
 ### Zod Schemas
 `z.coerce.number()` for all numeric IDs and monetary inputs. All schemas in `frontend/src/schemas/`.  
 Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormSchema>`.  
-Only 9 of the 18 domains have schema files; other domains use inline Zod or plain TypeScript types.
+17 of 20 domains have Zod schema files (`frontend/src/schemas/`); Budget, Delivery, and FixedAssets still use inline Zod or plain TypeScript types.
 
 ### Frontend Router & Stores
 - All routes are lazy-loaded in a single file `frontend/src/router/index.tsx` with a local `RequirePermission` guard component.

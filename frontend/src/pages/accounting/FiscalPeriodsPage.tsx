@@ -8,6 +8,7 @@ import {
   useOpenFiscalPeriod,
   useCloseFiscalPeriod,
 } from '@/hooks/useAccounting'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { FiscalPeriod, CreateFiscalPeriodPayload, FiscalPeriodStatus } from '@/types/accounting'
 
@@ -37,9 +38,12 @@ function PeriodStatusBadge({ status }: { status: FiscalPeriodStatus }) {
 // Action buttons per row — need individual hook calls per id
 // ---------------------------------------------------------------------------
 function PeriodActions({ period }: { period: FiscalPeriod }) {
+  const canManage = useAuthStore(s => s.hasPermission('fiscal_periods.manage'))
   const openMutation = useOpenFiscalPeriod(period.id)
   const closeMutation = useCloseFiscalPeriod(period.id)
   const busy = openMutation.isPending || closeMutation.isPending
+
+  if (!canManage) return null
 
   if (period.status === 'closed') {
     return (
@@ -164,6 +168,7 @@ function CreatePeriodModal({ open, onClose, onSave, saving }: CreateModalProps) 
 // Main Page
 // ---------------------------------------------------------------------------
 export default function FiscalPeriodsPage() {
+  const canManage = useAuthStore(s => s.hasPermission('fiscal_periods.manage'))
   const [statusFilter, setStatusFilter] = useState<FiscalPeriodStatus | undefined>(undefined)
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -210,13 +215,15 @@ export default function FiscalPeriodsPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Period
-          </button>
+          {canManage && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Period
+            </button>
+          )}
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Settings, Pencil, PowerOff, Power, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEquipmentDetail, useUpdateEquipment, useStorePmSchedule } from '@/hooks/useMaintenance';
+import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import PageHeader from '@/components/ui/PageHeader';
@@ -31,9 +32,12 @@ const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:
 export default function EquipmentDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>();
   const navigate = useNavigate();
+  const { hasPermission } = useAuthStore();
   const { data, isLoading, isError } = useEquipmentDetail(ulid ?? '');
   const updateMut = useUpdateEquipment(ulid ?? '');
   const storePmMut = useStorePmSchedule(ulid ?? '');
+
+  const canManage = hasPermission('maintenance.manage');
 
   const [isEditing, setIsEditing] = useState(false);
   const [showAddPm, setShowAddPm] = useState(false);
@@ -186,7 +190,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
         icon={<Settings className="w-5 h-5" />}
         status={statusBadges}
         actions={
-          !isEditing && (
+          !isEditing && canManage && (
             <div className="flex items-center gap-2 shrink-0">
               {!isDecommissioned && (
                 <button
@@ -310,7 +314,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
       <Card>
         <CardHeader
           actions={
-            !isDecommissioned && (
+            !isDecommissioned && canManage && (
               <button
                 type="button"
                 onClick={() => setShowAddPm(s => !s)}

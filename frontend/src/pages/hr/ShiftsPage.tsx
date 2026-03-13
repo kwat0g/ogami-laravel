@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/authStore'
 import {
   useShifts,
   useCreateShift,
@@ -58,6 +59,8 @@ function shiftFromExisting(s: ShiftSchedule): ShiftForm {
 }
 
 export default function ShiftsPage() {
+  const { hasPermission } = useAuthStore()
+  const canManage = hasPermission('attendance.manage_shifts')
   const { data, isLoading, isError } = useShifts()
   const create = useCreateShift()
   const upd    = useUpdateShift()
@@ -69,7 +72,7 @@ export default function ShiftsPage() {
 
   const rows = data?.data ?? []
 
-  const _openCreate = () => { setForm(emptyForm()); setFormError(null) }
+  const openCreate = () => { setForm(emptyForm()); setFormError(null) }
   const openEdit   = (s: ShiftSchedule) => { setForm(shiftFromExisting(s)); setFormError(null) }
   const closeForm  = () => setForm(null)
 
@@ -104,10 +107,23 @@ export default function ShiftsPage() {
     <div>
       <PageHeader title="Shift Schedules" />
 
+      {canManage && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={openCreate}
+            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+          >
+            + Add Shift
+          </button>
+        </div>
+      )}
+
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {rows.length === 0 && (
-          <div className="col-span-3 bg-white border border-neutral-200 rounded-lg p-8 text-center text-neutral-400">No shifts configured yet.</div>
+          <div className="col-span-3 bg-white border border-neutral-200 rounded-lg p-8 text-center text-neutral-400">
+            No shifts configured yet. {canManage && 'Click + Add Shift to start.'}
+          </div>
         )}
         {rows.map((shift) => (
           <div key={shift.id} className="bg-white border border-neutral-200 rounded-lg p-5">
@@ -140,10 +156,12 @@ export default function ShiftsPage() {
               {shift.is_flexible && <span className="text-teal-600">Flexible</span>}
             </div>
 
-            <div className="flex gap-3">
-              <button onClick={() => openEdit(shift)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-              <button onClick={() => setDeleteId(shift.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
-            </div>
+            {canManage && (
+              <div className="flex gap-3">
+                <button onClick={() => openEdit(shift)} className="text-xs text-neutral-600 hover:underline">Edit</button>
+                <button onClick={() => setDeleteId(shift.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+              </div>
+            )}
           </div>
         ))}
       </div>

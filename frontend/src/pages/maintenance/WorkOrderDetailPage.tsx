@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkOrderDetail, useStartWorkOrder, useCompleteWorkOrder } from '@/hooks/useMaintenance';
+import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import PageHeader from '@/components/ui/PageHeader';
@@ -24,8 +25,11 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>();
   const navigate = useNavigate();
   const { data, isLoading, isError } = useWorkOrderDetail(ulid ?? '');
+  const { hasPermission } = useAuthStore();
   const startMut    = useStartWorkOrder();
   const completeMut = useCompleteWorkOrder();
+
+  const canManage = hasPermission('maintenance.manage');
 
   const [showCompleteForm, setShowCompleteForm] = useState(false);
   const [completionNotes, setCompletionNotes]   = useState('');
@@ -95,7 +99,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
         status={statusBadges}
         actions={
           <div className="flex items-center gap-2 shrink-0">
-            {isOpen && (
+            {isOpen && canManage && (
               <button
                 type="button"
                 onClick={() => setStartConfirm(true)}
@@ -105,7 +109,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
                 Start Work
               </button>
             )}
-            {isInProgress && !showCompleteForm && (
+            {isInProgress && !showCompleteForm && canManage && (
               <button
                 type="button"
                 onClick={() => setShowCompleteForm(true)}

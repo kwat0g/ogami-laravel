@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ClipboardList, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/stores/authStore';
 import {
   useAudit,
   useStartAudit,
@@ -35,11 +36,13 @@ type ConfirmState = {
 export default function IsoAuditDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>();
   const navigate = useNavigate();
+  const { hasPermission } = useAuthStore();
   const { data, isLoading, isError } = useAudit(ulid ?? '');
   const startMut = useStartAudit();
   const completeMut = useCompleteAudit();
   const createFindingMut = useCreateFinding(ulid ?? '');
   const closeFindingMut = useCloseFinding();
+  const canAudit = hasPermission('iso.audit');
 
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     open: false,
@@ -142,7 +145,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
         status={<StatusBadge status={audit.status}>{audit.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
           <div className="flex items-center gap-2 shrink-0">
-            {audit.status === 'planned' && (
+            {audit.status === 'planned' && canAudit && (
               <button
                 type="button"
                 onClick={handleStart}
@@ -151,7 +154,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                 Start Audit
               </button>
             )}
-            {audit.status === 'in_progress' && (
+            {audit.status === 'in_progress' && canAudit && (
               <button
                 type="button"
                 onClick={() => setShowCompleteDialog(true)}
@@ -182,7 +185,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
       <Card>
         <CardHeader
           actions={
-            (audit.status === 'in_progress' || audit.status === 'completed') && (
+            (audit.status === 'in_progress' || audit.status === 'completed') && canAudit && (
               <button
                 type="button"
                 onClick={() => setShowFindingForm(s => !s)}
@@ -292,7 +295,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          {finding.status !== 'closed' && finding.status !== 'verified' && (
+                          {finding.status !== 'closed' && finding.status !== 'verified' && canAudit && (
                             <button
                               type="button"
                               onClick={() => handleCloseFinding(finding.ulid)}

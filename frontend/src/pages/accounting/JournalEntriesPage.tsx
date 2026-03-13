@@ -10,6 +10,7 @@ import {
   usePostJournalEntry,
   useReverseJournalEntry,
 } from '@/hooks/useAccounting'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type { JournalEntry, JournalEntryStatus, JournalEntryFilters } from '@/types/accounting'
@@ -56,6 +57,10 @@ function SourceTypeBadge({ sourceType }: { sourceType: string }) {
 // Row-level action buttons (hooks need specific id)
 // ---------------------------------------------------------------------------
 function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onReversed?: () => void }) {
+  const { hasPermission } = useAuthStore()
+  const canSubmit = hasPermission('journal_entries.submit')
+  const canPost = hasPermission('journal_entries.post')
+  const canReverse = hasPermission('journal_entries.reverse')
   const submitMutation = useSubmitJournalEntry(entry.ulid)
   const postMutation = usePostJournalEntry(entry.ulid)
   const reverseMutation = useReverseJournalEntry(entry.ulid)
@@ -67,7 +72,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
 
   return (
     <div className="flex items-center justify-end gap-2">
-      {entry.status === 'draft' && (
+      {entry.status === 'draft' && canSubmit && (
         <button
           onClick={async () => {
             try {
@@ -83,7 +88,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
           {submitMutation.isPending ? 'Submitting…' : 'Submit'}
         </button>
       )}
-      {entry.status === 'submitted' && (
+      {entry.status === 'submitted' && canPost && (
         <button
           onClick={async () => {
             try {
@@ -99,7 +104,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
           {postMutation.isPending ? 'Posting…' : 'Post'}
         </button>
       )}
-      {entry.status === 'posted' && !entry.reversal_of && (
+      {entry.status === 'posted' && !entry.reversal_of && canReverse && (
         <button
           onClick={async () => {
             const desc = window.prompt('Reversal description (optional):') ?? ''
@@ -127,6 +132,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
 // ---------------------------------------------------------------------------
 export default function JournalEntriesPage() {
   const navigate = useNavigate()
+  const canCreate = useAuthStore(s => s.hasPermission('journal_entries.create'))
   const [activeTab, setActiveTab] = useState<JournalEntryStatus | undefined>(undefined)
   const [fiscalPeriodId, setFiscalPeriodId] = useState<number | undefined>(undefined)
   const [sourceType, setSourceType] = useState<string | undefined>(undefined)
@@ -175,13 +181,15 @@ export default function JournalEntriesPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
-          <button
-            onClick={() => navigate('/accounting/journal-entries/new')}
-            className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Entry
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => navigate('/accounting/journal-entries/new')}
+              className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Entry
+            </button>
+          )}
         </div>
       </div>
 

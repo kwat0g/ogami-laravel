@@ -101,7 +101,7 @@ const SECTIONS: NavSection[] = [
     label: 'Payroll',
     icon: DollarSign,
     permission: 'payroll.view_runs',
-    roles: ['manager', 'officer', 'vice_president'],
+    roles: ['manager', 'officer', 'executive', 'vice_president'],
     children: [
       { label: 'Payroll Runs', href: '/payroll/runs', permission: 'payroll.view_runs' },
       { label: 'Pay Periods', href: '/payroll/periods', permission: 'payroll.manage_pay_periods' },
@@ -175,12 +175,12 @@ const SECTIONS: NavSection[] = [
   {
     label: 'Fixed Assets',
     icon: Landmark,
-    permission: 'chart_of_accounts.view',
-    roles: ['officer'],
+    permission: 'fixed_assets.view',
+    roles: ['officer', 'executive', 'vice_president', 'head'],
     children: [
-      { label: 'Asset Register', href: '/fixed-assets',             permission: 'chart_of_accounts.view' },
-      { label: 'Categories',    href: '/fixed-assets/categories',  permission: 'chart_of_accounts.view' },
-      { label: 'Disposals',     href: '/fixed-assets/disposals',   permission: 'chart_of_accounts.view' },
+      { label: 'Asset Register', href: '/fixed-assets',             permission: 'fixed_assets.view' },
+      { label: 'Categories',    href: '/fixed-assets/categories',  permission: 'fixed_assets.view' },
+      { label: 'Disposals',     href: '/fixed-assets/disposals',   permission: 'fixed_assets.view' },
     ],
   },
   {
@@ -203,12 +203,20 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'Executive',
+    label: 'GA Processing',
     icon: Shield,
     permission: 'leaves.ga_process',
     roles: ['ga_officer', 'vice_president'],
     children: [
       { label: 'GA Leave Processing', href: '/executive/leave-approvals',    permission: 'leaves.ga_process' },
+    ],
+  },
+  {
+    label: 'Executive Approvals',
+    icon: Shield,
+    permission: 'overtime.executive_approve',
+    roles: ['executive'],
+    children: [
       { label: 'Overtime Approvals', href: '/executive/overtime-approvals', permission: 'overtime.executive_approve' },
     ],
   },
@@ -244,7 +252,7 @@ const SECTIONS: NavSection[] = [
     label: 'Production',
     icon: Factory,
     permission: 'production.orders.view',
-    roles: ['plant_manager', 'production_manager', 'head'],
+    roles: ['plant_manager', 'production_manager', 'head', 'staff'],
     children: [
       { label: 'Bill of Materials',   href: '/production/boms',                 permission: 'production.bom.view' },
       { label: 'Delivery Schedules',  href: '/production/delivery-schedules',   permission: 'production.delivery-schedule.view' },
@@ -493,17 +501,25 @@ function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSe
 // User menu dropdown (top-right)
 // ---------------------------------------------------------------------------
 
-const SELF_SERVICE_LINKS = [
-  { label: 'My Profile', href: '/me/profile', icon: UserCircle },
-  { label: 'My Payslips', href: '/self-service/payslips', icon: FileText },
-  { label: 'My Attendance', href: '/me/attendance', icon: Clock },
-  { label: 'My Leaves', href: '/me/leaves', icon: Calendar },
-  { label: 'My Overtime', href: '/me/overtime', icon: TrendingUp },
-  { label: 'My Loans', href: '/me/loans', icon: Wallet },
+const SELF_SERVICE_LINKS: Array<{ label: string; href: string; icon: typeof UserCircle; permission?: string }> = [
+  { label: 'My Profile', href: '/me/profile', icon: UserCircle, permission: 'self.view_profile' },
+  { label: 'My Payslips', href: '/self-service/payslips', icon: FileText, permission: 'payroll.view_own_payslip' },
+  { label: 'My Attendance', href: '/me/attendance', icon: Clock, permission: 'self.view_attendance' },
+  { label: 'My Leaves', href: '/me/leaves', icon: Calendar, permission: 'leaves.view_own' },
+  { label: 'My Overtime', href: '/me/overtime', icon: TrendingUp, permission: 'overtime.view' },
+  { label: 'My Loans', href: '/me/loans', icon: Wallet, permission: 'loans.view_own' },
   { label: 'Change Password', href: '/account/change-password', icon: KeyRound },
 ]
 
-function UserMenu({ user, onLogout }: { user: { name?: string; email?: string } | null; onLogout: () => void }) {
+function UserMenu({
+  user,
+  onLogout,
+  hasPermission,
+}: {
+  user: { name?: string; email?: string } | null
+  onLogout: () => void
+  hasPermission: (permission: string) => boolean
+}) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -542,7 +558,7 @@ function UserMenu({ user, onLogout }: { user: { name?: string; email?: string } 
 
           <div className="py-1">
             <p className="px-4 py-1 text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Self Service</p>
-            {SELF_SERVICE_LINKS.map(({ label, href, icon: Icon }) => (
+            {SELF_SERVICE_LINKS.filter((item) => !item.permission || hasPermission(item.permission)).map(({ label, href, icon: Icon }) => (
               <button
                 key={href}
                 onClick={() => { navigate(href); setOpen(false) }}
@@ -788,7 +804,7 @@ export default function AppLayout() {
           <div className="flex items-center gap-2 sm:gap-3">
             <NotificationBell />
             <div className="h-5 w-px bg-neutral-200 hidden sm:block" />
-            <UserMenu user={user} onLogout={handleLogout} />
+            <UserMenu user={user} onLogout={handleLogout} hasPermission={hasPermission} />
           </div>
         </header>
 

@@ -54,7 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('{loan}/payments', [LoanController::class, 'recordPayment'])->name('payments.store');
 
     // ── Loan SOA Export (CSV) ────────────────────────────────────────────────
-    Route::get('{loan}/soa-export', function (\App\Domains\Loan\Models\Loan $loan): \Symfony\Component\HttpFoundation\StreamedResponse {
+    Route::get('{loan}/soa-export', function (\App\Domains\Loan\Models\Loan $loan): \Symfony\Component\HttpFoundation\StreamedResponse {        abort_unless(auth()->user()?->hasPermissionTo('loans.view_own'), 403, 'Unauthorized');
         $loan->load(['employee', 'loanType', 'amortizationSchedule']);
         $schedule = $loan->amortizationSchedule->sortBy('installment_no');
         $employeeName = ($loan->employee->first_name ?? '') . ' ' . ($loan->employee->last_name ?? '');

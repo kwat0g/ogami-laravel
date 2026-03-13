@@ -14,7 +14,7 @@ export default function FixedAssetCategoriesPage(): React.ReactElement {
   const create = useCreateFixedAssetCategory()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' as const })
-  const canManage = useAuthStore((s) => s.hasPermission('chart_of_accounts.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission('fixed_assets.manage'))
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()

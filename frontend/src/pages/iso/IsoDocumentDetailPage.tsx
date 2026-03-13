@@ -9,6 +9,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
+import { useAuthStore } from '@/stores/authStore';
 import type { DocumentType } from '@/types/iso';
 
 const TYPE_LABELS: Record<DocumentType, string> = {
@@ -29,6 +30,7 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
   const submitReviewMut = useSubmitDocumentForReview();
   const approveMut = useApproveDocument();
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const canManage = useAuthStore((s) => s.hasPermission('iso.manage'));
 
   if (isLoading) return <SkeletonLoader rows={6} />;
 
@@ -83,26 +85,28 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
         icon={<FileText className="w-5 h-5" />}
         status={statusBadges}
         actions={
-          <div className="flex items-center gap-2 shrink-0">
-            {doc.status === 'draft' && (
-              <button
-                type="button"
-                onClick={() => setConfirmAction('submit_review')}
-                className="px-4 py-2 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
-              >
-                Submit for Review
-              </button>
-            )}
-            {doc.status === 'under_review' && (
-              <button
-                type="button"
-                onClick={() => setConfirmAction('approve')}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-              >
-                Approve
-              </button>
-            )}
-          </div>
+          canManage ? (
+            <div className="flex items-center gap-2 shrink-0">
+              {doc.status === 'draft' && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmAction('submit_review')}
+                  className="px-4 py-2 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
+                >
+                  Submit for Review
+                </button>
+              )}
+              {doc.status === 'under_review' && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmAction('approve')}
+                  className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+                >
+                  Approve
+                </button>
+              )}
+            </div>
+          ) : null
         }
       />
 

@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom'
+import { useAuthStore } from '@/stores/authStore'
 import {
   useBankReconciliation,
   useUnmatchTransaction,
@@ -16,8 +17,12 @@ function fmtAmt(amount: number) {
 }
 
 export default function BankReconciliationDetailPage() {
+  const { hasPermission } = useAuthStore()
   const { ulid: id } = useParams<{ ulid: string }>()
   const reconciliationId = id ?? null
+
+  const canCertify = hasPermission('bank_reconciliations.certify')
+  const canEdit = hasPermission('bank_reconciliations.create')
 
   const { data: recon, isLoading, isError } = useBankReconciliation(reconciliationId)
   const unmatch  = useUnmatchTransaction(reconciliationId ?? '')
@@ -61,7 +66,7 @@ export default function BankReconciliationDetailPage() {
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge status={recon.status}>{recon.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
-          {isDraft && (
+          {isDraft && canCertify && (
             <SodActionButton
               initiatedById={recon.created_by_id}
               label={certify.isPending ? 'Certifying…' : 'Certify'}
@@ -124,7 +129,7 @@ export default function BankReconciliationDetailPage() {
         <TransactionTable
           transactions={matched}
           isDraft={isDraft}
-          onUnmatch={isDraft ? (txId) => void unmatch.mutateAsync(txId) : null}
+          onUnmatch={isDraft && canEdit ? (txId) => void unmatch.mutateAsync(txId) : null}
           emptyMsg="No matched transactions yet."
         />
       </section>

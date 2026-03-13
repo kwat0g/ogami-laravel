@@ -3,6 +3,7 @@ import { Plus, RefreshCw, ChevronRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAPInvoices } from '@/hooks/useAP'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { VendorInvoiceStatus } from '@/types/ap'
 
@@ -50,6 +51,7 @@ function formatCurrency(n: number) {
 
 export default function APInvoicesPage() {
   const navigate = useNavigate()
+  const canCreate = useAuthStore(s => s.hasPermission('vendor_invoices.create'))
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
 
@@ -74,12 +76,14 @@ export default function APInvoicesPage() {
           <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50">
             <RefreshCw className="w-4 h-4 text-neutral-500" />
           </button>
-          <button
-            onClick={() => navigate('/accounting/ap/invoices/new')}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
-          >
-            <Plus className="w-4 h-4" /> New Invoice
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => navigate('/accounting/ap/invoices/new')}
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+            >
+              <Plus className="w-4 h-4" /> New Invoice
+            </button>
+          )}
         </div>
       </div>
 

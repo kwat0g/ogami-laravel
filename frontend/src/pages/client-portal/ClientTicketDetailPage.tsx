@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTicket, useReplyToTicket, useReopenTicket } from '@/hooks/useCRM'
+import { useAuthStore } from '@/stores/authStore'
 
 const statusBadge: Record<string, string> = {
   open: 'bg-neutral-100 text-neutral-700',
@@ -16,6 +17,7 @@ export default function ClientTicketDetailPage() {
   const { data: ticket, isLoading } = useTicket(ulid)
   const replyMutation = useReplyToTicket(ulid)
   const reopenMutation = useReopenTicket(ulid)
+  const canReplyPermission = useAuthStore((s) => s.hasPermission('crm.tickets.reply'))
 
   const [replyBody, setReplyBody] = useState('')
   const [showReopen, setShowReopen] = useState(false)
@@ -24,8 +26,8 @@ export default function ClientTicketDetailPage() {
   if (isLoading) return <div className="p-8 text-center text-neutral-500">Loading…</div>
   if (!ticket) return <div className="p-8 text-center text-neutral-500">Ticket not found.</div>
 
-  const canReply = ['open', 'in_progress'].includes(ticket.status)
-  const canReopen = ['resolved', 'closed'].includes(ticket.status)
+  const canReply = ['open', 'in_progress'].includes(ticket.status) && canReplyPermission
+  const canReopen = ['resolved', 'closed'].includes(ticket.status) && canReplyPermission
 
   async function submitReply() {
     if (!replyBody.trim()) return

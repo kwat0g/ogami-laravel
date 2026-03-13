@@ -118,7 +118,7 @@ export const PERMISSIONS = {
     'view', 'create', 'update', 'approve', 'cancel',
     'override_credit', 'receive_payment', 'write_off', 'apply_payment', 'export',
   ]),
-  customer_payments: perms('customer_payments', ['view', 'create', 'approve', 'export']),
+
   // ── Banking ──────────────────────────────────────────────────────────────
   bank_accounts:        perms('bank_accounts',        ['view', 'create', 'update', 'delete']),
   bank_reconciliations: perms('bank_reconciliations', ['view', 'create', 'certify']),
@@ -201,7 +201,11 @@ export const PERMISSIONS = {
   vendor_portal: perms('vendor_portal', [
     'view_orders', 'update_fulfillment', 'manage_items', 'view_receipts',
   ]),
-} as const
+  // ── Budget ───────────────────────────────────────────────────────────
+  budget: perms('budget', ['view', 'manage', 'approve']),
+
+  // ── Fixed Assets ─────────────────────────────────────────────────────
+  fixed_assets: perms('fixed_assets', ['view', 'manage']),} as const
 
 export type PermissionString =
   typeof PERMISSIONS[keyof typeof PERMISSIONS][keyof typeof PERMISSIONS[keyof typeof PERMISSIONS]]

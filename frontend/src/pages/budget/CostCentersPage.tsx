@@ -18,7 +18,7 @@ export default function CostCentersPage(): React.ReactElement {
   const [editing, setEditing] = useState(false)
   const { data, isLoading } = useCostCenters()
   const create = useCreateCostCenter()
-  const canManage = useAuthStore((s) => s.hasPermission('chart_of_accounts.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission('budget.manage'))
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }))

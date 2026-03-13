@@ -4,6 +4,7 @@ import { Pencil, Box } from 'lucide-react';
 import { useMold, useLogShots, useUpdateMold } from '@/hooks/useMold';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useProductionOrders } from '@/hooks/useProduction';
+import { useAuthStore } from '@/stores/authStore';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import PageHeader from '@/components/ui/PageHeader';
@@ -16,10 +17,15 @@ const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:
 export default function MoldDetailPage() {
   const { ulid } = useParams<{ ulid: string }>();
   const _navigate = useNavigate();
+  const { hasPermission } = useAuthStore();
   const { data, isLoading } = useMold(ulid ?? '');
   const logShots = useLogShots(ulid ?? '');
   const updateMut = useUpdateMold(ulid ?? '');
   const [showForm, setShowForm] = useState(false);
+
+  const canManage = hasPermission('mold.manage');
+  const canLog    = hasPermission('mold.log_shots');
+
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '', description: '', cavity_count: '', material: '', location: '', max_shots: '', status: 'active' as MoldStatus,
@@ -106,7 +112,7 @@ export default function MoldDetailPage() {
         icon={<Box className="w-5 h-5" />}
         status={statusBadges}
         actions={
-          !isEditing && (
+          !isEditing && canManage && (
             <button
               type="button"
               onClick={startEdit}
@@ -200,12 +206,14 @@ export default function MoldDetailPage() {
       <Card>
         <CardHeader
           actions={
-            <button
-              onClick={() => setShowForm(s => !s)}
-              className="rounded bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
-            >
-              + Log Shots
-            </button>
+            canLog && (
+              <button
+                onClick={() => setShowForm(s => !s)}
+                className="rounded bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+              >
+                + Log Shots
+              </button>
+            )
           }
         >
           Shot Log

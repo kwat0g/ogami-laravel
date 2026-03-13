@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/authStore'
 import {
   usePositions,
   useDepartments,
@@ -25,6 +26,8 @@ interface PosFormState {
 const emptyForm = (): PosFormState => ({ code: '', title: '', department_id: undefined, pay_grade: '', description: '', is_active: true })
 
 export default function PositionsPage() {
+  const { hasPermission } = useAuthStore()
+  const canManage = hasPermission('employees.manage_structure')
   const [deptFilter, setDeptFilter] = useState<number | undefined>()
 
   const { data: depts, isLoading: deptsLoading } = useDepartments()
@@ -39,7 +42,7 @@ export default function PositionsPage() {
   const deptList = depts?.data ?? []
   const rows     = data?.data ?? []
 
-  const _openCreate = () => { setForm(emptyForm()); setFormError(null) }
+  const openCreate = () => { setForm(emptyForm()); setFormError(null) }
   const openEdit   = (pos: Position) => {
     setForm({ id: pos.id, code: pos.code ?? '', title: pos.title, department_id: pos.department_id ?? undefined, pay_grade: pos.pay_grade ?? '', description: pos.description ?? '', is_active: pos.is_active })
     setFormError(null)
@@ -78,6 +81,17 @@ export default function PositionsPage() {
     <div>
       <PageHeader title="Positions" />
 
+      {canManage && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={openCreate}
+            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+          >
+            + Add Position
+          </button>
+        </div>
+      )}
+
       {/* Filter by dept */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4">
         <select
@@ -95,14 +109,14 @@ export default function PositionsPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              {['Title', 'Department', 'Status', 'Actions'].map((h) => (
+              {['Title', 'Department', 'Status', canManage ? 'Actions' : ''].filter(Boolean).map((h) => (
                 <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 && (
-              <tr><td colSpan={4} className="px-3 py-8 text-center text-neutral-400">No positions found.</td></tr>
+              <tr><td colSpan={canManage ? 4 : 3} className="px-3 py-8 text-center text-neutral-400">No positions found.</td></tr>
             )}
             {rows.map((pos) => (
               <tr key={pos.id} className="hover:bg-neutral-50 transition-colors">
@@ -113,10 +127,12 @@ export default function PositionsPage() {
                     {pos.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="px-3 py-2 flex gap-2">
-                  <button onClick={() => openEdit(pos)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                  <button onClick={() => setDeleteId(pos.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
-                </td>
+                {canManage && (
+                  <td className="px-3 py-2 flex gap-2">
+                    <button onClick={() => openEdit(pos)} className="text-xs text-neutral-600 hover:underline">Edit</button>
+                    <button onClick={() => setDeleteId(pos.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

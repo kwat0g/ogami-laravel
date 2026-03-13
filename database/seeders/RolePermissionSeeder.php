@@ -204,6 +204,9 @@ class RolePermissionSeeder extends Seeder
         'budget.view',
         'budget.manage',
         'budget.approve',
+        // Fixed Assets
+        'fixed_assets.view',
+        'fixed_assets.manage',
         // Payroll
         'payroll.view_own_payslip',
         'payroll.download_own_payslip',
@@ -385,6 +388,10 @@ class RolePermissionSeeder extends Seeder
             'reports.ap_aging', 'reports.ar_aging', 'reports.bank_reconciliation',
             // Budget (view-only)
             'budget.view',
+            // Fixed Assets (view-only)
+            'fixed_assets.view',
+            // Self-service (executive can file own overtime)
+            'overtime.submit',
             'self.view_profile', 'self.view_attendance',
         ]);
 
@@ -467,11 +474,12 @@ class RolePermissionSeeder extends Seeder
             'delivery.view', 'delivery.manage',
             // ISO / IATF (full)
             'iso.view', 'iso.manage', 'iso.audit',
-            // Inventory — view stock for plant operations visibility
+            // Inventory — view stock for plant operations visibility + create MRQs
             'inventory.items.view',
             'inventory.stock.view',
             'inventory.locations.view',
             'inventory.mrq.view',
+            'inventory.mrq.create',
             // Self-service only
             'attendance.view_own',
             'overtime.view', 'overtime.submit',
@@ -583,6 +591,8 @@ class RolePermissionSeeder extends Seeder
             'inventory.locations.view', 'inventory.locations.manage',
             'inventory.stock.view', 'inventory.adjustments.create',
             'inventory.mrq.view', 'inventory.mrq.review',
+            // Fixed Assets (full management)
+            'fixed_assets.view', 'fixed_assets.manage',
             // Self-service
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
             // Basic employee/team view
@@ -709,6 +719,8 @@ class RolePermissionSeeder extends Seeder
             'customers.view', 'customer_invoices.view', 'customer_invoices.export',
             // Reports (read)
             'reports.gl', 'reports.ap_aging',
+            // Fixed Assets (view-only)
+            'fixed_assets.view',
             // Self-service
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
             // Legacy
@@ -744,6 +756,8 @@ class RolePermissionSeeder extends Seeder
             'reports.ap_aging', 'reports.ar_aging',
             'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
             'vendors.view', 'vendor_invoices.view', 'customers.view', 'customer_invoices.view',
+            // Fixed Assets (view-only)
+            'fixed_assets.view',
             // Self-service
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
             'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.cancel', 'leaves.vp_note',

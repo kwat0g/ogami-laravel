@@ -7,6 +7,7 @@ import {
   useSendPurchaseOrder,
   useCancelPurchaseOrder,
 } from '@/hooks/usePurchaseOrders'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -75,6 +76,7 @@ function CancelModal({
 export default function PurchaseOrderDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>()
   const _navigate  = useNavigate()
+  const { hasPermission } = useAuthStore()
 
   const { data: po, isLoading, isError } = usePurchaseOrder(ulid ?? null)
 
@@ -128,9 +130,9 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
     )
   }
 
-  const canSend    = po.status === 'draft'
-  const canCancel  = po.status === 'draft' || po.status === 'sent'
-  const canReceive = po.status === 'sent' || po.status === 'partially_received'
+  const canSend    = po.status === 'draft' && hasPermission('procurement.purchase-order.manage')
+  const canCancel  = (po.status === 'draft' || po.status === 'sent') && hasPermission('procurement.purchase-order.manage')
+  const canReceive = (po.status === 'sent' || po.status === 'partially_received') && hasPermission('procurement.goods-receipt.create')
 
   const actions = (
     <div className="flex items-center gap-3">

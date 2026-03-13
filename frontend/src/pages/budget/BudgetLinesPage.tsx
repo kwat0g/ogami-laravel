@@ -21,7 +21,7 @@ export default function BudgetLinesPage(): React.ReactElement {
   const { data: ccData } = useCostCenters()
   const { data: accounts } = useChartOfAccounts()
   const setBudget = useSetBudgetLine()
-  const canManage = useAuthStore((s) => s.hasPermission('chart_of_accounts.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission('budget.manage'))
 
   const lines: BudgetLine[] = lineData?.data ?? []
   const costCenters = ccData?.data ?? []

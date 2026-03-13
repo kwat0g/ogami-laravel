@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/work-orders/{maintenanceWorkOrder}/parts', [MaintenanceController::class, 'addPart']);
 
     // ── Work Order Export (CSV) ──────────────────────────────────────────────
-    Route::get('/work-orders/export', function (\Illuminate\Http\Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {
+    Route::get('/work-orders/export', function (\Illuminate\Http\Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {        abort_unless(auth()->user()?->hasPermissionTo('maintenance.view'), 403, 'Unauthorized');
         $query = \Illuminate\Support\Facades\DB::table('maintenance_work_orders')
             ->leftJoin('equipment', 'maintenance_work_orders.equipment_id', '=', 'equipment.id')
             ->select(

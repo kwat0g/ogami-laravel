@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuthStore } from '@/stores/authStore'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import {
   useBankReconciliations,
@@ -108,6 +109,10 @@ function statusBadge(status: string) {
 }
 
 function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconciliation }) {
+  const { hasPermission } = useAuthStore()
+  const canEdit = hasPermission('bank_reconciliations.create')
+  const canCertify = hasPermission('bank_reconciliations.certify')
+
   const { data, isLoading } = useBankReconciliation(reconciliation.ulid)
   const recon = data
   const { mutate: importStmt, isPending: importing } = useImportStatement(reconciliation.ulid)
@@ -148,15 +153,17 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
         </div>
         {!isCertified && (
           <div className="ml-auto flex gap-2">
-            <button
-              type="button"
-              disabled={importing}
-              onClick={() => importStmt({ transactions: csvLines })}
-              className="px-3 py-2 rounded border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {importing ? 'Importing…' : 'Import Statement'}
-            </button>
-            <CertifyButton reconciliationId={recon.ulid} createdBy={recon.created_by} />
+            {canEdit && (
+              <button
+                type="button"
+                disabled={importing}
+                onClick={() => importStmt({ transactions: csvLines })}
+                className="px-3 py-2 rounded border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {importing ? 'Importing…' : 'Import Statement'}
+              </button>
+            )}
+            {canCertify && <CertifyButton reconciliationId={recon.ulid} createdBy={recon.created_by} />}
           </div>
         )}
       </div>
@@ -172,7 +179,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
               <th className="px-3 py-2 text-left">Type</th>
               <th className="px-3 py-2 text-right">Amount</th>
               <th className="px-3 py-2 text-left">Status</th>
-              {!isCertified && <th className="px-3 py-2 text-left">Action</th>}
+              {!isCertified && canEdit && <th className="px-3 py-2 text-left">Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -188,9 +195,8 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
                     tx.transaction_type === 'debit' ? 'bg-neutral-100 text-neutral-700' : 'bg-neutral-100 text-neutral-700'
                   }`}>{tx.transaction_type}</span>
                 </td>
-                <td className="px-3 py-2 text-right font-mono">₱{tx.amount.toLocaleString()}</td>
                 <td className="px-3 py-2">{statusBadge(tx.status)}</td>
-                {!isCertified && (
+                {!isCertified && canEdit && (
                   <td className="px-3 py-2">
                     {tx.status === 'unmatched' && (
                       <button
@@ -229,7 +235,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
       </div>
 
       {/* Match panel */}
-      {selectedBankTx !== null && !isCertified && (
+      {selectedBankTx !== null && !isCertified && canEdit && (
         <div className="bg-neutral-50 border border-neutral-200 rounded p-4 flex gap-4 items-end">
           <p className="text-sm text-neutral-800 font-medium">
             Matching bank transaction #{selectedBankTx} to JE line:
@@ -267,10 +273,13 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
 // ---------------------------------------------------------------------------
 
 export default function BankReconciliationPage() {
+  const { hasPermission } = useAuthStore()
   const { data, isLoading } = useBankReconciliations()
   const reconciliations: BankReconciliation[] = data?.data ?? []
   const [showCreate, setShowCreate] = useState(false)
   const [selected, setSelected] = useState<BankReconciliation | null>(null)
+
+  const canCreate = hasPermission('bank_reconciliations.create')
 
   return (
     <div className="p-6 space-y-6">
@@ -281,13 +290,15 @@ export default function BankReconciliationPage() {
             Match bank transactions to GL journal entry lines (GL-006)
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-        >
-          + New Reconciliation
-        </button>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+          >
+            + New Reconciliation
+          </button>
+        )}
       </div>
 
       {isLoading && <SkeletonLoader rows={5} />}

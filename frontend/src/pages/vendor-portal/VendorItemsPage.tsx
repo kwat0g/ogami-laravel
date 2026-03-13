@@ -7,6 +7,7 @@ import {
   useImportVendorPortalItems,
   type VendorPortalItem,
 } from '@/hooks/useVendorPortal'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 
 const defaultForm = {
@@ -29,6 +30,7 @@ export default function VendorItemsPage(): React.ReactElement {
   const update = useUpdateVendorPortalItem()
   const importItems = useImportVendorPortalItems()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const canManage = useAuthStore((s) => s.hasPermission('vendor_portal.manage_items'))
 
   function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -103,32 +105,36 @@ export default function VendorItemsPage(): React.ReactElement {
             />
             Show inactive
           </label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            onChange={handleImport}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importItems.isPending}
-            className="flex items-center gap-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded-md px-3 py-1.5 hover:bg-neutral-50 disabled:opacity-50"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            {importItems.isPending ? 'Importing…' : 'Import CSV'}
-          </button>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Item
-          </button>
+          {canManage && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleImport}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importItems.isPending}
+                className="flex items-center gap-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded-md px-3 py-1.5 hover:bg-neutral-50 disabled:opacity-50"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                {importItems.isPending ? 'Importing…' : 'Import CSV'}
+              </button>
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Item
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {showForm && (
+      {showForm && canManage && (
         <div className="bg-white border border-neutral-200 rounded-lg p-5 mb-6">
           <h2 className="text-sm font-semibold text-neutral-800 mb-4">
             {editing ? 'Edit Item' : 'New Item'}
@@ -240,12 +246,14 @@ export default function VendorItemsPage(): React.ReactElement {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => openEdit(item)}
-                      className="text-neutral-400 hover:text-neutral-700"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
+                    {canManage && (
+                      <button
+                        onClick={() => openEdit(item)}
+                        className="text-neutral-400 hover:text-neutral-700"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

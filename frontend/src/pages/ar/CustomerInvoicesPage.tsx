@@ -6,6 +6,7 @@ import {
   useApproveCustomerInvoice,
   useCancelCustomerInvoice,
 } from '@/hooks/useAR'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -85,6 +86,9 @@ function CancelDraftButton({ invoice }: { invoice: CustomerInvoice }) {
 
 export default function CustomerInvoicesPage() {
   const navigate = useNavigate()
+  const canCreate = useAuthStore(s => s.hasPermission('customer_invoices.create'))
+  const canApprove = useAuthStore(s => s.hasPermission('customer_invoices.approve'))
+  const canCancel = useAuthStore(s => s.hasPermission('customer_invoices.cancel'))
   const [activeTab, setActiveTab] = useState<CustomerInvoiceStatus | 'all'>('all')
 
   const filters = activeTab === 'all' ? {} : { status: activeTab }
@@ -104,12 +108,14 @@ export default function CustomerInvoicesPage() {
           <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => navigate('/ar/invoices/new')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-          >
-            <Plus className="w-4 h-4" /> New Invoice
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => navigate('/ar/invoices/new')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+            >
+              <Plus className="w-4 h-4" /> New Invoice
+            </button>
+          )}
         </div>
       </div>
 
@@ -184,8 +190,8 @@ export default function CustomerInvoicesPage() {
                         </button>
                         {inv.status === 'draft' && (
                           <>
-                            <ApproveDraftButton invoice={inv} />
-                            <CancelDraftButton invoice={inv} />
+                            {canApprove && <ApproveDraftButton invoice={inv} />}
+                            {canCancel && <CancelDraftButton invoice={inv} />}
                           </>
                         )}
                       </div>

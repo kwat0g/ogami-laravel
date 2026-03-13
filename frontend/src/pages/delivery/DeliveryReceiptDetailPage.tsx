@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeliveryReceipt, useConfirmDeliveryReceipt } from '@/hooks/useDelivery';
+import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import PageHeader from '@/components/ui/PageHeader';
@@ -19,9 +20,11 @@ const DIRECTION_COLORS: Record<DrDirection, string> = {
 export default function DeliveryReceiptDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>();
   const navigate = useNavigate();
+  const { hasPermission } = useAuthStore();
   const { data, isLoading, isError } = useDeliveryReceipt(ulid ?? '');
   const confirmMut = useConfirmDeliveryReceipt();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canManage = hasPermission('delivery.manage');
 
   if (isLoading) return <SkeletonLoader rows={6} />;
 
@@ -66,7 +69,7 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
         icon={<Truck className="w-5 h-5" />}
         status={statusBadges}
         actions={
-          dr.status === 'draft' && (
+          dr.status === 'draft' && canManage && (
             <button
               type="button"
               onClick={() => setConfirmOpen(true)}

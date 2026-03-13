@@ -22,7 +22,7 @@ frontend/src/
   pages/<domain>/ # page components
   pages/vendor-portal/ # vendor self-service portal
   pages/client-portal/ # client ticket portal
-  schemas/        # Zod schemas (9 of 18 domains)
+  schemas/        # Zod schemas (17 of 20 domains)
   types/          # TypeScript interfaces (incl. crm.ts)
   lib/api.ts      # Axios default export, withCredentials, 1500ms write cooldown
 tests/
@@ -168,3 +168,11 @@ Use `/run-domain-tests <Domain|all>` to run the correct Pest suites for a domain
 
 - `php artisan assets:depreciate-monthly` — runs straight-line / double-declining depreciation for all active fixed assets in a fiscal period; idempotent (skips already-processed periods via unique constraint)
 - `php artisan journals:generate-recurring` — materialises all active recurring journal templates due today or earlier; advances `next_run_date` automatically
+
+
+Always use context7 when writing or explaining code that involves 
+Laravel, React, Spatie, or any third-party library — automatically 
+resolve library IDs and fetch current docs without being asked.
+
+Always use cocoindex_code_search to find existing code patterns 
+in this codebase before writing new code or suggesting implementations.

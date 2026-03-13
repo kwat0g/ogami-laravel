@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Package, AlertTriangle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useShipments, useCreateShipment, useUpdateShipmentStatus, useDeliveryReceipts } from '@/hooks/useDelivery';
+import { useAuthStore } from '@/stores/authStore';
 import { PageHeader } from '@/components/ui/PageHeader';
 import type { ShipmentStatus } from '@/types/delivery';
 
@@ -52,6 +53,7 @@ export default function ShipmentsPage() {
   const confirmedDrs = drData?.data ?? [];
   const createMut = useCreateShipment();
   const updateStatusMut = useUpdateShipmentStatus();
+  const canManage = useAuthStore(s => s.hasPermission('delivery.manage'));
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,13 +97,15 @@ export default function ShipmentsPage() {
       <PageHeader title="Shipments" />
       <div className="flex items-center justify-between">
         <div />
-        <button
-          type="button"
-          onClick={() => setShowCreate(s => !s)}
-          className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-        >
-          <Plus size={16} /> New Shipment
-        </button>
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setShowCreate(s => !s)}
+            className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          >
+            <Plus size={16} /> New Shipment
+          </button>
+        )}
       </div>
 
       {showCreate && (
@@ -230,7 +234,7 @@ export default function ShipmentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {NEXT_STATUS[shipment.status] && (
+                        {NEXT_STATUS[shipment.status] && canManage && (
                           <button
                             type="button"
                             onClick={() => {

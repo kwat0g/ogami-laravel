@@ -3,9 +3,10 @@ import { useAuthStore } from '@/stores/authStore'
 
 export default function ClientPortalLayout() {
   const user = useAuthStore(s => s.user)
+  const hasPermission = useAuthStore(s => s.hasPermission)
 
   // Only client role users can access this portal
-  if (!(user?.roles as string[] | undefined)?.includes('client')) {
+  if (!(user?.roles as string[] | undefined)?.includes('client') || !hasPermission('crm.tickets.view')) {
     return <Navigate to="/dashboard" replace />
   }
 

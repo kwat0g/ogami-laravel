@@ -7,6 +7,7 @@ import {
   useUpdateCustomer,
   useArchiveCustomer,
 } from '@/hooks/useAR'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -225,6 +226,8 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
 // ---------------------------------------------------------------------------
 
 export default function CustomersPage() {
+  const canManage = useAuthStore(s => s.hasPermission('customers.manage'))
+  const canArchive = useAuthStore(s => s.hasPermission('customers.archive'))
   const [search, setSearch] = useState('')
   const [modalCustomer, setModalCustomer] = useState<Customer | null | undefined>(undefined)
   const { data, isLoading, refetch } = useCustomers({ search, per_page: 50 })
@@ -247,12 +250,14 @@ export default function CustomersPage() {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setModalCustomer(null)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-          >
-            <Plus className="w-4 h-4" /> New Customer
-          </button>
+          {canManage && (
+            <button
+              onClick={() => setModalCustomer(null)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+            >
+              <Plus className="w-4 h-4" /> New Customer
+            </button>
+          )}
         </div>
       </div>
 
@@ -303,13 +308,15 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => setModalCustomer(c)}
-                          className="text-xs text-neutral-600 hover:underline flex items-center gap-1"
-                        >
-                          <CreditCard className="w-3 h-3" /> Edit
-                        </button>
-                        {c.is_active && <ArchiveCustomerButton customer={c} />}
+                        {canManage && (
+                          <button
+                            onClick={() => setModalCustomer(c)}
+                            className="text-xs text-neutral-600 hover:underline flex items-center gap-1"
+                          >
+                            <CreditCard className="w-3 h-3" /> Edit
+                          </button>
+                        )}
+                        {canArchive && c.is_active && <ArchiveCustomerButton customer={c} />}
                       </div>
                     </td>
                   </tr>

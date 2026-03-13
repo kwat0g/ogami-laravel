@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useCreateTicket } from '@/hooks/useCRM'
+import { useAuthStore } from '@/stores/authStore'
 
 export default function ClientNewTicketPage() {
   const navigate = useNavigate()
   const createMutation = useCreateTicket()
+  const canCreate = useAuthStore((s) => s.hasPermission('crm.tickets.create'))
 
   const [form, setForm] = useState({
     subject: '',
@@ -17,6 +19,10 @@ export default function ClientNewTicketPage() {
     e.preventDefault()
     const ticket = await createMutation.mutateAsync(form)
     navigate(`/client-portal/tickets/${ticket.ulid}`)
+  }
+
+  if (!canCreate) {
+    return <Navigate to="/client-portal/tickets" replace />
   }
 
   return (

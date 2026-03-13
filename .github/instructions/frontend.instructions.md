@@ -45,7 +45,7 @@ export function useSubmitLeaveRequest() {
 - URL params use **ULID** strings: `useParams<{ ulid: string }>()`.
 - Use `z.coerce.number()` for all numeric IDs and monetary inputs in Zod schemas.
 - Derive TS types: `type Foo = z.infer<typeof fooSchema>`.
-- Zod schemas live in `frontend/src/schemas/`. Only 9 domains have schema files; others use inline Zod or plain TS types.
+- Zod schemas live in `frontend/src/schemas/`. 17 of 20 domains have schema files; Budget, Delivery, and FixedAssets still use inline Zod or plain TS types.
 
 ## Permissions & SoD
 

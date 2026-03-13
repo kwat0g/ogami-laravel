@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCapaActions, useCompleteCapaAction } from '@/hooks/useQC'
+import { useAuthStore } from '@/stores/authStore'
 import type { CapaAction, CapaStatus } from '@/types/qc'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -21,6 +22,8 @@ export default function CapaListPage() {
   const [tab, setTab] = useState<CapaStatus | 'all'>('all')
   const [confirmCapa, setConfirmCapa] = useState<CapaAction | null>(null)
   const completeMut = useCompleteCapaAction()
+  const { hasPermission } = useAuthStore()
+  const canManage = hasPermission('qc.ncr.create')
 
   const { data, isLoading } = useCapaActions(
     tab !== 'all' ? { status: tab } : {}
@@ -112,7 +115,7 @@ export default function CapaListPage() {
                       {capa.assigned_to?.name ?? <span className="text-neutral-400">Unassigned</span>}
                     </td>
                     <td className="px-4 py-3">
-                      {(capa.status === 'open' || capa.status === 'in_progress') && (
+                      {(capa.status === 'open' || capa.status === 'in_progress') && canManage && (
                         <button
                           onClick={() => setConfirmCapa(capa)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 transition-colors"

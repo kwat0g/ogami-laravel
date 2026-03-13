@@ -8,6 +8,7 @@ import {
   useWriteOffInvoice,
   useApproveCustomerInvoice,
 } from '@/hooks/useAR'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import PageHeader from '@/components/ui/PageHeader'
@@ -176,13 +177,19 @@ export default function CustomerInvoiceDetailPage() {
   const invoiceId = id ?? null
   const { data: invoice, isLoading } = useCustomerInvoice(invoiceId)
   const approveMut = useApproveCustomerInvoice()
+  const { hasPermission } = useAuthStore()
 
   if (isLoading) return <SkeletonLoader rows={10} />
   if (!invoice) return <p className="p-6 text-gray-500">Invoice not found.</p>
 
-  const canApprove = invoice.status === 'draft'
-  const canPay     = invoice.status === 'approved' || invoice.status === 'partially_paid'
-  const canWriteOff = canPay && invoice.balance_due > 0
+  const canApprove = invoice.status === 'draft' && hasPermission('customer_invoices.approve')
+  const canReceivePayment =
+    (invoice.status === 'approved' || invoice.status === 'partially_paid') &&
+    hasPermission('customer_invoices.receive_payment')
+  const canWriteOff =
+    (invoice.status === 'approved' || invoice.status === 'partially_paid') &&
+    invoice.balance_due > 0 &&
+    hasPermission('customer_invoices.write_off')
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -277,7 +284,7 @@ export default function CustomerInvoiceDetailPage() {
       )}
 
       {/* Payment panel */}
-      {canPay && (
+      {canReceivePayment && (
         <ReceivePaymentPanel invoiceId={invoiceId ?? ''} balanceDue={invoice.balance_due} />
       )}
 

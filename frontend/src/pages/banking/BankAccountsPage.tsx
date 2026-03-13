@@ -7,6 +7,7 @@ import {
 } from '@/hooks/useBanking'
 import { toast } from 'sonner'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -169,10 +170,15 @@ function BankAccountFormModal({
 // ---------------------------------------------------------------------------
 
 export default function BankAccountsPage() {
+  const { hasPermission } = useAuthStore()
   const { data, isLoading } = useBankAccounts()
   const accounts = data ?? []
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<BankAccount | undefined>()
+
+  const canCreate = hasPermission('bank_accounts.create')
+  const canEdit = hasPermission('bank_accounts.update')
+  const canDelete = hasPermission('bank_accounts.delete')
 
   return (
     <div className="p-6 space-y-6">
@@ -181,13 +187,15 @@ export default function BankAccountsPage() {
         <div>
           <p className="text-sm text-neutral-500">Manage bank accounts linked to GL (GL-006)</p>
         </div>
-        <button
-          type="button"
-          onClick={() => { setEditing(undefined); setShowForm(true) }}
-          className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-        >
-          + New Account
-        </button>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={() => { setEditing(undefined); setShowForm(true) }}
+            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+          >
+            + New Account
+          </button>
+        )}
       </div>
 
       {isLoading && <SkeletonLoader rows={5} />}
@@ -230,14 +238,16 @@ export default function BankAccountsPage() {
                   </span>
                 </td>
                 <td className="px-3 py-2 flex gap-3 items-center">
-                  <button
-                    type="button"
-                    onClick={() => { setEditing(acct); setShowForm(true) }}
-                    className="text-neutral-600 hover:text-neutral-800 text-xs font-medium"
-                  >
-                    Edit
-                  </button>
-                  <DeleteBankAccountButton account={acct} />
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => { setEditing(acct); setShowForm(true) }}
+                      className="text-neutral-600 hover:text-neutral-800 text-xs font-medium"
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {canDelete && <DeleteBankAccountButton account={acct} />}
                 </td>
               </tr>
             ))}

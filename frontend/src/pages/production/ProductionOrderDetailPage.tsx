@@ -70,6 +70,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const canComplete   = usePermission('production.orders.complete')
   const canLogOutput  = usePermission('production.orders.log_output')
   const canQcOverride = usePermission('production.qc-override')
+  const canCreate     = usePermission('production.orders.create')
 
   const releaseMut    = useReleaseOrder(ulid ?? '')
   const startMut      = useStartOrder(ulid ?? '')
@@ -414,12 +415,12 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
               Log Output
             </button>
           )}
-          {['draft', 'released'].includes(order.status) && (
+          {['draft', 'released'].includes(order.status) && canCreate && (
             <button onClick={() => handleAction('cancel')} disabled={anyPending} className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded">
               Cancel WO
             </button>
           )}
-          {order.status === 'in_progress' && parseFloat(order.qty_produced) === 0 && !showLogForm && (
+          {order.status === 'in_progress' && parseFloat(order.qty_produced) === 0 && !showLogForm && canCreate && (
             <button
               onClick={() => setShowVoidConfirm(true)}
               disabled={voidMut.isPending}

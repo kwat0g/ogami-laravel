@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/authStore'
 import {
   useDepartments,
   useCreateDepartment,
@@ -22,6 +23,8 @@ interface DeptFormState {
 const emptyForm = (): DeptFormState => ({ code: '', name: '', cost_center_code: '', is_active: true })
 
 export default function DepartmentsPage() {
+  const { hasPermission } = useAuthStore()
+  const canManage = hasPermission('employees.manage_structure')
   const { data, isLoading, isError } = useDepartments()
   const create = useCreateDepartment()
   const update = useUpdateDepartment()
@@ -32,7 +35,7 @@ export default function DepartmentsPage() {
 
   const rows = data?.data ?? []
 
-  const _openCreate = () => { setForm(emptyForm()); setFormError(null) }
+  const openCreate = () => { setForm(emptyForm()); setFormError(null) }
   const openEdit   = (dept: Department) => { setForm({ id: dept.id, code: dept.code, name: dept.name, cost_center_code: dept.cost_center_code ?? '', is_active: dept.is_active }); setFormError(null) }
   const closeForm  = () => setForm(null)
 
@@ -72,19 +75,32 @@ export default function DepartmentsPage() {
     <div>
       <PageHeader title="Departments" />
 
+      {canManage && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={openCreate}
+            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+          >
+            + Add Department
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
         <table className="min-w-full text-sm">
           <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              {['Code', 'Name', 'Cost Center', 'Status', 'Actions'].map((h) => (
+              {['Code', 'Name', 'Cost Center', 'Status', canManage ? 'Actions' : ''].filter(Boolean).map((h) => (
                 <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-8 text-center text-neutral-400">No departments yet. Click + Add Department to start.</td></tr>
+              <tr><td colSpan={canManage ? 5 : 4} className="px-3 py-8 text-center text-neutral-400">
+                No departments yet. {canManage && 'Click + Add Department to start.'}
+              </td></tr>
             )}
             {rows.map((dept) => (
               <tr key={dept.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
@@ -96,10 +112,12 @@ export default function DepartmentsPage() {
                     {dept.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="px-3 py-2 flex gap-2">
-                  <button onClick={() => openEdit(dept)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                  <button onClick={() => handleDelete(dept.id)} className="text-xs text-red-500 hover:underline">Delete</button>
-                </td>
+                {canManage && (
+                  <td className="px-3 py-2 flex gap-2">
+                    <button onClick={() => openEdit(dept)} className="text-xs text-neutral-600 hover:underline">Edit</button>
+                    <button onClick={() => handleDelete(dept.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

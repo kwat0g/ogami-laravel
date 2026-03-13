@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Ticket } from 'lucide-react'
 import { useTickets } from '@/hooks/useCRM'
+import { useAuthStore } from '@/stores/authStore'
 import type { TicketFilters } from '@/types/crm'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -23,6 +24,7 @@ const PRIORITY_MAP: Record<string, string> = {
 export default function TicketListPage() {
   const [filters, setFilters] = useState<TicketFilters>({ per_page: 20 })
   const { data, isLoading } = useTickets(filters)
+  const canCreate = useAuthStore((s) => s.hasPermission('crm.tickets.create'))
   
   // Calculate summary stats
   const tickets = data?.data ?? []
@@ -40,9 +42,11 @@ export default function TicketListPage() {
         title="Support Tickets"
         icon={<Ticket className="w-5 h-5 text-neutral-600" />}
         actions={
-          <Link to="/crm/tickets/new" className="btn-primary">
-            <Plus className="w-3.5 h-3.5" /> New Ticket
-          </Link>
+          canCreate ? (
+            <Link to="/crm/tickets/new" className="btn-primary">
+              <Plus className="w-3.5 h-3.5" /> New Ticket
+            </Link>
+          ) : undefined
         }
       />
 
@@ -119,9 +123,11 @@ export default function TicketListPage() {
             title="No tickets found"
             description="Create a new ticket to get started."
             action={
-              <Link to="/crm/tickets/new" className="btn-primary">
-                <Plus className="w-3.5 h-3.5" /> New Ticket
-              </Link>
+              canCreate ? (
+                <Link to="/crm/tickets/new" className="btn-primary">
+                  <Plus className="w-3.5 h-3.5" /> New Ticket
+                </Link>
+              ) : undefined
             }
           />
         ) : (

@@ -8,6 +8,7 @@ import {
   useUpdateAccount,
   useArchiveAccount,
 } from '@/hooks/useAccounting'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type { ChartOfAccount, AccountType, NormalBalance, CreateAccountPayload } from '@/types/accounting'
@@ -44,9 +45,10 @@ interface AccountRowProps {
   depth: number
   onEdit: (a: ChartOfAccount) => void
   onArchive: (a: ChartOfAccount) => void
+  canManage: boolean
 }
 
-function AccountRow({ account, depth, onEdit, onArchive }: AccountRowProps) {
+function AccountRow({ account, depth, onEdit, onArchive, canManage }: AccountRowProps) {
   const [expanded, setExpanded] = useState(true)
   const hasChildren = (account.children?.length ?? 0) > 0
 
@@ -84,7 +86,7 @@ function AccountRow({ account, depth, onEdit, onArchive }: AccountRowProps) {
         </td>
         <td className="px-3 py-2 text-right">
           <div className="flex items-center justify-end gap-2">
-            {account.is_active && (
+            {account.is_active && canManage && (
               <>
                 <button
                   onClick={() => onEdit(account)}
@@ -118,6 +120,7 @@ function AccountRow({ account, depth, onEdit, onArchive }: AccountRowProps) {
             depth={depth + 1}
             onEdit={onEdit}
             onArchive={onArchive}
+            canManage={canManage}
           />
         ))}
     </>
@@ -269,6 +272,7 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
 // Main Page
 // ---------------------------------------------------------------------------
 export default function AccountsPage() {
+  const canManage = useAuthStore(s => s.hasPermission('chart_of_accounts.manage'))
   const [includeArchived, setIncludeArchived] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<ChartOfAccount | null>(null)
@@ -357,13 +361,15 @@ export default function AccountsPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Account
-          </button>
+          {canManage && (
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Account
+            </button>
+          )}
         </div>
       </div>
 
@@ -395,6 +401,7 @@ export default function AccountsPage() {
                     depth={0}
                     onEdit={openEdit}
                     onArchive={setArchiveTarget}
+                    canManage={canManage}
                   />
                 ))
               )}

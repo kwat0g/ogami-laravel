@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -52,6 +53,7 @@ export default function AssetDisposalPage(): React.ReactElement {
   const [method, setMethod] = useState('sale')
   const [proceeds, setProceeds] = useState('')
   const [reason, setReason] = useState('')
+  const canManage = useAuthStore((s) => s.hasPermission('fixed_assets.manage'))
 
   const handleDispose = (): void => {
     if (!selected) return
@@ -67,6 +69,20 @@ export default function AssetDisposalPage(): React.ReactElement {
         setReason('')
       },
     })
+  }
+
+  if (!canManage) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-4">
+        <PageHeader
+          title="Asset Disposal"
+          icon={<Trash2 className="w-5 h-5 text-red-600" />}
+        />
+        <div className="bg-white border border-neutral-200 rounded-lg p-6 text-sm text-neutral-600">
+          You do not have permission to dispose fixed assets.
+        </div>
+      </div>
+    )
   }
 
   return (

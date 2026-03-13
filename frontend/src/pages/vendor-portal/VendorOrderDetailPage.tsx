@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Truck, CheckCircle, AlertCircle } from 'lucide-react'
 import { useVendorOrder, useMarkInTransit, useMarkDelivered } from '@/hooks/useVendorPortal'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 
 export default function VendorOrderDetailPage(): React.ReactElement {
@@ -11,6 +12,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
   const { data: order, isLoading, isError } = useVendorOrder(ulid ?? '')
   const markInTransit = useMarkInTransit()
   const markDelivered = useMarkDelivered()
+  const { hasPermission } = useAuthStore()
 
   const [inTransitNotes, setInTransitNotes] = useState('')
   const [deliveryNotes, setDeliveryNotes] = useState('')
@@ -19,7 +21,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
   if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading order…</p>
   if (isError || !order) return <p className="text-sm text-red-500 mt-4">Order not found.</p>
 
-  const canFulfill = ['sent', 'partially_received'].includes(order.status)
+  const canFulfill = ['sent', 'partially_received'].includes(order.status) && hasPermission('vendor_portal.update_fulfillment')
 
   function handleMarkInTransit() {
     if (!ulid) return

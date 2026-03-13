@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { PackagePlus } from 'lucide-react'
+import { PackagePlus, ShieldAlert } from 'lucide-react'
 import {
   useItems,
   useWarehouseLocations,
   useStockAdjust,
   useStockLedger,
 } from '@/hooks/useInventory'
+import { useAuthStore } from '@/stores/authStore'
 
 export default function StockAdjustmentsPage(): React.ReactElement {
+  const canAdjust = useAuthStore(s => s.hasPermission('inventory.adjustments.create'))
   const [itemId, setItemId] = useState<number | ''>('')
   const [locationId, setLocationId] = useState<number | ''>('')
   const [adjustedQty, setAdjustedQty] = useState('')
@@ -21,6 +23,15 @@ export default function StockAdjustmentsPage(): React.ReactElement {
 
   const items = itemsData?.data ?? []
   const recentAdjustments = ledgerData?.data ?? []
+
+  if (!canAdjust) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
+        <ShieldAlert className="w-10 h-10 mb-3 text-neutral-400" />
+        <p className="text-sm font-medium">You do not have permission to create stock adjustments.</p>
+      </div>
+    )
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

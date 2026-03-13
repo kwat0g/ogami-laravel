@@ -24,7 +24,7 @@ export default function FixedAssetsPage(): React.ReactElement {
 
   const assets: FixedAsset[] = data?.data ?? []
   const periods = periodsData?.data ?? []
-  const canManage = useAuthStore((s) => s.hasPermission('chart_of_accounts.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission('fixed_assets.manage'))
 
   // Calculate totals
   const totalCost = assets.reduce((sum, a) => sum + a.acquisition_cost_centavos, 0)

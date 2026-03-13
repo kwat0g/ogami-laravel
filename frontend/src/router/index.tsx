@@ -535,10 +535,10 @@ export const router = createBrowserRouter([
       { path: '/budget/vs-actual',    element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
 
       // ── Fixed Assets ──────────────────────────────────────────────────────
-      { path: '/fixed-assets',             element: withSuspense(guard('chart_of_accounts.view', <FixedAssetsPage />)) },
-      { path: '/fixed-assets/categories',  element: withSuspense(guard('chart_of_accounts.view', <FixedAssetCategoriesPage />)) },
-      { path: '/fixed-assets/disposals',    element: withSuspense(guard('chart_of_accounts.view', <AssetDisposalPage />)) },
-      { path: '/fixed-assets/:ulid',       element: withSuspense(guard('chart_of_accounts.view', <FixedAssetDetailPage />)) },
+      { path: '/fixed-assets',             element: withSuspense(guard('fixed_assets.view', <FixedAssetsPage />)) },
+      { path: '/fixed-assets/categories',  element: withSuspense(guard('fixed_assets.view', <FixedAssetCategoriesPage />)) },
+      { path: '/fixed-assets/disposals',    element: withSuspense(guard('fixed_assets.view', <AssetDisposalPage />)) },
+      { path: '/fixed-assets/:ulid',       element: withSuspense(guard('fixed_assets.view', <FixedAssetDetailPage />)) },
 
       // ── Recurring Journal Templates ────────────────────────────────────────
       { path: '/accounting/recurring-templates', element: withSuspense(guard('journal_entries.view', <RecurringTemplatesPage />)) },
@@ -559,12 +559,12 @@ export const router = createBrowserRouter([
     element: <Suspense fallback={null}><VendorPortalLayout /></Suspense>,
     children: [
       { index: true, element: <Navigate to="/vendor-portal/dashboard" replace /> },
-      { path: 'dashboard', element: withSuspense(<VendorPortalDashboardPage />) },
-      { path: 'orders',    element: withSuspense(<VendorOrdersPage />) },
-      { path: 'orders/:ulid', element: withSuspense(<VendorOrderDetailPage />) },
-      { path: 'items',     element: withSuspense(<VendorItemsPage />) },
-      { path: 'goods-receipts', element: withSuspense(<VendorGoodsReceiptsPage />) },
-      { path: 'invoices', element: withSuspense(<VendorInvoicesPage />) },
+      { path: 'dashboard', element: withSuspense(guard('vendor_portal.view_orders', <VendorPortalDashboardPage />)) },
+      { path: 'orders',    element: withSuspense(guard('vendor_portal.view_orders', <VendorOrdersPage />)) },
+      { path: 'orders/:ulid', element: withSuspense(guard('vendor_portal.view_orders', <VendorOrderDetailPage />)) },
+      { path: 'items',     element: withSuspense(guard('vendor_portal.manage_items', <VendorItemsPage />)) },
+      { path: 'goods-receipts', element: withSuspense(guard('vendor_portal.view_receipts', <VendorGoodsReceiptsPage />)) },
+      { path: 'invoices', element: withSuspense(guard('vendor_portal.view_receipts', <VendorInvoicesPage />)) },
     ],
   },
 
@@ -574,9 +574,9 @@ export const router = createBrowserRouter([
     element: <Suspense fallback={null}><ClientPortalLayout /></Suspense>,
     children: [
       { index: true, element: <Navigate to="/client-portal/tickets" replace /> },
-      { path: 'tickets',         element: withSuspense(<ClientTicketsPage />) },
-      { path: 'tickets/new',     element: withSuspense(<ClientNewTicketPage />) },
-      { path: 'tickets/:ulid',   element: withSuspense(<ClientTicketDetailPage />) },
+      { path: 'tickets',         element: withSuspense(guard('crm.tickets.view', <ClientTicketsPage />)) },
+      { path: 'tickets/new',     element: withSuspense(guard('crm.tickets.create', <ClientNewTicketPage />)) },
+      { path: 'tickets/:ulid',   element: withSuspense(guard('crm.tickets.view', <ClientTicketDetailPage />)) },
     ],
   },
 

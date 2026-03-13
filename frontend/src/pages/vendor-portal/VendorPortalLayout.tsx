@@ -1,19 +1,23 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, Navigate } from 'react-router-dom'
 import { Link, useLocation } from 'react-router-dom'
 import { Package, ShoppingCart, LayoutDashboard, ClipboardCheck, FileText } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
 const NAV_ITEMS = [
-  { to: '/vendor-portal/dashboard',      label: 'Dashboard',       icon: LayoutDashboard },
-  { to: '/vendor-portal/orders',         label: 'My Orders',       icon: ShoppingCart },
-  { to: '/vendor-portal/goods-receipts', label: 'Goods Receipts',  icon: ClipboardCheck },
-  { to: '/vendor-portal/invoices',       label: 'Invoices',        icon: FileText },
-  { to: '/vendor-portal/items',          label: 'My Catalog',      icon: Package },
+  { to: '/vendor-portal/dashboard',      label: 'Dashboard',       icon: LayoutDashboard, permission: 'vendor_portal.view_orders' },
+  { to: '/vendor-portal/orders',         label: 'My Orders',       icon: ShoppingCart, permission: 'vendor_portal.view_orders' },
+  { to: '/vendor-portal/goods-receipts', label: 'Goods Receipts',  icon: ClipboardCheck, permission: 'vendor_portal.view_receipts' },
+  { to: '/vendor-portal/invoices',       label: 'Invoices',        icon: FileText, permission: 'vendor_portal.view_receipts' },
+  { to: '/vendor-portal/items',          label: 'My Catalog',      icon: Package, permission: 'vendor_portal.manage_items' },
 ]
 
 export default function VendorPortalLayout(): React.ReactElement {
   const location = useLocation()
-  const { user } = useAuthStore()
+  const { user, hasPermission, hasRole } = useAuthStore()
+
+  if (!hasRole('vendor')) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <div className="flex h-screen bg-neutral-50">
@@ -24,7 +28,7 @@ export default function VendorPortalLayout(): React.ReactElement {
           <p className="text-sm font-semibold text-neutral-800 mt-1 truncate">{user?.name ?? '—'}</p>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+          {NAV_ITEMS.filter((item) => hasPermission(item.permission)).map(({ to, label, icon: Icon }) => {
             const active = location.pathname.startsWith(to)
             return (
               <Link

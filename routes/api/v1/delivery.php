@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::patch('/shipments/{shipment}/status', [DeliveryController::class, 'updateShipmentStatus']);
 
     // ── Delivery Export (CSV) ────────────────────────────────────────────────
-    Route::get('/export', function (\Illuminate\Http\Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {
+    Route::get('/export', function (\Illuminate\Http\Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {        abort_unless(auth()->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
         $query = \Illuminate\Support\Facades\DB::table('shipments')
             ->leftJoin('delivery_receipts', 'shipments.id', '=', 'delivery_receipts.shipment_id')
             ->select(
