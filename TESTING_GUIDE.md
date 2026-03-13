@@ -121,7 +121,25 @@ These are pre-seeded — just verify they exist:
    - Email: `rose.garcia@megaplastics.com`
    - Credit Limit (₱): `500000`
 
-### Step 9: Create Inventory Items (Warehouse Head)
+### Step 9: Create CRM Manager + Client Portal User (Admin)
+
+📧 **Switch to**: `admin@ogamierp.local` / `Admin@1234567890!`
+
+1. Go to **Administration → Users → New**
+2. Create **CRM Manager**:
+   - Name: `CRM Manager`
+   - Email: `crm.manager@ogamierp.local`
+   - Password: `CrmManager@12345!`
+   - Role: `crm_manager`
+   - Department: `SALES`
+3. Create **Client Portal User**:
+   - Name: `Client User (XYZ)`
+   - Email: `client@ogamierp.local`
+   - Password: `Client@Test1234!`
+   - Role: `client`
+   - If a **Customer/Client** field exists, select **XYZ Manufacturing Corp.**
+
+### Step 10: Create Inventory Items (Warehouse Head)
 
 📧 **Switch to**: `warehouse.head@ogamierp.local` / `Head@123456789!`
 
@@ -134,7 +152,7 @@ These are pre-seeded — just verify they exist:
    - Category: `Packaging Materials` / Name: `Small Carton` / Type: `Raw Material` / Unit of Measure: `pcs`
    - Category: `Maintenance Supplies` / Name: `Hydraulic Oil` / Type: `Spare Part` / Unit of Measure: `pail`
 
-### Step 10: Create Equipment (Maintenance Head)
+### Step 11: Create Equipment (Maintenance Head)
 
 📧 **Switch to**: `maintenance.head@ogamierp.local` / `Head@123456789!`
 
@@ -145,7 +163,7 @@ These are pre-seeded — just verify they exist:
    - Status: `Operational`
    - Location: `Production Floor A`
 
-### Step 11: Create Mold Master (Mold Manager)
+### Step 12: Create Mold Master (Mold Manager)
 
 📧 **Switch to**: `mold.manager@ogamierp.local` / `Manager@12345!`
 
@@ -184,6 +202,9 @@ These are pre-seeded — just verify they exist:
 | 20 | QC/QA Head | `qcqa.head@ogamierp.local` | `Head@123456789!` | QC | `head` |
 | 21 | ISO Head | `iso.head@ogamierp.local` | `Head@123456789!` | ISO | `head` |
 | 22 | Staff (Prod Op) | `prod.staff@ogamierp.local` | `Staff@123456789!` | PROD | `staff` |
+| 23 | CRM Manager | `crm.manager@ogamierp.local` | `CrmManager@12345!` | SALES | `crm_manager` |
+| 24 | Vendor Portal User | `jun.reyes@abcsupply.com` | *(generated in Step 6)* | — | `vendor` |
+| 25 | Client Portal User | `client@ogamierp.local` | `Client@Test1234!` | — | `client` |
 
 ---
 
@@ -362,176 +383,298 @@ These are pre-seeded — just verify they exist:
 
 ---
 
-## Part 5 — Testing Scenarios (By Workflow)
+#### 15. CRM Manager — `crm.manager@ogamierp.local` / `CrmManager@12345!`
 
-### Scenario 1: Full Procurement Flow (6 roles)
+| Dashboard | Sidebar |
+|-----------|---------|
+| CrmManagerDashboard — ticket queue, SLA breaches | CRM (Tickets) |
 
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | **Head creates PR** | `production.head@ogamierp.local` / `Head@123456789!` |
-| | Go to Procurement → Purchase Requests → New. Select vendor from dropdown → pick items from catalog → set quantities → Submit | |
-| 2 | **Head Notes (Step 2)** | `warehouse.head@ogamierp.local` / `Head@123456789!` |
-| | Open the PR → click "Note" → confirm | |
-| 3 | **Manager Checks (Step 3)** | `hr.manager@ogamierp.local` / `HrManager@1234!` |
-| | Open the PR → click "Check" → confirm | |
-| 4 | **Purchasing Officer Reviews (Step 4)** | `purchasing.officer@ogamierp.local` / `Officer@12345!` |
-| | Open the PR → click "Review" → confirm | |
-| 5 | **Accounting Officer Budget Checks (Step 5)** | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | Open the PR → click "Budget Check" → confirm | |
-| 6 | **VP Final Approves (Step 6)** | `vp@ogamierp.local` / `VicePresident@1!` |
-| | Open the PR → click "Final Approve" → auto-creates PO | |
+**Key actions**: assign tickets, reply to clients, update status, close tickets.
 
 ---
 
-### Scenario 2: Leave Flow (4 roles)
+#### 16. Vendor Portal User — *(credentials from Step 6)*
 
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Staff submits leave | `prod.staff@ogamierp.local` / `Staff@123456789!` |
-| | User menu → My Leaves → "New" → VL, 2 days → Submit | |
-| 2 | Head approves | `production.head@ogamierp.local` / `Head@123456789!` |
-| | Team Management → Team Leave → find request → "Approve" | |
-| 3 | HR Manager checks | `hr.manager@ogamierp.local` / `HrManager@1234!` |
-| | HR → Leave Requests → find request → "Check" | |
-| 4 | GA Officer processes | `ga.officer@ogamierp.local` / `Officer@12345!` |
-| | Executive → GA Leave Processing → find request → "Process" | |
+**Portal only** — logs in to the Vendor Portal and sees: Dashboard, Orders, Items, Receipts.
 
 ---
 
-### Scenario 3: Payroll Run (3 roles)
+#### 17. Client Portal User — `client@ogamierp.local` / `Client@Test1234!`
 
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | HR creates, adjusts & computes | `hr.manager@ogamierp.local` / `HrManager@1234!` |
-| | Payroll → Payroll Runs → "New" → select period → scope → **add Adjustments** (e.g. ad-hoc bonus) → validate → compute → submit | |
-| 2 | Accounting approves | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | Payroll → Payroll Runs → open run → "Acctg Approve" | |
-| 3 | VP disbursement approval | `vp@ogamierp.local` / `VicePresident@1!` |
-| | VP Approvals → find payroll run → "VP Approve" → disburse | |
+**Portal only** — logs in to the Client Portal and sees: Tickets (create, view, reply).
 
 ---
 
-### Scenario 4: Loan Application (5 roles)
+## Part 5 — Full End-to-End Workflow (Single Story)
 
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Staff applies | `prod.staff@ogamierp.local` / `Staff@123456789!` |
-| | User menu → My Loans → "Apply" → select type → amount → Submit | |
-| 2 | Head notes | `production.head@ogamierp.local` / `Head@123456789!` |
-| | Team Management → Team Loans → "Note" the loan | |
-| 3 | HR Manager checks | `hr.manager@ogamierp.local` / `HrManager@1234!` |
-| | HR → Loans → "Check" the loan | |
-| 4 | Accounting reviews | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | Accounting → Loan Approvals → "Review" the loan | |
-| 5 | VP final approves | `vp@ogamierp.local` / `VicePresident@1!` |
-| | VP Approvals → Loans → "Approve" the loan | |
+This is a single, real-life story that starts from setup and walks through procurement, inventory receiving, BOM, production, delivery, and accounting. If you already completed Part 1, you can skip Phase A and proceed to Phase B.
+
+### Phase A — Setup & Master Data (one-time)
+1. **Admin**: Verify System Settings and reference data (Part 1, Steps 1–2).
+2. **Accounting Officer**: Create the two bank accounts (Part 1, Step 3).
+3. **Purchasing Officer**: Create two vendors (Part 1, Step 4).
+4. **Purchasing Officer**: Accredit both vendors (Part 1, Step 5).
+5. **Admin**: Create vendor portal accounts (Part 1, Step 6).
+6. **Vendor Portal**: Import vendor items from `storage/app/sample_vendor_items.csv` (Part 1, Step 7).
+7. **Accounting Officer**: Create two customers (Part 1, Step 8).
+8. **Admin**: Create CRM Manager + Client Portal user (Part 1, Step 9).
+9. **Warehouse Head**: Create item categories and item masters (Part 1, Step 10), plus a finished good:
+   - Add `Plastic Container 500ml` (Finished Good, UoM: `pcs`).
+10. **Warehouse Head**: Create a warehouse location (Inventory → Warehouse Locations):
+   - Code: `WH-A1`, Name: `Warehouse A – Rack 1`.
+11. **Production Manager**: Create a BOM (Production → BOMs → New):
+   - Finished Good: `Plastic Container 500ml`.
+   - Components: `PP Resin` (0.20 kg), `Small Carton` (1 pc).
+
+### Phase B — Procurement to Goods Receipt
+11. **Production Head**: Create a Purchase Request (Procurement → Purchase Requests → New).
+    - Vendor: `ABC Industrial Supply Co.`
+    - Items: select 2–3 items from the vendor catalog (e.g., resin + packaging).
+    - Submit PR.
+12. **Warehouse Head**: Open the PR and click **Note** with a short comment.
+13. **HR Manager**: Open the PR and click **Check**.
+14. **Purchasing Officer**: Open the PR and click **Review**.
+15. **Accounting Officer**: Open the PR and click **Budget Check**.
+    - If budget is missing, create a Cost Center + Budget Line first, then retry.
+16. **Vice President**: Approve the PR (auto-creates a PO).
+17. **Purchasing Officer**: Open the PO, map each line to an Item Master, set agreed unit cost, then click **Send to Vendor**.
+
+### Phase C — Vendor Portal to Receiving
+18. **Vendor Portal**: Orders → open the PO → mark **In Transit**.
+19. **Vendor Portal**: Mark **Delivered** (use full quantity for the first run).
+20. **Warehouse Head**: Procurement → Goods Receipts → New → select the PO → enter received quantities → **Confirm**.
+21. **QC Manager**: QC/QA → Inspections → New → link the GR/PO and record results.
+22. **Warehouse Head**: Inventory → Stock Balances → confirm on-hand quantities increased.
+23. **Accounting Officer**: Inventory → Valuation Report → confirm totals populate.
+
+### Phase D — MRQ to Production
+24. **Staff**: Inventory → Requisitions → New → request `PP Resin` + `Small Carton` → Submit.
+25. **Production Head**: Open MRQ → **Note**.
+26. **HR Manager**: Open MRQ → **Check**.
+27. **Purchasing Officer**: Open MRQ → **Review**.
+28. **Vice President**: Approve MRQ.
+29. **Warehouse Head**: Open MRQ → **Fulfill** (stock issues).
+30. **Production Manager**: Production → Work Orders → New → select BOM → **Release**.
+31. **Staff**: Production → Work Orders → open the released order → **Log Output** (e.g., 200 pcs).
+32. **QC Manager**: QC/QA → Inspections → record final inspection; close NCR if any.
+
+### Phase E — Delivery, AR, AP, Banking
+33. **ImpEx Officer**: Delivery → Shipments → New → assign vehicle.
+34. **Warehouse Head**: Delivery → Receipts → New → link shipment → record quantities.
+35. **Accounting Officer**: Receivables (AR) → Invoices → New → create invoice for `XYZ Manufacturing Corp.` → Submit.
+36. **Accounting Officer**: Receivables (AR) → Invoices → Receive Payment (record cash receipt).
+37. **Accounting Officer**: Payables (AP) → Invoices → open the draft created from GR (if present) → Submit and Approve.
+38. **Accounting Officer**: Banking → Reconciliations → match the AR receipt and AP payment.
+39. **Executive**: Financial Reports → Trial Balance → verify balances update.
+
+### Phase F — Payroll Test Data + Run (Detailed Dataset)
+
+**Dataset (use these two employees):**
+
+| Employee | Email | Employee Code | Monthly Rate | OT | Allowance | Deduction |
+|---|---|---|---:|---|---:|---:|
+| Production Operator | `prod.staff@ogamierp.local` | `EMP-2026-0023` | 25000 | 2.0 hrs Regular OT on 2026-03-06 | Meal Allowance 500 | Uniform Deduction 200 |
+| Production Head | `production.head@ogamierp.local` | `EMP-2026-0019` | 32000 | 1.5 hrs Regular OT on 2026-03-10 | Transport Allowance 1000 | Cash Advance 300 |
+
+40. **HR Manager**: HR → Employees → open both employees → ensure **Active**, assign **Salary Grade**, set **basic monthly rate** (per table), and confirm **Regular** shift schedule.
+
+41. **Prepare Attendance CSV** (for Mar 1–15, 2026; 10 working days). Create a file `attendance_mar_1_15.csv` with this exact header and rows:
+
+```
+employee_code,work_date,time_in,time_out,source
+EMP-2026-0023,2026-03-02,08:00,17:00,csv_import
+EMP-2026-0023,2026-03-03,08:00,17:00,csv_import
+EMP-2026-0023,2026-03-04,08:15,17:00,csv_import
+EMP-2026-0023,2026-03-05,08:00,16:30,csv_import
+EMP-2026-0023,2026-03-06,08:00,17:00,csv_import
+EMP-2026-0023,2026-03-09,08:00,17:00,csv_import
+EMP-2026-0023,2026-03-10,08:00,17:00,csv_import
+EMP-2026-0023,2026-03-11,08:00,17:00,csv_import
+EMP-2026-0023,2026-03-12,08:00,17:00,csv_import
+EMP-2026-0023,2026-03-13,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-02,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-03,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-04,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-05,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-06,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-09,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-10,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-11,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-12,08:00,17:00,csv_import
+EMP-2026-0019,2026-03-13,08:00,17:00,csv_import
+```
+
+42. **GA Officer**: Attendance → Import CSV → upload `attendance_mar_1_15.csv` → confirm both employees have 10 logs. Resolve any anomalies if prompted.
+
+43. **Overtime Requests**:
+   - **Production Operator** (`prod.staff`) submits OT: **2026-03-06**, **2.0 hours**, type **Regular OT**.
+   - **Production Head** submits OT: **2026-03-10**, **1.5 hours**, type **Regular OT**.
+   - **Production Head** supervises the staff OT; **HR Manager** approves both OT requests.
+
+44. **HR Manager**: Payroll → Payroll Runs → New → period **Mar 1–15, 2026** → include both employees.
+   - In **Adjustments** (per employee):
+     - `prod.staff`: **Allowance** `Meal Allowance` +500, **Deduction** `Uniform Deduction` -200.
+     - `production.head`: **Allowance** `Transport Allowance` +1000, **Deduction** `Cash Advance` -300.
+   - Compute → Submit.
+
+45. **Accounting Officer**: Payroll → Payroll Runs → Accounting Approve → Disburse → Publish.
+
+46. **Staff**: User menu → My Payslips → verify:
+   - Late minutes (15) and undertime (30) are reflected for `prod.staff`.
+   - OT pay, allowances, and deductions show under Earnings/Deductions.
+
+### Phase G — CRM Ticket Flow (Client + CRM Manager)
+47. **Client Portal User**: Client Portal → Tickets → New → submit a complaint ticket for a delayed delivery.
+48. **CRM Manager**: CRM → Tickets → assign to self → reply → set status to In Progress → resolve and close.
+49. **Client Portal User**: Open the ticket thread → reply → confirm internal notes are not visible.
+
+## Part 6 — Role-Based Scenario Scripts (Step-by-Step)
+
+Run these after Part 5. Each role only performs the actions in its responsibility boundary. If a step depends on a pending transaction, create it in the earlier role step first.
+
+### 6.1 Admin (System Owner)
+1. Login as `admin@ogamierp.local`.
+2. Confirm the sidebar only shows Administration modules.
+3. Go to Payables (AP) → Vendors and create portal accounts for each accredited vendor.
+4. Go to Administration → Users and create one test user (any role) to confirm user management works.
+5. Open Administration → Audit Logs and verify the actions were recorded.
+
+### 6.2 Super Admin (Full Bypass)
+1. Login as `superadmin@ogamierp.local`.
+2. Open HR → Employees and view any employee profile.
+3. Open Accounting → Journal Entries and confirm you can open the create form.
+4. Open Procurement → Purchase Orders and confirm unrestricted access.
+
+### 6.3 Executive (Chairman or President, Read-Only)
+1. Login as `chairman@ogamierp.local` (or `president@ogamierp.local`).
+2. Accounting → Chart of Accounts and Journal Entries: confirm view-only and no create buttons.
+3. Financial Reports → Trial Balance and Income Statement: confirm read-only access.
+4. Production → Work Orders: confirm list is visible and no write actions are shown.
+
+### 6.4 Vice President (Final Approvals)
+1. Login as `vp@ogamierp.local`.
+2. VP Approvals → Purchase Requests: approve the latest PR (created in 6.14 Production Head).
+3. VP Approvals → Material Requisitions: approve the latest MRQ (created in 6.15 Staff).
+4. VP Approvals → Loans: approve a pending loan (created in 6.15 Staff).
+5. VP Approvals → Payroll Runs: approve a submitted payroll run (created in 6.5 HR Manager).
+
+### 6.5 HR Manager (HR + Payroll)
+1. Login as `hr.manager@ogamierp.local`.
+2. HR → Employees → New: create one employee record (basic fields only).
+3. HR → Leave Requests: open a pending leave and click "Check".
+4. HR → Loans: open a pending loan and click "Check".
+5. Payroll → Payroll Runs: create a new run, compute, and submit for approval.
+
+### 6.6 GA Officer (GA Leave + Attendance)
+1. Login as `ga.officer@ogamierp.local`.
+2. Executive → GA Leave Processing: process a leave request that has passed HR check.
+3. Team Management → Attendance Anomalies: resolve at least one anomaly (if available).
+4. Team Management → Overtime: supervise or review any pending OT request.
+
+### 6.7 Accounting Officer (Accounting + Finance)
+1. Login as `acctg.officer@ogamierp.local`.
+2. Banking → Bank Accounts: create the two bank accounts from Part 1 if not done.
+3. Budget → Cost Centers: create a cost center, then Budget Lines: set a line item.
+4. Payables (AP) → Invoices: create an invoice from a confirmed GR and approve it.
+5. Receivables (AR) → Invoices: create a customer invoice and submit.
+6. Accounting → Journal Entries: create and post a simple 2-line JE.
+7. Fixed Assets → Register: add one asset, then run depreciation and create a disposal.
+8. Payroll → Payroll Runs: perform Accounting approval on a submitted run.
+
+### 6.8 Purchasing Officer (Procurement + Vendor Lifecycle)
+1. Login as `purchasing.officer@ogamierp.local`.
+2. Payables (AP) → Vendors: create a vendor, edit it, and accredit it.
+3. Procurement → Purchase Requests: open the latest PR and click "Review".
+4. Procurement → Purchase Orders: open the PO created after VP approval, assign a vendor if needed, and click "Send".
+5. Procurement → Goods Receipts: create a GR and confirm it.
+
+### 6.9 ImpEx Officer (Delivery)
+1. Login as `impex.officer@ogamierp.local`.
+2. Delivery → Shipments: create a shipment and assign a vehicle.
+3. Delivery → Receipts: create a delivery receipt linked to the shipment.
+4. Procurement → Purchase Orders: confirm view-only access.
+
+### 6.10 Plant Manager (Plant Ops Oversight)
+1. Login as `plant.manager@ogamierp.local`.
+2. Production → Work Orders: open and review active orders.
+3. QC/QA → Inspections: review the latest inspection record.
+4. Maintenance → Work Orders: create one work order and assign a priority.
+5. Mold → Mold Masters: open a mold and log shots.
+6. ISO/IATF → Documents: open the document register.
+
+### 6.11 Production Manager (Production Control)
+1. Login as `prod.manager@ogamierp.local`.
+2. Production → BOMs: create a BOM for a finished good.
+3. Production → Work Orders: create a work order and release it.
+4. Inventory → Stock Balances: confirm view-only access.
+
+### 6.12 QC Manager (QC/QA)
+1. Login as `qc.manager@ogamierp.local`.
+2. QC/QA → Templates: create or update an inspection template.
+3. QC/QA → Inspections: create an inspection linked to a production order.
+4. QC/QA → NCR: create an NCR and close it.
+
+### 6.13 Mold Manager (Mold Operations)
+1. Login as `mold.manager@ogamierp.local`.
+2. Mold → Mold Masters: create a mold master if not done in Part 1.
+3. Mold → Mold Masters: log a shot count update.
+
+### 6.14 Department Heads (Head role — repeat for each head account)
+
+Warehouse Head (`warehouse.head@ogamierp.local`)
+1. Inventory → Requisitions: open an approved MRQ and click "Fulfill".
+2. Procurement → Goods Receipts: create and confirm a GR.
+
+PPC Head (`ppc.head@ogamierp.local`)
+1. Production → Work Orders: open a released order and log output.
+
+Maintenance Head (`maintenance.head@ogamierp.local`)
+1. Maintenance → Equipment: verify the equipment list.
+2. Maintenance → Work Orders: create a work order and mark it in progress.
+
+Production Head (`production.head@ogamierp.local`)
+1. Procurement → Purchase Requests: create a PR using vendor catalog items.
+2. Team Management → Team Leave: approve one pending leave request.
+
+Processing Head (`processing.head@ogamierp.local`)
+1. Team Management → Team Loans: add a note to a pending loan.
+
+QC/QA Head (`qcqa.head@ogamierp.local`)
+1. QC/QA → NCR: review or create an NCR record.
+
+ISO Head (`iso.head@ogamierp.local`)
+1. ISO/IATF → Documents: create a controlled document.
+2. ISO/IATF → Audits: create an internal audit.
+
+### 6.15 Staff (Self-Service + Operations)
+1. Login as `prod.staff@ogamierp.local`.
+2. User menu → My Leaves: submit a leave request.
+3. User menu → My Overtime: submit an OT request.
+4. User menu → My Loans: submit a loan request.
+5. Inventory → Requisitions: create an MRQ and submit.
+6. Production → Work Orders: log output on a released order.
+7. Mold → Mold Masters: log shots if the mold module is visible.
+
+### 6.16 Vendor Portal User (Vendor role)
+1. Login using the vendor portal credentials created by Admin (Part 1, Step 6).
+2. Vendor Portal → Items: import the CSV catalog if not done.
+3. Vendor Portal → Orders: open a PO and mark it In Transit.
+4. Vendor Portal → Orders: mark as Delivered and upload any receipt or invoice file if available.
+
+### 6.17 CRM Manager (Tickets)
+1. Login as `crm.manager@ogamierp.local`.
+2. CRM → Tickets: open a new ticket from the client portal.
+3. Assign the ticket to yourself and reply.
+4. Update status to In Progress, then Resolved/Closed.
+
+### 6.18 Client Portal User
+1. Login as `client@ogamierp.local`.
+2. Client Portal → Tickets: create a new ticket (complaint or inquiry).
+3. Open the ticket thread and post a reply.
 
 ---
 
-### Scenario 5: Vendor Onboarding (2 roles + admin)
-
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Create & edit vendor | `purchasing.officer@ogamierp.local` / `Officer@12345!` |
-| | Payables → Vendors → "Add Vendor" → fill details → Save | |
-| 2 | Accredit vendor | `purchasing.officer@ogamierp.local` / `Officer@12345!` |
-| | Find vendor → "Accredit" button → confirm | |
-| 3 | Provision portal account | `admin@ogamierp.local` / `Admin@1234567890!` |
-| | Find accredited vendor → "Create Account" → copy credentials | |
-| 4 | Verify accounting officer cannot accredit | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | Payables → Vendors → verify: NO add/edit/accredit/suspend/archive buttons | |
-
----
-
-### Scenario 6: Production + QC Flow (4 roles)
-
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Create BOM | `prod.manager@ogamierp.local` / `Manager@12345!` |
-| | Production → BOMs → "New" → add materials → Save | |
-| 2 | Create production order | `prod.manager@ogamierp.local` / `Manager@12345!` |
-| | Production → Work Orders → "New" → select BOM, qty → Release | |
-| 3 | Staff logs output | `prod.staff@ogamierp.local` / `Staff@123456789!` |
-| | Production → Work Orders → open order → "Log Output" | |
-| 4 | QC inspects | `qc.manager@ogamierp.local` / `Manager@12345!` |
-| | QC/QA → Inspections → "New" → link to production order → record results | |
-| 5 | QC logs NCR (if fail) | `qcqa.head@ogamierp.local` / `Head@123456789!` |
-| | QC/QA → NCR → "New" → link inspection → assign CAPA | |
-
----
-
-### Scenario 7: Maintenance + Mold (3 roles)
-
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Create work order | `maintenance.head@ogamierp.local` / `Head@123456789!` |
-| | Maintenance → Work Orders → "New" → equipment, priority → Save | |
-| 2 | Log mold shots | `mold.manager@ogamierp.local` / `Manager@12345!` |
-| | Mold → Mold Masters → select mold → log shot count | |
-| 3 | Plant Manager reviews | `plant.manager@ogamierp.local` / `Manager@12345!` |
-| | Maintenance → Work Orders → review all plant WOs | |
-
----
-
-### Scenario 8: Accounting & Finance (2 roles)
-
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Journal entry | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | **Accounting** → Journal Entries → "New" → debit/credit lines → Submit → Post | |
-| 2 | AP invoice | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | **Payables (AP)** → Invoices → "New" → link to vendor/PO → Submit → Approve | |
-| 3 | AR invoice | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | **Receivables (AR)** → Invoices → "New" → Customer → items → Submit | |
-| 4 | Bank reconciliation | `acctg.officer@ogamierp.local` / `AcctgManager@1234!` |
-| | **Banking** → Reconciliations → select account → match/unmatch → Certify | |
-| 5 | VP reviews financials | `vp@ogamierp.local` / `VicePresident@1!` |
-| | **Financial Reports** → Trial Balance, Balance Sheet, Income Statement (read-only) | |
-
----
-
-### Scenario 9: ISO & Document Control (1 role)
-
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Create controlled document | `iso.head@ogamierp.local` / `Head@123456789!` |
-| | ISO/IATF → Documents → "New" → title, rev → Save | |
-| 2 | Create internal audit | `iso.head@ogamierp.local` / `Head@123456789!` |
-| | ISO/IATF → Audits → "New" → scope, findings → Save | |
-
----
-
-### Scenario 10: Delivery & Logistics (2 roles)
-
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Create shipment | `impex.officer@ogamierp.local` / `Officer@12345!` |
-| | Delivery → Shipments → "New" → assign vehicle → Save | |
-| 2 | Create delivery receipt | `warehouse.head@ogamierp.local` / `Head@123456789!` |
-| | Delivery → Receipts → "New" → link shipment → record qty | |
-
----
-
-### Scenario 11: Material Requisition (5 roles)
-
-| Step | Action | Login |
-|------|--------|-------|
-| 1 | Staff creates MRQ | `prod.staff@ogamierp.local` / `Staff@123456789!` |
-| | Inventory → Requisitions → "New" → items, qty → Submit | |
-| 2 | Head notes MRQ | `production.head@ogamierp.local` / `Head@123456789!` |
-| | Inventory → Requisitions → "Note" | |
-| 3 | Manager checks | `hr.manager@ogamierp.local` / `HrManager@1234!` |
-| | Inventory → Requisitions → "Check" | |
-| 4 | Purchasing reviews | `purchasing.officer@ogamierp.local` / `Officer@12345!` |
-| | Inventory → Requisitions → "Review" | |
-| 5 | VP approves | `vp@ogamierp.local` / `VicePresident@1!` |
-| | VP Approvals → Material Requisitions → "Approve" | |
-| 6 | Warehouse fulfills | `warehouse.head@ogamierp.local` / `Head@123456789!` |
-| | Inventory → Requisitions → "Fulfill" | |
-
----
-
-## Part 6 — Negative Tests (Access Denied Verification)
+## Part 7 — Negative Tests (Access Denied Verification)
 
 | Login | Try To Access | Expected |
 |-------|---------------|----------|
@@ -553,7 +696,7 @@ These are pre-seeded — just verify they exist:
 
 ---
 
-## Part 7 — Permission Implementation Audit
+## Part 8 — Permission Implementation Audit
 
 | # | Change | Severity | Status |
 |---|--------|----------|--------|

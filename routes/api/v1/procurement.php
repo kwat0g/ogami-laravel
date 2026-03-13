@@ -164,10 +164,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Spend by vendor (top 15)
         $byVendor = \Illuminate\Support\Facades\DB::table('purchase_orders')
             ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
-            ->whereIn('purchase_orders.status', ['approved', 'partially_received', 'received', 'completed'])
+            ->whereIn('purchase_orders.status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('purchase_orders.created_at', $year)
-            ->select('vendors.company_name as vendor', \Illuminate\Support\Facades\DB::raw('sum(purchase_orders.total_amount) as total_spend'))
-            ->groupBy('vendors.company_name')
+            ->select('vendors.name as vendor', \Illuminate\Support\Facades\DB::raw('sum(purchase_orders.total_po_amount) as total_spend'))
+            ->groupBy('vendors.name')
             ->orderByDesc('total_spend')
             ->limit(15)
             ->get();
@@ -175,13 +175,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Spend by item category
         $byCategory = \Illuminate\Support\Facades\DB::table('purchase_order_items')
             ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
-            ->join('item_masters', 'purchase_order_items.item_id', '=', 'item_masters.id')
+            ->join('item_masters', 'purchase_order_items.item_master_id', '=', 'item_masters.id')
             ->leftJoin('item_categories', 'item_masters.category_id', '=', 'item_categories.id')
-            ->whereIn('purchase_orders.status', ['approved', 'partially_received', 'received', 'completed'])
+            ->whereIn('purchase_orders.status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('purchase_orders.created_at', $year)
             ->select(
                 \Illuminate\Support\Facades\DB::raw("coalesce(item_categories.name, 'Uncategorized') as category"),
-                \Illuminate\Support\Facades\DB::raw('sum(purchase_order_items.quantity * purchase_order_items.unit_price) as total_spend'),
+                \Illuminate\Support\Facades\DB::raw('sum(purchase_order_items.total_cost) as total_spend'),
             )
             ->groupBy('category')
             ->orderByDesc('total_spend')
@@ -189,14 +189,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Summary stats
         $totalPOs = \Illuminate\Support\Facades\DB::table('purchase_orders')
-            ->whereIn('status', ['approved', 'partially_received', 'received', 'completed'])
+            ->whereIn('status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('created_at', $year)->count();
         $totalSpend = \Illuminate\Support\Facades\DB::table('purchase_orders')
-            ->whereIn('status', ['approved', 'partially_received', 'received', 'completed'])
-            ->whereYear('created_at', $year)->sum('total_amount');
+            ->whereIn('status', ['sent', 'partially_received', 'fully_received', 'closed'])
+            ->whereYear('created_at', $year)->sum('total_po_amount');
         $avgPoValue = $totalPOs > 0 ? round((float) $totalSpend / $totalPOs, 2) : 0;
         $activeVendors = \Illuminate\Support\Facades\DB::table('purchase_orders')
-            ->whereIn('status', ['approved', 'partially_received', 'received', 'completed'])
+            ->whereIn('status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('created_at', $year)->distinct('vendor_id')->count('vendor_id');
 
         return response()->json([
