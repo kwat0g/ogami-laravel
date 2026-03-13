@@ -17,6 +17,8 @@ final class VendorResource extends JsonResource
     {
         /** @var \App\Domains\AP\Models\Vendor $v */
         $v = $this->resource;
+        $portalUser = $v->relationLoaded('portalUser') ? $v->portalUser : null;
+        $canManageUsers = $request->user()?->hasPermissionTo('system.manage_users') ?? false;
 
         return [
             'id' => $v->id,
@@ -43,6 +45,8 @@ final class VendorResource extends JsonResource
             'bank_account_no' => $v->bank_account_no,
             'bank_account_name' => $v->bank_account_name,
             'payment_terms' => $v->payment_terms,
+            'portal_account_exists' => $portalUser !== null,
+            'portal_account_email' => $canManageUsers ? $portalUser?->email : null,
             'created_at' => $v->created_at->toIso8601String(),
             'updated_at' => $v->updated_at->toIso8601String(),
         ];

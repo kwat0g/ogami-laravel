@@ -1,8 +1,9 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import AuthLayout from '@/components/layout/AuthLayout'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { getLandingPath } from '@/lib/roleLanding'
 import { useAuthStore } from '@/stores/authStore'
 import { useAuth } from '@/hooks/useAuth'
 import { PayrollWizardProvider } from '@/contexts/PayrollWizardContext'
@@ -31,6 +32,14 @@ function RequirePermission({ permission, children }: { permission: string; child
   if (isLoading) return <SkeletonLoader rows={6} />
   if (!has) return <Navigate to="/403" replace />
   return <>{children}</>
+}
+
+// Role-aware landing route for authenticated users.
+// eslint-disable-next-line react-refresh/only-export-components
+function RoleLandingRedirect() {
+  const { user, isLoading } = useAuth()
+  if (isLoading) return <SkeletonLoader rows={6} />
+  return <Navigate to={getLandingPath(user)} replace />
 }
 
 // Shorthand helpers
@@ -295,7 +304,7 @@ const withSuspense = (node: React.ReactNode) => (
   <Suspense fallback={<SkeletonLoader rows={6} />}>{node}</Suspense>
 )
 
-export const router = createBrowserRouter([
+const router = createBrowserRouter([
   // ── Auth shell ───────────────────────────────────────────────────────────
   {
     element: <AuthLayout />,
@@ -308,7 +317,7 @@ export const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
+      { index: true, element: <RoleLandingRedirect /> },
       { path: '/dashboard', element: withSuspense(<Dashboard />) },
 
       // ── HR domain (all routes require hr.full_access - HR department only) ───
@@ -560,6 +569,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/vendor-portal/dashboard" replace /> },
       { path: 'dashboard', element: withSuspense(guard('vendor_portal.view_orders', <VendorPortalDashboardPage />)) },
+      { path: 'change-password', element: withSuspense(<ChangePasswordPage />) },
       { path: 'orders',    element: withSuspense(guard('vendor_portal.view_orders', <VendorOrdersPage />)) },
       { path: 'orders/:ulid', element: withSuspense(guard('vendor_portal.view_orders', <VendorOrderDetailPage />)) },
       { path: 'items',     element: withSuspense(guard('vendor_portal.manage_items', <VendorItemsPage />)) },
@@ -575,6 +585,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/client-portal/tickets" replace /> },
       { path: 'tickets',         element: withSuspense(guard('crm.tickets.view', <ClientTicketsPage />)) },
+      { path: 'change-password', element: withSuspense(<ChangePasswordPage />) },
       { path: 'tickets/new',     element: withSuspense(guard('crm.tickets.create', <ClientNewTicketPage />)) },
       { path: 'tickets/:ulid',   element: withSuspense(guard('crm.tickets.view', <ClientTicketDetailPage />)) },
     ],
@@ -584,3 +595,7 @@ export const router = createBrowserRouter([
   { path: '/403', element: withSuspense(<Forbidden />) },
   { path: '*', element: withSuspense(<NotFound />) },
 ])
+
+export default function AppRouter(): React.ReactElement {
+  return <RouterProvider router={router} />
+}

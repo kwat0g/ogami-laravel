@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, UserPlus, Copy, CheckCheck } from 'lucide-react'
+import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -10,7 +10,6 @@ import {
   useArchiveVendor,
   useAccreditVendor,
   useSuspendVendor,
-  useProvisionVendorAccount,
 } from '@/hooks/useAP'
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -125,86 +124,6 @@ function SuspendVendorButton({ vendor }: { vendor: Vendor }) {
       )}
     </>
   )
-}
-
-// ---------------------------------------------------------------------------
-// Create Portal Account Button (Admin only)
-// ---------------------------------------------------------------------------
-
-function CreatePortalAccountButton({ vendor }: { vendor: Vendor }) {
-  const provisionMut = useProvisionVendorAccount(vendor.id)
-  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null)
-  const [copied, setCopied] = useState(false)
-
-  const handleProvision = async (): Promise<void> => {
-    try {
-      const result = await provisionMut.mutateAsync()
-      setCredentials({ email: result.email, password: result.password })
-      toast.success('Portal account created!')
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to create account.'
-      toast.error(msg)
-    }
-  }
-
-  const handleCopy = (): void => {
-    if (!credentials) return
-    navigator.clipboard.writeText(`Email: ${credentials.email}\nPassword: ${credentials.password}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <>
-      <button
-        onClick={handleProvision}
-        disabled={provisionMut.isPending}
-        className="text-xs text-neutral-600 hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <UserPlus className="w-3 h-3" />
-        {provisionMut.isPending ? 'Creating…' : 'Create Account'}
-      </button>
-
-      {credentials && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded border border-neutral-200 w-full max-w-sm p-6 space-y-4">
-            <h3 className="text-base font-semibold text-neutral-900">Vendor Portal Credentials</h3>
-            <p className="text-sm text-neutral-500">
-              Share these credentials with <strong>{vendor.name}</strong>. The password cannot be retrieved later.
-            </p>
-            <div className="bg-neutral-50 rounded p-3 space-y-2 font-mono text-sm">
-              <div><span className="text-neutral-500">Email:</span> <span className="text-neutral-900 font-medium">{credentials.email}</span></div>
-              <div><span className="text-neutral-500">Password:</span> <span className="text-neutral-900 font-medium">{credentials.password}</span></div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={handleCopy}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
-              >
-                {copied ? <><CheckCheck className="w-3.5 h-3.5 text-green-600" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
-              </button>
-              <button
-                onClick={() => setCredentials(null)}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Admin-only wrapper: only renders for admin users + accredited vendors
-// ---------------------------------------------------------------------------
-
-function AdminOnlyPortalAccountButton({ vendor }: { vendor: Vendor }) {
-  const isAdmin = useAuthStore((s) => s.hasRole('admin'))
-  if (!isAdmin || vendor.accreditation_status !== 'accredited') return null
-  return <CreatePortalAccountButton vendor={vendor} />
 }
 
 // ---------------------------------------------------------------------------
@@ -460,13 +379,12 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
 
 export default function VendorsPage() {
   const [search, setSearch] = useState('')
-  const [showInactive, setShowInactive] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Vendor | null>(null)
 
   const { data, isLoading, refetch } = useVendors({
     search: search || undefined,
-    is_active: showInactive ? undefined : true,
+    is_active: true,
   })
 
   const vendors = data?.data ?? []
@@ -535,14 +453,6 @@ export default function VendorsPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={e => setShowInactive(e.target.checked)}
-          />
-          Show inactive
-        </label>
       </div>
 
       {/* Table */}
@@ -623,7 +533,6 @@ export default function VendorsPage() {
                       {canAccredit && <AccreditVendorButton vendor={vendor} />}
                       {canSuspend && <SuspendVendorButton vendor={vendor} />}
                       {canArchive && vendor.is_active && <ArchiveVendorButton vendor={vendor} />}
-                      <AdminOnlyPortalAccountButton vendor={vendor} />
                     </div>
                   </td>
                 </tr>

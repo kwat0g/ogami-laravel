@@ -91,20 +91,6 @@ export function useCreateVendor() {
   })
 }
 
-/** Provision a vendor portal user account (admin only). Returns { email, password }. */
-export function useProvisionVendorAccount(vendorId: number) {
-  return useMutation({
-    mutationFn: async () => {
-      const res = await api.post<{
-        success: boolean
-        message: string
-        data: { user_id: number; email: string; password: string; role: string }
-      }>(`/accounting/vendors/${vendorId}/provision-account`)
-      return res.data.data
-    },
-  })
-}
-
 export function useUpdateVendor(id: number) {
   const qc = useQueryClient()
   return useMutation({

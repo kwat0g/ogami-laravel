@@ -71,7 +71,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
           onClick={() => navigate('/vendor-portal/orders')}
           className="text-xs text-neutral-400 hover:text-neutral-700"
         >
-          ← Orders
+          ← Purchase Orders
         </button>
       </div>
       <h1 className="text-2xl font-bold text-neutral-900 mb-1">{order.po_reference}</h1>

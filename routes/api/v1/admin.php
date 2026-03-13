@@ -200,6 +200,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ─────────────────────────────────────────────────────────────────────────
 
     // GET /api/v1/admin/users
+    // Optional query params:
+    //   ?include_archived=1  include archived users in mixed list
+    //   ?archived=1          only archived users
     Route::get('users', function (Request $request) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
@@ -207,7 +210,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
             $q->select('id', 'user_id', 'employee_code', 'first_name', 'last_name', 'department_id')
                 ->with(['department:id,name,code']);
         }])
-            ->select('id', 'name', 'email', 'department_id', 'last_login_at', 'created_at', 'locked_until', 'failed_login_attempts');
+            ->select('id', 'name', 'email', 'department_id', 'last_login_at', 'created_at', 'locked_until', 'failed_login_attempts', 'deleted_at');
+
+        if ($request->boolean('archived')) {
+            $query->onlyTrashed();
+        } elseif ($request->boolean('include_archived')) {
+            $query->withTrashed();
+        }
 
         if ($search = $request->string('search')->trim()->value()) {
             $query->where(function ($q) use ($search) {
@@ -266,6 +275,96 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return response()->json(['data' => $query->get()]);
     })->name('employees.available');
 
+    // GET /api/v1/admin/vendors/available?search=abc&limit=50
+    // Returns active accredited vendors with an email and no linked user account.
+    Route::get('vendors/available', function (Request $request) {
+        abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
+
+        $search = $request->string('search')->trim()->value();
+        $limit = min(max((int) $request->input('limit', 50), 1), 200);
+
+        $query = DB::table('vendors')
+            ->whereNull('vendors.deleted_at')
+            ->where('vendors.is_active', true)
+            ->where('vendors.accreditation_status', 'accredited')
+            ->whereNotNull('vendors.email')
+            ->where('vendors.email', '!=', '')
+            ->whereNotExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('users')
+                    ->whereNull('users.deleted_at')
+                    ->whereColumn('users.vendor_id', 'vendors.id');
+            })
+            ->whereNotExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('users')
+                    ->whereNull('users.deleted_at')
+                    ->whereColumn('users.email', 'vendors.email');
+            })
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('vendors.name', 'ilike', "%{$search}%")
+                        ->orWhere('vendors.email', 'ilike', "%{$search}%")
+                        ->orWhere('vendors.tin', 'ilike', "%{$search}%");
+                });
+            })
+            ->select(
+                'vendors.id',
+                'vendors.name',
+                'vendors.email',
+                'vendors.contact_person',
+                'vendors.accreditation_status',
+            )
+            ->orderBy('vendors.name')
+            ->limit($limit);
+
+        return response()->json(['data' => $query->get()]);
+    })->name('vendors.available');
+
+    // GET /api/v1/admin/customers/available?search=abc&limit=50
+    // Returns active customers with an email and no linked user account.
+    Route::get('customers/available', function (Request $request) {
+        abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
+
+        $search = $request->string('search')->trim()->value();
+        $limit = min(max((int) $request->input('limit', 50), 1), 200);
+
+        $query = DB::table('customers')
+            ->whereNull('customers.deleted_at')
+            ->where('customers.is_active', true)
+            ->whereNotNull('customers.email')
+            ->where('customers.email', '!=', '')
+            ->whereNotExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('users')
+                    ->whereNull('users.deleted_at')
+                    ->whereColumn('users.client_id', 'customers.id');
+            })
+            ->whereNotExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('users')
+                    ->whereNull('users.deleted_at')
+                    ->whereColumn('users.email', 'customers.email');
+            })
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('customers.name', 'ilike', "%{$search}%")
+                        ->orWhere('customers.email', 'ilike', "%{$search}%")
+                        ->orWhere('customers.tin', 'ilike', "%{$search}%");
+                });
+            })
+            ->select(
+                'customers.id',
+                'customers.name',
+                'customers.email',
+                'customers.contact_person',
+            )
+            ->orderBy('customers.name')
+            ->limit($limit);
+
+        return response()->json(['data' => $query->get()]);
+    })->name('customers.available');
+
     // POST /api/v1/admin/users
     Route::post('users', function (Request $request) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
@@ -289,12 +388,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
             }
         }
 
+        $mustChangePassword = in_array($data['role'], ['vendor', 'client'], true);
+
         $user = \App\Models\User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'email_verified_at' => now(),
-            'password_changed_at' => now(),
+            'password_changed_at' => $mustChangePassword ? null : now(),
         ]);
 
         $user->assignRole($data['role']);
@@ -352,7 +453,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ], 422);
             }
             $data['password'] = Hash::make($data['password']);
-            $data['password_changed_at'] = now();
+            $data['password_changed_at'] = $user->hasAnyRole(['vendor', 'client']) ? null : now();
         }
 
         unset($data['current_password']);
@@ -364,26 +465,47 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ]);
     })->name('users.update');
 
+    // POST /api/v1/admin/users/{user}/disable
+    Route::post('users/{user}/disable', function (Request $request, \App\Models\User $user) {
+        abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
+
+        // Prevent self-disable so admins cannot lock themselves out of user management.
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'You cannot disable your own account.'], 422);
+        }
+
+        // Revoke all active tokens immediately so existing sessions are terminated.
+        $user->tokens()->delete();
+
+        // Use a long lock window as the disable flag; unlock endpoint re-enables the account.
+        $user->update([
+            'locked_until' => now()->addYears(10),
+            'failed_login_attempts' => 0,
+        ]);
+
+        return response()->json(['message' => 'User account disabled.']);
+    })->middleware('throttle:api-action')->name('users.disable');
+
     // DELETE /api/v1/admin/users/{user}
+    // Archive user account (soft-delete).
     Route::delete('users/{user}', function (Request $request, \App\Models\User $user) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
-        // Prevent self-deletion
+        // Prevent self-delete
         if ($user->id === $request->user()->id) {
             return response()->json(['message' => 'You cannot delete your own account.'], 422);
         }
 
-        // Revoke all tokens before deletion
+        // Revoke all active tokens immediately so existing sessions are terminated.
         $user->tokens()->delete();
 
-        // Unlink employee record so the employee can be assigned a new account later
+        // Unlink employee record so a replacement account can be provisioned.
         DB::table('employees')->where('user_id', $user->id)->update(['user_id' => null]);
 
-        // user_department_access rows cascade-delete with the user (FK cascadeOnDelete)
         $user->delete();
 
-        return response()->json(['message' => 'User deleted successfully.']);
-    })->name('users.destroy');
+        return response()->json(['message' => 'User archived successfully.']);
+    })->middleware('throttle:api-action')->name('users.destroy');
 
     // POST /api/v1/admin/users/{user}/roles
     Route::post('users/{user}/roles', function (Request $request, \App\Models\User $user) {

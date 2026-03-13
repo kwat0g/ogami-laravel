@@ -14,8 +14,8 @@ export default function VendorPortalDashboardPage(): React.ReactElement {
   const totalItems = items?.length ?? 0
 
   const statCards = [
-    { label: 'Active Orders', value: ordersLoading ? '—' : String(activeOrders.length), sub: 'Awaiting delivery', icon: ShoppingCart },
-    { label: 'Total Orders', value: ordersLoading ? '—' : String(totalOrders), sub: 'All time', icon: ShoppingCart },
+    { label: 'Active Purchase Orders', value: ordersLoading ? '—' : String(activeOrders.length), sub: 'Awaiting delivery', icon: ShoppingCart },
+    { label: 'Total Purchase Orders', value: ordersLoading ? '—' : String(totalOrders), sub: 'All time', icon: ShoppingCart },
     { label: 'Catalog Items', value: itemsLoading ? '—' : String(totalItems), sub: 'Active listings', icon: Package },
   ]
 
@@ -23,7 +23,7 @@ export default function VendorPortalDashboardPage(): React.ReactElement {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        subtitle="Overview of your orders and catalog."
+        subtitle="Overview of your purchase orders and catalog."
         icon={<LayoutDashboard className="w-5 h-5 text-neutral-600" />}
       />
 
@@ -46,7 +46,7 @@ export default function VendorPortalDashboardPage(): React.ReactElement {
 
       {activeOrders.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-base font-semibold text-neutral-800">Pending Orders</h2>
+          <h2 className="text-base font-semibold text-neutral-800">Pending Purchase Orders</h2>
           <Card>
             <table className="w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">

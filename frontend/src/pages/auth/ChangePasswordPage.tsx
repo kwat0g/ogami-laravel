@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { Lock } from 'lucide-react'
 import api from '@/lib/api'
+import { bumpAuthEpoch } from '@/lib/authEpoch'
 import { useAuthStore } from '@/stores/authStore'
 import { changePasswordSchema, type ChangePasswordFormValues } from '@/schemas/auth'
 import { parseApiError } from '@/lib/errorHandler'
@@ -34,6 +35,7 @@ export default function ChangePasswordPage() {
 
       toast.success('Password changed. Please log in with your new password.')
       clearAuth()
+      bumpAuthEpoch()
       navigate('/login', { replace: true })
     } catch (err) {
       const { message, fieldErrors } = parseApiError(err)

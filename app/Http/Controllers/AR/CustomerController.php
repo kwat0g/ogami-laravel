@@ -34,7 +34,10 @@ final class CustomerController extends Controller
             $filters['is_active'] = $request->boolean('is_active');
         }
 
-        return CustomerResource::collection($this->service->list($filters));
+        $filters['with_portal_user'] = true;
+        $customers = $this->service->list($filters);
+
+        return CustomerResource::collection($customers);
     }
 
     public function store(CreateCustomerRequest $request): CustomerResource
@@ -70,5 +73,37 @@ final class CustomerController extends Controller
         $this->service->archive($customer);
 
         return response()->json(['message' => 'Customer archived successfully.']);
+    }
+
+    /**
+     * Provision a client portal user account.
+     *
+     * Admin-only. Creates a User linked to the customer via client_id,
+     * assigns the 'client' role, and returns the generated credentials.
+     */
+    public function provisionPortalAccount(Customer $customer): JsonResponse
+    {
+        $this->authorize('provisionAccount', $customer);
+        $data = $this->service->provisionPortalAccount($customer);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Client portal account created successfully.',
+            'data' => $data,
+        ], 201);
+    }
+
+    /** Reset the client portal account password. */
+    public function resetPortalAccountPassword(Customer $customer): JsonResponse
+    {
+        $this->authorize('provisionAccount', $customer);
+
+        $data = $this->service->resetPortalAccountPassword($customer);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Client portal password reset successfully.',
+            'data' => $data,
+        ]);
     }
 }

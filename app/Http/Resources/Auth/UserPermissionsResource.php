@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\Redis;
  *   "department_ids": [1, 2],
  *   "primary_department_id": 1,
  *   "employee_id": 5,
- *   "timezone": "Asia/Manila"
+ *   "timezone": "Asia/Manila",
+ *   "must_change_password": false
  * }
  *
  * @mixin \App\Models\User
@@ -57,16 +58,19 @@ class UserPermissionsResource extends JsonResource
             now()->timestamp
         );
 
+        $roles = $user->getRoleNames()->values();
+
         return [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'roles' => $user->getRoleNames()->values(),
+            'roles' => $roles,
             'permissions' => $user->getEffectivePermissions()->values(),
             'department_ids' => $deptIds,
             'primary_department_id' => $primaryDeptId ? (int) $primaryDeptId : null,
             'employee_id' => $employeeId,
             'timezone' => $user->timezone ?? config('app.timezone', 'Asia/Manila'),
+            'must_change_password' => $user->password_changed_at === null,
         ];
     }
 }

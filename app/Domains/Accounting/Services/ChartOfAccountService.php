@@ -106,7 +106,10 @@ final class ChartOfAccountService implements ServiceContract
             );
         }
 
-        $account->delete(); // soft-delete
+        DB::transaction(function () use ($account): void {
+            $account->update(['is_active' => false]);
+            $account->delete(); // soft-delete
+        });
     }
 
     // ── Reads ────────────────────────────────────────────────────────────────

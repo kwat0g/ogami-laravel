@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Domains\AP\Services;
 
 use App\Domains\AP\Models\Vendor;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class VendorService implements ServiceContract
 {
@@ -103,6 +105,80 @@ final class VendorService implements ServiceContract
                 ->update(['locked_until' => now()->addYears(10)]);
 
             return $vendor->fresh();
+        });
+    }
+
+    /** Provision a vendor portal user account. */
+    public function provisionPortalAccount(Vendor $vendor): array
+    {
+        return DB::transaction(function () use ($vendor): array {
+            $existing = User::where('vendor_id', $vendor->id)->first();
+            if ($existing) {
+                throw new DomainException(
+                    message: "Vendor already has a portal account: {$existing->email}",
+                    errorCode: 'VENDOR_ACCOUNT_EXISTS',
+                    httpStatus: 422,
+                );
+            }
+
+            if (! $vendor->email) {
+                throw new DomainException(
+                    message: 'Vendor must have an email address before creating a portal account. Please update the vendor record first.',
+                    errorCode: 'VENDOR_EMAIL_MISSING',
+                    httpStatus: 422,
+                );
+            }
+
+            $tempPassword = 'Vendor' . Str::random(8) . '!';
+
+            $user = User::create([
+                'name' => $vendor->contact_person ?? $vendor->name,
+                'email' => $vendor->email,
+                'password' => $tempPassword,
+                'vendor_id' => $vendor->id,
+                'email_verified_at' => now(),
+                'password_changed_at' => null, // force change on first login
+            ]);
+
+            $user->syncRoles(['vendor']);
+
+            return [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'password' => $tempPassword,
+                'role' => 'vendor',
+            ];
+        });
+    }
+
+    /** Reset the vendor portal account password and unlock the account. */
+    public function resetPortalAccountPassword(Vendor $vendor): array
+    {
+        return DB::transaction(function () use ($vendor): array {
+            $user = User::where('vendor_id', $vendor->id)->first();
+            if (! $user) {
+                throw new DomainException(
+                    message: 'Vendor does not have a portal account yet.',
+                    errorCode: 'VENDOR_ACCOUNT_MISSING',
+                    httpStatus: 422,
+                );
+            }
+
+            $tempPassword = 'Vendor' . Str::random(8) . '!';
+
+            $user->update([
+                'password' => $tempPassword,
+                'password_changed_at' => null, // force change on next login
+                'failed_login_attempts' => 0,
+                'locked_until' => null,
+            ]);
+
+            return [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'password' => $tempPassword,
+                'role' => 'vendor',
+            ];
         });
     }
 }

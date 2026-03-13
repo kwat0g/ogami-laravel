@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
+  Archive,
   Lock,
   XCircle,
   RefreshCw,
@@ -20,6 +21,7 @@ import {
   usePayrollDetails,
   useLockPayrollRun,
   useApprovePayrollRun,
+  useArchivePayrollRun,
   useCancelPayrollRun,
   useDownloadPayslip,
   useExportPayrollRegister,
@@ -344,6 +346,7 @@ export default function PayrollRunDetailPage() {
 
   const lockMutation       = useLockPayrollRun(runId!)
   const approveMutation    = useApprovePayrollRun(runId!)
+  const archiveMutation    = useArchivePayrollRun(runId!)
   const cancelMutation     = useCancelPayrollRun(runId!)
   const exportRegister     = useExportPayrollRegister(runId!)
   const exportBreakdown    = useExportPayrollBreakdown(runId!)
@@ -394,7 +397,8 @@ export default function PayrollRunDetailPage() {
   const isDraft      = run.status === 'draft'
   const isCancelled  = run.status === 'cancelled'
   const isRejected   = run.status === 'REJECTED'
-  const nonCancellableStatuses = ['cancelled', 'DISBURSED', 'PUBLISHED', 'posted']
+  const canArchive   = ['cancelled', 'REJECTED'].includes(run.status)
+  const nonCancellableStatuses = ['cancelled', 'REJECTED', 'DISBURSED', 'PUBLISHED', 'posted']
   const canCancel    = !nonCancellableStatuses.includes(run.status) && run.approved_at === null
 
   const exceptionCount = (detailsData?.data ?? []).filter(
@@ -428,6 +432,16 @@ export default function PayrollRunDetailPage() {
       navigate('/payroll/runs')
     } catch {
       toast.error('Failed to cancel run.')
+    }
+  }
+
+  const handleArchive = async () => {
+    try {
+      await archiveMutation.mutateAsync()
+      toast.success('Payroll run archived.')
+      navigate('/payroll/runs')
+    } catch {
+      toast.error('Failed to archive run.')
     }
   }
 
@@ -540,6 +554,21 @@ export default function PayrollRunDetailPage() {
               <button className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded transition-colors">
                 <XCircle className="h-4 w-4" />
                 Cancel Run
+              </button>
+            </ConfirmDestructiveDialog>
+          )}
+
+          {canArchive && (
+            <ConfirmDestructiveDialog
+              title="Archive payroll run?"
+              description="Archiving removes this run from active payroll lists while keeping it available in archived records."
+              confirmWord="ARCHIVE"
+              confirmLabel="Archive Run"
+              onConfirm={handleArchive}
+            >
+              <button className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded transition-colors">
+                <Archive className="h-4 w-4" />
+                Archive Run
               </button>
             </ConfirmDestructiveDialog>
           )}

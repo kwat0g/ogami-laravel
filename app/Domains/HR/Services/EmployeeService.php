@@ -214,26 +214,13 @@ final class EmployeeService implements ServiceContract
             $this->stateMachine->transition($employee, $toState);
             $employee->save();
 
-            return $employee;
+            if ($toState === 'terminated' && ! $employee->trashed()) {
+                // Terminated employees are archived automatically.
+                $employee->delete();
+            }
+
+            return Employee::withTrashed()->findOrFail($employee->id);
         });
-    }
-
-    /**
-     * Soft-delete (archive) an employee.  Only allowed in terminal states.
-     *
-     * @throws DomainException
-     */
-    public function archive(Employee $employee): void
-    {
-        if (! in_array($employee->employment_status, ['resigned', 'terminated'], true)) {
-            throw new DomainException(
-                'Only resigned or terminated employees can be archived.',
-                'EMP_ARCHIVE_NOT_TERMINAL',
-                422
-            );
-        }
-
-        $employee->delete();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

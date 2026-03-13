@@ -159,18 +159,6 @@ final class EmployeeController extends Controller
     }
 
     /**
-     * DELETE /api/v1/hr/employees/{employee}
-     * Soft-archives a resigned or terminated employee.
-     */
-    public function destroy(Employee $employee): JsonResponse
-    {
-        $this->authorize('delete', $employee);
-        $this->employeeService->archive($employee);
-
-        return response()->json(['message' => 'Employee archived.']);
-    }
-
-    /**
      * POST /api/v1/hr/employees/{employee}/transition
      * Body: { "to_state": "active" }
      */

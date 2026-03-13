@@ -11,7 +11,7 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 /**
  * Customer Policy.
  *
- * Permissions: customers.view | .create | .update | .archive
+ * Permissions: customers.view | .manage | .archive
  */
 final class CustomerPolicy
 {
@@ -39,7 +39,7 @@ final class CustomerPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('customers.create');
+        return $user->hasPermissionTo('customers.manage');
     }
 
     public function update(User $user, Customer $customer): bool
@@ -48,11 +48,17 @@ final class CustomerPolicy
             return false;
         }
 
-        return $user->hasPermissionTo('customers.update');
+        return $user->hasPermissionTo('customers.manage');
     }
 
     public function archive(User $user, Customer $customer): bool
     {
         return $user->hasPermissionTo('customers.archive');
+    }
+
+    /** Provision a client portal user account — admin / system user management only. */
+    public function provisionAccount(User $user, Customer $customer): bool
+    {
+        return $user->hasPermissionTo('system.manage_users');
     }
 }

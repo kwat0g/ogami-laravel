@@ -62,8 +62,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('runs/{payrollRun}/exceptions', [PayrollRunController::class, 'exceptions'])
         ->name('runs.exceptions');
 
-    Route::delete('runs/{payrollRun}', [PayrollRunController::class, 'cancel'])
+    Route::patch('runs/{payrollRun}/cancel', [PayrollRunController::class, 'cancel'])
+        ->middleware('throttle:api-action')
         ->name('runs.cancel');
+
+    Route::delete('runs/{payrollRun}', [PayrollRunController::class, 'destroy'])
+        ->middleware('throttle:api-action')
+        ->name('runs.destroy');
 
     // ── Workflow v1.0 — Step 2: Scope ─────────────────────────────────────────
     Route::get('runs/{payrollRun}/scope-preview', [PayrollRunController::class, 'scopePreview'])

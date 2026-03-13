@@ -54,6 +54,14 @@ class Customer extends Model implements Auditable
 
     // ── Relationships ──────────────────────────────────────────────────────────
 
+    /**
+     * The client portal user linked to this customer (if provisioned).
+     */
+    public function portalUser(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\User::class, 'client_id');
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(CustomerInvoice::class);

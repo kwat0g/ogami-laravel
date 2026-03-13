@@ -1,13 +1,14 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { getLandingPath } from '@/lib/roleLanding'
 
 /**
  * Wraps unauthenticated routes (login).
  * Redirects to dashboard if user is already authenticated.
  */
 export default function AuthLayout() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
 
   if (isLoading) {
     return (
@@ -18,7 +19,7 @@ export default function AuthLayout() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to={getLandingPath(user)} replace />
   }
 
   return (

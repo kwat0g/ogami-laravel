@@ -1,17 +1,25 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useDebounce } from 'use-debounce'
 import { toast } from 'sonner'
 import {
   useAdminUsers,
   useCreateAdminUser,
+  useProvisionPortalAccount,
   useUpdateAdminUser,
+  useDisableAdminUser,
   useDeleteAdminUser,
   useAssignRole,
   useUnlockUser,
   useRoles,
   useAdminDepartments,
   useEmployeesAvailable,
+  useAvailableVendors,
+  useAvailableCustomers,
   type AdminUser,
   type AvailableEmployee,
+  type AvailableVendor,
+  type AvailableCustomer,
+  type PortalAccountCredentials,
   type CreateUserPayload,
   type Department,
 } from '@/hooks/useAdmin'
@@ -61,6 +69,9 @@ interface WizardState {
   step:         WizardStep
   department:   Department | null
   employee:     AvailableEmployee | null
+  vendor:       AvailableVendor | null
+  customer:     AvailableCustomer | null
+  targetSearch: string
   name:         string
   email:        string
   password:     string
@@ -71,34 +82,61 @@ interface WizardState {
 
 const emptyWizard = (): WizardState => ({
   step: 1, department: null, employee: null,
+  vendor: null, customer: null, targetSearch: '',
   name: '', email: '', password: '', role: '', skipEmployee: false,
 })
 
-// Roles that don't require a linked employee (system/board-level)
-const ROLES_WITHOUT_EMPLOYEE = ['admin', 'executive']
+type PortalRole = 'vendor' | 'client'
+
+const PORTAL_ROLES: PortalRole[] = ['vendor', 'client']
+
+function isPortalRole(role: string): role is PortalRole {
+  return PORTAL_ROLES.includes(role as PortalRole)
+}
+
+// Roles that don't require a linked employee (system/board-level + external portals)
+const ROLES_WITHOUT_EMPLOYEE = ['admin', 'executive', ...PORTAL_ROLES]
 
 export default function UsersPage() {
   const { hasPermission } = useAuthStore()
 
-  const _canCreate     = hasPermission('system.manage_users')
+  const canCreate     = hasPermission('system.manage_users')
   const canUpdate     = hasPermission('system.manage_users')
-  const canDelete     = hasPermission('system.manage_users')
+  const canDisable    = hasPermission('system.manage_users')
   const canAssignRole = hasPermission('system.assign_roles')
 
+  // Separate local state for search input to prevent focus loss
+  const [searchInput, setSearchInput] = useState('')
   const [filters, setFilters] = useState({ search: '', role: '', page: 1, per_page: 15 })
-  const { data, isLoading, isError } = useAdminUsers(filters)
+  
+  // Debounce search to prevent excessive API calls
+  const [debouncedSearch] = useDebounce(searchInput, 300)
+  
+  // Update filters when debounced search changes
+  useEffect(() => {
+    setFilters((f) => ({ ...f, search: debouncedSearch, page: 1 }))
+  }, [debouncedSearch])
+  
+  const { data, isLoading, isError, isFetching } = useAdminUsers(filters)
+  
+  // Ref for search input to maintain focus
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const { data: roles = [] }         = useRoles()
   const { data: departments = [] }   = useAdminDepartments()
 
   const create     = useCreateAdminUser()
+  const provisionPortal = useProvisionPortalAccount()
   const update     = useUpdateAdminUser()
-  const remove     = useDeleteAdminUser()
+  const disable    = useDisableAdminUser()
+  const removeUser = useDeleteAdminUser()
   const assignRole = useAssignRole()
   const unlock     = useUnlockUser()
 
   // Wizard state
   const [wizard, setWizard]         = useState<WizardState | null>(null)
   const [wizardError, setWizardError] = useState<string | null>(null)
+  const [portalCredentials, setPortalCredentials] = useState<PortalAccountCredentials | null>(null)
+  const [copiedCredentials, setCopiedCredentials] = useState(false)
 
   // Edit modal state
   const [editForm, setEditForm]     = useState<EditFormState | null>(null)
@@ -110,25 +148,51 @@ export default function UsersPage() {
 
   const rows = data?.data ?? []
   const meta = data?.meta
+  const [debouncedTargetSearch] = useDebounce(wizard?.targetSearch ?? '', 250)
 
   // ── Available employees for step 2 ───────────────────────────────────────
   const { data: availableEmployees = [], isLoading: empLoading } = useEmployeesAvailable(
     wizard?.step === 2 && !wizard.skipEmployee ? (wizard.department?.id ?? null) : null
   )
 
+  const { data: availableVendors = [], isLoading: vendorsLoading } = useAvailableVendors(
+    { search: debouncedTargetSearch, limit: 100 },
+    Boolean(wizard?.step === 2 && wizard?.role === 'vendor')
+  )
+
+  const { data: availableCustomers = [], isLoading: customersLoading } = useAvailableCustomers(
+    { search: debouncedTargetSearch, limit: 100 },
+    Boolean(wizard?.step === 2 && wizard?.role === 'client')
+  )
+
+  const isPortalTargetLoading = vendorsLoading || customersLoading
+
   // ── Wizard helpers ────────────────────────────────────────────────────────
-  const _openCreate = () => { setWizard(emptyWizard()); setWizardError(null) }
+  const openCreate = () => { setWizard(emptyWizard()); setWizardError(null) }
   const closeWizard = () => { setWizard(null); setWizardError(null) }
   const setWizardField = <K extends keyof WizardState>(k: K, v: WizardState[K]) =>
     setWizard((w) => w ? { ...w, [k]: v } : w)
 
   const goStep1to2 = () => {
     if (!wizard) return
+    if (!wizard.role) {
+      setWizardError('Please select a role.')
+      return
+    }
+
+    if (isPortalRole(wizard.role)) {
+      setWizardError(null)
+      setWizard((w) => w ? { ...w, step: 2, targetSearch: '', employee: null, department: null } : w)
+      return
+    }
+
     // Skip dept/employee for admin & executive
     if (wizard.skipEmployee) {
+      setWizardError(null)
       setWizard((w) => w ? { ...w, step: 3 } : w)
       return
     }
+
     if (!wizard.department) { setWizardError('Please select a department.'); return }
     setWizardError(null)
     setWizard((w) => w ? { ...w, step: 2 } : w)
@@ -136,13 +200,26 @@ export default function UsersPage() {
 
   const goStep2to3 = () => {
     if (!wizard) return
+
+    if (isPortalRole(wizard.role)) {
+      const selectedTarget = wizard.role === 'vendor' ? wizard.vendor : wizard.customer
+      if (!selectedTarget) {
+        setWizardError(`Please select a ${wizard.role === 'vendor' ? 'vendor' : 'customer'}.`)
+        return
+      }
+
+      setWizardError(null)
+      setWizard((w) => w ? { ...w, step: 3 } : w)
+      return
+    }
+
     if (!wizard.employee) { setWizardError('Please select an employee.'); return }
     setWizardError(null)
     // Pre-fill name from employee
     setWizard((w) => w ? {
       ...w,
       step: 3,
-      name: w.name || `${wizard.employee!.first_name} ${wizard.employee!.last_name}`,
+      name: w.name || `${wizard.employee.first_name} ${wizard.employee.last_name}`,
     } : w)
   }
 
@@ -150,10 +227,37 @@ export default function UsersPage() {
     if (!wizard) return
     setWizardError(null)
 
+    if (!wizard.role) {
+      setWizardError('Role is required.')
+      return
+    }
+
+    if (isPortalRole(wizard.role)) {
+      const target = wizard.role === 'vendor' ? wizard.vendor : wizard.customer
+      if (!target) {
+        setWizardError(`Please select a ${wizard.role === 'vendor' ? 'vendor' : 'customer'} account.`)
+        return
+      }
+
+      provisionPortal.mutate(
+        { role: wizard.role, targetId: target.id },
+        {
+          onSuccess: (credentials) => {
+            closeWizard()
+            setPortalCredentials(credentials)
+            setCopiedCredentials(false)
+            toast.success(`${wizard.role === 'vendor' ? 'Vendor' : 'Client'} portal account created.`)
+          },
+          onError: (e: unknown) => setWizardError(apiMsg(e) ?? 'Failed to create portal account.'),
+        }
+      )
+
+      return
+    }
+
     if (!wizard.name.trim())  { setWizardError('Name is required.'); return }
     if (!wizard.email.trim()) { setWizardError('Email is required.'); return }
     if (!wizard.password)     { setWizardError('Password is required.'); return }
-    if (!wizard.role)         { setWizardError('Role is required.'); return }
 
     if (!wizard.skipEmployee && !wizard.employee) {
       setWizardError('An employee record is required. Please go back and select one.'); return
@@ -171,6 +275,18 @@ export default function UsersPage() {
       onSuccess: closeWizard,
       onError: (e: unknown) => setWizardError(apiMsg(e) ?? 'Failed to create user.'),
     })
+  }
+
+  const handleCopyCredentials = async () => {
+    if (!portalCredentials) return
+
+    try {
+      await navigator.clipboard.writeText(`Email: ${portalCredentials.email}\nPassword: ${portalCredentials.password}`)
+      setCopiedCredentials(true)
+      setTimeout(() => setCopiedCredentials(false), 2000)
+    } catch {
+      toast.error('Failed to copy credentials. Please copy manually.')
+    }
   }
 
   // ── Edit helpers ──────────────────────────────────────────────────────────
@@ -212,9 +328,21 @@ export default function UsersPage() {
     )
   }
 
+  const handleDisable = (u: AdminUser) => {
+    if (confirm(`Disable user ${u.email}? They will not be able to sign in until unlocked.`)) {
+      disable.mutate(u.id, {
+        onSuccess: () => toast.success('User account disabled.'),
+        onError: (e: unknown) => toast.error(apiMsg(e) ?? 'Failed to disable user account.'),
+      })
+    }
+  }
+
   const handleDelete = (u: AdminUser) => {
-    if (confirm(`Delete user ${u.email}? This will unlink their employee account. This cannot be undone.`)) {
-      remove.mutate(u.id)
+    if (confirm(`Archive user ${u.email}? This removes the account from active user lists.`)) {
+      removeUser.mutate(u.id, {
+        onSuccess: () => toast.success('User account archived.'),
+        onError: (e: unknown) => toast.error(apiMsg(e) ?? 'Failed to archive user account.'),
+      })
     }
   }
 
@@ -233,7 +361,8 @@ export default function UsersPage() {
 
   const isLocked = (u: AdminUser) => u.locked_until && new Date(u.locked_until) > new Date()
 
-  if (isLoading) return <SkeletonLoader rows={10} />
+  // Only show skeleton on initial load, not during refetch (to preserve focus)
+  if (isLoading && !isFetching) return <SkeletonLoader rows={10} />
   if (isError)   return <p className="text-neutral-700 text-sm mt-4">Failed to load users.</p>
 
   return (
@@ -241,14 +370,20 @@ export default function UsersPage() {
       <PageHeader title="Users" />
 
       {/* ── Filters ─────────────────────────────────────────────────────── */}
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          placeholder="Search name or email…"
-          value={filters.search}
-          onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value, page: 1 }))}
-          className="border border-neutral-300 rounded px-3 py-2 text-sm w-64 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-        />
+      <div className="flex gap-3 mb-4 items-center">
+        <div className="relative">
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search name or email…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="border border-neutral-300 rounded px-3 py-2 text-sm w-64 focus:outline-none focus:ring-1 focus:ring-neutral-400 pr-8"
+          />
+          {isFetching && (
+            <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-neutral-400" />
+          )}
+        </div>
         <select
           value={filters.role}
           onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value, page: 1 }))}
@@ -259,6 +394,15 @@ export default function UsersPage() {
             <option key={r.id} value={r.name}>{r.name}</option>
           ))}
         </select>
+        <div className="flex-1" />
+        {canCreate && (
+          <button
+            onClick={openCreate}
+            className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+          >
+            + Create User
+          </button>
+        )}
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────────── */}
@@ -322,8 +466,11 @@ export default function UsersPage() {
                     {canUpdate && isLocked(u) && (
                       <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed">Unlock</button>
                     )}
-                    {canDelete && (
-                      <button onClick={() => handleDelete(u)} className="text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>
+                    {canDisable && !isLocked(u) && (
+                      <button onClick={() => handleDisable(u)} className="text-xs text-red-600 hover:text-red-700 font-medium">Disable</button>
+                    )}
+                    {canDisable && (
+                      <button onClick={() => handleDelete(u)} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">Delete</button>
                     )}
                   </div>
                 </td>
@@ -352,8 +499,11 @@ export default function UsersPage() {
             roles={roles}
             departments={departments}
             availableEmployees={availableEmployees}
+            availableVendors={availableVendors}
+            availableCustomers={availableCustomers}
             empLoading={empLoading}
-            isPending={create.isPending}
+            targetLoading={isPortalTargetLoading}
+            isPending={create.isPending || provisionPortal.isPending}
             error={wizardError}
             onSetField={setWizardField}
             onNext1={goStep1to2}
@@ -362,6 +512,36 @@ export default function UsersPage() {
             onBack={() => setWizard((w) => w ? { ...w, step: w.step > 1 ? (w.step - 1) as WizardStep : 1 } : w)}
             onClose={closeWizard}
           />
+        </Modal>
+      )}
+
+      {/* ── Portal credentials modal ─────────────────────────────────────── */}
+      {portalCredentials && (
+        <Modal
+          title={`${portalCredentials.role === 'vendor' ? 'Vendor' : 'Client'} Portal Account Created`}
+          onClose={() => setPortalCredentials(null)}
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-neutral-700">
+              Share these credentials securely. The user will be prompted to change password on first login.
+            </p>
+
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-3 space-y-2">
+              <div className="flex justify-between gap-2 text-sm">
+                <span className="text-neutral-500">Email</span>
+                <span className="text-neutral-900 font-medium break-all text-right">{portalCredentials.email}</span>
+              </div>
+              <div className="flex justify-between gap-2 text-sm">
+                <span className="text-neutral-500">Password</span>
+                <span className="text-neutral-900 font-mono font-medium break-all text-right">{portalCredentials.password}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-1">
+              <button onClick={() => setPortalCredentials(null)} className={btnSecondary}>Done</button>
+              <button onClick={handleCopyCredentials} className={btnPrimary}>{copiedCredentials ? 'Copied!' : 'Copy Credentials'}</button>
+            </div>
+          </div>
         </Modal>
       )}
 
@@ -420,7 +600,10 @@ interface WizardProps {
   roles:              Array<{ id: number; name: string }>
   departments:        Department[]
   availableEmployees: AvailableEmployee[]
+  availableVendors:   AvailableVendor[]
+  availableCustomers: AvailableCustomer[]
   empLoading:         boolean
+  targetLoading:      boolean
   isPending:          boolean
   error:              string | null
   onSetField:         <K extends keyof WizardState>(k: K, v: WizardState[K]) => void
@@ -432,27 +615,41 @@ interface WizardProps {
 }
 
 function CreateUserWizard({
-  wizard, roles, departments, availableEmployees, empLoading,
+  wizard, roles, departments, availableEmployees, availableVendors, availableCustomers, empLoading, targetLoading,
   isPending, error, onSetField, onNext1, onNext2, onSubmit, onBack, onClose,
 }: WizardProps) {
-  const STEPS = [
-    { label: 'Department', icon: Building2 },
-    { label: 'Employee',   icon: User },
-    { label: 'Account',    icon: Settings },
-  ]
+  const portalRole = isPortalRole(wizard.role)
+  const portalTargetName = wizard.role === 'vendor' ? 'Vendor' : 'Customer'
 
-  // Determine effective step count for admin/executive (no employee step)
-  const effectiveStep = wizard.skipEmployee && wizard.step === 3 ? 2 : wizard.step
+  const steps = portalRole
+    ? [
+      { label: 'Role', icon: Settings },
+      { label: portalTargetName, icon: User },
+      { label: 'Account', icon: Settings },
+    ]
+    : [
+      { label: 'Department', icon: Building2 },
+      { label: 'Employee', icon: User },
+      { label: 'Account', icon: Settings },
+    ]
+
+  // Determine effective step count for non-portal skip roles (admin/executive).
+  const effectiveStep = wizard.skipEmployee && !portalRole && wizard.step === 3 ? 2 : wizard.step
+  const selectedPortalId = wizard.role === 'vendor' ? wizard.vendor?.id : wizard.customer?.id
+  const selectedPortalName = wizard.role === 'vendor' ? wizard.vendor?.name : wizard.customer?.name
+  const selectedPortalEmail = wizard.role === 'vendor' ? wizard.vendor?.email : wizard.customer?.email
+  const selectedPortalContact = wizard.role === 'vendor'
+    ? wizard.vendor?.contact_person
+    : wizard.customer?.contact_person
 
   return (
     <div className="space-y-6">
       {/* Step indicator */}
       <div className="flex items-center">
-        {STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const stepNum = (i + 1) as WizardStep
-          const done    = effectiveStep > stepNum || (wizard.skipEmployee && stepNum === 2)
-          const active  = effectiveStep === stepNum && !(wizard.skipEmployee && stepNum === 2)
-          const _StepIcon    = s.icon
+          const done = effectiveStep > stepNum || (wizard.skipEmployee && !portalRole && stepNum === 2)
+          const active = effectiveStep === stepNum && !(wizard.skipEmployee && !portalRole && stepNum === 2)
           return (
             <div key={s.label} className="flex items-center flex-1 min-w-0">
               <div className={`flex items-center gap-1.5 shrink-0 ${
@@ -463,9 +660,9 @@ function CreateUserWizard({
                   ? <CheckCircle className="h-5 w-5" />
                   : <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${active ? 'border-neutral-600 text-neutral-600' : 'border-neutral-300 text-neutral-400'}`}>{stepNum}</div>
                 }
-                <span className={`text-xs font-medium ${wizard.skipEmployee && stepNum === 2 ? 'line-through opacity-40' : ''}`}>{s.label}</span>
+                <span className={`text-xs font-medium ${wizard.skipEmployee && !portalRole && stepNum === 2 ? 'line-through opacity-40' : ''}`}>{s.label}</span>
               </div>
-              {i < STEPS.length - 1 && <div className={`flex-1 mx-2 h-px ${done ? 'bg-neutral-400' : 'bg-neutral-200'}`} />}
+              {i < steps.length - 1 && <div className={`flex-1 mx-2 h-px ${done ? 'bg-neutral-400' : 'bg-neutral-200'}`} />}
             </div>
           )
         })}
@@ -474,19 +671,37 @@ function CreateUserWizard({
       {/* ── Step 1: Department ──────────────────────────────────────────── */}
       {wizard.step === 1 && (
         <div className="space-y-4">
-          <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
-            Every ERP user must be linked to an employee record. Start by selecting their department.
-            <br />
-            <span className="text-xs text-neutral-600">Admin and Executive accounts can be created without an employee record.</span>
-          </div>
+          {!portalRole ? (
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
+              Every ERP user must be linked to an employee record. Start by selecting their department.
+              <br />
+              <span className="text-xs text-neutral-600">Admin and Executive accounts can be created without an employee record.</span>
+            </div>
+          ) : (
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
+              Portal accounts are linked to an existing {portalTargetName.toLowerCase()} record.
+              The account email comes from that record, and password is auto-generated by the backend.
+            </div>
+          )}
 
           <FormField label="Role *">
             <select
               value={wizard.role}
               onChange={(e) => {
                 const role = e.target.value
+                const nextIsPortal = isPortalRole(role)
                 onSetField('role', role)
                 onSetField('skipEmployee', ROLES_WITHOUT_EMPLOYEE.includes(role))
+                onSetField('employee', null)
+                onSetField('vendor', null)
+                onSetField('customer', null)
+                onSetField('targetSearch', '')
+
+                if (nextIsPortal) {
+                  onSetField('department', null)
+                  return
+                }
+
                 // Auto-select the required department for dept-scoped manager roles
                 if (ROLE_DEPT_MAP[role]) {
                   const requiredCode = ROLE_DEPT_MAP[role]
@@ -502,7 +717,7 @@ function CreateUserWizard({
           </FormField>
 
           {/* Hint for dept-scoped manager roles */}
-          {SCOPED_MANAGER_ROLES.includes(wizard.role) && (
+          {!portalRole && SCOPED_MANAGER_ROLES.includes(wizard.role) && (
             <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-xs text-neutral-800">
               <strong>{wizard.role}</strong> is restricted to the{' '}
               <strong>
@@ -512,7 +727,7 @@ function CreateUserWizard({
             </div>
           )}
 
-          {!wizard.skipEmployee && (
+          {!wizard.skipEmployee && !portalRole && (
             <FormField label="Department *">
               <select
                 value={wizard.department?.id ?? ''}
@@ -534,9 +749,15 @@ function CreateUserWizard({
             </FormField>
           )}
 
-          {wizard.skipEmployee && (
+          {wizard.skipEmployee && !portalRole && (
             <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
               <strong>{wizard.role}</strong> accounts do not require a linked employee. You'll fill account details in the next step.
+            </div>
+          )}
+
+          {wizard.skipEmployee && portalRole && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
+              Continue to select which {portalTargetName.toLowerCase()} should receive this portal account.
             </div>
           )}
 
@@ -544,7 +765,11 @@ function CreateUserWizard({
 
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={onClose} className={btnSecondary}>Cancel</button>
-            <button onClick={onNext1} disabled={!wizard.role || (!wizard.skipEmployee && !wizard.department)} className={btnPrimary}>
+            <button 
+              onClick={onNext1} 
+              disabled={!wizard.role || (!wizard.skipEmployee && !wizard.department)} 
+              className={btnPrimary}
+            >
               Next <ChevronRight className="inline h-4 w-4 ml-1" />
             </button>
           </div>
@@ -552,7 +777,7 @@ function CreateUserWizard({
       )}
 
       {/* ── Step 2: Employee selection ──────────────────────────────────── */}
-      {wizard.step === 2 && !wizard.skipEmployee && (
+      {wizard.step === 2 && !wizard.skipEmployee && !portalRole && (
         <div className="space-y-4">
           <p className="text-sm text-neutral-600">
             Select an employee from <strong>{wizard.department?.name}</strong> to link to the new user account.
@@ -600,44 +825,158 @@ function CreateUserWizard({
         </div>
       )}
 
+      {/* ── Step 2: Portal target selection (Vendor / Client) ───────────── */}
+      {wizard.step === 2 && portalRole && (
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-600">
+            Select the {portalTargetName.toLowerCase()} record to provision. Only records with email and without existing portal user are shown.
+          </p>
+
+          <FormField label={`Search ${portalTargetName}`}>
+            <input
+              value={wizard.targetSearch}
+              onChange={(e) => onSetField('targetSearch', e.target.value)}
+              className={inputCls}
+              placeholder={`Search ${portalTargetName.toLowerCase()} by name or email...`}
+            />
+          </FormField>
+
+          {targetLoading ? (
+            <div className="flex items-center gap-2 text-sm text-neutral-400 py-4">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading {portalTargetName.toLowerCase()}s...
+            </div>
+          ) : wizard.role === 'vendor' ? (
+            availableVendors.length === 0 ? (
+              <div className="bg-neutral-50 border border-neutral-200 rounded p-4 text-sm text-neutral-800">
+                No available vendors found. Ensure vendor records are active, accredited, and have an email.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {availableVendors.map((vendor) => (
+                  <button
+                    key={vendor.id}
+                    type="button"
+                    onClick={() => {
+                      onSetField('vendor', vendor)
+                      onSetField('customer', null)
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded border transition-colors ${
+                      wizard.vendor?.id === vendor.id
+                        ? 'border-neutral-500 bg-neutral-50'
+                        : 'border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-neutral-800 text-sm">{vendor.name}</p>
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">
+                        {vendor.accreditation_status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-0.5">{vendor.email}</p>
+                    {vendor.contact_person && <p className="text-xs text-neutral-500">Contact: {vendor.contact_person}</p>}
+                  </button>
+                ))}
+              </div>
+            )
+          ) : availableCustomers.length === 0 ? (
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 text-sm text-neutral-800">
+              No available customers found. Ensure customer records are active and have an email.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {availableCustomers.map((customer) => (
+                <button
+                  key={customer.id}
+                  type="button"
+                  onClick={() => {
+                    onSetField('customer', customer)
+                    onSetField('vendor', null)
+                  }}
+                  className={`w-full text-left px-4 py-3 rounded border transition-colors ${
+                    wizard.customer?.id === customer.id
+                      ? 'border-neutral-500 bg-neutral-50'
+                      : 'border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50'
+                  }`}
+                >
+                  <p className="font-medium text-neutral-800 text-sm">{customer.name}</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">{customer.email}</p>
+                  {customer.contact_person && <p className="text-xs text-neutral-500">Contact: {customer.contact_person}</p>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          <div className="flex justify-between gap-3 pt-2">
+            <button onClick={onBack} className={btnSecondary}>
+              <ChevronLeft className="inline h-4 w-4 mr-1" /> Back
+            </button>
+            <button onClick={onNext2} disabled={!selectedPortalId} className={btnPrimary}>
+              Next <ChevronRight className="inline h-4 w-4 ml-1" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Step 3: Account details ─────────────────────────────────────── */}
       {wizard.step === 3 && (
         <div className="space-y-4">
-          {wizard.employee && (
+          {!portalRole && wizard.employee && (
             <div className="bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm">
               <p className="font-medium text-neutral-800">Linked Employee</p>
               <p className="text-neutral-700">{wizard.employee.first_name} {wizard.employee.last_name} · {wizard.employee.employee_code} · {wizard.employee.department_name}</p>
             </div>
           )}
 
-          <FormField label="Full Name *">
-            <input
-              value={wizard.name}
-              onChange={(e) => onSetField('name', e.target.value)}
-              className={inputCls}
-              placeholder="Full name"
-            />
-          </FormField>
+          {portalRole && selectedPortalName && selectedPortalEmail && (
+            <>
+              <div className="bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm space-y-1">
+                <p className="font-medium text-neutral-800">Selected {portalTargetName}</p>
+                <p className="text-neutral-700">{selectedPortalName}</p>
+                <p className="text-neutral-500 text-xs">{selectedPortalEmail}</p>
+                {selectedPortalContact && <p className="text-neutral-500 text-xs">Contact: {selectedPortalContact}</p>}
+              </div>
 
-          <FormField label="Email *">
-            <input
-              type="email"
-              value={wizard.email}
-              onChange={(e) => onSetField('email', e.target.value)}
-              className={inputCls}
-              placeholder="user@ogamierp.local"
-            />
-          </FormField>
+              <div className="bg-neutral-50 border border-neutral-200 rounded p-3 text-sm text-neutral-800">
+                Password will be auto-generated and returned once after creation.
+                The account will require a password change at first login.
+              </div>
+            </>
+          )}
 
-          <FormField label="Password *">
-            <input
-              type="password"
-              value={wizard.password}
-              onChange={(e) => onSetField('password', e.target.value)}
-              className={inputCls}
-              placeholder="Min 8 chars, upper/lower/number/symbol"
-            />
-          </FormField>
+          {!portalRole && (
+            <>
+              <FormField label="Full Name *">
+                <input
+                  value={wizard.name}
+                  onChange={(e) => onSetField('name', e.target.value)}
+                  className={inputCls}
+                  placeholder="Full name"
+                />
+              </FormField>
+
+              <FormField label="Email *">
+                <input
+                  type="email"
+                  value={wizard.email}
+                  onChange={(e) => onSetField('email', e.target.value)}
+                  className={inputCls}
+                  placeholder="user@ogamierp.local"
+                />
+              </FormField>
+
+              <FormField label="Password *">
+                <input
+                  type="password"
+                  value={wizard.password}
+                  onChange={(e) => onSetField('password', e.target.value)}
+                  className={inputCls}
+                  placeholder="Min 8 chars, upper/lower/number/symbol"
+                />
+              </FormField>
+            </>
+          )}
 
           <FormField label="Role">
             <input value={wizard.role} readOnly className={`${inputCls} bg-neutral-50 text-neutral-600 cursor-default`} />
@@ -659,7 +998,9 @@ function CreateUserWizard({
               disabled={isPending}
               className={btnPrimary}
             >
-              {isPending ? <><Loader2 className="inline h-4 w-4 mr-2 animate-spin" />Creating…</> : 'Create User'}
+              {isPending
+                ? <><Loader2 className="inline h-4 w-4 mr-2 animate-spin" />Creating…</>
+                : (portalRole ? 'Create Portal Account' : 'Create User')}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
-import axios from 'axios'
+import axios, { type AxiosRequestConfig } from 'axios'
 import type { ApiError } from '@/types/api'
+import { bumpAuthEpoch, getAuthEpoch } from '@/lib/authEpoch'
 
 export const api = axios.create({
   baseURL: '/api/v1',
@@ -21,6 +22,28 @@ export const api = axios.create({
 const WRITE_COOLDOWN_MS = 1500
 const lastWriteCallAt = new Map<string, number>()
 
+const AUTH_RECHECK_WINDOW_MS = 5000
+let authRecheckPromise: Promise<boolean> | null = null
+let lastAuthRecheckAt = 0
+
+function recheckAuth(): Promise<boolean> {
+  const now = Date.now()
+  if (authRecheckPromise && now - lastAuthRecheckAt < AUTH_RECHECK_WINDOW_MS) {
+    return authRecheckPromise
+  }
+
+  lastAuthRecheckAt = now
+  authRecheckPromise = api
+    .get('/auth/me', { __skipAuthRedirect: true, __authRecheck: true } as AxiosRequestConfig)
+    .then(() => true)
+    .catch(() => false)
+    .finally(() => {
+      authRecheckPromise = null
+    })
+
+  return authRecheckPromise
+}
+
 api.interceptors.request.use(
   (config) => {
     const method = (config.method ?? 'get').toUpperCase()
@@ -37,6 +60,8 @@ api.interceptors.request.use(
         lastWriteCallAt.set(key, now)
       }
     }
+    const cfg = config as typeof config & { __authEpoch?: number }
+    cfg.__authEpoch = getAuthEpoch()
     return config
   },
 )
@@ -69,20 +94,44 @@ api.interceptors.response.use(
     // We check uiStore instead of the cache endpoint to avoid an extra
     // round-trip on every 401.
     if (status === 401) {
-      void Promise.all([
-        import('@/stores/authStore'),
-        import('@/stores/uiStore'),
-      ]).then(([{ useAuthStore }, { useUiStore }]) => {
-        if (useUiStore.getState().systemRestoreInProgress) {
-          // Overlay is handling the redirect — suppress the hard page reload.
-          return
+      const cfg = error.config as {
+        __authEpoch?: number
+        __skipAuthRedirect?: boolean
+        __authRecheck?: boolean
+      } | undefined
+      const requestEpoch = cfg?.__authEpoch
+      if (requestEpoch !== undefined && requestEpoch !== getAuthEpoch()) {
+        return Promise.reject({ __handled: true })
+      }
+
+      if (cfg?.__skipAuthRedirect) {
+        return Promise.reject({
+          ...(data ?? { success: false, message: 'Unauthenticated.', error_code: 'UNAUTHENTICATED' }),
+          status,
+        })
+      }
+
+      return recheckAuth().then((sessionStillValid) => {
+        if (sessionStillValid) {
+          return Promise.reject(data ?? { success: false, message: 'Unauthenticated.', error_code: 'UNAUTHENTICATED' })
         }
-        useAuthStore.getState().clearAuth()
-        if (!window.location.pathname.startsWith('/login')) {
-          window.location.replace('/login')
-        }
+
+        void Promise.all([
+          import('@/stores/authStore'),
+          import('@/stores/uiStore'),
+        ]).then(([{ useAuthStore }, { useUiStore }]) => {
+          if (useUiStore.getState().systemRestoreInProgress) {
+            // Overlay is handling the redirect — suppress the hard page reload.
+            return
+          }
+          useAuthStore.getState().clearAuth()
+          bumpAuthEpoch()
+          if (!window.location.pathname.startsWith('/login')) {
+            window.location.replace('/login')
+          }
+        })
+        return Promise.reject({ __handled: true })
       })
-      return Promise.reject({ __handled: true })
     }
 
     // ── 429: Rate limit hit — show warning toast ──────────────────────────

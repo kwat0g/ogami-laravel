@@ -25,7 +25,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // ── Employee (dept_scope restricts queries to the user's department) ────────
     Route::middleware(['dept_scope'])->group(function () {
-        Route::apiResource('employees', EmployeeController::class);
+        Route::apiResource('employees', EmployeeController::class)->except(['destroy']);
         // SoD-001 (creator ≠ activator) is enforced at the policy level in EmployeePolicy.
         Route::post('employees/{employee}/transition', [EmployeeController::class, 'transition'])
             ->name('employees.transition');

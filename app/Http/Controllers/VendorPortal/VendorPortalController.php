@@ -14,6 +14,7 @@ use App\Domains\AP\Services\VendorItemService;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AP\VendorItemResource;
 use App\Imports\VendorItemImport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -136,9 +137,14 @@ final class VendorPortalController extends Controller
         $vendor = Vendor::findOrFail($vendorId);
 
         $activeOnly = $request->query('active_only', 'true') !== 'false';
-        $items = $this->itemService->list($vendor, $activeOnly);
+        $search = $request->query('search');
+        $items = $this->itemService->list(
+            $vendor,
+            $activeOnly,
+            is_string($search) ? $search : null,
+        );
 
-        return response()->json(['data' => $items]);
+        return VendorItemResource::collection($items)->response();
     }
 
     /**
@@ -161,7 +167,9 @@ final class VendorPortalController extends Controller
 
         $item = $this->itemService->create($vendor, $validated, $request->user());
 
-        return response()->json(['data' => $item], 201);
+        return (new VendorItemResource($item))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -185,7 +193,7 @@ final class VendorPortalController extends Controller
 
         $updated = $this->itemService->update($vendorItem, $validated, $request->user());
 
-        return response()->json(['data' => $updated]);
+        return (new VendorItemResource($updated))->response();
     }
 
     /**

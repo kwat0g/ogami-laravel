@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import type { AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 import api from '@/lib/api'
 import type { ApiSuccess, AuthUser } from '@/types/api'
@@ -14,13 +15,21 @@ export function useAuth() {
   const query = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: async () => {
-      const res = await api.get<ApiSuccess<AuthUser>>('/auth/me')
+      const res = await api.get<ApiSuccess<AuthUser>>(
+        '/auth/me',
+        { __skipAuthRedirect: true } as AxiosRequestConfig,
+      )
       return res.data.data
     },
     enabled: true,
     staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
     gcTime: 10 * 60 * 1000,   // 10 minutes - keep in garbage collection cache
-    retry: false,
+    retry: (failureCount, err) => {
+      const status = (err as { status?: number }).status
+      if (status === 401) return failureCount < 1
+      return false
+    },
+    retryDelay: 500,
     // Prevent re-fetching when components mount/unmount
     refetchOnMount: false,
     // Re-validate session when the user returns to the tab (catches post-restore logouts)
@@ -45,6 +54,14 @@ export function useAuth() {
       clearAuth()
     }
   }, [query.isError, user, clearAuth])
+
+  useEffect(() => {
+    if (!query.isError) return
+    const status = (query.error as { status?: number }).status
+    if (status !== 401) return
+    if (query.failureCount < 2) return
+    clearAuth()
+  }, [query.isError, query.error, query.failureCount, clearAuth])
 
   return {
     user: user ?? query.data ?? null,

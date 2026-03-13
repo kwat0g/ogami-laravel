@@ -372,7 +372,8 @@ class RolePermissionSeeder extends Seeder
             'system.manage_rate_tables', 'system.manage_holidays', 'system.manage_ewt_atc',
             'system.reopen_fiscal_period', 'system.view_audit_log',
             'system.view_horizon', 'system.view_pulse', 'system.manage_backups',
-            'vendors.view', // Added so Admin can access the Vendors page to provision portal accounts
+            'vendors.view',   // Added so Admin can access the Vendors page to provision portal accounts
+            'customers.view', // Added so Admin can access the Customers page to provision portal accounts
         ]);
 
         // ── Executive — read-only across all modules + executive approvals ─────────────────────────
@@ -553,20 +554,19 @@ class RolePermissionSeeder extends Seeder
             'chart_of_accounts.view', 'chart_of_accounts.manage',
             'fiscal_periods.view', 'fiscal_periods.manage',
             // AP
-            'vendors.view', 'vendors.manage', 'vendors.archive', 'vendors.accredit', 'vendors.suspend',
+            'vendors.view', // Can view but cannot create/manage (SoD: purchasing_officer creates)
             'vendor_invoices.view', 'vendor_invoices.create', 'vendor_invoices.update',
             'vendor_invoices.submit', 'vendor_invoices.approve', 'vendor_invoices.reject',
             'vendor_invoices.record_payment', 'vendor_invoices.cancel', 'vendor_invoices.export',
             'vendor_payments.view', 'vendor_payments.create', 'bir_2307.generate',
             // AR
-            'customers.view', 'customers.manage', 'customers.archive',
+            'customers.view', // Can view but cannot create/manage (SoD: purchasing_officer creates)
             'customer_invoices.view', 'customer_invoices.create', 'customer_invoices.update',
             'customer_invoices.approve', 'customer_invoices.cancel', 'customer_invoices.override_credit',
             'customer_invoices.receive_payment', 'customer_invoices.write_off',
             'customer_invoices.apply_payment', 'customer_invoices.export',
             // Banking
-            'bank_accounts.view', 'bank_accounts.create', 'bank_accounts.update', 'bank_accounts.delete',
-            'bank_reconciliations.view', 'bank_reconciliations.create', 'bank_reconciliations.certify',
+            'bank_accounts.view', 'bank_accounts.create', 'bank_accounts.update', 'bank_accounts.delete',            'bank_reconciliations.view', 'bank_reconciliations.create', 'bank_reconciliations.certify',
             // Financial Reports
             'reports.financial_statements', 'reports.gl', 'reports.trial_balance',
             'reports.ap_aging', 'reports.ar_aging', 'reports.vat', 'reports.bank_reconciliation',
@@ -632,8 +632,10 @@ class RolePermissionSeeder extends Seeder
             'procurement.purchase-request.review',
             'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
             'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
-            // Vendors (manage + accredit)
-            'vendors.view', 'vendors.manage', 'vendors.accredit',
+            // Vendors (manage + accredit + suspend + archive)
+            'vendors.view', 'vendors.manage', 'vendors.accredit', 'vendors.suspend', 'vendors.archive',
+            // Customers (manage - for AR master data setup)
+            'customers.view', 'customers.manage',
             // Inventory (view for sourcing context)
             'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
             'inventory.mrq.view', 'inventory.mrq.review',

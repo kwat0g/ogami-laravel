@@ -46,15 +46,22 @@ class TestAccountsSeeder extends Seeder
         $created = 0;
 
         foreach ($accounts as [$role, $email, $name, $deptCode]) {
+            $mustChangePassword = in_array($role, ['vendor', 'client'], true);
+            $passwordChangedAt = $mustChangePassword ? null : now();
+
             $user = User::firstOrCreate(
                 ['email' => $email],
                 [
                     'name'                => $name,
                     'password'            => ucfirst($role) . '@Test1234!',
                     'email_verified_at'   => now(),
-                    'password_changed_at' => now(),
+                    'password_changed_at' => $passwordChangedAt,
                 ]
             );
+
+            if ($mustChangePassword && $user->password_changed_at !== null) {
+                $user->update(['password_changed_at' => null]);
+            }
 
             $user->syncRoles([$role]);
 

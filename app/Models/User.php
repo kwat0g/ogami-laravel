@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Services\DepartmentPermissionServiceV3 as DepartmentPermissionService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
@@ -30,7 +31,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements Auditable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use AuditableTrait, HasApiTokens, HasFactory, Notifiable;
+    use AuditableTrait, HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     // Alias Spatie's hasPermissionTo so we can override it with department scoping.
     use HasRoles {

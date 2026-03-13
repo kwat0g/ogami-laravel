@@ -30,6 +30,9 @@ export interface Customer {
   is_active: boolean
   ar_account_id: number | null
   notes: string | null
+  // Client portal account (only visible to admin)
+  portal_account_exists: boolean
+  portal_account_email: string | null
   created_at: string
   updated_at: string
 }

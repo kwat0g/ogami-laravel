@@ -237,6 +237,13 @@ final class PayrollRunPolicy
             && $this->isInitiator($user, $run);
     }
 
+    /** Archive a terminal run (soft delete). */
+    public function delete(User $user, PayrollRun $run): bool
+    {
+        return $user->hasAnyPermission(['payroll.recall', 'payroll.initiate'])
+            && $this->isInitiator($user, $run);
+    }
+
     /** GL preview — Finance Manager (read) */
     public function glPreview(User $user, PayrollRun $run): bool
     {

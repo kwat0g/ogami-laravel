@@ -57,6 +57,8 @@ export interface Vendor {
   email: string | null
   phone: string | null
   notes: string | null
+  portal_account_exists: boolean
+  portal_account_email: string | null
   created_at: string
   updated_at: string
 }

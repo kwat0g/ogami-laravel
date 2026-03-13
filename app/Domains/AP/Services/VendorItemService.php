@@ -19,10 +19,16 @@ final class VendorItemService implements ServiceContract
     /**
      * @return LengthAwarePaginator<VendorItem>
      */
-    public function list(Vendor $vendor, bool $activeOnly = false): LengthAwarePaginator
+    public function list(Vendor $vendor, bool $activeOnly = false, ?string $search = null): LengthAwarePaginator
     {
+        $searchTerm = $search !== null ? trim($search) : '';
+
         return $vendor->vendorItems()
             ->when($activeOnly, fn ($q) => $q->where('is_active', true))
+            ->when(
+                $searchTerm !== '',
+                fn ($q) => $q->where('item_name', 'ilike', "%{$searchTerm}%")
+            )
             ->orderBy('item_code')
             ->paginate(50);
     }

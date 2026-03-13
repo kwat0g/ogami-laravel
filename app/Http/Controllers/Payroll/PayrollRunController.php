@@ -141,15 +141,41 @@ final class PayrollRunController extends Controller
     }
 
     /**
-     * DELETE /api/v1/payroll/runs/{payrollRun}
+     * PATCH /api/v1/payroll/runs/{payrollRun}/cancel
      */
     public function cancel(Request $request, PayrollRun $payrollRun): JsonResponse
     {
         $this->authorize('cancel', $payrollRun);
 
-        $this->service->cancel($payrollRun);
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
 
-        return response()->json(['message' => 'Payroll run cancelled.']);
+        $run = $this->workflowService->cancel(
+            $payrollRun,
+            (int) $request->user()->id,
+            $validated['reason'] ?? null,
+        );
+
+        return response()->json([
+            'message' => 'Payroll run cancelled.',
+            'run' => new PayrollRunResource($run),
+        ]);
+    }
+
+    /**
+     * DELETE /api/v1/payroll/runs/{payrollRun}
+     */
+    public function destroy(Request $request, PayrollRun $payrollRun): JsonResponse
+    {
+        $this->authorize('delete', $payrollRun);
+
+        $run = $this->service->archive($payrollRun);
+
+        return response()->json([
+            'message' => 'Payroll run archived.',
+            'run' => new PayrollRunResource($run),
+        ]);
     }
 
     /**

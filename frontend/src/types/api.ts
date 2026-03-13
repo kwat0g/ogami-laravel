@@ -30,6 +30,8 @@ export type AppRole =
   | 'officer'
   | 'head'
   | 'staff'
+  | 'vendor'
+  | 'client'
 
 export interface AuthUser {
   id: number
@@ -43,6 +45,7 @@ export interface AuthUser {
   primary_department_id: number | null
   timezone: string
   employee_id?: number | null
+  must_change_password: boolean
 }
 
 export interface LoginPayload {

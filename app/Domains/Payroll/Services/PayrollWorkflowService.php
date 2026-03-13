@@ -448,8 +448,8 @@ final class PayrollWorkflowService implements ServiceContract
     }
 
     /**
-     * Cancel a payroll run that has not yet been disbursed.
-     * Transitions any pre-disburse status → CANCELLED.
+    * Cancel a payroll run that has not yet been disbursed.
+    * Transitions any pre-disburse status → cancelled.
      * Notifies the initiator and, if already HR-approved, the HR approver as well.
      *
      * @throws \InvalidArgumentException
@@ -480,7 +480,7 @@ final class PayrollWorkflowService implements ServiceContract
                 'acted_at' => now(),
             ]);
 
-            $this->stateMachine->transition($run, 'CANCELLED');
+            $this->stateMachine->transition($run, 'cancelled');
         });
 
         // Notify initiator and (if already HR-approved) the HR approver

@@ -21,6 +21,7 @@ interface AuthState {
   isHead:          () => boolean
   isOfficer:       () => boolean
   isVicePresident: () => boolean
+  mustChangePassword: () => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -71,5 +72,6 @@ export const useAuthStore = create<AuthState>()(
     isHead:          () => get().user?.roles.includes('head')          ?? false,
     isOfficer:       () => get().user?.roles.includes('officer')       ?? false,
     isVicePresident: () => get().user?.roles.includes('vice_president') ?? false,
+    mustChangePassword: () => get().user?.must_change_password ?? false,
   }),
 )

@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace App\Domains\AR\Services;
 
 use App\Domains\AR\Models\Customer;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class CustomerService implements ServiceContract
 {
     // ── List / Search ─────────────────────────────────────────────────────────
 
     /**
-     * @param  array{search?: string, is_active?: bool, per_page?: int}  $filters
+     * @param  array{search?: string, is_active?: bool, per_page?: int, with_portal_user?: bool}  $filters
      */
     public function list(array $filters = []): LengthAwarePaginator
     {
@@ -31,6 +34,10 @@ final class CustomerService implements ServiceContract
 
         if (isset($filters['is_active'])) {
             $query->where('is_active', (bool) $filters['is_active']);
+        }
+
+        if (! empty($filters['with_portal_user'])) {
+            $query->with('portalUser');
         }
 
         return $query
@@ -94,5 +101,81 @@ final class CustomerService implements ServiceContract
 
         $customer->update(['is_active' => false]);
         $customer->delete();
+    }
+
+    // ── Client Portal Account ─────────────────────────────────────────────────
+
+    /** Provision a client portal user account linked to this customer. */
+    public function provisionPortalAccount(Customer $customer): array
+    {
+        return DB::transaction(function () use ($customer): array {
+            $existing = User::where('client_id', $customer->id)->first();
+            if ($existing) {
+                throw new DomainException(
+                    message: "Customer already has a portal account: {$existing->email}",
+                    errorCode: 'CUSTOMER_ACCOUNT_EXISTS',
+                    httpStatus: 422,
+                );
+            }
+
+            if (! $customer->email) {
+                throw new DomainException(
+                    message: 'Customer must have an email address before creating a portal account. Please update the customer record first.',
+                    errorCode: 'CUSTOMER_EMAIL_MISSING',
+                    httpStatus: 422,
+                );
+            }
+
+            $tempPassword = 'Client' . Str::random(8) . '!';
+
+            $user = User::create([
+                'name' => $customer->contact_person ?? $customer->name,
+                'email' => $customer->email,
+                'password' => $tempPassword,
+                'client_id' => $customer->id,
+                'email_verified_at' => now(),
+                'password_changed_at' => null, // force change on first login
+            ]);
+
+            $user->syncRoles(['client']);
+
+            return [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'password' => $tempPassword,
+                'role' => 'client',
+            ];
+        });
+    }
+
+    /** Reset the client portal account password and unlock the account. */
+    public function resetPortalAccountPassword(Customer $customer): array
+    {
+        return DB::transaction(function () use ($customer): array {
+            $user = User::where('client_id', $customer->id)->first();
+            if (! $user) {
+                throw new DomainException(
+                    message: 'Customer does not have a portal account yet.',
+                    errorCode: 'CUSTOMER_ACCOUNT_MISSING',
+                    httpStatus: 422,
+                );
+            }
+
+            $tempPassword = 'Client' . Str::random(8) . '!';
+
+            $user->update([
+                'password' => $tempPassword,
+                'password_changed_at' => null, // force change on next login
+                'failed_login_attempts' => 0,
+                'locked_until' => null,
+            ]);
+
+            return [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'password' => $tempPassword,
+                'role' => 'client',
+            ];
+        });
     }
 }

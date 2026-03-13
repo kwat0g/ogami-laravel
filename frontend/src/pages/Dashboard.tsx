@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { getLandingPath } from '@/lib/roleLanding'
 
 // Lazy load all dashboard variants
 const EmployeeDashboard       = lazy(() => import('@/pages/dashboard/EmployeeDashboard'))
@@ -20,11 +22,16 @@ const AdminDashboard          = lazy(() => import('@/pages/dashboard/AdminDashbo
 const ExecutiveDashboard      = lazy(() => import('@/pages/dashboard/ExecutiveDashboard'))
 
 export default function Dashboard() {
-  const { user: _user, isLoading } = useAuth()
+  const { user, isLoading } = useAuth()
   const { hasRole } = useAuthStore()
 
   if (isLoading) {
     return <SkeletonLoader rows={8} />
+  }
+
+  const landingPath = getLandingPath(user)
+  if (landingPath !== '/dashboard') {
+    return <Navigate to={landingPath} replace />
   }
 
   // Priority order: most privileged → least privileged

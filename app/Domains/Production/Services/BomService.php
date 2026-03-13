@@ -98,7 +98,10 @@ final class BomService implements ServiceContract
 
     public function archive(BillOfMaterials $bom): void
     {
-        $bom->delete();
+        \DB::transaction(function () use ($bom): void {
+            $bom->update(['is_active' => false]);
+            $bom->delete();
+        });
     }
 
     /** @param array<string,mixed> $filters */

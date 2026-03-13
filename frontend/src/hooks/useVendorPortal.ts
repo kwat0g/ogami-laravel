@@ -105,13 +105,21 @@ export function useMarkDelivered() {
   })
 }
 
-export function useVendorPortalItems(activeOnly = true) {
+export function useVendorPortalItems(filters: { activeOnly?: boolean; search?: string } = {}) {
+  const activeOnly = filters.activeOnly ?? true
+  const search = filters.search?.trim()
+  const searchParam = search ? search : undefined
+
   return useQuery({
-    queryKey: ['vendor-portal', 'items', { activeOnly }],
+    queryKey: ['vendor-portal', 'items', { activeOnly, search: searchParam }],
     queryFn: () =>
       api.get<{ data: VendorPortalItem[] }>('/vendor-portal/items', {
-        params: { active_only: activeOnly ? 'true' : 'false' },
+        params: {
+          active_only: activeOnly ? 'true' : 'false',
+          ...(searchParam ? { search: searchParam } : {}),
+        },
       }).then((r) => r.data.data),
+    placeholderData: (prev: VendorPortalItem[] | undefined) => prev,
   })
 }
 

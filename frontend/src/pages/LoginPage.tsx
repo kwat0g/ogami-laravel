@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { getLandingPath } from '@/lib/roleLanding'
+import { bumpAuthEpoch } from '@/lib/authEpoch'
 import { useAuthStore } from '@/stores/authStore'
 import type { ApiSuccess, LoginResult } from '@/types/api'
 
@@ -47,7 +49,8 @@ export default function LoginPage() {
         // hit on mount instead of immediately firing a redundant /auth/me request.
         queryClient.setQueryData(['auth', 'me'], result.user)
         setAuth(result.user)
-        navigate('/dashboard')
+        bumpAuthEpoch()
+        navigate(getLandingPath(result.user))
       }
     } catch (err: unknown) {
       const apiErr = err as { message?: string }

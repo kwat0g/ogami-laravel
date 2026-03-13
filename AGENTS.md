@@ -441,3 +441,18 @@ Every model that uses the `HasPublicUlid` trait **must** also use `SoftDeletes`.
 
 - **Some Instruction and Prompts**: `.github/`
 - **Full implementation audit**: `AUDIT_REPORT.md`
+
+
+Always use cocoindex_code_search to find existing patterns in this 
+codebase before writing any new code.
+
+Always use context7 when writing code that involves Laravel, React, 
+Spatie, or any third-party library — fetch current docs automatically.
+
+This is a Laravel 11 + React 18 + PostgreSQL 16 ERP system for 
+Philippine manufacturing. Monetary values are stored as integers 
+in centavos. Service classes are final and wrap mutations in 
+DB::transaction().
+
+ALWAYS USE INSTRUCTION IN .github/instructions/ to guide your work.
+ALWAYS USE SKILL IN .agents/skills/ to guide your work.

@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Hash;
 |   Store  → status: draft
 |   Lock   → status: locked (dispatches computation batch)
 |   Approve→ status: completed (SoD-gated)
-|   Cancel → soft-deleted
+|   Cancel (PATCH)  → status: cancelled
+|   Archive (DELETE)→ soft-deleted (cancelled/rejected only)
 |
 | Pre-condition:
 |   - User must have `payroll.initiate` to create a run
@@ -26,15 +27,10 @@ use Illuminate\Support\Facades\Hash;
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
 
-    // HR Manager — can initiate payroll runs
+    // Test actor with explicit payroll permissions used in this file.
     $this->hrManager = User::factory()->create(['password' => Hash::make('HRmgr!9876')]);
-    $this->hrManager->assignRole('hr_manager');
     $this->hrManager->givePermissionTo('payroll.initiate');
-
-    // Accounting Manager — approves; must NOT have `payroll_runs.prepare` or it would be blocked
-    $this->accountingManager = User::factory()->create(['password' => Hash::make('ACmgr!9876')]);
-    $this->accountingManager->assignRole('hr_manager');
-    $this->accountingManager->givePermissionTo('payroll.approve');
+    $this->hrManager->givePermissionTo('payroll.view');
 });
 
 function validRunPayload(array $overrides = []): array
@@ -137,26 +133,127 @@ describe('GET /api/v1/payroll/runs', function () {
     });
 });
 
-// ── DELETE /api/v1/payroll/runs/{id} (cancel) ─────────────────────────────
+// ── PATCH /api/v1/payroll/runs/{id}/cancel ────────────────────────────────
 
-describe('DELETE /api/v1/payroll/runs/{id}', function () {
+describe('PATCH /api/v1/payroll/runs/{id}/cancel', function () {
     it('cancels a draft run (sets status to cancelled)', function () {
         $run = PayrollRun::factory()->create([
             'created_by' => $this->hrManager->id,
-            'status' => 'draft',
+            'status' => 'DRAFT',
             'cutoff_start' => '2025-05-01',
             'cutoff_end' => '2025-05-15',
             'pay_date' => '2025-05-20',
         ]);
 
         $response = $this->actingAs($this->hrManager)
-            ->deleteJson("/api/v1/payroll/runs/{$run->ulid}");
+            ->patchJson("/api/v1/payroll/runs/{$run->ulid}/cancel");
 
         $response->assertStatus(200);
 
         $this->assertDatabaseHas('payroll_runs', [
             'id' => $run->id,
             'status' => 'cancelled',
+        ]);
+    });
+
+    it('rejects cancelling a disbursed run', function () {
+        $run = PayrollRun::factory()->create([
+            'created_by' => $this->hrManager->id,
+            'status' => 'DISBURSED',
+            'cutoff_start' => '2025-06-01',
+            'cutoff_end' => '2025-06-15',
+            'pay_date' => '2025-06-20',
+        ]);
+
+        $this->actingAs($this->hrManager)
+            ->patchJson("/api/v1/payroll/runs/{$run->ulid}/cancel")
+            ->assertStatus(409)
+            ->assertJsonPath('error_code', 'PR_NOT_CANCELLABLE');
+
+        $this->assertDatabaseHas('payroll_runs', [
+            'id' => $run->id,
+            'status' => 'DISBURSED',
+            'deleted_at' => null,
+        ]);
+    });
+});
+
+// ── DELETE /api/v1/payroll/runs/{id} (archive) ────────────────────────────
+
+describe('DELETE /api/v1/payroll/runs/{id}', function () {
+    it('archives a cancelled run', function () {
+        $run = PayrollRun::factory()->create([
+            'created_by' => $this->hrManager->id,
+            'status' => 'cancelled',
+            'cutoff_start' => '2025-07-01',
+            'cutoff_end' => '2025-07-15',
+            'pay_date' => '2025-07-20',
+        ]);
+
+        $this->actingAs($this->hrManager)
+            ->deleteJson("/api/v1/payroll/runs/{$run->ulid}")
+            ->assertStatus(200)
+            ->assertJsonPath('message', 'Payroll run archived.');
+
+        $this->assertSoftDeleted('payroll_runs', ['id' => $run->id]);
+    });
+
+    it('archives a rejected run', function () {
+        $run = PayrollRun::factory()->create([
+            'created_by' => $this->hrManager->id,
+            'status' => 'REJECTED',
+            'cutoff_start' => '2025-08-01',
+            'cutoff_end' => '2025-08-15',
+            'pay_date' => '2025-08-20',
+        ]);
+
+        $this->actingAs($this->hrManager)
+            ->deleteJson("/api/v1/payroll/runs/{$run->ulid}")
+            ->assertStatus(200)
+            ->assertJsonPath('message', 'Payroll run archived.');
+
+        $this->assertSoftDeleted('payroll_runs', ['id' => $run->id]);
+    });
+
+    it('rejects archiving a disbursed run', function () {
+        $run = PayrollRun::factory()->create([
+            'created_by' => $this->hrManager->id,
+            'status' => 'DISBURSED',
+            'cutoff_start' => '2025-09-01',
+            'cutoff_end' => '2025-09-15',
+            'pay_date' => '2025-09-20',
+        ]);
+
+        $this->actingAs($this->hrManager)
+            ->deleteJson("/api/v1/payroll/runs/{$run->ulid}")
+            ->assertUnprocessable()
+            ->assertJsonPath('error_code', 'PR_ARCHIVE_NOT_ALLOWED');
+
+        $this->assertDatabaseHas('payroll_runs', [
+            'id' => $run->id,
+            'status' => 'DISBURSED',
+            'deleted_at' => null,
+        ]);
+    });
+
+    it('rejects archiving a published run', function () {
+        $run = PayrollRun::factory()->create([
+            'created_by' => $this->hrManager->id,
+            'status' => 'PUBLISHED',
+            'cutoff_start' => '2025-10-01',
+            'cutoff_end' => '2025-10-15',
+            'pay_date' => '2025-10-20',
+        ]);
+
+        $this->actingAs($this->hrManager)
+            ->deleteJson("/api/v1/payroll/runs/{$run->ulid}")
+            ->assertUnprocessable()
+            ->assertJsonPath('error_code', 'PR_ARCHIVE_NOT_ALLOWED');
+
+        $this->assertDatabaseHas('payroll_runs', [
+            'id' => $run->id,
+            'status' => 'PUBLISHED',
+            'deleted_at' => null,
         ]);
     });
 });

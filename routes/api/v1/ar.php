@@ -32,6 +32,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
         ->name('customers.destroy');
 
+    // Client Portal Account provisioning (admin only)
+    Route::post('customers/{customer}/provision-account', [CustomerController::class, 'provisionPortalAccount'])
+        ->middleware(['permission:system.manage_users', 'throttle:api-action'])
+        ->name('customers.provision-account');
+
+    Route::post('customers/{customer}/reset-account', [CustomerController::class, 'resetPortalAccountPassword'])
+        ->middleware(['permission:system.manage_users', 'throttle:api-action'])
+        ->name('customers.reset-account');
+
     // ── Customer Invoices ─────────────────────────────────────────────────────
     // Static sub-routes BEFORE parameter routes (Laravel matches top-to-bottom)
     Route::get('invoices/due-soon', [CustomerInvoiceController::class, 'dueSoon'])

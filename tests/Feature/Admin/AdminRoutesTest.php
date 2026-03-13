@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Domains\AP\Models\Vendor;
+use App\Domains\AR\Models\Customer;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -11,11 +13,12 @@ use Spatie\Permission\Models\Role;
 |--------------------------------------------------------------------------
 | Admin Routes — Feature Tests
 |--------------------------------------------------------------------------
-| Tests for the 11 routes in routes/api/v1/admin.php:
+| Tests for the 12 routes in routes/api/v1/admin.php:
 |   GET    /api/v1/admin/dashboard/stats
 |   GET    /api/v1/admin/users
 |   POST   /api/v1/admin/users
 |   PATCH  /api/v1/admin/users/{user}
+|   POST   /api/v1/admin/users/{user}/disable
 |   DELETE /api/v1/admin/users/{user}
 |   POST   /api/v1/admin/users/{user}/roles
 |   POST   /api/v1/admin/users/{user}/unlock
@@ -131,6 +134,162 @@ describe('GET /api/v1/admin/users', function () {
 });
 
 // ---------------------------------------------------------------------------
+// Portal Provisioning Targets — Vendors / Customers
+// ---------------------------------------------------------------------------
+
+describe('GET /api/v1/admin/vendors/available', function () {
+    it('returns only active accredited vendors with email and no linked user account', function () {
+        $admin = adminUser();
+        $creator = User::factory()->create();
+
+        $available = Vendor::create([
+            'name' => 'Available Vendor Inc',
+            'email' => 'available.vendor@test.local',
+            'created_by' => $creator->id,
+            'is_active' => true,
+            'accreditation_status' => 'accredited',
+        ]);
+
+        $missingEmail = Vendor::create([
+            'name' => 'No Email Vendor',
+            'email' => null,
+            'created_by' => $creator->id,
+            'is_active' => true,
+            'accreditation_status' => 'accredited',
+        ]);
+
+        $inactive = Vendor::create([
+            'name' => 'Inactive Vendor',
+            'email' => 'inactive.vendor@test.local',
+            'created_by' => $creator->id,
+            'is_active' => false,
+            'accreditation_status' => 'accredited',
+        ]);
+
+        $notAccredited = Vendor::create([
+            'name' => 'Pending Vendor',
+            'email' => 'pending.vendor@test.local',
+            'created_by' => $creator->id,
+            'is_active' => true,
+            'accreditation_status' => 'pending',
+        ]);
+
+        $linkedVendor = Vendor::create([
+            'name' => 'Linked Vendor',
+            'email' => 'linked.vendor@test.local',
+            'created_by' => $creator->id,
+            'is_active' => true,
+            'accreditation_status' => 'accredited',
+        ]);
+
+        User::factory()->create([
+            'email' => 'linked.vendor@test.local',
+            'vendor_id' => $linkedVendor->id,
+        ]);
+
+        $emailTaken = Vendor::create([
+            'name' => 'Email Taken Vendor',
+            'email' => 'taken.vendor@test.local',
+            'created_by' => $creator->id,
+            'is_active' => true,
+            'accreditation_status' => 'accredited',
+        ]);
+
+        User::factory()->create(['email' => 'taken.vendor@test.local']);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/v1/admin/vendors/available')
+            ->assertOk();
+
+        $ids = collect($response->json('data'))->pluck('id')->all();
+
+        expect($ids)->toContain($available->id);
+        expect($ids)->not->toContain($missingEmail->id);
+        expect($ids)->not->toContain($inactive->id);
+        expect($ids)->not->toContain($notAccredited->id);
+        expect($ids)->not->toContain($linkedVendor->id);
+        expect($ids)->not->toContain($emailTaken->id);
+    });
+
+    it('returns 403 without system.manage_users permission', function () {
+        $user = limitedUser([]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/admin/vendors/available')
+            ->assertForbidden();
+    });
+});
+
+describe('GET /api/v1/admin/customers/available', function () {
+    it('returns only active customers with email and no linked user account', function () {
+        $admin = adminUser();
+        $creator = User::factory()->create();
+
+        $available = Customer::create([
+            'name' => 'Available Customer Corp',
+            'email' => 'available.customer@test.local',
+            'created_by' => $creator->id,
+            'is_active' => true,
+        ]);
+
+        $missingEmail = Customer::create([
+            'name' => 'No Email Customer',
+            'email' => null,
+            'created_by' => $creator->id,
+            'is_active' => true,
+        ]);
+
+        $inactive = Customer::create([
+            'name' => 'Inactive Customer',
+            'email' => 'inactive.customer@test.local',
+            'created_by' => $creator->id,
+            'is_active' => false,
+        ]);
+
+        $linkedCustomer = Customer::create([
+            'name' => 'Linked Customer',
+            'email' => 'linked.customer@test.local',
+            'created_by' => $creator->id,
+            'is_active' => true,
+        ]);
+
+        User::factory()->create([
+            'email' => 'linked.customer@test.local',
+            'client_id' => $linkedCustomer->id,
+        ]);
+
+        $emailTaken = Customer::create([
+            'name' => 'Email Taken Customer',
+            'email' => 'taken.customer@test.local',
+            'created_by' => $creator->id,
+            'is_active' => true,
+        ]);
+
+        User::factory()->create(['email' => 'taken.customer@test.local']);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/v1/admin/customers/available')
+            ->assertOk();
+
+        $ids = collect($response->json('data'))->pluck('id')->all();
+
+        expect($ids)->toContain($available->id);
+        expect($ids)->not->toContain($missingEmail->id);
+        expect($ids)->not->toContain($inactive->id);
+        expect($ids)->not->toContain($linkedCustomer->id);
+        expect($ids)->not->toContain($emailTaken->id);
+    });
+
+    it('returns 403 without system.manage_users permission', function () {
+        $user = limitedUser([]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/admin/customers/available')
+            ->assertForbidden();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // User Management — Create
 // ---------------------------------------------------------------------------
 
@@ -219,20 +378,81 @@ describe('PATCH /api/v1/admin/users/{user}', function () {
 });
 
 // ---------------------------------------------------------------------------
-// User Management — Delete
+// User Management — Disable
+// ---------------------------------------------------------------------------
+
+describe('POST /api/v1/admin/users/{user}/disable', function () {
+    it('disables another user by locking the account and revoking active tokens', function () {
+        $admin = adminUser();
+        $target = User::factory()->create([
+            'failed_login_attempts' => 3,
+            'locked_until' => null,
+        ]);
+
+        $target->createToken('test-device');
+        expect($target->tokens()->count())->toBe(1);
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/v1/admin/users/{$target->id}/disable")
+            ->assertOk()
+            ->assertJsonFragment(['message' => 'User account disabled.']);
+
+        $fresh = $target->fresh();
+        expect($fresh)->not->toBeNull();
+        expect($fresh?->failed_login_attempts)->toBe(0);
+        expect($fresh?->locked_until)->not->toBeNull();
+        expect($fresh?->locked_until?->isFuture())->toBeTrue();
+        expect($fresh?->locked_until?->gt(now()->addYears(9)))->toBeTrue();
+        expect($fresh?->tokens()->count())->toBe(0);
+        $this->assertDatabaseHas('users', ['id' => $target->id, 'deleted_at' => null]);
+    });
+
+    it('returns 422 when admin tries to disable themselves', function () {
+        $admin = adminUser();
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/v1/admin/users/{$admin->id}/disable")
+            ->assertUnprocessable()
+            ->assertJsonFragment(['message' => 'You cannot disable your own account.']);
+    });
+
+    it('returns 403 without users.update permission', function () {
+        $user = limitedUser([]);
+        $target = User::factory()->create();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/admin/users/{$target->id}/disable")
+            ->assertForbidden();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// User Management — Delete (Archive)
 // ---------------------------------------------------------------------------
 
 describe('DELETE /api/v1/admin/users/{user}', function () {
-    it('soft-deletes another user', function () {
+    it('archives another user via soft delete', function () {
         $admin = adminUser();
-        $target = User::factory()->create();
+        $target = User::factory()->create([
+            'failed_login_attempts' => 2,
+            'locked_until' => null,
+        ]);
+
+        $target->createToken('legacy-delete-call');
+        expect($target->tokens()->count())->toBe(1);
 
         $this->actingAs($admin, 'sanctum')
             ->deleteJson("/api/v1/admin/users/{$target->id}")
             ->assertOk()
-            ->assertJsonFragment(['message' => 'User deleted successfully.']);
+            ->assertJsonFragment(['message' => 'User archived successfully.']);
 
-        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
+
+        // Default listing excludes archived users.
+        $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/v1/admin/users?search='.$target->email)
+            ->assertOk()
+            ->assertJsonPath('meta.total', 0);
     });
 
     it('returns 422 when admin tries to delete themselves', function () {
@@ -251,6 +471,31 @@ describe('DELETE /api/v1/admin/users/{user}', function () {
         $this->actingAs($user, 'sanctum')
             ->deleteJson("/api/v1/admin/users/{$target->id}")
             ->assertForbidden();
+    });
+
+    it('archived list includes deleted users but excludes disabled-only users', function () {
+        $admin = adminUser();
+        $disabledOnly = User::factory()->create([
+            'name' => 'Disabled Only User',
+            'email' => 'disabled-only@test.local',
+            'locked_until' => now()->addYears(10),
+        ]);
+        $archived = User::factory()->create([
+            'name' => 'Archived User',
+            'email' => 'archived-user@test.local',
+        ]);
+        $archived->delete();
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/v1/admin/users?archived=1')
+            ->assertOk();
+
+        $emails = collect($response->json('data'))->pluck('email')->all();
+        expect($emails)->toContain('archived-user@test.local');
+        expect($emails)->not->toContain('disabled-only@test.local');
+
+        $this->assertDatabaseHas('users', ['id' => $disabledOnly->id, 'deleted_at' => null]);
+        $this->assertSoftDeleted('users', ['id' => $archived->id]);
     });
 });
 

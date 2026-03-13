@@ -19,6 +19,7 @@ function setUser(user: Partial<NonNullable<AuthUser>> | null) {
           roles: ['supervisor'],
           permissions: [],
           timezone: 'Asia/Manila',
+          must_change_password: false,
           ...user,
         } as NonNullable<AuthUser>)
       : null,

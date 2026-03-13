@@ -8,6 +8,7 @@ use App\Shared\Exceptions\DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -82,6 +83,11 @@ final class Vendor extends Model implements Auditable
     public function payments(): HasMany
     {
         return $this->hasMany(VendorPayment::class, 'vendor_id');
+    }
+
+    public function portalUser(): HasOne
+    {
+        return $this->hasOne(\App\Models\User::class, 'vendor_id');
     }
 
     /** @return HasMany<VendorItem, Vendor> */

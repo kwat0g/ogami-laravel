@@ -17,6 +17,9 @@ final class CustomerResource extends JsonResource
     {
         /** @var \App\Domains\AR\Models\Customer $c */
         $c = $this->resource;
+        /** @var \App\Models\User|null $portalUser */
+        $portalUser = $c->relationLoaded('portalUser') ? $c->portalUser : null;
+        $canManageUsers = $request->user()?->hasPermissionTo('system.manage_users') ?? false;
 
         return [
             'id' => $c->id,
@@ -34,6 +37,8 @@ final class CustomerResource extends JsonResource
             'is_active' => $c->is_active,
             'ar_account_id' => $c->ar_account_id,
             'notes' => $c->notes,
+            'portal_account_exists' => $portalUser !== null,
+            'portal_account_email' => $canManageUsers ? $portalUser?->email : null,
             'created_at' => $c->created_at->toIso8601String(),
             'updated_at' => $c->updated_at->toIso8601String(),
         ];

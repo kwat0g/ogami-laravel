@@ -117,6 +117,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('vendors/{vendor}/provision-account', [VendorController::class, 'provisionPortalAccount'])
         ->middleware(['permission:system.manage_users', 'throttle:api-action'])
         ->name('vendors.provision-account');
+    Route::post('vendors/{vendor}/reset-account', [VendorController::class, 'resetPortalAccountPassword'])
+        ->middleware(['permission:system.manage_users', 'throttle:api-action'])
+        ->name('vendors.reset-account');
 
     // ── AP Invoices (AP-001 to AP-011) ───────────────────────────────────────
     // AP operational dashboard: totals by status, overdue summary, aging buckets

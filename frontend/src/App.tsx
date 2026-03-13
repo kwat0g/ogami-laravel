@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { RouterProvider } from 'react-router-dom'
-import { router } from './router'
+import AppRouter from './router'
 import { AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react'
 import { useUiStore } from '@/stores/uiStore'
 
@@ -167,7 +166,7 @@ export default function App() {
   return (
     <>
       <SystemRestoreOverlay />
-      <RouterProvider router={router} />
+      <AppRouter />
     </>
   )
 }

@@ -24,7 +24,12 @@ final class VendorItemController extends Controller
     {
         $this->authorize('view', $vendor);
 
-        $items = $this->service->list($vendor, $request->boolean('active_only'));
+        $search = $request->query('search');
+        $items = $this->service->list(
+            $vendor,
+            $request->boolean('active_only'),
+            is_string($search) ? $search : null,
+        );
 
         return VendorItemResource::collection($items);
     }

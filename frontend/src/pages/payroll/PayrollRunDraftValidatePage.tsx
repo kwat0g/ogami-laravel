@@ -7,7 +7,7 @@
  *   1. POST /payroll/runs                   — create the run (DRAFT)
  *   2. PATCH /payroll/runs/{id}/scope       — save scope + exclusions (SCOPE_SET)
  *   3. POST /payroll/runs/{id}/pre-run-checks — run PR-001…PR-008 checks
- *   4a. Blockers found → delete the run, show errors, back to idle
+ *   4a. Blockers found → cancel then archive the run, show errors, back to idle
  *   4b. Warnings only  → show ack checkboxes, wait for user confirmation
  *   4c. All pass       → proceed directly
  *   5. POST /payroll/runs/{id}/acknowledge  — transition to PRE_RUN_CHECKED
@@ -111,6 +111,12 @@ export default function PayrollRunDraftValidatePage() {
     await api.post(`/payroll/runs/${runId}/compute`)
   }
 
+  async function cancelAndArchiveRun(runId: string) {
+    // Archive is allowed only for cancelled/rejected runs.
+    await api.patch(`/payroll/runs/${runId}/cancel`)
+    await api.delete(`/payroll/runs/${runId}`)
+  }
+
   // ── Main commit sequence ──────────────────────────────────────────────────
 
   async function handleBeginComputation() {
@@ -151,7 +157,7 @@ export default function PayrollRunDraftValidatePage() {
 
       // 4a — Blockers: rollback and show errors
       if (checksData.has_blockers) {
-        try { await api.delete(`/payroll/runs/${runId}`) } catch { /* ignore cleanup error */ }
+        try { await cancelAndArchiveRun(runId) } catch { /* ignore cleanup error */ }
         setPhase({ kind: 'blocked', checks: checksData.checks })
         return
       }
@@ -173,7 +179,7 @@ export default function PayrollRunDraftValidatePage() {
     } catch (err) {
       // Clean up partially-created run
       if (runId) {
-        try { await api.delete(`/payroll/runs/${runId}`) } catch { /* ignore cleanup error */ }
+        try { await cancelAndArchiveRun(runId) } catch { /* ignore cleanup error */ }
       }
       setPhase({ kind: 'idle' })
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -338,9 +344,10 @@ export default function PayrollRunDraftValidatePage() {
             <button
               type="button"
               onClick={() => {
-                // Delete the pending run and return to idle
-                void api.delete(`/payroll/runs/${phase.runId}`).catch(() => {})
-                setPhase({ kind: 'idle' })
+                // Cancel then archive the pending run and return to idle.
+                void cancelAndArchiveRun(phase.runId)
+                  .catch(() => {})
+                  .finally(() => setPhase({ kind: 'idle' }))
               }}
               className="text-sm text-neutral-500 hover:text-neutral-800"
             >

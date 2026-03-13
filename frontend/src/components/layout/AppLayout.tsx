@@ -8,7 +8,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { useRealtimeEvents } from '@/hooks/useRealtimeEvents'
 import { disconnectEcho } from '@/lib/echo'
+import { bumpAuthEpoch } from '@/lib/authEpoch'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { getPasswordChangePath } from '@/lib/roleLanding'
 import NotificationBell from '@/components/layout/NotificationBell'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import {
@@ -121,7 +123,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Recurring Templates',  href: '/accounting/recurring-templates', permission: 'journal_entries.view' },
     ],
   },
-  {
+   {
     label: 'Payables (AP)',
     icon: FileText,
     permission: 'vendors.view',
@@ -139,7 +141,7 @@ const SECTIONS: NavSection[] = [
     icon: Wallet,
     permission: 'customers.view',
     // officer = full write, executive/vice_president/head = view-only
-    roles: ['officer', 'executive', 'vice_president', 'head'],
+    roles: ['officer', 'executive', 'vice_president', 'head', 'purchasing_officer'],
     children: [
       { label: 'Customers',     href: '/ar/customers',       permission: 'customers.view' },
       { label: 'Invoices',      href: '/ar/invoices',        permission: 'customer_invoices.view' },
@@ -386,7 +388,7 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
   }, [isCurrentSection])
 
   if (section.permission && !hasPermission(section.permission)) return null
-  if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
+  if (section.roles && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
   if (visibleChildren.length === 0) return null
 
   return (
@@ -448,7 +450,7 @@ function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSe
   }, [open])
 
   if (section.permission && !hasPermission(section.permission)) return null
-  if (section.roles && !hasRole('admin') && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
+  if (section.roles && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
 
   const visibleChildren = section.children.filter(
     (c) => c.divider || !c.permission || hasPermission(c.permission),
@@ -591,6 +593,7 @@ function UserMenu({
 
 export default function AppLayout() {
   const { isAuthenticated, isLoading, user } = useAuth()
+  const location = useLocation()
   const { clearAuth, hasPermission, hasRole } = useAuthStore()
   const queryClient = useQueryClient()
 
@@ -622,6 +625,7 @@ export default function AppLayout() {
     disconnectEcho()
     queryClient.clear()
     clearAuth()
+    bumpAuthEpoch()
   }
 
   if (isLoading) {
@@ -634,6 +638,13 @@ export default function AppLayout() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  if (user?.must_change_password) {
+    const passwordPath = getPasswordChangePath(user)
+    if (location.pathname !== passwordPath) {
+      return <Navigate to={passwordPath} replace />
+    }
   }
 
   return (

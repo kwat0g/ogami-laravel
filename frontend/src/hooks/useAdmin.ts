@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Paginated } from '@/types/hr'
 
@@ -13,6 +13,7 @@ export interface AdminUser {
   department_id:         number | null
   last_login_at:         string | null
   created_at:            string
+  deleted_at:            string | null
   locked_until:          string | null
   failed_login_attempts: number
   roles:                 Array<{ id: number; name: string }>
@@ -95,6 +96,33 @@ export interface AvailableEmployee {
   department_name: string
 }
 
+export interface AvailableVendor {
+  id: number
+  name: string
+  email: string
+  contact_person: string | null
+  accreditation_status: string
+}
+
+export interface AvailableCustomer {
+  id: number
+  name: string
+  email: string
+  contact_person: string | null
+}
+
+export interface PortalAccountCredentials {
+  user_id: number
+  email: string
+  password: string
+  role: 'vendor' | 'client'
+}
+
+export interface ProvisionPortalAccountPayload {
+  role: 'vendor' | 'client'
+  targetId: number
+}
+
 export interface Department {
   id:   number
   name: string
@@ -135,6 +163,7 @@ export function useAdminUsers(filters: UserFilters = {}) {
       return res.data
     },
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -157,6 +186,18 @@ export function useUpdateAdminUser() {
     mutationFn: async ({ id, ...payload }: UpdateUserPayload & { id: number }) => {
       const res = await api.patch<{ data: AdminUser }>(`/admin/users/${id}`, payload)
       return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+  })
+}
+
+export function useDisableAdminUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.post(`/admin/users/${id}/disable`)
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
@@ -331,6 +372,63 @@ export function useEmployeesAvailable(departmentId: number | null) {
     },
     enabled: departmentId !== null && departmentId > 0,
     staleTime: 30_000,
+  })
+}
+
+interface AvailableAccountFilters {
+  search?: string
+  limit?: number
+}
+
+/** Active accredited vendors with email and no linked user account. */
+export function useAvailableVendors(filters: AvailableAccountFilters = {}, enabled = true) {
+  return useQuery({
+    queryKey: ['available-vendors', filters],
+    queryFn: async () => {
+      const res = await api.get<{ data: AvailableVendor[] }>('/admin/vendors/available', { params: filters })
+      return res.data.data
+    },
+    enabled,
+    staleTime: 30_000,
+  })
+}
+
+/** Active customers with email and no linked user account. */
+export function useAvailableCustomers(filters: AvailableAccountFilters = {}, enabled = true) {
+  return useQuery({
+    queryKey: ['available-customers', filters],
+    queryFn: async () => {
+      const res = await api.get<{ data: AvailableCustomer[] }>('/admin/customers/available', { params: filters })
+      return res.data.data
+    },
+    enabled,
+    staleTime: 30_000,
+  })
+}
+
+/**
+ * Provisions a portal account for a vendor or client record.
+ * Uses existing AP/AR provisioning endpoints so password generation stays domain-consistent.
+ */
+export function useProvisionPortalAccount() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (payload: ProvisionPortalAccountPayload) => {
+      const path = payload.role === 'vendor'
+        ? `/accounting/vendors/${payload.targetId}/provision-account`
+        : `/ar/customers/${payload.targetId}/provision-account`
+
+      const res = await api.post<{ data: PortalAccountCredentials }>(path)
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      void queryClient.invalidateQueries({ queryKey: ['available-vendors'] })
+      void queryClient.invalidateQueries({ queryKey: ['available-customers'] })
+      void queryClient.invalidateQueries({ queryKey: ['vendors'] })
+      void queryClient.invalidateQueries({ queryKey: ['customers'] })
+    },
   })
 }
 

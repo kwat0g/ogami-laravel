@@ -85,12 +85,16 @@ These are pre-seeded — just verify they exist:
 
 📧 **Switch to**: `admin@ogamierp.local` / `Admin@1234567890!`
 
-1. Go to **Payables (AP) → Vendors**
-2. Find each accredited vendor → in the **Actions** column, click **"Create Account"**
-3. The popup shows generated credentials (email + password) → click **Copy**
-4. Click **Done** to close
+1. Go to **Administration → Users → New User**
+2. Fill details:
+   - Name: `Vendor User (ABC)`
+   - Email: `jun.reyes@abcsupply.com`
+   - Password: `VendorUser@12345!`
+   - Role: `vendor`
+3. A **Linked Vendor** dropdown appears → select **ABC Industrial Supply Co.**
+4. Click **Create User**.
 
-> ⚠️ **Only Admin** can create vendor portal accounts, and only for *accredited* vendors.
+> ⚠️ **Only Admin** can manage user accounts. Vendor users must be linked to a specific vendor.
 
 ### Step 7: Vendor Imports Item Catalog (Vendor)
 
@@ -102,9 +106,9 @@ These are pre-seeded — just verify they exist:
 4. Upload: `storage/app/sample_vendor_items.csv` (20 items pre-created)
 5. Verify all items appear with correct prices
 
-### Step 8: Create Customers (Accounting Officer)
+### Step 8: Create Customers (Purchasing Officer)
 
-📧 **Switch to**: `acctg.officer@ogamierp.local` / `AcctgManager@1234!`
+📧 **Switch to**: `purchasing.officer@ogamierp.local` / `Officer@12345!`
 
 1. Go to **Receivables (AR) → Customers**
 2. Click **"New Customer"**
@@ -123,21 +127,34 @@ These are pre-seeded — just verify they exist:
 
 ### Step 9: Create CRM Manager + Client Portal User (Admin)
 
+> **Prerequisite**: Ensure an employee record exists for the CRM Manager first (HR Manager creates employees). We will use the seeded HR Manager account's authority if needed, but for simplicity, we assume an existing employee or create one.
+
+**Part A: Create Employee for CRM Manager (HR Manager)**
+📧 **Switch to**: `hr.manager@ogamierp.local` / `HrManager@1234!`
+1. Go to **Human Resources → All Employees → New Employee**
+2. Create:
+   - Name: `Carrie CRM`
+   - Monthly Rate: `30000`
+   - Position: `SALES-MGR` / Dept: `SALES`
+   - ID: `EMP-CRM-001`
+   - Status: `Active`
+
+**Part B: Create Users (Admin)**
 📧 **Switch to**: `admin@ogamierp.local` / `Admin@1234567890!`
 
-1. Go to **Administration → Users → New**
+1. Go to **Administration → Users → New User**
 2. Create **CRM Manager**:
    - Name: `CRM Manager`
    - Email: `crm.manager@ogamierp.local`
    - Password: `CrmManager@12345!`
    - Role: `crm_manager`
-   - Department: `SALES`
+   - **Linked Employee:** Select `Carrie CRM` (or searches by name)
 3. Create **Client Portal User**:
    - Name: `Client User (XYZ)`
    - Email: `client@ogamierp.local`
    - Password: `Client@Test1234!`
    - Role: `client`
-   - If a **Customer/Client** field exists, select **XYZ Manufacturing Corp.**
+   - **Linked Customer:** Select **XYZ Manufacturing Corp.**
 
 ### Step 10: Create Inventory Items (Warehouse Head)
 
@@ -307,10 +324,10 @@ These are pre-seeded — just verify they exist:
 
 #### 8. Mold Manager — `mold.manager@ogamierp.local` / `Manager@12345!`
 
-| Dashboard | Sidebar |
-|-----------|---------|
-| MoldManagerDashboard — mold status, shot counts | Mold (full), Inventory (view) |
+| Dashboard | Sidebar | [view-only], Invoices, Credit Notes), **Banking** (Bank Accounts, Reconciliations), **Financial Reports** (Trial Balance, BS, IS, CF, AP/AR Aging, VAT, Tax), **Fixed Assets** (Register, Categories, Disposals), **Budget** (Cost Centers, Lines, vs Actual), Payroll (acctg-approve, disburse, publish), Procurement (view + budget-check), Inventory (full) |
 
+**Key actions**: Journal entries, AP invoices (create/approve/pay), AR invoices, banking, reconciliations, payroll acctg-approve/disburse, budget, fixed assets, tax reports.  
+**Does NOT have** (since SoD separation): vendor/customer create/edit/accredit/suspend/archive — **view-only on vendor/customer lists
 **Key actions**: Mold CRUD, shot logging.  
 **Does NOT have**: QC/mold inspections, production orders, accounting.
 
@@ -342,10 +359,10 @@ These are pre-seeded — just verify they exist:
 
 | Dashboard | Sidebar |
 |-----------|---------|
-| PurchasingOfficerDashboard — PO status, vendor performance | Procurement (full), Payables AP → Vendors (full management: add, edit, accredit, suspend, archive), Inventory (view + MRQ review), Delivery (view) |
+| PurchasingOfficerDashboard — PO status, vendor performance | Procurement (full), Payables AP → Vendors (full management: add, edit, accredit, suspend, archive), Receivables (AR) → Customers (full management), Inventory (view + MRQ review), Delivery (view) |
 
-**Key actions**: PR create/review, PO create/manage, GR create/confirm, **full vendor lifecycle** (create, edit, accredit, suspend, archive), MRQ review.  
-**Does NOT have**: vendor invoicing, AR, banking, payroll, accounting GL.
+**Key actions**: PR create/review, PO create/manage, GR create/confirm, **full vendor lifecycle** (create, edit, accredit, suspend, archive), **full customer lifecycle**, MRQ review.  
+**Does NOT have**: vendor invoicing, AR invoicing, banking, payroll, accounting GL.
 
 ---
 
@@ -416,8 +433,8 @@ This is a single, real-life story that starts from setup and walks through procu
 4. **Purchasing Officer**: Accredit both vendors (Part 1, Step 5).
 5. **Admin**: Create vendor portal accounts (Part 1, Step 6).
 6. **Vendor Portal**: Import vendor items from `storage/app/sample_vendor_items.csv` (Part 1, Step 7).
-7. **Accounting Officer**: Create two customers (Part 1, Step 8).
-8. **Admin**: Create CRM Manager + Client Portal user (Part 1, Step 9).
+7. **Purchasing Officer**: Create two customers (Part 1, Step 8).
+8. **HR Manager & Admin**: Create CRM Manager and Client Portal users (Part 1, Step 9).
 9. **Warehouse Head**: Create item categories and item masters (Part 1, Step 10), plus a finished good:
    - Add `Plastic Container 500ml` (Finished Good, UoM: `pcs`).
 10. **Warehouse Head**: Create a warehouse location (Inventory → Warehouse Locations):

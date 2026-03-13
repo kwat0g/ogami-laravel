@@ -78,6 +78,13 @@
   }
 
   /* Form input enhancements */
+  .input {
+    @apply w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900;
+    @apply outline outline-1 outline-neutral-200;
+    @apply transition-all duration-150;
+    @apply focus:border-neutral-400 focus:outline-neutral-300 focus:ring-2 focus:ring-neutral-100;
+    @apply disabled:bg-neutral-100 disabled:text-neutral-500;
+  }
   .input-enhanced {
     @apply transition-all duration-150;
     @apply border-neutral-300 bg-white;

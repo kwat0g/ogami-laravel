@@ -276,6 +276,19 @@ export function useCancelPayrollRun(runId: string) {
 
   return useMutation({
     mutationFn: async () => {
+      await api.patch(`/payroll/runs/${runId}/cancel`)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['payroll-runs'] })
+    },
+  })
+}
+
+export function useArchivePayrollRun(runId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
       await api.delete(`/payroll/runs/${runId}`)
     },
     onSuccess: () => {

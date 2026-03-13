@@ -9,11 +9,9 @@ use App\Domains\AP\Services\VendorService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AP\CreateVendorRequest;
 use App\Http\Resources\AP\VendorResource;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Str;
 
 final class VendorController extends Controller
 {
@@ -31,7 +29,7 @@ final class VendorController extends Controller
     {
         $this->authorize('viewAny', Vendor::class);
 
-        $query = Vendor::with('ewtRate')
+        $query = Vendor::with(['ewtRate', 'portalUser'])
             ->when(
                 $request->filled('is_active'),
                 fn ($q) => $q->where('is_active', $request->boolean('is_active')),
@@ -63,7 +61,7 @@ final class VendorController extends Controller
 
         $vendor = $this->service->create($request->validated(), auth()->id());
 
-        return new VendorResource($vendor->load('ewtRate'));
+        return new VendorResource($vendor->load('ewtRate', 'portalUser'));
     }
 
     public function show(Vendor $vendor): VendorResource
@@ -126,49 +124,26 @@ final class VendorController extends Controller
     public function provisionPortalAccount(Vendor $vendor): JsonResponse
     {
         $this->authorize('provisionAccount', $vendor);
-
-        // Check if vendor already has a linked portal account
-        $existing = User::where('vendor_id', $vendor->id)->first();
-        if ($existing) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'VENDOR_ACCOUNT_EXISTS',
-                'message' => "Vendor already has a portal account: {$existing->email}",
-            ], 422);
-        }
-
-        // Require vendor email to exist
-        if (! $vendor->email) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'VENDOR_EMAIL_MISSING',
-                'message' => 'Vendor must have an email address before creating a portal account. Please update the vendor record first.',
-            ], 422);
-        }
-
-        // Generate temp password
-        $tempPassword = 'Vendor' . Str::random(8) . '!';
-
-        $user = User::create([
-            'name'                => $vendor->contact_person ?? $vendor->name,
-            'email'               => $vendor->email,
-            'password'            => $tempPassword,
-            'vendor_id'           => $vendor->id,
-            'email_verified_at'   => now(),
-            'password_changed_at' => now(),
-        ]);
-
-        $user->syncRoles(['vendor']);
+        $data = $this->service->provisionPortalAccount($vendor);
 
         return response()->json([
-            'success'  => true,
-            'message'  => 'Vendor portal account created successfully.',
-            'data'     => [
-                'user_id'  => $user->id,
-                'email'    => $user->email,
-                'password' => $tempPassword,
-                'role'     => 'vendor',
-            ],
+            'success' => true,
+            'message' => 'Vendor portal account created successfully.',
+            'data' => $data,
         ], 201);
+    }
+
+    /** Reset the vendor portal account password. */
+    public function resetPortalAccountPassword(Vendor $vendor): JsonResponse
+    {
+        $this->authorize('provisionAccount', $vendor);
+
+        $data = $this->service->resetPortalAccountPassword($vendor);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vendor portal password reset successfully.',
+            'data' => $data,
+        ]);
     }
 }

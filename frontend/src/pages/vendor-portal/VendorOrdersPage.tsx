@@ -21,8 +21,8 @@ export default function VendorOrdersPage(): React.ReactElement {
 
   const { data, isLoading, isError } = useVendorOrders(statusFilter || undefined)
 
-  if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading orders…</p>
-  if (isError) return <p className="text-sm text-red-500 mt-4">Failed to load orders.</p>
+  if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading purchase orders...</p>
+  if (isError) return <p className="text-sm text-red-500 mt-4">Failed to load purchase orders.</p>
 
   const orders = data?.data ?? []
 
@@ -30,7 +30,7 @@ export default function VendorOrdersPage(): React.ReactElement {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">My Orders</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Purchase Orders</h1>
           <p className="text-sm text-neutral-500">Purchase orders assigned to your vendor account.</p>
         </div>
         <select
@@ -47,7 +47,7 @@ export default function VendorOrdersPage(): React.ReactElement {
 
       {orders.length === 0 ? (
         <div className="bg-white border border-neutral-200 rounded-lg px-6 py-12 text-center">
-          <p className="text-neutral-500 text-sm">No orders found for the selected filter.</p>
+          <p className="text-neutral-500 text-sm">No purchase orders found for the selected filter.</p>
         </div>
       ) : (
         <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">

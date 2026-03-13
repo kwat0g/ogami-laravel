@@ -156,6 +156,35 @@ final class PayrollRunService implements ServiceContract
     }
 
     /**
+     * Soft-archive a payroll run.
+     *
+     * Only cancelled or rejected runs can be archived.
+     *
+     * @throws DomainException
+     */
+    public function archive(PayrollRun $run): PayrollRun
+    {
+        if ($run->trashed()) {
+            return PayrollRun::withTrashed()->findOrFail($run->id);
+        }
+
+        if (! ($run->isCancelled() || $run->isRejected())) {
+            throw new DomainException(
+                sprintf('Payroll run in status "%s" cannot be archived.', $run->status),
+                'PR_ARCHIVE_NOT_ALLOWED',
+                422,
+                ['status' => $run->status],
+            );
+        }
+
+        return DB::transaction(function () use ($run): PayrollRun {
+            $run->delete();
+
+            return PayrollRun::withTrashed()->findOrFail($run->id);
+        });
+    }
+
+    /**
      * HR Manager submits the computed run for Accounting Manager review.
      * Transitions: completed → submitted.
      *
