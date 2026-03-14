@@ -12,7 +12,7 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('manager');
+    $this->manager->assignRole('qc_manager');
 });
 
 it('lists inspections', function () {

@@ -509,11 +509,11 @@ describe('POST /api/v1/admin/users/{user}/roles', function () {
         $target = User::factory()->create();
 
         $this->actingAs($admin, 'sanctum')
-            ->postJson("/api/v1/admin/users/{$target->id}/roles", ['role' => 'hr_manager'])
+            ->postJson("/api/v1/admin/users/{$target->id}/roles", ['role' => 'manager'])
             ->assertOk()
             ->assertJsonFragment(['message' => 'Role assigned successfully.']);
 
-        expect($target->fresh()->hasRole('hr_manager'))->toBeTrue();
+        expect($target->fresh()->hasRole('manager'))->toBeTrue();
     });
 
     it('returns 422 if role does not exist in DB', function () {

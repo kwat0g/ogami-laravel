@@ -55,7 +55,7 @@ beforeEach(function () {
 
     // Accounting officer
     $this->officer = User::factory()->create(['password' => Hash::make('AccPass!456')]);
-    $this->officer->assignRole('accounting_manager');
+    $this->officer->assignRole('officer');
 });
 
 // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ describe('Journal entry lifecycle — JE-001 → JE-003', function () {
     it('posts a submitted JE — JE-003', function () {
         // The poster must differ from the creator (SoD JE-010)
         $creator = User::factory()->create();
-        $creator->assignRole('accounting_manager');
+        $creator->assignRole('officer');
 
         $je = JournalEntry::create([
             'date' => '2025-10-20',
@@ -129,7 +129,7 @@ describe('JE immutability — JE-007', function () {
 
     it('rejects cancellation of a posted journal entry', function () {
         $creator = User::factory()->create();
-        $creator->assignRole('accounting_manager');
+        $creator->assignRole('officer');
 
         $je = JournalEntry::create([
             'date' => '2025-10-20',
@@ -150,7 +150,7 @@ describe('JE immutability — JE-007', function () {
 
     it('posting endpoint rejects already-posted journal entry', function () {
         $creator = User::factory()->create();
-        $creator->assignRole('accounting_manager');
+        $creator->assignRole('officer');
 
         $je = JournalEntry::create([
             'date' => '2025-10-20',
@@ -304,7 +304,7 @@ describe('Bank reconciliation SoD — BNK-001', function () {
 
     it('rejects certifying one\'s own bank reconciliation (SOD-008)', function () {
         $reconciler = User::factory()->create(['password' => Hash::make('RecPass!123')]);
-        $reconciler->assignRole('accounting_manager');
+        $reconciler->assignRole('officer');
 
         // Create a reconciliation where reconciler is the creator
         $recon = \App\Domains\Accounting\Models\BankReconciliation::create([
@@ -325,8 +325,8 @@ describe('Bank reconciliation SoD — BNK-001', function () {
     it('allows a separate certifier to approve a bank reconciliation', function () {
         $preparer = User::factory()->create(['password' => Hash::make('PrepPass!123')]);
         $certifier = User::factory()->create(['password' => Hash::make('CertPass!123')]);
-        $preparer->assignRole('accounting_manager');
-        $certifier->assignRole('accounting_manager');
+        $preparer->assignRole('officer');
+        $certifier->assignRole('officer');
 
         $recon = \App\Domains\Accounting\Models\BankReconciliation::create([
             'bank_account_id' => $this->bankAccount->id,

@@ -15,20 +15,19 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('accounting_manager');
+    $this->manager->assignRole('officer', 'purchasing_officer');
 
     $this->staff = User::factory()->create();
     $this->staff->assignRole('staff');
 
     $this->vendor = Vendor::create([
-        'code'         => 'VND-001',
-        'company_name' => 'Test Vendor Co.',
-        'contact_name' => 'Juan Cruz',
-        'email'        => 'vendor@test.com',
-        'phone'        => '09171234567',
-        'address'      => '123 Test St.',
-        'is_active'    => true,
-        'created_by_id' => $this->manager->id,
+        'name'           => 'Test Vendor Co.',
+        'contact_person' => 'Juan Cruz',
+        'email'          => 'vendor@test.com',
+        'phone'          => '09171234567',
+        'address'        => '123 Test St.',
+        'is_active'      => true,
+        'created_by'     => $this->manager->id,
     ]);
 });
 
@@ -42,21 +41,21 @@ it('lists vendors with pagination', function () {
 it('creates a vendor', function () {
     $this->actingAs($this->manager)
         ->postJson('/api/v1/accounting/vendors', [
-            'code'         => 'VND-002',
-            'company_name' => 'Another Vendor',
-            'contact_name' => 'Maria',
-            'email'        => 'another@test.com',
-            'is_active'    => true,
+            'name'           => 'Another Vendor',
+            'contact_person' => 'Maria',
+            'email'          => 'another@test.com',
+            'is_active'      => true,
+            'is_ewt_subject' => false,
         ])
         ->assertCreated()
-        ->assertJsonPath('data.company_name', 'Another Vendor');
+        ->assertJsonPath('data.name', 'Another Vendor');
 });
 
 it('shows a single vendor', function () {
     $this->actingAs($this->manager)
-        ->getJson("/api/v1/accounting/vendors/{$this->vendor->ulid}")
+        ->getJson("/api/v1/accounting/vendors/{$this->vendor->id}")
         ->assertOk()
-        ->assertJsonPath('data.code', 'VND-001');
+        ->assertJsonPath('data.name', 'Test Vendor Co.');
 });
 
 it('lists vendor invoices', function () {
@@ -67,15 +66,20 @@ it('lists vendor invoices', function () {
 });
 
 it('creates a vendor invoice', function () {
+    $apco = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'LIABILITY')->first();
+    $exp = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'OPEX')->first();
+    $period = \App\Domains\Accounting\Models\FiscalPeriod::create(['name' => 'Test 2026', 'code' => 'TEST-AP', 'date_from' => '2026-01-01', 'date_to' => '2026-12-31', 'status' => 'open']);
+
     $this->actingAs($this->manager)
         ->postJson('/api/v1/accounting/ap/invoices', [
-            'vendor_id'      => $this->vendor->id,
-            'invoice_number' => 'VI-001',
-            'invoice_date'   => now()->toDateString(),
-            'due_date'       => now()->addDays(30)->toDateString(),
-            'total_amount'   => 50000.00,
-            'currency'       => 'PHP',
+            'vendor_id'          => $this->vendor->id,
+            'fiscal_period_id'   => $period->id,
+            'ap_account_id'      => $apco->id,
+            'expense_account_id' => $exp->id,
+            'invoice_date'       => now()->toDateString(),
+            'due_date'           => now()->addDays(30)->toDateString(),
+            'net_amount'         => 50000.00,
         ])
         ->assertCreated()
-        ->assertJsonPath('data.invoice_number', 'VI-001');
+        ->assertJsonStructure(['data' => ['id']]);
 });

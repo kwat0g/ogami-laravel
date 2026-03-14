@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AlertTriangle, CheckCircle2, ClipboardCheck, Trash2 } from 'lucide-react'
+import { usePermission } from '@/hooks/usePermission'
 import {
   useGoodsReceipt,
   useConfirmGoodsReceipt,
@@ -30,6 +31,7 @@ const conditionLabel: Record<GoodsReceiptCondition, string> = {
 export default function GoodsReceiptDetailPage(): React.ReactElement {
   const { ulid }  = useParams<{ ulid: string }>()
   const navigate  = useNavigate()
+  const canConfirmPermission = usePermission('procurement.goods-receipt.confirm')
 
   const { data: gr, isLoading, isError } = useGoodsReceipt(ulid ?? null)
   const confirmMutation = useConfirmGoodsReceipt()
@@ -85,15 +87,17 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
 
   const headerActions = canConfirm ? (
     <>
-      <button
-        type="button"
-        onClick={handleConfirm}
-        disabled={confirmMutation.isPending || deleteMutation.isPending}
-        className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <ClipboardCheck className="w-4 h-4" />
-        {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
-      </button>
+      {canConfirmPermission && (
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={confirmMutation.isPending || deleteMutation.isPending}
+          className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ClipboardCheck className="w-4 h-4" />
+          {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
+        </button>
+      )}
       <button
         type="button"
         onClick={handleDelete}

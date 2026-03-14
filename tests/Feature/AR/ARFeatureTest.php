@@ -14,16 +14,16 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('accounting_manager');
+    $this->manager->assignRole('officer', 'purchasing_officer');
 
     $this->customer = Customer::create([
-        'company_name' => 'Acme Corp',
-        'contact_name' => 'John Doe',
-        'email'        => 'john@acme.com',
-        'phone'        => '09171234567',
-        'address'      => '456 Client Ave.',
-        'is_active'    => true,
-        'created_by_id' => $this->manager->id,
+        'name'           => 'Acme Corp',
+        'contact_person' => 'John Doe',
+        'email'          => 'john@acme.com',
+        'phone'          => '09171234567',
+        'address'        => '456 Client Ave.',
+        'is_active'      => true,
+        'created_by'     => $this->manager->id,
     ]);
 });
 
@@ -37,20 +37,20 @@ it('lists customers', function () {
 it('creates a customer', function () {
     $this->actingAs($this->manager)
         ->postJson('/api/v1/ar/customers', [
-            'company_name' => 'Beta Inc',
-            'contact_name' => 'Jane',
-            'email'        => 'jane@beta.com',
-            'is_active'    => true,
+            'name'           => 'Beta Inc',
+            'contact_person' => 'Jane',
+            'email'          => 'jane@beta.com',
+            'is_active'      => true,
         ])
         ->assertCreated()
-        ->assertJsonPath('data.company_name', 'Beta Inc');
+        ->assertJsonPath('data.name', 'Beta Inc');
 });
 
 it('shows a single customer', function () {
     $this->actingAs($this->manager)
-        ->getJson("/api/v1/ar/customers/{$this->customer->ulid}")
+        ->getJson("/api/v1/ar/customers/{$this->customer->id}")
         ->assertOk()
-        ->assertJsonPath('data.company_name', 'Acme Corp');
+        ->assertJsonPath('data.name', 'Acme Corp');
 });
 
 it('lists customer invoices', function () {
@@ -61,16 +61,22 @@ it('lists customer invoices', function () {
 });
 
 it('creates a customer invoice', function () {
+    $arco = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'ASSET')->first();
+    $rev = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'REVENUE')->first();
+    $period = \App\Domains\Accounting\Models\FiscalPeriod::create(['name' => 'Test 2026 AR', 'code' => 'TEST-AR', 'date_from' => '2026-01-01', 'date_to' => '2026-12-31', 'status' => 'open']);
+
     $this->actingAs($this->manager)
         ->postJson('/api/v1/ar/invoices', [
-            'customer_id'    => $this->customer->id,
-            'invoice_number' => 'CI-001',
-            'invoice_date'   => now()->toDateString(),
-            'due_date'       => now()->addDays(30)->toDateString(),
-            'total_amount'   => 75000.00,
+            'customer_id'        => $this->customer->id,
+            'fiscal_period_id'   => $period->id,
+            'ar_account_id'      => $arco->id,
+            'revenue_account_id' => $rev->id,
+            'invoice_date'       => now()->toDateString(),
+            'due_date'           => now()->addDays(30)->toDateString(),
+            'subtotal'           => 75000.00,
         ])
         ->assertCreated()
-        ->assertJsonPath('data.invoice_number', 'CI-001');
+        ->assertJsonStructure(['data' => ['id']]);
 });
 
 it('returns AR aging report', function () {

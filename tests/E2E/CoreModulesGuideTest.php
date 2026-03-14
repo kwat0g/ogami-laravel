@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * single sequential test. All 11 scenarios run in one transaction-free test.
  */
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(Illuminate\Foundation\Testing\DatabaseMigrations::class);
 
 $state = new stdClass();
 
@@ -34,6 +34,7 @@ function go(string $method, string $path, array $data = []): \Illuminate\Testing
 }
 
 test('Full CORE_MODULES_TESTING_GUIDE walkthrough', function () use ($state) {
+    $this->withoutMiddleware([\Illuminate\Routing\Middleware\ThrottleRequests::class]);
 
     Artisan::call('db:seed');
     $superadmin = a();
@@ -71,6 +72,17 @@ test('Full CORE_MODULES_TESTING_GUIDE walkthrough', function () use ($state) {
     $r->assertStatus(201, "0.2 Create vendor — got {$r->status()}: " . $r->getContent());
     $state->vendorId = $r->json('data.id');
     echo "  ✅ 0.2 Vendor id={$state->vendorId}\n";
+
+    // 0.2b Create vendor item
+    $r = go('POST', "accounting/vendors/{$state->vendorId}/items", [
+        'item_code'       => 'V-PP-NAT',
+        'item_name'       => 'PP Resin Natural (Vendor Item)',
+        'unit_of_measure' => 'kg',
+        'unit_price'      => 18000, // 180.00
+    ]);
+    $r->assertStatus(201, "0.2b Create vendor item — got {$r->status()}: " . $r->getContent());
+    $state->vendorItemId = $r->json('data.id');
+    echo "  ✅ 0.2b Vendor Item id={$state->vendorItemId}\n";
 
     $r = go('POST', 'ar/customers', [
         'name'           => 'Ace Hardware Philippines',
@@ -169,10 +181,17 @@ test('Full CORE_MODULES_TESTING_GUIDE walkthrough', function () use ($state) {
 
     $r = go('POST', 'procurement/purchase-requests', [
         'department_id' => $deptId,
+        'vendor_id'     => $state->vendorId,
         'urgency'       => 'normal',
         'justification' => 'PP Resin Natural stock is below the safety level threshold of 500kg.',
         'items'         => [
-            ['item_description' => 'PP Resin Natural', 'unit_of_measure' => 'kg', 'quantity' => 500, 'estimated_unit_cost' => 180],
+            [
+                'vendor_item_id'      => $state->vendorItemId,
+                'item_description'    => 'PP Resin Natural',
+                'unit_of_measure'     => 'kg',
+                'quantity'            => 500,
+                'estimated_unit_cost' => 180
+            ],
         ],
     ]);
     $r->assertStatus(201, "1.1 Create PR — got {$r->status()}: " . $r->getContent());
@@ -184,22 +203,32 @@ test('Full CORE_MODULES_TESTING_GUIDE walkthrough', function () use ($state) {
     $ra->assertStatus(200, "1.1b Submit PR — got {$ra->status()}: " . $ra->getContent());
     echo "  ✅ 1.1b PR submitted\n";
 
-    foreach (['note', 'check', 'review', 'vp-approve'] as $action) {
+    // Superadmin submission auto-notes (Hierarchy Bypass), so we skip 'note'
+    foreach (['check', 'review', 'budget-check', 'vp-approve'] as $action) {
         $ra = go('POST', "procurement/purchase-requests/{$prUlid}/{$action}", ['remarks' => 'Approved']);
         $ra->assertStatus(200, "1.2 PR {$action} — got {$ra->status()}: " . $ra->getContent());
         echo "  ✅ 1.2 PR {$action}\n";
     }
 
     // [FIXED: no create-po nested route; PO is standalone resource]
+    // PO is auto-created after PR approval. We fetch it and update it.
+    $po = DB::table('purchase_orders')->where('purchase_request_id', $prId)->first();
+    expect($po)->not->toBeNull('PO should be auto-created after PR approval');
+    $poId = $po->id;
+    $poUlid = $po->ulid;
+    echo "  ✅ 1.3 PO auto-created ulid={$poUlid}\n";
+
+    // Fetch PR item ID for linking
     $prItemId = DB::table('purchase_request_items')->where('purchase_request_id', $prId)->value('id');
-    $r = go('POST', 'procurement/purchase-orders', [
-        'purchase_request_id' => $prId,
-        'vendor_id'           => $state->vendorId,
-        'delivery_date'       => now()->addDays(30)->toDateString(),
-        'payment_terms'       => 'NET30',
-        'items'               => [
+
+    // Update PO details AND map item to ItemMaster
+    $r = go('PATCH', "procurement/purchase-orders/{$poUlid}", [
+        'delivery_date' => now()->addDays(30)->toDateString(),
+        'payment_terms' => 'NET30',
+        'items' => [
             [
                 'pr_item_id'       => $prItemId,
+                'item_master_id'   => $state->raw1Id, // Map to PP Resin Natural
                 'item_description' => 'PP Resin Natural',
                 'unit_of_measure'  => 'kg',
                 'quantity_ordered' => 500,
@@ -207,16 +236,13 @@ test('Full CORE_MODULES_TESTING_GUIDE walkthrough', function () use ($state) {
             ],
         ],
     ]);
-    $r->assertStatus(201, "1.3 Create PO — got {$r->status()}: " . $r->getContent());
-    $poId   = $r->json('data.id');
-    $poUlid = $r->json('data.ulid');
-    echo "  ✅ 1.3 PO created ulid={$poUlid}\n";
+    $r->assertStatus(200, "1.3a Update PO — got {$r->status()}: " . $r->getContent());
 
     $ra = go('POST', "procurement/purchase-orders/{$poUlid}/send");
     $ra->assertStatus(200, "1.3b Send PO — got {$ra->status()}: " . $ra->getContent());
     echo "  ✅ 1.3b PO sent\n";
 
-    $poItemId = DB::table('purchase_order_items')->where('purchase_order_id', $poId)->value('id');
+    $poItemId = DB::table('purchase_order_items')->where('purchase_order_id', $poId)->whereNull('deleted_at')->value('id');
 
     // [FIXED: standalone POST procurement/goods-receipts; quantity_received not qty_received]
     $r = go('POST', 'procurement/goods-receipts', [

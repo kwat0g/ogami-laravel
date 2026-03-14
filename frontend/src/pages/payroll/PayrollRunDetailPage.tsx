@@ -27,6 +27,7 @@ import {
   useExportPayrollRegister,
   useExportPayrollBreakdown,
 } from '@/hooks/usePayroll'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
@@ -328,6 +329,7 @@ export default function PayrollRunDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
   const runId   = id ?? null
   const navigate = useNavigate()
+  const { hasPermission } = useAuthStore()
 
   const [activeTab, setActiveTab]   = useState<Tab>('payslips')
   const [detailPage, setDetailPage] = useState(1)
@@ -486,7 +488,7 @@ export default function PayrollRunDetailPage() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2">
-          {isDraft && (
+          {isDraft && hasPermission('payroll.initiate') && (
             <ConfirmDestructiveDialog
               title="Lock payroll run?"
               description={`Locking will queue computation for all active employees in the system. The cutoff period will be reserved. This cannot be undone easily.`}
@@ -501,7 +503,7 @@ export default function PayrollRunDetailPage() {
             </ConfirmDestructiveDialog>
           )}
 
-          {isDraft && (
+          {isDraft && hasPermission('payroll.initiate') && (
              <button
                onClick={() => setIsAdjustmentsModalOpen(true)}
                className="flex items-center gap-2 border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors"
@@ -511,7 +513,7 @@ export default function PayrollRunDetailPage() {
              </button>
           )}
 
-          {isCompleted && (
+          {isCompleted && hasPermission('payroll.hr_approve') && (
             <SodActionButton
               initiatedById={run.initiated_by_id}
               label="Approve Run"
@@ -543,7 +545,7 @@ export default function PayrollRunDetailPage() {
             </>
           )}
 
-          {canCancel && (
+          {canCancel && hasPermission('payroll.initiate') && (
             <ConfirmDestructiveDialog
               title="Cancel payroll run?"
               description="Cancelling will mark this run as cancelled. Employees will not be paid from this run. You can create a new run with the same period."

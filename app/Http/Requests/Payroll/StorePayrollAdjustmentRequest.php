@@ -11,7 +11,7 @@ final class StorePayrollAdjustmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('manage-payroll-adjustments') ?? false;
+        return $this->user()?->can('payroll.initiate') ?? false;
     }
 
     /** @return array<string, mixed> */

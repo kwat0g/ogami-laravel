@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { useEmployee, useEmployeeTransition } from '@/hooks/useEmployees'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmployeeProfileView } from '@/components/employee'
@@ -36,6 +37,9 @@ function statusLabel(s: string | undefined | null) {
 
 export default function EmployeeDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
+  const { hasPermission } = useAuthStore()
+  const canEdit = hasPermission('employees.update')
+  const canTransition = hasPermission('employees.suspend') || hasPermission('employees.terminate')
   const employeeId = id ?? null
 
   const { data: employee, isLoading, isError } = useEmployee(employeeId)
@@ -59,15 +63,17 @@ export default function EmployeeDetailPage() {
   // Build action buttons for HR view
   const actions = (
     <>
-      <Link
-        to={`/hr/employees/${employee.ulid}/edit`}
-        className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 transition-colors"
-      >
-        <Edit3 className="h-4 w-4" />
-        Edit Profile
-      </Link>
+      {canEdit && (
+        <Link
+          to={`/hr/employees/${employee.ulid}/edit`}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 transition-colors"
+        >
+          <Edit3 className="h-4 w-4" />
+          Edit Profile
+        </Link>
+      )}
       
-      {allowedNext.length > 0 && (
+      {allowedNext.length > 0 && canTransition && (
         <div className="flex gap-1">
           {allowedNext.map((state) => {
             const isSodBlocked = state === 'active' && activateBlocked
@@ -105,7 +111,7 @@ export default function EmployeeDetailPage() {
   return (
     <div className="max-w-7xl mx-auto">
       <PageHeader title="Employee Details" backTo="/hr/employees/all" />
-      <ExecutiveReadOnlyBanner permission="employees.transition" />
+      <ExecutiveReadOnlyBanner />
       <EmployeeProfileView
         employee={employee}
         viewContext="hr"

@@ -70,7 +70,8 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
   const canReview     = usePermission('inventory.mrq.review')
   const canVpApprove  = usePermission('inventory.mrq.vp_approve')
   const canFulfill    = usePermission('inventory.mrq.fulfill')
-
+  const canCreate     = usePermission('inventory.mrq.create')
+  
   const submitMut   = useSubmitMRQ(ulid ?? '')
   const noteMut     = useNoteMRQ(ulid ?? '')
   const checkMut    = useCheckMRQ(ulid ?? '')
@@ -304,7 +305,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
         )}
 
         <div className="flex flex-wrap gap-2">
-          {status === 'draft' && (
+          {status === 'draft' && canCreate && (
             <button
               onClick={handleSubmitWithStockCheck}
               disabled={submitMut.isPending}

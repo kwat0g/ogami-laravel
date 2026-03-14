@@ -123,8 +123,12 @@ final class LoanPolicy
 
     public function disburse(User $user, Loan $loan): bool
     {
+        // SoD: Disburser must differ from Accounting approver
+        if ((int) $user->id === (int) $loan->accounting_approved_by) {
+            return false;
+        }
+
         // Both HR Manager and Accounting Manager can disburse
-        // (SoD in service ensures disburser != accounting approver)
         return $user->hasAnyPermission(['loans.accounting_approve', 'loans.hr_approve']);
     }
 

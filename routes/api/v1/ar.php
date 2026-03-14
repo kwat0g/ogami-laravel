@@ -129,7 +129,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             'data' => array_values($buckets),
             'as_of_date' => $asOfDate->toDateString(),
         ]);
-    })->middleware('can:customer_invoices,viewAny')->name('ar.aging-report');
+    })->middleware('permission:reports.ar_aging')->name('ar.aging-report');
 
     // ── Customer Statement Export (CSV) ─────────────────────────────────────
     Route::get('customers/{customer}/statement', function (\App\Domains\AR\Models\Customer $customer): \Symfony\Component\HttpFoundation\StreamedResponse {

@@ -24,7 +24,7 @@ describe('POST /api/v1/auth/login', function () {
             'email' => 'staff@test.local',
             'password' => Hash::make('ValidPass!123'),
         ]);
-        $user->assignRole('hr_manager');
+        $user->assignRole('manager');
 
         $response = $this->postJson('/api/v1/auth/login', [
             'email' => 'staff@test.local',
@@ -58,7 +58,7 @@ describe('POST /api/v1/auth/login', function () {
             'email' => 'lockme@test.local',
             'password' => Hash::make('RealPass!123'),
         ]);
-        $user->assignRole('hr_manager');
+        $user->assignRole('manager');
 
         for ($i = 0; $i < 5; $i++) {
             $this->postJson('/api/v1/auth/login', [

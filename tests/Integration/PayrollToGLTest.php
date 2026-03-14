@@ -30,6 +30,14 @@ beforeEach(function () {
 
     $this->computeSvc = app(PayrollComputationService::class);
     $this->postSvc = app(PayrollPostingService::class);
+
+    // Create fiscal periods for 2025
+    \App\Domains\Accounting\Models\FiscalPeriod::create([
+        'name' => 'FY 2025',
+        'date_from' => '2025-01-01',
+        'date_to' => '2025-12-31',
+        'status' => 'open',
+    ]);
 });
 
 // ---------------------------------------------------------------------------

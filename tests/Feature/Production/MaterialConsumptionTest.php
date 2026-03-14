@@ -259,7 +259,7 @@ it('blocks release when QC inspection has failed status', function () {
     expect($this->order->status)->toBe('draft');
 });
 
-it('allows supervisor to override QC block with permission', function () {
+it('allows head to override QC block with permission', function () {
     seedStock($this->rawMaterial1, $this->warehouse, 100.0);
     seedStock($this->rawMaterial2, $this->warehouse, 50.0);
 

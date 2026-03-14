@@ -169,7 +169,9 @@ final class PayrollRunPolicy
      */
     public function accountingApprove(User $user, PayrollRun $run): bool
     {
-        if (! $user->hasAnyPermission(['payroll.acctg_approve', 'payroll.approve', 'payroll.post'])) {
+        // STRICT SoD: Only explicitly authorized accounting approvers can perform this step.
+        // We do NOT allow generic 'payroll.approve' (which HR Manager has) to leak into this step.
+        if (! $user->hasPermissionTo('payroll.acctg_approve')) {
             return false;
         }
 

@@ -1,0 +1,24 @@
+# Tasks
+
+- [x] Task 1: Phase 1 - Discovery (Roles & Permissions)
+  - [x] SubTask 1.1: Discover all roles defined in the codebase (seeders, constants).
+  - [x] SubTask 1.2: Discover all permissions and their categorization (read, write, approval).
+  - [x] SubTask 1.3: Map roles to their inferred key responsibilities based on permissions and usage.
+- [x] Task 2: Phase 2 - Frontend Permission Audit
+  - [x] SubTask 2.1: Identify the frontend permission checking pattern (hooks, components).
+  - [x] SubTask 2.2: Inventory all frontend pages and their route guards.
+  - [x] SubTask 2.3: Audit interactive elements (buttons, forms) for missing permission checks.
+  - [x] SubTask 2.4: Audit navigation items for visibility consistency.
+- [x] Task 3: Phase 3 - SoD Leakage Audit
+  - [x] SubTask 3.1: Discover all workflows with approval chains.
+  - [x] SubTask 3.2: Identify SoD violations (single role controlling entire chain).
+  - [x] SubTask 3.3: Check for self-approval prevention mechanisms.
+  - [x] SubTask 3.4: Identify data scope violations (unauthorized access to other departments' data).
+- [x] Task 4: Phase 4 - Consistency & API Audit
+  - [x] SubTask 4.1: Cross-reference frontend permission strings with backend definitions.
+  - [x] SubTask 4.2: Identify unprotected API write endpoints (missing backend authorization).
+- [x] Task 5: Phase 5 - Reporting & Remediation
+  - [x] SubTask 5.1: Generate the SoD Violation and Frontend Mismatch Registers.
+  - [x] SubTask 5.2: Apply fixes for critical SoD violations (update seeders/roles).
+  - [x] SubTask 5.3: Apply fixes for frontend permission mismatches (add guards).
+  - [x] SubTask 5.4: Apply fixes for unprotected API endpoints (add middleware/policies).

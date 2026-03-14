@@ -205,7 +205,7 @@ describe('DepartmentScopeMiddleware — HTTP integration', function () {
 
     it('activates dept scope on request using authenticated user department', function () {
         $dept = makeTestDept('MW1');
-        $user = makeUserInDept($dept, 'hr_manager');
+        $user = makeUserInDept($dept, 'manager');
 
         // Grant employees.view permission
         $perm = \Spatie\Permission\Models\Permission::firstOrCreate(
@@ -274,7 +274,7 @@ describe('DepartmentScopeMiddleware — HTTP integration', function () {
         $empX = makeEmployeeInDept($deptX, 'Xavier');
         $empY = makeEmployeeInDept($deptY, 'Yolanda');
 
-        $user = makeUserInDept($deptX, 'hr_manager');
+        $user = makeUserInDept($deptX, 'manager');
         $perm = \Spatie\Permission\Models\Permission::firstOrCreate(
             ['name' => 'employees.view', 'guard_name' => 'web']
         );

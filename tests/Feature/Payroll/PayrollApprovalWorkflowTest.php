@@ -30,7 +30,7 @@ beforeEach(function () {
 
     // HR Manager — creates/locks/submits runs
     $this->hrManager = User::factory()->create(['password' => Hash::make('HRmgr!9876')]);
-    $this->hrManager->assignRole('hr_manager');
+    $this->hrManager->assignRole('manager'); // Use new role name 'manager'
     $this->hrManager->givePermissionTo([
         'payroll.view',
         'payroll.initiate',
@@ -40,10 +40,11 @@ beforeEach(function () {
 
     // Accounting Manager — approves and posts; deliberately a different user from hrManager
     $this->accountingManager = User::factory()->create(['password' => Hash::make('ACmgr!9876')]);
-    $this->accountingManager->assignRole('accounting_manager');
+    $this->accountingManager->assignRole('officer'); // Use new role name 'officer'
     $this->accountingManager->givePermissionTo([
         'payroll.view',
         'payroll.approve',
+        'payroll.acctg_approve', // Explicitly needed for accounting-approve
         'payroll.post',
     ]);
 });
@@ -129,7 +130,7 @@ describe('PATCH .../accounting-approve', function () {
         expect($run->fresh()->status)->toBe('submitted'); // unchanged
     });
 
-    it('returns 403 when user lacks payroll.approve permission', function () {
+    it('returns 403 when user lacks payroll.acctg_approve permission', function () {
         $noPermUser = User::factory()->create();
 
         $run = makeRun('submitted');

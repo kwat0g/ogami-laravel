@@ -42,8 +42,8 @@ final class Step02PeriodMetaStep
     {
         // Fetch holiday dates within the range
         $holidays = DB::table('holiday_calendars')
-            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
-            ->pluck('date')
+            ->whereBetween('holiday_date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('holiday_date')
             ->map(fn ($d) => Carbon::parse($d)->toDateString())
             ->toArray();
 

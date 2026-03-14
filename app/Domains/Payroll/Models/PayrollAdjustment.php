@@ -21,7 +21,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $type earning|deduction
  * @property string $nature taxable|non_taxable
  * @property string $description
+ * @property int|null $gl_account_id
  * @property int $amount_centavos
+ * @property string $status pending|applied|deferred
  * @property int $created_by
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -40,7 +42,9 @@ final class PayrollAdjustment extends Model implements Auditable
         'type',
         'nature',
         'description',
+        'gl_account_id',
         'amount_centavos',
+        'status',
         'created_by',
     ];
 
@@ -54,5 +58,10 @@ final class PayrollAdjustment extends Model implements Auditable
     public function payrollRun(): BelongsTo
     {
         return $this->belongsTo(PayrollRun::class, 'payroll_run_id');
+    }
+
+    public function glAccount(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Accounting\Models\ChartOfAccount::class, 'gl_account_id');
     }
 }

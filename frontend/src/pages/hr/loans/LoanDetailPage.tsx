@@ -25,16 +25,19 @@ export default function LoanDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
   const location = useLocation()
   const loanListPath = location.pathname.startsWith('/accounting') ? '/accounting/loans' : '/hr/loans'
-  const { hasPermission } = useAuthStore()
-  const canApprove = hasPermission('loans.approve')
-  const canAccountingApprove = hasPermission('loans.accounting_approve')
-  const canDisburse = hasPermission('loans.accounting_approve') || hasPermission('loans.hr_approve')
-  const canHeadNote = hasPermission('loans.head_note')
-  const canManagerCheck = hasPermission('loans.manager_check')
-  const canOfficerReview = hasPermission('loans.officer_review')
-  const canVpApprove = hasPermission('loans.vp_approve')
+  const { user, hasPermission } = useAuthStore()
   const loanId = id ?? null
   const { data: loan, isLoading, isError } = useLoan(loanId)
+
+  const isRequester = user?.id === loan?.requested_by
+  const canApprove = hasPermission('loans.approve') && !isRequester
+  const canAccountingApprove = hasPermission('loans.accounting_approve') && !isRequester && user?.id !== loan?.approved_by
+  const canDisburse = (hasPermission('loans.accounting_approve') || hasPermission('loans.hr_approve')) && !isRequester
+  const canHeadNote = hasPermission('loans.head_note') && !isRequester
+  const canManagerCheck = hasPermission('loans.manager_check') && !isRequester && user?.id !== loan?.head_noted_by
+  const canOfficerReview = hasPermission('loans.officer_review') && !isRequester && user?.id !== loan?.manager_checked_by
+  const canVpApprove = hasPermission('loans.vp_approve') && !isRequester && user?.id !== loan?.officer_reviewed_by
+
   const { data: schedule, isLoading: schedLoading } = useLoanSchedule(loanId)
   const { data: loanHistory } = useEmployeeLoanHistory(loanId)
 

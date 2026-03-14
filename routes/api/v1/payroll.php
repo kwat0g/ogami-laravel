@@ -179,11 +179,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->name('periods.index');
 
     Route::post('periods', [PayPeriodController::class, 'store'])
+        ->middleware('permission:payroll.initiate')
         ->name('periods.store');
 
     Route::get('periods/{payPeriod}', [PayPeriodController::class, 'show'])
         ->name('periods.show');
 
     Route::patch('periods/{payPeriod}/close', [PayPeriodController::class, 'close'])
+        ->middleware('permission:payroll.initiate')
         ->name('periods.close');
 });

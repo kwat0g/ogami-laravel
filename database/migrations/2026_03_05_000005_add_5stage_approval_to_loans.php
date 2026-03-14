@@ -24,7 +24,11 @@ return new class extends Migration
     public function up(): void
     {
         // ── 1. Expand the status CHECK to cover all statuses (v1 + v2) ──────
+        // Drop the constraint created in 2026_02_23_100024_create_loans_table.php
+        DB::statement('ALTER TABLE loans DROP CONSTRAINT IF EXISTS chk_loan_status');
+        // Also drop loans_status_check in case it was created by an intermediate version
         DB::statement('ALTER TABLE loans DROP CONSTRAINT IF EXISTS loans_status_check');
+
         DB::statement("
             ALTER TABLE loans ADD CONSTRAINT loans_status_check
             CHECK (status IN (

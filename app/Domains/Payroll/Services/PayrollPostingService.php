@@ -6,6 +6,7 @@ namespace App\Domains\Payroll\Services;
 
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
+use App\Domains\Payroll\Models\PayrollAdjustment;
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
@@ -139,48 +140,100 @@ final class PayrollPostingService implements ServiceContract
         // ── Build lines (amounts in pesos, numeric(15,4)) ─────────────────────
         $lines = [];
 
+        // Debit: Salaries and Wages Expense
         $lines[] = [
-            'account_id' => $acctId('5001'),
+            'account_id' => $acctId(config('accounting.payroll.gl_accounts.salaries_expense', '5001')),
             'debit' => round($gross / 100, 4),
             'credit' => null,
             'description' => 'Salaries and wages expense',
         ];
 
+        // Credit: Statutory Payables
         if ($sssEe > 0) {
-            $lines[] = ['account_id' => $acctId('2100'), 'debit' => null, 'credit' => round($sssEe / 100, 4)];
+            $lines[] = [
+                'account_id' => $acctId(config('accounting.payroll.gl_accounts.sss_payable', '2100')),
+                'debit' => null,
+                'credit' => round($sssEe / 100, 4)
+            ];
         }
         if ($phEe > 0) {
-            $lines[] = ['account_id' => $acctId('2101'), 'debit' => null, 'credit' => round($phEe / 100, 4)];
+            $lines[] = [
+                'account_id' => $acctId(config('accounting.payroll.gl_accounts.philhealth_payable', '2101')),
+                'debit' => null,
+                'credit' => round($phEe / 100, 4)
+            ];
         }
         if ($pagEe > 0) {
-            $lines[] = ['account_id' => $acctId('2102'), 'debit' => null, 'credit' => round($pagEe / 100, 4)];
+            $lines[] = [
+                'account_id' => $acctId(config('accounting.payroll.gl_accounts.pagibig_payable', '2102')),
+                'debit' => null,
+                'credit' => round($pagEe / 100, 4)
+            ];
         }
         if ($wht > 0) {
-            $lines[] = ['account_id' => $acctId('2103'), 'debit' => null, 'credit' => round($wht / 100, 4)];
+            $lines[] = [
+                'account_id' => $acctId(config('accounting.payroll.gl_accounts.tax_payable', '2103')),
+                'debit' => null,
+                'credit' => round($wht / 100, 4)
+            ];
         }
 
-        // Loan deductions withheld from employees (repayments via payroll) → 2104
+        // Loan deductions withheld from employees (repayments via payroll)
         if ($loanDed > 0) {
             $lines[] = [
-                'account_id' => $acctId('2104'),
+                'account_id' => $acctId(config('accounting.payroll.gl_accounts.loans_payable', '2104')),
                 'debit' => null,
                 'credit' => round($loanDed / 100, 4),
                 'description' => 'Loan deductions payable',
             ];
         }
 
-        // Voluntary / other deductions (adjustments) → 2001 Accounts Payable
+        // Voluntary / other deductions (adjustments)
+        // If there are other deductions, we try to break them down by GL account ID
         if ($otherDed > 0) {
-            $lines[] = [
-                'account_id' => $acctId('2001'),
-                'debit' => null,
-                'credit' => round($otherDed / 100, 4),
-                'description' => 'Other payroll deductions payable',
-            ];
+            $adjustments = PayrollAdjustment::where('payroll_run_id', $run->id)
+                ->where('type', 'deduction')
+                ->where('status', 'applied')
+                ->get();
+
+            // Group by GL account ID (or null)
+            $grouped = $adjustments->groupBy(fn ($adj) => $adj->gl_account_id ?? 'default');
+
+            foreach ($grouped as $key => $group) {
+                $amountCentavos = $group->sum('amount_centavos');
+                if ($amountCentavos <= 0) {
+                    continue;
+                }
+
+                $accountId = $key === 'default'
+                    ? $acctId(config('accounting.payroll.gl_accounts.other_deductions_payable', '2001'))
+                    : (int) $key;
+
+                $lines[] = [
+                    'account_id' => $accountId,
+                    'debit' => null,
+                    'credit' => round($amountCentavos / 100, 4),
+                    'description' => $key === 'default' ? 'Other payroll deductions payable' : 'Payroll deduction: ' . $group->first()->description,
+                ];
+            }
+            
+            // Fallback: If no adjustments were marked as applied but we have a deduction amount (legacy support or migration edge case)
+            // We use the aggregated amount minus what we just processed
+            $processedCentavos = $adjustments->sum('amount_centavos');
+            $remainingCentavos = $otherDed - $processedCentavos;
+            
+            if ($remainingCentavos > 0) {
+                 $lines[] = [
+                    'account_id' => $acctId(config('accounting.payroll.gl_accounts.other_deductions_payable', '2001')),
+                    'debit' => null,
+                    'credit' => round($remainingCentavos / 100, 4),
+                    'description' => 'Other payroll deductions payable (unallocated)',
+                ];
+            }
         }
 
         $lines[] = [
-            'account_id' => $acctId('2200'),
+            'account_id' => $acctId(config('accounting.payroll.gl_accounts.net_pay_payable', '2200')),
             'debit' => null,
             'credit' => round($net / 100, 4),
             'description' => 'Net pay payable',

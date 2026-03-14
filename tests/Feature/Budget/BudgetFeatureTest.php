@@ -13,7 +13,7 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('accounting_manager');
+    $this->manager->assignRole('officer');
 });
 
 it('lists cost centers', function () {

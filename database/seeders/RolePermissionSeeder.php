@@ -631,7 +631,7 @@ class RolePermissionSeeder extends Seeder
             'procurement.purchase-request.view', 'procurement.purchase-request.create',
             'procurement.purchase-request.review',
             'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
-            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            'procurement.goods-receipt.view', // Can view but NOT create/confirm (SoD: Warehouse creates)
             // Vendors (manage + accredit + suspend + archive)
             'vendors.view', 'vendors.manage', 'vendors.accredit', 'vendors.suspend', 'vendors.archive',
             // Customers (manage - for AR master data setup)
@@ -738,7 +738,7 @@ class RolePermissionSeeder extends Seeder
         $warehouseHead->syncPermissions(array_merge($baseHeadPermissions, [
             // Inventory Management (Full)
             'inventory.items.create', 'inventory.items.edit',
-            'inventory.mrq.create', 'inventory.mrq.fulfill',
+            'inventory.mrq.create', // Can create requests but NOT fulfill (SoD: Inventory Staff fulfills)
             // Procurement (Goods Receipt is critical for WH)
             'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
             'procurement.purchase-order.view',

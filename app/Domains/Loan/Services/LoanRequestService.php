@@ -274,6 +274,14 @@ final class LoanRequestService implements ServiceContract
     {
         $this->assertWorkflowVersion($loan, 2);
 
+        if ($loan->requested_by === $managerUserId) {
+            throw new SodViolationException(
+                'loan_manager_check',
+                'check',
+                'Manager checker must differ from requester (SoD).',
+            );
+        }
+
         if ($loan->head_noted_by === $managerUserId) {
             throw new SodViolationException(
                 'loan_manager_check',
@@ -307,6 +315,15 @@ final class LoanRequestService implements ServiceContract
     public function officerReview(Loan $loan, int $officerUserId, string $remarks = ''): Loan
     {
         $this->assertWorkflowVersion($loan, 2);
+
+        // SoD: Officer reviewer cannot be the requester
+        if ($loan->requested_by === $officerUserId) {
+            throw new SodViolationException(
+                'loan_officer_review',
+                'review',
+                'Officer reviewer must differ from requester (SoD).',
+            );
+        }
 
         if ($loan->status !== 'manager_checked') {
             throw new DomainException(
@@ -347,6 +364,15 @@ final class LoanRequestService implements ServiceContract
             );
         }
 
+        // SoD: VP cannot be the requester
+        if ($loan->requested_by === $vpUserId) {
+            throw new SodViolationException(
+                'loan_vp_approval',
+                'approve',
+                'VP approver must differ from requester (SoD).',
+            );
+        }
+
         if ($loan->status !== 'officer_reviewed') {
             throw new DomainException(
                 'Only officer-reviewed loans can be VP-approved.',
@@ -369,6 +395,9 @@ final class LoanRequestService implements ServiceContract
 
             // Generate amortization schedule (same as v1 accountingApprove)
             $this->amortizationService->generateSchedule($loan);
+
+            // Create GL entry for loan receivable (same as v1 accountingApprove)
+            $this->createLoanGlEntry($loan);
 
             return $loan->fresh();
         });
@@ -402,6 +431,15 @@ final class LoanRequestService implements ServiceContract
                 'loan_accounting_approval',
                 'approve',
                 'Accounting approver must differ from HR approver (LN-011).',
+            );
+        }
+
+        // SoD: Accounting approver cannot be the requester
+        if ($loan->requested_by === $accountingManagerId) {
+            throw new SodViolationException(
+                'loan_accounting_approval',
+                'approve',
+                'Accounting approver must differ from requester (SoD).',
             );
         }
 
@@ -583,6 +621,14 @@ final class LoanRequestService implements ServiceContract
                 'Loan must be accounting-approved before disbursement.',
                 'LN_NOT_ACCOUNTING_APPROVED',
                 422,
+            );
+        }
+
+        if ($loan->accounting_approved_by === $disbursedByUserId) {
+            throw new SodViolationException(
+                'loan_disbursement',
+                'disburse',
+                'Disburser must differ from Accounting approver (SoD).',
             );
         }
 

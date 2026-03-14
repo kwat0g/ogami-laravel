@@ -119,6 +119,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(BankAccount::class, BankAccountPolicy::class);
         Gate::policy(BankReconciliation::class, BankReconciliationPolicy::class);
         Gate::policy(PayrollRun::class, \App\Domains\Payroll\Policies\PayrollRunPolicy::class);
+        Gate::policy(\App\Domains\Payroll\Models\PayPeriod::class, \App\Domains\Payroll\Policies\PayPeriodPolicy::class);
         Gate::policy(LeaveRequest::class, \App\Domains\Leave\Policies\LeaveRequestPolicy::class);
         Gate::policy(LeaveBalance::class, \App\Domains\Leave\Policies\LeaveBalancePolicy::class);
         Gate::policy(PurchaseRequest::class, PurchaseRequestPolicy::class);
@@ -132,6 +133,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Domains\Production\Models\BillOfMaterials::class, \App\Domains\Production\Policies\ProductionOrderPolicy::class);
         Gate::policy(\App\Domains\Production\Models\ProductionOrder::class, \App\Domains\Production\Policies\ProductionOrderPolicy::class);
         Gate::policy(\App\Domains\QC\Models\Inspection::class, \App\Domains\QC\Policies\InspectionPolicy::class);
+        Gate::policy(\App\Domains\QC\Models\InspectionTemplate::class, \App\Domains\QC\Policies\InspectionTemplatePolicy::class);
         Gate::policy(\App\Domains\QC\Models\NonConformanceReport::class, \App\Domains\QC\Policies\NcrPolicy::class);
         Gate::policy(\App\Domains\Maintenance\Models\Equipment::class, \App\Domains\Maintenance\Policies\MaintenancePolicy::class);
         Gate::policy(\App\Domains\Maintenance\Models\MaintenanceWorkOrder::class, \App\Domains\Maintenance\Policies\MaintenancePolicy::class);
@@ -154,6 +156,10 @@ class AppServiceProvider extends ServiceProvider
         //
         // Only register listeners that live outside the auto-discovered path:
         Event::listen(EmployeeActivated::class, CreateLeaveBalances::class);
+        Event::listen(
+            \App\Events\Procurement\ThreeWayMatchPassed::class,
+            \App\Listeners\UpdateStockOnThreeWayMatch::class,
+        );
 
         // ── Super Admin — bypass ALL gate / policy checks for testing ────────
         // Users with the 'super_admin' role skip every Gate::check(), authorize(),

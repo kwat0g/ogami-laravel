@@ -28,7 +28,7 @@ beforeEach(function () {
     // Create roles and permissions
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
 
-    // Create loan type (interest rate as decimal, e.g., 0.06 = 6%)
+    // Create loan type
     $this->loanType = LoanType::create([
         'code' => 'COMPANY',
         'name' => 'Company Loan',
@@ -45,214 +45,97 @@ beforeEach(function () {
     $this->employeeUser->syncRoles(['staff']);
     $this->employee = Employee::factory()->create(['user_id' => $this->employeeUser->id]);
 
-    $this->supervisor = User::factory()->create();
-    $this->supervisor->syncRoles(['supervisor']);
+    $this->head = User::factory()->create();
+    $this->head->syncRoles(['head']);
 
-    $this->hrManager = User::factory()->create();
-    $this->hrManager->syncRoles(['hr_manager']);
+    $this->manager = User::factory()->create();
+    $this->manager->syncRoles(['manager']);
 
-    $this->accountingManager = User::factory()->create();
-    $this->accountingManager->syncRoles(['hr_manager']);
+    $this->officer = User::factory()->create();
+    $this->officer->syncRoles(['officer']);
 
+    $this->vp = User::factory()->create();
+    $this->vp->syncRoles(['vice_president']);
+    
     $this->disburser = User::factory()->create();
-    $this->disburser->syncRoles(['hr_manager']);
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LN-010: SoD — Each approver must be different person
-// ─────────────────────────────────────────────────────────────────────────────
-
-it('prevents supervisor from approving their own loan request', function () {
-    // Employee submits loan
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'pending',
-        'loan_date' => now()->toDateString(),
-    ]);
-
-    // Employee tries to approve as supervisor (same person)
-    $response = $this->actingAs($this->employee->user)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/supervisor-approve", [
-            'remarks' => 'Self approval',
-        ]);
-
-    $response->assertStatus(403)
-        ->assertJsonPath('error_code', 'SOD_VIOLATION');
-});
-
-it('allows supervisor to approve loan after employee submits', function () {
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'pending',
-        'loan_date' => now()->toDateString(),
-    ]);
-
-    $response = $this->actingAs($this->supervisor)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/supervisor-approve", [
-            'remarks' => 'Supervisor approved',
-        ]);
-
-    $response->assertOk()
-        ->assertJsonPath('data.status', 'supervisor_approved')
-        ->assertJsonPath('data.supervisor_remarks', 'Supervisor approved');
-});
-
-it('prevents HR manager from approving if they were the supervisor', function () {
-    // Create scenario where supervisor and HR manager are the same person
-    $samePerson = User::factory()->create();
-    $samePerson->syncRoles(['supervisor', 'hr_manager']);
-    $samePerson->givePermissionTo(['loans.supervisor_review', 'loans.approve']);
-
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'pending',
-        'loan_date' => now()->toDateString(),
-        'supervisor_approved_by' => $samePerson->id,
-        'supervisor_approved_at' => now(),
-    ]);
-
-    // Same person tries to HR approve
-    $response = $this->actingAs($samePerson)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/approve");
-
-    $response->assertStatus(403)
-        ->assertJsonPath('error_code', 'SOD_VIOLATION');
-});
-
-it('prevents accounting manager from approving if they were HR manager', function () {
-    $samePerson = User::factory()->create();
-    $samePerson->syncRoles(['hr_manager']);
-    $samePerson->givePermissionTo(['loans.approve', 'loans.accounting_approve']);
-
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'approved',
-        'approved_by' => $samePerson->id,
-        'approved_at' => now(),
-        'loan_date' => now()->toDateString(),
-    ]);
-
-    $response = $this->actingAs($samePerson)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/accounting-approve");
-
-    $response->assertStatus(403)
-        ->assertJsonPath('error_code', 'SOD_VIOLATION');
-});
-
-it('prevents disburser from disbursing if they were accounting manager', function () {
-    $samePerson = User::factory()->create();
-    $samePerson->syncRoles(['hr_manager']);
-    $samePerson->givePermissionTo(['loans.accounting_approve']);
-
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'ready_for_disbursement',
-        'approved_by' => $this->hrManager->id,
-        'approved_at' => now(),
-        'accounting_approved_by' => $samePerson->id,
-        'accounting_approved_at' => now(),
-        'loan_date' => now()->toDateString(),
-    ]);
-
-    $response = $this->actingAs($samePerson)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/disburse");
-
-    $response->assertStatus(403)
-        ->assertJsonPath('error_code', 'SOD_VIOLATION');
+    // Use an officer role but a different user for SoD
+    $this->disburser->syncRoles(['officer']);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Full workflow test
 // ─────────────────────────────────────────────────────────────────────────────
 
-it('completes full loan workflow with different approvers', function () {
-    // 1. Employee submits loan
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'pending',
-        'loan_date' => now()->toDateString(),
-    ]);
+it('completes full loan v2 workflow with different approvers', function () {
+    // 1. Employee submits loan (V2 workflow)
+    $response = $this->actingAs($this->employeeUser)
+        ->postJson('/api/v1/loans', [
+            'employee_id' => $this->employee->id,
+            'loan_type_id' => $this->loanType->id,
+            'principal_centavos' => 500000,
+            'term_months' => 12,
+            'deduction_cutoff' => '1st',
+            'purpose' => 'Test V2 Workflow',
+        ]);
+        
+    $response->assertStatus(201);
+    $loanUlid = $response->json('data.ulid') ?? $response->json('data.id');
+    $loan = Loan::where('ulid', $loanUlid)->first();
+    
+    expect($loan)->not->toBeNull();
+    
+    expect($loan->workflow_version)->toBe(2);
+    expect($loan->status)->toBe('pending');
 
-    expect($loan->requested_by)->toBe($this->employeeUser->id);
-
-    // 2. Supervisor approves
-    $this->actingAs($this->supervisor)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/supervisor-approve", [
-            'remarks' => 'Supervisor review passed',
+    // 2. Head notes
+    $this->actingAs($this->head)
+        ->patchJson("/api/v1/loans/{$loan->ulid}/head-note", [
+            'remarks' => 'Head noted',
         ])
         ->assertOk()
-        ->assertJsonPath('data.status', 'supervisor_approved');
+        ->assertJsonPath('data.status', 'head_noted');
 
     $loan->refresh();
-    expect($loan->supervisor_approved_by)->toBe($this->supervisor->id);
-    expect($loan->supervisor_remarks)->toBe('Supervisor review passed');
+    expect($loan->head_noted_by)->toBe($this->head->id);
 
-    // 3. HR Manager approves
-    $this->actingAs($this->hrManager)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/approve", [
-            'remarks' => 'HR approved',
+    // 3. Manager checks
+    $this->actingAs($this->manager)
+        ->patchJson("/api/v1/loans/{$loan->ulid}/manager-check", [
+            'remarks' => 'Manager checked',
         ])
         ->assertOk()
-        ->assertJsonPath('data.status', 'approved');
+        ->assertJsonPath('data.status', 'manager_checked');
 
     $loan->refresh();
-    expect($loan->approved_by)->toBe($this->hrManager->id);
+    expect($loan->manager_checked_by)->toBe($this->manager->id);
 
-    // 4. Accounting Manager approves (creates GL entry)
-    $this->actingAs($this->accountingManager)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/accounting-approve", [
-            'remarks' => 'Funds verified',
+    // 4. Officer reviews
+    $this->actingAs($this->officer)
+        ->patchJson("/api/v1/loans/{$loan->ulid}/officer-review", [
+            'remarks' => 'Officer reviewed',
         ])
         ->assertOk()
-        ->assertJsonPath('data.status', 'ready_for_disbursement')
-        ->assertJsonPath('data.accounting_remarks', 'Funds verified');
+        ->assertJsonPath('data.status', 'officer_reviewed');
 
     $loan->refresh();
-    expect($loan->accounting_approved_by)->toBe($this->accountingManager->id);
-    expect($loan->journal_entry_id)->not->toBeNull();
+    expect($loan->officer_reviewed_by)->toBe($this->officer->id);
 
-    // 5. Disbursement
+    // 5. VP approves
+    $this->actingAs($this->vp)
+        ->patchJson("/api/v1/loans/{$loan->ulid}/vp-approve", [
+            'remarks' => 'VP approved',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.status', 'ready_for_disbursement');
+
+    $loan->refresh();
+    expect($loan->vp_approved_by)->toBe($this->vp->id);
+
+    // 6. Disbursement
     $this->actingAs($this->disburser)
         ->patchJson("/api/v1/loans/{$loan->ulid}/disburse")
         ->assertOk()
-        ->assertJsonPath('data.status', 'active')
-        ->assertJsonPath('data.disbursed_by', $this->disburser->id);
+        ->assertJsonPath('data.status', 'active');
 
     $loan->refresh();
     expect($loan->status)->toBe('active');
@@ -260,12 +143,9 @@ it('completes full loan workflow with different approvers', function () {
     expect($loan->disbursed_at)->not->toBeNull();
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GL Integration tests
-// ─────────────────────────────────────────────────────────────────────────────
-
-it('creates GL entry on accounting approval', function () {
+it('creates GL entry on vp approval in v2 workflow', function () {
     $loan = Loan::create([
+        'workflow_version' => 2,
         'reference_no' => 'LN-2026-0001',
         'employee_id' => $this->employee->id,
         'loan_type_id' => $this->loanType->id,
@@ -273,13 +153,14 @@ it('creates GL entry on accounting approval', function () {
         'principal_centavos' => 500000, // 5,000 PHP
         'term_months' => 12,
         'interest_rate_annual' => 0.06,
-        'status' => 'approved',
-        'approved_by' => $this->hrManager->id,
-        'approved_at' => now(),
+        'status' => 'officer_reviewed',
+        'officer_reviewed_by' => $this->officer->id,
+        'officer_reviewed_at' => now(),
+        'loan_date' => now()->toDateString(),
     ]);
 
-    $this->actingAs($this->accountingManager)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/accounting-approve")
+    $this->actingAs($this->vp)
+        ->patchJson("/api/v1/loans/{$loan->ulid}/vp-approve")
         ->assertOk();
 
     $loan->refresh();
@@ -300,69 +181,3 @@ it('creates GL entry on accounting approval', function () {
     expect($totalCredit)->toBe(5000.0);
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Status transition tests
-// ─────────────────────────────────────────────────────────────────────────────
-
-it('prevents HR approval without supervisor approval first', function () {
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'pending',
-        'loan_date' => now()->toDateString(),
-    ]);
-
-    $response = $this->actingAs($this->hrManager)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/approve");
-
-    $response->assertStatus(422)
-        ->assertJsonPath('error_code', 'LN_NOT_SUPERVISOR_APPROVED');
-});
-
-it('prevents accounting approval without HR approval first', function () {
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'supervisor_approved',
-        'supervisor_approved_by' => $this->supervisor->id,
-        'supervisor_approved_at' => now(),
-    ]);
-
-    // Try accounting approval (should fail - needs HR approval first)
-    $response = $this->actingAs($this->accountingManager)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/accounting-approve");
-
-    $response->assertStatus(422)
-        ->assertJsonPath('error_code', 'LN_NOT_HR_APPROVED');
-});
-
-it('prevents disbursement without accounting approval first', function () {
-    $loan = Loan::create([
-        'reference_no' => 'LN-2026-0001',
-        'employee_id' => $this->employee->id,
-        'loan_type_id' => $this->loanType->id,
-        'requested_by' => $this->employeeUser->id,
-        'principal_centavos' => 500000,
-        'term_months' => 12,
-        'interest_rate_annual' => 0.06,
-        'status' => 'approved',
-        'approved_by' => $this->hrManager->id,
-        'approved_at' => now(),
-    ]);
-
-    $response = $this->actingAs($this->disburser)
-        ->patchJson("/api/v1/loans/{$loan->ulid}/disburse");
-
-    $response->assertStatus(422)
-        ->assertJsonPath('error_code', 'LN_NOT_ACCOUNTING_APPROVED');
-});

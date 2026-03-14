@@ -12,7 +12,7 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
 
     $this->hrManager = User::factory()->create();
-    $this->hrManager->assignRole('hr_manager');
+    $this->hrManager->assignRole('manager');
 
     $this->staff = User::factory()->create();
     $this->staff->assignRole('staff');

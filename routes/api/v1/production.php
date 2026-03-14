@@ -95,5 +95,5 @@ Route::middleware(['auth:sanctum'])->group(function (): void {
                 'avg_unit_cost'       => $totalOutput > 0 ? round($totalMaterialCost / $totalOutput, 2) : 0,
             ],
         ]);
-    })->name('reports.cost-analysis');
+    })->name('reports.cost-analysis')->middleware('permission:production.orders.view');
 });

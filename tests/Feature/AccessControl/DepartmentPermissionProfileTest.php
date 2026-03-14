@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Domains\HR\Models\Department;
 use App\Models\DepartmentPermissionProfile;
 use App\Models\User;
-use App\Services\DepartmentPermissionService;
+use App\Services\DepartmentPermissionServiceV3 as DepartmentPermissionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Hash;
 |--------------------------------------------------------------------------
 | Department Permission Profile Tests — v2
 |--------------------------------------------------------------------------
+
+uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 | Verifies the DB-backed department permission profile system:
 |
 |   1. HRD Manager    — gets full HR module, NOT accounting
@@ -91,7 +93,7 @@ function hrdManagerPerms(): array
         'employees.view_unmasked_gov_ids', 'employees.create', 'employees.update',
         'employees.update_salary', 'employees.activate', 'employees.suspend', 'employees.terminate',
         'attendance.import_csv', 'attendance.resolve_anomalies', 'attendance.view_team',
-        'leaves.approve', 'leaves.reject', 'leaves.adjust_balance',
+        'leaves.manager_check', 'leaves.reject', 'leaves.adjust_balance',
         'overtime.approve', 'overtime.reject',
         'loans.hr_approve', 'loans.create', 'loans.approve',
         'payroll.initiate', 'payroll.hr_approve', 'payroll.hr_return',
@@ -169,14 +171,14 @@ describe('HRD Manager — profile permissions', function () {
 
     it('hasPermissionTo returns true for HR module permissions', function () {
         $dept = dppDept('DPP-HRD');
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', hrdManagerPerms());
+        $user = dppUser('manager', $dept);
 
         expect($user->hasPermissionTo('employees.create'))->toBeTrue();
         expect($user->hasPermissionTo('employees.view_salary'))->toBeTrue();
         expect($user->hasPermissionTo('payroll.initiate'))->toBeTrue();
         expect($user->hasPermissionTo('payroll.hr_approve'))->toBeTrue();
-        expect($user->hasPermissionTo('leaves.approve'))->toBeTrue();
+        expect($user->hasPermissionTo('leaves.manager_check'))->toBeTrue();
         expect($user->hasPermissionTo('overtime.approve'))->toBeTrue();
         expect($user->hasPermissionTo('loans.hr_approve'))->toBeTrue();
         expect($user->hasPermissionTo('reports.bir_2316'))->toBeTrue();
@@ -184,8 +186,8 @@ describe('HRD Manager — profile permissions', function () {
 
     it('hasPermissionTo denies accounting module permissions', function () {
         $dept = dppDept('DPP-HRD');
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', hrdManagerPerms());
+        $user = dppUser('manager', $dept);
 
         expect($user->hasPermissionTo('journal_entries.post'))->toBeFalse();
         expect($user->hasPermissionTo('journal_entries.view'))->toBeFalse();
@@ -197,14 +199,14 @@ describe('HRD Manager — profile permissions', function () {
     });
 
     it('DPP profile restricts permissions even when Spatie role grants more than the profile allows', function () {
-        // Assign an accounting_manager (who has journal_entries.post) to an HRD dept
+        // Assign an officer (who has journal_entries.post) to an HRD dept
         // with an HRD-only profile — DPP must block the accounting permission.
         $dept = dppDept('DPP-HRD-CROSS');
-        dppProfile($dept, 'accounting_manager', hrdManagerPerms()); // profile excludes accounting perms
-        $user = dppUser('accounting_manager', $dept);
+        dppProfile($dept, 'officer', hrdManagerPerms()); // profile excludes accounting perms
+        $user = dppUser('officer', $dept);
 
-        // Verify the accounting_manager Spatie ROLE genuinely has the permission
-        $acctgRole = \Spatie\Permission\Models\Role::findByName('accounting_manager');
+        // Verify the officer Spatie ROLE genuinely has the permission
+        $acctgRole = \Spatie\Permission\Models\Role::findByName('officer');
         expect($acctgRole->hasPermissionTo('journal_entries.post'))->toBeTrue();
 
         // But User::hasPermissionTo() (our override) returns false — HRD profile lacks it
@@ -213,13 +215,13 @@ describe('HRD Manager — profile permissions', function () {
 
     it('getEffectivePermissions returns HR perms and excludes accounting', function () {
         $dept = dppDept('DPP-HRD');
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', hrdManagerPerms());
+        $user = dppUser('manager', $dept);
 
         $perms = $user->getEffectivePermissions()->all();
 
         expect($perms)->toContain('payroll.initiate');
-        expect($perms)->toContain('leaves.approve');
+        expect($perms)->toContain('leaves.manager_check');
         expect($perms)->toContain('employees.view_salary');
 
         expect($perms)->not->toContain('journal_entries.post');
@@ -237,8 +239,8 @@ describe('ACCTG Manager — profile permissions', function () {
 
     it('hasPermissionTo returns true for accounting module permissions', function () {
         $dept = dppDept('DPP-ACCTG');
-        dppProfile($dept, 'accounting_manager', acctgManagerPerms());
-        $user = dppUser('accounting_manager', $dept);
+        dppProfile($dept, 'officer', acctgManagerPerms());
+        $user = dppUser('officer', $dept);
 
         expect($user->hasPermissionTo('journal_entries.view'))->toBeTrue();
         expect($user->hasPermissionTo('journal_entries.post'))->toBeTrue();
@@ -251,8 +253,8 @@ describe('ACCTG Manager — profile permissions', function () {
 
     it('hasPermissionTo denies HR module permissions', function () {
         $dept = dppDept('DPP-ACCTG');
-        dppProfile($dept, 'accounting_manager', acctgManagerPerms());
-        $user = dppUser('accounting_manager', $dept);
+        dppProfile($dept, 'officer', acctgManagerPerms());
+        $user = dppUser('officer', $dept);
 
         expect($user->hasPermissionTo('payroll.initiate'))->toBeFalse();
         expect($user->hasPermissionTo('payroll.hr_approve'))->toBeFalse();
@@ -266,8 +268,8 @@ describe('ACCTG Manager — profile permissions', function () {
 
     it('getEffectivePermissions returns accounting perms and excludes HR module', function () {
         $dept = dppDept('DPP-ACCTG');
-        dppProfile($dept, 'accounting_manager', acctgManagerPerms());
-        $user = dppUser('accounting_manager', $dept);
+        dppProfile($dept, 'officer', acctgManagerPerms());
+        $user = dppUser('officer', $dept);
 
         $perms = $user->getEffectivePermissions()->all();
 
@@ -290,8 +292,8 @@ describe('Ops Manager (PROD) — self-service only profile', function () {
 
     it('hasPermissionTo allows self-service permissions', function () {
         $dept = dppDept('DPP-PROD');
-        dppProfile($dept, 'hr_manager', selfServicePerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', selfServicePerms());
+        $user = dppUser('manager', $dept);
 
         expect($user->hasPermissionTo('payroll.view_own_payslip'))->toBeTrue();
         expect($user->hasPermissionTo('leaves.view_own'))->toBeTrue();
@@ -302,8 +304,8 @@ describe('Ops Manager (PROD) — self-service only profile', function () {
 
     it('hasPermissionTo denies HR module permissions', function () {
         $dept = dppDept('DPP-PROD');
-        dppProfile($dept, 'hr_manager', selfServicePerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', selfServicePerms());
+        $user = dppUser('manager', $dept);
 
         expect($user->hasPermissionTo('employees.view_salary'))->toBeFalse();
         expect($user->hasPermissionTo('employees.create'))->toBeFalse();
@@ -315,8 +317,8 @@ describe('Ops Manager (PROD) — self-service only profile', function () {
 
     it('hasPermissionTo denies accounting module permissions', function () {
         $dept = dppDept('DPP-PROD');
-        dppProfile($dept, 'hr_manager', selfServicePerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', selfServicePerms());
+        $user = dppUser('manager', $dept);
 
         expect($user->hasPermissionTo('journal_entries.view'))->toBeFalse();
         expect($user->hasPermissionTo('journal_entries.post'))->toBeFalse();
@@ -327,8 +329,8 @@ describe('Ops Manager (PROD) — self-service only profile', function () {
 
     it('getEffectivePermissions contains only self-service + team perms', function () {
         $dept = dppDept('DPP-PROD');
-        dppProfile($dept, 'hr_manager', selfServicePerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', selfServicePerms());
+        $user = dppUser('manager', $dept);
 
         $perms = $user->getEffectivePermissions()->all();
 
@@ -352,7 +354,7 @@ describe('Ops Manager (PROD) — self-service only profile', function () {
 describe('HRD Supervisor — limited HR profile', function () {
     beforeEach(function () {
         $this->dept = dppDept('DPP-HRD-SUP');
-        dppProfile($this->dept, 'supervisor', [
+        dppProfile($this->dept, 'head', [
             'employees.view', 'employees.view_full_record', 'employees.view_unmasked_gov_ids',
             'employees.create', 'employees.upload_documents', 'employees.download_documents',
             'attendance.import_csv', 'attendance.view_team', 'attendance.view_anomalies',
@@ -360,11 +362,11 @@ describe('HRD Supervisor — limited HR profile', function () {
             'overtime.view', 'overtime.submit',
             'leaves.view_own', 'leaves.view_team', 'leaves.file_own',
             'leaves.file_on_behalf', 'leaves.cancel',
-            'loans.view_own', 'loans.apply', 'loans.supervisor_review',
+            'loans.view_own', 'loans.apply', 'loans.head_review',
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
             'attendance.view_own', 'self.view_profile', 'self.submit_profile_update',
         ]);
-        $this->user = dppUser('supervisor', $this->dept);
+        $this->user = dppUser('head', $this->dept);
     });
 
     it('can create employees and import attendance', function () {
@@ -374,7 +376,7 @@ describe('HRD Supervisor — limited HR profile', function () {
     });
 
     it('cannot approve leave, overtime, or loans', function () {
-        expect($this->user->hasPermissionTo('leaves.approve'))->toBeFalse();
+        expect($this->user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
         expect($this->user->hasPermissionTo('overtime.approve'))->toBeFalse();
         expect($this->user->hasPermissionTo('loans.hr_approve'))->toBeFalse();
     });
@@ -400,7 +402,7 @@ describe('HRD Supervisor — limited HR profile', function () {
 describe('ACCTG Supervisor — limited accounting profile', function () {
     beforeEach(function () {
         $this->dept = dppDept('DPP-ACCTG-SUP');
-        dppProfile($this->dept, 'supervisor', [
+        dppProfile($this->dept, 'officer', [
             'journal_entries.view', 'journal_entries.create',
             'journal_entries.update', 'journal_entries.submit',
             'chart_of_accounts.view', 'fiscal_periods.view',
@@ -414,10 +416,10 @@ describe('ACCTG Supervisor — limited accounting profile', function () {
             'reports.gl', 'reports.ap_aging',
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
             'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'loans.view_own', 'loans.apply', 'loans.supervisor_review',
+            'loans.view_own', 'loans.apply', 'loans.head_review',
             'attendance.view_own', 'self.view_profile',
         ]);
-        $this->user = dppUser('supervisor', $this->dept);
+        $this->user = dppUser('officer', $this->dept);
     });
 
     it('can create and submit journal entries', function () {
@@ -436,7 +438,7 @@ describe('ACCTG Supervisor — limited accounting profile', function () {
 
     it('cannot access HR, payroll management, or financial reports', function () {
         expect($this->user->hasPermissionTo('employees.create'))->toBeFalse();
-        expect($this->user->hasPermissionTo('leaves.approve'))->toBeFalse();
+        expect($this->user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
         expect($this->user->hasPermissionTo('payroll.acctg_approve'))->toBeFalse();
         expect($this->user->hasPermissionTo('reports.financial_statements'))->toBeFalse();
         expect($this->user->hasPermissionTo('reports.trial_balance'))->toBeFalse();
@@ -453,18 +455,18 @@ describe('Staff — self-service only regardless of department', function () {
     it('staff in HRD gets only their own access — no HR admin permissions', function () {
         $dept = dppDept('DPP-STAFF-HRD');
         // Even if a profile exists for the dept, staff bypasses dept scoping
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
+        dppProfile($dept, 'manager', hrdManagerPerms());
         $user = dppUser('staff', $dept);
 
         // Staff has no module permissions at all (Spatie role)
         expect($user->hasPermissionTo('employees.view'))->toBeFalse();
         expect($user->hasPermissionTo('payroll.initiate'))->toBeFalse();
-        expect($user->hasPermissionTo('leaves.approve'))->toBeFalse();
+        expect($user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
     });
 
     it('staff in ACCTG gets only their own access — no accounting permissions', function () {
         $dept = dppDept('DPP-STAFF-ACCTG');
-        dppProfile($dept, 'accounting_manager', acctgManagerPerms());
+        dppProfile($dept, 'officer', acctgManagerPerms());
         $user = dppUser('staff', $dept);
 
         expect($user->hasPermissionTo('journal_entries.view'))->toBeFalse();
@@ -495,7 +497,7 @@ describe('Admin and Executive bypass department scoping', function () {
     it('executive can call hasPermissionTo on any permission they have without dept filter', function () {
         $dept = dppDept('DPP-EXEC');
         // Even with a restrictive dept profile, executive bypasses it
-        dppProfile($dept, 'hr_manager', selfServicePerms());
+        dppProfile($dept, 'manager', selfServicePerms());
         $user = User::factory()->create();
         $user->assignRole('executive');
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
@@ -514,8 +516,8 @@ describe('Profile permission caching', function () {
 
     it('caches permission resolution and returns same result on second call', function () {
         $dept = dppDept('DPP-CACHE');
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', hrdManagerPerms());
+        $user = dppUser('manager', $dept);
         Cache::flush();
 
         // First call — DB hit, result cached
@@ -529,8 +531,8 @@ describe('Profile permission caching', function () {
 
     it('clearDepartmentCache flushes the cache so next call re-reads DB', function () {
         $dept = dppDept('DPP-CACHE2');
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', hrdManagerPerms());
+        $user = dppUser('manager', $dept);
         Cache::flush();
 
         // Warm the cache
@@ -538,7 +540,7 @@ describe('Profile permission caching', function () {
 
         // Update the profile behind the scenes
         DepartmentPermissionProfile::where('department_id', $dept->id)
-            ->where('role', 'hr_manager')
+            ->where('role', 'manager')
             ->update(['permissions' => json_encode(selfServicePerms())]);
 
         // Without cache clear — still cached, old result
@@ -562,25 +564,25 @@ describe('Department isolation', function () {
         $hrd = dppDept('DPP-ISO-HRD');
         $prod = dppDept('DPP-ISO-PROD');
 
-        dppProfile($hrd, 'hr_manager', hrdManagerPerms());
-        dppProfile($prod, 'hr_manager', selfServicePerms()); // ops-only
+        dppProfile($hrd, 'manager', hrdManagerPerms());
+        dppProfile($prod, 'manager', selfServicePerms()); // ops-only
 
         // User is assigned to PROD only — NOT HRD
-        $user = dppUser('hr_manager', $prod);
+        $user = dppUser('manager', $prod);
 
         expect($user->hasPermissionTo('payroll.initiate'))->toBeFalse();
         expect($user->hasPermissionTo('employees.view_salary'))->toBeFalse();
-        expect($user->hasPermissionTo('leaves.approve'))->toBeFalse();
+        expect($user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
     });
 
     it('manager in ACCTG cannot use HRD permissions', function () {
         $hrd = dppDept('DPP-ISO-HRD2');
         $acctg = dppDept('DPP-ISO-ACCTG');
 
-        dppProfile($hrd, 'hr_manager', hrdManagerPerms());
-        dppProfile($acctg, 'accounting_manager', acctgManagerPerms());
+        dppProfile($hrd, 'manager', hrdManagerPerms());
+        dppProfile($acctg, 'officer', acctgManagerPerms());
 
-        $user = dppUser('accounting_manager', $acctg);
+        $user = dppUser('officer', $acctg);
 
         // ACCTG-specific allowed
         expect($user->hasPermissionTo('journal_entries.post'))->toBeTrue();
@@ -594,12 +596,12 @@ describe('Department isolation', function () {
 
     it('is_active=false profile disables all module permissions', function () {
         $dept = dppDept('DPP-INACTIVE');
-        $profile = dppProfile($dept, 'hr_manager', hrdManagerPerms());
+        $profile = dppProfile($dept, 'manager', hrdManagerPerms());
 
         // Disable the profile
         $profile->update(['is_active' => false]);
 
-        $user = dppUser('hr_manager', $dept);
+        $user = dppUser('manager', $dept);
         Cache::flush();
         $user->clearDepartmentCache();
         $user = $user->fresh();
@@ -610,7 +612,7 @@ describe('Department isolation', function () {
         // (This is the edge case: dept with inactive profile behaves like no dept profile)
         // The user's effective permissions become unscoped (full role permissions)
         $result = $user->hasPermissionTo('payroll.initiate');
-        expect($result)->toBeTrue(); // falls back to full hr_manager role perms
+        expect($result)->toBeTrue(); // falls back to full manager role perms
     });
 });
 
@@ -622,8 +624,8 @@ describe('getEffectivePermissions — frontend permission list', function () {
 
     it('returns only HR module perms for HRD Manager (not accounting)', function () {
         $dept = dppDept('DPP-EFF-HRD');
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', hrdManagerPerms());
+        $user = dppUser('manager', $dept);
 
         $perms = $user->getEffectivePermissions()->all();
 
@@ -635,8 +637,8 @@ describe('getEffectivePermissions — frontend permission list', function () {
 
     it('returns only accounting perms for ACCTG Manager (not HR)', function () {
         $dept = dppDept('DPP-EFF-ACCTG');
-        dppProfile($dept, 'accounting_manager', acctgManagerPerms());
-        $user = dppUser('accounting_manager', $dept);
+        dppProfile($dept, 'officer', acctgManagerPerms());
+        $user = dppUser('officer', $dept);
 
         $perms = $user->getEffectivePermissions()->all();
 
@@ -648,8 +650,8 @@ describe('getEffectivePermissions — frontend permission list', function () {
 
     it('returns minimal perms for Ops Manager (PROD)', function () {
         $dept = dppDept('DPP-EFF-PROD');
-        dppProfile($dept, 'hr_manager', selfServicePerms());
-        $user = dppUser('hr_manager', $dept);
+        dppProfile($dept, 'manager', selfServicePerms());
+        $user = dppUser('manager', $dept);
 
         $perms = $user->getEffectivePermissions()->all();
 
@@ -690,32 +692,32 @@ describe('DepartmentPermissionService — DB-backed resolution', function () {
 
     it('isRoleDepartmentScoped returns true when active profile exists', function () {
         $dept = dppDept('DPP-SVC-SCOPED');
-        dppProfile($dept, 'hr_manager', hrdManagerPerms());
+        dppProfile($dept, 'manager', hrdManagerPerms());
 
         // Flush the scoped cache
         Cache::forget('dept_scoped_v2:manager');
 
-        expect(DepartmentPermissionService::isRoleDepartmentScoped('hr_manager'))->toBeTrue();
+        expect(DepartmentPermissionService::isRoleDepartmentScoped('manager'))->toBeTrue();
     });
 
     it('getAllowedPermissions merges permissions from multiple departments', function () {
         $hrd = dppDept('DPP-MULTI-HRD');
         $acctg = dppDept('DPP-MULTI-ACCTG');
 
-        dppProfile($hrd, 'hr_manager', ['payroll.initiate', 'leaves.approve', 'payroll.view_own_payslip']);
-        dppProfile($acctg, 'hr_manager', ['journal_entries.post', 'vendor_invoices.approve', 'payroll.view_own_payslip']);
+        dppProfile($hrd, 'manager', ['payroll.initiate', 'leaves.manager_check', 'payroll.view_own_payslip']);
+        dppProfile($acctg, 'manager', ['journal_entries.post', 'vendor_invoices.approve', 'payroll.view_own_payslip']);
 
         Cache::flush();
 
         $allowed = DepartmentPermissionService::getAllowedPermissions(
-            'hr_manager',
+            'manager',
             [$hrd->code, $acctg->code]
         );
 
         // Should contain permissions from both profiles
         expect($allowed)->toContain('payroll.initiate');
         expect($allowed)->toContain('journal_entries.post');
-        expect($allowed)->toContain('leaves.approve');
+        expect($allowed)->toContain('leaves.manager_check');
         expect($allowed)->toContain('vendor_invoices.approve');
 
         // Duplicates removed
@@ -728,7 +730,7 @@ describe('DepartmentPermissionService — DB-backed resolution', function () {
 
         expect($list)->toContain('employees.update_salary');
         expect($list)->toContain('employees.terminate');
-        expect($list)->toContain('leaves.approve');
+        expect($list)->toContain('leaves.manager_check');
         expect($list)->toContain('overtime.approve');
         expect($list)->toContain('loans.hr_approve');
         expect($list)->toContain('payroll.hr_approve');
@@ -739,7 +741,7 @@ describe('DepartmentPermissionService — DB-backed resolution', function () {
     it('getAllowedPermissions returns empty array for unknown department code', function () {
         Cache::flush();
 
-        $allowed = DepartmentPermissionService::getAllowedPermissions('hr_manager', ['NONEXISTENT-999']);
+        $allowed = DepartmentPermissionService::getAllowedPermissions('manager', ['NONEXISTENT-999']);
 
         expect($allowed)->toBe([]);
     });

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\Procurement\PurchaseRequestStatusNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Exceptions\SodViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
@@ -171,6 +172,15 @@ final class PurchaseRequestService implements ServiceContract
     public function check(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'noted', 'PR_NOT_NOTED');
+
+        if ($pr->requested_by_id === $actor->id && ! $actor->hasRole('super_admin')) {
+            throw new SodViolationException(
+                'purchase_request',
+                'check',
+                'Manager checker must differ from requester (SoD).',
+            );
+        }
+
         $this->assertSod($actor, $pr->noted_by_id ?? 0, 'SOD-012', 'Manager cannot be the same person who noted the PR.');
 
         $pr->update([
@@ -194,6 +204,15 @@ final class PurchaseRequestService implements ServiceContract
     public function review(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'checked', 'PR_NOT_CHECKED');
+
+        if ($pr->requested_by_id === $actor->id && ! $actor->hasRole('super_admin')) {
+            throw new SodViolationException(
+                'purchase_request',
+                'review',
+                'Officer reviewer must differ from requester (SoD).',
+            );
+        }
+
         $this->assertSod($actor, $pr->checked_by_id ?? 0, 'SOD-013', 'Officer cannot be the same person who checked the PR.');
 
         $pr->update([
@@ -216,6 +235,14 @@ final class PurchaseRequestService implements ServiceContract
     public function budgetCheck(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
+
+        if ($pr->requested_by_id === $actor->id && ! $actor->hasRole('super_admin')) {
+            throw new SodViolationException(
+                'purchase_request',
+                'budget_check',
+                'Budget checker must differ from requester (SoD).',
+            );
+        }
 
         // ── Real budget enforcement ───────────────────────────────────────────
         /** @var Department|null $dept */
@@ -305,6 +332,15 @@ final class PurchaseRequestService implements ServiceContract
     public function vpApprove(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'budget_checked', 'PR_NOT_BUDGET_CHECKED');
+
+        if ($pr->requested_by_id === $actor->id && ! $actor->hasRole('super_admin')) {
+            throw new SodViolationException(
+                'purchase_request',
+                'vp_approve',
+                'VP approver must differ from requester (SoD).',
+            );
+        }
+
         $this->assertSod($actor, $pr->budget_checked_by_id ?? 0, 'SOD-014', 'VP cannot be the same person who budget-checked the PR.');
 
         return DB::transaction(function () use ($pr, $actor, $comments) {

@@ -60,8 +60,8 @@ final class EmployeePolicy
             return false;
         }
 
-        // Executive sees all departments
-        if ($user->hasRole('executive')) {
+        // Executive and VP see all departments
+        if ($user->hasRole('executive') || $user->hasRole('vice_president')) {
             return true;
         }
 

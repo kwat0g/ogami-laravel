@@ -12,9 +12,9 @@ beforeEach(function (): void {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
 });
 
-test('officer can create customer with customers.manage permission', function (): void {
+test('purchasing officer can create customer with customers.manage permission', function (): void {
     $officer = User::factory()->create();
-    $officer->assignRole('officer');
+    $officer->assignRole('purchasing_officer');
 
     $this->actingAs($officer)
         ->postJson('/api/v1/ar/customers', [
@@ -31,9 +31,9 @@ test('officer can create customer with customers.manage permission', function ()
     ]);
 });
 
-test('officer can update active customer with customers.manage permission', function (): void {
+test('purchasing officer can update active customer with customers.manage permission', function (): void {
     $officer = User::factory()->create();
-    $officer->assignRole('officer');
+    $officer->assignRole('purchasing_officer');
 
     $customer = Customer::create([
         'name' => 'Acme Industries',

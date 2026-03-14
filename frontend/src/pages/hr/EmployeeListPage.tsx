@@ -24,6 +24,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
   const canEdit = hasPermission('employees.update')
+  const canCreate = hasPermission('employees.create')
   const [filters, setFilters] = useState<EmployeeFilters>({ per_page: 25 })
   const [searchValue, setSearchValue] = useState('')
 
@@ -64,12 +65,14 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
       <PageHeader
         title="Employees"
         actions={
-          <Link
-            to="/hr/employees/new"
-            className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-          >
-            + Add Employee
-          </Link>
+          canCreate && (
+            <Link
+              to="/hr/employees/new"
+              className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              + Add Employee
+            </Link>
+          )
         }
       />
 

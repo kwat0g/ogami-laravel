@@ -15,13 +15,13 @@ use Illuminate\Support\Facades\Hash;
 | 6-Role model (Option B — department-scoped manager split):
 |   admin              — full access
 |   executive          — view + export only
-|   hr_manager         — full HR/payroll CRUD + approve (HR/payroll modules, dept-scoped)
-|   accounting_manager — full accounting CRUD + post (finance modules, dept-scoped)
-|   supervisor         — view + create + submit; no approve/post/delete
+|   manager         — full HR/payroll CRUD + approve (HR/payroll modules, dept-scoped)
+|   officer — full accounting CRUD + post (finance modules, dept-scoped)
+|   head         — view + create + submit; no approve/post/delete
 |   staff              — self-service only
 |
 | Cross-domain isolation is handled by RDAC (department scope), not by
-| role names. hr_manager/accounting_manager can only see their own
+| role names. manager/officer can only see their own
 | department's data, but routes are open to those roles regardless of department.
 --------------------------------------------------------------------------
 */
@@ -68,20 +68,20 @@ describe('Admin unrestricted access', function () {
 });
 
 // ---------------------------------------------------------------------------
-// hr_manager — full CRUD for HR & payroll modules (dept-scoped by RDAC)
-// accounting_manager — full CRUD for finance modules (dept-scoped by RDAC)
+// manager — full CRUD for HR & payroll modules (dept-scoped by RDAC)
+// officer — full CRUD for finance modules (dept-scoped by RDAC)
 // ---------------------------------------------------------------------------
 
 describe('Manager authorised access', function () {
     it('can list employees', function () {
-        $user = rbacUser('hr_manager');
+        $user = rbacUser('manager');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/hr/employees')
             ->assertStatus(200);
     });
 
     it('can create an employee', function () {
-        $user = rbacUser('hr_manager');
+        $user = rbacUser('manager');
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/hr/employees', [
                 'employee_code' => 'RBAC-001',
@@ -100,14 +100,14 @@ describe('Manager authorised access', function () {
     });
 
     it('can list journal entries', function () {
-        $user = rbacUser('accounting_manager');
+        $user = rbacUser('officer');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/accounting/journal-entries')
             ->assertStatus(200);
     });
 
     it('can access payroll runs', function () {
-        $user = rbacUser('hr_manager');
+        $user = rbacUser('manager');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/payroll/runs')
             ->assertStatus(200);
@@ -120,14 +120,14 @@ describe('Manager authorised access', function () {
 
 describe('Supervisor restricted access', function () {
     it('can list employees', function () {
-        $user = rbacUser('supervisor');
+        $user = rbacUser('head');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/hr/employees')
             ->assertStatus(200);
     });
 
     it('cannot update system settings — system_settings.update denied', function () {
-        $user = rbacUser('supervisor');
+        $user = rbacUser('head');
         $this->actingAs($user, 'sanctum')
             ->patchJson('/api/v1/admin/settings/company_name', ['value' => 'test'])
             ->assertStatus(403);
@@ -210,7 +210,7 @@ describe('Staff self-service restrictions', function () {
 
 describe('Payroll SoD enforcement', function () {
     it('manager cannot approve a payroll run they created — SOD-006', function () {
-        $creator = rbacUser('hr_manager');
+        $creator = rbacUser('manager');
         $run = \App\Domains\Payroll\Models\PayrollRun::create([
             'reference_no' => 'PR-RBAC-SOD001',
             'pay_period_label' => 'RBAC SoD Test',
@@ -227,8 +227,8 @@ describe('Payroll SoD enforcement', function () {
     });
 
     it('a different manager can approve a run created by another — SOD passes', function () {
-        $creator = rbacUser('hr_manager');
-        $approver = rbacUser('hr_manager');
+        $creator = rbacUser('manager');
+        $approver = rbacUser('manager');
         $run = \App\Domains\Payroll\Models\PayrollRun::create([
             'reference_no' => 'PR-RBAC-SOD002',
             'pay_period_label' => 'RBAC SoD Pass Test',

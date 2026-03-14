@@ -43,9 +43,21 @@ final class Step16OtherDeductionsStep
                 // Apply full deduction
                 $remainingNet -= $amount;
                 $ctx->otherDeductionsCentavos += $amount;
+                
+                // Mark as applied
+                if ($adjustment->status !== 'applied') {
+                    $adjustment->status = 'applied';
+                    $adjustment->save();
+                }
             } else {
                 // Would breach floor — skip this period
                 $ctx->hasDeferredDeductions = true;
+
+                // Mark as deferred
+                if ($adjustment->status !== 'deferred') {
+                    $adjustment->status = 'deferred';
+                    $adjustment->save();
+                }
             }
         }
 

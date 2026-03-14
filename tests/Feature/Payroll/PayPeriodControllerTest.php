@@ -26,7 +26,7 @@ beforeEach(function () {
     $this->manager = User::factory()->create([
         'password' => Hash::make('Manager!123'),
     ]);
-    $this->manager->assignRole('hr_manager');
+    $this->manager->assignRole('manager');
 });
 
 // ── Valid period payload ───────────────────────────────────────────────────
@@ -46,6 +46,7 @@ function validPeriodPayload(array $overrides = []): array
 
 describe('GET /api/v1/payroll/periods', function () {
     it('returns a paginated list of pay periods', function () {
+        $this->withoutExceptionHandling();
         PayPeriod::factory()->count(3)->create();
 
         $response = $this->actingAs($this->manager)

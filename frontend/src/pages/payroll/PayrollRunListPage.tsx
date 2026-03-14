@@ -30,6 +30,7 @@ function formatDate(iso: string) {
 export default function PayrollRunListPage() {
   const navigate = useNavigate()
   const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canInitiate = hasPermission('payroll.initiate')
 
   // Accounting Managers see only runs pending their action / already published.
   const isAcctgOnly =
@@ -62,7 +63,7 @@ export default function PayrollRunListPage() {
       <PageHeader
         title="Payroll Runs"
         actions={
-          !isAcctgOnly && (
+          !isAcctgOnly && canInitiate && (
             <Link
               to="/payroll/runs/new"
               className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"

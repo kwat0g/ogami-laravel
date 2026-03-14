@@ -25,7 +25,7 @@ beforeEach(function () {
     $this->hrManager = User::factory()->create([
         'password' => Hash::make('HRpass!123'),
     ]);
-    $this->hrManager->assignRole('hr_manager');
+    $this->hrManager->assignRole('manager');
 
     // A separate user who submits (SoD: reviewer must differ from submitter)
     $this->submitter = User::factory()->create();

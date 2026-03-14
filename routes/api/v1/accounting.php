@@ -15,6 +15,7 @@ use App\Http\Controllers\Accounting\Reports\IncomeStatementController;
 use App\Http\Controllers\Accounting\Reports\TrialBalanceController;
 use App\Http\Controllers\AP\VendorController;
 use App\Http\Controllers\AP\VendorInvoiceController;
+use App\Http\Controllers\AP\VendorItemController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -121,6 +122,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('vendors/{vendor}/reset-account', [VendorController::class, 'resetPortalAccountPassword'])
         ->middleware(['permission:system.manage_users', 'throttle:api-action'])
         ->name('vendors.reset-account');
+
+    // ── Vendor Items ─────────────────────────────────────────────────────────
+    Route::get('vendors/{vendor}/items', [VendorItemController::class, 'index'])->name('vendors.items.index');
+    Route::post('vendors/{vendor}/items', [VendorItemController::class, 'store'])->name('vendors.items.store');
+    Route::put('vendors/{vendor}/items/{vendorItem}', [VendorItemController::class, 'update'])->name('vendors.items.update');
+    Route::delete('vendors/{vendor}/items/{vendorItem}', [VendorItemController::class, 'destroy'])->name('vendors.items.destroy');
+    Route::post('vendors/{vendor}/items/import', [VendorItemController::class, 'import'])->name('vendors.items.import');
 
     // ── AP Invoices (AP-001 to AP-011) ───────────────────────────────────────
     // AP operational dashboard: totals by status, overdue summary, aging buckets

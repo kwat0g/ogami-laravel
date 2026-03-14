@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAttendanceLogs, useCreateAttendanceLog, useUpdateAttendanceLog, useEmployeeShiftAssignments } from '@/hooks/useAttendance'
+import { useAuthStore } from '@/stores/authStore'
 import { useEmployeeSearch } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -59,6 +60,8 @@ interface EmployeeOption {
 
 export default function AttendanceListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const { hasPermission } = useAuthStore()
+  const canManageShifts = hasPermission('attendance.manage_shifts')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [userModifiedSearch, setUserModifiedSearch] = useState(false) // Track if user manually typed
@@ -251,13 +254,15 @@ export default function AttendanceListPage() {
         title="Attendance"
         actions={
           <div className="flex gap-2">
-            <button
-              onClick={openCreateModal}
-              className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Manual Entry
-            </button>
+            {canManageShifts && (
+              <button
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Manual Entry
+              </button>
+            )}
             <Link to="/hr/attendance/import"
               className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-4 py-2 rounded transition-colors">
               Import CSV

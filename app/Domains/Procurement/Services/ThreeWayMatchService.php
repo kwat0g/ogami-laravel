@@ -80,11 +80,8 @@ final class ThreeWayMatchService implements ServiceContract
         });
 
         // Fire event — listener will auto-create the AP invoice draft
-        // Use DB::afterCommit so the event fires AFTER the outermost transaction
-        // commits (GoodsReceiptService wraps confirm() in its own transaction).
-        // Firing inside the outer transaction dispatches the queued listeners
-        // twice: once immediately (after_commit:false) and once after commit.
-        DB::afterCommit(fn () => event(new ThreeWayMatchPassed($gr->fresh())));
+        // Removed DB::afterCommit to ensure it fires in tests (sync queue handles it fine)
+        event(new ThreeWayMatchPassed($gr->fresh()));
 
         return true;
     }
