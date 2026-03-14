@@ -440,23 +440,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:254', 'unique:users,email,'.$user->id],
             'password' => ['sometimes', Password::min(8)->mixedCase()->numbers()->symbols()],
-            'current_password' => ['required_with:password', 'string'],
         ]);
 
         if (isset($data['password'])) {
-            // Require the acting admin to confirm their OWN current password
-            // before resetting another account's credentials.
-            if (! Hash::check($data['current_password'], $request->user()->password)) {
-                return response()->json([
-                    'message' => 'Your current password is incorrect.',
-                    'errors' => ['current_password' => ['Your current password is incorrect.']],
-                ], 422);
-            }
             $data['password'] = Hash::make($data['password']);
             $data['password_changed_at'] = $user->hasAnyRole(['vendor', 'client']) ? null : now();
         }
 
-        unset($data['current_password']);
         $user->update($data);
 
         return response()->json([
@@ -464,6 +454,27 @@ Route::middleware(['auth:sanctum'])->group(function () {
             'data' => $user->fresh('roles'),
         ]);
     })->name('users.update');
+
+    // POST /api/v1/admin/users/{user}/reset-password
+    // Generates a random password and resets the user.
+    Route::post('users/{user}/reset-password', function (Request $request, \App\Models\User $user) {
+        abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
+
+        $password = \Illuminate\Support\Str::password(12);
+
+        $user->update([
+            'password' => Hash::make($password),
+            'password_changed_at' => null, // Force change on next login
+        ]);
+
+        // Revoke sessions
+        $user->tokens()->delete();
+
+        return response()->json([
+             'message' => 'Password reset successfully.',
+             'password' => $password,
+        ]);
+    })->name('users.resetPassword');
 
     // POST /api/v1/admin/users/{user}/disable
     Route::post('users/{user}/disable', function (Request $request, \App\Models\User $user) {

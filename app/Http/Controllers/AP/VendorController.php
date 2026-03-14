@@ -146,4 +146,25 @@ final class VendorController extends Controller
             'data' => $data,
         ]);
     }
+
+    /** Get vendor's item catalog. */
+    public function items(Request $request, Vendor $vendor): JsonResponse
+    {
+        $this->authorize('view', $vendor);
+
+        $query = $vendor->vendorItems()
+            ->when($request->boolean('is_active'), fn ($q) => $q->where('is_active', true))
+            ->orderBy('item_name');
+
+        return response()->json([
+            'data' => $query->get()->map(fn ($item) => [
+                'id' => $item->id,
+                'item_code' => $item->item_code,
+                'name' => $item->item_name,
+                'unit_of_measure' => $item->unit_of_measure,
+                'unit_price_centavos' => $item->unit_price,
+                'is_active' => (bool) $item->is_active,
+            ])
+        ]);
+    }
 }

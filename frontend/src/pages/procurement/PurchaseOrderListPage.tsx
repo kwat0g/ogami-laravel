@@ -36,6 +36,7 @@ export default function PurchaseOrderListPage(): React.ReactElement {
       <PageHeader
         title="Purchase Orders"
         actions={
+          /* Manual PO creation disabled in favor of strict PR->PO auto-creation flow
           canCreate && (
             <Link
               to="/procurement/purchase-orders/new"
@@ -45,6 +46,8 @@ export default function PurchaseOrderListPage(): React.ReactElement {
               Create PO
             </Link>
           )
+          */
+          null
         }
       />
 

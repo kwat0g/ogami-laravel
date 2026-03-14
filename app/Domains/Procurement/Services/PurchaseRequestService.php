@@ -44,8 +44,7 @@ final class PurchaseRequestService implements ServiceContract
             $pr = PurchaseRequest::create([
                 'pr_reference' => $reference,
                 'department_id' => $data['department_id'],
-                'requested_by_id' => $actor->id,
-                'urgency' => $data['urgency'] ?? 'normal',
+                'requested_by_id' => $actor->id,                'vendor_id' => $data['vendor_id'],                'urgency' => $data['urgency'] ?? 'normal',
                 'justification' => $data['justification'],
                 'notes' => $data['notes'] ?? null,
                 'status' => 'draft',
@@ -76,6 +75,7 @@ final class PurchaseRequestService implements ServiceContract
         return DB::transaction(function () use ($pr, $data, $items): PurchaseRequest {
             $pr->update([
                 'department_id' => $data['department_id'] ?? $pr->department_id,
+                'vendor_id' => $data['vendor_id'] ?? $pr->vendor_id,
                 'urgency' => $data['urgency'] ?? $pr->urgency,
                 'justification' => $data['justification'] ?? $pr->justification,
                 'notes' => $data['notes'] ?? $pr->notes,
@@ -109,16 +109,35 @@ final class PurchaseRequestService implements ServiceContract
             );
         }
 
-        $pr->update([
-            'status' => 'submitted',
+        // Hierarchy Bypass: High-ranking users skip the "Staff -> Head" (Submitted -> Noted) wait.
+        // If the submitter is already a Head, Manager, Officer, or VP, we auto-transition to 'noted'.
+        $canBypassNote = $actor->hasAnyPermission([
+            'procurement.purchase-request.note',   // Head role
+            'procurement.purchase-request.check',  // Manager role
+            'procurement.purchase-request.review', // Officer role
+            'approvals.vp.approve',                // VP/Exec role
+        ]);
+
+        $targetStatus = $canBypassNote ? 'noted' : 'submitted';
+
+        $updateData = [
+            'status' => $targetStatus,
             'submitted_by_id' => $actor->id,
             'submitted_at' => now(),
-        ]);
+        ];
+
+        if ($targetStatus === 'noted') {
+            $updateData['noted_by_id'] = $actor->id;
+            $updateData['noted_at'] = now();
+            $updateData['noted_comments'] = 'Auto-noted (Hierarchy Bypass)';
+        }
+
+        $pr->update($updateData);
 
         $refreshed = $pr->refresh();
 
-        if ($refreshed->requestedBy !== null) {
-            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'submitted', $actor->name));
+        if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
+            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, $targetStatus, $actor->name));
         }
 
         return $refreshed;
@@ -140,7 +159,7 @@ final class PurchaseRequestService implements ServiceContract
 
         $refreshed = $pr->refresh();
 
-        if ($refreshed->requestedBy !== null) {
+        if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'noted', $actor->name, $comments ?: null));
         }
 
@@ -163,7 +182,7 @@ final class PurchaseRequestService implements ServiceContract
 
         $refreshed = $pr->refresh();
 
-        if ($refreshed->requestedBy !== null) {
+        if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'checked', $actor->name, $comments ?: null));
         }
 
@@ -186,7 +205,7 @@ final class PurchaseRequestService implements ServiceContract
 
         $refreshed = $pr->refresh();
 
-        if ($refreshed->requestedBy !== null) {
+        if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'reviewed', $actor->name, $comments ?: null));
         }
 
@@ -275,7 +294,7 @@ final class PurchaseRequestService implements ServiceContract
         $refreshed = $pr->refresh();
 
         // Notify the requester so they know to revise and resubmit
-        if ($refreshed->requestedBy !== null) {
+        if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'returned', $actor->name, $reason));
         }
 
@@ -288,32 +307,33 @@ final class PurchaseRequestService implements ServiceContract
         $this->assertStatus($pr, 'budget_checked', 'PR_NOT_BUDGET_CHECKED');
         $this->assertSod($actor, $pr->budget_checked_by_id ?? 0, 'SOD-014', 'VP cannot be the same person who budget-checked the PR.');
 
-        $pr->update([
-            'status' => 'approved',
-            'vp_approved_by_id' => $actor->id,
-            'vp_approved_at' => now(),
-            'vp_comments' => $comments,
-        ]);
+        return DB::transaction(function () use ($pr, $actor, $comments) {
+            $pr->update([
+                'status' => 'approved',
+                'vp_approved_by_id' => $actor->id,
+                'vp_approved_at' => now(),
+                'vp_comments' => $comments,
+            ]);
 
-        $refreshed = $pr->refresh();
+            $refreshed = $pr->refresh();
 
-        if ($refreshed->requestedBy !== null) {
-            Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null));
-        }
+            // Auto-create Purchase Order draft
+            // If this fails, the entire transaction (including PR approval) rolls back.
+            $this->purchaseOrderService->createFromApprovedPr($refreshed);
 
-        // PR-008: Notify Purchasing Officers so they can assign vendor and finalize the auto-created PO.
-        User::permission('procurement.purchase-order.create')
-            ->where('id', '!=', $actor->id)
-            ->each(fn (User $u) => $u->notify(
-                new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null)
-            ));
+            if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
+                Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null));
+            }
 
-        // Phase-4: Auto-create a PO draft (vendor_id = null) for Purchasing Officer to finalize.
-        $refreshed->loadMissing('items');
-        $this->purchaseOrderService->autoCreateFromPr($refreshed);
+            // Notify Purchasing Officers so they can assign vendor and finalize the auto-created PO.
+            User::permission('procurement.purchase-order.create')
+                ->where('id', '!=', $actor->id)
+                ->each(fn (User $u) => $u->notify(
+                    new PurchaseRequestStatusNotification($refreshed, 'approved', $actor->name, $comments ?: null)
+                ));
 
-        // Re-fresh after PR status was updated to converted_to_po inside autoCreateFromPr
-        return $refreshed->refresh();
+            return $refreshed;
+        });
     }
 
     // ── Reject ───────────────────────────────────────────────────────────────
@@ -338,7 +358,7 @@ final class PurchaseRequestService implements ServiceContract
 
         $refreshed = $pr->refresh();
 
-        if ($refreshed->requestedBy !== null) {
+        if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'rejected', $actor->name, $reason));
         }
 
@@ -361,7 +381,7 @@ final class PurchaseRequestService implements ServiceContract
 
         $refreshed = $pr->refresh();
 
-        if ($refreshed->requestedBy !== null) {
+        if ($refreshed->requestedBy !== null && $refreshed->requestedBy->id !== $actor->id) {
             Notification::send($refreshed->requestedBy, new PurchaseRequestStatusNotification($refreshed, 'cancelled', $actor->name));
         }
 
@@ -380,6 +400,7 @@ final class PurchaseRequestService implements ServiceContract
         foreach ($items as $index => $item) {
             PurchaseRequestItem::create([
                 'purchase_request_id' => $pr->id,
+                'vendor_item_id' => $item['vendor_item_id'] ?? null,
                 'item_description' => $item['item_description'],
                 'unit_of_measure' => $item['unit_of_measure'],
                 'quantity' => $item['quantity'],

@@ -32,7 +32,7 @@ const PAYMENT_TERMS_OPTIONS = ['COD', 'Net 7', 'Net 15', 'Net 30', 'Net 60']
 
 const itemSchema = z.object({
   po_item_id:        z.number().optional(),
-  item_master_id:    z.coerce.number().min(1, 'Select an item from Item Master'),
+  item_master_id:    z.coerce.number().nullable().optional(),
   item_description:  z.string().min(3, 'Description required'),
   quantity_ordered:  z.coerce.number().min(1),
   unit_of_measure:   z.string().min(1, 'UOM required'),
@@ -125,7 +125,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
         delivery_address:    values.delivery_address,
         notes:               values.notes,
         items:               values.items.map((it) => ({
-          item_master_id:   it.item_master_id,
+          item_master_id:   it.item_master_id || null, // send null if 0/undefined
           item_description: it.item_description,
           quantity_ordered: it.quantity_ordered,
           unit_of_measure:  it.unit_of_measure,
@@ -285,7 +285,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
               {/* Column Headers */}
               {fields.length > 0 && (
                 <div className="grid grid-cols-12 gap-2 px-3">
-                  <div className="col-span-3 text-xs font-medium text-neutral-600">Item Master <span className="text-red-500">*</span></div>
+                  <div className="col-span-3 text-xs font-medium text-neutral-600">Item Master <span className="text-neutral-400 font-normal">(optional)</span></div>
                   <div className="col-span-4 text-xs font-medium text-neutral-600">Description</div>
                   <div className="col-span-1 text-xs font-medium text-neutral-600">Qty</div>
                   <div className="col-span-1 text-xs font-medium text-neutral-600">UOM</div>
@@ -314,7 +314,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                           }}
                           className="w-full text-sm border border-neutral-300 rounded px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                         >
-                          <option value={0}>— Select item —</option>
+                          <option value={0}>— Select item (optional) —</option>
                           {allItems.map(i => (
                             <option key={i.id} value={i.id}>{i.item_code} — {i.name}</option>
                           ))}

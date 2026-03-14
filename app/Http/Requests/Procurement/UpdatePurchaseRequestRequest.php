@@ -18,6 +18,7 @@ final class UpdatePurchaseRequestRequest extends FormRequest
     {
         return [
             'department_id'                   => ['sometimes', 'integer', 'exists:departments,id'],
+            'vendor_id'                       => ['sometimes', 'integer', 'exists:vendors,id'],
             'urgency'                          => ['sometimes', 'string', 'in:normal,urgent,critical'],
             'justification'                    => ['sometimes', 'string', 'min:20'],
             'notes'                            => ['nullable', 'string'],

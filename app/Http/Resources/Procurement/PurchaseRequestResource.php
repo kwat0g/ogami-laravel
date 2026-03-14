@@ -61,6 +61,13 @@ final class PurchaseRequestResource extends JsonResource
                 'id' => $pr->reviewedBy->id, 'name' => $pr->reviewedBy->name,
             ] : null),
 
+            'budget_checked_by_id'      => $pr->budget_checked_by_id,
+            'budget_checked_at'         => $pr->budget_checked_at?->toIso8601String(),
+            'budget_checked_comments'   => $pr->budget_checked_comments,
+            'budget_checked_by'         => $this->whenLoaded('budgetCheckedBy', fn () => $pr->budgetCheckedBy ? [
+                'id' => $pr->budgetCheckedBy->id, 'name' => $pr->budgetCheckedBy->name,
+            ] : null),
+
             'vp_approved_by_id'  => $pr->vp_approved_by_id,
             'vp_approved_at'     => $pr->vp_approved_at?->toIso8601String(),
             'vp_comments'        => $pr->vp_comments,

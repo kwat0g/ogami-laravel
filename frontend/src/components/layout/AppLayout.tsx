@@ -72,7 +72,7 @@ const SECTIONS: NavSection[] = [
     label: 'Team Management',
     icon: Users,
     permission: 'employees.view_team',
-    roles: ['manager', 'head', 'ga_officer', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'],
+    roles: ['manager', 'head', 'warehouse_head', 'ppc_head', 'ga_officer', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'],
     children: [
       { label: 'My Team', href: '/team/employees', permission: 'employees.view_team' },
       { label: 'Team Attendance', href: '/team/attendance', permission: 'attendance.view_team' },
@@ -230,8 +230,8 @@ const SECTIONS: NavSection[] = [
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders',   href: '/procurement/purchase-orders',   permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts',    href: '/procurement/goods-receipts',    permission: 'procurement.goods-receipt.view' },
-      { label: 'RFQs',              href: '/procurement/rfqs',               permission: 'procurement.purchase-request.view' },
-      { label: 'Analytics',          href: '/procurement/analytics',          permission: 'procurement.purchase-order.view' },
+      { label: 'RFQs',              href: '/procurement/rfqs',               permission: 'procurement.purchase-order.create' },
+      { label: 'Analytics',          href: '/procurement/analytics',          permission: 'procurement.purchase-order.create' },
     ],
   },
   {
@@ -246,7 +246,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Stock Ledger',        href: '/inventory/ledger',          permission: 'inventory.stock.view' },
       { label: 'Requisitions',        href: '/inventory/requisitions',    permission: 'inventory.mrq.view' },
       { label: 'Stock Adjustments',  href: '/inventory/adjustments',     permission: 'inventory.adjustments.create' },
-      { label: 'Valuation',          href: '/inventory/valuation',       permission: 'inventory.stock.view' },
+      { label: 'Valuation',          href: '/inventory/valuation',       permission: 'reports.financial_statements' },
 
     ],
   },
@@ -254,7 +254,7 @@ const SECTIONS: NavSection[] = [
     label: 'Production',
     icon: Factory,
     permission: 'production.orders.view',
-    roles: ['plant_manager', 'production_manager', 'head', 'staff'],
+    roles: ['plant_manager', 'production_manager', 'head', 'ppc_head', 'warehouse_head', 'staff'],
     children: [
       { label: 'Bill of Materials',   href: '/production/boms',                 permission: 'production.bom.view' },
       { label: 'Delivery Schedules',  href: '/production/delivery-schedules',   permission: 'production.delivery-schedule.view' },

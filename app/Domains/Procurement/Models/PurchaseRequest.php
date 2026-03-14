@@ -64,6 +64,7 @@ final class PurchaseRequest extends Model implements Auditable
         'pr_reference',
         'department_id',
         'requested_by_id',
+        'vendor_id',
         'urgency',
         'justification',
         'notes',

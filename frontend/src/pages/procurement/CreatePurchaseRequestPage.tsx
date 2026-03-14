@@ -11,15 +11,12 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import type { PurchaseRequestUrgency } from '@/types/procurement'
 
-const UOM_OPTIONS = ['pcs', 'kg', 'g', 'L', 'mL', 'm', 'cm', 'box', 'roll', 'set', 'pair']
-
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
 const itemSchema = z.object({
-  is_custom:           z.boolean().default(false),
-  vendor_item_id:      z.coerce.number().nullable().default(null),
-  item_description:    z.string().min(1, 'Description is required'),
-  unit_of_measure:     z.string().min(1, 'Unit is required'),
+  vendor_item_id:      z.coerce.number().positive('Vendor item is required'),
+  item_description:    z.string(),
+  unit_of_measure:     z.string(),
   quantity:            z.coerce.number().gt(0, 'Must be > 0'),
   estimated_unit_cost: z.coerce.number().gt(0, 'Must be > 0'),
   specifications:      z.string().optional(),
@@ -57,7 +54,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     defaultValues: {
       urgency: 'normal',
       vendor_id: 0,
-      items: [{ is_custom: false, vendor_item_id: null, item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0 }],
+      items: [{ vendor_item_id: 0, item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0 }],
     },
   })
 
@@ -87,23 +84,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     if (!vendorItem) return
 
     setValue(`items.${index}.vendor_item_id`, vendorItem.id)
-    setValue(`items.${index}.item_description`, `${vendorItem.item_code} — ${vendorItem.name}`)
-    setValue(`items.${index}.unit_of_measure`, vendorItem.unit_of_measure)
     setValue(`items.${index}.estimated_unit_cost`, vendorItem.unit_price_centavos / 100)
-  }
-
-  // Toggle custom item mode
-  const toggleCustom = (index: number, isCustom: boolean): void => {
-    setValue(`items.${index}.is_custom`, isCustom)
-    if (isCustom) {
-      setValue(`items.${index}.vendor_item_id`, null)
-    } else {
-      // Reset fields when switching back to catalog
-      setValue(`items.${index}.item_description`, '')
-      setValue(`items.${index}.unit_of_measure`, '')
-      setValue(`items.${index}.estimated_unit_cost`, 0)
-      setValue(`items.${index}.vendor_item_id`, null)
-    }
   }
 
   const onSubmit = async (values: FormValues): Promise<void> => {
@@ -160,7 +141,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                       >
                         <option value="">— Select Vendor —</option>
                         {vendors.map(v => (
-                          <option key={v.id} value={v.id}>{v.company_name} ({v.code})</option>
+                          <option key={v.id} value={v.id}>{v.name}</option>
                         ))}
                       </select>
                     )}
@@ -254,8 +235,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                 type="button"
                 onClick={() =>
                   append({
-                    is_custom: false,
-                    vendor_item_id: null,
+                    vendor_item_id: 0,
                     item_description: '',
                     unit_of_measure: '',
                     quantity: 1,
@@ -292,81 +272,41 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
                 <div className="space-y-3">
                   {fields.map((field, index) => {
-                    const isCustom = items[index]?.is_custom ?? false
                     const qty  = Number(items[index]?.quantity)  || 0
                     const cost = Number(items[index]?.estimated_unit_cost) || 0
                     const lineTotal = qty * cost
 
                     return (
                       <div key={field.id} className="bg-neutral-50 rounded p-3 space-y-2">
-                        {/* Custom toggle + item selection row */}
-                        <div className="flex items-center gap-3 mb-1">
-                          <label className="inline-flex items-center gap-1.5 text-xs text-neutral-500 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={isCustom}
-                              onChange={e => toggleCustom(index, e.target.checked)}
-                              className="rounded border-neutral-300 text-neutral-600 focus:ring-neutral-400"
-                            />
-                            Custom item (not in catalog)
-                          </label>
-                          {isCustom && (
-                            <span className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
-                              <AlertTriangle className="w-3 h-3" />
-                              Custom item — not in vendor catalog
-                            </span>
-                          )}
-                        </div>
-
                         <div className="grid grid-cols-12 gap-2 items-start">
-                          {/* Item selection or description */}
+                          {/* Item selection */}
                           <div className="col-span-4">
-                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">{isCustom ? 'Description *' : 'Vendor Item *'}</p>}
-                            {isCustom ? (
-                              <>
-                                <input
-                                  {...register(`items.${index}.item_description`)}
-                                  placeholder="Item description"
-                                  className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                                />
-                                {errors.items?.[index]?.item_description && (
-                                  <p className="text-xs text-red-600 mt-0.5">
-                                    {errors.items[index]?.item_description?.message}
-                                  </p>
-                                )}
-                              </>
-                            ) : (
-                              <select
-                                value={items[index]?.vendor_item_id ?? ''}
-                                onChange={e => handleVendorItemSelect(index, Number(e.target.value))}
-                                className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                              >
-                                <option value="">— Select Item —</option>
-                                {vendorItems?.map(vi => (
-                                  <option key={vi.id} value={vi.id}>
-                                    {vi.item_code} — {vi.name} (₱{(vi.unit_price_centavos / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })})
-                                  </option>
-                                ))}
-                              </select>
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Vendor Item *</p>}
+                            <select
+                              value={items[index]?.vendor_item_id ?? ''}
+                              onChange={e => handleVendorItemSelect(index, Number(e.target.value))}
+                              className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                            >
+                              <option value="">— Select Item —</option>
+                              {vendorItems?.map(vi => (
+                                <option key={vi.id} value={vi.id}>
+                                  {vi.item_code} — {vi.name} (₱{(vi.unit_price_centavos / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })})
+                                </option>
+                              ))}
+                            </select>
+                            {errors.items?.[index]?.vendor_item_id && (
+                              <p className="text-xs text-red-600 mt-0.5">
+                                {errors.items[index]?.vendor_item_id?.message}
+                              </p>
                             )}
                           </div>
 
                           {/* UoM */}
                           <div className="col-span-1">
-                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">UoM *</p>}
-                            {isCustom ? (
-                              <select
-                                {...register(`items.${index}.unit_of_measure`)}
-                                className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                              >
-                                <option value="">—</option>
-                                {UOM_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
-                              </select>
-                            ) : (
-                              <div className="text-sm text-neutral-600 py-1.5 px-2 bg-neutral-100 rounded">
-                                {items[index]?.unit_of_measure || '—'}
-                              </div>
-                            )}
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">UoM</p>}
+                            <div className="text-sm text-neutral-600 py-1.5 px-2 bg-neutral-100 rounded">
+                              {items[index]?.unit_of_measure || '—'}
+                            </div>
                           </div>
 
                           {/* Quantity */}
@@ -378,23 +318,19 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                               {...register(`items.${index}.quantity`)}
                               className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
+                            {errors.items?.[index]?.quantity && (
+                              <p className="text-xs text-red-600 mt-0.5">
+                                {errors.items[index]?.quantity?.message}
+                              </p>
+                            )}
                           </div>
 
                           {/* Unit Cost */}
                           <div className="col-span-2">
-                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Unit Cost *</p>}
-                            {isCustom ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                {...register(`items.${index}.estimated_unit_cost`)}
-                                className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                            ) : (
-                              <div className="text-sm text-neutral-700 font-medium py-1.5 px-2 bg-neutral-100 rounded">
-                                ₱{cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                              </div>
-                            )}
+                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Unit Cost</p>}
+                            <div className="text-sm text-neutral-700 font-medium py-1.5 px-2 bg-neutral-100 rounded">
+                              ₱{cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </div>
                           </div>
 
                           {/* Line Total */}

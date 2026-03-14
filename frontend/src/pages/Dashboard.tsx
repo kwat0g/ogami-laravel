@@ -145,7 +145,7 @@ export default function Dashboard() {
   }
 
   // Head — Department head team oversight & notation dashboard
-  if (hasRole('head')) {
+  if (hasRole('head') || hasRole('warehouse_head') || hasRole('ppc_head')) {
     return (
       <Suspense fallback={<SkeletonLoader rows={8} />}>
         <HeadDashboard />

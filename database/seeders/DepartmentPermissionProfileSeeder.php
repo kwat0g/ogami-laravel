@@ -515,13 +515,109 @@ class DepartmentPermissionProfileSeeder extends Seeder
                 'profile_label' => 'Sales Head',
                 'permissions' => self::commonSupervisorPermissions(),
             ],
+
+            // ═══════════════════════════════════════════════════════════════
+            // OPERATIONS DEPARTMENTS HEADS — WH, MAINT, MOLD, QC, PLANT, PPC, ISO
+            // ═══════════════════════════════════════════════════════════════
+            [
+                'dept_code' => 'WH',
+                'role' => 'head',
+                'profile_label' => 'Warehouse Head',
+                'permissions' => array_merge(self::commonSupervisorPermissions(), [
+                    'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
+                    'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note', 'inventory.mrq.fulfill',
+                    'procurement.purchase-request.note', // Step 2 note
+                    'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+                    'delivery.view', // view receipts/shipments
+                    'reports.gl', // view-only
+                ]),
+            ],
+            [
+                'dept_code' => 'MAINT',
+                'role' => 'head',
+                'profile_label' => 'Maintenance Head',
+                'permissions' => array_merge(self::commonSupervisorPermissions(), [
+                    'maintenance.view', 'maintenance.manage',
+                    'inventory.items.view', // for parts
+                    'inventory.stock.view', // for parts availability
+                    'procurement.purchase-request.note',
+                ]),
+            ],
+            [
+                'dept_code' => 'MOLD',
+                'role' => 'head',
+                'profile_label' => 'Mold Head',
+                'permissions' => array_merge(self::commonSupervisorPermissions(), [
+                    'mold.view', 'mold.manage', 'mold.log_shots',
+                    'inventory.items.view', // for mold parts?
+                    'procurement.purchase-request.note',
+                ]),
+            ],
+            [
+                'dept_code' => 'QC',
+                'role' => 'head', // QC Manager usually handles this, but if head role used
+                'profile_label' => 'QC Head',
+                'permissions' => array_merge(self::commonSupervisorPermissions(), [
+                    'qc.templates.view', 'qc.inspections.view', 'qc.inspections.create',
+                    'qc.ncr.view',
+                    'inventory.items.view', // access to item specs
+                    'procurement.goods-receipt.view', // inspect incoming
+                    'procurement.purchase-request.note',
+                ]),
+            ],
+            [
+                'dept_code' => 'PLANT',
+                'role' => 'head', // General Plant Ops admin?
+                'profile_label' => 'Plant Ops Head',
+                'permissions' => array_merge(self::commonSupervisorPermissions(), [
+                    'production.orders.view', // overview
+                    'maintenance.view', // overview
+                    'mold.view', // overview
+                    'qc.inspections.view', // overview
+                    'procurement.purchase-request.note',
+                ]),
+            ],
+            [
+                'dept_code' => 'PPC',
+                'role' => 'head',
+                'profile_label' => 'PPC Head',
+                'permissions' => array_merge(self::commonSupervisorPermissions(), [
+                    'production.bom.view', 'production.delivery-schedule.view',
+                    'production.orders.view',
+                    'inventory.stock.view', // check material availability
+                    'procurement.purchase-request.note',
+                ]),
+            ],
+            [
+                'dept_code' => 'ISO',
+                'role' => 'head',
+                'profile_label' => 'ISO Head',
+                'permissions' => array_merge(self::commonSupervisorPermissions(), [
+                    'iso.view', 'iso.audit',
+                    'procurement.purchase-request.note',
+                ]),
+            ],
+            [
+                'dept_code' => 'EXEC',
+                'role' => 'head', // usually executive/vp, but if head assigned
+                'profile_label' => 'Executive Dept Head',
+                'permissions' => self::commonSupervisorPermissions(),
+            ],
         ];
 
         // ─── Insert/update profiles ───────────────────────────────────────
         foreach ($profiles as $data) {
             $deptCode = $data['dept_code'];
 
-            if (! isset($depts[$deptCode])) {
+            // Reload dept ID map to ensure we catch new ones if needed, but the top-level $depts usage prevents strict ordering issues if executed inside transaction.
+            // Better to rely on DB lookup for new codes not in top list.
+            $deptId = Department::where('code', $deptCode)->value('id');
+
+            if (! $deptId) {
+                // Try resolving by name if code fails (fallback logic for robustness)
+                // However, top list defines scope. We should expand scope.
+                
+                // Let's just log and skip IF truly missing
                 $this->command->warn("Department '{$deptCode}' not found — skipping profile '{$data['profile_label']}'.");
 
                 continue;
@@ -529,7 +625,7 @@ class DepartmentPermissionProfileSeeder extends Seeder
 
             DepartmentPermissionProfile::updateOrCreate(
                 [
-                    'department_id' => $depts[$deptCode],
+                    'department_id' => $deptId,
                     'role' => $data['role'],
                 ],
                 [
@@ -656,6 +752,7 @@ class DepartmentPermissionProfileSeeder extends Seeder
 
             // Team management
             'employees.view',
+            'employees.view_team',
             'employees.view_full_record',
             'employees.view_masked_gov_ids',
             'employees.upload_documents',    // supervisors file HR docs for their team
@@ -668,6 +765,15 @@ class DepartmentPermissionProfileSeeder extends Seeder
             'leaves.view_team',
             'leaves.supervise',
             'leaves.file_on_behalf',
+
+            // Common Approvals / Notes
+            'procurement.purchase-request.note',
+            'inventory.mrq.create', // Heads can request materials
+            'inventory.mrq.note',   // Heads note staff MRQs
+
+            // Common Visibility
+            'iso.view',             // All heads can view ISO docs
+            'reports.gl',           // View financial impact
 
             // Legacy aliases
             'payslips.view',

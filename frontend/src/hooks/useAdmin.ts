@@ -230,6 +230,19 @@ export function useAssignRole() {
   })
 }
 
+export function useResetPassword() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await api.post<{ message: string; password: string }>(`/admin/users/${userId}/reset-password`)
+      return res.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+  })
+}
+
 export function useUnlockUser() {
   const queryClient = useQueryClient()
   return useMutation({

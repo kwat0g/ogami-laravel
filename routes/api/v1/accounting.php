@@ -106,6 +106,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('vendors', [VendorController::class, 'index'])->name('vendors.index');
     Route::post('vendors', [VendorController::class, 'store'])->name('vendors.store');
     Route::get('vendors/{vendor}', [VendorController::class, 'show'])->name('vendors.show');
+    Route::get('vendors/{vendor}/items', [VendorController::class, 'items'])->name('vendors.items');
     Route::put('vendors/{vendor}', [VendorController::class, 'update'])->name('vendors.update');
     Route::delete('vendors/{vendor}', [VendorController::class, 'destroy'])->name('vendors.destroy');
     Route::patch('vendors/{vendor}/accredit', [VendorController::class, 'accredit'])

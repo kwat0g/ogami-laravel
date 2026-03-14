@@ -86,13 +86,10 @@ These are pre-seeded — just verify they exist:
 📧 **Switch to**: `admin@ogamierp.local` / `Admin@1234567890!`
 
 1. Go to **Administration → Users → New User**
-2. Fill details:
-   - Name: `Vendor User (ABC)`
-   - Email: `jun.reyes@abcsupply.com`
-   - Password: `VendorUser@12345!`
-   - Role: `vendor`
-3. A **Linked Vendor** dropdown appears → select **ABC Industrial Supply Co.**
-4. Click **Create User**.
+2. Select **Role**: `vendor` → Click **Next**
+3. Select **Vendor**: `ABC Industrial Supply Co.`
+4. Click **Create & Provision**
+5. Copy the generated credentials (email comes from the vendor record).
 
 > ⚠️ **Only Admin** can manage user accounts. Vendor users must be linked to a specific vendor.
 
@@ -125,36 +122,24 @@ These are pre-seeded — just verify they exist:
    - Email: `rose.garcia@megaplastics.com`
    - Credit Limit (₱): `500000`
 
-### Step 9: Create CRM Manager + Client Portal User (Admin)
+### Step 9: Verify CRM Manager & Provision Client User (Admin)
 
-> **Prerequisite**: Ensure an employee record exists for the CRM Manager first (HR Manager creates employees). We will use the seeded HR Manager account's authority if needed, but for simplicity, we assume an existing employee or create one.
+**Part A: Verify CRM Manager (Seeded)**
+The CRM Manager account is now seeded automatically.
+- **User**: `crm.manager@ogamierp.local`
+- **Password**: `CrmManager@12345!`
+- **Linked Employee**: `Carrie CRM` (EMP-CRM-001)
 
-**Part A: Create Employee for CRM Manager (HR Manager)**
-📧 **Switch to**: `hr.manager@ogamierp.local` / `HrManager@1234!`
-1. Go to **Human Resources → All Employees → New Employee**
-2. Create:
-   - Name: `Carrie CRM`
-   - Monthly Rate: `30000`
-   - Position: `SALES-MGR` / Dept: `SALES`
-   - ID: `EMP-CRM-001`
-   - Status: `Active`
-
-**Part B: Create Users (Admin)**
+**Part B: Provision Client Portal User**
 📧 **Switch to**: `admin@ogamierp.local` / `Admin@1234567890!`
 
 1. Go to **Administration → Users → New User**
-2. Create **CRM Manager**:
-   - Name: `CRM Manager`
-   - Email: `crm.manager@ogamierp.local`
-   - Password: `CrmManager@12345!`
-   - Role: `crm_manager`
-   - **Linked Employee:** Select `Carrie CRM` (or searches by name)
-3. Create **Client Portal User**:
-   - Name: `Client User (XYZ)`
-   - Email: `client@ogamierp.local`
-   - Password: `Client@Test1234!`
-   - Role: `client`
-   - **Linked Customer:** Select **XYZ Manufacturing Corp.**
+2. Select **Role**: `client` → Click **Next**
+3. Select **Customer**: `XYZ Manufacturing Corp.`
+4. Click **Create & Provision**
+5. Copy the generated credentials.
+
+> Note: Client portal accounts use the email from the Customer record and an auto-generated password.
 
 ### Step 10: Create Inventory Items (Warehouse Head)
 

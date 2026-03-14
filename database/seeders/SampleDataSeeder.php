@@ -97,6 +97,31 @@ class SampleDataSeeder extends Seeder
                 'bank_name' => 'UnionBank',
                 'bank_account_no' => '109212345678',
             ],
+            // CRM Manager — from TESTING_GUIDE step 9
+            [
+                'code' => 'EMP-CRM-001',
+                'first_name' => 'Carrie',
+                'last_name' => 'CRM',
+                'dob' => '1995-05-15',
+                'gender' => 'female',
+                'civil_status' => 'SINGLE',
+                'dependents' => 0,
+                'bir_status' => 'S',
+                'email' => 'carrie.crm@email.com',
+                'phone' => '09171234777',
+                'address' => '456 Business Park, Taguig City',
+                'dept' => 'SALES',
+                'pos' => 'SALES-MGR',
+                'sg' => 'SG-07',
+                'hired' => '2022-03-01',
+                'salary' => 3000000, // ₱30,000
+                'sss' => '02-4444444-4',
+                'tin' => '555-666-777-001',
+                'philhealth' => '02-555555555-5',
+                'pagibig' => '5555-6666-7777',
+                'bank_name' => 'BPI',
+                'bank_account_no' => '222212345678',
+            ],
         ];
 
         $count = 0;
@@ -201,10 +226,23 @@ class SampleDataSeeder extends Seeder
         );
         $acctgUser->syncRoles(['officer']);
 
+        // CRM Manager (from TESTING_GUIDE Step 9)
+        $crmUser = User::firstOrCreate(
+            ['email' => 'crm.manager@ogamierp.local'],
+            [
+                'name' => 'Carrie CRM',
+                'password' => 'CrmManager@12345!',
+                'email_verified_at' => now(),
+                'password_changed_at' => now(),
+            ]
+        );
+        $crmUser->syncRoles(['crm_manager']);
+
         $this->command->info('✓ User accounts ready:');
         $this->command->info('  admin   admin@ogamierp.local          Admin@1234567890!');
         $this->command->info('  manager hr.manager@ogamierp.local     HrManager@1234!');
         $this->command->info('  officer acctg.officer@ogamierp.local  AcctgManager@1234!');
+        $this->command->info('  crm     crm.manager@ogamierp.local    CrmManager@12345!');
     }
 
     // ── 3. User ↔ Employee Links ──────────────────────────────────────────────
@@ -214,6 +252,7 @@ class SampleDataSeeder extends Seeder
         $links = [
             ['user' => 'hr.manager@ogamierp.local',   'employee' => 'EMP-2026-0001'],
             ['user' => 'acctg.officer@ogamierp.local', 'employee' => 'EMP-2026-0003'],
+            ['user' => 'crm.manager@ogamierp.local',    'employee' => 'EMP-CRM-001'],
         ];
 
         foreach ($links as $link) {

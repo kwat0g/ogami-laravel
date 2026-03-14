@@ -63,7 +63,11 @@ final class PurchaseRequestController extends Controller
             actor: auth()->user(),
         );
 
-        return new PurchaseRequestResource($pr->load(['requestedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     public function show(PurchaseRequest $purchaseRequest): PurchaseRequestResource
@@ -90,7 +94,11 @@ final class PurchaseRequestController extends Controller
             items: $validated['items'] ?? [],
         );
 
-        return new PurchaseRequestResource($pr->load(['requestedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     // ── Workflow Actions ─────────────────────────────────────────────────────
@@ -101,7 +109,11 @@ final class PurchaseRequestController extends Controller
 
         $pr = $this->service->submit($purchaseRequest, auth()->user());
 
-        return new PurchaseRequestResource($pr->load(['requestedBy', 'submittedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     /** HEAD notes the PR (SOD-011) */
@@ -115,7 +127,11 @@ final class PurchaseRequestController extends Controller
             (string) $request->input('comments', ''),
         );
 
-        return new PurchaseRequestResource($pr->load(['notedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     /** MANAGER checks the PR (SOD-012) */
@@ -129,7 +145,11 @@ final class PurchaseRequestController extends Controller
             (string) $request->input('comments', ''),
         );
 
-        return new PurchaseRequestResource($pr->load(['checkedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     /** OFFICER reviews the PR (SOD-013) */
@@ -143,7 +163,11 @@ final class PurchaseRequestController extends Controller
             (string) $request->input('comments', ''),
         );
 
-        return new PurchaseRequestResource($pr->load(['reviewedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     /** VP gives final approval (SOD-014) */
@@ -157,7 +181,11 @@ final class PurchaseRequestController extends Controller
             (string) $request->input('comments', ''),
         );
 
-        return new PurchaseRequestResource($pr->load(['vpApprovedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     /** Accounting Officer passes budget check — moves PR to budget_checked */
@@ -171,7 +199,11 @@ final class PurchaseRequestController extends Controller
             (string) $request->input('comments', ''),
         );
 
-        return new PurchaseRequestResource($pr->load(['budgetCheckedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     /** Accounting Officer returns the PR for revision */
@@ -189,7 +221,11 @@ final class PurchaseRequestController extends Controller
             $request->string('reason')->value(),
         );
 
-        return new PurchaseRequestResource($pr->load(['returnedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     public function reject(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
@@ -208,7 +244,11 @@ final class PurchaseRequestController extends Controller
             $request->string('stage')->value(),
         );
 
-        return new PurchaseRequestResource($pr->load(['rejectedBy', 'items']));
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
+            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
+            'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 
     public function cancel(PurchaseRequest $purchaseRequest): JsonResponse

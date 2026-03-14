@@ -10,12 +10,83 @@ use App\Domains\Procurement\Models\PurchaseOrderItem;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Models\User;
 use App\Notifications\Procurement\PurchaseOrderSentNotification;
+use App\Notifications\Procurement\PurchaseOrderSentToVendorNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 
 final class PurchaseOrderService implements ServiceContract
 {
+    // ── Auto Create ──────────────────────────────────────────────────────────
+
+    /**
+     * Auto-create a PO draft from an approved PR.
+     */
+    public function createFromApprovedPr(PurchaseRequest $pr): PurchaseOrder
+    {
+        if ($pr->status !== 'approved') {
+            throw new DomainException(
+                message: 'A Purchase Order can only be auto-created from an approved Purchase Request.',
+                errorCode: 'PO_PR_NOT_APPROVED',
+                httpStatus: 422,
+            );
+        }
+
+        // Check if PR already has a PO linking to it (converted_to_po_id)
+        if ($pr->converted_to_po_id !== null) {
+            throw new DomainException(
+                message: 'This Purchase Request has already been converted to a Purchase Order.',
+                errorCode: 'PR_ALREADY_CONVERTED',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($pr): PurchaseOrder {
+            $reference = $this->generateReference();
+
+            // Try to resolve vendor default payment terms
+            $vendor = Vendor::find($pr->vendor_id);
+            $paymentTerms = $vendor?->payment_terms ?? null;
+
+            $po = PurchaseOrder::create([
+                'po_reference'        => $reference,
+                'purchase_request_id' => $pr->id,
+                'vendor_id'           => $pr->vendor_id,
+                'po_date'             => now()->toDateString(),
+                'delivery_date'       => null, // To be filled by Purchasing Officer
+                'payment_terms'       => $paymentTerms, // Default or null
+                'delivery_address'    => null, 
+                'notes'               => $pr->notes,
+                'status'              => 'draft',
+                'total_po_amount'     => 0, // Trigger will update
+                'created_by_id'       => $pr->vp_approved_by_id ?? $pr->created_by_id ?? 1, // Fallback if needed
+            ]);
+
+            foreach ($pr->items as $index => $item) {
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $po->id,
+                    'pr_item_id'        => $item->id,
+                    'item_master_id'    => null, // Optional unless matched later
+                    'item_description'  => $item->item_description,
+                    'unit_of_measure'   => $item->unit_of_measure,
+                    'quantity_ordered'  => $item->quantity,
+                    'agreed_unit_cost'  => $item->estimated_unit_cost,
+                    'quantity_received' => 0,
+                    'line_order'        => $index + 1,
+                ]);
+            }
+
+            // Mark the PR as converted
+            $pr->update([
+                'status'            => 'converted_to_po',
+                'converted_to_po_id' => $po->id,
+                'converted_at'      => now(),
+            ]);
+
+            return $po->refresh();
+        });
+    }
+
     // ── Store ────────────────────────────────────────────────────────────────
 
     /**
@@ -75,7 +146,7 @@ final class PurchaseOrderService implements ServiceContract
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
                     'pr_item_id'        => $item['pr_item_id']    ?? null,
-                    'item_master_id'    => $item['item_master_id'],
+                    'item_master_id'    => $item['item_master_id'] ?? null,
                     'item_description'  => $item['item_description'],
                     'unit_of_measure'   => $item['unit_of_measure'],
                     'quantity_ordered'  => $item['quantity_ordered'],
@@ -96,6 +167,55 @@ final class PurchaseOrderService implements ServiceContract
         });
     }
 
+    // ── Update ───────────────────────────────────────────────────────────────
+
+    /**
+     * Update a draft PO (e.g. set delivery date, payment terms, or adjust items).
+     *
+     * @param  array<string, mixed>       $data
+     * @param  list<array<string, mixed>> $items
+     */
+    public function update(PurchaseOrder $po, array $data, array $items): PurchaseOrder
+    {
+        if ($po->status !== 'draft') {
+            throw new DomainException(
+                message: "Only draft Purchase Orders can be updated.",
+                errorCode: 'PO_NOT_DRAFT',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($po, $data, $items): PurchaseOrder {
+            $po->update([
+                'vendor_id'        => $data['vendor_id']        ?? $po->vendor_id,
+                'delivery_date'    => $data['delivery_date']    ?? $po->delivery_date,
+                'payment_terms'    => $data['payment_terms']    ?? $po->payment_terms,
+                'delivery_address' => $data['delivery_address'] ?? $po->delivery_address,
+                'notes'            => $data['notes']            ?? $po->notes,
+            ]);
+
+            // Re-sync items if provided
+            if (! empty($items)) {
+                $po->items()->delete();
+                foreach ($items as $index => $item) {
+                    PurchaseOrderItem::create([
+                        'purchase_order_id' => $po->id,
+                        'pr_item_id'        => $item['pr_item_id']     ?? null,
+                        'item_master_id'    => $item['item_master_id'] ?? null,
+                        'item_description'  => $item['item_description'],
+                        'unit_of_measure'   => $item['unit_of_measure'],
+                        'quantity_ordered'  => $item['quantity_ordered'],
+                        'agreed_unit_cost'  => $item['agreed_unit_cost'],
+                        'quantity_received' => 0,
+                        'line_order'        => $index + 1,
+                    ]);
+                }
+            }
+
+            return $po->refresh();
+        });
+    }
+
     // ── Send ─────────────────────────────────────────────────────────────────
 
     public function send(PurchaseOrder $po): PurchaseOrder
@@ -108,17 +228,46 @@ final class PurchaseOrderService implements ServiceContract
             );
         }
 
+        if ($po->vendor_id === null) {
+            throw new DomainException(
+                message: "Cannot send — Vendor is required.",
+                errorCode: 'PO_VENDOR_REQUIRED',
+                httpStatus: 422,
+            );
+        }
+
+        if ($po->delivery_date === null) {
+            throw new DomainException(
+                message: "Cannot send — Delivery Date is required.",
+                errorCode: 'PO_DELIVERY_DATE_REQUIRED',
+                httpStatus: 422,
+            );
+        }
+
+        if ($po->payment_terms === null || trim($po->payment_terms) === '') {
+            throw new DomainException(
+                message: "Cannot send — Payment Terms are required.",
+                errorCode: 'PO_PAYMENT_TERMS_REQUIRED',
+                httpStatus: 422,
+            );
+        }
+
         $po->update([
             'status'  => 'sent',
             'sent_at' => now(),
         ]);
 
-        // PROC-WH-001: Notify warehouse staff (procurement.goods-receipt.create) to
-        // prepare for incoming goods against this PO.
+        // 1. Notify warehouse staff (internal)
         $po->loadMissing('vendor');
-        $notification = new PurchaseOrderSentNotification($po);
+        $internalNotification = new PurchaseOrderSentNotification($po);
         User::permission('procurement.goods-receipt.create')
-            ->each(fn (User $u) => $u->notify($notification));
+            ->each(fn (User $u) => $u->notify($internalNotification));
+
+        // 2. Notify vendor users (external) via the portal
+        // Find users linked to this vendor
+        $vendorNotification = new PurchaseOrderSentToVendorNotification($po);
+        User::where('vendor_id', $po->vendor_id)
+            ->each(fn (User $u) => $u->notify($vendorNotification));
 
         return $po->refresh();
     }
@@ -222,7 +371,7 @@ final class PurchaseOrderService implements ServiceContract
             $po = PurchaseOrder::create([
                 'po_reference'        => $reference,
                 'purchase_request_id' => $pr->id,
-                'vendor_id'           => null,  // to be assigned by Purchasing Officer
+                'vendor_id'           => $pr->vendor_id ?? null,  // Auto-assigned from PR
                 'po_date'             => now()->toDateString(),
                 'delivery_date'       => null,
                 'payment_terms'       => null,

@@ -5,7 +5,7 @@ import {
   useAdminUsers,
   useCreateAdminUser,
   useProvisionPortalAccount,
-  useUpdateAdminUser,
+  useResetPassword,
   useDisableAdminUser,
   useDeleteAdminUser,
   useAssignRole,
@@ -45,15 +45,6 @@ const roleBadgeClass: Record<string, string> = {
 // roles. No forced department mapping — admin assigns department manually.
 const ROLE_DEPT_MAP: Record<string, string> = {}
 const SCOPED_MANAGER_ROLES = Object.keys(ROLE_DEPT_MAP)
-
-// ── Edit form state ───────────────────────────────────────────────────────────
-interface EditFormState {
-  id:               number
-  name:             string
-  email:            string
-  password:         string
-  current_password: string
-}
 
 // ── Role-change modal state ───────────────────────────────────────────────────
 interface RoleModal {
@@ -126,7 +117,7 @@ export default function UsersPage() {
 
   const create     = useCreateAdminUser()
   const provisionPortal = useProvisionPortalAccount()
-  const update     = useUpdateAdminUser()
+  const reset     = useResetPassword()
   const disable    = useDisableAdminUser()
   const removeUser = useDeleteAdminUser()
   const assignRole = useAssignRole()
@@ -138,9 +129,8 @@ export default function UsersPage() {
   const [portalCredentials, setPortalCredentials] = useState<PortalAccountCredentials | null>(null)
   const [copiedCredentials, setCopiedCredentials] = useState(false)
 
-  // Edit modal state
-  const [editForm, setEditForm]     = useState<EditFormState | null>(null)
-  const [editError, setEditError]   = useState<string | null>(null)
+  // Reset Password State
+  const [resetResult, setResetResult] = useState<{ name: string; password: string } | null>(null)
 
   // Role modal
   const [roleModal, setRoleModal]   = useState<RoleModal | null>(null)
@@ -214,12 +204,13 @@ export default function UsersPage() {
     }
 
     if (!wizard.employee) { setWizardError('Please select an employee.'); return }
+    const employee = wizard.employee
     setWizardError(null)
     // Pre-fill name from employee
     setWizard((w) => w ? {
       ...w,
       step: 3,
-      name: w.name || `${wizard.employee.first_name} ${wizard.employee.last_name}`,
+      name: w.name || `${employee.first_name} ${employee.last_name}`,
     } : w)
   }
 
@@ -289,43 +280,16 @@ export default function UsersPage() {
     }
   }
 
-  // ── Edit helpers ──────────────────────────────────────────────────────────
-  const openEdit = (u: AdminUser) => {
-    setEditForm({ id: u.id, name: u.name, email: u.email, password: '', current_password: '' })
-    setEditError(null)
-  }
-  const closeEdit = () => { setEditForm(null); setEditError(null) }
-
-  const handleEditSave = () => {
-    if (!editForm) return
-    const payload: Record<string, string> = { name: editForm.name, email: editForm.email }
-    if (editForm.password.trim()) {
-      if (!editForm.current_password.trim()) {
-        setEditError('Your current password is required to set a new password.')
-        return
-      }
-      if (!confirm(`You are about to reset the password for this account.\n\nMake sure you have informed the user of their new password.\n\nContinue?`)) return
-      payload.password         = editForm.password
-      payload.current_password = editForm.current_password
-    }
-    update.mutate(
-      { id: editForm.id, ...payload },
-      {
-        onSuccess: () => {
-          closeEdit()
-          toast.success(
-            payload.password
-              ? 'Password updated successfully. Inform the user of their new password.'
-              : 'User details updated.'
-          )
-        },
-        onError: (e: unknown) => {
-          const msg = apiMsg(e) ?? 'Update failed.'
-          setEditError(msg)
-          toast.error(msg)
-        },
-      }
-    )
+  // ── Reset Password helpers ──────────────────────────────────────────────
+  const handleResetPassword = (u: AdminUser) => {
+    if (!confirm(`Are you sure you want to reset the password for ${u.name}?`)) return
+    reset.mutate(u.id, {
+      onSuccess: (data) => {
+        setResetResult({ name: u.name, password: data.password })
+        toast.success('Password reset successfully.')
+      },
+      onError: (e: unknown) => toast.error(apiMsg(e) ?? 'Failed to reset password.'),
+    })
   }
 
   const handleDisable = (u: AdminUser) => {
@@ -458,7 +422,7 @@ export default function UsersPage() {
                 <td className="px-3 py-2">
                   <div className="flex gap-2">
                     {canUpdate && (
-                      <button onClick={() => openEdit(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Edit</button>
+                      <button onClick={() => handleResetPassword(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Reset Password</button>
                     )}
                     {canAssignRole && (
                       <button onClick={() => openRoleModal(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Role</button>
@@ -545,28 +509,19 @@ export default function UsersPage() {
         </Modal>
       )}
 
-      {/* ── Edit User modal ──────────────────────────────────────────────── */}
-      {editForm && (
-        <Modal title="Edit User" onClose={closeEdit}>
+      {/* ── Password Reset Success Modal ─────────────────────────────────── */}
+      {resetResult && (
+        <Modal title="Password Reset Successful" onClose={() => setResetResult(null)}>
           <div className="space-y-4">
-            <FormField label="Name *">
-              <input value={editForm.name} onChange={(e) => setEditForm((f) => f ? { ...f, name: e.target.value } : f)} className={inputCls} placeholder="Full name" />
-            </FormField>
-            <FormField label="Email *">
-              <input type="email" value={editForm.email} onChange={(e) => setEditForm((f) => f ? { ...f, email: e.target.value } : f)} className={inputCls} placeholder="user@ogamierp.local" />
-            </FormField>
-            <FormField label="New Password (leave blank to keep)">
-              <input type="password" value={editForm.password} onChange={(e) => setEditForm((f) => f ? { ...f, password: e.target.value } : f)} className={inputCls} placeholder="Leave blank to keep current password" />
-            </FormField>
-            {editForm.password.trim() && (
-              <FormField label="Your Current Password *">
-                <input type="password" value={editForm.current_password} onChange={(e) => setEditForm((f) => f ? { ...f, current_password: e.target.value } : f)} className={inputCls} placeholder="Confirm your own password to authorise this change" />
-              </FormField>
-            )}
-            {editError && <p className="text-red-600 text-sm">{editError}</p>}
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={closeEdit} className={btnSecondary}>Cancel</button>
-              <button onClick={handleEditSave} disabled={update.isPending} className={btnPrimary}>{update.isPending ? 'Saving…' : 'Save'}</button>
+            <p className="text-sm text-neutral-600">
+              The password for <strong>{resetResult.name}</strong> has been reset.
+              Please share these credentials securely.
+            </p>
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 text-center">
+               <span className="font-mono text-lg font-bold select-all text-neutral-900">{resetResult.password}</span>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button onClick={() => setResetResult(null)} className={btnPrimary}>Done</button>
             </div>
           </div>
         </Modal>

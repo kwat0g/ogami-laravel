@@ -677,7 +677,9 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // ── Head (renamed from Supervisor) — dept heads, Step 2 approver ───
-        $head->syncPermissions([
+        // Base permissions common to ALL Department Heads
+        $baseHeadPermissions = [
+            // HR / Team Management
             'employees.view', 'employees.view_team', 'employees.view_full_record',
             'employees.view_unmasked_gov_ids', 'employees.view_masked_gov_ids',
             'employees.create', 'employees.upload_documents', 'employees.download_documents',
@@ -688,48 +690,73 @@ class RolePermissionSeeder extends Seeder
             // Leave
             'leaves.view_own', 'leaves.view_team', 'leaves.file_own',
             'leaves.file_on_behalf', 'leaves.cancel', 'leaves.head_approve',
-            // Loans (v1 + v2)
+            // Loans
             'loans.view_own', 'loans.apply', 'loans.supervisor_review', 'loans.head_note',
-            // Procurement
-            'procurement.purchase-request.view', 'procurement.purchase-request.note',
-            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
-            // Inventory (Step 2 noter + Warehouse Head fulfills MRQ)
-            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
-            'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note', 'inventory.mrq.fulfill',
-            // Production / PPC (Head: log output + view)
-            'production.bom.view', 'production.delivery-schedule.view',
-            'production.orders.view', 'production.orders.log_output',
-            // QC / QA (Head: inspections + NCR view)
-            'qc.templates.view', 'qc.inspections.view', 'qc.inspections.create',
-            'qc.ncr.view',
-            // Maintenance (Head: full)
-            'maintenance.view', 'maintenance.manage',
-            // Mold (Head: full + log shots)
-            'mold.view', 'mold.manage', 'mold.log_shots',
-            // Delivery (Head: view)
-            'delivery.view',
-            // ISO (Head: view + audit)
-            'iso.view', 'iso.audit',
-            // Payroll
+            // Payroll (Own)
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            // GL (view only — dept heads do not create accounting entries)
-            'journal_entries.view',
-            'chart_of_accounts.view', 'fiscal_periods.view',
-            // AP (view only)
-            'vendors.view', 'vendor_invoices.view', 'vendor_invoices.export', 'vendor_payments.view',
-            // AR (view only)
-            'customers.view', 'customer_invoices.view', 'customer_invoices.export',
-            // Reports (read)
-            'reports.gl', 'reports.ap_aging',
-            // Fixed Assets (view-only)
-            'fixed_assets.view',
-            // Self-service
+            // Self Service
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            // Legacy
+            // Legacy / Compat
             'payslips.view', 'payslips.download', 'leaves.view', 'leaves.create',
             'leave_balances.view', 'loans.view', 'attendance.view', 'attendance.create',
             'attendance.update', 'attendance.export', 'overtime.create', 'overtime.update',
-        ]);
+            // Basic Procurement (View/Note for approvals)
+            'procurement.purchase-request.view', 'procurement.purchase-request.note',
+            // Finance View (Context)
+            'vendors.view', 'vendor_invoices.view', 'vendor_invoices.export', 'vendor_payments.view',
+            'customers.view', 'customer_invoices.view', 'customer_invoices.export',
+            'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
+            'reports.gl', 'reports.ap_aging', 'fixed_assets.view',
+            // Common Inventory (View/Note MRQ for approvals)
+            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
+            'inventory.mrq.view', 'inventory.mrq.note',
+        ];
+
+        // Generic Head Role (Legacy/Catch-all) — keeps full access for backward compatibility
+        $head->syncPermissions(array_merge($baseHeadPermissions, [
+            // Extra Procurement
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            // Extra Inventory
+            'inventory.mrq.create', 'inventory.mrq.fulfill',
+            // Production
+            'production.bom.view', 'production.delivery-schedule.view',
+            'production.orders.view', 'production.orders.log_output',
+            // QC
+            'qc.templates.view', 'qc.inspections.view', 'qc.inspections.create', 'qc.ncr.view',
+            // Maintenance
+            'maintenance.view', 'maintenance.manage',
+            // Mold
+            'mold.view', 'mold.manage', 'mold.log_shots',
+            // Delivery
+            'delivery.view',
+            // ISO
+            'iso.view', 'iso.audit',
+        ]));
+
+        // ── Warehouse Head — Focused Inventory & Delivery role ────────────────
+        $warehouseHead = Role::findOrCreate('warehouse_head', self::GUARD);
+        $warehouseHead->syncPermissions(array_merge($baseHeadPermissions, [
+            // Inventory Management (Full)
+            'inventory.items.create', 'inventory.items.edit',
+            'inventory.mrq.create', 'inventory.mrq.fulfill',
+            // Procurement (Goods Receipt is critical for WH)
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            'procurement.purchase-order.view',
+            // Delivery & Schedules
+            'production.delivery-schedule.manage',
+            'delivery.view', 'delivery.manage',
+        ]));
+
+        // ── PPC Head — Production Planning & Control ──────────────────────────
+        $ppcHead = Role::findOrCreate('ppc_head', self::GUARD);
+        $ppcHead->syncPermissions(array_merge($baseHeadPermissions, [
+            // Production Planning
+            'production.bom.view',
+            'production.delivery-schedule.view', 'production.delivery-schedule.manage',
+            'production.orders.view', 'production.orders.create', 'production.orders.release',
+            // Inventory visibility (but not management)
+            'inventory.mrq.create', // PPC creates MRQs for production materials
+        ]));
 
         // ── Vice President — final financial approver, cross-department visibility
         $vicePresident->syncPermissions([

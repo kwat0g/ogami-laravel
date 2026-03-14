@@ -9,6 +9,7 @@ use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Services\PurchaseOrderService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\StorePurchaseOrderRequest;
+use App\Http\Requests\Procurement\UpdatePurchaseOrderRequest;
 use App\Http\Resources\Procurement\PurchaseOrderResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,19 +47,9 @@ final class PurchaseOrderController extends Controller
 
     public function store(StorePurchaseOrderRequest $request): PurchaseOrderResource
     {
-        $this->authorize('create', PurchaseOrder::class);
-
-        $validated = $request->validated();
-        $pr = PurchaseRequest::findOrFail($validated['purchase_request_id']);
-
-        $po = $this->service->store(
-            pr:    $pr,
-            data:  $validated,
-            items: $validated['items'],
-            actor: auth()->user(),
-        );
-
-        return new PurchaseOrderResource($po->load(['vendor', 'purchaseRequest', 'items']));
+        // Enforce strict flow: POs must be auto-created from Approved PRs.
+        // Manual creation is disabled.
+        abort(403, 'Manual Purchase Order creation is disabled. POs are automatically created upon PR approval.');
     }
 
     public function show(PurchaseOrder $purchaseOrder): PurchaseOrderResource
@@ -70,17 +61,18 @@ final class PurchaseOrderController extends Controller
         );
     }
 
-    public function update(StorePurchaseOrderRequest $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    public function update(UpdatePurchaseOrderRequest $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
         $this->authorize('update', $purchaseOrder);
 
-        if ($purchaseOrder->status !== 'draft') {
-            abort(422, 'Only draft POs can be edited.');
-        }
+        $validated = $request->validated();
+        $po = $this->service->update(
+            po:    $purchaseOrder,
+            data:  $validated,
+            items: $validated['items'] ?? [],
+        );
 
-        $purchaseOrder->update($request->only(['delivery_date', 'payment_terms', 'delivery_address', 'notes']));
-
-        return new PurchaseOrderResource($purchaseOrder->fresh()->load(['vendor', 'items']));
+        return new PurchaseOrderResource($po->load(['vendor', 'items']));
     }
 
     public function send(PurchaseOrder $purchaseOrder): PurchaseOrderResource

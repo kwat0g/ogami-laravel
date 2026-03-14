@@ -36,7 +36,8 @@ export default function ChangePasswordPage() {
       toast.success('Password changed. Please log in with your new password.')
       clearAuth()
       bumpAuthEpoch()
-      navigate('/login', { replace: true })
+      // Force a full reload to clear any stale navigation/auth state
+      window.location.href = '/login'
     } catch (err) {
       const { message, fieldErrors } = parseApiError(err)
 

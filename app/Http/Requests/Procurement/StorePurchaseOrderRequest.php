@@ -26,7 +26,7 @@ final class StorePurchaseOrderRequest extends FormRequest
 
             'items'                           => ['required', 'array', 'min:1'],
             'items.*.pr_item_id'              => ['nullable', 'integer', 'exists:purchase_request_items,id'],
-            'items.*.item_master_id'          => ['required', 'integer', 'exists:item_masters,id'],
+            'items.*.item_master_id'          => ['nullable', 'integer', 'exists:item_masters,id'],
             'items.*.item_description'        => ['required', 'string', 'max:255'],
             'items.*.unit_of_measure'         => ['required', 'string', 'max:30'],
             'items.*.quantity_ordered'        => ['required', 'numeric', 'gt:0'],

@@ -65,12 +65,26 @@ export const useAuthStore = create<AuthState>()(
     primaryDepartmentId: () => get().user?.primary_department_id ?? null,
 
     // ---- Role helpers ------------------------------------------------
+    isMemberOf: (roles: AppRole[]) => {
+      const userRoles = get().user?.roles ?? []
+      return roles.some(r => userRoles.includes(r))
+    },
+
     isManager: () => {
       const roles = get().user?.roles ?? []
-      return roles.some((r) => ['super_admin', 'manager', 'officer', 'vice_president'].includes(r))
+      return roles.some((r) => ['super_admin', 'manager', 'officer', 'vice_president', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'].includes(r))
     },
-    isHead:          () => get().user?.roles.includes('head')          ?? false,
-    isOfficer:       () => get().user?.roles.includes('officer')       ?? false,
+
+    isHead: () => {
+      const roles = get().user?.roles ?? []
+      return roles.some((r) => ['head', 'warehouse_head', 'ppc_head'].includes(r))
+    },
+
+    isOfficer:       () => {
+       const roles = get().user?.roles ?? []
+       return roles.some((r) => ['officer', 'ga_officer', 'purchasing_officer', 'impex_officer'].includes(r))
+    },
+
     isVicePresident: () => get().user?.roles.includes('vice_president') ?? false,
     mustChangePassword: () => get().user?.must_change_password ?? false,
   }),

@@ -39,11 +39,11 @@ final class PurchaseOrderSentNotification extends Notification implements Should
 
         return [
             'type'           => 'purchase_order_sent',
-            'title'          => "Purchase Order Sent — {$this->purchaseOrder->po_number}",
-            'body'           => "PO #{$this->purchaseOrder->po_number} to {$vendor} has been sent. Prepare to receive incoming goods.",
+            'title'          => "Purchase Order Sent — {$this->purchaseOrder->po_reference}",
+            'body'           => "PO #{$this->purchaseOrder->po_reference} to {$vendor} has been sent. Prepare to receive incoming goods.",
             'po_id'          => $this->purchaseOrder->id,
             'po_ulid'        => $this->purchaseOrder->ulid,
-            'po_number'      => $this->purchaseOrder->po_number,
+            'po_number'      => $this->purchaseOrder->po_reference,
             'vendor'         => $vendor,
             'total_amount'   => $this->purchaseOrder->total_po_amount,
             'url'            => "/procurement/purchase-orders/{$this->purchaseOrder->ulid}",

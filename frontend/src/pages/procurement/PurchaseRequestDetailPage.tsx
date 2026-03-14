@@ -212,8 +212,8 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
   const canCreatePo    = hasPermission('procurement.purchase-order.create')   && pr.status === 'approved'
   const isOwner        = user?.id === pr.requested_by_id
   const canCancel      = isOwner && pr.isCancellable
-  const canReturn      = (canNote || canCheck || canReview || canBudgetCheck || canVpApprove)
-                         && !['draft', 'approved', 'rejected', 'cancelled', 'converted_to_po'].includes(pr.status)
+  // Return is only available to Accounting Officer during Budget Check stage (status: reviewed)
+  const canReturn      = canBudgetCheck
 
   const handleAction = async (
     action: 'note' | 'check' | 'review' | 'budget-check' | 'vp-approve',
@@ -283,16 +283,18 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
         status={<StatusBadge status={pr.status}>{pr.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
           <div className="flex items-center gap-2">
-            {/* PDF Export — always visible */}
-            <a
-              href={`/api/v1/procurement/purchase-requests/${pr.ulid}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-2 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 font-medium rounded transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export PDF
-            </a>
+            {/* PDF Export — visible only when approved */}
+            {['approved', 'converted_to_po'].includes(pr.status) && (
+              <a
+                href={`/api/v1/procurement/purchase-requests/${pr.ulid}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 font-medium rounded transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export PDF
+              </a>
+            )}
             {canSubmit && (
               <button
                 onClick={async () => {
@@ -496,7 +498,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
             <CardBody>
               <div className="space-y-4">
                 <ApprovalStage
-                  label="1. Submitted by Staff"
+                  label="1. Submitted by Requester"
                   actor={pr.submitted_by}
                   timestamp={pr.submitted_at}
                   comments={null}
@@ -517,14 +519,14 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                   isDone={!!pr.checked_at}
                 />
                 <ApprovalStage
-                  label="4. Reviewed by Officer"
+                  label="4. Reviewed by Purchasing Officer"
                   actor={pr.reviewed_by}
                   timestamp={pr.reviewed_at}
                   comments={pr.reviewed_comments}
                   isDone={!!pr.reviewed_at}
                 />
                 <ApprovalStage
-                  label="5. Budget Checked"
+                  label="5. Budget Checked by Accounting"
                   actor={pr.budget_checked_by}
                   timestamp={pr.budget_checked_at}
                   comments={pr.budget_checked_comments}
