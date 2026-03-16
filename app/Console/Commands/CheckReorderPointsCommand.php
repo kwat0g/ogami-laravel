@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use App\Notifications\Inventory\LowStockNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 final class CheckReorderPointsCommand extends Command
 {
     protected $signature = 'inventory:check-reorder-points';
+
     protected $description = 'Check stock balances against reorder points and generate low stock notifications';
 
     public function handle(): int
@@ -43,7 +45,7 @@ final class CheckReorderPointsCommand extends Command
 
         // Notify inventory managers
         if ($lowStockItems->isNotEmpty()) {
-            $users = \App\Models\User::role(['admin', 'manager', 'officer'])
+            $users = User::role(['admin', 'manager', 'officer'])
                 ->whereHas('roles.permissions', fn ($q) => $q->where('name', 'like', 'inventory.%'))
                 ->get();
 

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Attendance;
 
+use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\Attendance\Services\AttendanceImportService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\AttendanceImportRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
 
 final class AttendanceImportController extends Controller
 {
@@ -23,9 +25,9 @@ final class AttendanceImportController extends Controller
      */
     public function store(AttendanceImportRequest $request): JsonResponse
     {
-        $this->authorize('import', \App\Domains\Attendance\Models\AttendanceLog::class);
+        $this->authorize('import', AttendanceLog::class);
 
-        /** @var \Illuminate\Http\UploadedFile $file */
+        /** @var UploadedFile $file */
         $file = $request->file('file');
 
         // Store in a temporary location within the default disk

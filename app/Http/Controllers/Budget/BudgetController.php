@@ -104,7 +104,7 @@ final class BudgetController extends Controller
             'data' => [
                 'cost_center' => $costCenter->only(['id', 'ulid', 'name', 'code']),
                 'fiscal_year' => $data['fiscal_year'],
-                'lines'       => $report,
+                'lines' => $report,
             ],
         ]);
     }

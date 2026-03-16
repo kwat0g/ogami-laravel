@@ -9,16 +9,19 @@ use App\Domains\Accounting\Models\JournalEntry;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
- * @property int                        $id
- * @property int                        $fixed_asset_id
- * @property int                        $fiscal_period_id
- * @property int                        $depreciation_amount_centavos
- * @property string                     $method
- * @property int|null                   $journal_entry_id
- * @property int                        $computed_by_id
- * @property \Illuminate\Support\Carbon $created_at
+ * @property int $id
+ * @property int $fixed_asset_id
+ * @property int $fiscal_period_id
+ * @property int $depreciation_amount_centavos
+ * @property int $book_value_after_centavos
+ * @property string $method
+ * @property int|null $journal_entry_id
+ * @property int $computed_by_id
+ * @property Carbon|null $posted_at
+ * @property Carbon $created_at
  */
 final class AssetDepreciationEntry extends Model
 {

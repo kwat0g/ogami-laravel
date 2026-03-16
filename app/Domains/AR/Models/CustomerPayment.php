@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\AR\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,7 +15,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $id
  * @property int $customer_invoice_id
  * @property int $customer_id
- * @property \Carbon\Carbon $payment_date
+ * @property Carbon $payment_date
  * @property float $amount
  * @property string|null $reference_number
  * @property string|null $payment_method bank_transfer|check|cash|online

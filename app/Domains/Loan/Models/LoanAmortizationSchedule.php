@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\Loan\Models;
 
+use Database\Factories\LoanAmortizationScheduleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -21,7 +23,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $id
  * @property int $loan_id
  * @property int $installment_no 1-based
- * @property \Illuminate\Support\Carbon $due_date
+ * @property Carbon $due_date
  * @property int $principal_portion_centavos
  * @property int $interest_portion_centavos
  * @property int $total_due_centavos = principal + interest (DB CHECK)
@@ -29,18 +31,18 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $status pending|paid|skipped|protected
  * @property bool $is_protected_by_min_wage LN-007
  * @property int|null $payroll_run_id
- * @property \Illuminate\Support\Carbon|null $paid_date
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $paid_date
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Loan $loan
  */
 final class LoanAmortizationSchedule extends Model implements Auditable
 {
     use AuditableTrait, HasFactory;
 
-    protected static function newFactory(): \Database\Factories\LoanAmortizationScheduleFactory
+    protected static function newFactory(): LoanAmortizationScheduleFactory
     {
-        return \Database\Factories\LoanAmortizationScheduleFactory::new();
+        return LoanAmortizationScheduleFactory::new();
     }
 
     protected $table = 'loan_amortization_schedules';

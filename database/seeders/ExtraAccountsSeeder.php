@@ -22,31 +22,51 @@ class ExtraAccountsSeeder extends Seeder
     private function seedEmployees(): void
     {
         $employees = [
+            // ── Accounting Manager ────────────────────────────────────────────
             [
-                'code' => 'EMP-2026-0030',
-                'first_name' => 'Amelia',
-                'last_name' => 'Cordero', // Accounting Manager
-                'pos' => 'ACCT-MGR',
-                'dept' => 'ACCTG',
-                'sg' => 'SG-11',
-                'email' => 'amelia.cordero@email.com',
-                'sss' => '33-1111111-1',
-                'tin' => '111-222-333-000',
-                'philhealth' => '01-111111111-1',
-                'pagibig' => '1111-2222-3333',
+                'code'           => 'EMP-2026-0030',
+                'first_name'     => 'Amelia',
+                'middle_name'    => 'Dela Cruz',
+                'last_name'      => 'Cordero',
+                'dob'            => '1982-07-14',
+                'gender'         => 'female',
+                'civil_status'   => 'MARRIED',
+                'dependents'     => 2,
+                'bir_status'     => 'ME2',
+                'address'        => '42 Emerald Ave., Brgy. Kapitolyo, Pasig City',
+                'phone'          => '09175550030',
+                'pos'            => 'ACCT-MGR',
+                'dept'           => 'ACCTG',
+                'sg'             => 'SG-11',
+                'hired'          => '2019-03-01',
+                'regularization' => '2019-09-01',
+                'salary'         => 5500000, // ₱55,000
+                'email'          => 'amelia.cordero@email.com',
+                'bank_name'      => 'UnionBank',
+                'bank_account_no'=> '109200123456',
             ],
+            // ── IT Admin ──────────────────────────────────────────────────────
             [
-                'code' => 'EMP-2026-0031',
-                'first_name' => 'Reynold',
-                'last_name' => 'Techy', // IT Admin
-                'pos' => 'IT-ADMIN',
-                'dept' => 'IT',
-                'sg' => 'SG-10',
-                'email' => 'reynold.techy@email.com',
-                'sss' => '33-9999999-9',
-                'tin' => '999-888-777-000',
-                'philhealth' => '01-999999999-9',
-                'pagibig' => '9999-8888-7777',
+                'code'           => 'EMP-2026-0031',
+                'first_name'     => 'Reynold',
+                'middle_name'    => 'Santos',
+                'last_name'      => 'Tecson',
+                'dob'            => '1990-11-20',
+                'gender'         => 'male',
+                'civil_status'   => 'SINGLE',
+                'dependents'     => 0,
+                'bir_status'     => 'S',
+                'address'        => '15 Sunset Drive, Brgy. San Roque, Antipolo City, Rizal',
+                'phone'          => '09175550031',
+                'pos'            => 'IT-ADMIN',
+                'dept'           => 'IT',
+                'sg'             => 'SG-10',
+                'hired'          => '2021-06-15',
+                'regularization' => '2021-12-15',
+                'salary'         => 3500000, // ₱35,000
+                'email'          => 'reynold.tecson@email.com',
+                'bank_name'      => 'BDO',
+                'bank_account_no'=> '00234567890123',
             ],
         ];
 
@@ -58,48 +78,38 @@ class ExtraAccountsSeeder extends Seeder
             if (!$deptId || !$posId) continue;
 
             DB::table('employees')->insertOrIgnore([
-                'employee_code' => $emp['code'],
-                'ulid' => (string) Str::ulid(),
-                'first_name' => $emp['first_name'],
-                'last_name' => $emp['last_name'],
-                'date_of_birth' => '1985-01-01',
-                'gender' => 'female',
-                'civil_status' => 'MARRIED',
-                'citizenship' => 'Filipino',
-                'present_address' => 'Test Address',
-                'permanent_address' => 'Test Address',
-                'qualified_dependents' => 0,
-                'bir_status' => 'S',
-                'personal_email' => $emp['email'],
-                'personal_phone' => '09170000000',
-                'bank_name' => 'Test Bank',
-                'bank_account_no' => '0000000000',
-                'department_id' => $deptId,
-                'position_id' => $posId,
-                'salary_grade_id' => $sgId,
-                'employment_type' => 'regular',
-                'employment_status' => 'active',
-                'date_hired' => '2020-01-01',
-                'basic_monthly_rate' => 5000000,
-                'onboarding_status' => 'active',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'employee_code'       => $emp['code'],
+                'ulid'                => (string) Str::ulid(),
+                'first_name'          => $emp['first_name'],
+                'middle_name'         => $emp['middle_name'] ?? null,
+                'last_name'           => $emp['last_name'],
+                'date_of_birth'       => $emp['dob'],
+                'gender'              => $emp['gender'],
+                'civil_status'        => $emp['civil_status'],
+                'citizenship'         => 'Filipino',
+                'present_address'     => $emp['address'],
+                'permanent_address'   => $emp['address'],
+                'qualified_dependents'=> $emp['dependents'],
+                'bir_status'          => $emp['bir_status'],
+                'personal_email'      => $emp['email'],
+                'personal_phone'      => $emp['phone'],
+                'bank_name'           => $emp['bank_name'],
+                'bank_account_no'     => $emp['bank_account_no'],
+                'bank_account_name'   => $emp['first_name'].' '.$emp['last_name'],
+                'department_id'       => $deptId,
+                'position_id'         => $posId,
+                'salary_grade_id'     => $sgId,
+                'employment_type'     => 'regular',
+                'employment_status'   => 'active',
+                'date_hired'          => $emp['hired'],
+                'regularization_date' => $emp['regularization'] ?? null,
+                'basic_monthly_rate'  => $emp['salary'],
+                'onboarding_status'   => 'documents_pending',
+                'is_active'           => false,
+                'pay_basis'           => 'monthly',
+                'created_at'          => now(),
+                'updated_at'          => now(),
             ]);
-
-             // Activate employee via model (sets encrypted gov IDs)
-             $employee = Employee::where('employee_code', $emp['code'])->first();
-             if ($employee && ! $employee->sss_no_encrypted) {
-                 $employee->setSssNo($emp['sss']);
-                 $employee->setTin($emp['tin']);
-                 $employee->setPhilhealthNo($emp['philhealth']);
-                 $employee->setPagibigNo($emp['pagibig']);
-
-                 $employee->onboarding_status       = 'active';
-                 $employee->is_active               = true;
-                 $employee->_fire_activated_event   = true;
-                 $employee->save();
-             }
         }
     }
 
@@ -113,7 +123,7 @@ class ExtraAccountsSeeder extends Seeder
             ],
             [
                 'email' => 'it.admin@ogamierp.local',
-                'name' => 'Reynold Techy',
+                'name' => 'Reynold Tecson',
                 'role' => 'admin', // IT Admin gets admin role
             ],
         ];
@@ -123,7 +133,7 @@ class ExtraAccountsSeeder extends Seeder
                 ['email' => $u['email']],
                 [
                     'name' => $u['name'],
-                    'password' => 'Manager@12345!', 
+                    'password' => 'Manager@12345!',
                     'email_verified_at' => now(),
                     'password_changed_at' => now(),
                 ]
@@ -146,7 +156,7 @@ class ExtraAccountsSeeder extends Seeder
             if ($user && $employee) {
                 $employee->user_id = $user->id;
                 $employee->save();
-                
+
                 $user->department_id = $employee->department_id;
                 $user->save();
 
@@ -159,7 +169,7 @@ class ExtraAccountsSeeder extends Seeder
                 ]);
             }
         }
-        
-        $this->command->info('✓ Extra accounts seeded: acctg.manager, it.admin');
+
+        $this->command->info('✓ Extra accounts seeded: acctg.manager@ogamierp.local, it.admin@ogamierp.local');
     }
 }

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\AR\Models;
 
+use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Shared\Traits\HasPublicUlid;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,11 +19,12 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $id
  * @property string|null $invoice_number AR-003: INV-YYYY-MM-NNNNNN, set on approval
  * @property int $customer_id
+ * @property int|null $delivery_receipt_id HIGH-001: Link to delivery receipt for verification
  * @property int $fiscal_period_id
  * @property int $ar_account_id
  * @property int $revenue_account_id
- * @property \Carbon\Carbon $invoice_date
- * @property \Carbon\Carbon $due_date
+ * @property Carbon $invoice_date
+ * @property Carbon $due_date
  * @property float $subtotal
  * @property float $vat_amount
  * @property float $total_amount stored as subtotal + vat_amount
@@ -29,12 +33,12 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $status draft|approved|partially_paid|paid|written_off|cancelled
  * @property string|null $write_off_reason
  * @property int|null $write_off_approved_by
- * @property \Carbon\Carbon|null $write_off_at
+ * @property Carbon|null $write_off_at
  * @property int|null $journal_entry_id
  * @property int|null $write_off_journal_entry_id
  * @property int $created_by
  * @property int|null $approved_by
- * @property \Carbon\Carbon|null $approved_at
+ * @property Carbon|null $approved_at
  * @property-read float $total_paid
  * @property-read float $balance_due
  * @property-read bool  $is_overdue
@@ -46,6 +50,7 @@ class CustomerInvoice extends Model implements Auditable
     protected $fillable = [
         'invoice_number',
         'customer_id',
+        'delivery_receipt_id',
         'fiscal_period_id',
         'ar_account_id',
         'revenue_account_id',
@@ -81,6 +86,11 @@ class CustomerInvoice extends Model implements Auditable
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function deliveryReceipt(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryReceipt::class);
     }
 
     public function payments(): HasMany
@@ -129,21 +139,21 @@ class CustomerInvoice extends Model implements Auditable
 
     // ── Query Scopes ───────────────────────────────────────────────────────────
 
-    public function scopeOverdue(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeOverdue(Builder $query): Builder
     {
         return $query
             ->whereNotIn('status', ['paid', 'written_off', 'cancelled'])
             ->where('due_date', '<', now()->toDateString());
     }
 
-    public function scopeDueSoon(\Illuminate\Database\Eloquent\Builder $query, int $days = 7): \Illuminate\Database\Eloquent\Builder
+    public function scopeDueSoon(Builder $query, int $days = 7): Builder
     {
         return $query
             ->whereNotIn('status', ['paid', 'written_off', 'cancelled'])
             ->whereBetween('due_date', [now()->toDateString(), now()->addDays($days)->toDateString()]);
     }
 
-    public function scopeByStatus(\Illuminate\Database\Eloquent\Builder $query, string|array $status): \Illuminate\Database\Eloquent\Builder
+    public function scopeByStatus(Builder $query, string|array $status): Builder
     {
         return $query->whereIn('status', (array) $status);
     }

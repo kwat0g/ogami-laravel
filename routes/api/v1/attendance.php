@@ -50,12 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('overtime.pending-executive');
     Route::post('overtime-requests', [OvertimeRequestController::class, 'store'])->name('overtime.store');
     Route::get('overtime-requests/{overtimeRequest}', [OvertimeRequestController::class, 'show'])->name('overtime.show');
-    // Supervisor/Head first-level endorsement (staff OT requests only)
+    // Supervisor/Head first-level endorsement (staff OT requests only) with SoD
     Route::patch('overtime-requests/{overtimeRequest}/supervisor-endorse', [OvertimeRequestController::class, 'supervisorEndorse'])
-        ->middleware(['permission:overtime.supervise', 'throttle:api-action'])
+        ->middleware(['permission:overtime.supervise', 'sod:overtime_requests,supervisor_endorse', 'throttle:api-action'])
         ->name('overtime.supervisor-endorse');
     Route::patch('overtime-requests/{overtimeRequest}/head-endorse', [OvertimeRequestController::class, 'supervisorEndorse'])
-        ->middleware(['permission:overtime.supervise', 'throttle:api-action'])
+        ->middleware(['permission:overtime.supervise', 'sod:overtime_requests,head_endorse', 'throttle:api-action'])
         ->name('overtime.head-endorse');
     // Manager final approval (staff after supervisor-endorsement, or supervisor directly)
     Route::patch('overtime-requests/{overtimeRequest}/approve', [OvertimeRequestController::class, 'approve'])
@@ -65,20 +65,20 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('throttle:api-action')
         ->name('overtime.reject');
     Route::delete('overtime-requests/{overtimeRequest}', [OvertimeRequestController::class, 'cancel'])->name('overtime.cancel');
-    // Executive approval for manager-filed OT requests
+    // Executive approval for manager-filed OT requests with SoD
     Route::patch('overtime-requests/{overtimeRequest}/executive-approve', [OvertimeRequestController::class, 'executiveApprove'])
-        ->middleware(['permission:overtime.executive_approve', 'throttle:api-action'])
+        ->middleware(['permission:overtime.executive_approve', 'sod:overtime_requests,executive_approve', 'throttle:api-action'])
         ->name('overtime.executive-approve');
     Route::patch('overtime-requests/{overtimeRequest}/executive-reject', [OvertimeRequestController::class, 'executiveReject'])
         ->middleware(['permission:overtime.executive_approve', 'throttle:api-action'])
         ->name('overtime.executive-reject');
-    // Step 4: HR Officer review
+    // Step 4: HR Officer review with SoD
     Route::patch('overtime-requests/{overtimeRequest}/officer-review', [OvertimeRequestController::class, 'officerReview'])
-        ->middleware(['permission:overtime.supervise', 'throttle:api-action'])
+        ->middleware(['permission:overtime.supervise', 'sod:overtime_requests,officer_review', 'throttle:api-action'])
         ->name('overtime.officer-review');
-    // Step 5: VP final approval
+    // Step 5: VP final approval with SoD
     Route::patch('overtime-requests/{overtimeRequest}/vp-approve', [OvertimeRequestController::class, 'vpApprove'])
-        ->middleware(['permission:overtime.executive_approve', 'throttle:api-action'])
+        ->middleware(['permission:overtime.executive_approve', 'sod:overtime_requests,vp_approve', 'throttle:api-action'])
         ->name('overtime.vp-approve');
 
     // Shift schedules CRUD

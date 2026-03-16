@@ -4,7 +4,15 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useEmployee, useCreateEmployee, useUpdateEmployee, useSalaryGrades, useDepartments, usePositions, useEmployees } from '@/hooks/useEmployees'
+import {
+  useEmployee,
+  useCreateEmployee,
+  useUpdateEmployee,
+  useSalaryGrades,
+  useDepartments,
+  usePositions,
+  useEmployees,
+} from '@/hooks/useEmployees'
 import { useShifts, useAssignShift } from '@/hooks/useAttendance'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -12,34 +20,44 @@ import type { ApiError } from '@/types/api'
 import type { CreateEmployeePayload } from '@/types/hr'
 
 const employeeSchema = z.object({
-  first_name:         z.string().min(1, 'First name is required').max(80),
-  last_name:          z.string().min(1, 'Last name is required').max(80),
-  middle_name:        z.string().max(80).optional(),
-  suffix:             z.string().max(10).optional(),
-  date_of_birth:      z.string().optional(),
-  gender:             z.enum(['male', 'female', 'other'], { errorMap: () => ({ message: 'Please select a gender' }) }),
-  civil_status:       z.enum(['', 'SINGLE', 'MARRIED', 'WIDOWED', 'LEGALLY_SEPARATED', 'HEAD_OF_FAMILY']).optional(),
-  employment_type:    z.enum(['regular', 'contractual', 'project_based', 'casual', 'probationary'], { errorMap: () => ({ message: 'Please select an employment type' }) }),
-  pay_basis:          z.enum(['monthly', 'daily'], { errorMap: () => ({ message: 'Please select a pay basis' }) }),
-  basic_monthly_rate: z.coerce.number({ invalid_type_error: 'Please enter a valid rate' }).min(0.01, 'Rate must be greater than 0'),
-  date_hired:         z.string().min(1, 'Date hired is required'),
-  salary_grade_id:    z.coerce.number().int().positive().optional(),
-  department_id:      z.coerce.number().int().positive().optional(),
-  position_id:        z.coerce.number().int().positive().optional(),
-  reports_to:         z.coerce.number().int().positive().optional().or(z.literal('')),
-  personal_email:     z.string().email().optional().or(z.literal('')),
-  personal_phone:     z.string().max(20).optional(),
-  citizenship:        z.string().max(60).optional(),
-  present_address:    z.string().max(255).optional(),
-  permanent_address:  z.string().max(255).optional(),
-  sss_no:             z.string().max(12).optional(),
-  tin:                z.string().max(15).optional(),
-  philhealth_no:      z.string().max(14).optional(),
-  pagibig_no:         z.string().max(14).optional(),
-  bank_name:          z.string().max(100).optional(),
-  bank_account_no:    z.string().max(30).optional(),
-  notes:              z.string().max(2000).optional(),
-  shift_schedule_id:  z.coerce.number().int().positive().optional(),
+  first_name: z.string().min(1, 'First name is required').max(80),
+  last_name: z.string().min(1, 'Last name is required').max(80),
+  middle_name: z.string().max(80).optional(),
+  suffix: z.string().max(10).optional(),
+  date_of_birth: z.string().optional(),
+  gender: z.enum(['male', 'female', 'other'], {
+    errorMap: () => ({ message: 'Please select a gender' }),
+  }),
+  civil_status: z
+    .enum(['', 'SINGLE', 'MARRIED', 'WIDOWED', 'LEGALLY_SEPARATED', 'HEAD_OF_FAMILY'])
+    .optional(),
+  employment_type: z.enum(['regular', 'contractual', 'project_based', 'casual', 'probationary'], {
+    errorMap: () => ({ message: 'Please select an employment type' }),
+  }),
+  pay_basis: z.enum(['monthly', 'daily'], {
+    errorMap: () => ({ message: 'Please select a pay basis' }),
+  }),
+  basic_monthly_rate: z.coerce
+    .number({ invalid_type_error: 'Please enter a valid rate' })
+    .min(0.01, 'Rate must be greater than 0'),
+  date_hired: z.string().min(1, 'Date hired is required'),
+  salary_grade_id: z.coerce.number().int().positive().optional(),
+  department_id: z.coerce.number().int().positive().optional(),
+  position_id: z.coerce.number().int().positive().optional(),
+  reports_to: z.coerce.number().int().positive().optional().or(z.literal('')),
+  personal_email: z.string().email().optional().or(z.literal('')),
+  personal_phone: z.string().max(20).optional(),
+  citizenship: z.string().max(60).optional(),
+  present_address: z.string().max(255).optional(),
+  permanent_address: z.string().max(255).optional(),
+  sss_no: z.string().max(12).optional(),
+  tin: z.string().max(15).optional(),
+  philhealth_no: z.string().max(14).optional(),
+  pagibig_no: z.string().max(14).optional(),
+  bank_name: z.string().max(100).optional(),
+  bank_account_no: z.string().max(30).optional(),
+  notes: z.string().max(2000).optional(),
+  shift_schedule_id: z.coerce.number().int().positive().optional(),
 })
 
 type EmployeeFormData = z.infer<typeof employeeSchema>
@@ -112,11 +130,11 @@ export default function EmployeeFormPage() {
       isEditing
         ? employeeSchema
         : employeeSchema.extend({
-            sss_no:          z.string().min(1, 'SSS No. is required').max(12),
-            tin:             z.string().min(1, 'TIN is required').max(15),
-            philhealth_no:   z.string().min(1, 'PhilHealth No. is required').max(14),
-            pagibig_no:      z.string().min(1, 'Pag-IBIG No. is required').max(14),
-            bank_name:       z.string().min(1, 'Bank name is required').max(100),
+            sss_no: z.string().min(1, 'SSS No. is required').max(12),
+            tin: z.string().min(1, 'TIN is required').max(15),
+            philhealth_no: z.string().min(1, 'PhilHealth No. is required').max(14),
+            pagibig_no: z.string().min(1, 'Pag-IBIG No. is required').max(14),
+            bank_name: z.string().min(1, 'Bank name is required').max(100),
             bank_account_no: z.string().min(1, 'Bank account number is required').max(30),
           }),
     [isEditing],
@@ -131,7 +149,7 @@ export default function EmployeeFormPage() {
   const { data: salaryGrades = [], isLoading: loadingSalaryGrades } = useSalaryGrades()
   const { data: deptData, isLoading: loadingDepartments } = useDepartments()
   const { data: employeesData } = useEmployees({ page: 1, per_page: 1000, is_active: true })
-  
+
   // Track when all reference data is loaded to avoid race conditions
   const referenceDataLoaded = !loadingSalaryGrades && !loadingDepartments
 
@@ -185,35 +203,41 @@ export default function EmployeeFormPage() {
   useEffect(() => {
     if (existing && referenceDataLoaded) {
       reset({
-        first_name:         existing.first_name,
-        last_name:          existing.last_name,
-        middle_name:        existing.middle_name ?? '',
-        suffix:             existing.suffix ?? '',
-        date_of_birth:      existing.date_of_birth ?? '',
-        gender:             existing.gender,
-        civil_status:       (existing.civil_status ?? '') as '' | 'SINGLE' | 'MARRIED' | 'WIDOWED' | 'LEGALLY_SEPARATED' | 'HEAD_OF_FAMILY',
-        employment_type:    existing.employment_type,
-        pay_basis:          existing.pay_basis,
+        first_name: existing.first_name,
+        last_name: existing.last_name,
+        middle_name: existing.middle_name ?? '',
+        suffix: existing.suffix ?? '',
+        date_of_birth: existing.date_of_birth ?? '',
+        gender: existing.gender,
+        civil_status: (existing.civil_status ?? '') as
+          | ''
+          | 'SINGLE'
+          | 'MARRIED'
+          | 'WIDOWED'
+          | 'LEGALLY_SEPARATED'
+          | 'HEAD_OF_FAMILY',
+        employment_type: existing.employment_type,
+        pay_basis: existing.pay_basis,
         basic_monthly_rate: existing.basic_monthly_rate / 100,
-        date_hired:         existing.date_hired,
-        salary_grade_id:    existing.salary_grade?.id,
-        department_id:      existing.department_id ?? undefined,
-        position_id:        existing.position_id ?? undefined,
-        reports_to:         existing.reports_to ?? undefined,
-        shift_schedule_id:  existing.current_shift?.shift_schedule_id ?? undefined,
-        personal_email:     existing.personal_email ?? '',
-        personal_phone:     existing.personal_phone ?? '',
-        citizenship:        existing.citizenship ?? '',
-        present_address:    existing.present_address ?? '',
-        permanent_address:  existing.permanent_address ?? '',
-        bank_name:          existing.bank_name ?? '',
-        bank_account_no:    existing.bank_account_no ?? '',
-        notes:              existing.notes ?? '',
+        date_hired: existing.date_hired,
+        salary_grade_id: existing.salary_grade?.id,
+        department_id: existing.department_id ?? undefined,
+        position_id: existing.position_id ?? undefined,
+        reports_to: existing.reports_to ?? undefined,
+        shift_schedule_id: existing.current_shift?.shift_schedule_id ?? undefined,
+        personal_email: existing.personal_email ?? '',
+        personal_phone: existing.personal_phone ?? '',
+        citizenship: existing.citizenship ?? '',
+        present_address: existing.present_address ?? '',
+        permanent_address: existing.permanent_address ?? '',
+        bank_name: existing.bank_name ?? '',
+        bank_account_no: existing.bank_account_no ?? '',
+        notes: existing.notes ?? '',
         // Government IDs: Don't pre-fill encrypted values, leave empty to keep existing
-        sss_no:             '',
-        tin:                '',
-        philhealth_no:      '',
-        pagibig_no:         '',
+        sss_no: '',
+        tin: '',
+        philhealth_no: '',
+        pagibig_no: '',
       })
     }
   }, [existing, referenceDataLoaded, reset])
@@ -222,7 +246,7 @@ export default function EmployeeFormPage() {
   const selectedDepartmentId = watch('department_id')
   const selectedDeptId = Number(selectedDepartmentId) || undefined
   const prevDeptIdRef = useRef<typeof selectedDeptId>(undefined)
-  const watchedGradeId    = watch('salary_grade_id')
+  const watchedGradeId = watch('salary_grade_id')
   const watchedMonthlyRate = watch('basic_monthly_rate')
 
   const selectedGrade = salaryGrades.find((g) => g.id === Number(watchedGradeId))
@@ -230,9 +254,11 @@ export default function EmployeeFormPage() {
   // Auto-fill rate from grade midpoint when grade changes (add-mode or explicit change)
   useEffect(() => {
     if (!watchedGradeId || !selectedGrade) return
-    const midpoint = Math.round((selectedGrade.min_monthly_rate + selectedGrade.max_monthly_rate) / 2 / 100)
+    const midpoint = Math.round(
+      (selectedGrade.min_monthly_rate + selectedGrade.max_monthly_rate) / 2 / 100,
+    )
     setValue('basic_monthly_rate', midpoint, { shouldValidate: true })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedGradeId])
 
   // Reset position when department changes so a position from the old dept isn't submitted.
@@ -244,30 +270,31 @@ export default function EmployeeFormPage() {
     if (prev !== undefined && prev !== selectedDeptId) {
       setValue('position_id', undefined)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeptId])
 
   const watchedPresentAddress = watch('present_address')
 
   // Derived daily rate for the live preview (÷22)
-  const monthlyPesos  = Number(watchedMonthlyRate) || 0
-  const dailyPesos    = monthlyPesos > 0 ? (monthlyPesos / 22).toFixed(2)  : null
+  const monthlyPesos = Number(watchedMonthlyRate) || 0
+  const dailyPesos = monthlyPesos > 0 ? (monthlyPesos / 22).toFixed(2) : null
 
   const { data: positionsData, isLoading: positionsLoading } = usePositions()
   const currentPositionId = existing?.position_id
   const currentPosition = existing?.position
   const currentDepartment = existing?.department
-  
+
   // Build position list: active positions for selected dept + current position
   const allPositions = positionsData?.data ?? []
   const deptPositions = allPositions.filter(
-    (p) => p.is_active && p.department_id === selectedDeptId
+    (p) => p.is_active && p.department_id === selectedDeptId,
   )
-  
+
   // Include current position if not already in the list
-  const filteredPositions = currentPosition && !deptPositions.find(p => p.id === currentPosition.id)
-    ? [...deptPositions, { ...currentPosition, is_active: true }]
-    : deptPositions
+  const filteredPositions =
+    currentPosition && !deptPositions.find((p) => p.id === currentPosition.id)
+      ? [...deptPositions, { ...currentPosition, is_active: true }]
+      : deptPositions
 
   // Filter supervisors: only managers/supervisors from the same department
   const supervisors = useMemo(() => {
@@ -277,8 +304,8 @@ export default function EmployeeFormPage() {
       if (e.ulid === validId) return false
       // Must have manager or head role
       const supervisorRoles = ['manager', 'head']
-      const hasManagerRole = e.user_roles.some(role =>
-        supervisorRoles.includes(role.toLowerCase())
+      const hasManagerRole = e.user_roles.some((role) =>
+        supervisorRoles.includes(role.toLowerCase()),
       )
       if (!hasManagerRole) return false
       // Must be in the same department (or if no department selected, show all managers)
@@ -295,10 +322,18 @@ export default function EmployeeFormPage() {
   if (isEditing && employeeError) {
     return (
       <div className="max-w-4xl mx-auto">
-        <button type="button" onClick={() => navigate(-1)} className="text-sm text-neutral-600 hover:underline mb-4 block">← Back</button>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="text-sm text-neutral-600 hover:underline mb-4 block"
+        >
+          ← Back
+        </button>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 font-medium mb-1">Failed to load employee data</p>
-          <p className="text-red-600 text-sm mb-4">The record may not exist or you may not have permission to edit it.</p>
+          <p className="text-red-600 text-sm mb-4">
+            The record may not exist or you may not have permission to edit it.
+          </p>
           <button
             type="button"
             onClick={() => void refetchEmployee()}
@@ -344,7 +379,9 @@ export default function EmployeeFormPage() {
         }
         toast.success('Employee updated.')
       } else {
-        const newEmployee = await createMutation.mutateAsync(payload as unknown as CreateEmployeePayload)
+        const newEmployee = await createMutation.mutateAsync(
+          payload as unknown as CreateEmployeePayload,
+        )
         if (data.shift_schedule_id) {
           await assignShiftMutation.mutateAsync({
             employee_ulid: newEmployee.ulid,
@@ -364,17 +401,14 @@ export default function EmployeeFormPage() {
       }
       // Show general error message (e.g., duplicate gov ID)
       if (apiErr.message && !apiErr.errors) {
-        alert(apiErr.message)
+        toast.error(apiErr.message)
       }
     }
   }
 
   return (
     <div className="max-w-4xl mx-auto">
-      <PageHeader 
-        title={isEditing ? 'Edit Employee' : 'New Employee'} 
-        backTo="/hr/employees/all" 
-      />
+      <PageHeader title={isEditing ? 'Edit Employee' : 'New Employee'} backTo="/hr/employees/all" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Personal */}
@@ -424,16 +458,26 @@ export default function EmployeeFormPage() {
               <Input {...register('citizenship')} placeholder="Filipino" />
             </FormField>
             <FormField label="Present Address" error={errors.present_address?.message}>
-              <Input {...register('present_address')} placeholder="Street, Barangay, City/Municipality, Province" />
+              <Input
+                {...register('present_address')}
+                placeholder="Street, Barangay, City/Municipality, Province"
+              />
             </FormField>
             <div className="sm:col-span-2">
               <FormField label="Permanent Address" error={errors.permanent_address?.message}>
                 <div className="space-y-1">
-                  <Input {...register('permanent_address')} placeholder="Street, Barangay, City/Municipality, Province" />
+                  <Input
+                    {...register('permanent_address')}
+                    placeholder="Street, Barangay, City/Municipality, Province"
+                  />
                   <button
                     type="button"
                     onClick={() => {
-                      if (watchedPresentAddress) setValue('permanent_address', watchedPresentAddress, { shouldDirty: true, shouldValidate: true })
+                      if (watchedPresentAddress)
+                        setValue('permanent_address', watchedPresentAddress, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
                     }}
                     className="text-xs text-neutral-600 hover:underline"
                   >
@@ -488,7 +532,8 @@ export default function EmployeeFormPage() {
                 <option value="">No grade (enter rate manually)</option>
                 {salaryGrades.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.code} — {g.name} (₱{(g.min_monthly_rate / 100).toLocaleString()}–₱{(g.max_monthly_rate / 100).toLocaleString()})
+                    {g.code} — {g.name} (₱{(g.min_monthly_rate / 100).toLocaleString()}–₱
+                    {(g.max_monthly_rate / 100).toLocaleString()})
                   </option>
                 ))}
               </Select>
@@ -520,17 +565,22 @@ export default function EmployeeFormPage() {
               <Select {...register('department_id')}>
                 <option value="">None</option>
                 {/* Include current department if not in list yet */}
-                {currentDepartment && !(deptData?.data ?? []).find(d => d.id === currentDepartment.id) && (
-                  <option key={currentDepartment.id} value={currentDepartment.id}>{currentDepartment.name}</option>
-                )}
+                {currentDepartment &&
+                  !(deptData?.data ?? []).find((d) => d.id === currentDepartment.id) && (
+                    <option key={currentDepartment.id} value={currentDepartment.id}>
+                      {currentDepartment.name}
+                    </option>
+                  )}
                 {(deptData?.data ?? []).map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
                 ))}
               </Select>
             </FormField>
             <FormField label="Position" error={errors.position_id?.message}>
-              <Select 
-                {...register('position_id')} 
+              <Select
+                {...register('position_id')}
                 disabled={positionsLoading && !currentPositionId}
               >
                 <option value="">
@@ -543,7 +593,9 @@ export default function EmployeeFormPage() {
                       : 'Select a department first'}
                 </option>
                 {filteredPositions.map((p) => (
-                  <option key={p.id} value={p.id}>{p.title}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
                 ))}
               </Select>
             </FormField>
@@ -552,7 +604,9 @@ export default function EmployeeFormPage() {
                 <option value="">None / Self-managed</option>
                 {supervisors.map((s) => {
                   const supervisorRoles = ['manager', 'head']
-                  const supervisorRole = s.user_roles.find(r => supervisorRoles.includes(r.toLowerCase()))
+                  const supervisorRole = s.user_roles.find((r) =>
+                    supervisorRoles.includes(r.toLowerCase()),
+                  )
                   const roleLabel = supervisorRole === 'manager' ? 'Manager' : 'Head'
                   return (
                     <option key={s.id} value={s.id}>
@@ -566,7 +620,11 @@ export default function EmployeeFormPage() {
             {/* ── Shift Schedule ── */}
             <FormField
               label="Shift Schedule"
-              hint={isEditing ? 'Changing this creates a new assignment effective today.' : 'Assign an initial work schedule for this employee.'}
+              hint={
+                isEditing
+                  ? 'Changing this creates a new assignment effective today.'
+                  : 'Assign an initial work schedule for this employee.'
+              }
               error={errors.shift_schedule_id?.message}
             >
               <Select {...register('shift_schedule_id')}>
@@ -585,41 +643,74 @@ export default function EmployeeFormPage() {
         <section className="bg-white border border-neutral-200 rounded-lg p-5">
           <h2 className="text-sm font-semibold text-neutral-700 mb-4">Government IDs</h2>
           <p className="text-xs text-neutral-500 mb-4">
-            IDs are <span className="font-medium">encrypted at rest</span> and never exposed after saving.
+            IDs are <span className="font-medium">encrypted at rest</span> and never exposed after
+            saving.
             {isEditing && ' Leave a field blank to keep the current saved value.'}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               label="SSS No."
               required={!isEditing}
-              hint={isEditing && existing?.has_sss_no ? '🔒 Encrypted value on file — enter new value to replace' : undefined}
+              hint={
+                isEditing && existing?.has_sss_no
+                  ? '🔒 Encrypted value on file — enter new value to replace'
+                  : undefined
+              }
               error={errors.sss_no?.message}
             >
-              <Input {...register('sss_no')} placeholder={isEditing && existing?.has_sss_no ? '(unchanged)' : '03-XXXXXXX-X'} />
+              <Input
+                {...register('sss_no')}
+                placeholder={isEditing && existing?.has_sss_no ? '(unchanged)' : '03-XXXXXXX-X'}
+              />
             </FormField>
             <FormField
               label="TIN"
               required={!isEditing}
-              hint={isEditing && existing?.has_tin ? '🔒 Encrypted value on file — enter new value to replace' : undefined}
+              hint={
+                isEditing && existing?.has_tin
+                  ? '🔒 Encrypted value on file — enter new value to replace'
+                  : undefined
+              }
               error={errors.tin?.message}
             >
-              <Input {...register('tin')} placeholder={isEditing && existing?.has_tin ? '(unchanged)' : 'XXX-XXX-XXX-XXX'} />
+              <Input
+                {...register('tin')}
+                placeholder={isEditing && existing?.has_tin ? '(unchanged)' : 'XXX-XXX-XXX-XXX'}
+              />
             </FormField>
             <FormField
               label="PhilHealth No."
               required={!isEditing}
-              hint={isEditing && existing?.has_philhealth_no ? '🔒 Encrypted value on file — enter new value to replace' : undefined}
+              hint={
+                isEditing && existing?.has_philhealth_no
+                  ? '🔒 Encrypted value on file — enter new value to replace'
+                  : undefined
+              }
               error={errors.philhealth_no?.message}
             >
-              <Input {...register('philhealth_no')} placeholder={isEditing && existing?.has_philhealth_no ? '(unchanged)' : 'XX-XXXXXXXXX-X'} />
+              <Input
+                {...register('philhealth_no')}
+                placeholder={
+                  isEditing && existing?.has_philhealth_no ? '(unchanged)' : 'XX-XXXXXXXXX-X'
+                }
+              />
             </FormField>
             <FormField
               label="Pag-IBIG No."
               required={!isEditing}
-              hint={isEditing && existing?.has_pagibig_no ? '🔒 Encrypted value on file — enter new value to replace' : undefined}
+              hint={
+                isEditing && existing?.has_pagibig_no
+                  ? '🔒 Encrypted value on file — enter new value to replace'
+                  : undefined
+              }
               error={errors.pagibig_no?.message}
             >
-              <Input {...register('pagibig_no')} placeholder={isEditing && existing?.has_pagibig_no ? '(unchanged)' : 'XXXX-XXXX-XXXX'} />
+              <Input
+                {...register('pagibig_no')}
+                placeholder={
+                  isEditing && existing?.has_pagibig_no ? '(unchanged)' : 'XXXX-XXXX-XXXX'
+                }
+              />
             </FormField>
           </div>
         </section>
@@ -631,7 +722,11 @@ export default function EmployeeFormPage() {
             <FormField label="Bank Name" required={!isEditing} error={errors.bank_name?.message}>
               <Input {...register('bank_name')} placeholder="BDO, BPI, UnionBank…" />
             </FormField>
-            <FormField label="Account No." required={!isEditing} error={errors.bank_account_no?.message}>
+            <FormField
+              label="Account No."
+              required={!isEditing}
+              error={errors.bank_account_no?.message}
+            >
               <Input {...register('bank_account_no')} />
             </FormField>
           </div>

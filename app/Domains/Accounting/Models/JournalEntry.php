@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\Accounting\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -35,9 +36,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property-read FiscalPeriod                         $fiscalPeriod
  * @property-read JournalEntry|null                    $reversalOf
  * @property-read Collection<int, JournalEntryLine>    $lines
- * @property-read \App\Models\User                     $creator
- * @property-read \App\Models\User|null                $submitter
- * @property-read \App\Models\User|null                $poster
+ * @property-read User                     $creator
+ * @property-read User|null                $submitter
+ * @property-read User|null                $poster
  */
 final class JournalEntry extends Model implements Auditable
 {
@@ -84,17 +85,17 @@ final class JournalEntry extends Model implements Auditable
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function submitter(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'submitted_by');
+        return $this->belongsTo(User::class, 'submitted_by');
     }
 
     public function poster(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'posted_by');
+        return $this->belongsTo(User::class, 'posted_by');
     }
 
     // ── Business helpers ─────────────────────────────────────────────────────

@@ -37,7 +37,7 @@ final class AuditFindingNotification extends Notification implements ShouldQueue
                 $this->finding->title ?? "Finding #{$this->finding->id}",
                 $this->finding->severity ?? 'unspecified',
             ),
-            'action_url' => "/iso/audits/{$this->finding->internal_audit_id}",
+            'action_url' => "/iso/audits/{$this->finding->audit_id}",
             'finding_id' => $this->finding->id,
         ];
     }

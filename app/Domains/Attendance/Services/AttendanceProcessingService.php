@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Attendance\Services;
 
 use App\Domains\Attendance\Models\AttendanceLog;
+use App\Domains\Attendance\Models\EmployeeShiftAssignment;
 use App\Domains\Attendance\Models\OvertimeRequest;
 use App\Domains\HR\Models\Employee;
 use App\Shared\Contracts\ServiceContract;
@@ -40,7 +41,7 @@ final class AttendanceProcessingService implements ServiceContract
     public function processLog(Employee $employee, string $workDate, array $raw): AttendanceLog
     {
         return DB::transaction(function () use ($employee, $workDate, $raw): AttendanceLog {
-            /** @var \App\Domains\Attendance\Models\EmployeeShiftAssignment|null $shiftAssignment */
+            /** @var EmployeeShiftAssignment|null $shiftAssignment */
             $shiftAssignment = $employee->shiftAssignments()
                 ->with('shiftSchedule')
                 ->where('effective_from', '<=', $workDate)

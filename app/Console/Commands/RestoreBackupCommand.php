@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 
 /**
@@ -74,11 +75,11 @@ final class RestoreBackupCommand extends Command
         }
 
         $dbConfig = config('database.connections.pgsql');
-        $host     = $dbConfig['host'];
-        $port     = $dbConfig['port'];
-        $user     = $dbConfig['username'];
+        $host = $dbConfig['host'];
+        $port = $dbConfig['port'];
+        $user = $dbConfig['username'];
         $password = $dbConfig['password'];
-        $prodDb   = $dbConfig['database'];
+        $prodDb = $dbConfig['database'];
 
         // ── Step 3: Safety backup of current state ────────────────────────────
         if (! $this->option('skip-safety-backup')) {
@@ -112,11 +113,11 @@ final class RestoreBackupCommand extends Command
 
         // Locate the SQL dump
         $sqlFiles = File::glob("{$extractDir}/**/*.sql") ?: File::glob("{$extractDir}/*.sql");
-        $gzFiles  = File::glob("{$extractDir}/**/*.sql.gz") ?: File::glob("{$extractDir}/*.sql.gz");
-        $sqlFile  = null;
+        $gzFiles = File::glob("{$extractDir}/**/*.sql.gz") ?: File::glob("{$extractDir}/*.sql.gz");
+        $sqlFile = null;
 
         if (! empty($gzFiles)) {
-            $gzFile  = reset($gzFiles);
+            $gzFile = reset($gzFiles);
             $sqlFile = str_replace('.gz', '', $gzFile);
             Process::run("gunzip -f \"{$gzFile}\"");
             $sqlFile = file_exists($sqlFile) ? $sqlFile : null;
@@ -168,8 +169,8 @@ final class RestoreBackupCommand extends Command
         $this->line('<info>✓</info> Production database restored');
 
         // Log the restore event
-        \Illuminate\Support\Facades\Log::warning('[BackupRestore] Production database restored via CLI', [
-            'archive'   => basename($archivePath),
+        Log::warning('[BackupRestore] Production database restored via CLI', [
+            'archive' => basename($archivePath),
             'timestamp' => now()->toIso8601String(),
         ]);
 
@@ -202,7 +203,7 @@ final class RestoreBackupCommand extends Command
         }, $files);
 
         $choice = $this->choice('Select a backup archive to restore:', $choices, 0);
-        $index  = array_search($choice, $choices, true);
+        $index = array_search($choice, $choices, true);
 
         return $index !== false ? $files[(int) $index] : null;
     }

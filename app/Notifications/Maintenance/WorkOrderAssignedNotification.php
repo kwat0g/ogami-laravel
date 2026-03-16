@@ -36,7 +36,7 @@ final class WorkOrderAssignedNotification extends Notification implements Should
                 'Work order "%s" (%s priority) has been assigned to you. Equipment: %s.',
                 $this->workOrder->title,
                 $this->workOrder->priority,
-                $this->workOrder->equipment?->name ?? '—',
+                $this->workOrder->equipment?->name ?? '—', // @phpstan-ignore-line
             ),
             'action_url' => "/maintenance/work-orders/{$this->workOrder->ulid}",
             'work_order_id' => $this->workOrder->id,

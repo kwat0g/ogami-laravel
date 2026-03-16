@@ -9,6 +9,7 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -16,19 +17,19 @@ use OwenIt\Auditing\Contracts\Auditable;
  * Recurring Journal Entry Template — parameterised blueprint that the
  * `journals:generate-recurring` command materialises automatically.
  *
- * @property int                             $id
- * @property string                          $ulid
- * @property string                          $description
- * @property string                          $frequency         daily|weekly|monthly|semi_monthly|annual
- * @property int|null                        $day_of_month      1–28; relevant for monthly/semi_monthly
- * @property \Illuminate\Support\Carbon      $next_run_date
- * @property \Illuminate\Support\Carbon|null $last_run_at
- * @property bool                            $is_active
- * @property array<int, array<string, mixed>> $lines            [{account_id, debit, credit, description}]
- * @property int                             $created_by_id
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int $id
+ * @property string $ulid
+ * @property string $description
+ * @property string $frequency daily|weekly|monthly|semi_monthly|annual
+ * @property int|null $day_of_month 1–28; relevant for monthly/semi_monthly
+ * @property Carbon $next_run_date
+ * @property Carbon|null $last_run_at
+ * @property bool $is_active
+ * @property array<int, array<string, mixed>> $lines [{account_id, debit, credit, description}]
+ * @property int $created_by_id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class RecurringJournalTemplate extends Model implements Auditable
 {
@@ -50,9 +51,9 @@ final class RecurringJournalTemplate extends Model implements Auditable
     /** @var array<string, string> */
     protected $casts = [
         'next_run_date' => 'date',
-        'last_run_at'   => 'datetime',
-        'is_active'     => 'boolean',
-        'lines'         => 'array',
+        'last_run_at' => 'datetime',
+        'is_active' => 'boolean',
+        'lines' => 'array',
     ];
 
     /** @return BelongsTo<User, $this> */

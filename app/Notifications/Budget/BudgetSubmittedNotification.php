@@ -35,7 +35,7 @@ final class BudgetSubmittedNotification extends Notification implements ShouldQu
             'message' => sprintf(
                 'Budget for "%s" (FY %s) has been submitted and requires your approval.',
                 $this->budget->costCenter?->name ?? "CC-{$this->budget->cost_center_id}",
-                $this->budget->fiscal_year ?? '',
+                $this->budget->fiscal_year,
             ),
             'action_url' => '/budget',
             'budget_id' => $this->budget->id,

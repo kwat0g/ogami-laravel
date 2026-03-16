@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\QC\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class InspectionTemplateItem extends Model
 {

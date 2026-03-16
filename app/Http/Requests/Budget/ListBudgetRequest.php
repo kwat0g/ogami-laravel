@@ -17,7 +17,7 @@ final class ListBudgetRequest extends FormRequest
     {
         return [
             'cost_center_id' => ['required', 'integer', 'exists:cost_centers,id'],
-            'fiscal_year'    => ['required', 'integer', 'min:2000', 'max:2100'],
+            'fiscal_year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ];
     }
 }

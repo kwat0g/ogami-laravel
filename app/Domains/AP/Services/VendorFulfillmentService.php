@@ -43,10 +43,10 @@ final class VendorFulfillmentService implements ServiceContract
         return DB::transaction(function () use ($po, $vendorUser, $notes): VendorFulfillmentNote {
             return VendorFulfillmentNote::create([
                 'purchase_order_id' => $po->id,
-                'vendor_user_id'    => $vendorUser->id,
-                'note_type'         => 'in_transit',
-                'notes'             => $notes ?: null,
-                'items'             => null,
+                'vendor_user_id' => $vendorUser->id,
+                'note_type' => 'in_transit',
+                'notes' => $notes ?: null,
+                'items' => null,
             ]);
         });
     }
@@ -54,7 +54,7 @@ final class VendorFulfillmentService implements ServiceContract
     /**
      * Mark delivery as completed (full or partial) and auto-create a GR draft.
      *
-     * @param array<int, array{po_item_id: int, qty_delivered: float}> $itemDeliveries
+     * @param  array<int, array{po_item_id: int, qty_delivered: float}>  $itemDeliveries
      */
     public function markDelivered(
         PurchaseOrder $po,
@@ -115,36 +115,36 @@ final class VendorFulfillmentService implements ServiceContract
 
             $note = VendorFulfillmentNote::create([
                 'purchase_order_id' => $po->id,
-                'vendor_user_id'    => $vendorUser->id,
-                'note_type'         => $noteType,
-                'notes'             => $notes ?: null,
-                'items'             => $itemDeliveries,
+                'vendor_user_id' => $vendorUser->id,
+                'note_type' => $noteType,
+                'notes' => $notes ?: null,
+                'items' => $itemDeliveries,
             ]);
 
             // Auto-create a Goods Receipt draft for the receiving staff to confirm
-            $reference = 'GR-VND-' . strtoupper(substr($po->po_reference, -6)) . '-' . now()->format('mdHi');
+            $reference = 'GR-VND-'.strtoupper(substr($po->po_reference, -6)).'-'.now()->format('mdHi');
 
             $gr = GoodsReceipt::create([
-                'gr_reference'          => $reference,
-                'purchase_order_id'     => $po->id,
-                'received_by_id'        => $vendorUser->id,
-                'received_date'         => now()->toDateString(),
-                'delivery_note_number'  => null,
-                'condition_notes'       => "Auto-created from vendor delivery confirmation. {$notes}",
-                'status'                => 'draft',
+                'gr_reference' => $reference,
+                'purchase_order_id' => $po->id,
+                'received_by_id' => $vendorUser->id,
+                'received_date' => now()->toDateString(),
+                'delivery_note_number' => null,
+                'condition_notes' => "Auto-created from vendor delivery confirmation. {$notes}",
+                'status' => 'draft',
                 'three_way_match_passed' => false,
-                'ap_invoice_created'    => false,
+                'ap_invoice_created' => false,
             ]);
 
             foreach ($itemDeliveries as $delivery) {
                 $poItem = $po->items->firstWhere('id', $delivery['po_item_id']);
                 GoodsReceiptItem::create([
-                    'goods_receipt_id'  => $gr->id,
-                    'po_item_id'        => $poItem->id,
-                    'item_master_id'    => $poItem->item_master_id,
+                    'goods_receipt_id' => $gr->id,
+                    'po_item_id' => $poItem->id,
+                    'item_master_id' => $poItem->item_master_id,
                     'quantity_received' => $delivery['qty_delivered'],
-                    'unit_of_measure'   => $poItem->unit_of_measure,
-                    'condition'         => 'good',
+                    'unit_of_measure' => $poItem->unit_of_measure,
+                    'condition' => 'good',
                 ]);
             }
 

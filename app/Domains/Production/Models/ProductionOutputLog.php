@@ -6,27 +6,50 @@ namespace App\Domains\Production\Models;
 
 use App\Domains\HR\Models\Employee;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * @property int         $id
- * @property int         $production_order_id
- * @property string      $shift
- * @property string      $log_date
- * @property string      $qty_produced
- * @property string      $qty_rejected
- * @property int         $operator_id
- * @property int         $recorded_by_id
+ * Production output log - tracks daily production quantities.
+ * HIGH-002: Audit trail enabled for production tracking.
+ *
+ * @property int $id
+ * @property int $production_order_id
+ * @property string $shift
+ * @property string $log_date
+ * @property string $qty_produced
+ * @property string $qty_rejected
+ * @property int $operator_id
+ * @property int $recorded_by_id
  * @property string|null $remarks
- * @property \Carbon\Carbon $created_at
+ * @property Carbon $created_at
  */
-final class ProductionOutputLog extends Model
+final class ProductionOutputLog extends Model implements Auditable
 {
-    use SoftDeletes;
+    use AuditableTrait, SoftDeletes;
 
     public $timestamps = false;
+
+    /**
+     * Attributes to include in the audit trail.
+     * Production quantities are audited for traceability.
+     *
+     * @var list<string>
+     */
+    protected $auditInclude = [
+        'production_order_id',
+        'shift',
+        'log_date',
+        'qty_produced',
+        'qty_rejected',
+        'operator_id',
+        'recorded_by_id',
+        'remarks',
+    ];
 
     protected $table = 'production_output_logs';
 
@@ -46,8 +69,8 @@ final class ProductionOutputLog extends Model
     protected $casts = [
         'qty_produced' => 'decimal:4',
         'qty_rejected' => 'decimal:4',
-        'log_date'     => 'date',
-        'created_at'   => 'datetime',
+        'log_date' => 'date',
+        'created_at' => 'datetime',
     ];
 
     public function productionOrder(): BelongsTo

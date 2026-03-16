@@ -8,6 +8,7 @@ use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -67,7 +68,7 @@ final class PayrollAutoPostService implements ServiceContract
         $lines = $this->buildLines($totals, $codes);
 
         $fiscalPeriod = $this->fiscalPeriodService->resolveForDateOrFail(
-            \Carbon\Carbon::parse($run->pay_date)
+            Carbon::parse($run->pay_date)
         );
 
         return DB::transaction(function () use ($run, $lines, $fiscalPeriod) {

@@ -10,24 +10,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * @property int         $id
- * @property string      $ulid
- * @property string      $rfq_reference       RFQ-YYYY-MM-NNNNN
- * @property int|null    $purchase_request_id
- * @property string      $status              draft|sent|quote_received|closed|cancelled
+ * @property int $id
+ * @property string $ulid
+ * @property string $rfq_reference RFQ-YYYY-MM-NNNNN
+ * @property int|null $purchase_request_id
+ * @property string $status draft|sent|quote_received|closed|cancelled
  * @property string|null $deadline_date
- * @property string      $scope_description
+ * @property string $scope_description
  * @property string|null $notes
- * @property int         $created_by_id
- * @property \Illuminate\Support\Carbon|null $sent_at
- * @property \Illuminate\Support\Carbon|null $closed_at
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int $created_by_id
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $closed_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class VendorRfq extends Model implements Auditable
 {
@@ -49,8 +50,8 @@ final class VendorRfq extends Model implements Auditable
 
     protected $casts = [
         'deadline_date' => 'date',
-        'sent_at'       => 'datetime',
-        'closed_at'     => 'datetime',
+        'sent_at' => 'datetime',
+        'closed_at' => 'datetime',
     ];
 
     // ── Relations ────────────────────────────────────────────────────────────

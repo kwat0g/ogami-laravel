@@ -8,6 +8,7 @@ use App\Domains\AR\Models\CustomerInvoice;
 use App\Models\User;
 use App\Notifications\AR\InvoiceOverdueNotification;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Checks for overdue AR invoices and sends notifications.
@@ -16,6 +17,7 @@ use Illuminate\Console\Command;
 final class CheckOverdueArInvoicesCommand extends Command
 {
     protected $signature = 'ar:check-overdue {--days=0 : Minimum days overdue to notify}';
+
     protected $description = 'Send notifications for overdue customer invoices';
 
     public function handle(): int
@@ -25,8 +27,8 @@ final class CheckOverdueArInvoicesCommand extends Command
         $overdue = CustomerInvoice::with('customer')
             ->where('status', 'approved')
             ->where('due_date', '<', now())
-            ->whereColumn('total_amount', '>', \Illuminate\Support\Facades\DB::raw(
-                "COALESCE((SELECT SUM(amount) FROM customer_payments WHERE customer_payments.customer_invoice_id = customer_invoices.id), 0)"
+            ->whereColumn('total_amount', '>', DB::raw(
+                'COALESCE((SELECT SUM(amount) FROM customer_payments WHERE customer_payments.customer_invoice_id = customer_invoices.id), 0)'
             ))
             ->get();
 
@@ -47,7 +49,7 @@ final class CheckOverdueArInvoicesCommand extends Command
             $notified++;
         }
 
-        $this->info("Notified about {$notified} overdue invoices to " . $arUsers->count() . " AR users.");
+        $this->info("Notified about {$notified} overdue invoices to ".$arUsers->count().' AR users.');
 
         return self::SUCCESS;
     }

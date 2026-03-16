@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -27,35 +28,35 @@ use OwenIt\Auditing\Contracts\Auditable;
  *
  * LV-004: each approver <> submitted_by enforced at service layer.
  *
- * @property int         $id
- * @property int         $employee_id
- * @property int         $leave_type_id
- * @property int         $submitted_by              FK users.id
- * @property \Illuminate\Support\Carbon $date_from
- * @property \Illuminate\Support\Carbon $date_to
- * @property float       $total_days
- * @property bool        $is_half_day
- * @property string|null $half_day_period            AM|PM
- * @property string      $reason
- * @property string      $status                     draft|submitted|head_approved|manager_checked|ga_processed|approved|rejected|cancelled
- * @property int|null    $head_id                    FK users.id — dept head who approved (step 2)
+ * @property int $id
+ * @property int $employee_id
+ * @property int $leave_type_id
+ * @property int $submitted_by FK users.id
+ * @property Carbon $date_from
+ * @property Carbon $date_to
+ * @property float $total_days
+ * @property bool $is_half_day
+ * @property string|null $half_day_period AM|PM
+ * @property string $reason
+ * @property string $status draft|submitted|head_approved|manager_checked|ga_processed|approved|rejected|cancelled
+ * @property int|null $head_id FK users.id — dept head who approved (step 2)
  * @property string|null $head_remarks
- * @property \Illuminate\Support\Carbon|null $head_approved_at
- * @property int|null    $manager_checked_by         FK users.id — plant manager who checked (step 3)
+ * @property Carbon|null $head_approved_at
+ * @property int|null $manager_checked_by FK users.id — plant manager who checked (step 3)
  * @property string|null $manager_check_remarks
- * @property \Illuminate\Support\Carbon|null $manager_checked_at
- * @property int|null    $ga_processed_by            FK users.id — GA officer who received (step 4)
+ * @property Carbon|null $manager_checked_at
+ * @property int|null $ga_processed_by FK users.id — GA officer who received (step 4)
  * @property string|null $ga_remarks
- * @property \Illuminate\Support\Carbon|null $ga_processed_at
- * @property string|null $action_taken               approved_with_pay|approved_without_pay|disapproved
- * @property float|null  $beginning_balance          balance snapshot at ga_process time
- * @property float|null  $applied_days               days to deduct (= total_days for full, 0 for without_pay)
- * @property float|null  $ending_balance             beginning_balance − applied_days
- * @property int|null    $vp_id                      FK users.id — VP who noted (step 5)
+ * @property Carbon|null $ga_processed_at
+ * @property string|null $action_taken approved_with_pay|approved_without_pay|disapproved
+ * @property float|null $beginning_balance balance snapshot at ga_process time
+ * @property float|null $applied_days days to deduct (= total_days for full, 0 for without_pay)
+ * @property float|null $ending_balance beginning_balance − applied_days
+ * @property int|null $vp_id FK users.id — VP who noted (step 5)
  * @property string|null $vp_remarks
- * @property \Illuminate\Support\Carbon|null $vp_noted_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $vp_noted_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Employee  $employee
  * @property-read LeaveType $leaveType
  * @property-read User      $submitter
@@ -108,17 +109,17 @@ final class LeaveRequest extends Model implements Auditable
     protected function casts(): array
     {
         return [
-            'date_from'          => 'date',
-            'date_to'            => 'date',
-            'total_days'         => 'float',
-            'is_half_day'        => 'boolean',
-            'head_approved_at'   => 'datetime',
+            'date_from' => 'date',
+            'date_to' => 'date',
+            'total_days' => 'float',
+            'is_half_day' => 'boolean',
+            'head_approved_at' => 'datetime',
             'manager_checked_at' => 'datetime',
-            'ga_processed_at'    => 'datetime',
-            'vp_noted_at'        => 'datetime',
-            'beginning_balance'  => 'float',
-            'applied_days'       => 'float',
-            'ending_balance'     => 'float',
+            'ga_processed_at' => 'datetime',
+            'vp_noted_at' => 'datetime',
+            'beginning_balance' => 'float',
+            'applied_days' => 'float',
+            'ending_balance' => 'float',
         ];
     }
 

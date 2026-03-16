@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Inventory\Services;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\LotBatch;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\StockLedger;
@@ -18,7 +19,7 @@ final class StockService implements ServiceContract
     /**
      * Receive stock into a location (from GR, production output, etc.)
      *
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function receive(
         int $itemId,
@@ -45,8 +46,8 @@ final class StockService implements ServiceContract
                 $lot = LotBatch::firstOrCreate(
                     ['lot_number' => $lotNumber, 'item_id' => $itemId],
                     [
-                        'received_from'     => $receivedFrom ?? 'vendor',
-                        'received_date'     => $receivedDate ?? now()->toDateString(),
+                        'received_from' => $receivedFrom ?? 'vendor',
+                        'received_date' => $receivedDate ?? now()->toDateString(),
                         'quantity_received' => $quantity,
                         'quantity_remaining' => $quantity,
                     ]
@@ -59,16 +60,16 @@ final class StockService implements ServiceContract
             $newBalance = $balance + $quantity;
 
             $ledger = StockLedger::create([
-                'item_id'          => $itemId,
-                'location_id'      => $locationId,
-                'lot_batch_id'     => $lotBatchId,
+                'item_id' => $itemId,
+                'location_id' => $locationId,
+                'lot_batch_id' => $lotBatchId,
                 'transaction_type' => $referenceType === 'production_orders' ? 'production_output' : 'goods_receipt',
-                'reference_type'   => $referenceType,
-                'reference_id'     => $referenceId,
-                'quantity'         => $quantity,
-                'balance_after'    => $newBalance,
-                'remarks'          => $remarks,
-                'created_by_id'    => $actor->id,
+                'reference_type' => $referenceType,
+                'reference_id' => $referenceId,
+                'quantity' => $quantity,
+                'balance_after' => $newBalance,
+                'remarks' => $remarks,
+                'created_by_id' => $actor->id,
             ]);
 
             $this->upsertBalance($itemId, $locationId, $newBalance);
@@ -109,21 +110,21 @@ final class StockService implements ServiceContract
             $newBalance = $balance - $quantity;
 
             $ledger = StockLedger::create([
-                'item_id'          => $itemId,
-                'location_id'      => $locationId,
+                'item_id' => $itemId,
+                'location_id' => $locationId,
                 'transaction_type' => 'issue',
-                'reference_type'   => $referenceType,
-                'reference_id'     => $referenceId,
-                'quantity'         => -$quantity,
-                'balance_after'    => $newBalance,
-                'remarks'          => $remarks,
-                'created_by_id'    => $actor->id,
+                'reference_type' => $referenceType,
+                'reference_id' => $referenceId,
+                'quantity' => -$quantity,
+                'balance_after' => $newBalance,
+                'remarks' => $remarks,
+                'created_by_id' => $actor->id,
             ]);
 
             $this->upsertBalance($itemId, $locationId, $newBalance);
 
             // Fire low-stock alert when balance hits or drops below reorder point
-            $item = \App\Domains\Inventory\Models\ItemMaster::find($itemId);
+            $item = ItemMaster::find($itemId);
             if ($item !== null && $newBalance <= (float) $item->reorder_point) {
                 DB::afterCommit(
                     fn () => event(new LowStockDetected($item, $newBalance, $locationId))
@@ -147,19 +148,19 @@ final class StockService implements ServiceContract
         ?string $remarks = null
     ): StockLedger {
         return DB::transaction(function () use ($itemId, $locationId, $quantity, $mrqId, $actor, $remarks): StockLedger {
-            $balance    = $this->currentBalance($itemId, $locationId);
+            $balance = $this->currentBalance($itemId, $locationId);
             $newBalance = $balance + $quantity;
 
             $ledger = StockLedger::create([
-                'item_id'          => $itemId,
-                'location_id'      => $locationId,
+                'item_id' => $itemId,
+                'location_id' => $locationId,
                 'transaction_type' => 'mrq_return',
-                'reference_type'   => 'material_requisitions',
-                'reference_id'     => $mrqId,
-                'quantity'         => $quantity,
-                'balance_after'    => $newBalance,
-                'remarks'          => $remarks ?? 'Returned — WO voided',
-                'created_by_id'    => $actor->id,
+                'reference_type' => 'material_requisitions',
+                'reference_id' => $mrqId,
+                'quantity' => $quantity,
+                'balance_after' => $newBalance,
+                'remarks' => $remarks ?? 'Returned — WO voided',
+                'created_by_id' => $actor->id,
             ]);
 
             $this->upsertBalance($itemId, $locationId, $newBalance);
@@ -179,18 +180,18 @@ final class StockService implements ServiceContract
         string $remarks
     ): StockLedger {
         return DB::transaction(function () use ($itemId, $locationId, $adjustedQty, $actor, $remarks): StockLedger {
-            $balance    = $this->currentBalance($itemId, $locationId);
+            $balance = $this->currentBalance($itemId, $locationId);
             $difference = $adjustedQty - $balance;
             $newBalance = $adjustedQty;
 
             $ledger = StockLedger::create([
-                'item_id'          => $itemId,
-                'location_id'      => $locationId,
+                'item_id' => $itemId,
+                'location_id' => $locationId,
                 'transaction_type' => 'adjustment',
-                'quantity'         => $difference,
-                'balance_after'    => $newBalance,
-                'remarks'          => $remarks,
-                'created_by_id'    => $actor->id,
+                'quantity' => $difference,
+                'balance_after' => $newBalance,
+                'remarks' => $remarks,
+                'created_by_id' => $actor->id,
             ]);
 
             $this->upsertBalance($itemId, $locationId, $newBalance);

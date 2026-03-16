@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Employee;
 
 use App\Domains\HR\Models\Department;
+use App\Domains\HR\Models\Employee;
 use App\Domains\HR\Models\Position;
+use App\Domains\Leave\Models\LeaveBalance;
+use App\Domains\Leave\Models\LeaveRequest;
+use App\Domains\Loan\Models\Loan;
 use App\Domains\Payroll\Models\PayrollDetail;
 use App\Domains\Payroll\Services\GovReportDataService;
 use App\Domains\Payroll\Services\PayrollQueryService;
@@ -283,11 +287,11 @@ final class EmployeeSelfServiceController extends Controller
      *
      * Return the authenticated employee's leave balances and recent request history.
      */
-    public function myLeave(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    public function myLeave(Request $request): JsonResponse
     {
         $employee = $this->resolveEmployee();
 
-        $balances = \App\Domains\Leave\Models\LeaveBalance::where('employee_id', $employee->id)
+        $balances = LeaveBalance::where('employee_id', $employee->id)
             ->with('leaveType')
             ->get()
             ->map(fn ($b) => [
@@ -297,7 +301,7 @@ final class EmployeeSelfServiceController extends Controller
                 'used_days' => $b->used_days,
             ]);
 
-        $requests = \App\Domains\Leave\Models\LeaveRequest::where('employee_id', $employee->id)
+        $requests = LeaveRequest::where('employee_id', $employee->id)
             ->with('leaveType')
             ->orderByDesc('date_from')
             ->paginate((int) $request->query('per_page', '20'));
@@ -315,11 +319,11 @@ final class EmployeeSelfServiceController extends Controller
      *
      * Return the authenticated employee's active loans and amortisation schedules.
      */
-    public function myLoans(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    public function myLoans(Request $request): JsonResponse
     {
         $employee = $this->resolveEmployee();
 
-        $loans = \App\Domains\Loan\Models\Loan::where('employee_id', $employee->id)
+        $loans = Loan::where('employee_id', $employee->id)
             ->with(['loanType', 'amortizationSchedules'])
             ->orderByDesc('created_at')
             ->paginate((int) $request->query('per_page', '20'));
@@ -345,7 +349,7 @@ final class EmployeeSelfServiceController extends Controller
      * Allow self-service updates to non-sensitive personal fields only.
      * Salary, department, position, and employment status remain HR-only.
      */
-    public function updateProfile(\Illuminate\Http\Request $request): EmployeeResource
+    public function updateProfile(Request $request): EmployeeResource
     {
         $employee = $this->resolveEmployee();
 
@@ -366,9 +370,9 @@ final class EmployeeSelfServiceController extends Controller
      * Resolve the Employee record for the current authenticated user.
      * Aborts 403 if no linked employee record exists.
      */
-    private function resolveEmployee(): \App\Domains\HR\Models\Employee
+    private function resolveEmployee(): Employee
     {
-        $employee = \App\Domains\HR\Models\Employee::where('user_id', auth()->id())->first();
+        $employee = Employee::where('user_id', auth()->id())->first();
 
         abort_if($employee === null, 403, 'No employee profile is linked to your account.');
 

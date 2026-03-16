@@ -6,6 +6,7 @@ namespace App\Domains\Accounting\Services;
 
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -140,7 +141,7 @@ final class CashFlowService implements ServiceContract
      *   - OPEX/depreciation: debit-normal, period movement is positive (debit > credit) → adds back to net income
      *   - Working capital: ASSET increase = subtract; LIABILITY increase = add
      */
-    private function fetchPeriodMovements(Carbon $dateFrom, Carbon $dateTo): \Illuminate\Support\Collection
+    private function fetchPeriodMovements(Carbon $dateFrom, Carbon $dateTo): Collection
     {
         return DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')

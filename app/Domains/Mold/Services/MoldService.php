@@ -36,6 +36,7 @@ final class MoldService implements ServiceContract
     public function update(MoldMaster $mold, array $data): MoldMaster
     {
         $mold->update($data);
+
         return $mold;
     }
 
@@ -52,11 +53,11 @@ final class MoldService implements ServiceContract
 
         /** @var MoldShotLog $log */
         $log = $mold->shotLogs()->create([
-            'shot_count'         => $data['shot_count'],
+            'shot_count' => $data['shot_count'],
             'production_order_id' => $data['production_order_id'] ?? null,
-            'operator_id'        => $data['operator_id'] ?? $userId,
-            'log_date'           => $data['log_date'] ?? today()->toDateString(),
-            'remarks'            => $data['remarks'] ?? null,
+            'operator_id' => $data['operator_id'] ?? $userId,
+            'log_date' => $data['log_date'] ?? today()->toDateString(),
+            'remarks' => $data['remarks'] ?? null,
         ]);
 
         // MOLD-MAINT-001: After logging shots, refresh the mold to get the updated
@@ -68,12 +69,12 @@ final class MoldService implements ServiceContract
             $this->maintenanceService->storeWorkOrder(
                 data: [
                     'mold_master_id' => $mold->id,
-                    'equipment_id'   => null,
-                    'type'           => 'preventive',
-                    'priority'       => 'high',
-                    'title'          => "Mold PM — {$mold->mold_code} reached shot limit",
-                    'description'    => "Mold '{$mold->name}' (code: {$mold->mold_code}) has reached its maximum shot count of {$mold->max_shots}. Preventive maintenance is required before further use.",
-                    'status'         => 'open',
+                    'equipment_id' => null,
+                    'type' => 'preventive',
+                    'priority' => 'high',
+                    'title' => "Mold PM — {$mold->mold_code} reached shot limit",
+                    'description' => "Mold '{$mold->name}' (code: {$mold->mold_code}) has reached its maximum shot count of {$mold->max_shots}. Preventive maintenance is required before further use.",
+                    'status' => 'open',
                 ],
                 userId: $userId,
             );
@@ -93,7 +94,7 @@ final class MoldService implements ServiceContract
         }
 
         $mold->update([
-            'status'    => 'retired',
+            'status' => 'retired',
             'is_active' => false,
         ]);
 

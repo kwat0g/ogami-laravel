@@ -289,6 +289,57 @@ final class PayrollWorkflowService implements ServiceContract
     }
 
     /**
+     * Step 7 (return path): Accounting Manager returns for rework.
+     * Transitions HR_APPROVED → RETURNED → DRAFT.
+     * Unlike rejection, this allows the run to be corrected and resubmitted.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function acctgReturn(PayrollRun $run, int $actorId, string $comments): PayrollRun
+    {
+        // Idempotent — already returned/reset to DRAFT
+        $status = strtoupper((string) $run->status);
+        if ($status === 'DRAFT' || $status === 'RETURNED') {
+            return $run;
+        }
+
+        if (empty(trim($comments))) {
+            throw new DomainException(
+                'A comment explaining the reason for return is required.',
+                'PR_RETURN_COMMENT_REQUIRED',
+                422,
+            );
+        }
+
+        DB::transaction(function () use ($run, $actorId, $comments) {
+            PayrollRunApproval::create([
+                'payroll_run_id' => $run->id,
+                'stage' => 'ACCOUNTING',
+                'action' => 'RETURNED',
+                'actor_id' => $actorId,
+                'comments' => $comments,
+                'acted_at' => now(),
+            ]);
+
+            $this->stateMachine->transition($run, 'RETURNED');
+            $this->stateMachine->transition($run, 'DRAFT');
+        });
+
+        // Notify initiator + HR approver
+        try {
+            $notify = User::whereIn('id', array_filter([
+                $run->initiated_by_id,
+                $run->hr_approved_by_id,
+            ]))->get();
+            $notif = new PayrollApprovedNotification($run, 'ACCOUNTING_RETURNED');
+            Notification::send($notify, $notif);
+        } catch (\Throwable) {
+        }
+
+        return $run->fresh();
+    }
+
+    /**
      * Step 7b: VP final approval.
      * Transitions ACCTG_APPROVED → VP_APPROVED.
      * Enforces SOD-008: VP who approves cannot be the same person who initiated.
@@ -448,8 +499,8 @@ final class PayrollWorkflowService implements ServiceContract
     }
 
     /**
-    * Cancel a payroll run that has not yet been disbursed.
-    * Transitions any pre-disburse status → cancelled.
+     * Cancel a payroll run that has not yet been disbursed.
+     * Transitions any pre-disburse status → cancelled.
      * Notifies the initiator and, if already HR-approved, the HR approver as well.
      *
      * @throws \InvalidArgumentException

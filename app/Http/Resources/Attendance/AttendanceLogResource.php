@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Attendance;
 
+use App\Domains\Attendance\Models\AttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\Attendance\Models\AttendanceLog
+ * @mixin AttendanceLog
  */
 final class AttendanceLogResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\Attendance\Models\AttendanceLog $log */
+        /** @var AttendanceLog $log */
         $log = $this->resource;
 
         return [

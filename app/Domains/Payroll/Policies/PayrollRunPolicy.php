@@ -221,14 +221,22 @@ final class PayrollRunPolicy
         return $user->hasPermissionTo('payroll.disburse');
     }
 
-    /** Step 8b: publish payslips to employees — HR Manager or Accounting Manager */
+    /**
+     * Step 8b: publish payslips to employees.
+     * Both HR Manager and Accounting Manager can publish after VP approval.
+     */
     public function publish(User $user, PayrollRun $run): bool
     {
+        // Only allow publishing after VP approval (or when already disbursed)
+        if (! in_array($run->status, ['VP_APPROVED', 'DISBURSED'], true)) {
+            return false;
+        }
+
+        // Both HR Manager and Accounting Manager can publish
         return $user->hasAnyPermission([
             'payroll.publish',
-            'payroll.submit',
-            'payroll.acctg_approve',
-            'payroll.post',
+            'payroll.hr_approve',      // HR Manager
+            'payroll.acctg_approve',   // Accounting Manager
         ]);
     }
 

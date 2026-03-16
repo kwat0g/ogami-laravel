@@ -32,7 +32,7 @@ final class GenerateRecurringJournalEntries extends Command
         if ($count === 0) {
             $this->info('No recurring journal entries due today.');
         } else {
-            $this->info("Generated {$count} recurring journal entr" . ($count === 1 ? 'y' : 'ies') . '.');
+            $this->info("Generated {$count} recurring journal entr".($count === 1 ? 'y' : 'ies').'.');
         }
 
         return self::SUCCESS;

@@ -13,29 +13,29 @@ final class ShipmentResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                  => $this->id,
-            'ulid'                => $this->ulid,
-            'shipment_reference'  => $this->shipment_reference,
-            'carrier'             => $this->carrier,
-            'tracking_number'     => $this->tracking_number,
-            'shipped_at'          => $this->shipped_at?->toISOString(),
-            'estimated_arrival'   => $this->estimated_arrival?->toDateString(),
-            'actual_arrival'      => $this->actual_arrival?->toDateString(),
-            'status'              => $this->status,
-            'notes'               => $this->notes,
-            'delivery_receipt'    => $this->whenLoaded('deliveryReceipt', fn () => $this->deliveryReceipt ? [
-                'id'           => $this->deliveryReceipt->id,
+            'id' => $this->id,
+            'ulid' => $this->ulid,
+            'shipment_reference' => $this->shipment_reference,
+            'carrier' => $this->carrier,
+            'tracking_number' => $this->tracking_number,
+            'shipped_at' => $this->shipped_at?->toISOString(),
+            'estimated_arrival' => $this->estimated_arrival?->toDateString(),
+            'actual_arrival' => $this->actual_arrival?->toDateString(),
+            'status' => $this->status,
+            'notes' => $this->notes,
+            'delivery_receipt' => $this->whenLoaded('deliveryReceipt', fn () => $this->deliveryReceipt ? [
+                'id' => $this->deliveryReceipt->id,
                 'dr_reference' => $this->deliveryReceipt->dr_reference,
             ] : null),
-            'impex_documents'     => $this->whenLoaded('impexDocuments', fn () => $this->impexDocuments->map(fn ($d) => [
-                'id'              => $d->id,
-                'document_type'   => $d->document_type,
+            'impex_documents' => $this->whenLoaded('impexDocuments', fn () => $this->impexDocuments->map(fn ($d) => [
+                'id' => $d->id,
+                'document_type' => $d->document_type,
                 'document_number' => $d->document_number,
-                'issued_date'     => $d->issued_date?->toDateString(),
-                'expiry_date'     => $d->expiry_date?->toDateString(),
+                'issued_date' => $d->issued_date?->toDateString(),
+                'expiry_date' => $d->expiry_date?->toDateString(),
             ])),
-            'created_at'          => $this->created_at?->toISOString(),
-            'updated_at'          => $this->updated_at?->toISOString(),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

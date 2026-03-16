@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Models;
 
 use App\Domains\AP\Models\Vendor;
+use App\Domains\AP\Models\VendorFulfillmentNote;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,20 +19,20 @@ use OwenIt\Auditing\Contracts\Auditable;
 /**
  * PurchaseOrder — Purchasing Officer converts an approved PR into a PO for a vendor.
  *
- * @property int         $id
- * @property string      $ulid
- * @property string      $po_reference   PO-YYYY-MM-NNNNN
- * @property int         $purchase_request_id
- * @property int|null    $vendor_id
- * @property string      $po_date
- * @property string      $delivery_date
- * @property string      $payment_terms
+ * @property int $id
+ * @property string $ulid
+ * @property string $po_reference PO-YYYY-MM-NNNNN
+ * @property int $purchase_request_id
+ * @property int|null $vendor_id
+ * @property string $po_date
+ * @property string $delivery_date
+ * @property string $payment_terms
  * @property string|null $delivery_address
- * @property string      $status         draft|sent|partially_received|fully_received|closed|cancelled
- * @property numeric-string $total_po_amount  updated by trigger
- * @property int         $created_by_id
- * @property \Carbon\Carbon|null $sent_at
- * @property \Carbon\Carbon|null $closed_at
+ * @property string $status draft|sent|partially_received|fully_received|closed|cancelled
+ * @property numeric-string $total_po_amount updated by trigger
+ * @property int $created_by_id
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $closed_at
  * @property string|null $cancellation_reason
  * @property string|null $notes
  */
@@ -58,10 +60,10 @@ final class PurchaseOrder extends Model implements Auditable
     ];
 
     protected $casts = [
-        'po_date'       => 'date',
+        'po_date' => 'date',
         'delivery_date' => 'date',
-        'sent_at'       => 'datetime',
-        'closed_at'     => 'datetime',
+        'sent_at' => 'datetime',
+        'closed_at' => 'datetime',
     ];
 
     // ── Relations ────────────────────────────────────────────────────────────
@@ -72,13 +74,13 @@ final class PurchaseOrder extends Model implements Auditable
         return $this->belongsTo(PurchaseRequest::class);
     }
 
-    /** @return BelongsTo<\App\Domains\AP\Models\Vendor, PurchaseOrder> */
+    /** @return BelongsTo<Vendor, PurchaseOrder> */
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
     }
 
-    /** @return BelongsTo<\App\Models\User, PurchaseOrder> */
+    /** @return BelongsTo<User, PurchaseOrder> */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_id');
@@ -96,10 +98,10 @@ final class PurchaseOrder extends Model implements Auditable
         return $this->hasMany(GoodsReceipt::class);
     }
 
-    /** @return HasMany<\App\Domains\AP\Models\VendorFulfillmentNote, PurchaseOrder> */
+    /** @return HasMany<VendorFulfillmentNote, PurchaseOrder> */
     public function fulfillmentNotes(): HasMany
     {
-        return $this->hasMany(\App\Domains\AP\Models\VendorFulfillmentNote::class)->orderBy('created_at', 'desc');
+        return $this->hasMany(VendorFulfillmentNote::class)->orderBy('created_at', 'desc');
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

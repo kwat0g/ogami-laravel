@@ -24,6 +24,7 @@ use App\Http\Requests\Payroll\HrApprovePayrollRunRequest;
 use App\Http\Requests\Payroll\PublishPayrollRunRequest;
 use App\Http\Requests\Payroll\StorePayrollRunRequest;
 use App\Http\Resources\Payroll\PayrollRunResource;
+use App\Models\User;
 use App\Services\BankDisbursementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,7 +55,7 @@ final class PayrollRunController extends Controller
     {
         $this->authorize('viewAny', PayrollRun::class);
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
         $filters = $request->only(['status', 'year']);
 
@@ -439,6 +440,7 @@ final class PayrollRunController extends Controller
             'employment_types.*' => ['string'],
             'include_unpaid_leave' => ['boolean'],
             'include_probation_end' => ['boolean'],
+            'exclude_no_attendance' => ['boolean'],
             'exclude_employee_ids' => ['array'],
             'exclude_employee_ids.*' => ['integer'],
         ]);
@@ -451,6 +453,7 @@ final class PayrollRunController extends Controller
             (bool) ($validated['include_unpaid_leave'] ?? false),
             (bool) ($validated['include_probation_end'] ?? false),
             $validated['exclude_employee_ids'] ?? [],
+            (bool) ($validated['exclude_no_attendance'] ?? false),
         );
 
         return response()->json(['data' => $preview]);
@@ -476,7 +479,13 @@ final class PayrollRunController extends Controller
             }
         }
 
-        $run = $this->scopeService->confirmScope($payrollRun, $request->validated());
+        $validated = $request->validated();
+        // Map exclude_no_attendance to the scope array key expected by the service
+        if (isset($validated['exclude_no_attendance'])) {
+            $validated['exclude_no_attendance'] = (bool) $validated['exclude_no_attendance'];
+        }
+
+        $run = $this->scopeService->confirmScope($payrollRun, $validated);
 
         return response()->json([
             'message' => 'Scope confirmed. Run is ready for pre-run validation.',
@@ -499,6 +508,7 @@ final class PayrollRunController extends Controller
             $request->array('employment_types'),
             (bool) $request->input('include_unpaid_leave', false),
             (bool) $request->input('include_probation_end', false),
+            (bool) $request->input('exclude_no_attendance', false),
         );
 
         return response()->json(['data' => $preview]);
@@ -765,6 +775,12 @@ final class PayrollRunController extends Controller
             $run = $this->workflowService->acctgApprove($payrollRun, (int) $request->user()->id, $request->validated());
 
             return response()->json(['message' => 'Accounting Manager approved. Forwarded to VP for final approval.', 'run' => new PayrollRunResource($run)]);
+        }
+
+        if ($action === 'RETURNED') {
+            $run = $this->workflowService->acctgReturn($payrollRun, (int) $request->user()->id, $request->validated('return_comments'));
+
+            return response()->json(['message' => 'Payroll run returned to HR Manager for rework.', 'run' => new PayrollRunResource($run)]);
         }
 
         $run = $this->workflowService->acctgReject($payrollRun, (int) $request->user()->id, $request->validated('rejection_reason'));

@@ -164,7 +164,7 @@ final class VendorController extends Controller
                 'unit_of_measure' => $item->unit_of_measure,
                 'unit_price_centavos' => $item->unit_price,
                 'is_active' => (bool) $item->is_active,
-            ])
+            ]),
         ]);
     }
 }

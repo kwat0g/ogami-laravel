@@ -7,6 +7,7 @@ namespace App\Domains\Attendance\Models;
 use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -17,7 +18,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  *
  * @property int $id
  * @property int $employee_id
- * @property \Illuminate\Support\Carbon $work_date
+ * @property Carbon $work_date
  * @property string $source biometric|csv_import|manual|system
  * @property string|null $time_in
  * @property string|null $time_out
@@ -35,8 +36,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $remarks
  * @property string|null $import_batch_id UUID — set when imported via CSV batch
  * @property int|null $processed_by
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Employee $employee
  */
 final class AttendanceLog extends Model implements Auditable

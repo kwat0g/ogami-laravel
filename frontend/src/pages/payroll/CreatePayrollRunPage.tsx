@@ -3,7 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, CalendarRange, AlertTriangle, Loader2, CheckCircle, XCircle, Ban } from 'lucide-react'
+import {
+  ArrowLeft,
+  CalendarRange,
+  AlertTriangle,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Ban,
+} from 'lucide-react'
 import { usePayPeriods, useRunDateConflictCheck } from '@/hooks/usePayroll'
 import type { DateConflictCheck } from '@/hooks/usePayroll'
 import { RUN_TYPE_LABELS, type PayrollRunType, type PayPeriod } from '@/types/payroll'
@@ -15,12 +23,14 @@ import { usePayrollWizard } from '@/contexts/PayrollWizardContext'
 
 const schema = z
   .object({
-    run_type:      z.enum(['regular', 'thirteenth_month', 'adjustment', 'year_end_reconciliation', 'final_pay']).default('regular'),
+    run_type: z
+      .enum(['regular', 'thirteenth_month', 'adjustment', 'year_end_reconciliation', 'final_pay'])
+      .default('regular'),
     pay_period_id: z.number().optional(),
-    cutoff_start:  z.string().min(1, 'Cutoff start is required'),
-    cutoff_end:    z.string().min(1, 'Cutoff end is required'),
-    pay_date:      z.string().min(1, 'Pay date is required'),
-    notes:         z.string().max(1000).optional(),
+    cutoff_start: z.string().min(1, 'Cutoff start is required'),
+    cutoff_end: z.string().min(1, 'Cutoff end is required'),
+    pay_date: z.string().min(1, 'Pay date is required'),
+    notes: z.string().max(1000).optional(),
   })
   .refine((d) => d.cutoff_end >= d.cutoff_start, {
     message: 'Cutoff end must be on or after cutoff start',
@@ -42,7 +52,15 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-1 text-xs text-red-600">{message}</p>
 }
 
-function Label({ htmlFor, required, children }: { htmlFor: string; required?: boolean; children: React.ReactNode }) {
+function Label({
+  htmlFor,
+  required,
+  children,
+}: {
+  htmlFor: string
+  required?: boolean
+  children: React.ReactNode
+}) {
   return (
     <label htmlFor={htmlFor} className="block text-sm font-medium text-neutral-700 mb-1">
       {children}
@@ -53,10 +71,14 @@ function Label({ htmlFor, required, children }: { htmlFor: string; required?: bo
 
 // Run type hints
 const RUN_TYPE_HINTS: Partial<Record<PayrollRunType, string>> = {
-  thirteenth_month: '13th Month Run: Set cutoff to Jan 1–Dec 31 of the target year. No gov\'t contributions deducted. WHT applies only to amount exceeding ₱90,000 exemption.',
-  adjustment: 'Adjustment Run: Used to correct prior payroll errors. Requires HR and Accounting approval.',
-  year_end_reconciliation: 'Year-End Reconciliation: Reconciles annual taxable income and withholding tax per TRAIN law annualization.',
-  final_pay: 'Final Pay: For separated employees. Includes last salary, pro-rated 13th month, unused SL/VL conversions.',
+  thirteenth_month:
+    "13th Month Run: Set cutoff to Jan 1–Dec 31 of the target year. No gov't contributions deducted. WHT applies only to amount exceeding ₱90,000 exemption.",
+  adjustment:
+    'Adjustment Run: Used to correct prior payroll errors. Requires HR and Accounting approval.',
+  year_end_reconciliation:
+    'Year-End Reconciliation: Reconciles annual taxable income and withholding tax per TRAIN law annualization.',
+  final_pay:
+    'Final Pay: For separated employees. Includes last salary, pro-rated 13th month, unused SL/VL conversions.',
 }
 
 // ---------------------------------------------------------------------------
@@ -71,22 +93,28 @@ const CHECK_DESCRIPTIONS: Record<string, string> = {
 }
 
 function ConflictCheckRow({ check }: { check: DateConflictCheck }) {
-  const isPassed  = check.status === 'pass'
-  const isBlock   = check.status === 'block'
-  const isWarn    = check.status === 'warn'
+  const isPassed = check.status === 'pass'
+  const isBlock = check.status === 'block'
+  const isWarn = check.status === 'warn'
 
   return (
-    <div className={`flex items-start gap-3 rounded px-3 py-2.5 border text-sm ${
-      isBlock ? 'bg-red-50 border-red-200' :
-      isWarn  ? 'bg-amber-50 border-amber-200' :
-                'bg-green-50 border-green-100'
-    }`}>
+    <div
+      className={`flex items-start gap-3 rounded px-3 py-2.5 border text-sm ${
+        isBlock
+          ? 'bg-red-50 border-red-200'
+          : isWarn
+            ? 'bg-amber-50 border-amber-200'
+            : 'bg-green-50 border-green-100'
+      }`}
+    >
       {isPassed && <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />}
-      {isBlock  && <XCircle     className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />}
-      {isWarn   && <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />}
+      {isBlock && <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />}
+      {isWarn && <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <span className={`font-medium ${isBlock ? 'text-red-800' : isWarn ? 'text-amber-800' : 'text-green-800'}`}>
+          <span
+            className={`font-medium ${isBlock ? 'text-red-800' : isWarn ? 'text-amber-800' : 'text-green-800'}`}
+          >
             {CHECK_DESCRIPTIONS[check.code] ?? check.label}
           </span>
           <span className="text-xs font-mono text-neutral-400 shrink-0">{check.code}</span>
@@ -128,7 +156,9 @@ function ConflictCheckPanel({
         </div>
       ) : (
         <div className="space-y-1.5">
-          {checks.map(c => <ConflictCheckRow key={c.code} check={c} />)}
+          {checks.map((c) => (
+            <ConflictCheckRow key={c.code} check={c} />
+          ))}
         </div>
       )}
 
@@ -172,27 +202,30 @@ export default function CreatePayrollRunPage() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    resolver:      zodResolver(schema),
-    mode:          'onBlur',
+    resolver: zodResolver(schema),
+    mode: 'onBlur',
     defaultValues: {
-      run_type:      (state.step1?.run_type     ?? 'regular') as PayrollRunType,
+      run_type: (state.step1?.run_type ?? 'regular') as PayrollRunType,
       pay_period_id: state.step1?.pay_period_id,
-      cutoff_start:  state.step1?.cutoff_start  ?? '',
-      cutoff_end:    state.step1?.cutoff_end    ?? '',
-      pay_date:      state.step1?.pay_date      ?? '',
-      notes:         state.step1?.notes         ?? '',
+      cutoff_start: state.step1?.cutoff_start ?? '',
+      cutoff_end: state.step1?.cutoff_end ?? '',
+      pay_date: state.step1?.pay_date ?? '',
+      notes: state.step1?.notes ?? '',
     },
   })
 
   const cutoffStart = watch('cutoff_start')
-  const cutoffEnd   = watch('cutoff_end')
-  const payDate     = watch('pay_date')
-  const runType     = watch('run_type') as PayrollRunType
-  const hint        = RUN_TYPE_HINTS[runType]
+  const cutoffEnd = watch('cutoff_end')
+  const payDate = watch('pay_date')
+  const runType = watch('run_type') as PayrollRunType
+  const hint = RUN_TYPE_HINTS[runType]
 
   // Debounce the API check so it doesn't fire on every keypress.
   const [validationParams, setValidationParams] = useState<{
-    cutoff_start: string; cutoff_end: string; pay_date: string; run_type: string
+    cutoff_start: string
+    cutoff_end: string
+    pay_date: string
+    run_type: string
   } | null>(null)
 
   useEffect(() => {
@@ -201,16 +234,22 @@ export default function CreatePayrollRunPage() {
       return
     }
     const timer = setTimeout(() => {
-      setValidationParams({ cutoff_start: cutoffStart, cutoff_end: cutoffEnd, pay_date: payDate, run_type: runType })
+      setValidationParams({
+        cutoff_start: cutoffStart,
+        cutoff_end: cutoffEnd,
+        pay_date: payDate,
+        run_type: runType,
+      })
     }, 600)
     return () => clearTimeout(timer)
   }, [cutoffStart, cutoffEnd, payDate, runType])
 
-  const { data: conflictData, isFetching: conflictChecking } = useRunDateConflictCheck(validationParams)
+  const { data: conflictData, isFetching: conflictChecking } =
+    useRunDateConflictCheck(validationParams)
 
   const showValidationPanel = validationParams !== null || conflictChecking
-  const hasApiBlockers      = conflictData ? !conflictData.can_proceed : false
-  const hasZodDateErrors    = !!(errors.cutoff_start || errors.cutoff_end || errors.pay_date)
+  const hasApiBlockers = conflictData ? !conflictData.can_proceed : false
+  const hasZodDateErrors = !!(errors.cutoff_start || errors.cutoff_end || errors.pay_date)
 
   // Pre-select the pay period in the dropdown if returning to this step
   useEffect(() => {
@@ -230,9 +269,9 @@ export default function CreatePayrollRunPage() {
     const period = payPeriods.find((p: PayPeriod) => p.id === periodId)
     if (period) {
       setValue('pay_period_id', period.id)
-      setValue('cutoff_start',  period.cutoff_start)
-      setValue('cutoff_end',    period.cutoff_end)
-      setValue('pay_date',      period.pay_date)
+      setValue('cutoff_start', period.cutoff_start)
+      setValue('cutoff_end', period.cutoff_end)
+      setValue('pay_date', period.pay_date)
     }
   }
 
@@ -241,12 +280,12 @@ export default function CreatePayrollRunPage() {
     // Safety net: block if the live conflict check found blockers
     if (hasApiBlockers) return
     setStep1({
-      run_type:      values.run_type,
+      run_type: values.run_type,
       pay_period_id: values.pay_period_id,
-      cutoff_start:  values.cutoff_start,
-      cutoff_end:    values.cutoff_end,
-      pay_date:      values.pay_date,
-      notes:         values.notes || undefined,
+      cutoff_start: values.cutoff_start,
+      cutoff_end: values.cutoff_end,
+      pay_date: values.pay_date,
+      notes: values.notes || undefined,
     })
     navigate('/payroll/runs/new/scope')
   }
@@ -254,7 +293,7 @@ export default function CreatePayrollRunPage() {
   const canProceed = !hasApiBlockers && !hasZodDateErrors && !conflictChecking
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Back */}
       <button
         onClick={() => navigate('/payroll/runs')}
@@ -266,10 +305,24 @@ export default function CreatePayrollRunPage() {
 
       {/* Wizard step indicator */}
       <div className="flex flex-wrap items-center gap-1.5 mb-6 text-xs text-neutral-500">
-        {['Define Run', 'Set Scope', 'Validate', 'Compute', 'Review', 'Acctg Review', 'Disburse'].map((step, i) => (
+        {[
+          'Define Run',
+          'Set Scope',
+          'Validate',
+          'Compute',
+          'Review',
+          'Acctg Review',
+          'Disburse',
+        ].map((step, i) => (
           <span key={step} className="flex items-center gap-1.5">
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-500'}`}>{i + 1}</span>
-            <span className={i === 0 ? 'text-neutral-900 font-semibold' : 'text-neutral-400'}>{step}</span>
+            <span
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${i === 0 ? 'bg-neutral-900 text-white' : 'bg-neutral-200 text-neutral-500'}`}
+            >
+              {i + 1}
+            </span>
+            <span className={i === 0 ? 'text-neutral-900 font-semibold' : 'text-neutral-400'}>
+              {step}
+            </span>
             {i < 6 && <span className="text-neutral-300">›</span>}
           </span>
         ))}
@@ -282,25 +335,32 @@ export default function CreatePayrollRunPage() {
         </div>
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">New Payroll Run</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Step 1 of 7 — Define the run type and pay period.</p>
+          <p className="text-sm text-neutral-500 mt-0.5">
+            Step 1 of 7 — Define the run type and pay period.
+          </p>
         </div>
       </div>
 
       {/* Form card */}
       <div className="bg-white border border-neutral-200 rounded p-6">
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-
           {/* Run Type */}
           <div>
-            <Label htmlFor="run_type" required>Run Type</Label>
+            <Label htmlFor="run_type" required>
+              Run Type
+            </Label>
             <select
               id="run_type"
               {...register('run_type')}
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
             >
-              {(Object.entries(RUN_TYPE_LABELS) as [PayrollRunType, string][]).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
+              {(Object.entries(RUN_TYPE_LABELS) as [PayrollRunType, string][]).map(
+                ([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ),
+              )}
             </select>
             {hint && (
               <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded px-3 py-2 text-xs text-amber-800">
@@ -334,14 +394,17 @@ export default function CreatePayrollRunPage() {
               </select>
             </div>
             <p className="mt-1 text-xs text-neutral-400">
-              Only open pay periods are listed. Selecting one auto-fills the dates below; you can still adjust them manually.
+              Only open pay periods are listed. Selecting one auto-fills the dates below; you can
+              still adjust them manually.
             </p>
           </div>
 
           {/* Dates row */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="cutoff_start" required>Cutoff Start</Label>
+              <Label htmlFor="cutoff_start" required>
+                Cutoff Start
+              </Label>
               <input
                 id="cutoff_start"
                 type="date"
@@ -353,7 +416,9 @@ export default function CreatePayrollRunPage() {
               <FieldError message={errors.cutoff_start?.message} />
             </div>
             <div>
-              <Label htmlFor="cutoff_end" required>Cutoff End</Label>
+              <Label htmlFor="cutoff_end" required>
+                Cutoff End
+              </Label>
               <input
                 id="cutoff_end"
                 type="date"
@@ -365,7 +430,9 @@ export default function CreatePayrollRunPage() {
               <FieldError message={errors.cutoff_end?.message} />
             </div>
             <div>
-              <Label htmlFor="pay_date" required>Pay Date</Label>
+              <Label htmlFor="pay_date" required>
+                Pay Date
+              </Label>
               <input
                 id="pay_date"
                 type="date"
@@ -389,7 +456,9 @@ export default function CreatePayrollRunPage() {
 
           {/* Notes */}
           <div>
-            <Label htmlFor="notes">Reference / Notes <span className="text-neutral-400 font-normal">(optional)</span></Label>
+            <Label htmlFor="notes">
+              Reference / Notes <span className="text-neutral-400 font-normal">(optional)</span>
+            </Label>
             <textarea
               id="notes"
               rows={2}
@@ -403,8 +472,14 @@ export default function CreatePayrollRunPage() {
           {/* Workflow info */}
           <div className="bg-neutral-50 border border-neutral-100 rounded p-3 text-xs text-neutral-800 space-y-1">
             <p className="font-semibold">7-Step Workflow</p>
-            <p>You will configure <strong>Scope → Validate</strong> locally. The payroll run is only saved to the database when you click <strong>"Begin Computation"</strong> on the final setup step.</p>
-            <p className="text-neutral-900">SoD enforced: the initiator cannot approve at HR or Accounting stages.</p>
+            <p>
+              You will configure <strong>Scope → Validate</strong> locally. The payroll run is only
+              saved to the database when you click <strong>"Begin Computation"</strong> on the final
+              setup step.
+            </p>
+            <p className="text-neutral-900">
+              SoD enforced: the initiator cannot approve at HR or Accounting stages.
+            </p>
           </div>
 
           {/* Actions */}
@@ -418,27 +493,35 @@ export default function CreatePayrollRunPage() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !canProceed || (validationParams !== null && conflictChecking)}
+              disabled={
+                isSubmitting || !canProceed || (validationParams !== null && conflictChecking)
+              }
               title={
-                hasApiBlockers     ? 'Fix the date validation errors above before proceeding.' :
-                conflictChecking   ? 'Validating dates…' :
-                hasZodDateErrors   ? 'Correct the date errors before proceeding.' :
-                undefined
+                hasApiBlockers
+                  ? 'Fix the date validation errors above before proceeding.'
+                  : conflictChecking
+                    ? 'Validating dates…'
+                    : hasZodDateErrors
+                      ? 'Correct the date errors before proceeding.'
+                      : undefined
               }
               className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
             >
-              {isSubmitting
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>
-                : conflictChecking && validationParams
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Validating…</>
-                : 'Next: Set Scope →'
-              }
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+                </>
+              ) : conflictChecking && validationParams ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Validating…
+                </>
+              ) : (
+                'Next: Set Scope →'
+              )}
             </button>
           </div>
-
         </form>
       </div>
     </div>
   )
 }
-

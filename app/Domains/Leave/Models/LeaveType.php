@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -26,8 +27,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property bool $can_be_monetized SIL — LV-007
  * @property bool $deducts_absent_on_lwop LWOP — LV-006
  * @property bool $is_active
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Collection<int, LeaveBalance> $balances
  * @property-read Collection<int, LeaveRequest> $requests
  */

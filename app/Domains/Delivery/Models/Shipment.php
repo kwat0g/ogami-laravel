@@ -4,30 +4,32 @@ declare(strict_types=1);
 
 namespace App\Domains\Delivery\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
- * @property int                                  $id
- * @property string                               $ulid
- * @property int|null                             $delivery_receipt_id
- * @property string|null                          $carrier
- * @property string|null                          $tracking_number
- * @property \Illuminate\Support\Carbon|null      $shipped_at
- * @property \Illuminate\Support\Carbon|null      $estimated_arrival
- * @property \Illuminate\Support\Carbon|null      $actual_arrival
- * @property string|null                          $status
- * @property string|null                          $notes
- * @property bool                                 $ar_invoice_created
- * @property int|null                             $created_by_id
- * @property \Illuminate\Support\Carbon           $created_at
- * @property \Illuminate\Support\Carbon           $updated_at
- * @property \Illuminate\Support\Carbon|null      $deleted_at
+ * @property int $id
+ * @property string $ulid
+ * @property int|null $delivery_receipt_id
+ * @property string|null $carrier
+ * @property string|null $tracking_number
+ * @property Carbon|null $shipped_at
+ * @property Carbon|null $estimated_arrival
+ * @property Carbon|null $actual_arrival
+ * @property string|null $status
+ * @property string|null $notes
+ * @property bool $ar_invoice_created
+ * @property int|null $created_by_id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class Shipment extends Model implements AuditableContract
 {
@@ -42,10 +44,10 @@ final class Shipment extends Model implements AuditableContract
     ];
 
     protected $casts = [
-        'shipped_at'          => 'datetime',
-        'estimated_arrival'   => 'date',
-        'actual_arrival'      => 'date',
-        'ar_invoice_created'  => 'boolean',
+        'shipped_at' => 'datetime',
+        'estimated_arrival' => 'date',
+        'actual_arrival' => 'date',
+        'ar_invoice_created' => 'boolean',
     ];
 
     public function deliveryReceipt(): BelongsTo
@@ -55,7 +57,7 @@ final class Shipment extends Model implements AuditableContract
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 
     public function impexDocuments(): HasMany

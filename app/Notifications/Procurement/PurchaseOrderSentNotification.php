@@ -38,15 +38,15 @@ final class PurchaseOrderSentNotification extends Notification implements Should
         $vendor = $this->purchaseOrder->vendor?->name ?? '(unknown vendor)';
 
         return [
-            'type'           => 'purchase_order_sent',
-            'title'          => "Purchase Order Sent — {$this->purchaseOrder->po_reference}",
-            'body'           => "PO #{$this->purchaseOrder->po_reference} to {$vendor} has been sent. Prepare to receive incoming goods.",
-            'po_id'          => $this->purchaseOrder->id,
-            'po_ulid'        => $this->purchaseOrder->ulid,
-            'po_number'      => $this->purchaseOrder->po_reference,
-            'vendor'         => $vendor,
-            'total_amount'   => $this->purchaseOrder->total_po_amount,
-            'url'            => "/procurement/purchase-orders/{$this->purchaseOrder->ulid}",
+            'type' => 'purchase_order_sent',
+            'title' => "Purchase Order Sent — {$this->purchaseOrder->po_reference}",
+            'body' => "PO #{$this->purchaseOrder->po_reference} to {$vendor} has been sent. Prepare to receive incoming goods.",
+            'po_id' => $this->purchaseOrder->id,
+            'po_ulid' => $this->purchaseOrder->ulid,
+            'po_number' => $this->purchaseOrder->po_reference,
+            'vendor' => $vendor,
+            'total_amount' => $this->purchaseOrder->total_po_amount,
+            'url' => "/procurement/purchase-orders/{$this->purchaseOrder->ulid}",
         ];
     }
 

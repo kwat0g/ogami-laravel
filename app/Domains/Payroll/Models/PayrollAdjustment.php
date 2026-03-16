@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Payroll\Models;
 
+use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -62,6 +63,6 @@ final class PayrollAdjustment extends Model implements Auditable
 
     public function glAccount(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Accounting\Models\ChartOfAccount::class, 'gl_account_id');
+        return $this->belongsTo(ChartOfAccount::class, 'gl_account_id');
     }
 }

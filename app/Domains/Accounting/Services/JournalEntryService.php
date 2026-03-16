@@ -10,6 +10,7 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\SodViolationException;
 use App\Shared\Exceptions\UnbalancedJournalEntryException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -238,7 +239,7 @@ final class JournalEntryService implements ServiceContract
      */
     private function generateJeNumber(string $date): string
     {
-        $d = \Carbon\Carbon::parse($date);
+        $d = Carbon::parse($date);
         $yyyy = $d->format('Y');
         $mm = $d->format('m');
 

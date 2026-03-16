@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Tax;
 
+use App\Domains\Tax\Models\VatLedger;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\Tax\Models\VatLedger
+ * @mixin VatLedger
  */
 final class VatLedgerResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\Tax\Models\VatLedger $ledger */
+        /** @var VatLedger $ledger */
         $ledger = $this->resource;
 
         return [

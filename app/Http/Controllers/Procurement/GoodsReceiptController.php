@@ -10,6 +10,8 @@ use App\Domains\Procurement\Services\GoodsReceiptService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\StoreGoodsReceiptRequest;
 use App\Http\Resources\Procurement\GoodsReceiptResource;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class GoodsReceiptController extends Controller
@@ -23,7 +25,7 @@ final class GoodsReceiptController extends Controller
      *   ?status=draft|confirmed
      *   ?purchase_order_id=12
      */
-    public function index(\Illuminate\Http\Request $request): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', GoodsReceipt::class);
 
@@ -50,8 +52,8 @@ final class GoodsReceiptController extends Controller
         $po = PurchaseOrder::findOrFail($validated['purchase_order_id']);
 
         $gr = $this->service->store(
-            po:    $po,
-            data:  $validated,
+            po: $po,
+            data: $validated,
             items: $validated['items'],
             actor: auth()->user(),
         );
@@ -77,15 +79,15 @@ final class GoodsReceiptController extends Controller
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'confirmedBy', 'items']));
     }
 
-    public function destroy(GoodsReceipt $goodsReceipt): \Illuminate\Http\JsonResponse
+    public function destroy(GoodsReceipt $goodsReceipt): JsonResponse
     {
         $this->authorize('delete', $goodsReceipt);
 
         if ($goodsReceipt->status !== 'draft') {
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'GR_NOT_DRAFT',
-                'message'    => 'Only draft Goods Receipts can be cancelled.',
+                'message' => 'Only draft Goods Receipts can be cancelled.',
             ], 422);
         }
 

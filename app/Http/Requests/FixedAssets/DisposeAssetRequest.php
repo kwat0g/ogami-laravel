@@ -16,10 +16,10 @@ final class DisposeAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'disposal_date'     => ['required', 'date'],
+            'disposal_date' => ['required', 'date'],
             'proceeds_centavos' => ['nullable', 'integer', 'min:0'],
-            'disposal_method'   => ['nullable', 'string', 'in:sale,scrap,donation,write_off'],
-            'notes'             => ['nullable', 'string'],
+            'disposal_method' => ['nullable', 'string', 'in:sale,scrap,donation,write_off'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

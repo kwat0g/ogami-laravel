@@ -158,11 +158,11 @@ final class LeaveRequestPolicy
     public function review(User $user, LeaveRequest $leaveRequest): bool
     {
         return match ($leaveRequest->status) {
-            'submitted'       => $this->headApprove($user, $leaveRequest),
-            'head_approved'   => $this->managerCheck($user, $leaveRequest),
+            'submitted' => $this->headApprove($user, $leaveRequest),
+            'head_approved' => $this->managerCheck($user, $leaveRequest),
             'manager_checked' => $this->gaProcess($user, $leaveRequest),
-            'ga_processed'    => $this->vpNote($user, $leaveRequest),
-            default           => false,
+            'ga_processed' => $this->vpNote($user, $leaveRequest),
+            default => false,
         };
     }
 

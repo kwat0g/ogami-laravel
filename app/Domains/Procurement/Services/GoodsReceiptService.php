@@ -21,8 +21,8 @@ final class GoodsReceiptService implements ServiceContract
     // ── Store (draft) ────────────────────────────────────────────────────────
 
     /**
-     * @param  array<string, mixed>       $data
-     * @param  list<array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  list<array<string, mixed>>  $items
      */
     public function store(PurchaseOrder $po, array $data, array $items, User $actor): GoodsReceipt
     {
@@ -48,15 +48,15 @@ final class GoodsReceiptService implements ServiceContract
             $reference = $this->generateReference();
 
             $gr = GoodsReceipt::create([
-                'gr_reference'          => $reference,
-                'purchase_order_id'     => $po->id,
-                'received_by_id'        => $actor->id,
-                'received_date'         => $receivedDate,
-                'delivery_note_number'  => $data['delivery_note_number'] ?? null,
-                'condition_notes'       => $data['condition_notes'] ?? null,
-                'status'                => 'draft',
+                'gr_reference' => $reference,
+                'purchase_order_id' => $po->id,
+                'received_by_id' => $actor->id,
+                'received_date' => $receivedDate,
+                'delivery_note_number' => $data['delivery_note_number'] ?? null,
+                'condition_notes' => $data['condition_notes'] ?? null,
+                'status' => 'draft',
                 'three_way_match_passed' => false,
-                'ap_invoice_created'    => false,
+                'ap_invoice_created' => false,
             ]);
 
             foreach ($items as $item) {
@@ -72,13 +72,13 @@ final class GoodsReceiptService implements ServiceContract
 
                 // item_master_id comes directly from the PO item FK — no name-matching needed
                 GoodsReceiptItem::create([
-                    'goods_receipt_id'  => $gr->id,
-                    'po_item_id'        => $item['po_item_id'],
-                    'item_master_id'    => $poItem->item_master_id,
+                    'goods_receipt_id' => $gr->id,
+                    'po_item_id' => $item['po_item_id'],
+                    'item_master_id' => $poItem->item_master_id,
                     'quantity_received' => $item['quantity_received'],
-                    'unit_of_measure'   => $item['unit_of_measure'],
-                    'condition'         => $item['condition'] ?? 'good',
-                    'remarks'           => $item['remarks'] ?? null,
+                    'unit_of_measure' => $item['unit_of_measure'],
+                    'condition' => $item['condition'] ?? 'good',
+                    'remarks' => $item['remarks'] ?? null,
                 ]);
             }
 
@@ -114,9 +114,9 @@ final class GoodsReceiptService implements ServiceContract
 
         return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
             $gr->update([
-                'status'        => 'confirmed',
+                'status' => 'confirmed',
                 'confirmed_by_id' => $actor->id,
-                'confirmed_at'  => now(),
+                'confirmed_at' => now(),
             ]);
 
             $this->threeWayMatchService->runMatch($gr->refresh());
@@ -138,6 +138,6 @@ final class GoodsReceiptService implements ServiceContract
         $seq = DB::selectOne('SELECT NEXTVAL(\'goods_receipt_seq\') AS val');
         $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
 
-        return 'GR-' . now()->format('Y-m') . '-' . $num;
+        return 'GR-'.now()->format('Y-m').'-'.$num;
     }
 }

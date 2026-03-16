@@ -35,6 +35,7 @@ final class PayrollScopeService implements ServiceContract
      *   employment_types?: string[],
      *   include_unpaid_leave?: bool,
      *   include_probation_end?: bool,
+     *   exclude_no_attendance?: bool,
      * } $scope
      */
     public function confirmScope(PayrollRun $run, array $scope): PayrollRun
@@ -44,6 +45,7 @@ final class PayrollScopeService implements ServiceContract
         $run->scope_employment_types = $scope['employment_types'] ?? null;
         $run->scope_include_unpaid_leave = $scope['include_unpaid_leave'] ?? false;
         $run->scope_include_probation_end = $scope['include_probation_end'] ?? false;
+        $run->scope_exclude_no_attendance = $scope['exclude_no_attendance'] ?? false;
         $run->scope_confirmed_at = now();
         $run->save();
 
@@ -88,6 +90,7 @@ final class PayrollScopeService implements ServiceContract
      *
      * @param  string  $cutoffEnd  YYYY-MM-DD — taken from Step 1 form data
      * @param  int[]  $excludeEmployeeIds  Locally-tracked draft exclusions
+     * @param  bool  $excludeNoAttendance  Whether to exclude employees with zero attendance
      */
     public function draftScopePreview(
         string $cutoffEnd,
@@ -97,6 +100,7 @@ final class PayrollScopeService implements ServiceContract
         bool $includeUnpaidLeave,
         bool $includeProbationEnd,
         array $excludeEmployeeIds = [],
+        bool $excludeNoAttendance = false,
     ): array {
         $query = Employee::query()
             ->where('employment_status', 'active')
@@ -112,15 +116,32 @@ final class PayrollScopeService implements ServiceContract
             $query->whereIn('employment_type', $employmentTypes);
         }
 
+        // Exclude employees with no attendance records in the cutoff period
+        if ($excludeNoAttendance) {
+            $query->whereHas('attendanceLogs', function ($q) use ($cutoffEnd) {
+                // For draft preview, we use a default 15-day cutoff start
+                $cutoffStart = (new \DateTime($cutoffEnd))->modify('-14 days')->format('Y-m-d');
+                $q->where('work_date', '>=', $cutoffStart)
+                    ->where('work_date', '<=', $cutoffEnd);
+            });
+        }
+
         $totalInScope = (clone $query)->count();
         $manuallyExcluded = count($excludeEmployeeIds);
         $willBeComputed = max(0, $totalInScope - $manuallyExcluded);
 
-        $deptData = Department::with(['employees' => function ($q) use ($cutoffEnd, $departmentIds) {
+        $deptData = Department::with(['employees' => function ($q) use ($cutoffEnd, $departmentIds, $excludeNoAttendance) {
             $q->where('employment_status', 'active')
                 ->where('date_hired', '<=', $cutoffEnd);
             if (! empty($departmentIds)) {
                 $q->whereIn('department_id', $departmentIds);
+            }
+            if ($excludeNoAttendance) {
+                $cutoffStart = (new \DateTime($cutoffEnd))->modify('-14 days')->format('Y-m-d');
+                $q->whereHas('attendanceLogs', function ($sq) use ($cutoffStart, $cutoffEnd) {
+                    $sq->where('work_date', '>=', $cutoffStart)
+                        ->where('work_date', '<=', $cutoffEnd);
+                });
             }
         }])
             ->when(! empty($departmentIds), fn ($q) => $q->whereIn('id', $departmentIds))
@@ -184,6 +205,7 @@ final class PayrollScopeService implements ServiceContract
         ?array $employmentTypes,
         bool $includeUnpaidLeave,
         bool $includeProbationEnd,
+        bool $excludeNoAttendance = false,
     ): array {
         $query = Employee::query()
             ->where('employment_status', 'active')
@@ -197,6 +219,14 @@ final class PayrollScopeService implements ServiceContract
         }
         if (! empty($employmentTypes)) {
             $query->whereIn('employment_type', $employmentTypes);
+        }
+
+        // Exclude employees with no attendance records in the cutoff period
+        if ($excludeNoAttendance) {
+            $query->whereHas('attendanceLogs', function ($q) use ($run) {
+                $q->where('work_date', '>=', $run->cutoff_start)
+                    ->where('work_date', '<=', $run->cutoff_end);
+            });
         }
 
         $totalInScope = (clone $query)->count();
@@ -228,11 +258,17 @@ final class PayrollScopeService implements ServiceContract
             ->pluck('employee_id')
             ->toArray();
 
-        $deptData = Department::with(['employees' => function ($q) use ($run, $departmentIds) {
+        $deptData = Department::with(['employees' => function ($q) use ($run, $departmentIds, $excludeNoAttendance) {
             $q->where('employment_status', 'active')
                 ->where('date_hired', '<=', $run->cutoff_end);
             if (! empty($departmentIds)) {
                 $q->whereIn('department_id', $departmentIds);
+            }
+            if ($excludeNoAttendance) {
+                $q->whereHas('attendanceLogs', function ($sq) use ($run) {
+                    $sq->where('work_date', '>=', $run->cutoff_start)
+                        ->where('work_date', '<=', $run->cutoff_end);
+                });
             }
         }])
             ->when(! empty($departmentIds), fn ($q) => $q->whereIn('id', $departmentIds))

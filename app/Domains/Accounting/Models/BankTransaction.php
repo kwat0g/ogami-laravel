@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Accounting\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -71,17 +72,17 @@ final class BankTransaction extends Model implements Auditable
 
     // ── Scopes ───────────────────────────────────────────────────────────────
 
-    public function scopeUnmatched(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeUnmatched(Builder $query): Builder
     {
         return $query->where('status', 'unmatched');
     }
 
-    public function scopeMatched(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeMatched(Builder $query): Builder
     {
         return $query->where('status', 'matched');
     }
 
-    public function scopeReconciled(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeReconciled(Builder $query): Builder
     {
         return $query->where('status', 'reconciled');
     }

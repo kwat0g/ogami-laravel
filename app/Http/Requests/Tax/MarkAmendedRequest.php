@@ -16,9 +16,9 @@ final class MarkAmendedRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'confirmation_number'    => ['nullable', 'string', 'max:100'],
+            'confirmation_number' => ['nullable', 'string', 'max:100'],
             'total_tax_due_centavos' => ['nullable', 'integer', 'min:0'],
-            'notes'                  => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

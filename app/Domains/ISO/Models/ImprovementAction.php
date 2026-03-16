@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ISO\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,9 +25,9 @@ final class ImprovementAction extends Model implements AuditableContract
     ];
 
     protected $casts = [
-        'due_date'     => 'date',
+        'due_date' => 'date',
         'completed_at' => 'datetime',
-        'verified_at'  => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     public function finding(): BelongsTo
@@ -36,16 +37,16 @@ final class ImprovementAction extends Model implements AuditableContract
 
     public function assignedTo(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'assigned_to_id');
+        return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
     public function verifiedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'verified_by_id');
+        return $this->belongsTo(User::class, 'verified_by_id');
     }
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 }

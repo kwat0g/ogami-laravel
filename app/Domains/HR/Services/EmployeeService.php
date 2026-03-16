@@ -9,6 +9,7 @@ use App\Domains\HR\Models\SalaryGrade;
 use App\Domains\HR\StateMachines\EmployeeStateMachine;
 use App\Domains\Leave\Models\LeaveBalance;
 use App\Domains\Leave\Models\LeaveType;
+use App\Infrastructure\Scopes\DepartmentScope;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\InvalidStateTransitionException;
@@ -219,7 +220,16 @@ final class EmployeeService implements ServiceContract
                 $employee->delete();
             }
 
-            return Employee::withTrashed()->findOrFail($employee->id);
+            // Bypass DepartmentScope on the post-save refetch: the scope is
+            // active at this point (DepartmentScopeMiddleware has already run)
+            // and would add WHERE department_id = X, causing a 404 whenever
+            // the target employee belongs to a different department from the
+            // requesting user's primary department. Authorization is enforced
+            // by the Policy gate before this method is called, so skipping
+            // the scope here is safe.
+            return Employee::withoutGlobalScope(DepartmentScope::class)
+                ->withTrashed()
+                ->findOrFail($employee->id);
         });
     }
 
@@ -231,7 +241,12 @@ final class EmployeeService implements ServiceContract
     private function generateEmployeeCode(): string
     {
         $year = date('Y');
-        $last = Employee::withTrashed()
+        // Bypass DepartmentScope so we scan codes across ALL departments.
+        // Without this, a dept-scoped request would only see codes from the
+        // requesting user's department and could generate a duplicate code
+        // that already exists in another department.
+        $last = Employee::withoutGlobalScope(DepartmentScope::class)
+            ->withTrashed()
             ->where('employee_code', 'LIKE', "EMP-{$year}-%")
             ->orderByDesc('employee_code')
             ->value('employee_code');

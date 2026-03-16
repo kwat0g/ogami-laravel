@@ -8,11 +8,12 @@ use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Services\FiscalPeriodService;
 use App\Domains\Accounting\Services\JournalEntryService;
-use App\Domains\Tax\Services\VatLedgerService;
 use App\Domains\AP\Models\Vendor;
 use App\Domains\AP\Models\VendorInvoice;
 use App\Domains\AP\Models\VendorPayment;
 use App\Domains\Procurement\Models\GoodsReceipt;
+use App\Domains\Procurement\Models\GoodsReceiptItem;
+use App\Domains\Tax\Services\VatLedgerService;
 use App\Models\User;
 use App\Notifications\VendorInvoiceDecidedNotification;
 use App\Notifications\VendorInvoiceSubmittedNotification;
@@ -527,8 +528,7 @@ final class VendorInvoiceService implements ServiceContract
         // Falls back to PO total only if no items are loaded (safety net).
         $gr->loadMissing('items.poItem');
         $netAmount = $gr->items->reduce(
-            fn (float $carry, \App\Domains\Procurement\Models\GoodsReceiptItem $item): float =>
-                $carry + ((float) $item->quantity_received * (float) ($item->poItem->agreed_unit_cost ?? 0)),
+            fn (float $carry, GoodsReceiptItem $item): float => $carry + ((float) $item->quantity_received * (float) ($item->poItem->agreed_unit_cost ?? 0)),
             0.0,
         );
         if ($netAmount <= 0) {

@@ -31,12 +31,12 @@ final class RecurringJournalTemplateService implements ServiceContract
 
         return DB::transaction(function () use ($data, $actor): RecurringJournalTemplate {
             return RecurringJournalTemplate::create([
-                'description'   => $data['description'],
-                'frequency'     => $data['frequency'],
-                'day_of_month'  => $data['day_of_month'] ?? null,
+                'description' => $data['description'],
+                'frequency' => $data['frequency'],
+                'day_of_month' => $data['day_of_month'] ?? null,
                 'next_run_date' => $data['next_run_date'],
-                'is_active'     => true,
-                'lines'         => $data['lines'],
+                'is_active' => true,
+                'lines' => $data['lines'],
                 'created_by_id' => $actor->id,
             ]);
         });
@@ -53,11 +53,11 @@ final class RecurringJournalTemplateService implements ServiceContract
 
         return DB::transaction(function () use ($template, $data): RecurringJournalTemplate {
             $template->update(array_filter([
-                'description'   => $data['description'] ?? null,
-                'frequency'     => $data['frequency'] ?? null,
-                'day_of_month'  => array_key_exists('day_of_month', $data) ? $data['day_of_month'] : null,
+                'description' => $data['description'] ?? null,
+                'frequency' => $data['frequency'] ?? null,
+                'day_of_month' => array_key_exists('day_of_month', $data) ? $data['day_of_month'] : null,
                 'next_run_date' => $data['next_run_date'] ?? null,
-                'lines'         => $data['lines'] ?? null,
+                'lines' => $data['lines'] ?? null,
             ], fn ($v) => $v !== null));
 
             return $template->refresh();
@@ -77,7 +77,7 @@ final class RecurringJournalTemplateService implements ServiceContract
      * Each materialised template generates one draft JE that awaits normal
      * submission → approval → posting workflow.
      *
-     * @return int  Number of JEs created
+     * @return int Number of JEs created
      */
     public function generateDueEntries(): int
     {
@@ -93,9 +93,9 @@ final class RecurringJournalTemplateService implements ServiceContract
                 $count++;
             } catch (\Throwable $e) {
                 Log::error('Failed to generate recurring JE', [
-                    'template_id'  => $template->id,
+                    'template_id' => $template->id,
                     'template_ulid' => $template->ulid,
-                    'error'        => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -112,15 +112,15 @@ final class RecurringJournalTemplateService implements ServiceContract
             $today = now()->toDateString();
 
             $this->jeService->create([
-                'date'        => $today,
-                'description' => $template->description . ' (auto ' . $today . ')',
+                'date' => $today,
+                'description' => $template->description.' (auto '.$today.')',
                 'source_type' => 'recurring',
-                'source_id'   => $template->id,
-                'lines'       => $template->lines,
+                'source_id' => $template->id,
+                'lines' => $template->lines,
             ]);
 
             $template->update([
-                'last_run_at'   => now(),
+                'last_run_at' => now(),
                 'next_run_date' => $this->advanceDate($template),
             ]);
         });
@@ -131,12 +131,12 @@ final class RecurringJournalTemplateService implements ServiceContract
         $base = Carbon::parse($template->next_run_date);
 
         return match ($template->frequency) {
-            'daily'       => $base->addDay()->toDateString(),
-            'weekly'      => $base->addWeek()->toDateString(),
-            'monthly'     => $base->addMonthNoOverflow()->toDateString(),
+            'daily' => $base->addDay()->toDateString(),
+            'weekly' => $base->addWeek()->toDateString(),
+            'monthly' => $base->addMonthNoOverflow()->toDateString(),
             'semi_monthly' => $base->addDays(15)->toDateString(),
-            'annual'      => $base->addYearNoOverflow()->toDateString(),
-            default       => $base->addMonthNoOverflow()->toDateString(),
+            'annual' => $base->addYearNoOverflow()->toDateString(),
+            default => $base->addMonthNoOverflow()->toDateString(),
         };
     }
 
@@ -149,7 +149,7 @@ final class RecurringJournalTemplateService implements ServiceContract
             throw new DomainException('A recurring template must have at least 2 lines.', 'RJT_MIN_LINES', 422);
         }
 
-        $totalDebit  = array_sum(array_column($lines, 'debit'));
+        $totalDebit = array_sum(array_column($lines, 'debit'));
         $totalCredit = array_sum(array_column($lines, 'credit'));
 
         if (abs($totalDebit - $totalCredit) > 0.001) {

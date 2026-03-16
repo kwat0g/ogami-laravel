@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\Maintenance\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
@@ -25,18 +27,18 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int|null $reported_by_id
  * @property int|null $assigned_to_id
  * @property int $created_by_id
- * @property \Illuminate\Support\Carbon|null $scheduled_date
- * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property Carbon|null $scheduled_date
+ * @property Carbon|null $completed_at
  * @property string|null $completion_notes
  * @property float|null $labor_hours
  * @property string|null $mwo_reference
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class MaintenanceWorkOrder extends Model implements AuditableContract
 {
-    use HasPublicUlid, Auditable, SoftDeletes;
+    use Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'maintenance_work_orders';
 
@@ -59,8 +61,8 @@ final class MaintenanceWorkOrder extends Model implements AuditableContract
 
     protected $casts = [
         'scheduled_date' => 'date',
-        'completed_at'   => 'datetime',
-        'labor_hours'    => 'float',
+        'completed_at' => 'datetime',
+        'labor_hours' => 'float',
     ];
 
     /** @return BelongsTo<Equipment, $this> */
@@ -69,22 +71,22 @@ final class MaintenanceWorkOrder extends Model implements AuditableContract
         return $this->belongsTo(Equipment::class, 'equipment_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function reportedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'reported_by_id');
+        return $this->belongsTo(User::class, 'reported_by_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function assignedTo(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'assigned_to_id');
+        return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 
     /** @return HasMany<WorkOrderPart, $this> */

@@ -13,12 +13,12 @@ final class BomComponentResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                 => $this->id,
-            'component_item'     => new ItemMasterResource($this->whenLoaded('componentItem')),
-            'component_item_id'  => $this->component_item_id,
-            'qty_per_unit'       => $this->qty_per_unit,
-            'unit_of_measure'    => $this->unit_of_measure,
-            'scrap_factor_pct'   => $this->scrap_factor_pct,
+            'id' => $this->id,
+            'component_item' => new ItemMasterResource($this->whenLoaded('componentItem')),
+            'component_item_id' => $this->component_item_id,
+            'qty_per_unit' => $this->qty_per_unit,
+            'unit_of_measure' => $this->unit_of_measure,
+            'scrap_factor_pct' => $this->scrap_factor_pct,
         ];
     }
 }

@@ -4,30 +4,41 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmployeeProfileView } from '@/components/employee'
-import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { toast } from 'sonner'
 import { useSodCheck } from '@/hooks/useSodCheck'
 import type { EmploymentStatus } from '@/types/hr'
-import { Edit3 } from 'lucide-react'
+import { Edit3, ChevronDown } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 
 const ALLOWED_TRANSITIONS: Record<EmploymentStatus, EmploymentStatus[]> = {
-  draft:      ['active'],
-  active:     ['on_leave', 'suspended', 'resigned', 'terminated'],
-  on_leave:   ['active', 'resigned', 'terminated'],
-  suspended:  ['active', 'resigned', 'terminated'],
-  resigned:   [],
+  draft: ['active'],
+  active: ['on_leave', 'suspended', 'resigned', 'terminated'],
+  on_leave: ['active', 'resigned', 'terminated'],
+  suspended: ['active', 'resigned', 'terminated'],
+  resigned: [],
   terminated: [],
+}
+
+// Status display config for dropdown button
+const statusConfig: Record<EmploymentStatus, { label: string; color: string }> = {
+  active: { label: 'Active', color: 'bg-green-600 hover:bg-green-700' },
+  on_leave: { label: 'On Leave', color: 'bg-blue-600 hover:bg-blue-700' },
+  suspended: { label: 'Suspended', color: 'bg-amber-600 hover:bg-amber-700' },
+  resigned: { label: 'Resigned', color: 'bg-red-600 hover:bg-red-700' },
+  terminated: { label: 'Terminated', color: 'bg-red-600 hover:bg-red-700' },
+  draft: { label: 'Draft', color: 'bg-neutral-600 hover:bg-neutral-700' },
 }
 
 // Color coding for status transitions
 const transitionColors: Record<EmploymentStatus, string> = {
-  active:     'bg-green-600 text-white hover:bg-green-700',
-  on_leave:   'bg-blue-600 text-white hover:bg-blue-700',
-  suspended:  'bg-amber-600 text-white hover:bg-amber-700',
-  resigned:   'bg-red-600 text-white hover:bg-red-700',
+  active: 'bg-green-600 text-white hover:bg-green-700',
+  on_leave: 'bg-blue-600 text-white hover:bg-blue-700',
+  suspended: 'bg-amber-600 text-white hover:bg-amber-700',
+  resigned: 'bg-red-600 text-white hover:bg-red-700',
   terminated: 'bg-red-600 text-white hover:bg-red-700',
-  draft:      'bg-neutral-600 text-white hover:bg-neutral-700',
+  draft: 'bg-neutral-600 text-white hover:bg-neutral-700',
 }
 
 function statusLabel(s: string | undefined | null) {
@@ -47,15 +58,24 @@ export default function EmployeeDetailPage() {
   const { isBlocked: activateBlocked, reason: activateReason } = useSodCheck(
     employee?.created_by_id ?? null,
   )
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   if (isLoading) return <SkeletonLoader rows={12} />
 
   if (isError || !employee) {
-    return (
-      <div className="text-red-600 text-sm mt-4">
-        Employee not found or failed to load.
-      </div>
-    )
+    return <div className="text-red-600 text-sm mt-4">Employee not found or failed to load.</div>
   }
 
   const allowedNext = ALLOWED_TRANSITIONS[employee.employment_status] ?? []
@@ -72,37 +92,65 @@ export default function EmployeeDetailPage() {
           Edit Profile
         </Link>
       )}
-      
+
       {allowedNext.length > 0 && canTransition && (
-        <div className="flex gap-1">
-          {allowedNext.map((state) => {
-            const isSodBlocked = state === 'active' && activateBlocked
-            return (
-              <ConfirmDestructiveDialog
-                key={state}
-                title={`Change Status to "${statusLabel(state)}"?`}
-                description={`This will transition ${employee.full_name}'s employment status to "${statusLabel(state)}". The action is recorded in the audit log.`}
-                confirmWord={state.toUpperCase().replace('_', '')}
-                confirmLabel={`Set ${statusLabel(state)}`}
-                onConfirm={async () => {
-                  try {
-                    await transitionMutation.mutateAsync(state)
-                    toast.success(`Status changed to "${statusLabel(state)}".`)
-                  } catch {
-                    toast.error('Failed to change employee status.')
-                  }
-                }}
-              >
-                <button
-                  disabled={isSodBlocked}
-                  title={isSodBlocked ? activateReason : undefined}
-                  className={`px-3 py-2 text-xs rounded transition-colors capitalize disabled:opacity-50 disabled:cursor-not-allowed ${transitionColors[state]}`}
-                >
-                  → {statusLabel(state)}
-                </button>
-              </ConfirmDestructiveDialog>
-            )
-          })}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm text-white rounded transition-colors ${statusConfig[employee.employment_status].color}`}
+          >
+            {statusConfig[employee.employment_status].label}
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {isDropdownOpen && (
+            <div className="absolute right-0 mt-1 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 py-1">
+              <div className="px-3 py-2 text-xs text-neutral-500 border-b border-neutral-100">
+                Change Status to:
+              </div>
+              {allowedNext.map((state) => {
+                const isSodBlocked = state === 'active' && activateBlocked
+                return (
+                  <ConfirmDialog
+                    key={state}
+                    title={`Change Status to "${statusLabel(state)}"?`}
+                    description={`This will transition ${employee.full_name}'s employment status to "${statusLabel(state)}". The action is recorded in the audit log.`}
+                    confirmLabel={`Set ${statusLabel(state)}`}
+                    variant={state === 'resigned' || state === 'terminated' ? 'danger' : 'default'}
+                    onConfirm={async () => {
+                      try {
+                        await transitionMutation.mutateAsync(state)
+                        toast.success(`Status changed to "${statusLabel(state)}".`)
+                        setIsDropdownOpen(false)
+                      } catch {
+                        toast.error('Failed to change employee status.')
+                      }
+                    }}
+                  >
+                    <button
+                      disabled={isSodBlocked}
+                      title={isSodBlocked ? (activateReason ?? undefined) : undefined}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+                        isSodBlocked ? 'text-neutral-400' : 'text-neutral-700'
+                      }`}
+                      onClick={(e) => {
+                        if (isSodBlocked) {
+                          e.preventDefault()
+                        }
+                      }}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${transitionColors[state].split(' ')[0].replace('bg-', 'bg-')}`}
+                      />
+                      {statusLabel(state)}
+                    </button>
+                  </ConfirmDialog>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </>
@@ -112,13 +160,7 @@ export default function EmployeeDetailPage() {
     <div className="max-w-7xl mx-auto">
       <PageHeader title="Employee Details" backTo="/hr/employees/all" />
       <ExecutiveReadOnlyBanner />
-      <EmployeeProfileView
-        employee={employee}
-        viewContext="hr"
-        backTo="/hr/employees/all"
-        backLabel="Back to Employees"
-        actions={actions}
-      />
+      <EmployeeProfileView employee={employee} viewContext="hr" actions={actions} />
     </div>
   )
 }

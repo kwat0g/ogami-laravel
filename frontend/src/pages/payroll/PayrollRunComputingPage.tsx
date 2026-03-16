@@ -8,7 +8,12 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Loader2, CheckCircle, XCircle, ArrowRight, RefreshCw, PlayCircle, Ban } from 'lucide-react'
-import { usePayrollRun, useComputationProgress, useBeginComputation, useCancelPayrollRun } from '@/hooks/usePayroll'
+import {
+  usePayrollRun,
+  useComputationProgress,
+  useBeginComputation,
+  useCancelPayrollRun,
+} from '@/hooks/usePayroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 
 function formatCentavos(c: number | null | undefined): string {
@@ -18,13 +23,13 @@ function formatCentavos(c: number | null | undefined): string {
 
 export default function PayrollRunComputingPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
-  const runId    = id ?? null
+  const runId = id ?? null
   const navigate = useNavigate()
 
-  const { data: run }        = usePayrollRun(runId)
-  const { data: progress }   = useComputationProgress(runId)
-  const beginComputation     = useBeginComputation(runId)
-  const cancelRun            = useCancelPayrollRun(runId)
+  const { data: run } = usePayrollRun(runId)
+  const { data: progress } = useComputationProgress(runId)
+  const beginComputation = useBeginComputation(runId)
+  const cancelRun = useCancelPayrollRun(runId)
 
   const status = run?.status ?? progress?.status
   const [confirmCancel, setConfirmCancel] = useState(false)
@@ -50,14 +55,14 @@ export default function PayrollRunComputingPage() {
   }
 
   const isPreRunChecked = status === 'PRE_RUN_CHECKED'
-  const isProcessing    = status === 'PROCESSING' || status === 'processing'
-  const isFailed        = status === 'FAILED'     || status === 'failed'
-  const isComputed      = status === 'COMPUTED'   || status === 'completed'
+  const isProcessing = status === 'PROCESSING' || status === 'processing'
+  const isFailed = status === 'FAILED' || status === 'failed'
+  const isComputed = status === 'COMPUTED' || status === 'completed'
 
   const pct = progress?.percent_complete ?? 0
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <WizardStepHeader
         step={4}
         title="Payroll Computation"
@@ -71,7 +76,9 @@ export default function PayrollRunComputingPage() {
             <CheckCircle className="h-7 w-7 text-green-500 shrink-0" />
             <div>
               <p className="text-base font-semibold text-neutral-900">All Pre-Run Checks Passed</p>
-              <p className="text-sm text-neutral-500 mt-0.5">The run is ready to compute. Click below to start the payroll batch.</p>
+              <p className="text-sm text-neutral-500 mt-0.5">
+                The run is ready to compute. Click below to start the payroll batch.
+              </p>
             </div>
           </div>
           <button
@@ -80,30 +87,39 @@ export default function PayrollRunComputingPage() {
             onClick={() => beginComputation.mutate()}
             className="flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
           >
-            {beginComputation.isPending
-              ? <><Loader2 className="h-4 w-4 animate-spin" /> Starting…</>
-              : <><PlayCircle className="h-4 w-4" /> Begin Computation</>
-            }
+            {beginComputation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Starting…
+              </>
+            ) : (
+              <>
+                <PlayCircle className="h-4 w-4" /> Begin Computation
+              </>
+            )}
           </button>
         </div>
       )}
 
       {/* Status card */}
-      <div className={`rounded border p-6 space-y-4 ${
-        isFailed   ? 'bg-red-50 border-red-200' :
-        isComputed ? 'bg-green-50 border-green-200' :
-        'bg-neutral-50 border-neutral-200'
-      }`}>
+      <div
+        className={`rounded border p-6 space-y-4 ${
+          isFailed
+            ? 'bg-red-50 border-red-200'
+            : isComputed
+              ? 'bg-green-50 border-green-200'
+              : 'bg-neutral-50 border-neutral-200'
+        }`}
+      >
         {/* Status icon + message */}
         <div className="flex items-center gap-3">
           {isProcessing && <Loader2 className="h-7 w-7 text-neutral-500 animate-spin shrink-0" />}
-          {isFailed     && <XCircle  className="h-7 w-7 text-red-500 shrink-0" />}
-          {isComputed   && <CheckCircle className="h-7 w-7 text-green-500 shrink-0" />}
+          {isFailed && <XCircle className="h-7 w-7 text-red-500 shrink-0" />}
+          {isComputed && <CheckCircle className="h-7 w-7 text-green-500 shrink-0" />}
           <div>
             <p className="text-base font-semibold text-neutral-900">
               {isProcessing && 'Computing payroll…'}
-              {isFailed     && 'Computation Failed'}
-              {isComputed   && 'Computation Complete!'}
+              {isFailed && 'Computation Failed'}
+              {isComputed && 'Computation Complete!'}
               {!isProcessing && !isFailed && !isComputed && !isPreRunChecked && 'Waiting to start…'}
             </p>
             {progress?.current_department && isProcessing && (
@@ -118,7 +134,10 @@ export default function PayrollRunComputingPage() {
         {isProcessing && (
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-neutral-500">
-              <span>{progress?.employees_processed ?? 0} of {progress?.total_employees ?? run.total_employees} employees</span>
+              <span>
+                {progress?.employees_processed ?? 0} of{' '}
+                {progress?.total_employees ?? run.total_employees} employees
+              </span>
               <span>{pct}%</span>
             </div>
             <div className="h-2 rounded bg-neutral-200 overflow-hidden">
@@ -145,11 +164,15 @@ export default function PayrollRunComputingPage() {
               <p className="text-xs text-neutral-500">Employees Processed</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-neutral-900">{formatCentavos(run.gross_pay_total_centavos)}</p>
+              <p className="text-xl font-bold text-neutral-900">
+                {formatCentavos(run.gross_pay_total_centavos)}
+              </p>
               <p className="text-xs text-neutral-500">Total Gross</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-neutral-900">{formatCentavos(run.net_pay_total_centavos)}</p>
+              <p className="text-xl font-bold text-neutral-900">
+                {formatCentavos(run.net_pay_total_centavos)}
+              </p>
               <p className="text-xs text-neutral-500">Total Net Pay</p>
             </div>
           </div>
@@ -159,10 +182,12 @@ export default function PayrollRunComputingPage() {
       {/* Timing info */}
       {(progress?.started_at || run.computation_started_at) && (
         <p className="text-xs text-neutral-400">
-          Started: {new Date(progress?.started_at ?? run.computation_started_at ?? '').toLocaleString('en-PH')}
+          Started:{' '}
+          {new Date(progress?.started_at ?? run.computation_started_at ?? '').toLocaleString(
+            'en-PH',
+          )}
           {(progress?.finished_at ?? run.computation_completed_at) &&
-            ` · Finished: ${new Date(progress?.finished_at ?? run.computation_completed_at ?? '').toLocaleString('en-PH')}`
-          }
+            ` · Finished: ${new Date(progress?.finished_at ?? run.computation_completed_at ?? '').toLocaleString('en-PH')}`}
         </p>
       )}
 
@@ -170,8 +195,15 @@ export default function PayrollRunComputingPage() {
       <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
         <div className="flex items-center gap-2">
           {/* Cancel button available until submitted to accounting */}
-          {!['SUBMITTED', 'HR_APPROVED', 'ACCTG_APPROVED', 'APPROVED', 'POSTED', 'DISBURSED'].includes(status || '') && (
-            confirmCancel ? (
+          {![
+            'SUBMITTED',
+            'HR_APPROVED',
+            'ACCTG_APPROVED',
+            'APPROVED',
+            'POSTED',
+            'DISBURSED',
+          ].includes(status || '') &&
+            (confirmCancel ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-red-600">Cancel this run?</span>
                 <button
@@ -199,8 +231,7 @@ export default function PayrollRunComputingPage() {
               >
                 <Ban className="h-4 w-4" /> Cancel Run
               </button>
-            )
-          )}
+            ))}
         </div>
         {isComputed && (
           <button

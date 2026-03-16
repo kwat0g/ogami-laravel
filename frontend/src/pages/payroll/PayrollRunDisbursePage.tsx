@@ -7,9 +7,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import {
-  Building2, Send, CheckCircle, Loader2, Download, CalendarClock, Bell,
-} from 'lucide-react'
+import { Building2, Send, CheckCircle, Loader2, Download, CalendarClock, Bell } from 'lucide-react'
 import {
   usePayrollRun,
   useDisburse,
@@ -27,25 +25,24 @@ type Stage = 'disburse' | 'publish' | 'done'
 
 export default function PayrollRunDisbursePage() {
   const { ulid: id } = useParams<{ ulid: string }>()
-  const runId    = id ?? null
+  const runId = id ?? null
   const navigate = useNavigate()
 
   const { data: run } = usePayrollRun(runId)
 
-  const disburse          = useDisburse(runId)
-  const publish           = usePublish(runId)
-  const { download: downloadBreakdown, isLoading: breakdownLoading } = useExportPayrollBreakdown(runId)
+  const disburse = useDisburse(runId)
+  const publish = usePublish(runId)
+  const { download: downloadBreakdown, isLoading: breakdownLoading } =
+    useExportPayrollBreakdown(runId)
 
-  const [publishAt,     setPublishAt]     = useState<string>('')
-  const [notifyEmail,   setNotifyEmail]   = useState(true)
-  const [notifyInApp,   setNotifyInApp]   = useState(true)
-  const [disburseDone,  setDisburseDone]  = useState(false)
+  const [publishAt, setPublishAt] = useState<string>('')
+  const [notifyEmail, setNotifyEmail] = useState(true)
+  const [notifyInApp, setNotifyInApp] = useState(true)
+  const [disburseDone, setDisburseDone] = useState(false)
 
   // Determine current stage from run status
   const stage: Stage =
-    (run?.status === 'PUBLISHED')   ? 'done' :
-    (run?.status === 'DISBURSED')   ? 'publish' :
-    'disburse'
+    run?.status === 'PUBLISHED' ? 'done' : run?.status === 'DISBURSED' ? 'publish' : 'disburse'
 
   async function handleDisburse() {
     try {
@@ -61,11 +58,15 @@ export default function PayrollRunDisbursePage() {
   async function handlePublish() {
     try {
       await publish.mutateAsync({
-        publish_at:     publishAt || null,
-        notify_email:   notifyEmail,
-        notify_in_app:  notifyInApp,
+        publish_at: publishAt || null,
+        notify_email: notifyEmail,
+        notify_in_app: notifyInApp,
       })
-      toast.success(publishAt ? `Payslips scheduled for ${new Date(publishAt).toLocaleString('en-PH')}.` : 'Payslips published. Employees can now view them.')
+      toast.success(
+        publishAt
+          ? `Payslips scheduled for ${new Date(publishAt).toLocaleString('en-PH')}.`
+          : 'Payslips published. Employees can now view them.',
+      )
       navigate('/payroll/runs')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -77,13 +78,21 @@ export default function PayrollRunDisbursePage() {
 
   if (stage === 'done' || run.status === 'PUBLISHED') {
     return (
-      <div className="max-w-2xl space-y-6">
-        <WizardStepHeader step={7} title="Disburse & Publish" description={`Run #${run.reference_no}`} />
+      <div className="max-w-5xl mx-auto space-y-6">
+        <WizardStepHeader
+          step={7}
+          title="Disburse & Publish"
+          description={`Run #${run.reference_no}`}
+        />
         <div className="bg-green-50 border border-green-200 rounded p-8 text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
           <h2 className="text-xl font-bold text-neutral-900 mb-2">Payroll Run Complete</h2>
-          <p className="text-sm text-neutral-600">Payslips have been published. Reference: <strong>{run.reference_no}</strong></p>
-          <p className="text-sm text-neutral-600 mt-1">Net Pay Total: <strong>{formatCentavos(run.net_pay_total_centavos)}</strong></p>
+          <p className="text-sm text-neutral-600">
+            Payslips have been published. Reference: <strong>{run.reference_no}</strong>
+          </p>
+          <p className="text-sm text-neutral-600 mt-1">
+            Net Pay Total: <strong>{formatCentavos(run.net_pay_total_centavos)}</strong>
+          </p>
           <div className="flex justify-center gap-3 mt-6">
             <button
               type="button"
@@ -107,7 +116,7 @@ export default function PayrollRunDisbursePage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <WizardStepHeader
         step={7}
         title="Disburse & Publish"
@@ -115,14 +124,22 @@ export default function PayrollRunDisbursePage() {
       />
 
       {/* ── 7a: Disburse ── */}
-      <div className={`bg-white border rounded overflow-hidden ${stage !== 'disburse' || disburseDone ? 'border-green-200' : 'border-neutral-200'}`}>
-        <div className={`px-5 py-4 border-b flex items-center gap-3 ${stage !== 'disburse' || disburseDone ? 'bg-green-50 border-green-100' : 'border-neutral-100'}`}>
-          <div className={`w-8 h-8 rounded flex items-center justify-center text-sm font-bold ${stage !== 'disburse' || disburseDone ? 'bg-green-500 text-white' : 'bg-neutral-900 text-white'}`}>
+      <div
+        className={`bg-white border rounded overflow-hidden ${stage !== 'disburse' || disburseDone ? 'border-green-200' : 'border-neutral-200'}`}
+      >
+        <div
+          className={`px-5 py-4 border-b flex items-center gap-3 ${stage !== 'disburse' || disburseDone ? 'bg-green-50 border-green-100' : 'border-neutral-100'}`}
+        >
+          <div
+            className={`w-8 h-8 rounded flex items-center justify-center text-sm font-bold ${stage !== 'disburse' || disburseDone ? 'bg-green-500 text-white' : 'bg-neutral-900 text-white'}`}
+          >
             {stage !== 'disburse' || disburseDone ? '✓' : '7a'}
           </div>
           <div>
             <p className="text-sm font-semibold text-neutral-800">Step 7a: Disbursement</p>
-            <p className="text-xs text-neutral-500">Post GL journal entry and generate bank disbursement file.</p>
+            <p className="text-xs text-neutral-500">
+              Post GL journal entry and generate bank disbursement file.
+            </p>
           </div>
         </div>
 
@@ -130,7 +147,9 @@ export default function PayrollRunDisbursePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
             <div className="bg-neutral-50 rounded p-3">
               <p className="text-xs text-neutral-400">Total Net Pay</p>
-              <p className="font-bold text-neutral-900">{formatCentavos(run.net_pay_total_centavos)}</p>
+              <p className="font-bold text-neutral-900">
+                {formatCentavos(run.net_pay_total_centavos)}
+              </p>
             </div>
             <div className="bg-neutral-50 rounded p-3">
               <p className="text-xs text-neutral-400">Employees</p>
@@ -138,22 +157,29 @@ export default function PayrollRunDisbursePage() {
             </div>
             <div className="bg-neutral-50 rounded p-3">
               <p className="text-xs text-neutral-400">Pay Date</p>
-              <p className="font-bold text-neutral-900">{new Date(run.pay_date).toLocaleDateString('en-PH')}</p>
+              <p className="font-bold text-neutral-900">
+                {new Date(run.pay_date).toLocaleDateString('en-PH')}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {(stage === 'disburse' && !disburseDone) ? (
+            {stage === 'disburse' && !disburseDone ? (
               <button
                 type="button"
                 onClick={handleDisburse}
                 disabled={disburse.isPending}
                 className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
               >
-                {disburse.isPending
-                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Posting…</>
-                  : <><Building2 className="h-4 w-4" /> Post to GL & Disburse</>
-                }
+                {disburse.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Posting…
+                  </>
+                ) : (
+                  <>
+                    <Building2 className="h-4 w-4" /> Post to GL & Disburse
+                  </>
+                )}
               </button>
             ) : (
               <span className="flex items-center gap-2 text-sm text-green-600 font-medium">
@@ -177,14 +203,22 @@ export default function PayrollRunDisbursePage() {
       </div>
 
       {/* ── 7b: Publish Payslips ── */}
-      <div className={`bg-white border rounded overflow-hidden ${
-        stage === 'disburse' && !disburseDone ? 'border-neutral-100 opacity-50 pointer-events-none' : 'border-neutral-200'
-      }`}>
+      <div
+        className={`bg-white border rounded overflow-hidden ${
+          stage === 'disburse' && !disburseDone
+            ? 'border-neutral-100 opacity-50 pointer-events-none'
+            : 'border-neutral-200'
+        }`}
+      >
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-neutral-900 flex items-center justify-center text-sm font-bold text-white">7b</div>
+          <div className="w-8 h-8 rounded bg-neutral-900 flex items-center justify-center text-sm font-bold text-white">
+            7b
+          </div>
           <div>
             <p className="text-sm font-semibold text-neutral-800">Step 7b: Publish Payslips</p>
-            <p className="text-xs text-neutral-500">Make payslips visible to employees. Optionally schedule for a future date.</p>
+            <p className="text-xs text-neutral-500">
+              Make payslips visible to employees. Optionally schedule for a future date.
+            </p>
           </div>
         </div>
 
@@ -193,12 +227,15 @@ export default function PayrollRunDisbursePage() {
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
               <CalendarClock className="inline h-4 w-4 mr-1 text-neutral-400" />
-              Publish Date &amp; Time <span className="text-neutral-400 font-normal">(leave blank to publish immediately)</span>
+              Publish Date &amp; Time{' '}
+              <span className="text-neutral-400 font-normal">
+                (leave blank to publish immediately)
+              </span>
             </label>
             <input
               type="datetime-local"
               value={publishAt}
-              onChange={e => setPublishAt(e.target.value)}
+              onChange={(e) => setPublishAt(e.target.value)}
               className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
             />
           </div>
@@ -213,7 +250,7 @@ export default function PayrollRunDisbursePage() {
               <input
                 type="checkbox"
                 checked={notifyEmail}
-                onChange={e => setNotifyEmail(e.target.checked)}
+                onChange={(e) => setNotifyEmail(e.target.checked)}
                 className="accent-neutral-900"
               />
               <span className="text-sm text-neutral-700">Email notification</span>
@@ -222,7 +259,7 @@ export default function PayrollRunDisbursePage() {
               <input
                 type="checkbox"
                 checked={notifyInApp}
-                onChange={e => setNotifyInApp(e.target.checked)}
+                onChange={(e) => setNotifyInApp(e.target.checked)}
                 className="accent-neutral-900"
               />
               <span className="text-sm text-neutral-700">In-app notification</span>
@@ -235,10 +272,15 @@ export default function PayrollRunDisbursePage() {
             disabled={publish.isPending}
             className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
           >
-            {publish.isPending
-              ? <><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</>
-              : <><Send className="h-4 w-4" /> {publishAt ? 'Schedule Publication' : 'Publish Now'}</>
-            }
+            {publish.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Publishing…
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" /> {publishAt ? 'Schedule Publication' : 'Publish Now'}
+              </>
+            )}
           </button>
         </div>
       </div>

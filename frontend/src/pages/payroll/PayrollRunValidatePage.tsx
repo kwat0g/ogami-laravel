@@ -8,29 +8,49 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, ArrowRight, CheckCircle, XCircle, AlertTriangle, Loader2, RefreshCw, Ban,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Loader2,
+  RefreshCw,
+  Ban,
 } from 'lucide-react'
-import { usePayrollRun, usePreRunChecks, useAcknowledgePreRun, useCancelPayrollRun } from '@/hooks/usePayroll'
+import {
+  usePayrollRun,
+  usePreRunChecks,
+  useAcknowledgePreRun,
+  useCancelPayrollRun,
+} from '@/hooks/usePayroll'
 import type { PreRunCheckResult } from '@/types/payroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 
 function SeverityIcon({ check }: { check: PreRunCheckResult }) {
-  if (check.status === 'pass')  return <CheckCircle  className="h-5 w-5 text-green-500 shrink-0" />
-  if (check.status === 'block') return <XCircle      className="h-5 w-5 text-red-500 shrink-0" />
-  return                               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+  if (check.status === 'pass') return <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+  if (check.status === 'block') return <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+  return <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
 }
 
-function CheckRow({ check, warnAcked, onAck }: {
+function CheckRow({
+  check,
+  warnAcked,
+  onAck,
+}: {
   check: PreRunCheckResult
   warnAcked: boolean
   onAck: () => void
 }) {
   return (
-    <div className={`flex items-start gap-3 p-3 rounded border ${
-      check.status === 'block' ? 'bg-red-50 border-red-200' :
-      check.status === 'warn'  ? 'bg-amber-50 border-amber-200' :
-      'bg-green-50 border-green-100'
-    }`}>
+    <div
+      className={`flex items-start gap-3 p-3 rounded border ${
+        check.status === 'block'
+          ? 'bg-red-50 border-red-200'
+          : check.status === 'warn'
+            ? 'bg-amber-50 border-amber-200'
+            : 'bg-green-50 border-green-100'
+      }`}
+    >
       <SeverityIcon check={check} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
@@ -40,9 +60,11 @@ function CheckRow({ check, warnAcked, onAck }: {
         <p className="text-xs text-neutral-500 mt-0.5">{check.message}</p>
         {check.details?.employees && check.details.employees.length > 0 && (
           <div className="mt-2 border border-amber-100 rounded divide-y divide-amber-50 max-h-32 overflow-y-auto">
-            {check.details.employees.map(emp => (
+            {check.details.employees.map((emp) => (
               <div key={emp.employee_code} className="flex items-center gap-2 px-3 py-1.5">
-                <span className="text-xs font-mono text-neutral-400 shrink-0">{emp.employee_code}</span>
+                <span className="text-xs font-mono text-neutral-400 shrink-0">
+                  {emp.employee_code}
+                </span>
                 <span className="text-xs text-neutral-700">{emp.full_name}</span>
               </div>
             ))}
@@ -56,7 +78,9 @@ function CheckRow({ check, warnAcked, onAck }: {
               onChange={onAck}
               className="accent-neutral-700"
             />
-            <span className="text-xs text-amber-800">I acknowledge this warning and wish to proceed</span>
+            <span className="text-xs text-amber-800">
+              I acknowledge this warning and wish to proceed
+            </span>
           </label>
         )}
       </div>
@@ -66,38 +90,51 @@ function CheckRow({ check, warnAcked, onAck }: {
 
 export default function PayrollRunValidatePage() {
   const { ulid: id } = useParams<{ ulid: string }>()
-  const runId    = id ?? null
+  const runId = id ?? null
   const navigate = useNavigate()
 
-  const { data: run }                           = usePayrollRun(runId)
-  const { data: result, isFetching, refetch }   = usePreRunChecks(runId, true)
-  const acknowledge                             = useAcknowledgePreRun(runId)
-  const cancelRun                               = useCancelPayrollRun(runId)
+  const { data: run } = usePayrollRun(runId)
+  const { data: result, isFetching, refetch } = usePreRunChecks(runId, true)
+  const acknowledge = useAcknowledgePreRun(runId)
+  const cancelRun = useCancelPayrollRun(runId)
 
-  const [warnAcked, setWarnAcked]     = useState<Record<string, boolean>>({})
+  const [warnAcked, setWarnAcked] = useState<Record<string, boolean>>({})
   const [confirmCancel, setConfirmCancel] = useState(false)
 
   const cancellableStatuses = [
     // v1.0 workflow statuses
-    'DRAFT', 'SCOPE_SET', 'PRE_RUN_CHECKED', 'PROCESSING', 'COMPUTED',
-    'REVIEW', 'SUBMITTED', 'HR_APPROVED', 'ACCTG_APPROVED', 'FAILED', 'RETURNED', 'REJECTED',
+    'DRAFT',
+    'SCOPE_SET',
+    'PRE_RUN_CHECKED',
+    'PROCESSING',
+    'COMPUTED',
+    'REVIEW',
+    'SUBMITTED',
+    'HR_APPROVED',
+    'ACCTG_APPROVED',
+    'FAILED',
+    'RETURNED',
+    'REJECTED',
     // Legacy lowercase statuses
-    'draft', 'locked', 'processing', 'completed',
+    'draft',
+    'locked',
+    'processing',
+    'completed',
   ]
   const canCancel = run ? cancellableStatuses.includes(run.status) : false
 
-  const checks      = result?.checks ?? []
-  const hasBlocker  = result?.has_blockers ?? false
-  const warnChecks  = checks.filter(c => c.status === 'warn')
-  const allWarnsAck = warnChecks.every(c => !!warnAcked[c.code])
-  const canProceed  = !hasBlocker && allWarnsAck
+  const checks = result?.checks ?? []
+  const hasBlocker = result?.has_blockers ?? false
+  const warnChecks = checks.filter((c) => c.status === 'warn')
+  const allWarnsAck = warnChecks.every((c) => !!warnAcked[c.code])
+  const canProceed = !hasBlocker && allWarnsAck
 
   function toggleWarn(code: string) {
-    setWarnAcked(prev => ({ ...prev, [code]: !prev[code] }))
+    setWarnAcked((prev) => ({ ...prev, [code]: !prev[code] }))
   }
 
   async function handleAcknowledge() {
-    const ackedWarnings = warnChecks.filter(c => warnAcked[c.code]).map(c => c.code)
+    const ackedWarnings = warnChecks.filter((c) => warnAcked[c.code]).map((c) => c.code)
     try {
       await acknowledge.mutateAsync(ackedWarnings)
       toast.success('Pre-run checks acknowledged. Proceed to computation.')
@@ -119,14 +156,19 @@ export default function PayrollRunValidatePage() {
 
   if (!run) return null
 
+  // Only show back button when in DRAFT status
+  const canGoBack = run.status === 'DRAFT' || run.status === 'draft'
+
   return (
-    <div className="max-w-3xl space-y-6">
-      <button
-        onClick={() => navigate(`/payroll/runs/${runId}/scope`)}
-        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Scope
-      </button>
+    <div className="max-w-5xl mx-auto space-y-6">
+      {canGoBack && (
+        <button
+          onClick={() => navigate(`/payroll/runs/${runId}/scope`)}
+          className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Scope
+        </button>
+      )}
 
       <WizardStepHeader
         step={3}
@@ -141,10 +183,13 @@ export default function PayrollRunValidatePage() {
             <>
               <span className="text-green-600 font-medium">{result.total_passed} passed</span>
               <span className="text-neutral-300">|</span>
-              {hasBlocker
-                ? <span className="text-red-600 font-medium">Blockers found — fix required</span>
-                : <span className="text-amber-600 font-medium">{warnChecks.length} warning{warnChecks.length !== 1 ? 's' : ''}</span>
-              }
+              {hasBlocker ? (
+                <span className="text-red-600 font-medium">Blockers found — fix required</span>
+              ) : (
+                <span className="text-amber-600 font-medium">
+                  {warnChecks.length} warning{warnChecks.length !== 1 ? 's' : ''}
+                </span>
+              )}
             </>
           )}
         </div>
@@ -167,7 +212,7 @@ export default function PayrollRunValidatePage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {checks.map(check => (
+          {checks.map((check) => (
             <CheckRow
               key={check.code}
               check={check}
@@ -180,7 +225,8 @@ export default function PayrollRunValidatePage() {
 
       {/* Auto-refresh notice */}
       <p className="text-xs text-neutral-400">
-        Checks auto-refresh every 10 seconds. Fix any blockers in their respective modules then refresh.
+        Checks auto-refresh every 10 seconds. Fix any blockers in their respective modules then
+        refresh.
       </p>
 
       {/* Actions */}
@@ -193,8 +239,8 @@ export default function PayrollRunValidatePage() {
           >
             <ArrowLeft className="h-4 w-4" /> Back to Scope
           </button>
-          {canCancel && (
-            confirmCancel ? (
+          {canCancel &&
+            (confirmCancel ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-red-600">Cancel this run?</span>
                 <button
@@ -222,20 +268,30 @@ export default function PayrollRunValidatePage() {
               >
                 <Ban className="h-4 w-4" /> Cancel Run
               </button>
-            )
-          )}
+            ))}
         </div>
         <button
           type="button"
           onClick={handleAcknowledge}
           disabled={!canProceed || acknowledge.isPending}
-          title={hasBlocker ? 'Fix all blocking issues first.' : !allWarnsAck ? 'Acknowledge all warnings to continue.' : undefined}
+          title={
+            hasBlocker
+              ? 'Fix all blocking issues first.'
+              : !allWarnsAck
+                ? 'Acknowledge all warnings to continue.'
+                : undefined
+          }
           className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
         >
-          {acknowledge.isPending
-            ? <><Loader2 className="h-4 w-4 animate-spin" /> Acknowledging…</>
-            : <>Proceed to Computation <ArrowRight className="h-4 w-4" /></>
-          }
+          {acknowledge.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Acknowledging…
+            </>
+          ) : (
+            <>
+              Proceed to Computation <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </div>
     </div>

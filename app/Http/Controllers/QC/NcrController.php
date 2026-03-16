@@ -22,6 +22,7 @@ final class NcrController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', NonConformanceReport::class);
+
         return NcrResource::collection(
             $this->service->paginate($request->only(['status', 'severity', 'per_page', 'with_archived']))
         );
@@ -31,12 +32,14 @@ final class NcrController extends Controller
     {
         $this->authorize('create', NonConformanceReport::class);
         $ncr = $this->service->store($request->validated(), $request->user()->id);
+
         return (new NcrResource($ncr))->response()->setStatusCode(201);
     }
 
     public function show(NonConformanceReport $nonConformanceReport): NcrResource
     {
         $this->authorize('view', $nonConformanceReport);
+
         return new NcrResource($nonConformanceReport->load(['inspection.itemMaster', 'raisedBy', 'capaActions.assignedTo']));
     }
 
@@ -44,6 +47,7 @@ final class NcrController extends Controller
     {
         $this->authorize('issueCapa', $nonConformanceReport);
         $capa = $this->service->issueCapa($nonConformanceReport, $request->validated(), $request->user()->id);
+
         return response()->json(['data' => $capa], 201);
     }
 
@@ -51,6 +55,7 @@ final class NcrController extends Controller
     {
         $this->authorize('close', $nonConformanceReport);
         $ncr = $this->service->closeNcr($nonConformanceReport, $request->user()->id);
+
         return new NcrResource($ncr);
     }
 
@@ -62,19 +67,20 @@ final class NcrController extends Controller
             ->orderByDesc('created_at');
         $paginated = $query->paginate((int) ($request->input('per_page', 20)));
         $paginated->getCollection()->transform(fn (CapaAction $c) => [
-            'id'                => $c->id,
-            'ulid'              => $c->ulid,
-            'type'              => $c->type,
-            'description'       => $c->description,
-            'due_date'          => $c->due_date?->toDateString(),
-            'status'            => $c->status,
-            'completed_at'      => $c->completed_at?->toIso8601String(),
-            'ncr_id'            => $c->ncr_id,
-            'audit_finding_id'  => $c->audit_finding_id,
-            'ncr_reference'     => $c->ncr?->ncr_reference,
-            'audit_reference'   => $c->auditFinding?->audit?->audit_reference,
-            'assigned_to'       => $c->assignedTo ? ['id' => $c->assignedTo->id, 'name' => $c->assignedTo->name] : null,
+            'id' => $c->id,
+            'ulid' => $c->ulid,
+            'type' => $c->type,
+            'description' => $c->description,
+            'due_date' => $c->due_date?->toDateString(),
+            'status' => $c->status,
+            'completed_at' => $c->completed_at?->toIso8601String(),
+            'ncr_id' => $c->ncr_id,
+            'audit_finding_id' => $c->audit_finding_id,
+            'ncr_reference' => $c->ncr?->ncr_reference,
+            'audit_reference' => $c->auditFinding?->audit?->audit_reference,
+            'assigned_to' => $c->assignedTo ? ['id' => $c->assignedTo->id, 'name' => $c->assignedTo->name] : null,
         ]);
+
         return response()->json($paginated);
     }
 
@@ -86,6 +92,7 @@ final class NcrController extends Controller
             abort(403, 'Unauthorized to complete CAPA.');
         }
         $capa = $this->service->completeCapaAction($capaAction);
+
         return response()->json(['data' => $capa]);
     }
 }

@@ -265,7 +265,7 @@ export default function HeadDashboard() {
             { label: 'Mold Masters',      href: '/mold/masters',            icon: Package },
             { label: 'Production Orders', href: '/production/orders',       icon: ClipboardList },
             { label: 'Delivery',          href: '/delivery',                icon: Truck },
-            { label: 'Inventory MRQ',     href: '/inventory/mrqs',          icon: Package },
+            { label: 'Inventory MRQ',     href: '/inventory/requisitions',  icon: Package },
             { label: 'ISO Audits',        href: '/iso/audits',              icon: CheckCircle },
             { label: 'OT Requests',       href: '/attendance/overtime',     icon: Timer },
             { label: 'Leave Requests',    href: '/leave/requests',          icon: CalendarOff },

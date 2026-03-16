@@ -33,18 +33,18 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('reject');
     Route::delete('{loan}', [LoanController::class, 'cancel'])->name('cancel');
 
-    // Workflow v2 actions
+    // Workflow v2 actions (all with SoD enforcement)
     Route::patch('{loan}/head-note', [LoanController::class, 'headNote'])
-        ->middleware('throttle:api-action')
+        ->middleware(['sod:loans,head_note', 'throttle:api-action'])
         ->name('headNote');
     Route::patch('{loan}/manager-check', [LoanController::class, 'managerCheck'])
-        ->middleware('throttle:api-action')
+        ->middleware(['sod:loans,manager_check', 'throttle:api-action'])
         ->name('managerCheck');
     Route::patch('{loan}/officer-review', [LoanController::class, 'officerReview'])
-        ->middleware('throttle:api-action')
+        ->middleware(['sod:loans,officer_review', 'throttle:api-action'])
         ->name('officerReview');
     Route::patch('{loan}/vp-approve', [LoanController::class, 'vpApprove'])
-        ->middleware('throttle:api-action')
+        ->middleware(['sod:loans,vp_approve', 'throttle:api-action'])
         ->name('vpApprove');
 
     // Amortization schedule sub-resource (read-only)

@@ -19,9 +19,11 @@ final class AcctgApprovePayrollRunRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'action' => ['required', 'string', 'in:APPROVED,REJECTED'],
-            // Required if rejecting
+            'action' => ['required', 'string', 'in:APPROVED,REJECTED,RETURNED'],
+            // Required if rejecting permanently
             'rejection_reason' => ['required_if:action,REJECTED', 'nullable', 'string', 'min:10', 'max:5000'],
+            // Required if returning for rework
+            'return_comments' => ['required_if:action,RETURNED', 'nullable', 'string', 'min:10', 'max:5000'],
             // Required 3-checkbox confirmation when approving
             'checkboxes_checked' => ['required_if:action,APPROVED', 'nullable', 'array', 'min:3'],
             'checkboxes_checked.*' => ['string'],

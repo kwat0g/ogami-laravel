@@ -39,10 +39,10 @@ final class VendorRfqController extends Controller
         $this->authorize('create', VendorRfq::class);
 
         $data = $request->validate([
-            'scope_description'   => ['required', 'string', 'min:10'],
-            'deadline_date'       => ['nullable', 'date', 'after:today'],
+            'scope_description' => ['required', 'string', 'min:10'],
+            'deadline_date' => ['nullable', 'date', 'after:today'],
             'purchase_request_id' => ['nullable', 'integer', 'exists:purchase_requests,id'],
-            'notes'               => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $rfq = $this->service->create($data, $request->user());
@@ -67,7 +67,7 @@ final class VendorRfqController extends Controller
         $this->authorize('update', $vendorRfq);
 
         $data = $request->validate([
-            'vendor_ids'   => ['required', 'array', 'min:1'],
+            'vendor_ids' => ['required', 'array', 'min:1'],
             'vendor_ids.*' => ['integer', 'exists:vendors,id'],
         ]);
 
@@ -85,8 +85,8 @@ final class VendorRfqController extends Controller
 
         $data = $request->validate([
             'quoted_amount_centavos' => ['required', 'integer', 'min:0'],
-            'lead_time_days'         => ['nullable', 'integer', 'min:1'],
-            'vendor_remarks'         => ['nullable', 'string', 'max:1000'],
+            'lead_time_days' => ['nullable', 'integer', 'min:1'],
+            'vendor_remarks' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $rfq = $this->service->receiveQuote($vendorRfq, $vendor, $data);

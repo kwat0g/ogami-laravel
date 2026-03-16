@@ -4,6 +4,9 @@
 
 This guide walks through a complete manufacturing business cycle, testing all major modules in a realistic sequence. We'll skip HR, Leave, OT, and Self-Service modules as requested.
 
+> 📖 **Also see:** [ROLE_BASED_TESTING_GUIDE.md](./ROLE_BASED_TESTING_GUIDE.md) for comprehensive role-by-role testing  
+> 📖 **Quick Reference:** [TEST_ACCOUNTS_QUICKREF.md](./TEST_ACCOUNTS_QUICKREF.md) for all test account credentials
+
 ---
 
 ## Prerequisites
@@ -17,24 +20,25 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 
 | Role | Email | Password | Department | Purpose |
 |------|-------|----------|------------|---------|
-| Accounting Officer | acctg.officer@ogamierp.local | AcctgManager@1234! | ACCTG | Financial management, AP/AR |
-| Purchasing Officer | purchasing.officer@ogamierp.local | Officer@12345! | PROC | Procurement operations |
-| Warehouse Head | warehouse.head@ogamierp.local | Head@123456789! | WH | Inventory management |
-| PPC Head | ppc.head@ogamierp.local | Head@123456789! | PPC | Production planning |
-| Production Manager | prod.manager@ogamierp.local | Manager@12345! | PROD | Production execution |
-| QC Manager | qc.manager@ogamierp.local | Manager@12345! | QC | Quality control |
-| Vice President | vp@ogamierp.local | VicePresident@1! | — | Final approvals |
+| Super Admin | superadmin@ogamierp.local | SuperAdmin@12345! | — | Full system access |
+| Accounting Officer | acctg.officer@ogamierp.local | Officer@Test1234! | ACCTG | Financial management, AP/AR |
+| Purchasing Officer | purchasing@ogamierp.local | Purchasing_officer@Test1234! | ACCTG | Procurement operations |
+| HR Manager | hr.manager@ogamierp.local | Manager@Test1234! | HR | HR, Leave, Attendance |
+| Production Manager | prod.manager@ogamierp.local | Production_manager@Test1234! | PROD | Production execution |
+| QC Manager | qc.manager@ogamierp.local | Qc_manager@Test1234! | QC | Quality control |
+| Vice President | vp@ogamierp.local | Vp@Test1234! | EXEC | Final approvals |
+| Vendor (External) | vendor@ogamierp.local | Vendor@Test1234! | — | Vendor portal access |
 
 ---
 
 ## Phase 1: Initial System Setup
 
 ### 1.1 Setup Bank Accounts
-**User:** acctg.officer@ogamierp.local / AcctgManager@1234!
+**User:** acctg.officer@ogamierp.local / Officer@Test1234!
 **Page:** `/banking/accounts`
 
 1. Navigate to: `http://localhost:5173/login`
-2. Login with: acctg.officer@ogamierp.local / AcctgManager@1234!
+2. Login with: acctg.officer@ogamierp.local / Officer@Test1234!
 3. Click sidebar: "Banking" → "Bank Accounts"
 4. Click "Add Bank Account"
 5. Fill form:
@@ -50,7 +54,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 7. Verify bank account appears in list
 
 ### 1.2 Setup Vendors
-**User:** acctg.officer@ogamierp.local / AcctgManager@1234!
+**User:** acctg.officer@ogamierp.local / Officer@Test1234!
 **Page:** `/accounting/vendors`
 
 1. Click sidebar: "Accounting" → "Vendors"
@@ -79,7 +83,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 6. Click "Save"
 
 ### 1.3 Setup Customers
-**User:** acctg.officer@ogamierp.local / AcctgManager@1234!
+**User:** acctg.officer@ogamierp.local / Officer@Test1234!
 **Page:** `/ar/customers`
 
 
@@ -114,10 +118,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 ## Phase 2: Inventory Setup
 
 ### 2.1 Setup Item Categories
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/categories`
 
-1. Login with: warehouse.head@ogamierp.local / Head@123456789!
+1. Login with: dept.head@ogamierp.local / Head@Test1234!
 2. Click sidebar: "Inventory" → "Item Categories"
 3. Click "Add Category"
 4. Create categories:
@@ -128,7 +132,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 5. Click "Save" for each
 
 ### 2.2 Setup Warehouse Locations
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/locations`
 
 1. Click sidebar: "Inventory" → "Warehouse Locations"
@@ -141,7 +145,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 4. Click "Save" for each
 
 ### 2.3 Create Raw Material Items
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/items/new`
 
 1. Click sidebar: "Inventory" → "Items"
@@ -178,7 +182,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 
 
 ### 2.4 Create Finished Goods Items
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/items/new`
 
 1. Click "Add Item"
@@ -209,11 +213,11 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 ## Phase 3: Procurement Process
 
 ### 3.1 Create Purchase Request
-**User:** purchasing.officer@ogamierp.local / Officer@12345!
+**User:** purchasing@ogamierp.local / Purchasing_officer@Test1234!
 **Page:** `/procurement/purchase-requests/new`
 
 1. Logout from warehouse head
-2. Login with: purchasing.officer@ogamierp.local / Officer@12345!
+2. Login with: purchasing@ogamierp.local / Purchasing_officer@Test1234!
 3. Click sidebar: "Procurement" → "Purchase Requests"
 4. Click "New Purchase Request"
 5. Fill form:
@@ -255,10 +259,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 9. Logout
 
 ### 3.3 Create Purchase Order from PR
-**User:** purchasing.officer@ogamierp.local / Officer@12345!
+**User:** purchasing@ogamierp.local / Purchasing_officer@Test1234!
 **Page:** `/procurement/purchase-orders/new`
 
-1. Login with: purchasing.officer@ogamierp.local / Officer@12345!
+1. Login with: purchasing@ogamierp.local / Purchasing_officer@Test1234!
 2. Click sidebar: "Procurement" → "Purchase Orders"
 3. Click "New Purchase Order"
 4. Select "Create from PR"
@@ -278,11 +282,11 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 
 
 ### 3.4 Create Goods Receipt
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/procurement/goods-receipts/new`
 
 1. Logout from purchasing officer
-2. Login with: warehouse.head@ogamierp.local / Head@123456789!
+2. Login with: dept.head@ogamierp.local / Head@Test1234!
 3. Click sidebar: "Procurement" → "Goods Receipts"
 4. Click "New Goods Receipt"
 5. Fill form:
@@ -304,7 +308,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 12. Verify stock levels updated in inventory
 
 ### 3.5 Verify Stock Balance
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/stock`
 
 1. Click sidebar: "Inventory" → "Stock Balance"
@@ -344,11 +348,11 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 8. Verify invoice status: "Pending Approval"
 
 ### 4.2 Approve Vendor Invoice (VP Approval)
-**User:** vp@ogamierp.local / VicePresident@1!
+**User:** vp@ogamierp.local / Vp@Test1234!
 **Page:** `/accounting/ap/invoices`
 
 1. Logout from accounting officer
-2. Login with: vp@ogamierp.local / VicePresident@1!
+2. Login with: vp@ogamierp.local / Vp@Test1234!
 3. Click sidebar: "Accounting" → "AP Invoices"
 4. Find invoice INV-ABC-2026-001
 5. Click on invoice number
@@ -379,10 +383,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 ## Phase 5: Production Planning
 
 ### 5.1 Create Bill of Materials (BOM)
-**User:** ppc.head@ogamierp.local / Head@123456789!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/boms/new`
 
-1. Login with: ppc.head@ogamierp.local / Head@123456789!
+1. Login with: prod.manager@ogamierp.local / Production_manager@Test1234!
 2. Click sidebar: "Production" → "BOMs"
 3. Click "New BOM"
 4. Fill form:
@@ -409,7 +413,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 
 
 ### 5.2 Create Delivery Schedule
-**User:** ppc.head@ogamierp.local / Head@123456789!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/delivery-schedules/new`
 
 1. Click sidebar: "Production" → "Delivery Schedules"
@@ -425,7 +429,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 5. Verify delivery schedule created
 
 ### 5.3 Create Production Order
-**User:** ppc.head@ogamierp.local / Head@123456789!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/orders/new`
 
 1. Click sidebar: "Production" → "Production Orders"
@@ -446,11 +450,11 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 6. Verify status: "Draft"
 
 ### 5.4 Approve Production Order (Production Manager)
-**User:** prod.manager@ogamierp.local / Manager@12345!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/orders`
 
 1. Logout from PPC head
-2. Login with: prod.manager@ogamierp.local / Manager@12345!
+2. Login with: prod.manager@ogamierp.local / Production_manager@Test1234!
 3. Click sidebar: "Production" → "Production Orders"
 4. Find production order from step 5.3
 5. Click on PO number
@@ -460,7 +464,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 9. Verify status changes to "Approved"
 
 ### 5.5 Release Production Order
-**User:** prod.manager@ogamierp.local / Manager@12345!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/orders/{ulid}`
 
 1. Click on production order
@@ -479,10 +483,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 ## Phase 6: Material Requisition
 
 ### 6.1 Create Material Requisition from Production Order
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/requisitions/new`
 
-1. Login with: warehouse.head@ogamierp.local / Head@123456789!
+1. Login with: dept.head@ogamierp.local / Head@Test1234!
 2. Click sidebar: "Inventory" → "Material Requisitions"
 3. Click "New Requisition"
 4. Fill form:
@@ -499,11 +503,11 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 7. Verify status: "Pending Approval"
 
 ### 6.2 Approve Material Requisition (Production Manager)
-**User:** prod.manager@ogamierp.local / Manager@12345!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/inventory/requisitions`
 
 1. Logout from warehouse head
-2. Login with: prod.manager@ogamierp.local / Manager@12345!
+2. Login with: prod.manager@ogamierp.local / Production_manager@Test1234!
 3. Click sidebar: "Inventory" → "Material Requisitions"
 4. Find MR from step 6.1
 5. Click on MR number
@@ -514,10 +518,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 10. Logout
 
 ### 6.3 Issue Materials
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/requisitions`
 
-1. Login with: warehouse.head@ogamierp.local / Head@123456789!
+1. Login with: dept.head@ogamierp.local / Head@Test1234!
 2. Find approved MR
 3. Click on MR number
 4. Click "Issue Materials"
@@ -533,17 +537,17 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 ## Phase 7: Production Execution
 
 ### 7.1 Start Production
-**User:** prod.manager@ogamierp.local / Manager@12345!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/orders/{ulid}`
 
-1. Login with: prod.manager@ogamierp.local / Manager@12345!
+1. Login with: prod.manager@ogamierp.local / Production_manager@Test1234!
 2. Navigate to production order
 3. Click "Start Production"
 4. Verify status changes to "In Progress"
 5. Record start time: 2026-03-20 08:00
 
 ### 7.2 Record Production Output
-**User:** prod.manager@ogamierp.local / Manager@12345!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/orders/{ulid}`
 
 1. Click "Record Output"
@@ -563,10 +567,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 ## Phase 8: Quality Control
 
 ### 8.1 Create Inspection
-**User:** qc.manager@ogamierp.local / Manager@12345!
+**User:** qc.manager@ogamierp.local / Qc_manager@Test1234!
 **Page:** `/qc/inspections/new`
 
-1. Login with: qc.manager@ogamierp.local / Manager@12345!
+1. Login with: qc.manager@ogamierp.local / Qc_manager@Test1234!
 2. Click sidebar: "QC" → "Inspections"
 3. Click "New Inspection"
 4. Fill form:
@@ -585,7 +589,7 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 7. Verify inspection record created
 
 ### 8.2 Create NCR for Rejected Items
-**User:** qc.manager@ogamierp.local / Manager@12345!
+**User:** qc.manager@ogamierp.local / Qc_manager@Test1234!
 **Page:** `/qc/ncrs/new`
 
 1. Click sidebar: "QC" → "NCRs"
@@ -609,10 +613,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 ## Phase 9: Finished Goods Receipt
 
 ### 9.1 Complete Production Order
-**User:** prod.manager@ogamierp.local / Manager@12345!
+**User:** prod.manager@ogamierp.local / Production_manager@Test1234!
 **Page:** `/production/orders/{ulid}`
 
-1. Login with: prod.manager@ogamierp.local / Manager@12345!
+1. Login with: prod.manager@ogamierp.local / Production_manager@Test1234!
 2. Navigate to production order
 3. Click "Complete Production"
 4. Verify final quantities:
@@ -624,10 +628,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 7. Logout
 
 ### 9.2 Receive Finished Goods to Warehouse
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/inventory/stock`
 
-1. Login with: warehouse.head@ogamierp.local / Head@123456789!
+1. Login with: dept.head@ogamierp.local / Head@Test1234!
 2. Click sidebar: "Inventory" → "Stock Balance"
 3. Search for "FG-DASH-001"
 4. Verify stock increased by 180 PCS at WH-B1
@@ -665,11 +669,11 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 8. Verify invoice status: "Draft"
 
 ### 10.2 Approve Customer Invoice (VP)
-**User:** vp@ogamierp.local / VicePresident@1!
+**User:** vp@ogamierp.local / Vp@Test1234!
 **Page:** `/ar/invoices`
 
 1. Logout from accounting officer
-2. Login with: vp@ogamierp.local / VicePresident@1!
+2. Login with: vp@ogamierp.local / Vp@Test1234!
 3. Click sidebar: "AR" → "Invoices"
 4. Find invoice from step 10.1
 5. Click on invoice number
@@ -698,10 +702,10 @@ This guide walks through a complete manufacturing business cycle, testing all ma
 
 
 ### 10.4 Create Delivery Receipt
-**User:** warehouse.head@ogamierp.local / Head@123456789!
+**User:** dept.head@ogamierp.local / Head@Test1234!
 **Page:** `/delivery/receipts/new`
 
-1. Login with: warehouse.head@ogamierp.local / Head@123456789!
+1. Login with: dept.head@ogamierp.local / Head@Test1234!
 2. Click sidebar: "Delivery" → "Delivery Receipts"
 3. Click "New Delivery Receipt"
 4. Fill form:

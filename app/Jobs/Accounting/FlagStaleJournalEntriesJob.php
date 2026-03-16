@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Jobs\Accounting;
 
 use App\Domains\Accounting\Models\JournalEntry;
+use App\Models\User;
+use App\Notifications\JournalEntryStaleNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,7 +25,6 @@ use Illuminate\Support\Facades\Log;
  * "Inactivity" = updated_at has not changed for the threshold period.
  *
  * Both thresholds are read from system_settings (zero hardcoding, S3).
- * A notification is sent to the drafter on flagging (TODO: notification class in Sprint 17).
  */
 final class FlagStaleJournalEntriesJob implements ShouldQueue
 {
@@ -41,13 +42,31 @@ final class FlagStaleJournalEntriesJob implements ShouldQueue
         $today = now()->toDateTimeString();
 
         // ── Pass 1: draft → stale ────────────────────────────────────────────
-        $stalledCount = JournalEntry::where('status', 'draft')
+        $stalledEntries = JournalEntry::where('status', 'draft')
             ->where('updated_at', '<=', $staleThreshold)
-            ->update(['status' => 'stale', 'updated_at' => $today]);
+            ->get();
+
+        $stalledCount = $stalledEntries->count();
 
         if ($stalledCount > 0) {
+            // Update status to stale
+            JournalEntry::whereIn('id', $stalledEntries->pluck('id'))
+                ->update(['status' => 'stale', 'updated_at' => $today]);
+
             Log::info("[FlagStaleJournalEntriesJob] Flagged {$stalledCount} draft JE(s) as stale (idle ≥ {$staleDays} days).");
-            // TODO Sprint 17: dispatch notification to drafters
+
+            // Notify drafters (group by creator to avoid spam)
+            $entriesByCreator = $stalledEntries->groupBy('created_by');
+            foreach ($entriesByCreator as $creatorId => $entries) {
+                $creator = User::find($creatorId);
+                if ($creator) {
+                    foreach ($entries as $entry) {
+                        $creator->notify(new JournalEntryStaleNotification($entry, $staleDays));
+                    }
+                }
+            }
+
+            Log::info("[FlagStaleJournalEntriesJob] Sent stale notifications to {$entriesByCreator->count()} drafter(s).");
         }
 
         // ── Pass 2: stale → cancelled ────────────────────────────────────────

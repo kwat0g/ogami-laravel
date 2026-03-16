@@ -35,25 +35,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->middleware('throttle:api-action')
             ->name('update');
 
-        // Workflow transitions
+        // Workflow transitions with SoD enforcement
         Route::post('/{purchaseRequest}/submit', [PurchaseRequestController::class, 'submit'])
             ->middleware('throttle:api-action')
             ->name('submit');
 
         Route::post('/{purchaseRequest}/note', [PurchaseRequestController::class, 'note'])
-            ->middleware('throttle:api-action')
+            ->middleware(['sod:procurement,note', 'throttle:api-action'])
             ->name('note');
 
         Route::post('/{purchaseRequest}/check', [PurchaseRequestController::class, 'check'])
-            ->middleware('throttle:api-action')
+            ->middleware(['sod:procurement,check', 'throttle:api-action'])
             ->name('check');
 
         Route::post('/{purchaseRequest}/review', [PurchaseRequestController::class, 'review'])
-            ->middleware('throttle:api-action')
+            ->middleware(['sod:procurement,review', 'throttle:api-action'])
             ->name('review');
 
         Route::post('/{purchaseRequest}/vp-approve', [PurchaseRequestController::class, 'vpApprove'])
-            ->middleware('throttle:api-action')
+            ->middleware(['sod:procurement,vp_approve', 'throttle:api-action'])
             ->name('vp-approve');
 
         Route::post('/{purchaseRequest}/budget-check', [PurchaseRequestController::class, 'budgetCheck'])

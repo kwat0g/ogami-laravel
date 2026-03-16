@@ -12,16 +12,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * VendorItem — an item in a vendor's product/price catalog.
  *
- * @property int         $id
- * @property string      $ulid
- * @property int         $vendor_id
- * @property string      $item_code
- * @property string      $item_name
+ * @property int $id
+ * @property string $ulid
+ * @property int $vendor_id
+ * @property string $item_code
+ * @property string $item_name
  * @property string|null $description
- * @property string      $unit_of_measure
- * @property int         $unit_price      centavos
- * @property bool        $is_active
- * @property int         $created_by_id
+ * @property string $unit_of_measure
+ * @property int $unit_price centavos
+ * @property bool $is_active
+ * @property int $created_by_id
  */
 final class VendorItem extends Model
 {
@@ -41,7 +41,7 @@ final class VendorItem extends Model
     ];
 
     protected $casts = [
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
         'unit_price' => 'integer',
     ];
 

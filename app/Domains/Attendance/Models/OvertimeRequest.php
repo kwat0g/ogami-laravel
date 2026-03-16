@@ -8,6 +8,7 @@ use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -25,7 +26,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $id
  * @property int $employee_id
  * @property string|null $requester_role staff|supervisor|manager
- * @property \Illuminate\Support\Carbon $work_date
+ * @property Carbon $work_date
  * @property int $requested_minutes 1–480
  * @property int|null $approved_minutes
  * @property string $reason
@@ -33,19 +34,19 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $requested_by FK users.id — who filed the request
  * @property int|null $supervisor_id FK users.id — supervisor who endorsed (staff requests)
  * @property string|null $supervisor_remarks
- * @property \Illuminate\Support\Carbon|null $supervisor_approved_at
+ * @property Carbon|null $supervisor_approved_at
  * @property int|null $approved_by FK users.id — manager final approval
  * @property string|null $approver_remarks
- * @property \Illuminate\Support\Carbon|null $reviewed_at
+ * @property Carbon|null $reviewed_at
  * @property int|null $executive_id FK users.id — executive approval for manager requests
  * @property string|null $executive_remarks
- * @property \Illuminate\Support\Carbon|null $executive_approved_at
+ * @property Carbon|null $executive_approved_at
  * @property int|null $officer_reviewed_by FK users.id — HR officer review step
- * @property \Illuminate\Support\Carbon|null $officer_reviewed_at
+ * @property Carbon|null $officer_reviewed_at
  * @property int|null $vp_approved_by FK users.id — VP final approval step
- * @property \Illuminate\Support\Carbon|null $vp_approved_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $vp_approved_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Employee $employee
  */
 final class OvertimeRequest extends Model implements Auditable

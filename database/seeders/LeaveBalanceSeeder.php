@@ -21,7 +21,17 @@ class LeaveBalanceSeeder extends Seeder
     public function run(): void
     {
         $year = (int) date('Y');
-        $employees = Employee::whereIn('employment_status', ['active', 'on_leave', 'probationary'])->get();
+        // Only seed balances for employees who already have all 4 government IDs.
+        // Employees without gov IDs must have them added via the UI, which triggers
+        // EmployeeService::update() → createLeaveBalancesForEmployee() automatically.
+        // Seeding balances here for ID-less employees would mark the year as "already
+        // provisioned" and silently suppress the auto-trigger later.
+        $employees = Employee::whereIn('employment_status', ['active', 'on_leave', 'probationary'])
+            ->whereNotNull('sss_no_hash')
+            ->whereNotNull('tin_hash')
+            ->whereNotNull('philhealth_no_hash')
+            ->whereNotNull('pagibig_no_hash')
+            ->get();
         $leaveTypes = LeaveType::where('is_active', true)->where('code', '!=', 'LWOP')->get();
 
         foreach ($employees as $employee) {
@@ -50,6 +60,6 @@ class LeaveBalanceSeeder extends Seeder
             }
         }
 
-        $this->command->info("Seeded leave balances for {$employees->count()} employees × {$leaveTypes->count()} leave types for {$year}.");
+        $this->command->info("Seeded leave balances for {$employees->count()} employees (complete gov IDs only) × {$leaveTypes->count()} leave types for {$year}.");
     }
 }

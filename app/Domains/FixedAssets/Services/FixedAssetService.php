@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\FixedAssets\Services;
 
 use App\Domains\Accounting\Models\FiscalPeriod;
+use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Accounting\Services\JournalEntryService;
 use App\Domains\FixedAssets\Models\AssetDepreciationEntry;
 use App\Domains\FixedAssets\Models\AssetDisposal;
@@ -41,23 +42,23 @@ final class FixedAssetService implements ServiceContract
             $category = FixedAssetCategory::findOrFail($data['category_id']);
 
             return FixedAsset::create([
-                'asset_code'                       => '', // populated by DB trigger
-                'category_id'                      => $category->id,
-                'department_id'                    => $data['department_id'] ?? null,
-                'name'                             => $data['name'],
-                'description'                      => $data['description'] ?? null,
-                'serial_number'                    => $data['serial_number'] ?? null,
-                'location'                         => $data['location'] ?? null,
-                'acquisition_date'                 => $data['acquisition_date'],
-                'acquisition_cost_centavos'        => $data['acquisition_cost_centavos'],
-                'residual_value_centavos'          => $data['residual_value_centavos'] ?? 0,
-                'useful_life_years'                => $data['useful_life_years'] ?? $category->default_useful_life_years,
-                'depreciation_method'              => $data['depreciation_method'] ?? $category->default_depreciation_method,
+                'asset_code' => '', // populated by DB trigger
+                'category_id' => $category->id,
+                'department_id' => $data['department_id'] ?? null,
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'serial_number' => $data['serial_number'] ?? null,
+                'location' => $data['location'] ?? null,
+                'acquisition_date' => $data['acquisition_date'],
+                'acquisition_cost_centavos' => $data['acquisition_cost_centavos'],
+                'residual_value_centavos' => $data['residual_value_centavos'] ?? 0,
+                'useful_life_years' => $data['useful_life_years'] ?? $category->default_useful_life_years,
+                'depreciation_method' => $data['depreciation_method'] ?? $category->default_depreciation_method,
                 'accumulated_depreciation_centavos' => 0,
-                'status'                           => 'active',
-                'purchased_from'                   => $data['purchased_from'] ?? null,
-                'purchase_invoice_ref'             => $data['purchase_invoice_ref'] ?? null,
-                'created_by_id'                    => $actor->id,
+                'status' => 'active',
+                'purchased_from' => $data['purchased_from'] ?? null,
+                'purchase_invoice_ref' => $data['purchase_invoice_ref'] ?? null,
+                'created_by_id' => $actor->id,
             ]);
         });
     }
@@ -67,7 +68,7 @@ final class FixedAssetService implements ServiceContract
     /**
      * Depreciate all eligible active assets for the given fiscal period.
      *
-     * @return int  Number of assets processed
+     * @return int Number of assets processed
      */
     public function depreciateMonth(FiscalPeriod $period, User $actor): int
     {
@@ -92,6 +93,7 @@ final class FixedAssetService implements ServiceContract
             if ($depAmount <= 0) {
                 // Mark fully depreciated if no remaining amount
                 $asset->update(['status' => 'fully_depreciated']);
+
                 continue;
             }
 
@@ -101,7 +103,7 @@ final class FixedAssetService implements ServiceContract
             } catch (\Throwable $e) {
                 Log::error('Fixed asset depreciation failed', [
                     'asset_id' => $asset->id,
-                    'error'    => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -121,9 +123,9 @@ final class FixedAssetService implements ServiceContract
         }
 
         return DB::transaction(function () use ($asset, $data, $actor): AssetDisposal {
-            $proceeds  = $data['proceeds_centavos'] ?? 0;
+            $proceeds = $data['proceeds_centavos'] ?? 0;
             $bookValue = $asset->bookValueCentavos();
-            $gainLoss  = $proceeds - $bookValue;
+            $gainLoss = $proceeds - $bookValue;
 
             $je = null;
             $category = $asset->category;
@@ -136,18 +138,18 @@ final class FixedAssetService implements ServiceContract
             }
 
             $disposal = AssetDisposal::create([
-                'fixed_asset_id'   => $asset->id,
-                'disposal_date'    => $data['disposal_date'],
+                'fixed_asset_id' => $asset->id,
+                'disposal_date' => $data['disposal_date'],
                 'proceeds_centavos' => $proceeds,
-                'disposal_method'  => $data['disposal_method'] ?? 'write_off',
+                'disposal_method' => $data['disposal_method'] ?? 'write_off',
                 'gain_loss_centavos' => $gainLoss,
                 'journal_entry_id' => $je?->id,
-                'notes'            => $data['notes'] ?? null,
-                'created_by_id'    => $actor->id,
+                'notes' => $data['notes'] ?? null,
+                'created_by_id' => $actor->id,
             ]);
 
             $asset->update([
-                'status'       => 'disposed',
+                'status' => 'disposed',
                 'disposal_date' => $data['disposal_date'],
             ]);
 
@@ -171,16 +173,16 @@ final class FixedAssetService implements ServiceContract
 
     private function computeDepreciation(FixedAsset $asset): int
     {
-        $depreciable  = $asset->depreciableAmountCentavos();
+        $depreciable = $asset->depreciableAmountCentavos();
 
         if ($depreciable <= 0) {
             return 0;
         }
 
         return match ($asset->depreciation_method) {
-            'straight_line'    => $this->straightLine($asset),
+            'straight_line' => $this->straightLine($asset),
             'double_declining' => $this->doubleDeclining($asset),
-            default            => $this->straightLine($asset),
+            default => $this->straightLine($asset),
         };
     }
 
@@ -194,9 +196,9 @@ final class FixedAssetService implements ServiceContract
 
     private function doubleDeclining(FixedAsset $asset): int
     {
-        $bookValue   = $asset->bookValueCentavos();
-        $annualRate  = 2 / $asset->useful_life_years;
-        $monthly     = ($bookValue * $annualRate) / 12;
+        $bookValue = $asset->bookValueCentavos();
+        $annualRate = 2 / $asset->useful_life_years;
+        $monthly = ($bookValue * $annualRate) / 12;
 
         // Never depreciate below residual value
         $remaining = $bookValue - $asset->residual_value_centavos;
@@ -211,7 +213,7 @@ final class FixedAssetService implements ServiceContract
         User $actor,
     ): AssetDepreciationEntry {
         return DB::transaction(function () use ($asset, $period, $depAmountCentavos, $actor): AssetDepreciationEntry {
-            $je     = null;
+            $je = null;
             $category = $asset->category;
 
             if ($category !== null &&
@@ -220,11 +222,11 @@ final class FixedAssetService implements ServiceContract
                 $depFloat = $depAmountCentavos / 100;
 
                 $je = $this->jeService->create([
-                    'date'        => $period->date_to,
+                    'date' => $period->date_to,
                     'description' => "Depreciation — {$asset->name} ({$asset->asset_code})",
                     'source_type' => 'fixed_assets',
-                    'source_id'   => $asset->id,
-                    'lines'       => [
+                    'source_id' => $asset->id,
+                    'lines' => [
                         ['account_id' => $category->gl_depreciation_expense_account_id, 'debit' => $depFloat, 'credit' => null],
                         ['account_id' => $category->gl_accumulated_depreciation_account_id, 'debit' => null, 'credit' => $depFloat],
                     ],
@@ -232,12 +234,12 @@ final class FixedAssetService implements ServiceContract
             }
 
             $entry = AssetDepreciationEntry::create([
-                'fixed_asset_id'              => $asset->id,
-                'fiscal_period_id'            => $period->id,
+                'fixed_asset_id' => $asset->id,
+                'fiscal_period_id' => $period->id,
                 'depreciation_amount_centavos' => $depAmountCentavos,
-                'method'                      => $asset->depreciation_method,
-                'journal_entry_id'            => $je?->id,
-                'computed_by_id'              => $actor->id,
+                'method' => $asset->depreciation_method,
+                'journal_entry_id' => $je?->id,
+                'computed_by_id' => $actor->id,
             ]);
 
             $newAccumulated = $asset->accumulated_depreciation_centavos + $depAmountCentavos;
@@ -245,7 +247,7 @@ final class FixedAssetService implements ServiceContract
 
             $asset->update([
                 'accumulated_depreciation_centavos' => $newAccumulated,
-                'status'                            => $fullyDep ? 'fully_depreciated' : 'active',
+                'status' => $fullyDep ? 'fully_depreciated' : 'active',
             ]);
 
             return $entry;
@@ -259,10 +261,10 @@ final class FixedAssetService implements ServiceContract
         int $gainLossCentavos,
         string $disposalDate,
         User $actor,
-    ): \App\Domains\Accounting\Models\JournalEntry {
-        $costFloat      = $asset->acquisition_cost_centavos / 100;
-        $accumDepFloat  = $asset->accumulated_depreciation_centavos / 100;
-        $proceedsFloat  = $proceedsCentavos / 100;
+    ): JournalEntry {
+        $costFloat = $asset->acquisition_cost_centavos / 100;
+        $accumDepFloat = $asset->accumulated_depreciation_centavos / 100;
+        $proceedsFloat = $proceedsCentavos / 100;
 
         $lines = [
             // Remove accumulated depreciation
@@ -290,11 +292,11 @@ final class FixedAssetService implements ServiceContract
         }
 
         return $this->jeService->create([
-            'date'        => $disposalDate,
+            'date' => $disposalDate,
             'description' => "Asset disposal — {$asset->name} ({$asset->asset_code})",
             'source_type' => 'fixed_assets',
-            'source_id'   => $asset->id,
-            'lines'       => $lines,
+            'source_id' => $asset->id,
+            'lines' => $lines,
         ]);
     }
 }

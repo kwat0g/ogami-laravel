@@ -41,58 +41,58 @@ export type PayrollRunType =
 
 /** Map a raw status string to a human-readable label */
 export const PAYROLL_STATUS_LABELS: Record<string, string> = {
-  DRAFT:           'Draft',
-  SCOPE_SET:       'Scope Set',
+  DRAFT: 'Draft',
+  SCOPE_SET: 'Scope Set',
   PRE_RUN_CHECKED: 'Pre-Run Checked',
-  PROCESSING:      'Processing',
-  COMPUTED:        'Computed',
-  REVIEW:          'Under Review',
-  SUBMITTED:       'Submitted for HR Review',
-  HR_APPROVED:     'HR Approved',
-  ACCTG_APPROVED:  'Accounting Approved',
-  DISBURSED:       'Disbursed',
-  PUBLISHED:       'Published',
-  FAILED:          'Failed',
-  RETURNED:        'Returned',
-  REJECTED:        'Rejected',
+  PROCESSING: 'Processing',
+  COMPUTED: 'Computed',
+  REVIEW: 'Under Review',
+  SUBMITTED: 'Submitted for HR Review',
+  HR_APPROVED: 'HR Approved',
+  ACCTG_APPROVED: 'Accounting Approved',
+  DISBURSED: 'Disbursed',
+  PUBLISHED: 'Published',
+  FAILED: 'Failed',
+  RETURNED: 'Returned',
+  REJECTED: 'Rejected',
   // legacy
-  draft:       'Draft',
-  locked:      'Locked',
-  processing:  'Processing',
-  completed:   'Completed',
-  submitted:   'Submitted',
-  approved:    'Approved',
-  posted:      'Posted',
-  failed:      'Failed',
-  cancelled:   'Cancelled',
+  draft: 'Draft',
+  locked: 'Locked',
+  processing: 'Processing',
+  completed: 'Completed',
+  submitted: 'Submitted',
+  approved: 'Approved',
+  posted: 'Posted',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
 }
 
 /** Returns the wizard step number (1–8) for a given status; null if not applicable */
 export function statusToWizardStep(status: PayrollRunStatus): number | null {
   const map: Partial<Record<string, number>> = {
-    DRAFT:           1,
-    SCOPE_SET:       2,
+    DRAFT: 1,
+    SCOPE_SET: 2,
     PRE_RUN_CHECKED: 3,
-    PROCESSING:      4,
-    COMPUTED:        4,
-    REVIEW:          5,
-    SUBMITTED:       6,
-    HR_APPROVED:     7,
-    RETURNED:        6,
-    ACCTG_APPROVED:  8,
-    DISBURSED:       8,
-    PUBLISHED:       8,
+    PROCESSING: 4,
+    COMPUTED: 4,
+    REVIEW: 5,
+    SUBMITTED: 6,
+    HR_APPROVED: 7,
+    RETURNED: 6,
+    ACCTG_APPROVED: 8,
+    DISBURSED: 8,
+    PUBLISHED: 8,
   }
   return map[status] ?? null
 }
 
 /** Human label for run types */
 export const RUN_TYPE_LABELS: Record<PayrollRunType, string> = {
-  regular:                'Regular Payroll',
-  thirteenth_month:       '13th Month',
-  adjustment:             'Adjustment',
-  year_end_reconciliation:'Year-End Reconciliation',
-  final_pay:              'Final Pay',
+  regular: 'Regular Payroll',
+  thirteenth_month: '13th Month',
+  adjustment: 'Adjustment',
+  year_end_reconciliation: 'Year-End Reconciliation',
+  final_pay: 'Final Pay',
 }
 
 // ── Scope / Exclusion types ───────────────────────────────────────────────
@@ -113,6 +113,7 @@ export interface ScopeFilters {
   employment_types?: string[]
   include_unpaid_leave?: boolean
   include_probation_end?: boolean
+  exclude_no_attendance?: boolean
   exclusions?: Array<{ employee_id: number; reason: string }>
 }
 
@@ -138,7 +139,7 @@ export interface ScopePreview {
 // ── Pre-Run Check types ───────────────────────────────────────────────────
 
 export interface PreRunCheckResult {
-  code: string          // e.g. PR-001
+  code: string // e.g. PR-001
   label: string
   severity: 'block' | 'warn'
   status: 'pass' | 'block' | 'warn'
@@ -157,7 +158,7 @@ export interface PreRunValidationResult {
 
 // ── Approval history ──────────────────────────────────────────────────────
 
-export type ApprovalStage  = 'HR_REVIEW' | 'ACCOUNTING'
+export type ApprovalStage = 'HR_REVIEW' | 'ACCOUNTING'
 export type ApprovalAction = 'APPROVED' | 'RETURNED' | 'REJECTED'
 
 export interface PayrollRunApproval {
@@ -218,17 +219,17 @@ export interface PayrollRun {
   reference_no: string
   pay_period_id: number | null
   pay_period_label: string
-  cutoff_start: string         // ISO date
-  cutoff_end: string           // ISO date
-  pay_date: string             // ISO date
+  cutoff_start: string // ISO date
+  cutoff_end: string // ISO date
+  pay_date: string // ISO date
   status: PayrollRunStatus
   run_type: PayrollRunType
   total_employees: number
-  gross_pay_total: number      // centavos (legacy key)
+  gross_pay_total: number // centavos (legacy key)
   gross_pay_total_centavos: number
-  total_deductions: number     // centavos (legacy key)
+  total_deductions: number // centavos (legacy key)
   total_deductions_centavos: number
-  net_pay_total: number        // centavos (legacy key)
+  net_pay_total: number // centavos (legacy key)
   net_pay_total_centavos: number
   notes: string | null
   created_by: number
@@ -243,6 +244,7 @@ export interface PayrollRun {
   scope_employment_types: string[] | null
   scope_include_unpaid_leave: boolean
   scope_include_probation_end: boolean
+  scope_exclude_no_attendance: boolean
   scope_confirmed_at: string | null
   pre_run_checks_json: PreRunCheckResult[] | null
   pre_run_acknowledged_at: string | null
@@ -332,8 +334,8 @@ export interface PayrollDetail {
   has_deferred_deductions: boolean
   // v1.0 workflow flags
   ln007_applied: boolean
-  ln007_truncated_amt: number | null   // centavos
-  ln007_carried_fwd: number | null     // centavos
+  ln007_truncated_amt: number | null // centavos
+  ln007_carried_fwd: number | null // centavos
   edge_cases_applied: string[] | null
   employee_flag: 'none' | 'flagged' | 'resolved'
   review_note: string | null
@@ -371,9 +373,9 @@ export type PayPeriodFrequency = 'semi_monthly' | 'monthly' | 'weekly'
 export interface PayPeriod {
   id: number
   label: string
-  cutoff_start: string   // ISO date
-  cutoff_end: string     // ISO date
-  pay_date: string       // ISO date
+  cutoff_start: string // ISO date
+  cutoff_end: string // ISO date
+  pay_date: string // ISO date
   status: PayPeriodStatus
   frequency: PayPeriodFrequency
   created_at: string
@@ -400,18 +402,20 @@ export interface CreateAdjustmentPayload {
 export interface HrApprovePayload {
   action: 'APPROVED' | 'RETURNED'
   comments?: string
-  return_comments?: string          // required when action === 'RETURNED'
-  checkboxes_checked?: string[]     // required when action === 'APPROVED', min 3
+  return_comments?: string // required when action === 'RETURNED'
+  checkboxes_checked?: string[] // required when action === 'APPROVED', min 3
 }
 
 export interface AcctgApprovePayload {
-  action: 'APPROVED' | 'REJECTED'
-  rejection_reason?: string         // required when action === 'REJECTED'
-  checkboxes_checked?: string[]     // required when action === 'APPROVED', min 3
+  action: 'APPROVED' | 'REJECTED' | 'RETURNED'
+  rejection_reason?: string // required when action === 'REJECTED'
+  return_comments?: string // required when action === 'RETURNED'
+  comments?: string // optional comments for approval
+  checkboxes_checked?: string[] // required when action === 'APPROVED', min 3
 }
 
 export interface PublishPayload {
-  publish_at?: string | null        // ISO datetime, null = immediate
+  publish_at?: string | null // ISO datetime, null = immediate
   notify_email?: boolean
   notify_in_app?: boolean
 }

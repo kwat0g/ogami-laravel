@@ -56,7 +56,7 @@ final class BomController extends Controller
         return new BomResource($this->service->activate($bom));
     }
 
-    public function destroy(BillOfMaterials $bom): \Illuminate\Http\JsonResponse
+    public function destroy(BillOfMaterials $bom): JsonResponse
     {
         $this->authorize('update', $bom);
 

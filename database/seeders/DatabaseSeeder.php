@@ -51,6 +51,9 @@ class DatabaseSeeder extends Seeder
             // Must run AFTER DepartmentPositionSeeder (requires departments to exist)
             DepartmentPermissionProfileSeeder::class,
             DepartmentPermissionTemplateSeeder::class,
+            // ── Comprehensive test accounts with employee links ─────────────────
+            // Creates Manager/Officer/Head/Staff for each department with linked employees
+            ComprehensiveTestAccountsSeeder::class,
             // ── Transactional sample data ─────────────────────────────────────
             // Must come last — depends on employees, leave_types, COA, fiscal_periods
             SampleDataSeeder::class,

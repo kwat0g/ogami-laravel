@@ -7,6 +7,7 @@ namespace App\Domains\Inventory\Services;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\MaterialRequisitionItem;
+use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\BomComponent;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Models\User;
@@ -60,7 +61,7 @@ final class MaterialRequisitionService implements ServiceContract
      */
     public function createFromBom(ProductionOrder $order, User $actor): MaterialRequisition
     {
-        /** @var \App\Domains\Production\Models\BillOfMaterials $bom */
+        /** @var BillOfMaterials $bom */
         $bom = $order->bom()->with('components')->firstOrFail();
 
         $items = $bom->components
@@ -106,11 +107,11 @@ final class MaterialRequisitionService implements ServiceContract
     {
         $this->assertStatus($mrq, 'draft');
         $mrq->update([
-            'status'          => 'submitted',
+            'status' => 'submitted',
             'submitted_by_id' => $actor->id,
-            'submitted_at'    => now(),
+            'submitted_at' => now(),
             // Store the override reason so every approver can see why stock was short at submission
-            'remarks'         => $stockOverrideReason
+            'remarks' => $stockOverrideReason
                 ? '[Stock override] '.$stockOverrideReason
                 : $mrq->remarks,
         ]);
@@ -184,7 +185,7 @@ final class MaterialRequisitionService implements ServiceContract
         // PROD-003: When an auto-MRQ tied to a released WO is rejected, revert the WO to
         // draft so the planner can review and re-release (which generates a new auto-MRQ).
         if ($mrq->production_order_id) {
-            \App\Domains\Production\Models\ProductionOrder::query()
+            ProductionOrder::query()
                 ->where('id', $mrq->production_order_id)
                 ->where('status', 'released')
                 ->update(['status' => 'draft']);
@@ -203,7 +204,7 @@ final class MaterialRequisitionService implements ServiceContract
         // PROD-003: Mirror reject() — when a linked WO is released and this MRQ is cancelled,
         // revert the WO back to draft so the planner can re-release with a corrected MRQ.
         if ($mrq->production_order_id) {
-            \App\Domains\Production\Models\ProductionOrder::query()
+            ProductionOrder::query()
                 ->where('id', $mrq->production_order_id)
                 ->where('status', 'released')
                 ->update(['status' => 'draft']);

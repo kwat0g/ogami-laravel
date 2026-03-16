@@ -6,7 +6,6 @@ namespace App\Domains\Production\Services;
 
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\BomComponent;
-use App\Exceptions\DomainException;
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -14,7 +13,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 final class BomService implements ServiceContract
 {
     /**
-     * @param  array<string,mixed> $filters
+     * @param  array<string,mixed>  $filters
      */
     public function paginate(array $filters = []): LengthAwarePaginator
     {
@@ -43,18 +42,18 @@ final class BomService implements ServiceContract
             /** @var BillOfMaterials $bom */
             $bom = BillOfMaterials::create([
                 'product_item_id' => $data['product_item_id'],
-                'version'         => $data['version'] ?? '1.0',
-                'is_active'       => true,
-                'notes'           => $data['notes'] ?? null,
+                'version' => $data['version'] ?? '1.0',
+                'is_active' => true,
+                'notes' => $data['notes'] ?? null,
             ]);
 
             foreach ($data['components'] ?? [] as $comp) {
                 BomComponent::create([
-                    'bom_id'            => $bom->id,
+                    'bom_id' => $bom->id,
                     'component_item_id' => $comp['component_item_id'],
-                    'qty_per_unit'      => $comp['qty_per_unit'],
-                    'unit_of_measure'   => $comp['unit_of_measure'],
-                    'scrap_factor_pct'  => $comp['scrap_factor_pct'] ?? 0,
+                    'qty_per_unit' => $comp['qty_per_unit'],
+                    'unit_of_measure' => $comp['unit_of_measure'],
+                    'scrap_factor_pct' => $comp['scrap_factor_pct'] ?? 0,
                 ]);
             }
 
@@ -67,20 +66,20 @@ final class BomService implements ServiceContract
     {
         return \DB::transaction(function () use ($bom, $data): BillOfMaterials {
             $bom->update([
-                'version'  => $data['version']  ?? $bom->version,
+                'version' => $data['version'] ?? $bom->version,
                 'is_active' => $data['is_active'] ?? $bom->is_active,
-                'notes'    => $data['notes']    ?? $bom->notes,
+                'notes' => $data['notes'] ?? $bom->notes,
             ]);
 
             if (isset($data['components'])) {
                 $bom->components()->delete();
                 foreach ($data['components'] as $comp) {
                     BomComponent::create([
-                        'bom_id'            => $bom->id,
+                        'bom_id' => $bom->id,
                         'component_item_id' => $comp['component_item_id'],
-                        'qty_per_unit'      => $comp['qty_per_unit'],
-                        'unit_of_measure'   => $comp['unit_of_measure'],
-                        'scrap_factor_pct'  => $comp['scrap_factor_pct'] ?? 0,
+                        'qty_per_unit' => $comp['qty_per_unit'],
+                        'unit_of_measure' => $comp['unit_of_measure'],
+                        'scrap_factor_pct' => $comp['scrap_factor_pct'] ?? 0,
                     ]);
                 }
             }

@@ -7,6 +7,7 @@ namespace App\Domains\AP\Models;
 use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
+use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * VendorInvoice — AP invoice lifecycle (AP-001 through AP-008).
  *
  * @property int $id
+ * @property string|null $invoice_number External vendor invoice number
  * @property int $vendor_id
  * @property int $fiscal_period_id
  * @property int $ap_account_id
@@ -135,7 +137,7 @@ final class VendorInvoice extends Model implements Auditable
 
     public function purchaseOrder(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Procurement\Models\PurchaseOrder::class, 'purchase_order_id');
+        return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
     // ── Computed Accessors ────────────────────────────────────────────────────

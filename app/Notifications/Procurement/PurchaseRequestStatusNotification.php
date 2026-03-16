@@ -24,23 +24,23 @@ final class PurchaseRequestStatusNotification extends Notification implements Sh
 
     /** @var array<string,string> */
     private const STATUS_LABELS = [
-        'submitted'      => 'Submitted for Approval',
-        'noted'          => 'Noted by Department Head',
-        'checked'        => 'Checked by Manager',
-        'reviewed'       => 'Reviewed — Awaiting VP Approval',
-        'approved'       => 'Approved',
-        'rejected'       => 'Rejected',
-        'cancelled'      => 'Cancelled',
+        'submitted' => 'Submitted for Approval',
+        'noted' => 'Noted by Department Head',
+        'checked' => 'Checked by Manager',
+        'reviewed' => 'Reviewed — Awaiting VP Approval',
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
+        'cancelled' => 'Cancelled',
         'converted_to_po' => 'Converted to Purchase Order',
     ];
 
     public function __construct(
         private readonly PurchaseRequest $purchaseRequest,
         private readonly string $status,
-        private readonly string|null $actorName = null,
-        private readonly string|null $comments = null,
+        private readonly ?string $actorName = null,
+        private readonly ?string $comments = null,
     ) {
-        $this->queue       = 'notifications';
+        $this->queue = 'notifications';
         $this->statusLabel = self::STATUS_LABELS[$status] ?? ucfirst($status);
     }
 
@@ -70,13 +70,13 @@ final class PurchaseRequestStatusNotification extends Notification implements Sh
         }
 
         return [
-            'type'               => 'procurement.purchase_request.' . $this->status,
-            'title'              => "PR {$pr->pr_reference}: {$this->statusLabel}",
-            'message'            => $message . '.',
-            'action_url'         => "/procurement/purchase-requests/{$pr->ulid}",
+            'type' => 'procurement.purchase_request.'.$this->status,
+            'title' => "PR {$pr->pr_reference}: {$this->statusLabel}",
+            'message' => $message.'.',
+            'action_url' => "/procurement/purchase-requests/{$pr->ulid}",
             'purchase_request_id' => $pr->id,
-            'pr_reference'       => $pr->pr_reference,
-            'status'             => $this->status,
+            'pr_reference' => $pr->pr_reference,
+            'status' => $this->status,
         ];
     }
 

@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\Delivery\Models;
 
+use App\Domains\AP\Models\Vendor;
+use App\Domains\AR\Models\Customer;
+use App\Domains\Production\Models\DeliverySchedule;
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,9 +30,9 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int|null $created_by_id
  * @property int|null $vehicle_id
  * @property string|null $driver_name
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, DeliveryReceiptItem> $items
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read Collection<int, DeliveryReceiptItem> $items
  */
 final class DeliveryReceipt extends Model implements AuditableContract
 {
@@ -46,27 +52,27 @@ final class DeliveryReceipt extends Model implements AuditableContract
 
     public function deliverySchedule(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Production\Models\DeliverySchedule::class);
+        return $this->belongsTo(DeliverySchedule::class);
     }
 
     public function vendor(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\AP\Models\Vendor::class);
+        return $this->belongsTo(Vendor::class);
     }
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\AR\Models\Customer::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function receivedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'received_by_id');
+        return $this->belongsTo(User::class, 'received_by_id');
     }
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 
     public function vehicle(): BelongsTo

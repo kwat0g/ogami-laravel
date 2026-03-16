@@ -32,7 +32,7 @@ final class PurchaseRequestController extends Controller
     {
         $this->authorize('viewAny', PurchaseRequest::class);
 
-        $user  = auth()->user();
+        $user = auth()->user();
         $query = PurchaseRequest::with(['requestedBy', 'items'])
             ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
             ->when(
@@ -58,7 +58,7 @@ final class PurchaseRequestController extends Controller
 
         $validated = $request->validated();
         $pr = $this->service->store(
-            data:  $validated,
+            data: $validated,
             items: $validated['items'],
             actor: auth()->user(),
         );
@@ -89,8 +89,8 @@ final class PurchaseRequestController extends Controller
 
         $validated = $request->validated();
         $pr = $this->service->update(
-            pr:    $purchaseRequest,
-            data:  $validated,
+            pr: $purchaseRequest,
+            data: $validated,
             items: $validated['items'] ?? [],
         );
 
@@ -234,7 +234,7 @@ final class PurchaseRequestController extends Controller
 
         $request->validate([
             'reason' => ['required', 'string', 'min:10'],
-            'stage'  => ['required', 'string'],
+            'stage' => ['required', 'string'],
         ]);
 
         $pr = $this->service->reject(
@@ -272,7 +272,7 @@ final class PurchaseRequestController extends Controller
         ]);
 
         $settings = [
-            'company_name'    => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_name' => config('app.company_name', 'Ogami Manufacturing Corp.'),
             'company_address' => config('app.company_address', ''),
         ];
 

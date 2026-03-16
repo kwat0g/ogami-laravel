@@ -19,23 +19,23 @@ final class VendorRfqService implements ServiceContract
     /**
      * Create a new RFQ draft, optionally linked to a Purchase Request.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function create(array $data, User $actor): VendorRfq
     {
         return DB::transaction(function () use ($data, $actor): VendorRfq {
             $seq = DB::selectOne('SELECT NEXTVAL(\'vendor_rfq_seq\') AS val');
             $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
-            $reference = 'RFQ-' . now()->format('Y-m') . '-' . $num;
+            $reference = 'RFQ-'.now()->format('Y-m').'-'.$num;
 
             return VendorRfq::create([
-                'rfq_reference'       => $reference,
+                'rfq_reference' => $reference,
                 'purchase_request_id' => $data['purchase_request_id'] ?? null,
-                'status'              => 'draft',
-                'deadline_date'       => $data['deadline_date'] ?? null,
-                'scope_description'   => $data['scope_description'],
-                'notes'               => $data['notes'] ?? null,
-                'created_by_id'       => $actor->id,
+                'status' => 'draft',
+                'deadline_date' => $data['deadline_date'] ?? null,
+                'scope_description' => $data['scope_description'],
+                'notes' => $data['notes'] ?? null,
+                'created_by_id' => $actor->id,
             ]);
         });
     }
@@ -45,7 +45,7 @@ final class VendorRfqService implements ServiceContract
     /**
      * Mark RFQ as sent and attach vendor invitation records.
      *
-     * @param list<int> $vendorIds
+     * @param  list<int>  $vendorIds
      */
     public function send(VendorRfq $rfq, array $vendorIds, User $actor): VendorRfq
     {
@@ -84,7 +84,7 @@ final class VendorRfqService implements ServiceContract
     /**
      * Record a vendor's quotation response for an RFQ.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function receiveQuote(VendorRfq $rfq, Vendor $vendor, array $data): VendorRfq
     {
@@ -110,11 +110,11 @@ final class VendorRfqService implements ServiceContract
 
         return DB::transaction(function () use ($rfq, $invitation, $data): VendorRfq {
             $invitation->update([
-                'status'                 => 'quoted',
+                'status' => 'quoted',
                 'quoted_amount_centavos' => $data['quoted_amount_centavos'],
-                'lead_time_days'         => $data['lead_time_days'] ?? null,
-                'vendor_remarks'         => $data['vendor_remarks'] ?? null,
-                'responded_at'           => now(),
+                'lead_time_days' => $data['lead_time_days'] ?? null,
+                'vendor_remarks' => $data['vendor_remarks'] ?? null,
+                'responded_at' => now(),
             ]);
 
             $rfq->update(['status' => 'quote_received']);
@@ -132,9 +132,9 @@ final class VendorRfqService implements ServiceContract
             ->firstOrFail();
 
         $invitation->update([
-            'status'          => 'declined',
-            'vendor_remarks'  => $remarks,
-            'responded_at'    => now(),
+            'status' => 'declined',
+            'vendor_remarks' => $remarks,
+            'responded_at' => now(),
         ]);
     }
 
@@ -152,6 +152,7 @@ final class VendorRfqService implements ServiceContract
 
         return DB::transaction(function () use ($rfq): VendorRfq {
             $rfq->update(['status' => 'closed', 'closed_at' => now()]);
+
             return $rfq->refresh();
         });
     }
@@ -170,6 +171,7 @@ final class VendorRfqService implements ServiceContract
 
         return DB::transaction(function () use ($rfq): VendorRfq {
             $rfq->update(['status' => 'cancelled']);
+
             return $rfq->refresh();
         });
     }

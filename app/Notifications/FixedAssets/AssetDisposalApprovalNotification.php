@@ -34,7 +34,7 @@ final class AssetDisposalApprovalNotification extends Notification implements Sh
             'title' => 'Asset Disposal Approval Required',
             'message' => sprintf(
                 'Asset disposal request for "%s" (method: %s) requires your approval.',
-                $this->disposal->fixedAsset?->name ?? "Asset #{$this->disposal->fixed_asset_id}",
+                $this->disposal->fixedAsset->name ?? "Asset #{$this->disposal->fixed_asset_id}",
                 $this->disposal->disposal_method ?? 'unspecified',
             ),
             'action_url' => '/fixed-assets',

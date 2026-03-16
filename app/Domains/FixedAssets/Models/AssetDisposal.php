@@ -10,24 +10,25 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * @property int                             $id
- * @property string                          $ulid
- * @property int                             $fixed_asset_id
- * @property \Illuminate\Support\Carbon      $disposal_date
- * @property int                             $proceeds_centavos
- * @property string                          $disposal_method         sale|scrap|donation|write_off
- * @property int                             $gain_loss_centavos       positive = gain; negative = loss
- * @property int|null                        $journal_entry_id
- * @property string|null                     $notes
- * @property int|null                        $approved_by_id
- * @property int                             $created_by_id
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int $id
+ * @property string $ulid
+ * @property int $fixed_asset_id
+ * @property Carbon $disposal_date
+ * @property int $proceeds_centavos
+ * @property string $disposal_method sale|scrap|donation|write_off
+ * @property int $gain_loss_centavos positive = gain; negative = loss
+ * @property int|null $journal_entry_id
+ * @property string|null $notes
+ * @property int|null $approved_by_id
+ * @property int $created_by_id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class AssetDisposal extends Model implements Auditable
 {

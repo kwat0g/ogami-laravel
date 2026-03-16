@@ -16,8 +16,8 @@ final class CompleteWorkOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'completion_notes'       => ['required', 'string'],
-            'labor_hours'            => ['nullable', 'numeric', 'min:0'],
+            'completion_notes' => ['required', 'string'],
+            'labor_hours' => ['nullable', 'numeric', 'min:0'],
             'actual_completion_date' => ['nullable', 'date'],
         ];
     }

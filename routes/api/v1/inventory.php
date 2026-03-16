@@ -40,10 +40,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('requisitions', [MaterialRequisitionController::class, 'store']);
     Route::get('requisitions/{materialRequisition}', [MaterialRequisitionController::class, 'show']);
     Route::patch('requisitions/{materialRequisition}/submit', [MaterialRequisitionController::class, 'submit'])->middleware('throttle:api-action');
-    Route::patch('requisitions/{materialRequisition}/note', [MaterialRequisitionController::class, 'note'])->middleware('throttle:api-action');
-    Route::patch('requisitions/{materialRequisition}/check', [MaterialRequisitionController::class, 'check'])->middleware('throttle:api-action');
-    Route::patch('requisitions/{materialRequisition}/review', [MaterialRequisitionController::class, 'review'])->middleware('throttle:api-action');
-    Route::patch('requisitions/{materialRequisition}/vp-approve', [MaterialRequisitionController::class, 'vpApprove'])->middleware('throttle:api-action');
+    Route::patch('requisitions/{materialRequisition}/note', [MaterialRequisitionController::class, 'note'])
+        ->middleware(['sod:inventory_mrq,note', 'throttle:api-action']);
+    Route::patch('requisitions/{materialRequisition}/check', [MaterialRequisitionController::class, 'check'])
+        ->middleware(['sod:inventory_mrq,check', 'throttle:api-action']);
+    Route::patch('requisitions/{materialRequisition}/review', [MaterialRequisitionController::class, 'review'])
+        ->middleware(['sod:inventory_mrq,review', 'throttle:api-action']);
+    Route::patch('requisitions/{materialRequisition}/vp-approve', [MaterialRequisitionController::class, 'vpApprove'])
+        ->middleware(['sod:inventory_mrq,vp_approve', 'throttle:api-action']);
     Route::patch('requisitions/{materialRequisition}/reject', [MaterialRequisitionController::class, 'reject'])->middleware('throttle:api-action');
     Route::patch('requisitions/{materialRequisition}/cancel', [MaterialRequisitionController::class, 'cancel'])->middleware('throttle:api-action');
     Route::patch('requisitions/{materialRequisition}/fulfill', [MaterialRequisitionController::class, 'fulfill'])->middleware('throttle:api-action');

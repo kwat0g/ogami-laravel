@@ -6,6 +6,8 @@ namespace App\Domains\Production\Models;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Shared\Traits\HasPublicUlid;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,16 +16,16 @@ use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * @property int         $id
- * @property string      $ulid
- * @property int         $product_item_id
- * @property string      $version
- * @property bool        $is_active
+ * @property int $id
+ * @property string $ulid
+ * @property int $product_item_id
+ * @property string $version
+ * @property bool $is_active
  * @property string|null $notes
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read ItemMaster $productItem
- * @property-read \Illuminate\Database\Eloquent\Collection<int,BomComponent> $components
+ * @property-read Collection<int,BomComponent> $components
  */
 final class BillOfMaterials extends Model implements Auditable
 {

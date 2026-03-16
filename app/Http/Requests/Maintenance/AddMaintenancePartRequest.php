@@ -16,10 +16,10 @@ final class AddMaintenancePartRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item_id'      => ['required', 'integer', 'exists:item_masters,id'],
-            'location_id'  => ['required', 'integer', 'exists:warehouse_locations,id'],
+            'item_id' => ['required', 'integer', 'exists:item_masters,id'],
+            'location_id' => ['required', 'integer', 'exists:warehouse_locations,id'],
             'qty_required' => ['required', 'numeric', 'min:0.0001'],
-            'remarks'      => ['nullable', 'string', 'max:500'],
+            'remarks' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

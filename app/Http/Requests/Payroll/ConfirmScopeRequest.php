@@ -27,6 +27,7 @@ final class ConfirmScopeRequest extends FormRequest
             'employment_types.*' => ['string', 'in:regular,contractual,project_based,casual,probationary'],
             'include_unpaid_leave' => ['boolean'],
             'include_probation_end' => ['boolean'],
+            'exclude_no_attendance' => ['boolean'],
             'exclusions' => ['nullable', 'array'],
             'exclusions.*.employee_id' => ['required', 'integer', 'exists:employees,id'],
             'exclusions.*.reason' => ['required', 'string', 'min:5', 'max:1000'],

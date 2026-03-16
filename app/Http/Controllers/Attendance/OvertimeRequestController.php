@@ -211,7 +211,7 @@ final class OvertimeRequestController extends Controller
      * GET /api/v1/attendance/overtime-requests/pending-executive
      * Executive queue: manager-filed requests pending executive approval.
      */
-    public function pendingExecutive(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    public function pendingExecutive(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewExecutiveQueue', OvertimeRequest::class);
 

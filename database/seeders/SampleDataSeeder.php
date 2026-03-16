@@ -13,17 +13,18 @@ use Illuminate\Support\Str;
 /**
  * Demo data for development and payroll testing.
  *
- * Creates a focused set of 4 employees and their linked user accounts across
- * HR, IT, and Accounting departments.  Government IDs are fake but realistic;
- * TIN and bank details are intentionally left null.
+ * Creates a focused set of 3 employees and their linked user accounts across
+ * HR, Accounting, and Sales departments.  Government IDs, bank details, and
+ * all demographic fields are populated with realistic fake data.
  *
  * Demo accounts:
  *
- * | Email                        | Password             | Role    | Dept  |
- * |------------------------------|----------------------|---------|-------|
- * | admin@ogamierp.local         | Admin@1234567890!    | admin   | —     |
- * | hr.manager@ogamierp.local    | HrManager@1234!      | manager | HR    |
- * | acctg.officer@ogamierp.local | AcctgManager@1234!   | officer | ACCTG |
+ * | Email                        | Password             | Role       | Dept  |
+ * |------------------------------|----------------------|------------|-------|
+ * | admin@ogamierp.local         | Admin@1234567890!    | admin      | —     |
+ * | hr.manager@ogamierp.local    | HrManager@1234!      | manager    | HR    |
+ * | acctg.officer@ogamierp.local | AcctgManager@1234!   | officer    | ACCTG |
+ * | crm.manager@ogamierp.local   | CrmManager@12345!    | crm_manager| SALES |
  *
  * Depends on: DepartmentPositionSeeder, SalaryGradeSeeder, LeaveTypeSeeder,
  *             FiscalPeriodSeeder, RolePermissionSeeder
@@ -49,78 +50,72 @@ class SampleDataSeeder extends Seeder
         $employees = [
             // HR Manager — changes.md: HR Department
             [
-                'code' => 'EMP-2026-0001',
-                'first_name' => 'Maria',
-                'last_name' => 'Santos',
-                'dob' => '1990-03-15',
-                'gender' => 'female',
-                'civil_status' => 'MARRIED',
-                'dependents' => 2,
-                'bir_status' => 'ME2',
-                'email' => 'maria.santos@email.com',
-                'phone' => '09171234567',
-                'address' => '123 Sampaguita St., Brgy. San Antonio, Quezon City',
-                'dept' => 'HR',
-                'pos' => 'HR-MGR',
-                'sg' => 'SG-05',
-                'hired' => '2020-01-06',
-                'salary' => 4500000, // ₱45,000
-                'sss' => '03-1234567-8',
-                'tin' => '123-456-789-000',
-                'philhealth' => '01-234567890-1',
-                'pagibig' => '1234-5678-9012',
-                'bank_name' => 'BDO',
-                'bank_account_no' => '00001234567890',
+                'code'              => 'EMP-2026-0001',
+                'first_name'        => 'Maria',
+                'middle_name'       => 'Reyes',
+                'last_name'         => 'Santos',
+                'dob'               => '1990-03-15',
+                'gender'            => 'female',
+                'civil_status'      => 'MARRIED',
+                'dependents'        => 2,
+                'bir_status'        => 'ME2',
+                'email'             => 'maria.santos@email.com',
+                'phone'             => '09171234567',
+                'address'           => '123 Sampaguita St., Brgy. San Antonio, Quezon City',
+                'dept'              => 'HR',
+                'pos'               => 'HR-MGR',
+                'sg'                => 'SG-05',
+                'hired'             => '2020-01-06',
+                'regularization'    => '2020-07-06',
+                'salary'            => 4500000, // ₱45,000
+                'bank_name'         => 'BDO',
+                'bank_account_no'   => '00001234567890',
             ],
             // Accounting Officer — changes.md: Officers section
             [
-                'code' => 'EMP-2026-0003',
-                'first_name' => 'Anna Marie',
-                'last_name' => 'Lim',
-                'dob' => '1989-09-25',
-                'gender' => 'female',
-                'civil_status' => 'MARRIED',
-                'dependents' => 2,
-                'bir_status' => 'ME2',
-                'email' => 'anna.lim@email.com',
-                'phone' => '09171234571',
-                'address' => '147 Escolta St., Binondo, Manila',
-                'dept' => 'ACCTG',
-                'pos' => 'ACCT-OFF',
-                'sg' => 'SG-06',
-                'hired' => '2018-05-20',
-                'salary' => 5500000, // ₱55,000
-                'sss' => '03-4444444-4',
-                'tin' => '345-678-901-002',
-                'philhealth' => '01-444444444-4',
-                'pagibig' => '4444-5555-6666',
-                'bank_name' => 'UnionBank',
-                'bank_account_no' => '109212345678',
+                'code'              => 'EMP-2026-0003',
+                'first_name'        => 'Anna Marie',
+                'middle_name'       => 'Cruz',
+                'last_name'         => 'Lim',
+                'dob'               => '1989-09-25',
+                'gender'            => 'female',
+                'civil_status'      => 'MARRIED',
+                'dependents'        => 2,
+                'bir_status'        => 'ME2',
+                'email'             => 'anna.lim@email.com',
+                'phone'             => '09171234571',
+                'address'           => '147 Escolta St., Binondo, Manila',
+                'dept'              => 'ACCTG',
+                'pos'               => 'ACCT-OFF',
+                'sg'                => 'SG-06',
+                'hired'             => '2018-05-20',
+                'regularization'    => '2018-11-20',
+                'salary'            => 5500000, // ₱55,000
+                'bank_name'         => 'UnionBank',
+                'bank_account_no'   => '109212345678',
             ],
             // CRM Manager — from TESTING_GUIDE step 9
             [
-                'code' => 'EMP-CRM-001',
-                'first_name' => 'Carrie',
-                'last_name' => 'CRM',
-                'dob' => '1995-05-15',
-                'gender' => 'female',
-                'civil_status' => 'SINGLE',
-                'dependents' => 0,
-                'bir_status' => 'S',
-                'email' => 'carrie.crm@email.com',
-                'phone' => '09171234777',
-                'address' => '456 Business Park, Taguig City',
-                'dept' => 'SALES',
-                'pos' => 'SALES-MGR',
-                'sg' => 'SG-07',
-                'hired' => '2022-03-01',
-                'salary' => 3000000, // ₱30,000
-                'sss' => '02-4444444-4',
-                'tin' => '555-666-777-001',
-                'philhealth' => '02-555555555-5',
-                'pagibig' => '5555-6666-7777',
-                'bank_name' => 'BPI',
-                'bank_account_no' => '222212345678',
+                'code'              => 'EMP-CRM-001',
+                'first_name'        => 'Carrie',
+                'middle_name'       => 'San Jose',
+                'last_name'         => 'Macaraig',
+                'dob'               => '1995-05-15',
+                'gender'            => 'female',
+                'civil_status'      => 'SINGLE',
+                'dependents'        => 0,
+                'bir_status'        => 'S',
+                'email'             => 'carrie.macaraig@email.com',
+                'phone'             => '09171234777',
+                'address'           => '456 Bayview Residences, Brgy. Ususan, Taguig City',
+                'dept'              => 'SALES',
+                'pos'               => 'SALES-MGR',
+                'sg'                => 'SG-07',
+                'hired'             => '2022-03-01',
+                'regularization'    => '2022-09-01',
+                'salary'            => 3000000, // ₱30,000
+                'bank_name'         => 'BPI',
+                'bank_account_no'   => '222212345678',
             ],
         ];
 
@@ -137,53 +132,43 @@ class SampleDataSeeder extends Seeder
             }
 
             DB::table('employees')->insertOrIgnore([
-                'employee_code' => $emp['code'],
-                'ulid' => (string) Str::ulid(),
-                'first_name' => $emp['first_name'],
-                'last_name' => $emp['last_name'],
-                'date_of_birth' => $emp['dob'],
-                'gender' => $emp['gender'],
-                'civil_status' => $emp['civil_status'],
-                'citizenship' => 'Filipino',
-                'present_address' => $emp['address'],
-                'permanent_address' => $emp['address'],
+                'employee_code'        => $emp['code'],
+                'ulid'                 => (string) Str::ulid(),
+                'first_name'           => $emp['first_name'],
+                'middle_name'          => $emp['middle_name'] ?? null,
+                'last_name'            => $emp['last_name'],
+                'date_of_birth'        => $emp['dob'],
+                'gender'               => $emp['gender'],
+                'civil_status'         => $emp['civil_status'],
+                'citizenship'          => 'Filipino',
+                'present_address'      => $emp['address'],
+                'permanent_address'    => $emp['address'],
                 'qualified_dependents' => $emp['dependents'],
-                'bir_status' => $emp['bir_status'],
-                'personal_email' => $emp['email'],
-                'personal_phone' => $emp['phone'],
-                'bank_name' => $emp['bank_name'],
-                'bank_account_no' => $emp['bank_account_no'],
-                'department_id' => $deptId,
-                'position_id' => $posId,
-                'salary_grade_id' => $sgId,
-                'employment_type' => 'regular',
-                'employment_status' => 'active',
-                'date_hired' => $emp['hired'],
-                'basic_monthly_rate' => $emp['salary'],
-                'onboarding_status' => 'active',
-                'is_active' => true,
-                'pay_basis' => 'monthly',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'bir_status'           => $emp['bir_status'],
+                'personal_email'       => $emp['email'],
+                'personal_phone'       => $emp['phone'],
+                'bank_name'            => $emp['bank_name'],
+                'bank_account_no'      => $emp['bank_account_no'],
+                'bank_account_name'    => $emp['first_name'].' '.$emp['last_name'],
+                'department_id'        => $deptId,
+                'position_id'          => $posId,
+                'salary_grade_id'      => $sgId,
+                'employment_type'      => 'regular',
+                'employment_status'    => 'active',
+                'date_hired'           => $emp['hired'],
+                'regularization_date'  => $emp['regularization'] ?? null,
+                'basic_monthly_rate'   => $emp['salary'],
+                'onboarding_status'    => 'documents_pending',
+                'is_active'            => false,
+                'pay_basis'            => 'monthly',
+                'created_at'           => now(),
+                'updated_at'           => now(),
             ]);
-
-            // Set government IDs and activate via model (encrypted + hashed).
-            $employee = Employee::where('employee_code', $emp['code'])->first();
-            if ($employee && ! $employee->has_sss_no) {
-                $employee->setSssNo($emp['sss']);
-                $employee->setTin($emp['tin']);
-                $employee->setPhilhealthNo($emp['philhealth']);
-                $employee->setPagibigNo($emp['pagibig']);
-                $employee->onboarding_status = 'active';
-                $employee->is_active = true;
-                $employee->_fire_activated_event = true;
-                $employee->save();
-            }
 
             $count++;
         }
 
-        $this->command->info("✓ {$count} demo employees seeded (HR Manager + Accounting Officer).");
+        $this->command->info("✓ {$count} demo employees seeded (HR Manager, Accounting Officer, CRM Manager).");
     }
 
     // ── 2. User Accounts ──────────────────────────────────────────────────────
@@ -230,7 +215,7 @@ class SampleDataSeeder extends Seeder
         $crmUser = User::firstOrCreate(
             ['email' => 'crm.manager@ogamierp.local'],
             [
-                'name' => 'Carrie CRM',
+                'name' => 'Carrie Macaraig',
                 'password' => 'CrmManager@12345!',
                 'email_verified_at' => now(),
                 'password_changed_at' => now(),

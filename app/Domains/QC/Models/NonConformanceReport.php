@@ -4,33 +4,35 @@ declare(strict_types=1);
 
 namespace App\Domains\QC\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
- * @property int                                  $id
- * @property string                               $ulid
- * @property string                               $ncr_reference
- * @property int                                  $inspection_id
- * @property string                               $title
- * @property string                               $description
- * @property string                               $severity
- * @property string                               $status
- * @property int|null                             $raised_by_id
- * @property \Illuminate\Support\Carbon|null      $closed_at
- * @property int|null                             $closed_by_id
- * @property \Illuminate\Support\Carbon           $created_at
- * @property \Illuminate\Support\Carbon           $updated_at
- * @property \Illuminate\Support\Carbon|null      $deleted_at
+ * @property int $id
+ * @property string $ulid
+ * @property string $ncr_reference
+ * @property int $inspection_id
+ * @property string $title
+ * @property string $description
+ * @property string $severity
+ * @property string $status
+ * @property int|null $raised_by_id
+ * @property Carbon|null $closed_at
+ * @property int|null $closed_by_id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class NonConformanceReport extends Model implements AuditableContract
 {
-    use HasPublicUlid, Auditable, SoftDeletes;
+    use Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'non_conformance_reports';
 
@@ -55,16 +57,16 @@ final class NonConformanceReport extends Model implements AuditableContract
         return $this->belongsTo(Inspection::class, 'inspection_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function raisedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'raised_by_id');
+        return $this->belongsTo(User::class, 'raised_by_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function closedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'closed_by_id');
+        return $this->belongsTo(User::class, 'closed_by_id');
     }
 
     /** @return HasMany<CapaAction, $this> */

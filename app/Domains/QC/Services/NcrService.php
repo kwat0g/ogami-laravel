@@ -33,10 +33,10 @@ final class NcrService implements ServiceContract
             /** @var NonConformanceReport $ncr */
             $ncr = NonConformanceReport::create([
                 'inspection_id' => $data['inspection_id'],
-                'title'         => $data['title'],
-                'description'   => $data['description'],
-                'severity'      => $data['severity'] ?? 'minor',
-                'raised_by_id'  => $userId,
+                'title' => $data['title'],
+                'description' => $data['description'],
+                'severity' => $data['severity'] ?? 'minor',
+                'raised_by_id' => $userId,
             ]);
 
             // Transition inspection to on_hold
@@ -55,7 +55,7 @@ final class NcrService implements ServiceContract
     /** @param array<string,mixed> $data */
     public function issueCapa(NonConformanceReport $ncr, array $data, int $userId): CapaAction
     {
-        if (!in_array($ncr->status, ['open', 'under_review'], true)) {
+        if (! in_array($ncr->status, ['open', 'under_review'], true)) {
             throw new DomainException(
                 message: "NCR cannot accept a CAPA in its current status '{$ncr->status}'.",
                 errorCode: 'QC_NCR_CANNOT_ISSUE_CAPA',
@@ -66,10 +66,10 @@ final class NcrService implements ServiceContract
         return DB::transaction(function () use ($ncr, $data, $userId) {
             /** @var CapaAction $capa */
             $capa = CapaAction::create([
-                'ncr_id'        => $ncr->id,
-                'type'          => $data['type'] ?? 'corrective',
-                'description'   => $data['description'],
-                'due_date'      => $data['due_date'],
+                'ncr_id' => $ncr->id,
+                'type' => $data['type'] ?? 'corrective',
+                'description' => $data['description'],
+                'due_date' => $data['due_date'],
                 'assigned_to_id' => $data['assigned_to_id'] ?? null,
                 'created_by_id' => $userId,
             ]);
@@ -91,8 +91,8 @@ final class NcrService implements ServiceContract
         }
 
         $ncr->update([
-            'status'       => 'closed',
-            'closed_at'    => now(),
+            'status' => 'closed',
+            'closed_at' => now(),
             'closed_by_id' => $userId,
         ]);
 
@@ -110,7 +110,7 @@ final class NcrService implements ServiceContract
         }
 
         $capa->update([
-            'status'       => 'completed',
+            'status' => 'completed',
             'completed_at' => now(),
         ]);
 

@@ -10,6 +10,7 @@ use App\Domains\Budget\Models\AnnualBudget;
 use App\Domains\Budget\Models\CostCenter;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
+use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 
 final class BudgetService implements ServiceContract
@@ -20,12 +21,12 @@ final class BudgetService implements ServiceContract
     {
         return DB::transaction(function () use ($data, $actor): CostCenter {
             return CostCenter::create([
-                'name'          => $data['name'],
-                'code'          => strtoupper($data['code']),
-                'description'   => $data['description'] ?? null,
+                'name' => $data['name'],
+                'code' => strtoupper($data['code']),
+                'description' => $data['description'] ?? null,
                 'department_id' => $data['department_id'] ?? null,
-                'parent_id'     => $data['parent_id'] ?? null,
-                'is_active'     => $data['is_active'] ?? true,
+                'parent_id' => $data['parent_id'] ?? null,
+                'is_active' => $data['is_active'] ?? true,
                 'created_by_id' => $actor->id,
             ]);
         });
@@ -35,16 +36,16 @@ final class BudgetService implements ServiceContract
     {
         return DB::transaction(function () use ($costCenter, $data): CostCenter {
             $costCenter->update([
-                'name'          => $data['name'] ?? $costCenter->name,
-                'code'          => isset($data['code']) ? strtoupper($data['code']) : $costCenter->code,
-                'description'   => $data['description'] ?? $costCenter->description,
+                'name' => $data['name'] ?? $costCenter->name,
+                'code' => isset($data['code']) ? strtoupper($data['code']) : $costCenter->code,
+                'description' => $data['description'] ?? $costCenter->description,
                 'department_id' => array_key_exists('department_id', $data)
                     ? $data['department_id']
                     : $costCenter->department_id,
-                'parent_id'     => array_key_exists('parent_id', $data)
+                'parent_id' => array_key_exists('parent_id', $data)
                     ? $data['parent_id']
                     : $costCenter->parent_id,
-                'is_active'     => $data['is_active'] ?? $costCenter->is_active,
+                'is_active' => $data['is_active'] ?? $costCenter->is_active,
             ]);
 
             return $costCenter->fresh();
@@ -62,17 +63,17 @@ final class BudgetService implements ServiceContract
             /** @var AnnualBudget $budget */
             $budget = AnnualBudget::firstOrNew([
                 'cost_center_id' => $data['cost_center_id'],
-                'fiscal_year'    => $data['fiscal_year'],
-                'account_id'     => $data['account_id'],
+                'fiscal_year' => $data['fiscal_year'],
+                'account_id' => $data['account_id'],
             ]);
 
             $isNew = ! $budget->exists;
 
             $budget->fill([
                 'budgeted_amount_centavos' => $data['budgeted_amount_centavos'],
-                'notes'                    => $data['notes'] ?? $budget->notes,
-                'created_by_id'            => $isNew ? $actor->id : $budget->created_by_id,
-                'updated_by_id'            => $actor->id,
+                'notes' => $data['notes'] ?? $budget->notes,
+                'created_by_id' => $isNew ? $actor->id : $budget->created_by_id,
+                'updated_by_id' => $actor->id,
             ]);
 
             $budget->save();
@@ -89,7 +90,7 @@ final class BudgetService implements ServiceContract
     public function submitBudget(AnnualBudget $budget, User $actor): AnnualBudget
     {
         if ($budget->status !== 'draft' && $budget->status !== 'rejected') {
-            throw new \App\Shared\Exceptions\DomainException(
+            throw new DomainException(
                 'Only draft or rejected budgets can be submitted.',
                 'BUDGET_INVALID_STATUS',
                 422,
@@ -98,11 +99,11 @@ final class BudgetService implements ServiceContract
 
         return DB::transaction(function () use ($budget, $actor): AnnualBudget {
             $budget->update([
-                'status'          => 'submitted',
+                'status' => 'submitted',
                 'submitted_by_id' => $actor->id,
-                'submitted_at'    => now(),
-                'approved_by_id'  => null,
-                'approved_at'     => null,
+                'submitted_at' => now(),
+                'approved_by_id' => null,
+                'approved_at' => null,
                 'approval_remarks' => null,
             ]);
 
@@ -116,7 +117,7 @@ final class BudgetService implements ServiceContract
     public function approveBudget(AnnualBudget $budget, User $actor, ?string $remarks = null): AnnualBudget
     {
         if ($budget->status !== 'submitted') {
-            throw new \App\Shared\Exceptions\DomainException(
+            throw new DomainException(
                 'Only submitted budgets can be approved.',
                 'BUDGET_INVALID_STATUS',
                 422,
@@ -124,7 +125,7 @@ final class BudgetService implements ServiceContract
         }
 
         if ($budget->submitted_by_id === $actor->id) {
-            throw new \App\Shared\Exceptions\DomainException(
+            throw new DomainException(
                 'The submitter cannot also approve the budget (SOD).',
                 'SOD_VIOLATION',
                 403,
@@ -133,9 +134,9 @@ final class BudgetService implements ServiceContract
 
         return DB::transaction(function () use ($budget, $actor, $remarks): AnnualBudget {
             $budget->update([
-                'status'           => 'approved',
-                'approved_by_id'   => $actor->id,
-                'approved_at'      => now(),
+                'status' => 'approved',
+                'approved_by_id' => $actor->id,
+                'approved_at' => now(),
                 'approval_remarks' => $remarks,
             ]);
 
@@ -149,7 +150,7 @@ final class BudgetService implements ServiceContract
     public function rejectBudget(AnnualBudget $budget, User $actor, ?string $remarks = null): AnnualBudget
     {
         if ($budget->status !== 'submitted') {
-            throw new \App\Shared\Exceptions\DomainException(
+            throw new DomainException(
                 'Only submitted budgets can be rejected.',
                 'BUDGET_INVALID_STATUS',
                 422,
@@ -158,9 +159,9 @@ final class BudgetService implements ServiceContract
 
         return DB::transaction(function () use ($budget, $actor, $remarks): AnnualBudget {
             $budget->update([
-                'status'           => 'rejected',
-                'approved_by_id'   => $actor->id,
-                'approved_at'      => now(),
+                'status' => 'rejected',
+                'approved_by_id' => $actor->id,
+                'approved_at' => now(),
                 'approval_remarks' => $remarks,
             ]);
 
@@ -224,9 +225,9 @@ final class BudgetService implements ServiceContract
 
         foreach ($budgets as $budget) {
             $account = $budget->account;
-            $row     = $actuals[$budget->account_id] ?? null;
+            $row = $actuals[$budget->account_id] ?? null;
 
-            $totalDebit  = (float) ($row['total_debit']  ?? 0);
+            $totalDebit = (float) ($row['total_debit'] ?? 0);
             $totalCredit = (float) ($row['total_credit'] ?? 0);
 
             // Net activity in centavos based on the account's normal balance side
@@ -236,20 +237,20 @@ final class BudgetService implements ServiceContract
 
             $budgetedCentavos = $budget->budgeted_amount_centavos;
             $varianceCentavos = $budgetedCentavos - $activityCentavos;
-            $utilisationPct   = $budgetedCentavos > 0
+            $utilisationPct = $budgetedCentavos > 0
                 ? round($activityCentavos / $budgetedCentavos * 100, 2)
                 : 0.0;
 
             $result[] = [
-                'budget_ulid'              => $budget->ulid,
-                'account_id'               => $budget->account_id,
-                'account_code'             => $account->account_code ?? '',
-                'account_name'             => $account->account_name ?? '',
-                'normal_balance'           => $account->normal_balance,
+                'budget_ulid' => $budget->ulid,
+                'account_id' => $budget->account_id,
+                'account_code' => $account->account_code ?? '',
+                'account_name' => $account->account_name ?? '',
+                'normal_balance' => $account->normal_balance,
                 'budgeted_amount_centavos' => $budgetedCentavos,
-                'actual_amount_centavos'   => $activityCentavos,
-                'variance_centavos'        => $varianceCentavos,
-                'utilisation_pct'          => $utilisationPct,
+                'actual_amount_centavos' => $activityCentavos,
+                'variance_centavos' => $varianceCentavos,
+                'utilisation_pct' => $utilisationPct,
             ];
         }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domains\FixedAssets\Models;
 
-use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\HR\Models\Department;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
@@ -13,35 +12,36 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * Fixed Asset — individual capitalised item in the asset register.
  *
- * @property int                             $id
- * @property string                          $ulid
- * @property string                          $asset_code              Auto-generated: {PREFIX}-YYYY-NNNN
- * @property int                             $category_id
- * @property int|null                        $department_id
- * @property string                          $name
- * @property string|null                     $description
- * @property string|null                     $serial_number
- * @property string|null                     $location
- * @property \Illuminate\Support\Carbon      $acquisition_date
- * @property int                             $acquisition_cost_centavos
- * @property int                             $residual_value_centavos
- * @property int                             $useful_life_years
- * @property string                          $depreciation_method      straight_line|double_declining|units_of_production
- * @property int                             $accumulated_depreciation_centavos
- * @property string                          $status                  active|fully_depreciated|disposed|impaired
- * @property string|null                     $purchase_invoice_ref
- * @property string|null                     $purchased_from
- * @property \Illuminate\Support\Carbon|null $disposal_date
- * @property int                             $created_by_id
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int $id
+ * @property string $ulid
+ * @property string $asset_code Auto-generated: {PREFIX}-YYYY-NNNN
+ * @property int $category_id
+ * @property int|null $department_id
+ * @property string $name
+ * @property string|null $description
+ * @property string|null $serial_number
+ * @property string|null $location
+ * @property Carbon $acquisition_date
+ * @property int $acquisition_cost_centavos
+ * @property int $residual_value_centavos
+ * @property int $useful_life_years
+ * @property string $depreciation_method straight_line|double_declining|units_of_production
+ * @property int $accumulated_depreciation_centavos
+ * @property string $status active|fully_depreciated|disposed|impaired
+ * @property string|null $purchase_invoice_ref
+ * @property string|null $purchased_from
+ * @property Carbon|null $disposal_date
+ * @property int $created_by_id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class FixedAsset extends Model implements Auditable
 {
@@ -73,7 +73,7 @@ final class FixedAsset extends Model implements Auditable
     /** @var array<string, string> */
     protected $casts = [
         'acquisition_date' => 'date',
-        'disposal_date'    => 'date',
+        'disposal_date' => 'date',
     ];
 
     /**

@@ -8,6 +8,7 @@ use App\Rules\Accounting\LeafAccountRule;
 use App\Rules\Accounting\NotFuturePeriodRule;
 use App\Rules\Accounting\OpenFiscalPeriodRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 /**
  * Validates Journal Entry create requests.
@@ -70,7 +71,7 @@ final class CreateJournalEntryRequest extends FormRequest
      * Additional validation: each line must have either debit OR credit — not both, not neither.
      * This cannot be expressed as a rule array, so we use withValidator.
      */
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
         $validator->after(function ($v) {
             $lines = $this->input('lines', []);

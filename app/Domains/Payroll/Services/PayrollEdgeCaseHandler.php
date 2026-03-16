@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Payroll\Services;
 
+use App\Domains\Payroll\Models\ThirteenthMonthAccrual;
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Carbon;
 
@@ -137,7 +138,7 @@ final class PayrollEdgeCaseHandler implements ServiceContract
 
         $year = Carbon::parse($ctx->run->cutoff_end)->year;
 
-        $accrual = \App\Domains\Payroll\Models\ThirteenthMonthAccrual::where('employee_id', $ctx->employee->id)
+        $accrual = ThirteenthMonthAccrual::where('employee_id', $ctx->employee->id)
             ->where('year', $year)
             ->first();
 

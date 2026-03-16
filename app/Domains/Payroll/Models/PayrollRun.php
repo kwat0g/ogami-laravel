@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\Payroll\Models;
 
 use App\Domains\HR\Models\Employee;
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Database\Factories\PayrollRunFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -60,10 +62,10 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
- * @property-read \App\Models\User                     $creator
- * @property-read \App\Models\User|null                $approver
- * @property-read \App\Models\User|null                $hrApprovedBy
- * @property-read \App\Models\User|null                $acctgApprovedBy
+ * @property-read User                     $creator
+ * @property-read User|null                $approver
+ * @property-read User|null                $hrApprovedBy
+ * @property-read User|null                $acctgApprovedBy
  * @property-read Collection<int, PayrollDetail>       $details
  * @property-read Collection<int, PayrollAdjustment>   $adjustments
  * @property-read Collection<int, PayrollRunApproval>  $approvals
@@ -120,6 +122,7 @@ final class PayrollRun extends Model implements Auditable
         'scope_employment_types',
         'scope_include_unpaid_leave',
         'scope_include_probation_end',
+        'scope_exclude_no_attendance',
         'notes',
     ];
 
@@ -145,6 +148,7 @@ final class PayrollRun extends Model implements Auditable
             'scope_employment_types' => 'array',
             'scope_include_unpaid_leave' => 'boolean',
             'scope_include_probation_end' => 'boolean',
+            'scope_exclude_no_attendance' => 'boolean',
         ];
     }
 
@@ -153,22 +157,22 @@ final class PayrollRun extends Model implements Auditable
     /** The user who initiated (created) this run — SoD subject (PR-003). */
     public function initiatedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'initiated_by_id');
+        return $this->belongsTo(User::class, 'initiated_by_id');
     }
 
     public function hrApprovedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'hr_approved_by_id');
+        return $this->belongsTo(User::class, 'hr_approved_by_id');
     }
 
     public function acctgApprovedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'acctg_approved_by_id');
+        return $this->belongsTo(User::class, 'acctg_approved_by_id');
     }
 
     public function preRunAcknowledgedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'pre_run_acknowledged_by_id');
+        return $this->belongsTo(User::class, 'pre_run_acknowledged_by_id');
     }
 
     public function details(): HasMany
@@ -299,7 +303,7 @@ final class PayrollRun extends Model implements Auditable
     }
 
     /** Count of active employees covered by this run's cutoff range. */
-    public function employeesInScope(): \Illuminate\Database\Eloquent\Builder
+    public function employeesInScope(): Builder
     {
         return Employee::where('is_active', true)
             ->where('employment_status', 'active')

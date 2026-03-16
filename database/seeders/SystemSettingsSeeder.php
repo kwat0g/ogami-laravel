@@ -174,19 +174,43 @@ class SystemSettingsSeeder extends Seeder
                         'file_own' => ['approve'],
                     ],
 
+                    // ── Leave Requests (HTTP route process identifier) ─────────
+                    // Used by sod:leave_requests,{action} middleware
+                    // Note: uses leaves.file_own permission (not leaves.apply)
+                    'leave_requests' => [
+                        'head_approve' => ['file_own'],
+                        'manager_check' => ['file_own'],
+                        'ga_process' => ['file_own'],
+                        'vp_note' => ['file_own'],
+                        'file_own' => ['head_approve', 'manager_check', 'ga_process', 'vp_note'],
+                    ],
+
                     // ── SOD-003 ── Overtime: approver cannot be submitter ─────
                     'overtime' => [
                         'approve' => ['submit'],
                         'submit' => ['approve'],
                     ],
 
-                    // ── SOD-004 ── Loans: record-level only ───────────────────
-                    // Approver ≠ requester of the SAME loan is enforced in
-                    // LoanPolicy::approve() and LoanRequestService::approve().
-                    // HR Managers legitimately hold both loans.apply (on-behalf filing)
-                    // and loans.hr_approve, so NO route-level permission conflict is
-                    // possible here without blocking every HR Manager.
-                    // The sod:loans,approve middleware has been removed from the route.
+                    // ── Overtime Requests (HTTP route process identifier) ──────
+                    // Used by sod:overtime_requests,{action} middleware
+                    'overtime_requests' => [
+                        'supervisor_endorse' => ['submit'],
+                        'head_endorse' => ['submit'],
+                        'approve' => ['submit'],
+                        'executive_approve' => ['submit'],
+                        'officer_review' => ['submit'],
+                        'vp_approve' => ['submit'],
+                        'submit' => ['supervisor_endorse', 'head_endorse', 'approve', 'executive_approve', 'officer_review', 'vp_approve'],
+                    ],
+
+                    // ── SOD-004 ── Loans: approver cannot be applicant ─────────
+                    'loans' => [
+                        'head_note' => ['apply'],
+                        'manager_check' => ['apply'],
+                        'officer_review' => ['apply'],
+                        'vp_approve' => ['apply'],
+                        'apply' => ['head_note', 'manager_check', 'officer_review', 'vp_approve'],
+                    ],
 
                     // ── SOD-005/006/007 ── Payroll workflow ───────────────────
                     // SOD-005: hr_approver ≠ initiator
@@ -206,6 +230,27 @@ class SystemSettingsSeeder extends Seeder
                     'vendor_invoices' => [
                         'create' => ['approve'],
                         'approve' => ['create'],
+                    ],
+
+                    // ── Procurement (HTTP route process identifier) ────────────
+                    // Used by sod:procurement,{action} middleware
+                    // Note: uses procurement.purchase-request.create permission
+                    'procurement' => [
+                        'note' => ['create'],
+                        'check' => ['create'],
+                        'review' => ['create'],
+                        'vp_approve' => ['create'],
+                        'create' => ['note', 'check', 'review', 'vp_approve'],
+                    ],
+
+                    // ── Inventory MRQ (HTTP route process identifier) ─────────
+                    // Used by sod:inventory_mrq,{action} middleware
+                    'inventory_mrq' => [
+                        'note' => ['create'],
+                        'check' => ['create'],
+                        'review' => ['create'],
+                        'vp_approve' => ['create'],
+                        'create' => ['note', 'check', 'review', 'vp_approve'],
                     ],
 
                     // NOTE: journal_entries and bank_reconciliations SoD is enforced at

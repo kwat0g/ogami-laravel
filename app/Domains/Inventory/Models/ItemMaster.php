@@ -13,18 +13,18 @@ use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * @property int    $id
+ * @property int $id
  * @property string $ulid
  * @property string $item_code
- * @property int    $category_id
+ * @property int $category_id
  * @property string $name
  * @property string $unit_of_measure
  * @property string|null $description
  * @property numeric-string $reorder_point
  * @property numeric-string $reorder_qty
- * @property string $type     raw_material|semi_finished|finished_good|consumable|spare_part
- * @property bool   $requires_iqc
- * @property bool   $is_active
+ * @property string $type raw_material|semi_finished|finished_good|consumable|spare_part
+ * @property bool $requires_iqc
+ * @property bool $is_active
  */
 final class ItemMaster extends Model implements Auditable
 {
@@ -47,7 +47,7 @@ final class ItemMaster extends Model implements Auditable
 
     protected $casts = [
         'requires_iqc' => 'boolean',
-        'is_active'    => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /** @return BelongsTo<ItemCategory, ItemMaster> */

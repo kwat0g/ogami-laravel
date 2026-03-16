@@ -49,38 +49,38 @@ final class PurchaseOrderService implements ServiceContract
             $paymentTerms = $vendor?->payment_terms ?? null;
 
             $po = PurchaseOrder::create([
-                'po_reference'        => $reference,
+                'po_reference' => $reference,
                 'purchase_request_id' => $pr->id,
-                'vendor_id'           => $pr->vendor_id,
-                'po_date'             => now()->toDateString(),
-                'delivery_date'       => null, // To be filled by Purchasing Officer
-                'payment_terms'       => $paymentTerms, // Default or null
-                'delivery_address'    => null, 
-                'notes'               => $pr->notes,
-                'status'              => 'draft',
-                'total_po_amount'     => 0, // Trigger will update
-                'created_by_id'       => $pr->vp_approved_by_id ?? $pr->created_by_id ?? 1, // Fallback if needed
+                'vendor_id' => $pr->vendor_id,
+                'po_date' => now()->toDateString(),
+                'delivery_date' => null, // To be filled by Purchasing Officer
+                'payment_terms' => $paymentTerms, // Default or null
+                'delivery_address' => null,
+                'notes' => $pr->notes,
+                'status' => 'draft',
+                'total_po_amount' => 0, // Trigger will update
+                'created_by_id' => $pr->vp_approved_by_id ?? $pr->created_by_id ?? 1, // Fallback if needed
             ]);
 
             foreach ($pr->items as $index => $item) {
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
-                    'pr_item_id'        => $item->id,
-                    'item_master_id'    => null, // Optional unless matched later
-                    'item_description'  => $item->item_description,
-                    'unit_of_measure'   => $item->unit_of_measure,
-                    'quantity_ordered'  => $item->quantity,
-                    'agreed_unit_cost'  => $item->estimated_unit_cost,
+                    'pr_item_id' => $item->id,
+                    'item_master_id' => null, // Optional unless matched later
+                    'item_description' => $item->item_description,
+                    'unit_of_measure' => $item->unit_of_measure,
+                    'quantity_ordered' => $item->quantity,
+                    'agreed_unit_cost' => $item->estimated_unit_cost,
                     'quantity_received' => 0,
-                    'line_order'        => $index + 1,
+                    'line_order' => $index + 1,
                 ]);
             }
 
             // Mark the PR as converted
             $pr->update([
-                'status'            => 'converted_to_po',
+                'status' => 'converted_to_po',
                 'converted_to_po_id' => $po->id,
-                'converted_at'      => now(),
+                'converted_at' => now(),
             ]);
 
             return $po->refresh();
@@ -92,8 +92,8 @@ final class PurchaseOrderService implements ServiceContract
     /**
      * Create a PO from an approved PR.
      *
-     * @param  array<string, mixed>       $data
-     * @param  list<array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  list<array<string, mixed>>  $items
      */
     public function store(PurchaseRequest $pr, array $data, array $items, User $actor): PurchaseOrder
     {
@@ -129,38 +129,38 @@ final class PurchaseOrderService implements ServiceContract
             $reference = $this->generateReference();
 
             $po = PurchaseOrder::create([
-                'po_reference'        => $reference,
+                'po_reference' => $reference,
                 'purchase_request_id' => $pr->id,
-                'vendor_id'           => $data['vendor_id'],
-                'po_date'             => now()->toDateString(),
-                'delivery_date'       => $data['delivery_date'],
-                'payment_terms'       => $data['payment_terms'],
-                'delivery_address'    => $data['delivery_address'] ?? null,
-                'notes'               => $data['notes'] ?? null,
-                'status'              => 'draft',
-                'total_po_amount'     => 0,
-                'created_by_id'       => $actor->id,
+                'vendor_id' => $data['vendor_id'],
+                'po_date' => now()->toDateString(),
+                'delivery_date' => $data['delivery_date'],
+                'payment_terms' => $data['payment_terms'],
+                'delivery_address' => $data['delivery_address'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'status' => 'draft',
+                'total_po_amount' => 0,
+                'created_by_id' => $actor->id,
             ]);
 
             foreach ($items as $index => $item) {
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
-                    'pr_item_id'        => $item['pr_item_id']    ?? null,
-                    'item_master_id'    => $item['item_master_id'] ?? null,
-                    'item_description'  => $item['item_description'],
-                    'unit_of_measure'   => $item['unit_of_measure'],
-                    'quantity_ordered'  => $item['quantity_ordered'],
-                    'agreed_unit_cost'  => $item['agreed_unit_cost'],
+                    'pr_item_id' => $item['pr_item_id'] ?? null,
+                    'item_master_id' => $item['item_master_id'] ?? null,
+                    'item_description' => $item['item_description'],
+                    'unit_of_measure' => $item['unit_of_measure'],
+                    'quantity_ordered' => $item['quantity_ordered'],
+                    'agreed_unit_cost' => $item['agreed_unit_cost'],
                     'quantity_received' => 0,
-                    'line_order'        => $index + 1,
+                    'line_order' => $index + 1,
                 ]);
             }
 
             // Mark the PR as converted so it cannot spawn a second PO
             $pr->update([
-                'status'            => 'converted_to_po',
+                'status' => 'converted_to_po',
                 'converted_to_po_id' => $po->id,
-                'converted_at'      => now(),
+                'converted_at' => now(),
             ]);
 
             return $po->refresh();
@@ -172,14 +172,14 @@ final class PurchaseOrderService implements ServiceContract
     /**
      * Update a draft PO (e.g. set delivery date, payment terms, or adjust items).
      *
-     * @param  array<string, mixed>       $data
-     * @param  list<array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  list<array<string, mixed>>  $items
      */
     public function update(PurchaseOrder $po, array $data, array $items): PurchaseOrder
     {
         if ($po->status !== 'draft') {
             throw new DomainException(
-                message: "Only draft Purchase Orders can be updated.",
+                message: 'Only draft Purchase Orders can be updated.',
                 errorCode: 'PO_NOT_DRAFT',
                 httpStatus: 422,
             );
@@ -187,11 +187,11 @@ final class PurchaseOrderService implements ServiceContract
 
         return DB::transaction(function () use ($po, $data, $items): PurchaseOrder {
             $po->update([
-                'vendor_id'        => $data['vendor_id']        ?? $po->vendor_id,
-                'delivery_date'    => $data['delivery_date']    ?? $po->delivery_date,
-                'payment_terms'    => $data['payment_terms']    ?? $po->payment_terms,
+                'vendor_id' => $data['vendor_id'] ?? $po->vendor_id,
+                'delivery_date' => $data['delivery_date'] ?? $po->delivery_date,
+                'payment_terms' => $data['payment_terms'] ?? $po->payment_terms,
                 'delivery_address' => $data['delivery_address'] ?? $po->delivery_address,
-                'notes'            => $data['notes']            ?? $po->notes,
+                'notes' => $data['notes'] ?? $po->notes,
             ]);
 
             // Re-sync items if provided
@@ -200,14 +200,14 @@ final class PurchaseOrderService implements ServiceContract
                 foreach ($items as $index => $item) {
                     PurchaseOrderItem::create([
                         'purchase_order_id' => $po->id,
-                        'pr_item_id'        => $item['pr_item_id']     ?? null,
-                        'item_master_id'    => $item['item_master_id'] ?? null,
-                        'item_description'  => $item['item_description'],
-                        'unit_of_measure'   => $item['unit_of_measure'],
-                        'quantity_ordered'  => $item['quantity_ordered'],
-                        'agreed_unit_cost'  => $item['agreed_unit_cost'],
+                        'pr_item_id' => $item['pr_item_id'] ?? null,
+                        'item_master_id' => $item['item_master_id'] ?? null,
+                        'item_description' => $item['item_description'],
+                        'unit_of_measure' => $item['unit_of_measure'],
+                        'quantity_ordered' => $item['quantity_ordered'],
+                        'agreed_unit_cost' => $item['agreed_unit_cost'],
                         'quantity_received' => 0,
-                        'line_order'        => $index + 1,
+                        'line_order' => $index + 1,
                     ]);
                 }
             }
@@ -230,7 +230,7 @@ final class PurchaseOrderService implements ServiceContract
 
         if ($po->vendor_id === null) {
             throw new DomainException(
-                message: "Cannot send — Vendor is required.",
+                message: 'Cannot send — Vendor is required.',
                 errorCode: 'PO_VENDOR_REQUIRED',
                 httpStatus: 422,
             );
@@ -238,7 +238,7 @@ final class PurchaseOrderService implements ServiceContract
 
         if ($po->delivery_date === null) {
             throw new DomainException(
-                message: "Cannot send — Delivery Date is required.",
+                message: 'Cannot send — Delivery Date is required.',
                 errorCode: 'PO_DELIVERY_DATE_REQUIRED',
                 httpStatus: 422,
             );
@@ -246,14 +246,14 @@ final class PurchaseOrderService implements ServiceContract
 
         if ($po->payment_terms === null || trim($po->payment_terms) === '') {
             throw new DomainException(
-                message: "Cannot send — Payment Terms are required.",
+                message: 'Cannot send — Payment Terms are required.',
                 errorCode: 'PO_PAYMENT_TERMS_REQUIRED',
                 httpStatus: 422,
             );
         }
 
         $po->update([
-            'status'  => 'sent',
+            'status' => 'sent',
             'sent_at' => now(),
         ]);
 
@@ -285,8 +285,8 @@ final class PurchaseOrderService implements ServiceContract
         }
 
         $po->update([
-            'status'               => 'cancelled',
-            'cancellation_reason'  => $reason,
+            'status' => 'cancelled',
+            'cancellation_reason' => $reason,
         ]);
 
         return $po->refresh();
@@ -299,7 +299,7 @@ final class PurchaseOrderService implements ServiceContract
         $seq = DB::selectOne('SELECT NEXTVAL(\'purchase_order_seq\') AS val');
         $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
 
-        return 'PO-' . now()->format('Y-m') . '-' . $num;
+        return 'PO-'.now()->format('Y-m').'-'.$num;
     }
 
     // ── Finalize vendor assignment (Phase 4) ─────────────────────────────────
@@ -308,8 +308,8 @@ final class PurchaseOrderService implements ServiceContract
      * Assign a vendor to an auto-created PO draft and map each PO line
      * to a VendorItem from the vendor's catalog.
      *
-     * @param  array<string, mixed>           $poData    vendor_id, delivery_date, payment_terms, etc.
-     * @param  list<array<string, mixed>>     $itemUpdates  [{ po_item_id, item_master_id?, vendor_item_id?, agreed_unit_cost }]
+     * @param  array<string, mixed>  $poData  vendor_id, delivery_date, payment_terms, etc.
+     * @param  list<array<string, mixed>>  $itemUpdates  [{ po_item_id, item_master_id?, vendor_item_id?, agreed_unit_cost }]
      */
     public function finalizeVendorAssignment(PurchaseOrder $po, array $poData, array $itemUpdates, User $actor): PurchaseOrder
     {
@@ -334,11 +334,11 @@ final class PurchaseOrderService implements ServiceContract
 
         return DB::transaction(function () use ($po, $poData, $itemUpdates, $vendor): PurchaseOrder {
             $po->update([
-                'vendor_id'        => $vendor->id,
-                'delivery_date'    => $poData['delivery_date']    ?? null,
-                'payment_terms'    => $poData['payment_terms']    ?? null,
+                'vendor_id' => $vendor->id,
+                'delivery_date' => $poData['delivery_date'] ?? null,
+                'payment_terms' => $poData['payment_terms'] ?? null,
                 'delivery_address' => $poData['delivery_address'] ?? null,
-                'notes'            => $poData['notes']            ?? $po->notes,
+                'notes' => $poData['notes'] ?? $po->notes,
             ]);
 
             foreach ($itemUpdates as $upd) {
@@ -346,7 +346,7 @@ final class PurchaseOrderService implements ServiceContract
                     ->findOrFail($upd['po_item_id']);
 
                 $poItem->update([
-                    'item_master_id'   => $upd['item_master_id']  ?? $poItem->item_master_id,
+                    'item_master_id' => $upd['item_master_id'] ?? $poItem->item_master_id,
                     'agreed_unit_cost' => $upd['agreed_unit_cost'] ?? $poItem->agreed_unit_cost,
                 ]);
             }
@@ -369,38 +369,38 @@ final class PurchaseOrderService implements ServiceContract
             $reference = $this->generateReference();
 
             $po = PurchaseOrder::create([
-                'po_reference'        => $reference,
+                'po_reference' => $reference,
                 'purchase_request_id' => $pr->id,
-                'vendor_id'           => $pr->vendor_id ?? null,  // Auto-assigned from PR
-                'po_date'             => now()->toDateString(),
-                'delivery_date'       => null,
-                'payment_terms'       => null,
-                'delivery_address'    => null,
-                'notes'               => "Auto-created from approved PR {$pr->pr_reference}.",
-                'status'              => 'draft',
-                'total_po_amount'     => 0,
-                'created_by_id'       => $pr->vp_approved_by_id,
+                'vendor_id' => $pr->vendor_id ?? null,  // Auto-assigned from PR
+                'po_date' => now()->toDateString(),
+                'delivery_date' => null,
+                'payment_terms' => null,
+                'delivery_address' => null,
+                'notes' => "Auto-created from approved PR {$pr->pr_reference}.",
+                'status' => 'draft',
+                'total_po_amount' => 0,
+                'created_by_id' => $pr->vp_approved_by_id,
             ]);
 
             foreach ($pr->items as $index => $prItem) {
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
-                    'pr_item_id'        => $prItem->id,
-                    'item_master_id'    => null,   // Purchasing Officer maps via vendor catalog
-                    'item_description'  => $prItem->item_description,
-                    'unit_of_measure'   => $prItem->unit_of_measure,
-                    'quantity_ordered'  => $prItem->quantity,
-                    'agreed_unit_cost'  => $prItem->estimated_unit_cost,
+                    'pr_item_id' => $prItem->id,
+                    'item_master_id' => null,   // Purchasing Officer maps via vendor catalog
+                    'item_description' => $prItem->item_description,
+                    'unit_of_measure' => $prItem->unit_of_measure,
+                    'quantity_ordered' => $prItem->quantity,
+                    'agreed_unit_cost' => $prItem->estimated_unit_cost,
                     'quantity_received' => 0,
-                    'line_order'        => $index + 1,
+                    'line_order' => $index + 1,
                 ]);
             }
 
             // Mark the PR as converted so it cannot spawn a second PO
             $pr->update([
-                'status'             => 'converted_to_po',
+                'status' => 'converted_to_po',
                 'converted_to_po_id' => $po->id,
-                'converted_at'       => now(),
+                'converted_at' => now(),
             ]);
 
             return $po->refresh();

@@ -7,19 +7,20 @@ namespace App\Domains\Procurement\Models;
 use App\Domains\AP\Models\Vendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
- * @property int         $id
- * @property int         $rfq_id
- * @property int         $vendor_id
- * @property string      $status              invited|quoted|declined
- * @property int|null    $quoted_amount_centavos
- * @property int|null    $lead_time_days
+ * @property int $id
+ * @property int $rfq_id
+ * @property int $vendor_id
+ * @property string $status invited|quoted|declined
+ * @property int|null $quoted_amount_centavos
+ * @property int|null $lead_time_days
  * @property string|null $vendor_remarks
- * @property bool        $is_selected
- * @property \Illuminate\Support\Carbon|null $responded_at
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
+ * @property bool $is_selected
+ * @property Carbon|null $responded_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class VendorRfqVendor extends Model
 {
@@ -38,7 +39,7 @@ final class VendorRfqVendor extends Model
 
     protected $casts = [
         'responded_at' => 'datetime',
-        'is_selected'  => 'boolean',
+        'is_selected' => 'boolean',
     ];
 
     // ── Relations ────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Tax\Services;
 
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Tax\Models\BirFiling;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
@@ -65,13 +66,13 @@ final class BirFilingService implements ServiceContract
                 : $this->computeDueDate($data['form_type'], $data['fiscal_period_id']);
 
             return BirFiling::create([
-                'form_type'                 => $data['form_type'],
-                'fiscal_period_id'          => $data['fiscal_period_id'],
-                'due_date'                  => $dueDate,
-                'total_tax_due_centavos'    => $data['total_tax_due_centavos'] ?? 0,
-                'status'                    => 'pending',
-                'notes'                     => $data['notes'] ?? null,
-                'created_by_id'             => $actor->id,
+                'form_type' => $data['form_type'],
+                'fiscal_period_id' => $data['fiscal_period_id'],
+                'due_date' => $dueDate,
+                'total_tax_due_centavos' => $data['total_tax_due_centavos'] ?? 0,
+                'status' => 'pending',
+                'notes' => $data['notes'] ?? null,
+                'created_by_id' => $actor->id,
             ]);
         });
     }
@@ -92,15 +93,15 @@ final class BirFilingService implements ServiceContract
 
         return DB::transaction(function () use ($filing, $data, $actor): BirFiling {
             $filedDate = Carbon::parse($data['filed_date']);
-            $isLate    = $filedDate->isAfter($filing->due_date);
+            $isLate = $filedDate->isAfter($filing->due_date);
 
             $filing->update([
-                'filed_date'                => $filedDate,
-                'confirmation_number'       => $data['confirmation_number'] ?? null,
-                'total_tax_due_centavos'    => $data['total_tax_due_centavos'] ?? $filing->total_tax_due_centavos,
-                'status'                    => $isLate ? 'late' : 'filed',
-                'notes'                     => $data['notes'] ?? $filing->notes,
-                'filed_by_id'               => $actor->id,
+                'filed_date' => $filedDate,
+                'confirmation_number' => $data['confirmation_number'] ?? null,
+                'total_tax_due_centavos' => $data['total_tax_due_centavos'] ?? $filing->total_tax_due_centavos,
+                'status' => $isLate ? 'late' : 'filed',
+                'notes' => $data['notes'] ?? $filing->notes,
+                'filed_by_id' => $actor->id,
             ]);
 
             return $filing->fresh();
@@ -122,11 +123,11 @@ final class BirFilingService implements ServiceContract
 
         return DB::transaction(function () use ($filing, $data, $actor): BirFiling {
             $filing->update([
-                'confirmation_number'       => $data['confirmation_number'] ?? $filing->confirmation_number,
-                'total_tax_due_centavos'    => $data['total_tax_due_centavos'] ?? $filing->total_tax_due_centavos,
-                'status'                    => 'amended',
-                'notes'                     => $data['notes'] ?? $filing->notes,
-                'filed_by_id'               => $actor->id,
+                'confirmation_number' => $data['confirmation_number'] ?? $filing->confirmation_number,
+                'total_tax_due_centavos' => $data['total_tax_due_centavos'] ?? $filing->total_tax_due_centavos,
+                'status' => 'amended',
+                'notes' => $data['notes'] ?? $filing->notes,
+                'filed_by_id' => $actor->id,
             ]);
 
             return $filing->fresh();
@@ -166,14 +167,14 @@ final class BirFilingService implements ServiceContract
         $calendar = [];
         foreach ($filings as $filing) {
             $calendar[$filing->form_type][] = [
-                'ulid'                      => $filing->ulid,
-                'fiscal_period_id'          => $filing->fiscal_period_id,
-                'due_date'                  => $filing->due_date->toDateString(),
-                'filed_date'                => $filing->filed_date?->toDateString(),
-                'confirmation_number'       => $filing->confirmation_number,
-                'status'                    => $filing->status,
-                'is_overdue'                => $filing->isOverdue(),
-                'total_tax_due_centavos'    => $filing->total_tax_due_centavos,
+                'ulid' => $filing->ulid,
+                'fiscal_period_id' => $filing->fiscal_period_id,
+                'due_date' => $filing->due_date->toDateString(),
+                'filed_date' => $filing->filed_date?->toDateString(),
+                'confirmation_number' => $filing->confirmation_number,
+                'status' => $filing->status,
+                'is_overdue' => $filing->isOverdue(),
+                'total_tax_due_centavos' => $filing->total_tax_due_centavos,
             ];
         }
 
@@ -189,15 +190,15 @@ final class BirFilingService implements ServiceContract
      */
     private function computeDueDate(string $formType, int $fiscalPeriodId): Carbon
     {
-        $period = \App\Domains\Accounting\Models\FiscalPeriod::findOrFail($fiscalPeriodId);
+        $period = FiscalPeriod::findOrFail($fiscalPeriodId);
         /** @var Carbon $periodEnd */
         $periodEnd = Carbon::parse($period->date_to);
 
         return match (true) {
-            in_array($formType, self::MONTHLY_FORMS, true)   => $periodEnd->addMonthNoOverflow()->day(self::DEFAULT_DUE_DAY),
+            in_array($formType, self::MONTHLY_FORMS, true) => $periodEnd->addMonthNoOverflow()->day(self::DEFAULT_DUE_DAY),
             in_array($formType, self::QUARTERLY_FORMS, true) => $periodEnd->addMonthNoOverflow()->day(self::DEFAULT_DUE_DAY),
-            $formType === '1702RT'                            => $periodEnd->addMonths(4)->day(15),
-            default                                           => $periodEnd->addMonthNoOverflow()->day(self::DEFAULT_DUE_DAY),
+            $formType === '1702RT' => $periodEnd->addMonths(4)->day(15),
+            default => $periodEnd->addMonthNoOverflow()->day(self::DEFAULT_DUE_DAY),
         };
     }
 }

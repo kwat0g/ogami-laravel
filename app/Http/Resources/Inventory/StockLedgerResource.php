@@ -17,31 +17,31 @@ final class StockLedgerResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'               => $this->id,
-            'item_id'          => $this->item_id,
-            'location_id'      => $this->location_id,
-            'lot_batch_id'     => $this->lot_batch_id,
+            'id' => $this->id,
+            'item_id' => $this->item_id,
+            'location_id' => $this->location_id,
+            'lot_batch_id' => $this->lot_batch_id,
             'transaction_type' => $this->transaction_type,
-            'reference_type'   => $this->reference_type,
-            'reference_id'     => $this->reference_id,
-            'reference_label'  => $this->resolveReferenceLabel(),
-            'reference_ulid'   => $this->resolveReferenceUlid(),
-            'quantity'         => $this->quantity,
-            'balance_after'    => $this->balance_after,
-            'remarks'          => $this->remarks,
-            'created_at'       => $this->created_at?->toIso8601String(),
-            'item'             => $this->whenLoaded('item', fn () => [
-                'id'        => $this->item->id,
+            'reference_type' => $this->reference_type,
+            'reference_id' => $this->reference_id,
+            'reference_label' => $this->resolveReferenceLabel(),
+            'reference_ulid' => $this->resolveReferenceUlid(),
+            'quantity' => $this->quantity,
+            'balance_after' => $this->balance_after,
+            'remarks' => $this->remarks,
+            'created_at' => $this->created_at?->toIso8601String(),
+            'item' => $this->whenLoaded('item', fn () => [
+                'id' => $this->item->id,
                 'item_code' => $this->item->item_code,
-                'name'      => $this->item->name,
+                'name' => $this->item->name,
             ]),
-            'location'         => $this->whenLoaded('location', fn () => [
-                'id'   => $this->location->id,
+            'location' => $this->whenLoaded('location', fn () => [
+                'id' => $this->location->id,
                 'code' => $this->location->code,
                 'name' => $this->location->name,
             ]),
-            'created_by'       => $this->whenLoaded('createdBy', fn () => [
-                'id'   => $this->createdBy->id,
+            'created_by' => $this->whenLoaded('createdBy', fn () => [
+                'id' => $this->createdBy->id,
                 'name' => $this->createdBy->name,
             ]),
         ];
@@ -54,10 +54,10 @@ final class StockLedgerResource extends JsonResource
         }
 
         return match ($this->reference_type) {
-            'goods_receipts'        => GoodsReceipt::find($this->reference_id)?->gr_reference,
+            'goods_receipts' => GoodsReceipt::find($this->reference_id)?->gr_reference,
             'material_requisitions' => MaterialRequisition::find($this->reference_id)?->mr_reference,
-            'production_orders'     => ProductionOrder::find($this->reference_id)?->po_reference,
-            default                 => "{$this->reference_type}#{$this->reference_id}",
+            'production_orders' => ProductionOrder::find($this->reference_id)?->po_reference,
+            default => "{$this->reference_type}#{$this->reference_id}",
         };
     }
 
@@ -68,10 +68,10 @@ final class StockLedgerResource extends JsonResource
         }
 
         return match ($this->reference_type) {
-            'goods_receipts'        => GoodsReceipt::find($this->reference_id)?->ulid,
+            'goods_receipts' => GoodsReceipt::find($this->reference_id)?->ulid,
             'material_requisitions' => MaterialRequisition::find($this->reference_id)?->ulid,
-            'production_orders'     => ProductionOrder::find($this->reference_id)?->ulid,
-            default                 => null,
+            'production_orders' => ProductionOrder::find($this->reference_id)?->ulid,
+            default => null,
         };
     }
 }

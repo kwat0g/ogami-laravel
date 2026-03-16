@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\HR;
 
+use App\Domains\HR\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Lightweight employee summary — used in paginated list responses.
  *
- * @mixin \App\Domains\HR\Models\Employee
+ * @mixin Employee
  */
 final class EmployeeListResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\HR\Models\Employee $emp */
+        /** @var Employee $emp */
         $emp = $this->resource;
 
         return [

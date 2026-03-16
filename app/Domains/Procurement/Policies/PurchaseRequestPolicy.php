@@ -113,12 +113,12 @@ final class PurchaseRequestPolicy
     public function reject(User $user, PurchaseRequest $pr): bool
     {
         return match ($pr->status) {
-            'submitted'      => $user->hasPermissionTo('procurement.purchase-request.note'),
-            'noted'          => $user->hasPermissionTo('procurement.purchase-request.check'),
-            'checked'        => $user->hasPermissionTo('procurement.purchase-request.review'),
-            'reviewed'       => $user->hasPermissionTo('procurement.purchase-request.budget-check'),
+            'submitted' => $user->hasPermissionTo('procurement.purchase-request.note'),
+            'noted' => $user->hasPermissionTo('procurement.purchase-request.check'),
+            'checked' => $user->hasPermissionTo('procurement.purchase-request.review'),
+            'reviewed' => $user->hasPermissionTo('procurement.purchase-request.budget-check'),
             'budget_checked' => $user->hasPermissionTo('approvals.vp.approve'),
-            default          => false,
+            default => false,
         };
     }
 

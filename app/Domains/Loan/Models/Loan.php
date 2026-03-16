@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Domains\Loan\Models;
 
 use App\Domains\HR\Models\Employee;
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Database\Factories\LoanFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -38,33 +41,33 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $status pending|head_noted|manager_checked|officer_reviewed|supervisor_approved|approved|ready_for_disbursement|active|fully_paid|cancelled|written_off
  * @property int|null $head_noted_by FK users.id
  * @property string|null $head_remarks
- * @property \Illuminate\Support\Carbon|null $head_noted_at
+ * @property Carbon|null $head_noted_at
  * @property int|null $manager_checked_by FK users.id
  * @property string|null $manager_remarks
- * @property \Illuminate\Support\Carbon|null $manager_checked_at
+ * @property Carbon|null $manager_checked_at
  * @property int|null $officer_reviewed_by FK users.id
  * @property string|null $officer_remarks
- * @property \Illuminate\Support\Carbon|null $officer_reviewed_at
+ * @property Carbon|null $officer_reviewed_at
  * @property int|null $vp_approved_by FK users.id
  * @property string|null $vp_remarks
- * @property \Illuminate\Support\Carbon|null $vp_approved_at
+ * @property Carbon|null $vp_approved_at
  * @property int|null $approved_by FK users.id — must != requested_by (HR/Manager approval)
  * @property string|null $approver_remarks
- * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property Carbon|null $approved_at
  * @property int|null $supervisor_approved_by FK users.id — Supervisor approval
  * @property string|null $supervisor_remarks
- * @property \Illuminate\Support\Carbon|null $supervisor_approved_at
+ * @property Carbon|null $supervisor_approved_at
  * @property int|null $accounting_approved_by FK users.id — Accounting Manager approval
  * @property string|null $accounting_remarks
- * @property \Illuminate\Support\Carbon|null $accounting_approved_at
+ * @property Carbon|null $accounting_approved_at
  * @property int|null $journal_entry_id FK to journal_entries for GL tracking
- * @property \Illuminate\Support\Carbon|null $disbursed_at
+ * @property Carbon|null $disbursed_at
  * @property int|null $disbursed_by FK users.id — who released the funds
  * @property string|null $loan_date
- * @property \Illuminate\Support\Carbon|null $first_deduction_date
+ * @property Carbon|null $first_deduction_date
  * @property string|null $purpose
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Employee $employee
  * @property-read LoanType $loanType
  * @property-read Collection<int, LoanAmortizationSchedule> $amortizationSchedules
@@ -73,9 +76,9 @@ final class Loan extends Model implements Auditable
 {
     use AuditableTrait, HasFactory, HasPublicUlid, SoftDeletes;
 
-    protected static function newFactory(): \Database\Factories\LoanFactory
+    protected static function newFactory(): LoanFactory
     {
-        return \Database\Factories\LoanFactory::new();
+        return LoanFactory::new();
     }
 
     protected $table = 'loans';
@@ -209,33 +212,33 @@ final class Loan extends Model implements Auditable
 
     public function approver(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function accountingApprover(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'accounting_approved_by');
+        return $this->belongsTo(User::class, 'accounting_approved_by');
     }
 
     // v2 workflow relations
     public function headNotedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'head_noted_by');
+        return $this->belongsTo(User::class, 'head_noted_by');
     }
 
     public function managerCheckedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'manager_checked_by');
+        return $this->belongsTo(User::class, 'manager_checked_by');
     }
 
     public function officerReviewedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'officer_reviewed_by');
+        return $this->belongsTo(User::class, 'officer_reviewed_by');
     }
 
     public function vpApprovedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'vp_approved_by');
+        return $this->belongsTo(User::class, 'vp_approved_by');
     }
 
     public function amortizationSchedules(): HasMany

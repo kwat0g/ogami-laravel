@@ -5,28 +5,29 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * PurchaseRequestItem — line item on a Purchase Request.
  *
- * @property int         $id
- * @property int         $purchase_request_id
- * @property string      $item_description
- * @property string      $unit_of_measure
+ * @property int $id
+ * @property int $purchase_request_id
+ * @property string $item_description
+ * @property string $unit_of_measure
  * @property numeric-string $quantity
  * @property numeric-string $estimated_unit_cost
- * @property numeric-string $estimated_total    GENERATED ALWAYS AS (quantity * estimated_unit_cost) STORED
+ * @property numeric-string $estimated_total GENERATED ALWAYS AS (quantity * estimated_unit_cost) STORED
  * @property string|null $specifications
- * @property int         $line_order
+ * @property int $line_order
  */
 final class PurchaseRequestItem extends Model
 {
     use SoftDeletes;
 
     public $timestamps = false;
-    protected $table   = 'purchase_request_items';
+
+    protected $table = 'purchase_request_items';
 
     protected $fillable = [
         'purchase_request_id',

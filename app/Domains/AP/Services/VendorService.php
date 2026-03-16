@@ -85,7 +85,7 @@ final class VendorService implements ServiceContract
     {
         $vendor->update([
             'accreditation_status' => 'accredited',
-            'accreditation_notes'  => $notes,
+            'accreditation_notes' => $notes,
         ]);
 
         return $vendor->fresh();
@@ -97,11 +97,11 @@ final class VendorService implements ServiceContract
         return DB::transaction(function () use ($vendor, $reason): Vendor {
             $vendor->update([
                 'accreditation_status' => 'suspended',
-                'accreditation_notes'  => $reason,
+                'accreditation_notes' => $reason,
             ]);
 
             // Lock the vendor portal user account so they cannot log in while suspended.
-            \App\Models\User::where('vendor_id', $vendor->id)
+            User::where('vendor_id', $vendor->id)
                 ->update(['locked_until' => now()->addYears(10)]);
 
             return $vendor->fresh();
@@ -129,7 +129,7 @@ final class VendorService implements ServiceContract
                 );
             }
 
-            $tempPassword = 'Vendor' . Str::random(8) . '!';
+            $tempPassword = 'Vendor'.Str::random(8).'!';
 
             $user = User::create([
                 'name' => $vendor->contact_person ?? $vendor->name,
@@ -164,7 +164,7 @@ final class VendorService implements ServiceContract
                 );
             }
 
-            $tempPassword = 'Vendor' . Str::random(8) . '!';
+            $tempPassword = 'Vendor'.Str::random(8).'!';
 
             $user->update([
                 'password' => $tempPassword,

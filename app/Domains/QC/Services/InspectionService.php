@@ -128,14 +128,14 @@ final class InspectionService implements ServiceContract
             $inspection->results()->delete();
 
             $appendedRemarks = $inspection->remarks
-                ? $inspection->remarks . "\n[Cancelled] " . $reason
-                : '[Cancelled] ' . $reason;
+                ? $inspection->remarks."\n[Cancelled] ".$reason
+                : '[Cancelled] '.$reason;
 
             $inspection->update([
                 'qty_passed' => 0,
                 'qty_failed' => 0,
-                'status'     => 'open',
-                'remarks'    => $appendedRemarks,
+                'status' => 'open',
+                'remarks' => $appendedRemarks,
             ]);
 
             return $inspection->fresh(['template.items', 'results', 'itemMaster', 'inspector', 'ncrs']);

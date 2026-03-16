@@ -32,22 +32,23 @@ final class ISOService implements ServiceContract
     public function storeDocument(array $data, int $userId): ControlledDocument
     {
         return ControlledDocument::create([
-            'title'           => $data['title'],
-            'category'        => $data['category'] ?? null,
-            'document_type'   => $data['document_type'] ?? 'procedure',
-            'owner_id'        => $data['owner_id'] ?? $userId,
+            'title' => $data['title'],
+            'category' => $data['category'] ?? null,
+            'document_type' => $data['document_type'] ?? 'procedure',
+            'owner_id' => $data['owner_id'] ?? $userId,
             'current_version' => $data['current_version'] ?? '1.0',
-            'status'          => 'draft',
-            'effective_date'  => $data['effective_date'] ?? null,
-            'review_date'     => $data['review_date'] ?? null,
-            'is_active'       => true,
-            'created_by_id'   => $userId,
+            'status' => 'draft',
+            'effective_date' => $data['effective_date'] ?? null,
+            'review_date' => $data['review_date'] ?? null,
+            'is_active' => true,
+            'created_by_id' => $userId,
         ]);
     }
 
     public function updateDocument(ControlledDocument $doc, array $data): ControlledDocument
     {
         $doc->update(array_filter($data, fn ($v) => $v !== null));
+
         return $doc;
     }
 
@@ -66,12 +67,12 @@ final class ISOService implements ServiceContract
     public function storeAudit(array $data, int $userId): InternalAudit
     {
         return InternalAudit::create([
-            'audit_scope'     => $data['audit_scope'],
-            'standard'        => $data['standard'] ?? 'ISO 9001:2015',
+            'audit_scope' => $data['audit_scope'],
+            'standard' => $data['standard'] ?? 'ISO 9001:2015',
             'lead_auditor_id' => $data['lead_auditor_id'] ?? null,
-            'audit_date'      => $data['audit_date'],
-            'status'          => 'planned',
-            'created_by_id'   => $userId,
+            'audit_date' => $data['audit_date'],
+            'status' => 'planned',
+            'created_by_id' => $userId,
         ]);
     }
 
@@ -81,6 +82,7 @@ final class ISOService implements ServiceContract
             throw new DomainException('ISO_AUDIT_NOT_PLANNED');
         }
         $audit->update(['status' => 'in_progress']);
+
         return $audit;
     }
 
@@ -90,6 +92,7 @@ final class ISOService implements ServiceContract
             throw new DomainException('ISO_AUDIT_NOT_IN_PROGRESS');
         }
         $audit->update(['status' => 'completed', 'summary' => $summary]);
+
         return $audit;
     }
 
@@ -99,10 +102,10 @@ final class ISOService implements ServiceContract
     {
         $finding = $audit->findings()->create([
             'finding_type' => $data['finding_type'] ?? 'observation',
-            'clause_ref'   => $data['clause_ref'] ?? null,
-            'description'  => $data['description'],
-            'severity'     => $data['severity'] ?? 'minor',
-            'status'       => 'open',
+            'clause_ref' => $data['clause_ref'] ?? null,
+            'description' => $data['description'],
+            'severity' => $data['severity'] ?? 'minor',
+            'status' => 'open',
             'raised_by_id' => $userId,
         ]);
 
@@ -120,6 +123,7 @@ final class ISOService implements ServiceContract
             throw new DomainException('Document must be in draft to submit for review.', 'ISO_DOC_NOT_DRAFT', 422);
         }
         $doc->update(['status' => 'under_review']);
+
         return $doc;
     }
 
@@ -135,11 +139,11 @@ final class ISOService implements ServiceContract
             // Record each approval as an immutable revision snapshot.
             DocumentRevision::create([
                 'controlled_document_id' => $doc->id,
-                'version'                => $doc->current_version,
-                'change_summary'         => 'Document approved.',
-                'revised_by_id'          => $doc->created_by_id,
-                'approved_by_id'         => $userId,
-                'approved_at'            => now(),
+                'version' => $doc->current_version,
+                'change_summary' => 'Document approved.',
+                'revised_by_id' => $doc->created_by_id,
+                'approved_by_id' => $userId,
+                'approved_at' => now(),
             ]);
 
             return $doc->fresh();
@@ -148,10 +152,11 @@ final class ISOService implements ServiceContract
 
     public function obsoleteDocument(ControlledDocument $doc): ControlledDocument
     {
-        if (!in_array($doc->status, ['approved', 'under_review'], true)) {
+        if (! in_array($doc->status, ['approved', 'under_review'], true)) {
             throw new DomainException('Only approved or under-review documents can be obsoleted.', 'ISO_DOC_CANNOT_OBSOLETE', 422);
         }
         $doc->update(['status' => 'obsolete', 'is_active' => false]);
+
         return $doc;
     }
 
@@ -161,6 +166,7 @@ final class ISOService implements ServiceContract
             throw new DomainException('Finding is already closed.', 'ISO_FINDING_ALREADY_CLOSED', 422);
         }
         $finding->update(['status' => 'closed']);
+
         return $finding;
     }
 }

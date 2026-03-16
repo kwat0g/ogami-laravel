@@ -14,18 +14,18 @@ final class WarehouseLocationResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'            => $this->id,
-            'code'          => $this->code,
-            'name'          => $this->name,
-            'zone'          => $this->zone,
-            'bin'           => $this->bin,
+            'id' => $this->id,
+            'code' => $this->code,
+            'name' => $this->name,
+            'zone' => $this->zone,
+            'bin' => $this->bin,
             'department_id' => $this->department_id,
-            'department'    => $this->whenLoaded('department', fn () => [
-                'id'   => $this->department->id,
+            'department' => $this->whenLoaded('department', fn () => [
+                'id' => $this->department->id,
                 'name' => $this->department->name,
             ]),
-            'is_active'     => $this->is_active,
-            'created_at'    => $this->created_at?->toIso8601String(),
+            'is_active' => $this->is_active,
+            'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 }

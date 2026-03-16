@@ -28,8 +28,8 @@ This document provides essential information for AI coding agents working on the
 | **Delivery** | `Shipment`, `DeliveryReceipt`, `Vehicle` | `routes/api/v1/delivery.php` |
 | **ISO** | `ControlledDocument`, `InternalAudit`, `AuditFinding` | `routes/api/v1/iso.php` |
 | **CRM** | `Ticket`, `TicketMessage` | `routes/api/v1/crm.php` |
-| **FixedAssets** _(new)_ | `FixedAsset`, `FixedAssetCategory`, `AssetDepreciationEntry`, `AssetDisposal` | `routes/api/v1/fixed_assets.php` |
-| **Budget** _(new)_ | `CostCenter`, `AnnualBudget` | `routes/api/v1/budget.php` |
+| **FixedAssets** | `FixedAsset`, `FixedAssetCategory`, `AssetDepreciationEntry`, `AssetDisposal` | `routes/api/v1/fixed_assets.php` |
+| **Budget** | `CostCenter`, `AnnualBudget` | `routes/api/v1/budget.php` |
 
 ## Technology Stack
 
@@ -63,7 +63,7 @@ app/
     Traits/                  # Reusable model traits
   Jobs/<Domain>/             # Queueable jobs (payroll batch, leave accrual, etc.)
 database/migrations/         # 100+ migrations — never SQLite-compatible (PgSQL features)
-database/seeders/            # 25 seeders with strict ordering (see Seeder Order below)
+database/seeders/            # 27 seeders with strict ordering (see Seeder Order below)
 frontend/src/
   hooks/                     # TanStack Query wrappers (one file per domain)
   pages/<domain>/            # Page components
@@ -85,7 +85,7 @@ tests/
 ## Code Patterns
 
 ### Domain Service
-`final class` + implements `ServiceContract` + constructor-inject dependencies + wrap mutations in `DB::transaction()`.  
+`final class` + implements `ServiceContract` + constructor-inject dependencies + wrap mutations in `DB::transaction()`.
 Reference: `app/Domains/HR/Services/EmployeeService.php`
 
 ```php
@@ -101,7 +101,7 @@ final class EmployeeService implements ServiceContract
 ```
 
 ### Controller
-`final class`, no DB/business logic, delegate to service, return API Resource.  
+`final class`, no DB/business logic, delegate to service, return API Resource.
 Reference: `app/Http/Controllers/Leave/LeaveRequestController.php`
 
 ```php
@@ -121,13 +121,13 @@ final class LeaveRequestController extends Controller
 Multi-step workflow actions are **named methods** (`headApprove`, `managerCheck`, `gaProcess`) not a generic action.
 
 ### Value Objects
-`final readonly class` in `app/Shared/ValueObjects/`.  
-**`Money`**: stores **centavos (integer)**, never float. Factory: `Money::fromFloat(25000.00)` → `2_500_000` centavos. All arithmetic is immutable and rounds with `PHP_ROUND_HALF_UP`.  
-`₱25,000 = 2_500_000 centavos` — pay attention in tests (`'basic_monthly_rate' => 2_500_000`).  
+`final readonly class` in `app/Shared/ValueObjects/`.
+**`Money`**: stores **centavos (integer)**, never float. Factory: `Money::fromFloat(25000.00)` → `2_500_000` centavos. All arithmetic is immutable and rounds with `PHP_ROUND_HALF_UP`.
+`₱25,000 = 2_500_000 centavos` — pay attention in tests (`'basic_monthly_rate' => 2_500_000`).
 Reference: `app/Shared/ValueObjects/Money.php`
 
 ### State Machines
-Dedicated class with a `TRANSITIONS` constant. Never scatter status string comparisons in controllers.  
+Dedicated class with a `TRANSITIONS` constant. Never scatter status string comparisons in controllers.
 - `app/Domains/HR/StateMachines/EmployeeStateMachine.php` — `draft→active→on_leave|suspended→resigned|terminated`
 - `app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php` — 14-state workflow with legacy alias compatibility
 
@@ -142,7 +142,7 @@ public function __invoke(PayrollComputationContext $ctx, Closure $next): Payroll
 }
 ```
 
-Files in `app/Domains/Payroll/Pipeline/Step01SnapshotsStep.php` through `Step17NetPayStep.php`.  
+Files in `app/Domains/Payroll/Pipeline/Step01SnapshotsStep.php` through `Step17NetPayStep.php`.
 Shared mutable state object: `app/Domains/Payroll/Services/PayrollComputationContext.php`.
 
 ### PostgreSQL-Specific Migration Gotchas
@@ -151,7 +151,7 @@ Shared mutable state object: `app/Domains/Payroll/Services/PayrollComputationCon
 3. **Government ID encryption** — raw values encrypted + SHA-256 hash columns for uniqueness (`tin_hash`, `sss_no_hash`, etc.).
 
 ### Route Conventions
-All routes require `auth:sanctum`. Domain middleware applied at group level (`dept_scope`, `permission:xxx`).  
+All routes require `auth:sanctum`. Domain middleware applied at group level (`dept_scope`, `permission:xxx`).
 Custom workflow actions added beside `apiResource`:
 
 ```php
@@ -159,7 +159,7 @@ Route::apiResource('employees', EmployeeController::class);
 Route::post('employees/{employee}/transition', [EmployeeController::class, 'transition']);
 ```
 
-Inline closures are acceptable for simple reference/lookup endpoints (salary grades, departments list).  
+Inline closures are acceptable for simple reference/lookup endpoints (salary grades, departments list).
 Reference: `routes/api/v1/hr.php`
 
 ### Frontend Hooks
@@ -187,8 +187,8 @@ Reference: `frontend/src/hooks/useLeave.ts`
 Frontend URL params use **ULID** strings (not integer IDs): `useParams<{ ulid: string }>()`.
 
 ### Zod Schemas
-`z.coerce.number()` for all numeric IDs and monetary inputs. All schemas in `frontend/src/schemas/`.  
-Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormSchema>`.  
+`z.coerce.number()` for all numeric IDs and monetary inputs. All schemas in `frontend/src/schemas/`.
+Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormSchema>`.
 17 of 20 domains have Zod schema files (`frontend/src/schemas/`); Budget, Delivery, and FixedAssets still use inline Zod or plain TypeScript types.
 
 ### Frontend Router & Stores
@@ -198,8 +198,8 @@ Derive TypeScript types: `type EmployeeFormValues = z.infer<typeof employeeFormS
 - ESLint rule `@typescript-eslint/no-unused-vars` is `error`; prefix intentionally unused variables/args with `_` (e.g., `_event`).
 
 ### SoD (Segregation of Duties)
-Enforced backend (middleware + policy) **and** frontend via `useSodCheck(createdById)`.  
-Same user who created a record cannot approve/activate it.  
+Enforced backend (middleware + policy) **and** frontend via `useSodCheck(createdById)`.
+Same user who created a record cannot approve/activate it.
 Only `admin` and `super_admin` roles bypass SoD — the `manager` role **can** be blocked.
 
 ## Build and Run Commands
@@ -295,14 +295,14 @@ beforeEach(function () {
 | ARCH-005 | No `dd()`/`dump()`/`var_dump()` in `app/` |
 | ARCH-006 | `Shared\Contracts` namespace: interfaces only |
 
-### Seeder Order (25 seeders — strict dependency order)
-1. Rate tables: `SssContributionTableSeeder`, `PhilhealthPremiumTableSeeder`, `PagibigContributionTableSeeder`, `TrainTaxBracketSeeder`, `OvertimeMultiplierSeeder`, `HolidayCalendarSeeder`, `MinimumWageRateSeeder`  
-2. RBAC: `RolePermissionSeeder` → `SampleAccountsSeeder`  
-3. HR reference: `SalaryGradeSeeder`, `LeaveTypeSeeder`, `LoanTypeSeeder`, `ShiftScheduleSeeder`  
-4. Accounting: `ChartOfAccountsSeeder`  
-5. Org structure: `FiscalPeriodSeeder`, `DepartmentPositionSeeder`, `DepartmentPermissionProfileSeeder`, `DepartmentPermissionTemplateSeeder`  
-6. Transactional sample data: `SampleDataSeeder`, `ManufacturingEmployeeSeeder`, `FleetSeeder`, `LeaveBalanceSeeder`  
-7. System config: `SystemSettingsSeeder`, `NewModulesSeeder`  
+### Seeder Order (27 seeders — strict dependency order)
+1. Rate tables: `SssContributionTableSeeder`, `PhilhealthPremiumTableSeeder`, `PagibigContributionTableSeeder`, `TrainTaxBracketSeeder`, `OvertimeMultiplierSeeder`, `HolidayCalendarSeeder`, `MinimumWageRateSeeder`
+2. RBAC: `RolePermissionSeeder` → `SampleAccountsSeeder`
+3. HR reference: `SalaryGradeSeeder`, `LeaveTypeSeeder`, `LoanTypeSeeder`, `ShiftScheduleSeeder`
+4. Accounting: `ChartOfAccountsSeeder`
+5. Org structure: `FiscalPeriodSeeder`, `DepartmentPositionSeeder`, `DepartmentPermissionProfileSeeder`, `DepartmentPermissionTemplateSeeder`
+6. Transactional sample data: `SampleDataSeeder`, `ManufacturingEmployeeSeeder`, `FleetSeeder`, `LeaveBalanceSeeder`
+7. System config: `SystemSettingsSeeder`, `NewModulesSeeder`, `TestAccountsSeeder`, `ExtraAccountsSeeder`
 
 ## Security Considerations
 
@@ -334,13 +334,13 @@ Steps are in `app/Domains/Payroll/Pipeline/`. Each is `final class` with signatu
 ```php
 public function __invoke(PayrollComputationContext $ctx, Closure $next): PayrollComputationContext
 ```
-Shared mutable state: `app/Domains/Payroll/Services/PayrollComputationContext.php`
+Shared mutable state object: `app/Domains/Payroll/Services/PayrollComputationContext.php`
 
 ### State Machines
-- `app/Domains/HR/StateMachines/EmployeeStateMachine.php`  
+- `app/Domains/HR/StateMachines/EmployeeStateMachine.php`
   `draft → active → on_leave|suspended → resigned|terminated`
-- `app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php`  
-  14-state workflow: `DRAFT → SCOPE_SET → PRE_RUN_CHECKED → PROCESSING → COMPUTED → REVIEW → SUBMITTED → HR_APPROVED → ACCTG_APPROVED → DISBURSED → PUBLISHED` (+ `RETURNED`/`REJECTED → DRAFT`)  
+- `app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php`
+  14-state workflow: `DRAFT → SCOPE_SET → PRE_RUN_CHECKED → PROCESSING → COMPUTED → REVIEW → SUBMITTED → HR_APPROVED → ACCTG_APPROVED → DISBURSED → PUBLISHED` (+ `RETURNED`/`REJECTED → DRAFT`)
   Has legacy lowercase alias compatibility layer.
 
 ### Value Objects (all in `app/Shared/ValueObjects/`)
@@ -355,18 +355,18 @@ Shared mutable state: `app/Domains/Payroll/Services/PayrollComputationContext.ph
 | `WorkingDays` | Working day count calculations |
 
 ### Job Queues
-Defined queues: `payroll`, `computations`, `notifications`, `default`  
-Jobs in `app/Jobs/<Domain>/`. Pattern: `final class`, `ShouldQueue`, `Batchable` for payroll.  
+Defined queues: `payroll`, `computations`, `notifications`, `default`
+Jobs in `app/Jobs/<Domain>/`. Pattern: `final class`, `ShouldQueue`, `Batchable` for payroll.
 Reference: `app/Jobs/Payroll/ProcessPayrollBatch.php`
 
 ## API Structure
 
-All routes under `/api/v1/` via `routes/api.php` which includes 25 domain route files from `routes/api/v1/`.  
+All routes under `/api/v1/` via `routes/api.php` which includes 27 domain route files from `routes/api/v1/`.
 All endpoints require `auth:sanctum`. Write throttle: 60/min; Read throttle: 120/min.
 
 Key prefixes: `hr`, `leave`, `loans`, `attendance`, `payroll`, `accounting`, `ar`, `tax`, `procurement`, `inventory`, `production`, `qc`, `maintenance`, `mold`, `delivery`, `iso`, `crm`, `vendor-portal`, `reports`, `employee`, `admin`, `notifications`, `dashboard`, `auth`, `fixed-assets`, `budget`
 
-API responses always use `JsonResource` — data is wrapped: `{ "data": { ... } }` or `{ "data": [...] }`.  
+API responses always use `JsonResource` — data is wrapped: `{ "data": { ... } }` or `{ "data": [...] }`.
 Error responses: `{ "success": false, "error_code": "DOMAIN_ERROR_CODE", "message": "..." }`.
 
 ## Deployment
@@ -441,7 +441,6 @@ Every model that uses the `HasPublicUlid` trait **must** also use `SoftDeletes`.
 
 - **Some Instruction and Prompts**: `.github/`
 - **Full implementation audit**: `AUDIT_REPORT.md`
-
 
 Always use cocoindex_code_search to find existing patterns in this 
 codebase before writing any new code.

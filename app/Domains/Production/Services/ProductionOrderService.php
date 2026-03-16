@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\Production\Services;
 
-use App\Domains\Inventory\Models\WarehouseLocation;
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\StockLedger;
+use App\Domains\Inventory\Models\WarehouseLocation;
 use App\Domains\Inventory\Services\MaterialRequisitionService;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BomComponent;
@@ -93,7 +94,7 @@ final class ProductionOrderService implements ServiceContract
                 ->where('status', 'failed')
                 ->get(['id', 'inspection_date', 'remarks']);
 
-            if ($failedInspections->isNotEmpty() && !$forceRelease) {
+            if ($failedInspections->isNotEmpty() && ! $forceRelease) {
                 $ids = $failedInspections->pluck('id')->implode(', ');
                 throw new DomainException(
                     "Release blocked by failed QC inspection(s): #{$ids}. Resolve them or use force-release with QC override permission.",
@@ -104,7 +105,7 @@ final class ProductionOrderService implements ServiceContract
 
             if ($failedInspections->isNotEmpty() && $forceRelease) {
                 Log::warning("PROD-002: QC override used for order #{$order->id} — failed inspections: "
-                    . $failedInspections->pluck('id')->implode(', '));
+                    .$failedInspections->pluck('id')->implode(', '));
             }
 
             // ── PROD-001: Deduct BOM component stock from inventory ─────────
@@ -149,25 +150,25 @@ final class ProductionOrderService implements ServiceContract
         if ($location === null) {
             return $components->map(fn ($c) => [
                 'component_item_id' => $c->component_item_id,
-                'item_name'         => $c->componentItem->name ?? "Item #{$c->component_item_id}",
-                'unit_of_measure'   => $c->unit_of_measure,
-                'required_qty'      => $this->computeRequiredQty($c, $order),
-                'available_qty'     => 0.0,
-                'sufficient'        => false,
+                'item_name' => $c->componentItem->name ?? "Item #{$c->component_item_id}",
+                'unit_of_measure' => $c->unit_of_measure,
+                'required_qty' => $this->computeRequiredQty($c, $order),
+                'available_qty' => 0.0,
+                'sufficient' => false,
             ])->toArray();
         }
 
         return $components->map(function ($component) use ($order, $location) {
-            $requiredQty  = $this->computeRequiredQty($component, $order);
+            $requiredQty = $this->computeRequiredQty($component, $order);
             $availableQty = $this->stockService->currentBalance($component->component_item_id, $location->id);
 
             return [
                 'component_item_id' => $component->component_item_id,
-                'item_name'         => $component->componentItem->name ?? "Item #{$component->component_item_id}",
-                'unit_of_measure'   => $component->unit_of_measure,
-                'required_qty'      => $requiredQty,
-                'available_qty'     => $availableQty,
-                'sufficient'        => $availableQty >= $requiredQty,
+                'item_name' => $component->componentItem->name ?? "Item #{$component->component_item_id}",
+                'unit_of_measure' => $component->unit_of_measure,
+                'required_qty' => $requiredQty,
+                'available_qty' => $availableQty,
+                'sufficient' => $availableQty >= $requiredQty,
             ];
         })->toArray();
     }
@@ -179,7 +180,7 @@ final class ProductionOrderService implements ServiceContract
     private function deductBomComponents(ProductionOrder $order): void
     {
         $components = $order->bom->components()->with('componentItem')->get();
-        $location   = WarehouseLocation::where('is_active', true)->first();
+        $location = WarehouseLocation::where('is_active', true)->first();
 
         if ($location === null) {
             throw new DomainException(
@@ -192,33 +193,33 @@ final class ProductionOrderService implements ServiceContract
         // Phase 1: Check all components for sufficient stock
         $shortages = [];
         foreach ($components as $component) {
-            $requiredQty  = $this->computeRequiredQty($component, $order);
+            $requiredQty = $this->computeRequiredQty($component, $order);
             $availableQty = $this->stockService->currentBalance($component->component_item_id, $location->id);
 
             if ($availableQty < $requiredQty) {
                 $shortages[] = [
-                    'item'      => $component->componentItem->name ?? "Item #{$component->component_item_id}",
-                    'required'  => $requiredQty,
+                    'item' => $component->componentItem->name ?? "Item #{$component->component_item_id}",
+                    'required' => $requiredQty,
                     'available' => $availableQty,
-                    'short_by'  => round($requiredQty - $availableQty, 4),
+                    'short_by' => round($requiredQty - $availableQty, 4),
                 ];
             }
         }
 
-        if (!empty($shortages)) {
+        if (! empty($shortages)) {
             $details = collect($shortages)
                 ->map(fn ($s) => "{$s['item']}: need {$s['required']}, have {$s['available']} (short by {$s['short_by']})")
                 ->implode('; ');
 
             throw new DomainException(
-                "Insufficient stock for " . count($shortages) . " component(s): {$details}",
+                'Insufficient stock for '.count($shortages)." component(s): {$details}",
                 'PROD_INSUFFICIENT_STOCK',
                 422,
             );
         }
 
         // Phase 2: Issue stock for all components
-        /** @var \App\Models\User $actor */
+        /** @var User $actor */
         $actor = auth()->user() ?? User::where('email', 'admin@ogamierp.local')->firstOrFail();
 
         foreach ($components as $component) {
@@ -232,7 +233,7 @@ final class ProductionOrderService implements ServiceContract
                 referenceId: $order->id,
                 actor: $actor,
                 remarks: "BOM material issue — WO {$order->po_reference}, component: "
-                    . ($component->componentItem->name ?? "#{$component->component_item_id}"),
+                    .($component->componentItem->name ?? "#{$component->component_item_id}"),
             );
         }
     }
@@ -244,9 +245,9 @@ final class ProductionOrderService implements ServiceContract
      */
     private function computeRequiredQty(BomComponent $component, ProductionOrder $order): float
     {
-        $qtyPerUnit   = (float) $component->qty_per_unit;
-        $orderQty     = (float) $order->qty_required;
-        $scrapFactor  = 1.0 + ((float) $component->scrap_factor_pct / 100.0);
+        $qtyPerUnit = (float) $component->qty_per_unit;
+        $orderQty = (float) $order->qty_required;
+        $scrapFactor = 1.0 + ((float) $component->scrap_factor_pct / 100.0);
 
         return round($qtyPerUnit * $orderQty * $scrapFactor, 4);
     }
@@ -258,7 +259,7 @@ final class ProductionOrderService implements ServiceContract
         }
 
         // Ensure all linked MRQs are fulfilled before production begins (PROD-MRQ-001).
-        $unfulfilledMrq = \App\Domains\Inventory\Models\MaterialRequisition::query()
+        $unfulfilledMrq = MaterialRequisition::query()
             ->where('production_order_id', $order->id)
             ->whereNotIn('status', ['fulfilled', 'cancelled', 'rejected'])
             ->exists();
@@ -326,12 +327,12 @@ final class ProductionOrderService implements ServiceContract
         }
 
         return DB::transaction(function () use ($order): ProductionOrder {
-            $mrqs = \App\Domains\Inventory\Models\MaterialRequisition::query()
+            $mrqs = MaterialRequisition::query()
                 ->where('production_order_id', $order->id)
                 ->get();
 
-            /** @var \App\Models\User $actor */
-            $actor = auth()->user() ?? \App\Models\User::findOrFail($order->created_by_id);
+            /** @var User $actor */
+            $actor = auth()->user() ?? User::findOrFail($order->created_by_id);
 
             foreach ($mrqs as $mrq) {
                 if ($mrq->status === 'fulfilled') {
@@ -376,12 +377,12 @@ final class ProductionOrderService implements ServiceContract
         }
 
         return DB::transaction(function () use ($order): ProductionOrder {
-            $mrqs = \App\Domains\Inventory\Models\MaterialRequisition::query()
+            $mrqs = MaterialRequisition::query()
                 ->where('production_order_id', $order->id)
                 ->get();
 
-            /** @var \App\Models\User $actor */
-            $actor = auth()->user() ?? \App\Models\User::findOrFail($order->created_by_id);
+            /** @var User $actor */
+            $actor = auth()->user() ?? User::findOrFail($order->created_by_id);
 
             foreach ($mrqs as $mrq) {
                 if ($mrq->status === 'fulfilled') {

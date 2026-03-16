@@ -16,13 +16,13 @@ final class UpdateFixedAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'                 => ['sometimes', 'string', 'max:200'],
-            'description'          => ['nullable', 'string'],
-            'serial_number'        => ['nullable', 'string', 'max:100'],
-            'location'             => ['nullable', 'string', 'max:200'],
-            'purchased_from'       => ['nullable', 'string', 'max:200'],
+            'name' => ['sometimes', 'string', 'max:200'],
+            'description' => ['nullable', 'string'],
+            'serial_number' => ['nullable', 'string', 'max:100'],
+            'location' => ['nullable', 'string', 'max:200'],
+            'purchased_from' => ['nullable', 'string', 'max:200'],
             'purchase_invoice_ref' => ['nullable', 'string', 'max:100'],
-            'department_id'        => ['nullable', 'integer', 'exists:departments,id'],
+            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
         ];
     }
 }

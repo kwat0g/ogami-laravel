@@ -28,24 +28,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('requests', [LeaveRequestController::class, 'store'])->name('requests.store');
     Route::get('requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('requests.show');
 
-    // Step 2 — Department Head approves
+    // Step 2 — Department Head approves (SoD: approver cannot be submitter)
     Route::patch('requests/{leaveRequest}/head-approve', [LeaveRequestController::class, 'headApprove'])
-        ->middleware(['permission:leaves.head_approve', 'throttle:api-action'])
+        ->middleware(['permission:leaves.head_approve', 'sod:leave_requests,head_approve', 'throttle:api-action'])
         ->name('requests.head_approve');
 
-    // Step 3 — Plant Manager checks
+    // Step 3 — Plant Manager checks (SoD: checker cannot be submitter)
     Route::patch('requests/{leaveRequest}/manager-check', [LeaveRequestController::class, 'managerCheck'])
-        ->middleware(['permission:leaves.manager_check', 'throttle:api-action'])
+        ->middleware(['permission:leaves.manager_check', 'sod:leave_requests,manager_check', 'throttle:api-action'])
         ->name('requests.manager_check');
 
-    // Step 4 — GA Officer processes (sets action_taken + balance snapshot)
+    // Step 4 — GA Officer processes (SoD: processor cannot be submitter)
     Route::patch('requests/{leaveRequest}/ga-process', [LeaveRequestController::class, 'gaProcess'])
-        ->middleware(['permission:leaves.ga_process', 'throttle:api-action'])
+        ->middleware(['permission:leaves.ga_process', 'sod:leave_requests,ga_process', 'throttle:api-action'])
         ->name('requests.ga_process');
 
-    // Step 5 — VP notes (deducts balance for approved_with_pay)
+    // Step 5 — VP notes (SoD: VP cannot be submitter)
     Route::patch('requests/{leaveRequest}/vp-note', [LeaveRequestController::class, 'vpNote'])
-        ->middleware(['permission:leaves.vp_note', 'throttle:api-action'])
+        ->middleware(['permission:leaves.vp_note', 'sod:leave_requests,vp_note', 'throttle:api-action'])
         ->name('requests.vp_note');
 
     // Reject (any current-step approver)

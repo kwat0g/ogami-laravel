@@ -32,7 +32,7 @@ final class SilMonetizationService implements ServiceContract
      * at year-end.  Idempotent: already-monetized balances are skipped.
      *
      * @param  int|null  $payrollRunId  When provided, a PayrollAdjustment earmarks the payout per employee.
-     * @param  int|null  $createdBy     User ID recording the adjustments (required when $payrollRunId is set).
+     * @param  int|null  $createdBy  User ID recording the adjustments (required when $payrollRunId is set).
      * @return array<string, mixed> Summary: { processed: int, total_cash_centavos: int, employees: list<int> }
      */
     public function monetizeAllForYear(int $year, ?int $payrollRunId = null, ?int $createdBy = null): array
@@ -85,13 +85,13 @@ final class SilMonetizationService implements ServiceContract
                 // LV-B2: Create a PayrollAdjustment so the cash payout flows through GL.
                 if ($payrollRunId !== null && $createdBy !== null) {
                     PayrollAdjustment::create([
-                        'payroll_run_id'   => $payrollRunId,
-                        'employee_id'      => $row['employee_id'],
-                        'type'             => 'earning',
-                        'nature'           => 'non_taxable',
-                        'description'      => 'SIL monetization — year-end cash conversion',
-                        'amount_centavos'  => $row['cash_centavos'],
-                        'created_by'       => $createdBy,
+                        'payroll_run_id' => $payrollRunId,
+                        'employee_id' => $row['employee_id'],
+                        'type' => 'earning',
+                        'nature' => 'non_taxable',
+                        'description' => 'SIL monetization — year-end cash conversion',
+                        'amount_centavos' => $row['cash_centavos'],
+                        'created_by' => $createdBy,
                     ]);
                 }
             }
@@ -114,7 +114,7 @@ final class SilMonetizationService implements ServiceContract
      *
      * @param  int  $year  The leave year to monetize (defaults to current year)
      * @param  int|null  $payrollRunId  When provided, a PayrollAdjustment is created for each balance converted.
-     * @param  int|null  $createdBy     User ID recording the adjustment (required when $payrollRunId is set).
+     * @param  int|null  $createdBy  User ID recording the adjustment (required when $payrollRunId is set).
      * @return list<array<string, mixed>> { leave_type_id, days_monetized, cash_centavos }[]
      */
     public function monetizeForEmployee(Employee $employee, int $year = 0, ?int $payrollRunId = null, ?int $createdBy = null): array
@@ -159,21 +159,21 @@ final class SilMonetizationService implements ServiceContract
                 // LV-B2: Create a PayrollAdjustment so the cash payout flows through GL.
                 if ($payrollRunId !== null && $createdBy !== null) {
                     PayrollAdjustment::create([
-                        'payroll_run_id'   => $payrollRunId,
-                        'employee_id'      => $employee->id,
-                        'type'             => 'earning',
-                        'nature'           => 'non_taxable',
-                        'description'      => "SIL monetization — {$leaveType->code} cash conversion",
-                        'amount_centavos'  => $cashCentavos,
-                        'created_by'       => $createdBy,
+                        'payroll_run_id' => $payrollRunId,
+                        'employee_id' => $employee->id,
+                        'type' => 'earning',
+                        'nature' => 'non_taxable',
+                        'description' => "SIL monetization — {$leaveType->code} cash conversion",
+                        'amount_centavos' => $cashCentavos,
+                        'created_by' => $createdBy,
                     ]);
                 }
 
                 $processed[] = [
-                    'leave_type_id'   => $leaveType->id,
+                    'leave_type_id' => $leaveType->id,
                     'leave_type_code' => $leaveType->code,
-                    'days_monetized'  => $daysToConvert,
-                    'cash_centavos'   => $cashCentavos,
+                    'days_monetized' => $daysToConvert,
+                    'cash_centavos' => $cashCentavos,
                 ];
             }
         });

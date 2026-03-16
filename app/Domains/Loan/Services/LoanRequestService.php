@@ -21,6 +21,7 @@ use App\Notifications\LoanWrittenOffNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\SodViolationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -82,9 +83,9 @@ final class LoanRequestService implements ServiceContract
     /**
      * Get loan history for an employee (past and pending loans).
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, Loan>
+     * @return Collection<int, Loan>
      */
-    public function getEmployeeLoanHistory(int $employeeId, ?int $excludeLoanId = null): \Illuminate\Database\Eloquent\Collection
+    public function getEmployeeLoanHistory(int $employeeId, ?int $excludeLoanId = null): Collection
     {
         $query = Loan::with(['loanType'])
             ->where('employee_id', $employeeId)

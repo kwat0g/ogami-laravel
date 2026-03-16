@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domains\Tax\Services;
 
-use App\Domains\Tax\Models\VatLedger;
 use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Services\JournalEntryService;
+use App\Domains\Tax\Models\VatLedger;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -121,7 +122,7 @@ final class VatLedgerService implements ServiceContract
     // ── Summary ───────────────────────────────────────────────────────────────
 
     /** Tabular summary for the TaxPeriodSummaryPage. */
-    public function summaryForPeriods(array $fiscalPeriodIds): \Illuminate\Support\Collection
+    public function summaryForPeriods(array $fiscalPeriodIds): Collection
     {
         return VatLedger::whereIn('fiscal_period_id', $fiscalPeriodIds)
             ->with('closedByUser')

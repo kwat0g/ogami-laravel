@@ -91,7 +91,7 @@ final class VendorPortalController extends Controller
 
         return response()->json([
             'message' => 'In-transit notification recorded.',
-            'data'    => $note,
+            'data' => $note,
         ]);
     }
 
@@ -106,9 +106,9 @@ final class VendorPortalController extends Controller
         $this->assertVendorOwns($purchaseOrder);
 
         $validated = $request->validate([
-            'notes'                => ['nullable', 'string', 'max:1000'],
-            'items'                => ['required', 'array', 'min:1'],
-            'items.*.po_item_id'   => ['required', 'integer'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.po_item_id' => ['required', 'integer'],
             'items.*.qty_delivered' => ['required', 'numeric', 'min:0.001'],
         ]);
 
@@ -121,7 +121,7 @@ final class VendorPortalController extends Controller
 
         return response()->json([
             'message' => 'Delivery confirmed. A Goods Receipt draft has been created for review.',
-            'data'    => $note,
+            'data' => $note,
         ], 201);
     }
 
@@ -157,12 +157,12 @@ final class VendorPortalController extends Controller
         $vendor = Vendor::findOrFail($vendorId);
 
         $validated = $request->validate([
-            'item_code'      => ['required', 'string', 'max:50'],
-            'item_name'      => ['required', 'string', 'max:200'],
-            'description'    => ['nullable', 'string', 'max:1000'],
+            'item_code' => ['required', 'string', 'max:50'],
+            'item_name' => ['required', 'string', 'max:200'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'unit_of_measure' => ['required', 'string', 'max:20'],
-            'unit_price'     => ['required', 'numeric', 'min:0'],
-            'is_active'      => ['boolean'],
+            'unit_price' => ['required', 'numeric', 'min:0'],
+            'is_active' => ['boolean'],
         ]);
 
         $item = $this->itemService->create($vendor, $validated, $request->user());
@@ -184,11 +184,11 @@ final class VendorPortalController extends Controller
         $vendorItem = $vendor->vendorItems()->findOrFail($item);
 
         $validated = $request->validate([
-            'item_name'      => ['sometimes', 'string', 'max:200'],
-            'description'    => ['nullable', 'string', 'max:1000'],
+            'item_name' => ['sometimes', 'string', 'max:200'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'unit_of_measure' => ['sometimes', 'string', 'max:20'],
-            'unit_price'     => ['sometimes', 'numeric', 'min:0'],
-            'is_active'      => ['boolean'],
+            'unit_price' => ['sometimes', 'numeric', 'min:0'],
+            'is_active' => ['boolean'],
         ]);
 
         $updated = $this->itemService->update($vendorItem, $validated, $request->user());
@@ -211,14 +211,14 @@ final class VendorPortalController extends Controller
         $vendorId = app('vendor_scope.vendor_id');
         $vendor = Vendor::findOrFail($vendorId);
 
-        $import = new VendorItemImport();
+        $import = new VendorItemImport;
         Excel::import($import, $request->file('file'));
 
         $result = $this->itemService->importRows($vendor, $import->getRows(), $request->user());
 
         return response()->json([
             'message' => "Import complete. {$result['created']} created, {$result['updated']} updated.",
-            'data'    => $result,
+            'data' => $result,
         ]);
     }
 
@@ -273,12 +273,12 @@ final class VendorPortalController extends Controller
 
         $validated = $request->validate([
             'goods_receipt_id' => ['required', 'integer'],
-            'invoice_date'     => ['required', 'date'],
-            'due_date'         => ['required', 'date', 'after_or_equal:invoice_date'],
-            'net_amount'       => ['required', 'numeric', 'min:0.01'],
-            'vat_amount'       => ['nullable', 'numeric', 'min:0'],
-            'or_number'        => ['nullable', 'string', 'max:50'],
-            'description'      => ['nullable', 'string', 'max:1000'],
+            'invoice_date' => ['required', 'date'],
+            'due_date' => ['required', 'date', 'after_or_equal:invoice_date'],
+            'net_amount' => ['required', 'numeric', 'min:0.01'],
+            'vat_amount' => ['nullable', 'numeric', 'min:0'],
+            'or_number' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
         // Ensure the GR belongs to a PO owned by this vendor
@@ -316,30 +316,30 @@ final class VendorPortalController extends Controller
             : 0.00;
 
         $invoice = VendorInvoice::create([
-            'vendor_id'          => $vendor->id,
-            'fiscal_period_id'   => $fiscalPeriod->id,
-            'ap_account_id'      => $apAccount?->id,
+            'vendor_id' => $vendor->id,
+            'fiscal_period_id' => $fiscalPeriod->id,
+            'ap_account_id' => $apAccount?->id,
             'expense_account_id' => $expenseAccount?->id,
-            'invoice_date'       => $validated['invoice_date'],
-            'due_date'           => $validated['due_date'],
-            'net_amount'         => $netAmount,
-            'vat_amount'         => $vatAmount,
-            'ewt_amount'         => $ewtAmount,
-            'ewt_rate'           => $vendor->is_ewt_subject ? $vendor->ewtRate?->rate : null,
-            'atc_code'           => $vendor->is_ewt_subject ? $vendor->atc_code : null,
-            'or_number'          => $validated['or_number'] ?? null,
-            'description'        => $validated['description'] ?? "Vendor-submitted invoice for GR {$gr->gr_reference}",
-            'source'             => 'vendor_portal',
-            'purchase_order_id'  => $gr->purchaseOrder->id,
-            'status'             => 'draft',
-            'created_by'         => $request->user()->id,
+            'invoice_date' => $validated['invoice_date'],
+            'due_date' => $validated['due_date'],
+            'net_amount' => $netAmount,
+            'vat_amount' => $vatAmount,
+            'ewt_amount' => $ewtAmount,
+            'ewt_rate' => $vendor->is_ewt_subject ? $vendor->ewtRate?->rate : null,
+            'atc_code' => $vendor->is_ewt_subject ? $vendor->atc_code : null,
+            'or_number' => $validated['or_number'] ?? null,
+            'description' => $validated['description'] ?? "Vendor-submitted invoice for GR {$gr->gr_reference}",
+            'source' => 'vendor_portal',
+            'purchase_order_id' => $gr->purchaseOrder->id,
+            'status' => 'draft',
+            'created_by' => $request->user()->id,
         ]);
 
         $gr->update(['ap_invoice_created' => true]);
 
         return response()->json([
             'message' => 'Invoice submitted successfully. It will be reviewed by accounting.',
-            'data'    => $invoice,
+            'data' => $invoice,
         ], 201);
     }
 

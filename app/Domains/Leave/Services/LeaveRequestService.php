@@ -18,6 +18,7 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\InsufficientLeaveBalanceException;
 use App\Shared\Exceptions\SodViolationException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 // NOTICE: This file has been rewritten to implement the 4-step approval chain
@@ -68,22 +69,22 @@ final class LeaveRequestService implements ServiceContract
                 $totalDays = (float) $data['total_days'];
             } else {
                 // Compute inclusive calendar days from date range
-                $from = new \Carbon\Carbon($data['date_from']);
-                $to   = new \Carbon\Carbon($data['date_to']);
+                $from = new Carbon($data['date_from']);
+                $to = new Carbon($data['date_to']);
                 $totalDays = (float) ($from->diffInDays($to) + 1);
             }
 
             return LeaveRequest::create([
-                'employee_id'     => $employee->id,
-                'leave_type_id'   => $leaveType->id,
-                'submitted_by'    => $submittedByUserId,
-                'date_from'       => $data['date_from'],
-                'date_to'         => $data['date_to'],
-                'total_days'      => $totalDays,
-                'is_half_day'     => $isHalfDay,
+                'employee_id' => $employee->id,
+                'leave_type_id' => $leaveType->id,
+                'submitted_by' => $submittedByUserId,
+                'date_from' => $data['date_from'],
+                'date_to' => $data['date_to'],
+                'total_days' => $totalDays,
+                'is_half_day' => $isHalfDay,
                 'half_day_period' => isset($data['half_day_period']) ? strtolower($data['half_day_period']) : null,
-                'reason'          => $data['reason'],
-                'status'          => 'submitted',
+                'reason' => $data['reason'],
+                'status' => 'submitted',
             ]);
         });
 
@@ -111,9 +112,9 @@ final class LeaveRequestService implements ServiceContract
             throw new DomainException('Only submitted requests can be head-approved.', 'LV_NOT_SUBMITTED', 422);
         }
 
-        $request->status           = 'head_approved';
-        $request->head_id          = $headUserId;
-        $request->head_remarks     = $remarks;
+        $request->status = 'head_approved';
+        $request->head_id = $headUserId;
+        $request->head_remarks = $remarks;
         $request->head_approved_at = now();
         $request->save();
 
@@ -140,10 +141,10 @@ final class LeaveRequestService implements ServiceContract
             throw new DomainException('Only head-approved requests can be manager-checked.', 'LV_NOT_HEAD_APPROVED', 422);
         }
 
-        $request->status               = 'manager_checked';
-        $request->manager_checked_by   = $managerUserId;
+        $request->status = 'manager_checked';
+        $request->manager_checked_by = $managerUserId;
         $request->manager_check_remarks = $remarks;
-        $request->manager_checked_at   = now();
+        $request->manager_checked_at = now();
         $request->save();
 
         $this->notifyGaOfficerOfManagerCheck($request);
@@ -183,12 +184,12 @@ final class LeaveRequestService implements ServiceContract
 
         $request = DB::transaction(function () use ($request, $gaUserId, $actionTaken, $remarks): LeaveRequest {
             $leaveType = $request->leaveType;
-            $year      = $request->date_from->year;
+            $year = $request->date_from->year;
 
             $request->ga_processed_by = $gaUserId;
-            $request->ga_remarks      = $remarks;
+            $request->ga_remarks = $remarks;
             $request->ga_processed_at = now();
-            $request->action_taken    = $actionTaken;
+            $request->action_taken = $actionTaken;
 
             if ($actionTaken === 'disapproved') {
                 // Immediate rejection — VP step is skipped
@@ -199,13 +200,13 @@ final class LeaveRequestService implements ServiceContract
                     // LV-006: OTH is discretionary — no balance record; skip balance check
                     if ($leaveType->code === 'OTH') {
                         $request->beginning_balance = null;
-                        $request->applied_days      = 0;
-                        $request->ending_balance    = null;
+                        $request->applied_days = 0;
+                        $request->ending_balance = null;
                     } else {
                         $balance = LeaveBalance::where([
-                            'employee_id'   => $request->employee_id,
+                            'employee_id' => $request->employee_id,
                             'leave_type_id' => $request->leave_type_id,
-                            'year'          => $year,
+                            'year' => $year,
                         ])->lockForUpdate()->first();
 
                         // @phpstan-ignore nullsafe.neverNull
@@ -220,14 +221,14 @@ final class LeaveRequestService implements ServiceContract
                         }
 
                         $request->beginning_balance = $currentBalance;
-                        $request->applied_days      = $request->total_days;
-                        $request->ending_balance    = $currentBalance - $request->total_days;
+                        $request->applied_days = $request->total_days;
+                        $request->ending_balance = $currentBalance - $request->total_days;
                     }
                 } else {
                     // approved_without_pay — snapshot zeros
                     $request->beginning_balance = null;
-                    $request->applied_days      = 0;
-                    $request->ending_balance    = null;
+                    $request->applied_days = 0;
+                    $request->ending_balance = null;
                 }
 
                 $request->status = 'ga_processed';
@@ -272,9 +273,9 @@ final class LeaveRequestService implements ServiceContract
                 $year = $request->date_from->year;
 
                 $balance = LeaveBalance::where([
-                    'employee_id'   => $request->employee_id,
+                    'employee_id' => $request->employee_id,
                     'leave_type_id' => $request->leave_type_id,
-                    'year'          => $year,
+                    'year' => $year,
                 ])->lockForUpdate()->first();
 
                 if ($balance !== null) {
@@ -292,9 +293,9 @@ final class LeaveRequestService implements ServiceContract
                 }
             }
 
-            $request->status      = 'approved';
-            $request->vp_id       = $vpUserId;
-            $request->vp_remarks  = $remarks;
+            $request->status = 'approved';
+            $request->vp_id = $vpUserId;
+            $request->vp_remarks = $remarks;
             $request->vp_noted_at = now();
             $request->save();
 
@@ -326,25 +327,25 @@ final class LeaveRequestService implements ServiceContract
 
         // Record who rejected at each possible step
         match ($request->status) {
-            'submitted'       => $request->fill([
-                'head_id'         => $rejectedByUserId,
-                'head_remarks'    => $remarks,
+            'submitted' => $request->fill([
+                'head_id' => $rejectedByUserId,
+                'head_remarks' => $remarks,
                 'head_approved_at' => now(),
             ]),
-            'head_approved'   => $request->fill([
-                'manager_checked_by'    => $rejectedByUserId,
+            'head_approved' => $request->fill([
+                'manager_checked_by' => $rejectedByUserId,
                 'manager_check_remarks' => $remarks,
-                'manager_checked_at'    => now(),
+                'manager_checked_at' => now(),
             ]),
             'manager_checked' => $request->fill([
                 'ga_processed_by' => $rejectedByUserId,
-                'ga_remarks'      => $remarks,
+                'ga_remarks' => $remarks,
                 'ga_processed_at' => now(),
-                'action_taken'    => 'disapproved',
+                'action_taken' => 'disapproved',
             ]),
             'ga_processed' => $request->fill([
-                'vp_id'       => $rejectedByUserId,
-                'vp_remarks'  => $remarks,
+                'vp_id' => $rejectedByUserId,
+                'vp_remarks' => $remarks,
                 'vp_noted_at' => now(),
             ]),
             default => null,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\AP\Models;
 
+use App\Models\User;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +36,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $phone
  * @property string|null $notes
  * @property int $created_by
+ * @property-read EwtRate|null $ewtRate
  */
 final class Vendor extends Model implements Auditable
 {
@@ -70,6 +72,7 @@ final class Vendor extends Model implements Auditable
 
     // ── Relationships ────────────────────────────────────────────────────────
 
+    /** @return BelongsTo<EwtRate, $this> */
     public function ewtRate(): BelongsTo
     {
         return $this->belongsTo(EwtRate::class, 'ewt_rate_id');
@@ -87,7 +90,7 @@ final class Vendor extends Model implements Auditable
 
     public function portalUser(): HasOne
     {
-        return $this->hasOne(\App\Models\User::class, 'vendor_id');
+        return $this->hasOne(User::class, 'vendor_id');
     }
 
     /** @return HasMany<VendorItem, Vendor> */

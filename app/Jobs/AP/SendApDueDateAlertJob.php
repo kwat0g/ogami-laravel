@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Jobs\AP;
 
 use App\Domains\AP\Models\VendorInvoice;
+use App\Models\User;
+use App\Notifications\ApDueDateAlertNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -52,7 +54,21 @@ final class SendApDueDateAlertJob implements ShouldQueue
                 ])->toArray(),
             ]);
 
-            // TODO Sprint 17: dispatch Mail/Notification to accounting manager
+            // Notify accounting managers about overdue invoices
+            $accountingManagers = User::permission('vendor_invoices.approve')->get();
+            foreach ($overdueInvoices as $invoice) {
+                $daysOverdue = (int) $invoice->due_date->diffInDays(now(), absolute: true);
+                $notification = new ApDueDateAlertNotification(
+                    $invoice,
+                    ApDueDateAlertNotification::TYPE_OVERDUE,
+                    $daysOverdue
+                );
+                foreach ($accountingManagers as $manager) {
+                    $manager->notify($notification);
+                }
+            }
+
+            Log::info('[SendApDueDateAlertJob] Sent overdue alerts for '.$overdueInvoices->count().' invoice(s) to '.$accountingManagers->count().' manager(s).');
         }
 
         // ── Upcoming due invoices ────────────────────────────────────────────
@@ -74,7 +90,21 @@ final class SendApDueDateAlertJob implements ShouldQueue
                 ])->toArray(),
             ]);
 
-            // TODO Sprint 17: dispatch Mail/Notification to accounting staff
+            // Notify accounting staff about upcoming due invoices
+            $accountingStaff = User::permission('vendor_invoices.view')->get();
+            foreach ($dueSoonInvoices as $invoice) {
+                $daysUntil = (int) now()->diffInDays($invoice->due_date, absolute: true);
+                $notification = new ApDueDateAlertNotification(
+                    $invoice,
+                    ApDueDateAlertNotification::TYPE_DUE_SOON,
+                    $daysUntil
+                );
+                foreach ($accountingStaff as $staff) {
+                    $staff->notify($notification);
+                }
+            }
+
+            Log::info('[SendApDueDateAlertJob] Sent due-soon alerts for '.$dueSoonInvoices->count().' invoice(s) to '.$accountingStaff->count().' staff member(s).');
         }
 
         Log::info(sprintf(

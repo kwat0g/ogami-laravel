@@ -10,6 +10,7 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -20,16 +21,16 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $account_id
  * @property int $budgeted_amount_centavos
  * @property string|null $notes
- * @property string $status  draft|submitted|approved|rejected
+ * @property string $status draft|submitted|approved|rejected
  * @property int|null $submitted_by_id
- * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property Carbon|null $submitted_at
  * @property int|null $approved_by_id
- * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property Carbon|null $approved_at
  * @property string|null $approval_remarks
  * @property int $created_by_id
  * @property int|null $updated_by_id
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read CostCenter $costCenter
  * @property-read ChartOfAccount $account
  * @property-read User $createdBy
@@ -40,8 +41,8 @@ use OwenIt\Auditing\Contracts\Auditable;
 final class AnnualBudget extends Model implements Auditable
 {
     use HasPublicUlid;
-    use SoftDeletes;
     use \OwenIt\Auditing\Auditable;
+    use SoftDeletes;
 
     protected $table = 'annual_budgets';
 
@@ -62,10 +63,10 @@ final class AnnualBudget extends Model implements Auditable
     ];
 
     protected $casts = [
-        'fiscal_year'               => 'integer',
-        'budgeted_amount_centavos'  => 'integer',
-        'submitted_at'              => 'datetime',
-        'approved_at'               => 'datetime',
+        'fiscal_year' => 'integer',
+        'budgeted_amount_centavos' => 'integer',
+        'submitted_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     public function costCenter(): BelongsTo

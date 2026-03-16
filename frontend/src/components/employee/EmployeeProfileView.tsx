@@ -3,12 +3,12 @@ import { useLeaveBalances } from '@/hooks/useLeave'
 import { useAttendanceLogs } from '@/hooks/useAttendance'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
-import { 
-  User, 
-  Mail, 
-  MapPin, 
-  Building2, 
-  Briefcase, 
+import {
+  User,
+  Mail,
+  MapPin,
+  Building2,
+  Briefcase,
   Wallet,
   ShieldCheck,
   Calendar,
@@ -18,7 +18,7 @@ import {
   Users,
   Plus,
   FileText,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react'
 import type { Employee } from '@/types/hr'
 
@@ -66,7 +66,7 @@ function formatDate(dateString: string | null | undefined): string {
     return new Date(dateString).toLocaleDateString('en-PH', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })
   } catch {
     return dateString
@@ -97,10 +97,10 @@ function formatDuration(startDate: string | null | undefined): string {
     const years = now.getFullYear() - start.getFullYear()
     const months = now.getMonth() - start.getMonth()
     const totalMonths = years * 12 + months
-    
+
     if (totalMonths < 1) return 'Less than 1 month'
     if (totalMonths < 12) return `${totalMonths} month${totalMonths > 1 ? 's' : ''}`
-    
+
     const y = Math.floor(totalMonths / 12)
     const m = totalMonths % 12
     if (m === 0) return `${y} year${y > 1 ? 's' : ''}`
@@ -114,14 +114,14 @@ function formatDuration(startDate: string | null | undefined): string {
 // Sub-Components
 // ============================================================================
 
-function InfoCard({ 
-  title, 
-  icon: Icon, 
-  children, 
+function InfoCard({
+  title,
+  icon: Icon,
+  children,
   className = '',
   action,
-  emptyState
-}: { 
+  emptyState,
+}: {
   title: string
   icon: React.ElementType
   children: React.ReactNode
@@ -130,9 +130,11 @@ function InfoCard({
   emptyState?: { message: string; action?: React.ReactNode }
 }) {
   const hasContent = children && (Array.isArray(children) ? children.length > 0 : true)
-  
+
   return (
-    <section className={`bg-white border border-neutral-200 rounded-lg overflow-hidden ${className}`}>
+    <section
+      className={`bg-white border border-neutral-200 rounded-lg overflow-hidden ${className}`}
+    >
       <div className="px-5 py-3 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-neutral-500" />
@@ -141,30 +143,30 @@ function InfoCard({
         {action && <div>{action}</div>}
       </div>
       <div className="p-5">
-        {hasContent ? children : (
-          emptyState ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-neutral-400 mb-3">{emptyState.message}</p>
-              {emptyState.action}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-neutral-300">
-              <Icon className="h-10 w-10 mb-2" />
-              <p className="text-sm">No data available</p>
-            </div>
-          )
+        {hasContent ? (
+          children
+        ) : emptyState ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-neutral-400 mb-3">{emptyState.message}</p>
+            {emptyState.action}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-neutral-300">
+            <Icon className="h-10 w-10 mb-2" />
+            <p className="text-sm">No data available</p>
+          </div>
         )}
       </div>
     </section>
   )
 }
 
-function InfoRow({ 
-  label, 
-  value, 
+function InfoRow({
+  label,
+  value,
   highlight = false,
-  icon
-}: { 
+  icon,
+}: {
   label: string
   value: React.ReactNode
   highlight?: boolean
@@ -172,21 +174,27 @@ function InfoRow({
 }) {
   const Icon = icon
   const hasValue = value && value !== '—' && value !== null && value !== undefined
-  
+
   return (
     <div className="flex justify-between items-start py-2.5 border-b border-neutral-100 last:border-0">
       <div className="flex items-center gap-1.5">
         {Icon && <Icon className="h-3.5 w-3.5 text-neutral-400" />}
         <span className="text-xs text-neutral-500">{label}</span>
       </div>
-      <span className={`text-sm text-right ${highlight ? 'font-medium text-neutral-900' : 'text-neutral-700'} ${!hasValue ? 'text-neutral-400 italic' : ''}`}>
+      <span
+        className={`text-sm text-right ${highlight ? 'font-medium text-neutral-900' : 'text-neutral-700'} ${!hasValue ? 'text-neutral-400 italic' : ''}`}
+      >
         {value || '—'}
       </span>
     </div>
   )
 }
 
-function StatCard({ label, value, subtext }: {
+function StatCard({
+  label,
+  value,
+  subtext,
+}: {
   label: string
   value: string | number
   subtext?: string
@@ -206,42 +214,48 @@ function StatCard({ label, value, subtext }: {
 // Main Component
 // ============================================================================
 
-export default function EmployeeProfileView({ 
-  employee, 
+export default function EmployeeProfileView({
+  employee,
   viewContext,
   onBack,
   backLabel = 'Back',
   backTo,
   actions,
-  showStats = true
+  showStats = true,
 }: EmployeeProfileViewProps) {
   const isHR = viewContext === 'hr'
-  
+
   // Fetch leave balances and attendance for both views
   // Date range: 1st of month to last day of month
   const now = new Date()
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
-  
-  const { data: leaveBalancesResponse } = useLeaveBalances({ employee_id: employee.id, year: now.getFullYear(), per_page: 50 })
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    .toISOString()
+    .slice(0, 10)
+
+  const { data: leaveBalancesResponse } = useLeaveBalances({
+    employee_id: employee.id,
+    year: now.getFullYear(),
+    per_page: 50,
+  })
   // The balances endpoint returns paginated EmployeeLeaveBalance rows; since we
   // filter by employee_id there will be at most one entry.
   const employeeLeaveData = leaveBalancesResponse?.data?.[0]
   // Exclude OTH (Others) — discretionary type with no fixed balance row
   const leaveBalanceItems = (employeeLeaveData?.balances ?? []).filter(
-    (b) => b.leave_type_code !== 'OTH'
+    (b) => b.leave_type_code !== 'OTH',
   )
-  const { data: attendanceData } = useAttendanceLogs({ 
+  const { data: attendanceData } = useAttendanceLogs({
     employee_id: employee.id,
     date_from: firstDayOfMonth,
     date_to: lastDayOfMonth,
-    per_page: 31
+    per_page: 31,
   })
 
   // Get initials for avatar
   const initials = employee.full_name
     .split(' ')
-    .map(n => n[0])
+    .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
@@ -251,9 +265,9 @@ export default function EmployeeProfileView({
 
   // Calculate attendance stats
   const attendanceLogs = attendanceData?.data || []
-  const presentDays = attendanceLogs.filter(log => log.is_present).length
-  const absentDays = attendanceLogs.filter(log => log.is_absent).length
-  const lateDays = attendanceLogs.filter(log => (log.late_minutes || 0) > 0).length
+  const presentDays = attendanceLogs.filter((log) => log.is_present).length
+  const absentDays = attendanceLogs.filter((log) => log.is_absent).length
+  const lateDays = attendanceLogs.filter((log) => (log.late_minutes || 0) > 0).length
 
   // Calculate total leave balance from the employee's balance entry
   const totalLeaveBalance = employeeLeaveData?.total_balance ?? 0
@@ -266,7 +280,7 @@ export default function EmployeeProfileView({
       {/* Back Link */}
       <div>
         {backTo ? (
-          <Link 
+          <Link
             to={backTo}
             className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
           >
@@ -293,17 +307,16 @@ export default function EmployeeProfileView({
               {initials}
             </div>
           </div>
-          
+
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold text-neutral-900">{employee.full_name}</h1>
-              <StatusBadge 
-                label={employee.employment_status?.replace('_', ' ') || 'Unknown'} 
-                autoVariant 
-              />
+              <StatusBadge status={employee.employment_status}>
+                {employee.employment_status?.replace('_', ' ') || 'Unknown'}
+              </StatusBadge>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm">
               <span className="font-mono text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded">
                 {employee.employee_code}
@@ -346,37 +359,17 @@ export default function EmployeeProfileView({
           )}
 
           {/* Custom Actions */}
-          {actions && (
-            <div className="flex flex-wrap gap-2">
-              {actions}
-            </div>
-          )}
+          {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </div>
       </div>
 
       {/* Stats Row */}
       {showStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard 
-            label="Present This Month" 
-            value={presentDays} 
-            subtext="Working days"
-          />
-          <StatCard 
-            label="Late Arrivals" 
-            value={lateDays} 
-            subtext="This month"
-          />
-          <StatCard 
-            label="Absences" 
-            value={absentDays} 
-            subtext="This month"
-          />
-          <StatCard 
-            label="Leave Balance" 
-            value={totalLeaveBalance} 
-            subtext="Days available"
-          />
+          <StatCard label="Present This Month" value={presentDays} subtext="Working days" />
+          <StatCard label="Late Arrivals" value={lateDays} subtext="This month" />
+          <StatCard label="Absences" value={absentDays} subtext="This month" />
+          <StatCard label="Leave Balance" value={totalLeaveBalance} subtext="Days available" />
         </div>
       )}
 
@@ -386,9 +379,13 @@ export default function EmployeeProfileView({
         <InfoCard title="Personal Information" icon={User}>
           <div className="space-y-1">
             <InfoRow label="Full Name" value={employee.full_name} highlight />
-            <InfoRow 
-              label="Date of Birth" 
-              value={age ? `${formatDate(employee.date_of_birth)} (${age} years old)` : formatDate(employee.date_of_birth)} 
+            <InfoRow
+              label="Date of Birth"
+              value={
+                age
+                  ? `${formatDate(employee.date_of_birth)} (${age} years old)`
+                  : formatDate(employee.date_of_birth)
+              }
             />
             <InfoRow label="Gender" value={formatGender(employee.gender)} />
             <InfoRow label="Civil Status" value={formatCivilStatus(employee.civil_status)} />
@@ -402,7 +399,7 @@ export default function EmployeeProfileView({
             <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
               <span className="text-xs text-neutral-500">Personal Email</span>
               {employee.personal_email ? (
-                <a 
+                <a
                   href={`mailto:${employee.personal_email}`}
                   className="text-sm text-neutral-700 hover:underline"
                 >
@@ -415,7 +412,7 @@ export default function EmployeeProfileView({
             <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
               <span className="text-xs text-neutral-500">Mobile</span>
               {employee.personal_phone ? (
-                <a 
+                <a
                   href={`tel:${employee.personal_phone}`}
                   className="text-sm text-neutral-700 hover:underline"
                 >
@@ -425,27 +422,31 @@ export default function EmployeeProfileView({
                 <span className="text-sm text-neutral-400 italic">Not provided</span>
               )}
             </div>
-            <InfoRow 
-              label="Present Address" 
+            <InfoRow
+              label="Present Address"
               value={
                 employee.present_address ? (
                   <span className="flex items-start gap-1">
                     <MapPin className="h-3.5 w-3.5 text-neutral-400 mt-0.5 flex-shrink-0" />
                     <span className="line-clamp-2">{employee.present_address}</span>
                   </span>
-                ) : 'Not provided'
-              } 
+                ) : (
+                  'Not provided'
+                )
+              }
             />
-            <InfoRow 
-              label="Permanent Address" 
+            <InfoRow
+              label="Permanent Address"
               value={
                 employee.permanent_address ? (
                   <span className="flex items-start gap-1">
                     <MapPin className="h-3.5 w-3.5 text-neutral-400 mt-0.5 flex-shrink-0" />
                     <span className="line-clamp-2">{employee.permanent_address}</span>
                   </span>
-                ) : 'Not provided'
-              } 
+                ) : (
+                  'Not provided'
+                )
+              }
             />
           </div>
         </InfoCard>
@@ -455,13 +456,13 @@ export default function EmployeeProfileView({
           <div className="space-y-1">
             <InfoRow label="Department" value={employee.department?.name} highlight />
             <InfoRow label="Position" value={employee.position?.title} highlight />
-            <InfoRow 
-              label="Employment Type" 
-              value={employee.employment_type ? statusLabel(employee.employment_type) : null} 
+            <InfoRow
+              label="Employment Type"
+              value={employee.employment_type ? statusLabel(employee.employment_type) : null}
             />
-            <InfoRow 
-              label="Pay Basis" 
-              value={employee.pay_basis === 'monthly' ? 'Monthly (Fixed)' : 'Daily Rate'} 
+            <InfoRow
+              label="Pay Basis"
+              value={employee.pay_basis === 'monthly' ? 'Monthly (Fixed)' : 'Daily Rate'}
             />
             <InfoRow label="Date Hired" value={formatDate(employee.date_hired)} />
             <InfoRow label="Years of Service" value={tenure} />
@@ -479,54 +480,48 @@ export default function EmployeeProfileView({
         </InfoCard>
 
         {/* Compensation */}
-        <InfoCard 
-          title="Compensation & Benefits" 
+        <InfoCard
+          title="Compensation & Benefits"
           icon={Wallet}
-          emptyState={{ 
-            message: employee.salary_grade ? 'Compensation details loading...' : 'Salary grade not assigned',
+          emptyState={{
+            message: employee.salary_grade
+              ? 'Compensation details loading...'
+              : 'Salary grade not assigned',
             action: !employee.salary_grade && isHR && (
-              <Link 
-                to={`/hr/employees/${employee.ulid}/edit`} 
+              <Link
+                to={`/hr/employees/${employee.ulid}/edit`}
                 className="text-sm text-neutral-600 hover:underline inline-flex items-center gap-1"
               >
                 <Plus className="h-4 w-4" />
                 Assign Salary Grade
               </Link>
-            )
+            ),
           }}
         >
           {employee.salary_grade && (
             <div className="space-y-1">
-              <InfoRow 
-                label="Salary Grade" 
-                value={employee.salary_grade.code} 
-              />
-              <InfoRow 
-                label="Step" 
-                value={employee.salary_grade.name} 
-              />
+              <InfoRow label="Salary Grade" value={employee.salary_grade.code} />
+              <InfoRow label="Step" value={employee.salary_grade.name} />
               <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
                 <span className="text-xs text-neutral-500">Basic Monthly</span>
                 <span className="text-sm font-medium text-neutral-900">
                   {employee.basic_monthly_rate ? (
                     <CurrencyAmount centavos={employee.basic_monthly_rate} />
-                  ) : '—'}
+                  ) : (
+                    '—'
+                  )}
                 </span>
               </div>
               <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
                 <span className="text-xs text-neutral-500">Basic Daily</span>
                 <span className="text-sm text-neutral-700">
-                  {employee.daily_rate ? (
-                    <CurrencyAmount centavos={employee.daily_rate} />
-                  ) : '—'}
+                  {employee.daily_rate ? <CurrencyAmount centavos={employee.daily_rate} /> : '—'}
                 </span>
               </div>
               <div className="flex justify-between items-start py-2.5 border-b border-neutral-100">
                 <span className="text-xs text-neutral-500">Basic Hourly</span>
                 <span className="text-sm text-neutral-700">
-                  {employee.hourly_rate ? (
-                    <CurrencyAmount centavos={employee.hourly_rate} />
-                  ) : '—'}
+                  {employee.hourly_rate ? <CurrencyAmount centavos={employee.hourly_rate} /> : '—'}
                 </span>
               </div>
             </div>
@@ -534,20 +529,20 @@ export default function EmployeeProfileView({
         </InfoCard>
 
         {/* Government IDs & Bank Information - Combined */}
-        <InfoCard 
-          title="Government IDs & Bank Information" 
+        <InfoCard
+          title="Government IDs & Bank Information"
           icon={ShieldCheck}
-          emptyState={{ 
+          emptyState={{
             message: 'No government or bank information recorded',
             action: isHR && (
-              <Link 
-                to={`/hr/employees/${employee.ulid}/edit`} 
+              <Link
+                to={`/hr/employees/${employee.ulid}/edit`}
                 className="text-sm text-neutral-600 hover:underline inline-flex items-center gap-1"
               >
                 <Plus className="h-4 w-4" />
                 Add Information
               </Link>
-            )
+            ),
           }}
         >
           <div className="space-y-4">
@@ -558,66 +553,98 @@ export default function EmployeeProfileView({
                 {isHR ? (
                   // HR View - Show On file / Missing badges
                   <>
-                    <InfoRow 
-                      label="SSS No." 
+                    <InfoRow
+                      label="SSS No."
                       value={
                         employee.has_sss_no ? (
-                          <StatusBadge label="On file" variant="success" />
+                          <StatusBadge status="active">On file</StatusBadge>
                         ) : (
                           <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
-                      } 
+                      }
                     />
-                    <InfoRow 
-                      label="PhilHealth" 
+                    <InfoRow
+                      label="PhilHealth"
                       value={
                         employee.has_philhealth_no ? (
-                          <StatusBadge label="On file" variant="success" />
+                          <StatusBadge status="active">On file</StatusBadge>
                         ) : (
                           <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
-                      } 
+                      }
                     />
-                    <InfoRow 
-                      label="Pag-IBIG" 
+                    <InfoRow
+                      label="Pag-IBIG"
                       value={
                         employee.has_pagibig_no ? (
-                          <StatusBadge label="On file" variant="success" />
+                          <StatusBadge status="active">On file</StatusBadge>
                         ) : (
                           <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
-                      } 
+                      }
                     />
-                    <InfoRow 
-                      label="TIN" 
+                    <InfoRow
+                      label="TIN"
                       value={
                         employee.has_tin ? (
-                          <StatusBadge label="On file" variant="success" />
+                          <StatusBadge status="active">On file</StatusBadge>
                         ) : (
                           <span className="text-neutral-400 italic text-xs">Not recorded</span>
                         )
-                      } 
+                      }
                     />
                     <InfoRow label="BIR Status" value={employee.bir_status ?? '—'} />
                   </>
                 ) : (
                   // Team View - Show Registered badges
                   <>
-                    <InfoRow 
-                      label="SSS" 
-                      value={employee.has_sss_no ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
+                    <InfoRow
+                      label="SSS"
+                      value={
+                        employee.has_sss_no ? (
+                          <span className="text-neutral-700 flex items-center gap-1">
+                            <BadgeCheck className="h-3.5 w-3.5" /> Registered
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
+                        )
+                      }
                     />
-                    <InfoRow 
-                      label="PhilHealth" 
-                      value={employee.has_philhealth_no ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
+                    <InfoRow
+                      label="PhilHealth"
+                      value={
+                        employee.has_philhealth_no ? (
+                          <span className="text-neutral-700 flex items-center gap-1">
+                            <BadgeCheck className="h-3.5 w-3.5" /> Registered
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
+                        )
+                      }
                     />
-                    <InfoRow 
-                      label="Pag-IBIG" 
-                      value={employee.has_pagibig_no ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
+                    <InfoRow
+                      label="Pag-IBIG"
+                      value={
+                        employee.has_pagibig_no ? (
+                          <span className="text-neutral-700 flex items-center gap-1">
+                            <BadgeCheck className="h-3.5 w-3.5" /> Registered
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
+                        )
+                      }
                     />
-                    <InfoRow 
-                      label="TIN" 
-                      value={employee.has_tin ? <span className="text-neutral-700 flex items-center gap-1"><BadgeCheck className="h-3.5 w-3.5" /> Registered</span> : <span className="text-neutral-400 italic text-xs">Not recorded</span>} 
+                    <InfoRow
+                      label="TIN"
+                      value={
+                        employee.has_tin ? (
+                          <span className="text-neutral-700 flex items-center gap-1">
+                            <BadgeCheck className="h-3.5 w-3.5" /> Registered
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400 italic text-xs">Not recorded</span>
+                        )
+                      }
                     />
                   </>
                 )}
@@ -631,9 +658,16 @@ export default function EmployeeProfileView({
             <div>
               <p className="text-xs font-medium text-neutral-500 mb-2">Bank Information</p>
               <div className="space-y-1">
-                <InfoRow label="Bank Name" value={employee.bank_name ?? <span className="text-neutral-400 italic text-xs">Not recorded</span>} />
-                <InfoRow 
-                  label="Account Number" 
+                <InfoRow
+                  label="Bank Name"
+                  value={
+                    employee.bank_name ?? (
+                      <span className="text-neutral-400 italic text-xs">Not recorded</span>
+                    )
+                  }
+                />
+                <InfoRow
+                  label="Account Number"
                   value={
                     employee.bank_account_no ? (
                       <span className="font-mono text-sm">
@@ -642,7 +676,7 @@ export default function EmployeeProfileView({
                     ) : (
                       <span className="text-neutral-400 italic text-xs">Not recorded</span>
                     )
-                  } 
+                  }
                 />
               </div>
             </div>
@@ -664,8 +698,8 @@ export default function EmployeeProfileView({
         </InfoCard>
 
         {/* Leave Balances */}
-        <InfoCard 
-          title="Leave Balances" 
+        <InfoCard
+          title="Leave Balances"
           icon={Calendar}
           action={<span className="text-xs text-neutral-500">{new Date().getFullYear()}</span>}
           emptyState={{ message: 'No leave balances found for this year' }}
@@ -674,15 +708,22 @@ export default function EmployeeProfileView({
             <div className="space-y-2.5">
               {leaveBalanceItems.map((balance) => {
                 // Total entitlement = opening + accrued + adjusted
-                const totalEntitlement = balance.opening_balance + balance.accrued + balance.adjusted
-                const pct = totalEntitlement > 0
-                  ? Math.min((balance.balance / totalEntitlement) * 100, 100)
-                  : balance.balance > 0 ? 100 : 0
+                const totalEntitlement =
+                  balance.opening_balance + balance.accrued + balance.adjusted
+                const pct =
+                  totalEntitlement > 0
+                    ? Math.min((balance.balance / totalEntitlement) * 100, 100)
+                    : balance.balance > 0
+                      ? 100
+                      : 0
                 const _isEmpty = balance.balance <= 0 && totalEntitlement > 0
                 const isEventBased = totalEntitlement === 0
 
                 return (
-                  <div key={balance.leave_type_id} className="py-2 border-b border-neutral-100 last:border-0">
+                  <div
+                    key={balance.leave_type_id}
+                    className="py-2 border-b border-neutral-100 last:border-0"
+                  >
                     <div className="flex justify-between items-center mb-1.5">
                       <span className="text-sm text-neutral-700">{balance.leave_type_name}</span>
                       <div className="flex items-baseline gap-0.5">
@@ -693,7 +734,9 @@ export default function EmployeeProfileView({
                             <span className="text-sm font-medium text-neutral-900">
                               {balance.balance}
                             </span>
-                            <span className="text-xs text-neutral-400">/{totalEntitlement} days</span>
+                            <span className="text-xs text-neutral-400">
+                              /{totalEntitlement} days
+                            </span>
                           </>
                         )}
                       </div>
@@ -707,7 +750,9 @@ export default function EmployeeProfileView({
                       </div>
                     )}
                     {balance.used > 0 && (
-                      <p className="text-[11px] text-neutral-400 mt-0.5">{balance.used} day{balance.used !== 1 ? 's' : ''} used</p>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                        {balance.used} day{balance.used !== 1 ? 's' : ''} used
+                      </p>
                     )}
                   </div>
                 )
@@ -717,15 +762,16 @@ export default function EmployeeProfileView({
         </InfoCard>
 
         {/* Recent Attendance */}
-        <InfoCard 
-          title="Recent Attendance" 
+        <InfoCard
+          title="Recent Attendance"
           icon={Clock}
           action={
-            <Link 
-              to={isHR 
-                ? `/hr/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}` 
-                : `/team/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}`
-              } 
+            <Link
+              to={
+                isHR
+                  ? `/hr/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}`
+                  : `/team/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}`
+              }
               className="text-xs text-neutral-600 hover:underline"
             >
               View All
@@ -736,17 +782,29 @@ export default function EmployeeProfileView({
           {attendanceLogs.length > 0 && (
             <div className="space-y-2">
               {attendanceLogs.slice(0, 5).map((log) => (
-                <div key={log.id} className="flex justify-between items-center py-2 border-b border-neutral-100 last:border-0">
+                <div
+                  key={log.id}
+                  className="flex justify-between items-center py-2 border-b border-neutral-100 last:border-0"
+                >
                   <span className="text-sm text-neutral-600">
-                    {new Date(log.work_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
+                    {new Date(log.work_date).toLocaleDateString('en-PH', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
                   </span>
                   <div className="flex items-center gap-2">
                     {log.is_absent ? (
-                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">Absent</span>
+                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">
+                        Absent
+                      </span>
                     ) : log.late_minutes > 0 ? (
-                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">Late ({log.late_minutes}m)</span>
+                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">
+                        Late ({log.late_minutes}m)
+                      </span>
                     ) : (
-                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">Present</span>
+                      <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-700 rounded">
+                        Present
+                      </span>
                     )}
                     {log.time_in && (
                       <span className="text-xs text-neutral-500">
@@ -761,41 +819,42 @@ export default function EmployeeProfileView({
         </InfoCard>
 
         {/* Reporting Structure */}
-        <InfoCard 
-          title="Reporting Structure" 
+        <InfoCard
+          title="Reporting Structure"
           icon={Users}
-          emptyState={{ 
+          emptyState={{
             message: 'No supervisor assigned',
             action: !hasSupervisor && isHR && (
-              <Link 
-                to={`/hr/employees/${employee.ulid}/edit`} 
+              <Link
+                to={`/hr/employees/${employee.ulid}/edit`}
                 className="text-sm text-neutral-600 hover:underline inline-flex items-center gap-1"
               >
                 <Plus className="h-4 w-4" />
                 Assign Supervisor
               </Link>
-            )
+            ),
           }}
         >
           {hasSupervisor && (
             <div className="space-y-1">
-              <InfoRow 
-                label="Immediate Supervisor" 
+              <InfoRow
+                label="Immediate Supervisor"
                 value={
-                  <Link 
-                    to={isHR ? `/hr/employees/${employee.supervisor!.ulid}` : `/team/employees/${employee.supervisor!.ulid}`}
+                  <Link
+                    to={
+                      isHR
+                        ? `/hr/employees/${employee.supervisor!.ulid}`
+                        : `/team/employees/${employee.supervisor!.ulid}`
+                    }
                     className="text-neutral-700 hover:underline flex items-center gap-1"
                   >
                     <UserCircle className="h-3.5 w-3.5" />
                     {employee.supervisor!.full_name}
                   </Link>
-                } 
-                highlight 
+                }
+                highlight
               />
-              <InfoRow 
-                label="Employee Code" 
-                value={employee.supervisor!.employee_code} 
-              />
+              <InfoRow label="Employee Code" value={employee.supervisor!.employee_code} />
             </div>
           )}
         </InfoCard>

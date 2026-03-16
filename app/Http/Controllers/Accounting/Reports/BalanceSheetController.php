@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Accounting\Reports;
 
+use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Accounting\Services\BalanceSheetService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\FinancialStatementRequest;
@@ -23,7 +24,7 @@ final class BalanceSheetController extends Controller
 
     public function __invoke(FinancialStatementRequest $request): BalanceSheetResource
     {
-        $this->authorize('viewAny', \App\Domains\Accounting\Models\JournalEntry::class);
+        $this->authorize('viewAny', JournalEntry::class);
 
         $comparativeDate = $request->validated('comparative_date')
             ? Carbon::parse($request->validated('comparative_date'))

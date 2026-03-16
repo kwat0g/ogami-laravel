@@ -9,6 +9,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Carbon;
 
 /**
  * Sent to the Accounting Manager when HR submits a payroll run for approval.
@@ -39,7 +40,7 @@ final class PayrollSubmittedNotification extends Notification implements ShouldQ
                 $this->run->reference_no,
                 $this->run->pay_period_label,
                 $this->run->pay_date
-                    ? \Illuminate\Support\Carbon::parse($this->run->pay_date)->toFormattedDateString()
+                    ? Carbon::parse($this->run->pay_date)->toFormattedDateString()
                     : 'TBD',
             ),
             'action_url' => "/payroll/runs/{$this->run->ulid}",

@@ -1,6 +1,24 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Parameter \#3 \$second of method Illuminate\\Database\\Eloquent\\Builder\<App\\Domains\\AR\\Models\\CustomerInvoice\>\:\:whereColumn\(\) expects string\|null, Illuminate\\Contracts\\Database\\Query\\Expression given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/CheckOverdueArInvoicesCommand.php
+
+		-
+			message: '#^Parameter \#1 \$item of class App\\Notifications\\Inventory\\LowStockNotification constructor expects App\\Domains\\Inventory\\Models\\ItemMaster, int\<0, max\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/CheckReorderPointsCommand.php
+
+		-
+			message: '#^Parameter \#2 \$currentBalance of class App\\Notifications\\Inventory\\LowStockNotification constructor expects float, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/CheckReorderPointsCommand.php
+
+		-
 			message: '#^Left side of && is always true\.$#'
 			identifier: booleanAnd.leftAlwaysTrue
 			count: 2
@@ -97,12 +115,6 @@ parameters:
 			path: app/Domains/AP/Services/VendorInvoiceService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rate\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/AP/Services/VendorInvoiceService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasTin\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -145,6 +157,7 @@ parameters:
 				  vat_exemption_reason\?\: string,
 				  description\?\: string,
 				  bypass_credit_check\?\: bool,  AR\-002 flag — must be separately authorized
+				  delivery_receipt_id\?\: int,   HIGH\-001\: Link to delivery receipt
 				\} \$data\)\: Unexpected token "flag", expected '\}' at offset 349 on line 12$#
 			'''
 			identifier: phpDoc.parseError
@@ -294,12 +307,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: app/Domains/HR/Services/EmployeeService.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domains/ISO/Services/ISOService.php
 
 		-
 			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\InternalAudit\:\:\$status\.$#'
@@ -646,7 +653,7 @@ parameters:
 		-
 			message: '#^Class App\\Shared\\Exceptions\\SodViolationException constructor invoked with 1 parameter, 2\-3 required\.$#'
 			identifier: arguments.count
-			count: 2
+			count: 3
 			path: app/Domains/Payroll/Services/PayrollWorkflowService.php
 
 		-
@@ -657,6 +664,12 @@ parameters:
 
 		-
 			message: '#^Property App\\Domains\\Payroll\\Models\\PayrollRun\:\:\$publish_scheduled_at \(Illuminate\\Support\\Carbon\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Domains/Payroll/Services/PayrollWorkflowService.php
+
+		-
+			message: '#^Property App\\Domains\\Payroll\\Models\\PayrollRun\:\:\$vp_approved_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
 			identifier: assign.propertyType
 			count: 1
 			path: app/Domains/Payroll/Services/PayrollWorkflowService.php
@@ -680,10 +693,46 @@ parameters:
 			path: app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php
 
 		-
+			message: '#^Property App\\Domains\\Payroll\\Models\\PayrollRun\:\:\$vp_approved_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Domains/Payroll/StateMachines/PayrollRunStateMachine.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Domains/Procurement/Services/PurchaseOrderService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>payment_terms" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Domains/Procurement/Services/PurchaseOrderService.php
+
+		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$filters$#'
 			identifier: parameter.notFound
 			count: 1
 			path: app/Domains/Production/Services/BomService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:components\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Domains/Production/Services/ProductionOrderService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Domains/Production/Services/ProductionOrderService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between int and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Domains/Production/Services/ProductionOrderService.php
 
 		-
 			message: '#^Method App\\Domains\\QC\\Models\\Inspection\:\:inspector\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\User, \$this\(App\\Domains\\QC\\Models\\Inspection\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Domains\\HR\\Models\\Employee, \$this\(App\\Domains\\QC\\Models\\Inspection\)\>\.$#'
@@ -944,6 +993,18 @@ parameters:
 			path: app/Http/Controllers/Employee/EmployeeSelfServiceController.php
 
 		-
+			message: '#^Access to an undefined property App\\Domains\\FixedAssets\\Models\\AssetDisposal\:\:\$disposal_amount_centavos\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/FixedAssets/FixedAssetController.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/FixedAssets/FixedAssetController.php
+
+		-
 			message: '#^Access to an undefined property App\\Domains\\Leave\\Models\\LeaveRequest\:\:\$leave_days\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1112,25 +1173,7 @@ parameters:
 			path: app/Http/Resources/AP/VendorInvoiceResource.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$atc_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/AP/VendorResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/AP/VendorResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/AP/VendorResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rate\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/AP/VendorResource.php
@@ -1386,6 +1429,30 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/Delivery/ShipmentResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Resources/FixedAssets/FixedAssetCategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\FixedAssets\\FixedAssetResource\:\:\$depreciation_start_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/FixedAssets/FixedAssetResource.php
+
+		-
+			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{id\: int, fiscal_period_id\: int, fiscal_period\: string\|null, depreciation_amount_centavos\: int, depreciation_amount\: \(float\|int\), book_value_after_centavos\: int, book_value_after\: \(float\|int\), posted_at\: string\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, fiscal_period_id\: int, fiscal_period\: string\|null, depreciation_amount_centavos\: int, depreciation_amount\: \(float\|int\), book_value_after_centavos\: int, book_value_after\: \(float\|int\), posted_at\: string\|null\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Resources/FixedAssets/FixedAssetResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Http/Resources/FixedAssets/FixedAssetResource.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -1760,6 +1827,102 @@ parameters:
 			path: app/Http/Resources/Maintenance/EquipmentResource.php
 
 		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$issued_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$issued_by_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$item\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$item_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$location\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$location_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$maintenance_work_order_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$quantity_issued\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$quantity_returned\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$total_cost_centavos\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$unit_cost_centavos\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderPartResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
+			message: '#^PHPDoc tag @mixin contains unknown class App\\Domains\\Maintenance\\Models\\MaintenanceWorkOrderPart\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderPartResource.php
+
+		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\Maintenance\\MaintenanceWorkOrderResource\:\:\$assignedTo\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1866,6 +2029,18 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/Maintenance/MaintenanceWorkOrderResource.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Resources/Maintenance/PmScheduleResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Resources/Maintenance/PmScheduleResource.php
 
 		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\Mold\\MoldMasterResource\:\:\$cavity_count\.$#'
@@ -2534,22 +2709,10 @@ parameters:
 			path: app/Listeners/Inventory/LinkGoodsReceiptToInventory.php
 
 		-
-			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$description\.$#'
-			identifier: property.notFound
+			message: '#^Parameter \#2 \$amount of method App\\Domains\\Inventory\\Models\\StockBalance\:\:increment\(\) expects float\|int, string given\.$#'
+			identifier: argument.type
 			count: 1
-			path: app/Listeners/QC/CreateCapaOnAuditFinding.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$raised_by_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/QC/CreateCapaOnAuditFinding.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\AuditFinding\:\:\$severity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Listeners/QC/CreateCapaOnAuditFinding.php
+			path: app/Listeners/UpdateStockOnThreeWayMatch.php
 
 		-
 			message: '#^Method App\\Models\\User\:\:getEffectivePermissions\(\) should return Illuminate\\Support\\Collection\<int, string\> but returns Illuminate\\Support\\Collection\<int, TValue\>\.$#'
@@ -2561,6 +2724,18 @@ parameters:
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
 			count: 1
+			path: app/Notifications/Budget/BudgetApprovedNotification.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Notifications/Budget/BudgetSubmittedNotification.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
 			path: app/Notifications/LeaveDecidedNotification.php
 
 		-
@@ -2580,12 +2755,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Notifications/LeaveFiledNotification.php
-
-		-
-			message: '#^Access to an undefined property App\\Domains\\Procurement\\Models\\PurchaseOrder\:\:\$po_number\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Notifications/Procurement/PurchaseOrderSentNotification.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

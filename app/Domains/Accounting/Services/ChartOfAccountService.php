@@ -7,6 +7,7 @@ namespace App\Domains\Accounting\Services;
 use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -139,7 +140,7 @@ final class ChartOfAccountService implements ServiceContract
     /**
      * Returns the full COA tree as a nested collection (for tree-view rendering).
      */
-    public function treeFor(?int $parentId = null): \Illuminate\Support\Collection
+    public function treeFor(?int $parentId = null): Collection
     {
         return ChartOfAccount::where('parent_id', $parentId)
             ->whereNull('deleted_at')

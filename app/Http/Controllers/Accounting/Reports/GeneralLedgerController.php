@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Accounting\Reports;
 
+use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Accounting\Services\GeneralLedgerService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\GeneralLedgerRequest;
@@ -23,7 +24,7 @@ final class GeneralLedgerController extends Controller
 
     public function __invoke(GeneralLedgerRequest $request): GeneralLedgerResource
     {
-        $this->authorize('viewAny', \App\Domains\Accounting\Models\JournalEntry::class);
+        $this->authorize('viewAny', JournalEntry::class);
 
         $report = $this->glService->generate(
             accountId: (int) $request->validated('account_id'),

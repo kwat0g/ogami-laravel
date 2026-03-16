@@ -11,7 +11,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 final class DeliveryScheduleService implements ServiceContract
 {
     /**
-     * @param array<string,mixed> $filters
+     * @param  array<string,mixed>  $filters
      */
     public function paginate(array $filters = []): LengthAwarePaginator
     {
@@ -50,12 +50,12 @@ final class DeliveryScheduleService implements ServiceContract
     {
         /** @var DeliverySchedule $ds */
         $ds = DeliverySchedule::create([
-            'customer_id'          => $data['customer_id'],
-            'product_item_id'      => $data['product_item_id'],
-            'qty_ordered'          => $data['qty_ordered'],
+            'customer_id' => $data['customer_id'],
+            'product_item_id' => $data['product_item_id'],
+            'qty_ordered' => $data['qty_ordered'],
             'target_delivery_date' => $data['target_delivery_date'],
-            'type'                 => $data['type']  ?? 'local',
-            'notes'                => $data['notes'] ?? null,
+            'type' => $data['type'] ?? 'local',
+            'notes' => $data['notes'] ?? null,
         ]);
 
         return $ds->load('customer', 'productItem');
@@ -65,11 +65,11 @@ final class DeliveryScheduleService implements ServiceContract
     public function update(DeliverySchedule $ds, array $data): DeliverySchedule
     {
         $ds->update(array_filter([
-            'qty_ordered'          => $data['qty_ordered']          ?? null,
+            'qty_ordered' => $data['qty_ordered'] ?? null,
             'target_delivery_date' => $data['target_delivery_date'] ?? null,
-            'type'                 => $data['type']                 ?? null,
-            'status'               => $data['status']               ?? null,
-            'notes'                => $data['notes']                ?? null,
+            'type' => $data['type'] ?? null,
+            'status' => $data['status'] ?? null,
+            'notes' => $data['notes'] ?? null,
         ], fn ($v) => $v !== null));
 
         return $ds->refresh();

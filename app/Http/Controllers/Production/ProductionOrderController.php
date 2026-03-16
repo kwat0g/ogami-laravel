@@ -55,7 +55,7 @@ final class ProductionOrderController extends Controller
         $options = [];
         if ($request->boolean('force_release')) {
             // PROD-002: Only users with production.qc-override can force-release
-            if (!$request->user()?->can('production.qc-override')) {
+            if (! $request->user()?->can('production.qc-override')) {
                 abort(403, 'You do not have permission to override QC blocks.');
             }
             $options['force_release'] = true;

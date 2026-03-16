@@ -7,7 +7,18 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, ArrowRight, Users, Minus, Plus, Loader2, Ban, Search, X, Info } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Users,
+  Minus,
+  Plus,
+  Loader2,
+  Ban,
+  Search,
+  X,
+  Info,
+} from 'lucide-react'
 import {
   usePayrollRun,
   useScopePreview,
@@ -20,11 +31,11 @@ import { useEmployeeSearch } from '@/hooks/useEmployees'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 
 const EMPLOYMENT_TYPES = [
-  { value: 'regular',      label: 'Regular' },
+  { value: 'regular', label: 'Regular' },
   { value: 'probationary', label: 'Probationary' },
-  { value: 'contractual',  label: 'Contractual' },
+  { value: 'contractual', label: 'Contractual' },
   { value: 'project_based', label: 'Project-Based' },
-  { value: 'casual',       label: 'Casual' },
+  { value: 'casual', label: 'Casual' },
 ]
 
 // ── Employee Search Dropdown Component ───────────────────────────────────────
@@ -35,13 +46,17 @@ interface EmployeeSearchDropdownProps {
   excludedIds: number[]
 }
 
-function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: EmployeeSearchDropdownProps) {
+function EmployeeSearchDropdown({
+  selectedEmployee,
+  onSelect,
+  excludedIds,
+}: EmployeeSearchDropdownProps) {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  
+
   const { data: employees, isLoading } = useEmployeeSearch(query, isOpen)
-  
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,27 +67,29 @@ function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: Emp
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-  
-  const filteredEmployees = employees?.filter(emp => !excludedIds.includes(emp.id)) || []
-  
+
+  const filteredEmployees = employees?.filter((emp) => !excludedIds.includes(emp.id)) || []
+
   const handleSelect = (employee: { id: number; full_name: string; employee_code: string }) => {
     onSelect(employee)
     setQuery('')
     setIsOpen(false)
   }
-  
+
   const handleClear = () => {
     onSelect({ id: 0, full_name: '', employee_code: '' })
     setQuery('')
   }
-  
+
   return (
     <div ref={containerRef} className="relative flex-1">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
         <input
           type="text"
-          placeholder={selectedEmployee ? selectedEmployee.full_name : "Search by surname or name..."}
+          placeholder={
+            selectedEmployee ? selectedEmployee.full_name : 'Search by surname or name...'
+          }
           value={selectedEmployee ? selectedEmployee.full_name : query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -90,7 +107,7 @@ function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: Emp
           </button>
         )}
       </div>
-      
+
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-neutral-200 rounded  max-h-60 overflow-y-auto">
           {isLoading ? (
@@ -102,9 +119,7 @@ function EmployeeSearchDropdown({ selectedEmployee, onSelect, excludedIds }: Emp
               Type at least 2 characters to search
             </div>
           ) : filteredEmployees.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-neutral-500">
-              No employees found
-            </div>
+            <div className="px-4 py-3 text-sm text-neutral-500">No employees found</div>
           ) : (
             filteredEmployees.map((emp) => (
               <button
@@ -136,91 +151,120 @@ export default function PayrollRunScopePage() {
   const { data: run, isLoading: runLoading } = usePayrollRun(runId)
 
   // ── Scope filter state ────────────────────────────────────────────────────
-  const [departments,        setDepartments]        = useState<number[]>([])
-  const [positions,          _setPositions]         = useState<number[]>([])
-  const [employmentTypes,    setEmploymentTypes]    = useState<string[]>(['regular', 'probationary', 'contractual', 'project_based', 'casual'])
+  const [departments, setDepartments] = useState<number[]>([])
+  const [positions, _setPositions] = useState<number[]>([])
+  const [employmentTypes, setEmploymentTypes] = useState<string[]>([
+    'regular',
+    'probationary',
+    'contractual',
+    'project_based',
+    'casual',
+  ])
   const [includeUnpaidLeave, setIncludeUnpaidLeave] = useState(false)
   const [includeProbationEnd, setIncludeProbationEnd] = useState(false)
+  const [excludeNoAttendance, setExcludeNoAttendance] = useState(false)
 
   // ── New manual exclusion form ─────────────────────────────────────────────
-  const [selectedEmployee, setSelectedEmployee] = useState<{ id: number; full_name: string; employee_code: string } | null>(null)
-  const [exclReason,     setExclReason]     = useState('')
+  const [selectedEmployee, setSelectedEmployee] = useState<{
+    id: number
+    full_name: string
+    employee_code: string
+  } | null>(null)
+  const [exclReason, setExclReason] = useState('')
 
   // Pre-populate from existing run scope if re-entering
   useEffect(() => {
     if (!run) return
     if (run.scope_employment_types?.length) setEmploymentTypes(run.scope_employment_types)
-    if (run.scope_departments?.length)      setDepartments(run.scope_departments)
+    if (run.scope_departments?.length) setDepartments(run.scope_departments)
     setIncludeUnpaidLeave(run.scope_include_unpaid_leave ?? false)
     setIncludeProbationEnd(run.scope_include_probation_end ?? false)
+    setExcludeNoAttendance(run.scope_exclude_no_attendance ?? false)
   }, [run])
 
   // ── Live preview ──────────────────────────────────────────────────────────
   const previewFilters = {
-    departments:          departments.length  ? departments  : undefined,
-    positions:            positions.length    ? positions    : undefined,
-    employment_types:     employmentTypes,
+    departments: departments.length ? departments : undefined,
+    positions: positions.length ? positions : undefined,
+    employment_types: employmentTypes,
     include_unpaid_leave: includeUnpaidLeave,
     include_probation_end: includeProbationEnd,
+    exclude_no_attendance: excludeNoAttendance,
   }
 
-  const { data: preview, isFetching: previewLoading } = useScopePreview(runId, previewFilters, !runLoading)
+  const { data: preview, isFetching: previewLoading } = useScopePreview(
+    runId,
+    previewFilters,
+    !runLoading,
+  )
 
   // ── Mutations ─────────────────────────────────────────────────────────────
-  const confirmScope   = useConfirmScope(runId)
-  const addExclusion   = useAddExclusion(runId)
+  const confirmScope = useConfirmScope(runId)
+  const addExclusion = useAddExclusion(runId)
   const removeExclusion = useRemoveExclusion(runId)
-  const cancelRun      = useCancelPayrollRun(runId)
+  const cancelRun = useCancelPayrollRun(runId)
 
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [showMissingBankConfirm, setShowMissingBankConfirm] = useState(false)
 
   // ── Auto-excluded employees (missing bank account) ──────────────────────────
   const autoExcludedIdsRef = useRef<Set<number>>(new Set())
-  const [autoExcludedEmployees, setAutoExcludedEmployees] = useState<Array<{ id: number; full_name: string; employee_code: string; department_name: string }>>([])
+  const [autoExcludedEmployees, setAutoExcludedEmployees] = useState<
+    Array<{ id: number; full_name: string; employee_code: string; department_name: string }>
+  >([])
 
   // ── Auto-exclude employees without bank accounts on preview load ─────────────
   useEffect(() => {
     const missing = preview?.missing_bank_employees ?? []
     if (missing.length === 0) return
-    const toAdd = missing.filter(emp => !autoExcludedIdsRef.current.has(emp.id))
+    const toAdd = missing.filter((emp) => !autoExcludedIdsRef.current.has(emp.id))
     if (toAdd.length === 0) return
-    toAdd.forEach(emp => autoExcludedIdsRef.current.add(emp.id))
-    setAutoExcludedEmployees(prev => {
-      const existingIds = new Set(prev.map(e => e.id))
-      return [...prev, ...toAdd.filter(e => !existingIds.has(e.id))]
+    toAdd.forEach((emp) => autoExcludedIdsRef.current.add(emp.id))
+    setAutoExcludedEmployees((prev) => {
+      const existingIds = new Set(prev.map((e) => e.id))
+      return [...prev, ...toAdd.filter((e) => !existingIds.has(e.id))]
     })
     void Promise.allSettled(
-      toAdd.map(emp =>
-        addExclusion.mutateAsync({ employee_id: emp.id, reason: 'Missing bank account number' })
-      )
-    ).then(results => {
-      const failed = results.filter(r => r.status === 'rejected').length
+      toAdd.map((emp) =>
+        addExclusion.mutateAsync({ employee_id: emp.id, reason: 'Missing bank account number' }),
+      ),
+    ).then((results) => {
+      const failed = results.filter((r) => r.status === 'rejected').length
       if (failed === 0) {
-        toast.success(`${toAdd.length} employee${toAdd.length !== 1 ? 's' : ''} automatically excluded (no bank account).`)
+        toast.success(
+          `${toAdd.length} employee${toAdd.length !== 1 ? 's' : ''} automatically excluded (no bank account).`,
+        )
       } else {
         toast.warning(`${toAdd.length - failed} employees auto-excluded; ${failed} failed.`)
       }
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preview?.missing_bank_employees])
 
   // Redirect if run is past SCOPE_SET already
   useEffect(() => {
     if (!run) return
-    if (run.status === 'PRE_RUN_CHECKED' || run.status === 'PROCESSING' || run.status === 'COMPUTED') {
+    if (
+      run.status === 'PRE_RUN_CHECKED' ||
+      run.status === 'PROCESSING' ||
+      run.status === 'COMPUTED'
+    ) {
       navigate(`/payroll/runs/${runId}/validate`)
     }
   }, [run, runId, navigate])
 
   if (runLoading) {
-    return <div className="flex items-center gap-2 text-sm text-neutral-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+    return (
+      <div className="flex items-center gap-2 text-sm text-neutral-500">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+      </div>
+    )
   }
   if (!run) return <div className="text-red-500 text-sm">Payroll run not found.</div>
 
   function toggleEmploymentType(val: string) {
-    setEmploymentTypes(prev =>
-      prev.includes(val) ? prev.filter(e => e !== val) : [...prev, val]
+    setEmploymentTypes((prev) =>
+      prev.includes(val) ? prev.filter((e) => e !== val) : [...prev, val],
     )
   }
 
@@ -238,7 +282,10 @@ export default function PayrollRunScopePage() {
       return
     }
     try {
-      await addExclusion.mutateAsync({ employee_id: selectedEmployee.id, reason: exclReason.trim() })
+      await addExclusion.mutateAsync({
+        employee_id: selectedEmployee.id,
+        reason: exclReason.trim(),
+      })
       setSelectedEmployee(null)
       setExclReason('')
       toast.success('Exclusion added.')
@@ -259,11 +306,12 @@ export default function PayrollRunScopePage() {
   async function doConfirmScope() {
     try {
       await confirmScope.mutateAsync({
-        departments:            departments.length ? departments : undefined,
-        positions:              positions.length   ? positions   : undefined,
-        employment_types:       employmentTypes,
-        include_unpaid_leave:   includeUnpaidLeave,
-        include_probation_end:  includeProbationEnd,
+        departments: departments.length ? departments : undefined,
+        positions: positions.length ? positions : undefined,
+        employment_types: employmentTypes,
+        include_unpaid_leave: includeUnpaidLeave,
+        include_probation_end: includeProbationEnd,
+        exclude_no_attendance: excludeNoAttendance,
       })
       toast.success('Scope confirmed.')
       navigate(`/payroll/runs/${runId}/validate`)
@@ -298,7 +346,7 @@ export default function PayrollRunScopePage() {
   const exclusions = run?.exclusions ?? []
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate('/payroll/runs')}
@@ -345,7 +393,6 @@ export default function PayrollRunScopePage() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {/* ── Left: Scope Filters ── */}
         <div className="lg:col-span-2 space-y-5">
           <div className="bg-white border border-neutral-200 rounded p-5 space-y-5">
@@ -356,11 +403,14 @@ export default function PayrollRunScopePage() {
               <p className="text-sm font-medium text-neutral-700 mb-2">Employment Types</p>
               <div className="flex flex-wrap gap-2">
                 {EMPLOYMENT_TYPES.map(({ value, label }) => (
-                  <label key={value} className={`flex items-center gap-2 px-3 py-1.5 rounded border text-sm cursor-pointer transition-colors ${
-                    employmentTypes.includes(value)
-                      ? 'bg-neutral-900 border-neutral-900 text-white'
-                      : 'bg-white border-neutral-300 text-neutral-700 hover:border-neutral-400'
-                  }`}>
+                  <label
+                    key={value}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded border text-sm cursor-pointer transition-colors ${
+                      employmentTypes.includes(value)
+                        ? 'bg-neutral-900 border-neutral-900 text-white'
+                        : 'bg-white border-neutral-300 text-neutral-700 hover:border-neutral-400'
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       className="sr-only"
@@ -381,30 +431,56 @@ export default function PayrollRunScopePage() {
                   type="button"
                   role="switch"
                   aria-checked={includeUnpaidLeave}
-                  onClick={() => setIncludeUnpaidLeave(p => !p)}
+                  onClick={() => setIncludeUnpaidLeave((p) => !p)}
                   className={`relative inline-flex h-5 w-9 rounded transition-colors ${
                     includeUnpaidLeave ? 'bg-neutral-900' : 'bg-neutral-300'
                   }`}
                 >
-                  <span className={`inline-block h-4 w-4 bg-white rounded shadow transform transition-transform mt-0.5 ${
-                    includeUnpaidLeave ? 'translate-x-4' : 'translate-x-0.5'
-                  }`} />
+                  <span
+                    className={`inline-block h-4 w-4 bg-white rounded shadow transform transition-transform mt-0.5 ${
+                      includeUnpaidLeave ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
                 </button>
               </label>
               <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm text-neutral-700">Include employees whose probation ends this period</span>
+                <span className="text-sm text-neutral-700">
+                  Include employees whose probation ends this period
+                </span>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={includeProbationEnd}
-                  onClick={() => setIncludeProbationEnd(p => !p)}
+                  onClick={() => setIncludeProbationEnd((p) => !p)}
                   className={`relative inline-flex h-5 w-9 rounded transition-colors ${
                     includeProbationEnd ? 'bg-neutral-900' : 'bg-neutral-300'
                   }`}
                 >
-                  <span className={`inline-block h-4 w-4 bg-white rounded shadow transform transition-transform mt-0.5 ${
-                    includeProbationEnd ? 'translate-x-4' : 'translate-x-0.5'
-                  }`} />
+                  <span
+                    className={`inline-block h-4 w-4 bg-white rounded shadow transform transition-transform mt-0.5 ${
+                      includeProbationEnd ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </label>
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm text-neutral-700">
+                  Exclude employees with no attendance records
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={excludeNoAttendance}
+                  onClick={() => setExcludeNoAttendance((p) => !p)}
+                  className={`relative inline-flex h-5 w-9 rounded transition-colors ${
+                    excludeNoAttendance ? 'bg-neutral-900' : 'bg-neutral-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 bg-white rounded shadow transform transition-transform mt-0.5 ${
+                      excludeNoAttendance ? 'translate-x-4' : 'translate-x-0.5'
+                    }`}
+                  />
                 </button>
               </label>
             </div>
@@ -416,18 +492,25 @@ export default function PayrollRunScopePage() {
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-neutral-900 shrink-0" />
                 <p className="text-sm font-semibold text-neutral-800">
-                  {autoExcludedEmployees.length} employee{autoExcludedEmployees.length !== 1 ? 's' : ''} automatically excluded
+                  {autoExcludedEmployees.length} employee
+                  {autoExcludedEmployees.length !== 1 ? 's' : ''} automatically excluded
                 </p>
               </div>
               <p className="text-xs text-neutral-800">
-                These employees have no bank account on file and were excluded from this run automatically. You may remove them from the exclusion list below to include them (payroll will need to be disbursed manually).
+                These employees have no bank account on file and were excluded from this run
+                automatically. You may remove them from the exclusion list below to include them
+                (payroll will need to be disbursed manually).
               </p>
               <div className="border border-neutral-100 rounded overflow-hidden divide-y divide-neutral-50 max-h-36 overflow-y-auto">
-                {autoExcludedEmployees.map(emp => (
+                {autoExcludedEmployees.map((emp) => (
                   <div key={emp.id} className="flex items-center gap-3 px-3 py-2 bg-white/70">
-                    <span className="text-xs font-mono text-neutral-400 shrink-0">{emp.employee_code}</span>
+                    <span className="text-xs font-mono text-neutral-400 shrink-0">
+                      {emp.employee_code}
+                    </span>
                     <span className="text-sm text-neutral-700">{emp.full_name}</span>
-                    <span className="text-xs text-neutral-400 ml-auto shrink-0">{emp.department_name}</span>
+                    <span className="text-xs text-neutral-400 ml-auto shrink-0">
+                      {emp.department_name}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -438,7 +521,8 @@ export default function PayrollRunScopePage() {
           <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
             <h3 className="text-sm font-semibold text-neutral-800">Manual Exclusions</h3>
             <p className="text-xs text-neutral-500">
-              Exclude specific employees from this run. Exclusions persist until removed. The employee will not receive a payslip for this run.
+              Exclude specific employees from this run. Exclusions persist until removed. The
+              employee will not receive a payslip for this run.
             </p>
 
             {/* Add exclusion row */}
@@ -446,14 +530,14 @@ export default function PayrollRunScopePage() {
               <EmployeeSearchDropdown
                 selectedEmployee={selectedEmployee}
                 onSelect={setSelectedEmployee}
-                excludedIds={exclusions.map(e => e.employee_id)}
+                excludedIds={exclusions.map((e) => e.employee_id)}
               />
               <div className="flex-[1.5] space-y-1">
                 <input
                   type="text"
                   placeholder="Reason for exclusion (min. 5 chars)"
                   value={exclReason}
-                  onChange={e => setExclReason(e.target.value)}
+                  onChange={(e) => setExclReason(e.target.value)}
                   className={`w-full border rounded px-3 py-2 text-sm ${
                     exclReason.length > 0 && exclReason.trim().length < 5
                       ? 'border-red-300 focus:ring-red-400'
@@ -461,7 +545,10 @@ export default function PayrollRunScopePage() {
                   } focus:outline-none focus:ring-2`}
                 />
                 {exclReason.length > 0 && exclReason.trim().length < 5 && (
-                  <p className="text-xs text-red-500">{5 - exclReason.trim().length} more character{5 - exclReason.trim().length !== 1 ? 's' : ''} needed</p>
+                  <p className="text-xs text-red-500">
+                    {5 - exclReason.trim().length} more character
+                    {5 - exclReason.trim().length !== 1 ? 's' : ''} needed
+                  </p>
                 )}
               </div>
               <button
@@ -477,24 +564,32 @@ export default function PayrollRunScopePage() {
             {/* Existing exclusions */}
             {exclusions.length > 0 && (
               <div className="border border-red-100 rounded divide-y divide-red-50">
-                {exclusions.map((exc: { employee_id: number; reason: string; employee?: { first_name: string; last_name: string } }) => (
-                  <div key={exc.employee_id} className="flex items-center gap-3 px-4 py-2">
-                    <Users className="h-4 w-4 text-red-400 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm text-neutral-800">
-                        {exc.employee ? `${exc.employee.first_name} ${exc.employee.last_name}` : `Employee #${exc.employee_id}`}
-                      </span>
-                      <p className="text-xs text-neutral-500 truncate">{exc.reason}</p>
+                {exclusions.map(
+                  (exc: {
+                    employee_id: number
+                    reason: string
+                    employee?: { first_name: string; last_name: string }
+                  }) => (
+                    <div key={exc.employee_id} className="flex items-center gap-3 px-4 py-2">
+                      <Users className="h-4 w-4 text-red-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-neutral-800">
+                          {exc.employee
+                            ? `${exc.employee.first_name} ${exc.employee.last_name}`
+                            : `Employee #${exc.employee_id}`}
+                        </span>
+                        <p className="text-xs text-neutral-500 truncate">{exc.reason}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExclusion(exc.employee_id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExclusion(exc.employee_id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             )}
           </div>
@@ -528,11 +623,24 @@ export default function PayrollRunScopePage() {
 
                 {preview.by_department?.length > 0 && (
                   <div className="space-y-1 max-h-64 overflow-y-auto">
-                    <p className="text-xs font-medium text-neutral-500 font-medium">By Department</p>
-                    {preview.by_department?.map(dept => (
-                      <div key={dept.department_id} className="flex items-center justify-between text-sm py-1 border-b border-neutral-50">
-                        <span className="text-neutral-700 truncate max-w-[140px]" title={dept.department_name}>{dept.department_name}</span>
-                        <span className="text-neutral-900 font-medium shrink-0">{dept.in_scope} <span className="text-neutral-400 font-normal">/ {dept.eligible}</span></span>
+                    <p className="text-xs font-medium text-neutral-500 font-medium">
+                      By Department
+                    </p>
+                    {preview.by_department?.map((dept) => (
+                      <div
+                        key={dept.department_id}
+                        className="flex items-center justify-between text-sm py-1 border-b border-neutral-50"
+                      >
+                        <span
+                          className="text-neutral-700 truncate max-w-[140px]"
+                          title={dept.department_name}
+                        >
+                          {dept.department_name}
+                        </span>
+                        <span className="text-neutral-900 font-medium shrink-0">
+                          {dept.in_scope}{' '}
+                          <span className="text-neutral-400 font-normal">/ {dept.eligible}</span>
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -549,14 +657,20 @@ export default function PayrollRunScopePage() {
               className="w-full px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors flex items-center justify-center gap-2"
             >
               {confirmScope.isPending ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Confirming…</>
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Confirming…
+                </>
               ) : (
-                <>Confirm Scope <ArrowRight className="h-4 w-4" /></>
+                <>
+                  Confirm Scope <ArrowRight className="h-4 w-4" />
+                </>
               )}
             </button>
 
             {preview?.net_in_scope === 0 && (
-              <p className="text-xs text-red-600 text-center">No employees match the current filters.</p>
+              <p className="text-xs text-red-600 text-center">
+                No employees match the current filters.
+              </p>
             )}
           </div>
         </div>
@@ -564,34 +678,43 @@ export default function PayrollRunScopePage() {
 
       {/* Missing bank account — proceed anyway confirmation dialog */}
       {showMissingBankConfirm && preview?.missing_bank_employees && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
           onClick={() => setShowMissingBankConfirm(false)}
         >
-          <div className="bg-white rounded w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4"
-            onClick={e => e.stopPropagation()}
+          <div
+            className="bg-white rounded w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-neutral-900">
-                  {preview.missing_bank_employees.length} employee{preview.missing_bank_employees.length !== 1 ? 's' : ''} without a bank account
+                  {preview.missing_bank_employees.length} employee
+                  {preview.missing_bank_employees.length !== 1 ? 's' : ''} without a bank account
                 </h3>
                 <p className="text-sm text-neutral-600 mt-1">
-                  These employees cannot be included in bank disbursement. They will be computed but skipped when generating the bank file.
+                  These employees cannot be included in bank disbursement. They will be computed but
+                  skipped when generating the bank file.
                 </p>
               </div>
             </div>
             <div className="border border-amber-100 rounded divide-y divide-amber-50 max-h-40 overflow-y-auto">
-              {preview.missing_bank_employees.map(emp => (
+              {preview.missing_bank_employees.map((emp) => (
                 <div key={emp.id} className="flex items-center gap-3 px-3 py-2">
-                  <span className="text-xs font-mono text-neutral-400 shrink-0">{emp.employee_code}</span>
+                  <span className="text-xs font-mono text-neutral-400 shrink-0">
+                    {emp.employee_code}
+                  </span>
                   <span className="text-sm text-neutral-700">{emp.full_name}</span>
-                  <span className="text-xs text-neutral-400 ml-auto shrink-0">{emp.department_name}</span>
+                  <span className="text-xs text-neutral-400 ml-auto shrink-0">
+                    {emp.department_name}
+                  </span>
                 </div>
               ))}
             </div>
             <p className="text-xs text-neutral-500">
-              You can still go back and use the <strong>Auto-exclude</strong> button in the warning panel above.
+              You can still go back and use the <strong>Auto-exclude</strong> button in the warning
+              panel above.
             </p>
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-2 pt-1">
               <button
@@ -603,7 +726,10 @@ export default function PayrollRunScopePage() {
               </button>
               <button
                 type="button"
-                onClick={() => { setShowMissingBankConfirm(false); void doConfirmScope() }}
+                onClick={() => {
+                  setShowMissingBankConfirm(false)
+                  void doConfirmScope()
+                }}
                 disabled={confirmScope.isPending}
                 className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50 flex items-center gap-1"
               >

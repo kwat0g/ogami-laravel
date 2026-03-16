@@ -34,9 +34,9 @@ final class LowStockNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'type'     => 'inventory.low_stock',
-            'title'    => 'Low Stock Alert',
-            'message'  => sprintf(
+            'type' => 'inventory.low_stock',
+            'title' => 'Low Stock Alert',
+            'message' => sprintf(
                 'Item "%s" (%s) is low on stock. Current balance: %s %s (reorder point: %s).',
                 $this->item->name,
                 $this->item->item_code,
@@ -44,10 +44,10 @@ final class LowStockNotification extends Notification implements ShouldQueue
                 $this->item->unit_of_measure,
                 number_format((float) $this->item->reorder_point, 2),
             ),
-            'action_url'  => '/inventory/items/' . $this->item->ulid,
-            'item_id'     => $this->item->id,
-            'item_code'   => $this->item->item_code,
-            'balance'     => $this->currentBalance,
+            'action_url' => '/inventory/items/'.$this->item->ulid,
+            'item_id' => $this->item->id,
+            'item_code' => $this->item->item_code,
+            'balance' => $this->currentBalance,
             'reorder_point' => (float) $this->item->reorder_point,
         ];
     }

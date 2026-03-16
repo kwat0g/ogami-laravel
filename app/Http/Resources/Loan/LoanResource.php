@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Loan;
 
+use App\Domains\Loan\Models\Loan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\Loan\Models\Loan
+ * @mixin Loan
  */
 final class LoanResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\Loan\Models\Loan $loan */
+        /** @var Loan $loan */
         $loan = $this->resource;
 
         // Compute projected monthly amortization and total payable if not yet persisted

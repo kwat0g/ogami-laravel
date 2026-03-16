@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\System\SystemRestoreCompleted;
+use App\Events\System\SystemRestoreStarting;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Redis;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -47,12 +50,12 @@ final class BackupController extends Controller
         $files = $this->getAllBackupFiles();
 
         $data = array_map(fn (string $path) => [
-            'filename'    => basename($path),
-            'size_bytes'  => filesize($path),
-            'size_human'  => $this->humanFileSize((int) filesize($path)),
-            'created_at'  => date('M j, Y g:i A', (int) filemtime($path)),
-            'age_days'    => (int) floor((time() - (int) filemtime($path)) / 86400),
-            'type'        => $this->getBackupType(basename($path)),
+            'filename' => basename($path),
+            'size_bytes' => filesize($path),
+            'size_human' => $this->humanFileSize((int) filesize($path)),
+            'created_at' => date('M j, Y g:i A', (int) filemtime($path)),
+            'age_days' => (int) floor((time() - (int) filemtime($path)) / 86400),
+            'type' => $this->getBackupType(basename($path)),
         ], $files);
 
         return response()->json(['data' => array_values($data)]);
@@ -69,17 +72,17 @@ final class BackupController extends Controller
     {
         abort_unless(Auth::user()->can('system.manage_backups'), 403, 'Insufficient permissions.');
 
-        $files  = $this->getAllBackupFiles();
+        $files = $this->getAllBackupFiles();
         $latest = $files[0] ?? null;
 
         return response()->json([
             'data' => [
-                'backup_count'  => count($files),
+                'backup_count' => count($files),
                 'latest_backup' => $latest ? [
-                    'filename'   => basename($latest),
+                    'filename' => basename($latest),
                     'size_human' => $this->humanFileSize((int) filesize($latest)),
                     'created_at' => date('M j, Y g:i A', (int) filemtime($latest)),
-                    'age_days'   => (int) floor((time() - (int) filemtime($latest)) / 86400),
+                    'age_days' => (int) floor((time() - (int) filemtime($latest)) / 86400),
                 ] : null,
             ],
         ]);
@@ -100,31 +103,31 @@ final class BackupController extends Controller
         $filesBeforeRun = $this->getAllBackupFiles();
 
         $exitCode = Artisan::call('backup:run', ['--only-db' => true]);
-        $output   = Artisan::output();
+        $output = Artisan::output();
 
         if ($exitCode !== 0) {
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'BACKUP_FAILED',
-                'message'    => 'Backup process failed. Check server logs for details.',
-                'detail'     => substr($output, -2000),
+                'message' => 'Backup process failed. Check server logs for details.',
+                'detail' => substr($output, -2000),
             ], 500);
         }
 
         Log::info('[Backup] On-demand backup triggered via admin UI', [
             'by_user_id' => Auth::id(),
-            'by_user'    => Auth::user()->email,
+            'by_user' => Auth::user()->email,
         ]);
 
         // Rename the spatie-generated archive to a human-readable filename.
         $filesAfterRun = $this->getAllBackupFiles();
-        $newFiles      = array_values(array_diff($filesAfterRun, $filesBeforeRun));
-        $newest        = $newFiles[0] ?? ($filesAfterRun[0] ?? null);
+        $newFiles = array_values(array_diff($filesAfterRun, $filesBeforeRun));
+        $newest = $newFiles[0] ?? ($filesAfterRun[0] ?? null);
 
         if ($newest !== null) {
             $readable = now()->format('M-d-Y_H-i-s');
-            $newName  = 'ogami-erp-backup-'.$readable.'.zip';
-            $newPath  = dirname($newest).'/'.$newName;
+            $newName = 'ogami-erp-backup-'.$readable.'.zip';
+            $newPath = dirname($newest).'/'.$newName;
             if (@rename($newest, $newPath)) {
                 $newest = $newPath;
             }
@@ -134,10 +137,10 @@ final class BackupController extends Controller
         // unzip 6.x cannot handle AES-256 encrypted zips (PK compat v5.1).
         if ($newest !== null) {
             $archivePassword = config('backup.backup.password');
-            $testPassArg     = ($archivePassword !== null && $archivePassword !== '')
+            $testPassArg = ($archivePassword !== null && $archivePassword !== '')
                 ? '-p'.(string) $archivePassword
                 : null;
-            $testCmd    = array_values(array_filter(['7z', 't', $testPassArg, $newest]));
+            $testCmd = array_values(array_filter(['7z', 't', $testPassArg, $newest]));
             $testResult = Process::timeout(60)->run($testCmd);
             // Retry without password in case encryption was skipped on this run
             if ($testResult->failed() && $testPassArg !== null) {
@@ -145,11 +148,12 @@ final class BackupController extends Controller
             }
             if ($testResult->failed()) {
                 @unlink($newest);
+
                 return response()->json([
-                    'success'    => false,
+                    'success' => false,
                     'error_code' => 'BACKUP_CORRUPTED',
-                    'message'    => 'Backup was created but failed integrity check — the archive is unreadable. Check the BACKUP_ARCHIVE_PASSWORD setting.',
-                    'detail'     => substr($testResult->output(), -500),
+                    'message' => 'Backup was created but failed integrity check — the archive is unreadable. Check the BACKUP_ARCHIVE_PASSWORD setting.',
+                    'detail' => substr($testResult->output(), -500),
                 ], 500);
             }
         }
@@ -157,8 +161,8 @@ final class BackupController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Backup completed successfully.',
-            'data'    => $newest ? [
-                'filename'   => basename($newest),
+            'data' => $newest ? [
+                'filename' => basename($newest),
                 'size_human' => $this->humanFileSize((int) filesize($newest)),
                 'created_at' => date('M j, Y g:i A', (int) filemtime($newest)),
             ] : null,
@@ -187,7 +191,7 @@ final class BackupController extends Controller
 
         $validated = $request->validate([
             'filename' => ['required', 'string', 'max:255'],
-            'confirm'  => ['required', 'in:CONFIRM'],
+            'confirm' => ['required', 'in:CONFIRM'],
         ]);
 
         try {
@@ -199,16 +203,16 @@ final class BackupController extends Controller
             Cache::forget('system.restore_in_progress');
 
             Log::error('[BackupRestore] Unhandled exception during restore', [
-                'error'    => $e->getMessage(),
-                'file'     => $e->getFile(),
-                'line'     => $e->getLine(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'filename' => $validated['filename'] ?? null,
             ]);
 
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'RESTORE_EXCEPTION',
-                'message'    => 'Restore failed unexpectedly: '.$e->getMessage(),
+                'message' => 'Restore failed unexpectedly: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -225,32 +229,32 @@ final class BackupController extends Controller
 
         if ($archivePath === null) {
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'BACKUP_FILE_NOT_FOUND',
-                'message'    => "Backup file '{$validated['filename']}' not found on server.",
+                'message' => "Backup file '{$validated['filename']}' not found on server.",
             ], 404);
         }
 
         $dbConfig = config('database.connections.pgsql');
-        $host     = (string) $dbConfig['host'];
-        $port     = (string) $dbConfig['port'];
-        $user     = (string) $dbConfig['username'];
+        $host = (string) $dbConfig['host'];
+        $port = (string) $dbConfig['port'];
+        $user = (string) $dbConfig['username'];
         $password = (string) $dbConfig['password'];
-        $prodDb   = (string) $dbConfig['database'];
+        $prodDb = (string) $dbConfig['database'];
 
         // ── Extract + validate archive FIRST (before touching anything) ───────
         $extractDir = storage_path('app/backup-temp/restore-ui-'.now()->format('YmdHis'));
         File::ensureDirectoryExists($extractDir);
 
         $archivePassword = config('backup.backup.password');
-        $passwordArg     = ($archivePassword !== null && $archivePassword !== '')
+        $passwordArg = ($archivePassword !== null && $archivePassword !== '')
             ? '-p'.(string) $archivePassword
             : null;
 
         // Use 7z for extraction: unlike unzip 6.x it supports AES-256 (PK compat v5.1)
         // which is what PHP's ZipArchive uses when BACKUP_ARCHIVE_PASSWORD is set.
         $unzipCmd = array_values(array_filter(['7z', 'x', $passwordArg, "-o{$extractDir}", $archivePath]));
-        $unzip    = Process::timeout(120)->run($unzipCmd);
+        $unzip = Process::timeout(120)->run($unzipCmd);
 
         // Retry without password in case this particular archive was created without encryption.
         if ($unzip->failed() && $passwordArg !== null) {
@@ -263,19 +267,19 @@ final class BackupController extends Controller
             File::deleteDirectory($extractDir);
 
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'EXTRACT_FAILED',
-                'message'    => 'Failed to extract backup archive.',
-                'detail'     => substr($unzip->output(), -1000),
+                'message' => 'Failed to extract backup archive.',
+                'detail' => substr($unzip->output(), -1000),
             ], 500);
         }
 
         $sqlFiles = File::glob("{$extractDir}/**/*.sql") ?: File::glob("{$extractDir}/*.sql");
-        $gzFiles  = File::glob("{$extractDir}/**/*.sql.gz") ?: File::glob("{$extractDir}/*.sql.gz");
-        $sqlFile  = null;
+        $gzFiles = File::glob("{$extractDir}/**/*.sql.gz") ?: File::glob("{$extractDir}/*.sql.gz");
+        $sqlFile = null;
 
         if (! empty($gzFiles)) {
-            $gzFile  = reset($gzFiles);
+            $gzFile = reset($gzFiles);
             $sqlFile = str_replace('.gz', '', $gzFile);
             Process::run("gunzip -f \"{$gzFile}\"");
             $sqlFile = file_exists($sqlFile) ? $sqlFile : null;
@@ -287,9 +291,9 @@ final class BackupController extends Controller
             File::deleteDirectory($extractDir);
 
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'NO_SQL_FILE',
-                'message'    => 'No SQL dump found inside the backup archive.',
+                'message' => 'No SQL dump found inside the backup archive.',
             ], 422);
         }
 
@@ -312,10 +316,10 @@ final class BackupController extends Controller
             Cache::forget('system.restore_in_progress');
 
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'SAFETY_BACKUP_FAILED',
-                'message'    => 'Could not create a safety backup of the current database. Restore aborted to protect your data.',
-                'detail'     => substr(Artisan::output(), -1000),
+                'message' => 'Could not create a safety backup of the current database. Restore aborted to protect your data.',
+                'detail' => substr(Artisan::output(), -1000),
             ], 500);
         }
 
@@ -324,10 +328,10 @@ final class BackupController extends Controller
         // This is far more reliable than getAllBackupFiles()[0] because it is
         // immune to mtime collisions with the restore target (e.g. when restoring
         // a pre-restore/safety file whose mtime equals the new backup's mtime).
-        $safetyPath       = null;
+        $safetyPath = null;
         $filesAfterSafety = $this->getAllBackupFiles();
-        $newFiles         = array_values(array_diff($filesAfterSafety, $filesBeforeSafety));
-        $newest           = $newFiles[0] ?? null;
+        $newFiles = array_values(array_diff($filesAfterSafety, $filesBeforeSafety));
+        $newest = $newFiles[0] ?? null;
 
         // Fallback: if the snapshot diff found nothing (unlikely — e.g. NFS mtime
         // granularity), pick the newest file that is NOT the restore target.
@@ -342,8 +346,8 @@ final class BackupController extends Controller
 
         if ($newest !== null) {
             $safetyTimestamp = now()->format('M-d-Y_H-i-s');
-            $labelledName    = 'safety-'.$safetyTimestamp.'-before-restore.zip';
-            $safetyPath      = dirname($newest).'/'.$labelledName;
+            $labelledName = 'safety-'.$safetyTimestamp.'-before-restore.zip';
+            $safetyPath = dirname($newest).'/'.$labelledName;
             @rename($newest, $safetyPath);
         }
 
@@ -354,8 +358,8 @@ final class BackupController extends Controller
         // Wrapped in try/catch: a Reverb/Pusher HTTP error must never abort the
         // restore — the polling-based overlay handles the missing broadcast.
         try {
-            event(new \App\Events\System\SystemRestoreStarting(
-                filename:    $validated['filename'],
+            event(new SystemRestoreStarting(
+                filename: $validated['filename'],
                 initiatedBy: Auth::user()->email ?? 'unknown',
             ));
         } catch (\Throwable) {
@@ -379,9 +383,9 @@ final class BackupController extends Controller
             }
 
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'SCHEMA_RESET_FAILED',
-                'message'    => 'Failed to reset database schema: '.$e->getMessage(),
+                'message' => 'Failed to reset database schema: '.$e->getMessage(),
             ], 500);
         }
 
@@ -399,18 +403,18 @@ final class BackupController extends Controller
             Cache::put('system.restore_in_progress', 'done', 30);
 
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'RESTORE_FAILED',
-                'message'    => 'Database restore failed after the schema was reset. Use the safety backup to recover. All users have been directed to log in.',
-                'detail'     => substr($restoreResult->output(), -2000),
+                'message' => 'Database restore failed after the schema was reset. Use the safety backup to recover. All users have been directed to log in.',
+                'detail' => substr($restoreResult->output(), -2000),
             ], 500);
         }
 
         Log::warning('[BackupRestore] Production database restored via admin UI', [
             'by_user_id' => Auth::id(),
-            'by_user'    => Auth::user()->email,
-            'archive'    => $validated['filename'],
-            'timestamp'  => now()->toIso8601String(),
+            'by_user' => Auth::user()->email,
+            'archive' => $validated['filename'],
+            'timestamp' => now()->toIso8601String(),
         ]);
 
         // Flush every Redis session so all users (including the current admin)
@@ -433,14 +437,13 @@ final class BackupController extends Controller
         // strings while del() expects the bare (un-prefixed) key names.
         try {
             $redisPrefix = config('database.redis.options.prefix', '');
-            $allKeys     = \Illuminate\Support\Facades\Redis::keys('*');
-            $stripped    = array_filter(
+            $allKeys = Redis::keys('*');
+            $stripped = array_filter(
                 array_map(fn (string $k) => substr($k, strlen($redisPrefix)), $allKeys),
-                static fn (string $bare): bool =>
-                    (bool) preg_match('/[a-zA-Z0-9]{40}$/', $bare) && ! str_contains($bare, ':'),
+                static fn (string $bare): bool => (bool) preg_match('/[a-zA-Z0-9]{40}$/', $bare) && ! str_contains($bare, ':'),
             );
             if (! empty($stripped)) {
-                \Illuminate\Support\Facades\Redis::del(array_values($stripped));
+                Redis::del(array_values($stripped));
             }
         } catch (\Throwable) {
             Log::warning('[BackupRestore] Could not flush Redis sessions after restore.');
@@ -460,7 +463,7 @@ final class BackupController extends Controller
         // ShouldBroadcastNow fires via Redis pub/sub (no DB required), so it
         // works correctly even after the schema was dropped and rebuilt.
         try {
-            event(new \App\Events\System\SystemRestoreCompleted(
+            event(new SystemRestoreCompleted(
                 filename: $validated['filename'],
             ));
         } catch (\Throwable) {
@@ -482,21 +485,21 @@ final class BackupController extends Controller
     {
         abort_unless(Auth::user()->can('system.manage_backups'), 403, 'Insufficient permissions.');
 
-        $filename    = $request->query('file', '');
+        $filename = $request->query('file', '');
         $archivePath = $this->findArchiveByFilename((string) $filename);
 
         if ($archivePath === null) {
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'BACKUP_FILE_NOT_FOUND',
-                'message'    => "File '{$filename}' not found.",
+                'message' => "File '{$filename}' not found.",
             ], 404);
         }
 
         Log::info('[Backup] Archive downloaded via admin UI', [
             'by_user_id' => Auth::id(),
-            'by_user'    => Auth::user()->email,
-            'filename'   => $filename,
+            'by_user' => Auth::user()->email,
+            'filename' => $filename,
         ]);
 
         return response()->download($archivePath, $filename);

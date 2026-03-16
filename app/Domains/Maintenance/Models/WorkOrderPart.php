@@ -6,20 +6,22 @@ namespace App\Domains\Maintenance\Models;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\WarehouseLocation;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int         $id
- * @property int         $work_order_id
- * @property int         $item_id
- * @property int         $location_id
- * @property float       $qty_required
- * @property float|null  $qty_consumed
+ * @property int $id
+ * @property int $work_order_id
+ * @property int $item_id
+ * @property int $location_id
+ * @property float $qty_required
+ * @property float|null $qty_consumed
  * @property string|null $remarks
- * @property int         $added_by_id
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property int $added_by_id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class WorkOrderPart extends Model
 {
@@ -58,9 +60,9 @@ final class WorkOrderPart extends Model
         return $this->belongsTo(WarehouseLocation::class, 'location_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function addedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'added_by_id');
+        return $this->belongsTo(User::class, 'added_by_id');
     }
 }

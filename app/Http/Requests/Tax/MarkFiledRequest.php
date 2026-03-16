@@ -16,10 +16,10 @@ final class MarkFiledRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'filed_date'             => ['required', 'date'],
-            'confirmation_number'    => ['nullable', 'string', 'max:100'],
+            'filed_date' => ['required', 'date'],
+            'confirmation_number' => ['nullable', 'string', 'max:100'],
             'total_tax_due_centavos' => ['nullable', 'integer', 'min:0'],
-            'notes'                  => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

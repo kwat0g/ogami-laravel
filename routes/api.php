@@ -83,5 +83,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::prefix('fixed-assets')->name('fixed-assets.')->group(base_path('routes/api/v1/fixed_assets.php'));
         Route::prefix('budget')->name('budget.')->group(base_path('routes/api/v1/budget.php'));
         Route::prefix('search')->name('search.')->group(base_path('routes/api/v1/search.php'));
+        Route::prefix('approvals')->name('approvals.')->group(base_path('routes/api/v1/approvals.php'));
     });
 });

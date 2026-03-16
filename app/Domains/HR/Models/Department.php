@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\HR\Models;
 
+use Database\Factories\DepartmentFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,7 +25,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class Department extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    /** @use HasFactory<DepartmentFactory> */
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $table = 'departments';
 
@@ -56,5 +59,10 @@ final class Department extends Model implements Auditable
     public function positions(): HasMany
     {
         return $this->hasMany(Position::class);
+    }
+
+    protected static function newFactory(): DepartmentFactory
+    {
+        return DepartmentFactory::new();
     }
 }

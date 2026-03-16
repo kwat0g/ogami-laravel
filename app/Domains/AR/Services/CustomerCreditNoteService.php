@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\AR\Services;
 
+use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\AR\Models\Customer;
@@ -11,6 +12,7 @@ use App\Domains\AR\Models\CustomerCreditNote;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -25,27 +27,27 @@ use Illuminate\Support\Facades\DB;
 final class CustomerCreditNoteService implements ServiceContract
 {
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function create(Customer $customer, array $data, User $actor): CustomerCreditNote
     {
         return DB::transaction(function () use ($customer, $data, $actor): CustomerCreditNote {
             $prefix = $data['note_type'] === 'debit' ? 'DN-AR' : 'CN-AR';
-            $seq    = DB::selectOne('SELECT NEXTVAL(\'customer_credit_note_seq\') AS val');
-            $num    = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
-            $ref    = "{$prefix}-" . now()->format('Y-m') . '-' . $num;
+            $seq = DB::selectOne('SELECT NEXTVAL(\'customer_credit_note_seq\') AS val');
+            $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
+            $ref = "{$prefix}-".now()->format('Y-m').'-'.$num;
 
             return CustomerCreditNote::create([
-                'cn_reference'        => $ref,
-                'customer_id'         => $customer->id,
+                'cn_reference' => $ref,
+                'customer_id' => $customer->id,
                 'customer_invoice_id' => $data['customer_invoice_id'] ?? null,
-                'note_type'           => $data['note_type'] ?? 'credit',
-                'note_date'           => $data['note_date'],
-                'amount_centavos'     => $data['amount_centavos'],
-                'reason'              => $data['reason'],
-                'ar_account_id'       => $data['ar_account_id'],
-                'status'              => 'draft',
-                'created_by_id'       => $actor->id,
+                'note_type' => $data['note_type'] ?? 'credit',
+                'note_date' => $data['note_date'],
+                'amount_centavos' => $data['amount_centavos'],
+                'reason' => $data['reason'],
+                'ar_account_id' => $data['ar_account_id'],
+                'status' => 'draft',
+                'created_by_id' => $actor->id,
             ]);
         });
     }
@@ -64,8 +66,8 @@ final class CustomerCreditNoteService implements ServiceContract
         }
 
         return DB::transaction(function () use ($note): CustomerCreditNote {
-            $date         = $note->note_date->toDateString();
-            $amount       = $note->amount_centavos / 100;
+            $date = $note->note_date->toDateString();
+            $amount = $note->amount_centavos / 100;
             $fiscalPeriod = $this->ensureFiscalPeriod($date);
             $systemUserId = $this->systemUserId();
 
@@ -73,14 +75,14 @@ final class CustomerCreditNoteService implements ServiceContract
             $returnsAccountId = $this->accountIdByCode('4010');
 
             $je = JournalEntry::create([
-                'date'             => $date,
-                'description'      => "Customer {$note->note_type} note #{$note->cn_reference}",
-                'source_type'      => 'ar',
-                'source_id'        => $note->id,
-                'status'           => 'draft',
+                'date' => $date,
+                'description' => "Customer {$note->note_type} note #{$note->cn_reference}",
+                'source_type' => 'ar',
+                'source_id' => $note->id,
+                'status' => 'draft',
                 'fiscal_period_id' => $fiscalPeriod->id,
-                'created_by'       => $systemUserId,
-                'je_number'        => null,
+                'created_by' => $systemUserId,
+                'je_number' => null,
             ]);
 
             if ($note->note_type === 'credit') {
@@ -94,16 +96,16 @@ final class CustomerCreditNoteService implements ServiceContract
             }
 
             $je->update([
-                'status'    => 'posted',
+                'status' => 'posted',
                 'je_number' => "JE-CN-{$note->id}",
                 'posted_by' => null,
                 'posted_at' => now(),
             ]);
 
             $note->update([
-                'status'           => 'posted',
+                'status' => 'posted',
                 'journal_entry_id' => $je->id,
-                'posted_at'        => now(),
+                'posted_at' => now(),
             ]);
 
             return $note->refresh();
@@ -114,7 +116,7 @@ final class CustomerCreditNoteService implements ServiceContract
 
     private function accountIdByCode(string $code): int
     {
-        $id = \App\Domains\Accounting\Models\ChartOfAccount::where('account_code', $code)->value('id');
+        $id = ChartOfAccount::where('account_code', $code)->value('id');
 
         if ($id === null) {
             throw new DomainException(
@@ -138,7 +140,7 @@ final class CustomerCreditNoteService implements ServiceContract
             return $period;
         }
 
-        $carbon = \Carbon\Carbon::parse($date);
+        $carbon = Carbon::parse($date);
 
         return FiscalPeriod::firstOrCreate(
             ['name' => $carbon->format('M Y')],
@@ -148,8 +150,8 @@ final class CustomerCreditNoteService implements ServiceContract
 
     private function systemUserId(): int
     {
-        return \App\Models\User::where('email', 'system-test@ogami.test')->value('id')
-            ?? \App\Models\User::value('id')
+        return User::where('email', 'system-test@ogami.test')->value('id')
+            ?? User::value('id')
             ?? 1;
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Requests\HR\StoreEmployeeRequest;
 use App\Http\Requests\HR\UpdateEmployeeRequest;
 use App\Http\Resources\HR\EmployeeListResource;
 use App\Http\Resources\HR\EmployeeResource;
+use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -75,14 +76,14 @@ final class EmployeeController extends Controller
         }
 
         // Supervisors must not see themselves or higher-role employees (managers, executives, admins)
-        /** @var \App\Domains\HR\Models\Employee|null $currentEmployee */
+        /** @var Employee|null $currentEmployee */
         $currentEmployee = $request->user()->employee;
         $excludeEmployeeIds = $currentEmployee instanceof Employee ? [$currentEmployee->id] : [];
 
         $higherRoleUserIds = DB::table('model_has_roles')
             ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
             ->whereIn('roles.name', ['admin', 'executive', 'manager', 'officer'])
-            ->where('model_has_roles.model_type', \App\Models\User::class)
+            ->where('model_has_roles.model_type', User::class)
             ->pluck('model_has_roles.model_id')
             ->all();
 
@@ -139,22 +140,32 @@ final class EmployeeController extends Controller
 
             return new EmployeeResource($employee);
         } catch (UniqueConstraintViolationException $e) {
-            $message = 'Duplicate value detected. ';
+            // Safety-net: closure validators in UpdateEmployeeRequest already catch duplicates
+            // at validation time. This block only fires if the DB constraint is hit directly
+            // (e.g. concurrent save race condition).
+            $errMsg = $e->getMessage();
 
-            // Parse the error message to determine which field caused the conflict
-            if (str_contains($e->getMessage(), 'sss_no_hash')) {
-                $message .= 'This SSS number is already registered to another employee.';
-            } elseif (str_contains($e->getMessage(), 'tin_hash')) {
-                $message .= 'This TIN is already registered to another employee.';
-            } elseif (str_contains($e->getMessage(), 'philhealth_no_hash')) {
-                $message .= 'This PhilHealth number is already registered to another employee.';
-            } elseif (str_contains($e->getMessage(), 'pagibig_no_hash')) {
-                $message .= 'This Pag-IBIG number is already registered to another employee.';
-            } else {
-                $message .= 'A unique value conflict occurred.';
+            [$field, $message] = match (true) {
+                str_contains($errMsg, 'sss_no_hash') => ['sss_no',        'This SSS number is already registered to another employee.'],
+                str_contains($errMsg, 'tin_hash') => ['tin',           'This TIN is already registered to another employee.'],
+                str_contains($errMsg, 'philhealth_no_hash') => ['philhealth_no', 'This PhilHealth number is already registered to another employee.'],
+                str_contains($errMsg, 'pagibig_no_hash') => ['pagibig_no',    'This Pag-IBIG number is already registered to another employee.'],
+                default => ['',             'A duplicate government ID conflict occurred.'],
+            };
+
+            $body = [
+                'success' => false,
+                'error_code' => 'DUPLICATE_GOVERNMENT_ID',
+                'message' => $message,
+            ];
+
+            // Attach a field-level error key so the frontend form can highlight
+            // the exact input that caused the conflict.
+            if ($field !== '') {
+                $body['errors'] = [$field => [$message]];
             }
 
-            return response()->json(['message' => $message], 422);
+            return response()->json($body, 422);
         }
     }
 

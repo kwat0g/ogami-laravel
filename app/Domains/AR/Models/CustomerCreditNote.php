@@ -9,27 +9,28 @@ use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * @property int         $id
- * @property string      $ulid
- * @property string      $cn_reference        CN-AR-YYYY-MM-NNNNN
- * @property int         $customer_id
- * @property int|null    $customer_invoice_id
- * @property string      $note_type           credit|debit
- * @property \Illuminate\Support\Carbon $note_date
- * @property int         $amount_centavos
- * @property string      $reason
- * @property string      $status              draft|posted
- * @property int|null    $journal_entry_id
- * @property int         $ar_account_id
- * @property int         $created_by_id
- * @property \Illuminate\Support\Carbon|null $posted_at
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int $id
+ * @property string $ulid
+ * @property string $cn_reference CN-AR-YYYY-MM-NNNNN
+ * @property int $customer_id
+ * @property int|null $customer_invoice_id
+ * @property string $note_type credit|debit
+ * @property Carbon $note_date
+ * @property int $amount_centavos
+ * @property string $reason
+ * @property string $status draft|posted
+ * @property int|null $journal_entry_id
+ * @property int $ar_account_id
+ * @property int $created_by_id
+ * @property Carbon|null $posted_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class CustomerCreditNote extends Model implements Auditable
 {

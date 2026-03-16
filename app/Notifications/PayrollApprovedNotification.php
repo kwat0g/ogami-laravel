@@ -9,17 +9,19 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Carbon;
 
 /**
  * Sent across the payroll approval chain and to employees on payslip publication.
  *
  * Audience values:
- *   'payslip'             → employee: their payslip is available
- *   'HR'                  → accounting manager: HR has approved, awaiting acctg sign-off
- *   'HR_RETURNED'         → initiator: HR returned the run for revision
- *   'ACCOUNTING'          → initiator + HR approver: accounting has given final approval
- *   'ACCOUNTING_REJECTED' → initiator + HR approver: accounting permanently rejected the run
- *   'DISBURSED'           → initiator + HR approver + accounting approver: payroll funds released
+ *   'payslip'              → employee: their payslip is available
+ *   'HR'                   → accounting manager: HR has approved, awaiting acctg sign-off
+ *   'HR_RETURNED'          → initiator: HR returned the run for revision
+ *   'ACCOUNTING'           → initiator + HR approver: accounting has given final approval
+ *   'ACCOUNTING_RETURNED'  → initiator + HR approver: accounting returned for rework (not rejected)
+ *   'ACCOUNTING_REJECTED'  → initiator + HR approver: accounting permanently rejected the run
+ *   'DISBURSED'            → initiator + HR approver + accounting approver: payroll funds released
  */
 final class PayrollApprovedNotification extends Notification implements ShouldQueue
 {
@@ -50,7 +52,7 @@ final class PayrollApprovedNotification extends Notification implements ShouldQu
                     'Your payslip for %s (pay date: %s) is now available for download.',
                     $this->run->pay_period_label,
                     $this->run->pay_date
-                        ? \Illuminate\Support\Carbon::parse($this->run->pay_date)->toFormattedDateString()
+                        ? Carbon::parse($this->run->pay_date)->toFormattedDateString()
                         : 'TBD',
                 ),
                 'action_url' => '/self-service/payslips',
@@ -59,7 +61,7 @@ final class PayrollApprovedNotification extends Notification implements ShouldQu
         }
 
         $payDate = $this->run->pay_date
-            ? \Illuminate\Support\Carbon::parse($this->run->pay_date)->toFormattedDateString()
+            ? Carbon::parse($this->run->pay_date)->toFormattedDateString()
             : 'TBD';
 
         return match ($this->audience) {
@@ -96,6 +98,17 @@ final class PayrollApprovedNotification extends Notification implements ShouldQu
                     $payDate,
                 ),
                 'action_url' => "/payroll/runs/{$this->run->ulid}/disburse",
+                'payroll_run_id' => $this->run->id,
+            ],
+            'ACCOUNTING_RETURNED' => [
+                'type' => 'payroll.accounting_returned',
+                'title' => 'Payroll Run Returned by Accounting for Rework',
+                'message' => sprintf(
+                    'Payroll run %s (%s) was returned by Accounting for corrections. Please review comments and resubmit.',
+                    $this->run->reference_no,
+                    $this->run->pay_period_label,
+                ),
+                'action_url' => "/payroll/runs/{$this->run->ulid}",
                 'payroll_run_id' => $this->run->id,
             ],
             'ACCOUNTING_REJECTED' => [

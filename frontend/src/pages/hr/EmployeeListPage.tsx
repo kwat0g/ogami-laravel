@@ -9,11 +9,20 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import type { EmployeeFilters, EmploymentStatus, EmploymentType } from '@/types/hr'
 
 const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
-  'draft', 'active', 'on_leave', 'suspended', 'resigned', 'terminated',
+  'draft',
+  'active',
+  'on_leave',
+  'suspended',
+  'resigned',
+  'terminated',
 ]
 
 const EMPLOYMENT_TYPES: EmploymentType[] = [
-  'regular', 'contractual', 'project_based', 'casual', 'probationary',
+  'regular',
+  'contractual',
+  'project_based',
+  'casual',
+  'probationary',
 ]
 
 interface EmployeeListPageProps {
@@ -35,11 +44,11 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
 
   const { data: deptsData } = useDepartments()
   const departments = deptsData?.data ?? []
-  
+
   // Calculate summary stats
   const employees = data?.data ?? []
-  const activeCount = employees.filter(e => e.employment_status === 'active').length
-  const onLeaveCount = employees.filter(e => e.employment_status === 'on_leave').length
+  const activeCount = employees.filter((e) => e.employment_status === 'active').length
+  const onLeaveCount = employees.filter((e) => e.employment_status === 'on_leave').length
   const totalPayroll = employees.reduce((sum, e) => sum + (e.basic_monthly_rate || 0), 0)
 
   const handleSearch = () => {
@@ -54,9 +63,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
 
   if (isError) {
     return (
-      <div className="text-red-600 text-sm mt-4">
-        Failed to load employees. Please try again.
-      </div>
+      <div className="text-red-600 text-sm mt-4">Failed to load employees. Please try again.</div>
     )
   }
 
@@ -80,7 +87,9 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
       {!isLoading && employees.length > 0 && (
         <div className="grid grid-cols-4 gap-4 mb-4">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Employees</p>
+            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+              Total Employees
+            </p>
             <p className="text-2xl font-bold text-blue-700 mt-1">{employees.length}</p>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
@@ -92,7 +101,9 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
             <p className="text-2xl font-bold text-amber-700 mt-1">{onLeaveCount}</p>
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-            <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">Total Monthly Payroll</p>
+            <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">
+              Total Monthly Payroll
+            </p>
             <p className="text-xl font-bold text-purple-700 font-mono mt-1">
               ₱{(totalPayroll / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}
             </p>
@@ -123,11 +134,13 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
         {/* Employment Status */}
         <select
           value={filters.employment_status ?? ''}
-          onChange={(e) => setFilters((f) => ({
-            ...f,
-            employment_status: (e.target.value as EmploymentStatus) || undefined,
-            page: 1,
-          }))}
+          onChange={(e) =>
+            setFilters((f) => ({
+              ...f,
+              employment_status: (e.target.value as EmploymentStatus) || undefined,
+              page: 1,
+            }))
+          }
           className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           <option value="">All Statuses</option>
@@ -142,16 +155,20 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
         {!isTeamView && (
           <select
             value={filters.department_id ?? ''}
-            onChange={(e) => setFilters((f) => ({
-              ...f,
-              department_id: e.target.value ? Number(e.target.value) : undefined,
-              page: 1,
-            }))}
+            onChange={(e) =>
+              setFilters((f) => ({
+                ...f,
+                department_id: e.target.value ? Number(e.target.value) : undefined,
+                page: 1,
+              }))
+            }
             className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
           >
             <option value="">All Departments</option>
             {departments.map((d) => (
-              <option key={d.id} value={d.id}>{d.name}</option>
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
             ))}
           </select>
         )}
@@ -159,11 +176,13 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
         {/* Employment Type */}
         <select
           value={filters.employment_type ?? ''}
-          onChange={(e) => setFilters((f) => ({
-            ...f,
-            employment_type: (e.target.value as EmploymentType) || undefined,
-            page: 1,
-          }))}
+          onChange={(e) =>
+            setFilters((f) => ({
+              ...f,
+              employment_type: (e.target.value as EmploymentType) || undefined,
+              page: 1,
+            }))
+          }
           className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           <option value="">All Types</option>
@@ -181,16 +200,36 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
           <table className="min-w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Code</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Name</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Department</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Position</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Type</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Status</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Grade</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Monthly Rate</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Date Hired</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Actions</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Code
+                </th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Department
+                </th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Position
+                </th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Grade
+                </th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Monthly Rate
+                </th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Date Hired
+                </th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -213,14 +252,21 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-neutral-900">{emp.full_name}</span>
-                        {(!emp.has_sss_no || !emp.has_tin || !emp.has_philhealth_no || !emp.has_pagibig_no) && (
+                        {(!emp.has_sss_no ||
+                          !emp.has_tin ||
+                          !emp.has_philhealth_no ||
+                          !emp.has_pagibig_no) && (
                           <span
-                            title={`Employee is inactive due to missing government ID(s): ${[
+                            title={`Pending onboarding — missing government ID(s): ${[
                               !emp.has_sss_no && 'SSS',
                               !emp.has_tin && 'TIN',
                               !emp.has_philhealth_no && 'PhilHealth',
                               !emp.has_pagibig_no && 'Pag-IBIG',
-                            ].filter(Boolean).join(', ')}`}
+                            ]
+                              .filter(Boolean)
+                              .join(
+                                ', ',
+                              )}. Employee is excluded from payroll runs until all IDs are recorded.`}
                           >
                             <AlertTriangle className="w-4 h-4 text-amber-500" />
                           </span>
@@ -237,20 +283,25 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                       {emp.employment_type?.replace('_', ' ') || '—'}
                     </td>
                     <td className="px-3 py-2">
-                      <StatusBadge status={emp.employment_status}>{emp.employment_status}</StatusBadge>
+                      <StatusBadge status={emp.employment_status}>
+                        {emp.employment_status}
+                      </StatusBadge>
                     </td>
-                    <td className="px-3 py-2 text-neutral-600">
-                      {emp.salary_grade_code ?? '—'}
-                    </td>
+                    <td className="px-3 py-2 text-neutral-600">{emp.salary_grade_code ?? '—'}</td>
                     <td className="px-3 py-2 text-right">
                       <span className="font-mono font-bold text-emerald-700">
-                        ₱{(emp.basic_monthly_rate / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₱
+                        {(emp.basic_monthly_rate / 100).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-neutral-600">
                       {emp.date_hired
                         ? new Date(emp.date_hired).toLocaleDateString('en-PH', {
-                            year: 'numeric', month: 'short', day: 'numeric',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
                           })
                         : '—'}
                     </td>
@@ -283,7 +334,8 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
         {data?.meta && data.meta.last_page > 1 && (
           <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
             <span>
-              Page {data.meta.current_page} of {data.meta.last_page} &middot; {data.meta.total} total
+              Page {data.meta.current_page} of {data.meta.last_page} &middot; {data.meta.total}{' '}
+              total
             </span>
             <div className="flex gap-2">
               <button

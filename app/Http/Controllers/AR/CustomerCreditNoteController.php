@@ -44,17 +44,17 @@ final class CustomerCreditNoteController extends Controller
         $this->authorize('create', CustomerCreditNote::class);
 
         $data = $request->validate([
-            'customer_id'         => ['required', 'integer', 'exists:customers,id'],
+            'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'customer_invoice_id' => ['nullable', 'integer', 'exists:customer_invoices,id'],
-            'note_type'           => ['required', 'in:credit,debit'],
-            'note_date'           => ['required', 'date'],
-            'amount_centavos'     => ['required', 'integer', 'min:1'],
-            'reason'              => ['required', 'string', 'max:500'],
-            'ar_account_id'       => ['required', 'integer', 'exists:chart_of_accounts,id'],
+            'note_type' => ['required', 'in:credit,debit'],
+            'note_date' => ['required', 'date'],
+            'amount_centavos' => ['required', 'integer', 'min:1'],
+            'reason' => ['required', 'string', 'max:500'],
+            'ar_account_id' => ['required', 'integer', 'exists:chart_of_accounts,id'],
         ]);
 
         $customer = Customer::findOrFail($data['customer_id']);
-        $note     = $this->service->create($customer, $data, $request->user());
+        $note = $this->service->create($customer, $data, $request->user());
 
         return response()->json($note->load('customer', 'customerInvoice'), 201);
     }

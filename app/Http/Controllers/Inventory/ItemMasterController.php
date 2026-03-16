@@ -8,9 +8,11 @@ use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Services\ItemMasterService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreItemMasterRequest;
+use App\Http\Resources\Inventory\ItemCategoryResource;
 use App\Http\Resources\Inventory\ItemMasterResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 final class ItemMasterController extends Controller
@@ -36,9 +38,9 @@ final class ItemMasterController extends Controller
         return ItemMasterResource::collection($query->paginate(50));
     }
 
-    public function categories(): JsonResponse
+    public function categories(): AnonymousResourceCollection
     {
-        return response()->json(['data' => $this->service->allCategories()]);
+        return ItemCategoryResource::collection($this->service->allCategories());
     }
 
     public function storeCategory(Request $request): JsonResponse
@@ -46,19 +48,20 @@ final class ItemMasterController extends Controller
         $this->authorize('create', ItemMaster::class);
 
         $data = $request->validate([
-            'code'        => 'required|string|max:50|unique:item_categories,code',
-            'name'        => 'required|string|max:200|unique:item_categories,name',
+            'code' => 'required|string|max:50|unique:item_categories,code',
+            'name' => 'required|string|max:200|unique:item_categories,name',
             'description' => 'nullable|string|max:500',
         ]);
 
         $category = $this->service->storeCategory($data);
 
-        return response()->json(['data' => $category], 201);
+        return (new ItemCategoryResource($category))->response()->setStatusCode(201);
     }
 
     public function lowStock(): ResourceCollection
     {
         $this->authorize('viewAny', ItemMaster::class);
+
         return ItemMasterResource::collection($this->service->lowStockItems());
     }
 
@@ -66,12 +69,14 @@ final class ItemMasterController extends Controller
     {
         $this->authorize('create', ItemMaster::class);
         $item = $this->service->store($request->validated());
+
         return new ItemMasterResource($item->load('category'));
     }
 
     public function show(ItemMaster $item): ItemMasterResource
     {
         $this->authorize('view', $item);
+
         return new ItemMasterResource($item->load(['category', 'stockBalances.location']));
     }
 
@@ -79,12 +84,14 @@ final class ItemMasterController extends Controller
     {
         $this->authorize('update', $item);
         $updated = $this->service->update($item, $request->validated());
+
         return new ItemMasterResource($updated->load('category'));
     }
 
     public function toggleActive(ItemMaster $item): ItemMasterResource
     {
         $this->authorize('update', $item);
+
         return new ItemMasterResource($this->service->toggleActive($item));
     }
 }

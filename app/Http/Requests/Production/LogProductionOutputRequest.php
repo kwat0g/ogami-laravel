@@ -17,12 +17,12 @@ final class LogProductionOutputRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'shift'        => ['required', 'string', 'in:A,B,C'],
-            'log_date'     => ['required', 'date'],
+            'shift' => ['required', 'string', 'in:A,B,C'],
+            'log_date' => ['required', 'date'],
             'qty_produced' => ['required', 'numeric', 'min:0.0001'],
             'qty_rejected' => ['sometimes', 'numeric', 'min:0'],
-            'operator_id'  => ['required', 'integer', 'exists:employees,id'],
-            'remarks'      => ['nullable', 'string', 'max:500'],
+            'operator_id' => ['required', 'integer', 'exists:employees,id'],
+            'remarks' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

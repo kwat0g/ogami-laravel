@@ -8,6 +8,7 @@ use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Payroll\Models\PayrollAdjustment;
 use App\Domains\Payroll\Models\PayrollRun;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
@@ -132,8 +133,8 @@ final class PayrollPostingService implements ServiceContract
         }
 
         // ── Determine system user for created_by ──────────────────────────────
-        $systemUserId = \App\Models\User::where('email', 'system-test@ogami.test')->value('id')
-            ?? \App\Models\User::value('id')
+        $systemUserId = User::where('email', 'system-test@ogami.test')->value('id')
+            ?? User::value('id')
             ?? auth()->id()
             ?? 1;
 
@@ -153,28 +154,28 @@ final class PayrollPostingService implements ServiceContract
             $lines[] = [
                 'account_id' => $acctId(config('accounting.payroll.gl_accounts.sss_payable', '2100')),
                 'debit' => null,
-                'credit' => round($sssEe / 100, 4)
+                'credit' => round($sssEe / 100, 4),
             ];
         }
         if ($phEe > 0) {
             $lines[] = [
                 'account_id' => $acctId(config('accounting.payroll.gl_accounts.philhealth_payable', '2101')),
                 'debit' => null,
-                'credit' => round($phEe / 100, 4)
+                'credit' => round($phEe / 100, 4),
             ];
         }
         if ($pagEe > 0) {
             $lines[] = [
                 'account_id' => $acctId(config('accounting.payroll.gl_accounts.pagibig_payable', '2102')),
                 'debit' => null,
-                'credit' => round($pagEe / 100, 4)
+                'credit' => round($pagEe / 100, 4),
             ];
         }
         if ($wht > 0) {
             $lines[] = [
                 'account_id' => $acctId(config('accounting.payroll.gl_accounts.tax_payable', '2103')),
                 'debit' => null,
-                'credit' => round($wht / 100, 4)
+                'credit' => round($wht / 100, 4),
             ];
         }
 
@@ -213,17 +214,17 @@ final class PayrollPostingService implements ServiceContract
                     'account_id' => $accountId,
                     'debit' => null,
                     'credit' => round($amountCentavos / 100, 4),
-                    'description' => $key === 'default' ? 'Other payroll deductions payable' : 'Payroll deduction: ' . $group->first()->description,
+                    'description' => $key === 'default' ? 'Other payroll deductions payable' : 'Payroll deduction: '.$group->first()->description,
                 ];
             }
-            
+
             // Fallback: If no adjustments were marked as applied but we have a deduction amount (legacy support or migration edge case)
             // We use the aggregated amount minus what we just processed
             $processedCentavos = $adjustments->sum('amount_centavos');
             $remainingCentavos = $otherDed - $processedCentavos;
-            
+
             if ($remainingCentavos > 0) {
-                 $lines[] = [
+                $lines[] = [
                     'account_id' => $acctId(config('accounting.payroll.gl_accounts.other_deductions_payable', '2001')),
                     'debit' => null,
                     'credit' => round($remainingCentavos / 100, 4),

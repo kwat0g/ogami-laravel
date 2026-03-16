@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Accounting\Reports;
 
+use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Accounting\Services\TrialBalanceService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\FinancialStatementRequest;
@@ -23,7 +24,7 @@ final class TrialBalanceController extends Controller
 
     public function __invoke(FinancialStatementRequest $request): TrialBalanceResource
     {
-        $this->authorize('viewAny', \App\Domains\Accounting\Models\JournalEntry::class);
+        $this->authorize('viewAny', JournalEntry::class);
 
         $report = $this->trialBalanceService->generate(
             dateFrom: Carbon::parse($request->validated('date_from')),

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Loan;
 
+use App\Domains\Loan\Models\LoanAmortizationSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\Loan\Models\LoanAmortizationSchedule
+ * @mixin LoanAmortizationSchedule
  */
 final class LoanAmortizationScheduleResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\Loan\Models\LoanAmortizationSchedule $sched */
+        /** @var LoanAmortizationSchedule $sched */
         $sched = $this->resource;
 
         return [

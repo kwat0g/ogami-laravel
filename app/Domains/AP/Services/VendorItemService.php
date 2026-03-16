@@ -44,14 +44,14 @@ final class VendorItemService implements ServiceContract
 
         return DB::transaction(function () use ($vendor, $data, $actor): VendorItem {
             return VendorItem::create([
-                'vendor_id'       => $vendor->id,
-                'item_code'       => $data['item_code'],
-                'item_name'       => $data['item_name'],
-                'description'     => $data['description'] ?? null,
+                'vendor_id' => $vendor->id,
+                'item_code' => $data['item_code'],
+                'item_name' => $data['item_name'],
+                'description' => $data['description'] ?? null,
                 'unit_of_measure' => $data['unit_of_measure'] ?? 'pc',
-                'unit_price'      => (int) $data['unit_price'],
-                'is_active'       => $data['is_active'] ?? true,
-                'created_by_id'   => $actor->id,
+                'unit_price' => (int) $data['unit_price'],
+                'is_active' => $data['is_active'] ?? true,
+                'created_by_id' => $actor->id,
             ]);
         });
     }
@@ -72,12 +72,12 @@ final class VendorItemService implements ServiceContract
         }
 
         $item->update([
-            'item_code'       => $data['item_code']       ?? $item->item_code,
-            'item_name'       => $data['item_name']       ?? $item->item_name,
-            'description'     => $data['description']     ?? $item->description,
+            'item_code' => $data['item_code'] ?? $item->item_code,
+            'item_name' => $data['item_name'] ?? $item->item_name,
+            'description' => $data['description'] ?? $item->description,
             'unit_of_measure' => $data['unit_of_measure'] ?? $item->unit_of_measure,
-            'unit_price'      => isset($data['unit_price']) ? (int) $data['unit_price'] : $item->unit_price,
-            'is_active'       => $data['is_active']       ?? $item->is_active,
+            'unit_price' => isset($data['unit_price']) ? (int) $data['unit_price'] : $item->unit_price,
+            'is_active' => $data['is_active'] ?? $item->is_active,
         ]);
 
         return $item->fresh();
@@ -126,24 +126,24 @@ final class VendorItemService implements ServiceContract
                     }
 
                     $existing->update([
-                        'item_name'       => trim((string) ($row['item_name'] ?? $existing->item_name)),
-                        'description'     => $row['description'] ?? $existing->description,
+                        'item_name' => trim((string) ($row['item_name'] ?? $existing->item_name)),
+                        'description' => $row['description'] ?? $existing->description,
                         'unit_of_measure' => trim((string) ($row['unit_of_measure'] ?? $existing->unit_of_measure)),
-                        'unit_price'      => isset($row['unit_price']) ? (int) round((float) $row['unit_price'] * 100) : $existing->unit_price,
-                        'is_active'       => isset($row['is_active']) ? (bool) $row['is_active'] : $existing->is_active,
+                        'unit_price' => isset($row['unit_price']) ? (int) round((float) $row['unit_price'] * 100) : $existing->unit_price,
+                        'is_active' => isset($row['is_active']) ? (bool) $row['is_active'] : $existing->is_active,
                     ]);
 
                     $updated++;
                 } else {
                     VendorItem::create([
-                        'vendor_id'       => $vendor->id,
-                        'item_code'       => $itemCode,
-                        'item_name'       => trim((string) ($row['item_name'] ?? '')),
-                        'description'     => $row['description'] ?? null,
+                        'vendor_id' => $vendor->id,
+                        'item_code' => $itemCode,
+                        'item_name' => trim((string) ($row['item_name'] ?? '')),
+                        'description' => $row['description'] ?? null,
                         'unit_of_measure' => trim((string) ($row['unit_of_measure'] ?? 'pc')),
-                        'unit_price'      => isset($row['unit_price']) ? (int) round((float) $row['unit_price'] * 100) : 0,
-                        'is_active'       => isset($row['is_active']) ? (bool) $row['is_active'] : true,
-                        'created_by_id'   => $actor->id,
+                        'unit_price' => isset($row['unit_price']) ? (int) round((float) $row['unit_price'] * 100) : 0,
+                        'is_active' => isset($row['is_active']) ? (bool) $row['is_active'] : true,
+                        'created_by_id' => $actor->id,
                     ]);
 
                     $created++;

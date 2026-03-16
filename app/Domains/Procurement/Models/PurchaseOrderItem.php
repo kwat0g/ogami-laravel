@@ -6,31 +6,32 @@ namespace App\Domains\Procurement\Models;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * PurchaseOrderItem — line item on a Purchase Order linked to a PR item.
  *
- * @property int         $id
- * @property int         $purchase_order_id
- * @property int|null    $pr_item_id         FK to purchase_request_items — three-way match
- * @property int|null    $item_master_id     FK to item_masters — required for GR stock update
- * @property string      $item_description
- * @property string      $unit_of_measure
+ * @property int $id
+ * @property int $purchase_order_id
+ * @property int|null $pr_item_id FK to purchase_request_items — three-way match
+ * @property int|null $item_master_id FK to item_masters — required for GR stock update
+ * @property string $item_description
+ * @property string $unit_of_measure
  * @property numeric-string $quantity_ordered
  * @property numeric-string $agreed_unit_cost
- * @property numeric-string $total_cost        GENERATED ALWAYS AS (quantity_ordered * agreed_unit_cost)
+ * @property numeric-string $total_cost GENERATED ALWAYS AS (quantity_ordered * agreed_unit_cost)
  * @property numeric-string $quantity_received updated as GRs come in
- * @property numeric-string $quantity_pending  GENERATED ALWAYS AS (quantity_ordered - quantity_received)
- * @property int         $line_order
+ * @property numeric-string $quantity_pending GENERATED ALWAYS AS (quantity_ordered - quantity_received)
+ * @property int $line_order
  */
 final class PurchaseOrderItem extends Model
 {
     use SoftDeletes;
 
     public $timestamps = true;
-    protected $table   = 'purchase_order_items';
+
+    protected $table = 'purchase_order_items';
 
     protected $fillable = [
         'purchase_order_id',

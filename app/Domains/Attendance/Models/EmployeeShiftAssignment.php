@@ -7,6 +7,7 @@ namespace App\Domains\Attendance\Models;
 use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -17,12 +18,12 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $id
  * @property int $employee_id
  * @property int $shift_schedule_id
- * @property \Illuminate\Support\Carbon $effective_from
- * @property \Illuminate\Support\Carbon|null $effective_to null = still active
+ * @property Carbon $effective_from
+ * @property Carbon|null $effective_to null = still active
  * @property string|null $notes
  * @property int $created_by FK users.id
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Employee $employee
  * @property-read ShiftSchedule $shiftSchedule
  */

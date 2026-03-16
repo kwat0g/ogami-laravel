@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace App\Domains\ISO\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Auditable;
 
 final class DocumentRevision extends Model implements \OwenIt\Auditing\Contracts\Auditable
 {
-    use \OwenIt\Auditing\Auditable, HasPublicUlid, SoftDeletes;
+    use Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'document_revisions';
 
     public $timestamps = false;
+
     const CREATED_AT = 'created_at';
 
     protected $fillable = [
@@ -32,11 +35,11 @@ final class DocumentRevision extends Model implements \OwenIt\Auditing\Contracts
 
     public function revisedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'revised_by_id');
+        return $this->belongsTo(User::class, 'revised_by_id');
     }
 
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'approved_by_id');
+        return $this->belongsTo(User::class, 'approved_by_id');
     }
 }

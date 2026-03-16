@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Accounting\Models;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,7 +26,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $closed_by
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read \App\Models\User|null             $closer
+ * @property-read User|null             $closer
  * @property-read Collection<int, JournalEntry>     $journalEntries
  */
 final class FiscalPeriod extends Model implements Auditable
@@ -52,7 +54,7 @@ final class FiscalPeriod extends Model implements Auditable
 
     public function closer(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'closed_by');
+        return $this->belongsTo(User::class, 'closed_by');
     }
 
     public function journalEntries(): HasMany
@@ -62,7 +64,7 @@ final class FiscalPeriod extends Model implements Auditable
 
     // ── Scopes ───────────────────────────────────────────────────────────────
 
-    public function scopeOpen(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeOpen(Builder $query): Builder
     {
         return $query->where('status', 'open');
     }

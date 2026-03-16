@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace App\Domains\Inventory\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * @property int    $id
- * @property int    $material_requisition_id
- * @property int    $item_id
+ * @property int $id
+ * @property int $material_requisition_id
+ * @property int $item_id
  * @property numeric-string $qty_requested
  * @property numeric-string|null $qty_issued
  * @property string|null $remarks
- * @property int    $line_order
+ * @property int $line_order
  */
 final class MaterialRequisitionItem extends Model
 {

@@ -1,0 +1,955 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Ogami ERP API",
+    "description": "Comprehensive API for Ogami ERP - Philippine Manufacturing ERP System\n\n## Authentication\n\nThis API uses Laravel Sanctum for session-based authentication. All endpoints (except login) require authentication via session cookie.\n\n## Response Format\n\nAll responses follow a consistent format:\n```json\n{\n  \"data\": { ... },\n  \"meta\": {\n    \"current_page\": 1,\n    \"last_page\": 10,\n    \"per_page\": 25,\n    \"total\": 250\n  }\n}\n```\n\n## Error Responses\n\n```json\n{\n  \"success\": false,\n  \"error_code\": \"VALIDATION_ERROR\",\n  \"message\": \"Validation failed.\",\n  \"errors\": {\n    \"field_name\": [\"Error message\"]\n  }\n}\n```\n\n## Rate Limiting\n\n- Read operations: 120 requests/minute\n- Write operations: 60 requests/minute\n\n## Domains\n\nThe API is organized into 20 domains:\n- HR (Employees, Departments, Positions)\n- Leave (Leave requests, balances)\n- Attendance (Logs, overtime, shifts)\n- Payroll (Payroll runs, computations)\n- Loans (Employee loans)\n- AP (Vendors, invoices, payments)\n- AR (Customers, invoices, payments)\n- Accounting (GL, Journal Entries, Chart of Accounts)\n- Tax (VAT, BIR filings)\n- Budget (Cost centers, budgets)\n- Fixed Assets (Assets, depreciation, disposals)\n- Inventory (Items, stock, requisitions)\n- Procurement (PR, PO, Goods Receipts)\n- Production (Orders, BOM, schedules)\n- QC (Inspections, NCR, CAPA)\n- Maintenance (Equipment, work orders)\n- Mold (Mold tracking, shot counts)\n- Delivery (Shipments, receipts)\n- ISO (Documents, audits, findings)\n- CRM (Tickets, support)",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Ogami ERP Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api/v1",
+      "description": "Local development server"
+    },
+    {
+      "url": "https://api.ogami-erp.local/api/v1",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User login",
+        "description": "Authenticate user and create session",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User logout",
+        "security": [{"sanctum": []}],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get current user",
+        "security": [{"sanctum": []}],
+        "responses": {
+          "200": {
+            "description": "Current user details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/employees": {
+      "get": {
+        "tags": ["HR - Employees"],
+        "summary": "List employees",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "department_id",
+            "in": "query",
+            "schema": {"type": "integer"},
+            "description": "Filter by department"
+          },
+          {
+            "name": "employment_status",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["active", "on_leave", "suspended", "resigned", "terminated"]},
+            "description": "Filter by employment status"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {"type": "string"},
+            "description": "Search by name or employee code"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of employees",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["HR - Employees"],
+        "summary": "Create employee",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEmployeeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Employee created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/employees/{ulid}": {
+      "get": {
+        "tags": ["HR - Employees"],
+        "summary": "Get employee details",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "ulid",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Employee ULID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employee details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Employee not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["HR - Employees"],
+        "summary": "Update employee",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "ulid",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Employee ULID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmployeeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Employee updated"
+          }
+        }
+      }
+    },
+    "/hr/employees/{ulid}/transition": {
+      "post": {
+        "tags": ["HR - Employees"],
+        "summary": "Transition employee status",
+        "description": "Change employee employment status via state machine",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "ulid",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeTransitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status transitioned successfully"
+          }
+        }
+      }
+    },
+    "/leave/requests": {
+      "get": {
+        "tags": ["Leave"],
+        "summary": "List leave requests",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["pending", "approved", "rejected", "cancelled"]},
+            "description": "Filter by status"
+          },
+          {
+            "name": "employee_id",
+            "in": "query",
+            "schema": {"type": "integer"},
+            "description": "Filter by employee"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of leave requests"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Leave"],
+        "summary": "Submit leave request",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Leave request submitted"
+          }
+        }
+      }
+    },
+    "/payroll/runs": {
+      "get": {
+        "tags": ["Payroll"],
+        "summary": "List payroll runs",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string"},
+            "description": "Filter by status (draft, processing, computed, submitted, approved, etc.)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of payroll runs"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Payroll"],
+        "summary": "Create payroll run",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePayrollRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payroll run created"
+          }
+        }
+      }
+    },
+    "/accounting/vendors": {
+      "get": {
+        "tags": ["AP - Vendors"],
+        "summary": "List vendors",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "schema": {"type": "boolean"},
+            "description": "Filter by active status"
+          },
+          {
+            "name": "accreditation_status",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["pending", "accredited", "suspended", "blacklisted"]},
+            "description": "Filter by accreditation status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of vendors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VendorListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["AP - Vendors"],
+        "summary": "Create vendor",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVendorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Vendor created"
+          }
+        }
+      }
+    },
+    "/accounting/ap/invoices": {
+      "get": {
+        "tags": ["AP - Invoices"],
+        "summary": "List AP invoices",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "vendor_id",
+            "in": "query",
+            "schema": {"type": "integer"},
+            "description": "Filter by vendor"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string"},
+            "description": "Filter by status"
+          },
+          {
+            "name": "due_date_from",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"},
+            "description": "Filter by due date range start"
+          },
+          {
+            "name": "due_date_to",
+            "in": "query",
+            "schema": {"type": "string", "format": "date"},
+            "description": "Filter by due date range end"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of AP invoices"
+          }
+        }
+      }
+    },
+    "/ar/customers": {
+      "get": {
+        "tags": ["AR - Customers"],
+        "summary": "List customers",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "schema": {"type": "boolean"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of customers"
+          }
+        }
+      },
+      "post": {
+        "tags": ["AR - Customers"],
+        "summary": "Create customer",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created"
+          }
+        }
+      }
+    },
+    "/accounting/journal-entries": {
+      "get": {
+        "tags": ["Accounting - Journal Entries"],
+        "summary": "List journal entries",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["draft", "submitted", "posted", "cancelled"]},
+            "description": "Filter by status"
+          },
+          {
+            "name": "fiscal_period_id",
+            "in": "query",
+            "schema": {"type": "integer"},
+            "description": "Filter by fiscal period"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of journal entries"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Accounting - Journal Entries"],
+        "summary": "Create journal entry",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJournalEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Journal entry created"
+          }
+        }
+      }
+    },
+    "/inventory/items": {
+      "get": {
+        "tags": ["Inventory - Items"],
+        "summary": "List item masters",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["raw_material", "semi_finished", "finished_good", "consumable", "spare_part"]},
+            "description": "Filter by item type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of items"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Inventory - Items"],
+        "summary": "Create item master",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created"
+          }
+        }
+      }
+    },
+    "/procurement/purchase-requests": {
+      "get": {
+        "tags": ["Procurement - Purchase Requests"],
+        "summary": "List purchase requests",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string"},
+            "description": "Filter by status"
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "schema": {"type": "integer"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of PRs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseRequestListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Procurement - Purchase Requests"],
+        "summary": "Create purchase request",
+        "security": [{"sanctum": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchaseRequestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "PR created"
+          }
+        }
+      }
+    },
+    "/procurement/purchase-orders": {
+      "get": {
+        "tags": ["Procurement - Purchase Orders"],
+        "summary": "List purchase orders",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "vendor_id",
+            "in": "query",
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of POs"
+          }
+        }
+      }
+    },
+    "/production/orders": {
+      "get": {
+        "tags": ["Production"],
+        "summary": "List production orders",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of production orders"
+          }
+        }
+      }
+    },
+    "/qc/inspections": {
+      "get": {
+        "tags": ["QC - Inspections"],
+        "summary": "List inspections",
+        "security": [{"sanctum": []}],
+        "parameters": [
+          {
+            "name": "stage",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["IQC", "IPQC", "OQC"]},
+            "description": "Inspection stage"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of inspections"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {"type": "string", "format": "email", "example": "admin@ogamierp.local"},
+          "password": {"type": "string", "format": "password", "example": "Admin@1234567890!"}
+        },
+        "required": ["email", "password"]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {"type": "string"},
+          "user": {"$ref": "#/components/schemas/User"}
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "name": {"type": "string"},
+          "email": {"type": "string"},
+          "roles": {"type": "array", "items": {"type": "string"}},
+          "permissions": {"type": "array", "items": {"type": "string"}},
+          "department_id": {"type": "integer", "nullable": true}
+        }
+      },
+      "Employee": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "ulid": {"type": "string"},
+          "employee_code": {"type": "string", "example": "EMP-2025-001"},
+          "first_name": {"type": "string"},
+          "last_name": {"type": "string"},
+          "full_name": {"type": "string"},
+          "date_of_birth": {"type": "string", "format": "date"},
+          "gender": {"type": "string", "enum": ["male", "female", "other"]},
+          "employment_type": {"type": "string", "enum": ["regular", "contractual", "project_based", "seasonal", "probationary"]},
+          "employment_status": {"type": "string", "enum": ["active", "on_leave", "suspended", "resigned", "terminated"]},
+          "pay_basis": {"type": "string", "enum": ["monthly", "daily", "hourly"]},
+          "basic_monthly_rate": {"type": "integer", "description": "Amount in centavos"},
+          "department_id": {"type": "integer", "nullable": true},
+          "position_id": {"type": "integer", "nullable": true},
+          "date_hired": {"type": "string", "format": "date"},
+          "has_sss_no": {"type": "boolean"},
+          "has_tin": {"type": "boolean"},
+          "has_philhealth_no": {"type": "boolean"},
+          "has_pagibig_no": {"type": "boolean"},
+          "is_active": {"type": "boolean"},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "CreateEmployeeRequest": {
+        "type": "object",
+        "properties": {
+          "first_name": {"type": "string", "maxLength": 100},
+          "last_name": {"type": "string", "maxLength": 100},
+          "date_of_birth": {"type": "string", "format": "date"},
+          "gender": {"type": "string", "enum": ["male", "female", "other"]},
+          "employment_type": {"type": "string", "enum": ["regular", "contractual", "project_based", "seasonal", "probationary"]},
+          "pay_basis": {"type": "string", "enum": ["monthly", "daily", "hourly"]},
+          "basic_monthly_rate": {"type": "integer", "description": "Amount in centavos"},
+          "department_id": {"type": "integer"},
+          "date_hired": {"type": "string", "format": "date"},
+          "tin": {"type": "string", "pattern": "^\\d{3}-\\d{3}-\\d{3}-\\d{3}$", "nullable": true},
+          "sss_no": {"type": "string", "pattern": "^\\d{2}-\\d{7}-\\d{1}$", "nullable": true},
+          "philhealth_no": {"type": "string", "pattern": "^\\d{2}-\\d{9}-\\d{1}$", "nullable": true},
+          "pagibig_no": {"type": "string", "pattern": "^\\d{4}-\\d{4}-\\d{4}$", "nullable": true}
+        },
+        "required": ["first_name", "last_name", "date_of_birth", "gender", "employment_type", "pay_basis", "basic_monthly_rate", "date_hired"]
+      },
+      "UpdateEmployeeRequest": {
+        "type": "object",
+        "properties": {
+          "first_name": {"type": "string"},
+          "last_name": {"type": "string"},
+          "department_id": {"type": "integer"},
+          "position_id": {"type": "integer"},
+          "employment_status": {"type": "string"}
+        }
+      },
+      "EmployeeTransitionRequest": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["active", "on_leave", "suspended", "resigned", "terminated"]},
+          "reason": {"type": "string"},
+          "effective_date": {"type": "string", "format": "date"}
+        },
+        "required": ["status"]
+      },
+      "EmployeeListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Employee"}},
+          "meta": {"$ref": "#/components/schemas/PaginationMeta"}
+        }
+      },
+      "LeaveRequest": {
+        "type": "object",
+        "properties": {
+          "leave_type_id": {"type": "integer"},
+          "start_date": {"type": "string", "format": "date"},
+          "end_date": {"type": "string", "format": "date"},
+          "reason": {"type": "string"},
+          "half_day": {"type": "boolean", "default": false}
+        },
+        "required": ["leave_type_id", "start_date", "end_date"]
+      },
+      "CreatePayrollRunRequest": {
+        "type": "object",
+        "properties": {
+          "pay_period_id": {"type": "integer"},
+          "department_ids": {"type": "array", "items": {"type": "integer"}},
+          "run_type": {"type": "string", "enum": ["regular", "special", "13th_month", "final"]},
+          "remarks": {"type": "string"}
+        },
+        "required": ["pay_period_id"]
+      },
+      "Vendor": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "name": {"type": "string"},
+          "tin": {"type": "string"},
+          "is_ewt_subject": {"type": "boolean"},
+          "is_active": {"type": "boolean"},
+          "accreditation_status": {"type": "string", "enum": ["pending", "accredited", "suspended", "blacklisted"]},
+          "contact_person": {"type": "string"},
+          "email": {"type": "string"},
+          "phone": {"type": "string"},
+          "address": {"type": "string"},
+          "bank_name": {"type": "string"},
+          "bank_account_no": {"type": "string"},
+          "payment_terms": {"type": "string"}
+        }
+      },
+      "CreateVendorRequest": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "maxLength": 255},
+          "tin": {"type": "string", "pattern": "^\\d{3}-\\d{3}-\\d{3}-\\d{3}$", "nullable": true},
+          "is_ewt_subject": {"type": "boolean", "default": false},
+          "is_active": {"type": "boolean", "default": true},
+          "contact_person": {"type": "string"},
+          "email": {"type": "string", "format": "email"},
+          "phone": {"type": "string"},
+          "address": {"type": "string"},
+          "bank_name": {"type": "string"},
+          "bank_account_no": {"type": "string"},
+          "bank_account_name": {"type": "string"},
+          "payment_terms": {"type": "string"}
+        },
+        "required": ["name"]
+      },
+      "VendorListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {"type": "array", "items": {"$ref": "#/components/schemas/Vendor"}},
+          "meta": {"$ref": "#/components/schemas/PaginationMeta"}
+        }
+      },
+      "CreateCustomerRequest": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "maxLength": 255},
+          "tin": {"type": "string", "pattern": "^\\d{3}-\\d{3}-\\d{3}-\\d{3}$", "nullable": true},
+          "email": {"type": "string", "format": "email"},
+          "phone": {"type": "string"},
+          "contact_person": {"type": "string"},
+          "address": {"type": "string"},
+          "credit_limit": {"type": "number", "default": 0},
+          "is_active": {"type": "boolean", "default": true}
+        },
+        "required": ["name"]
+      },
+      "CreateJournalEntryRequest": {
+        "type": "object",
+        "properties": {
+          "date": {"type": "string", "format": "date"},
+          "description": {"type": "string"},
+          "fiscal_period_id": {"type": "integer"},
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "chart_of_account_id": {"type": "integer"},
+                "debit_centavos": {"type": "integer"},
+                "credit_centavos": {"type": "integer"},
+                "description": {"type": "string"}
+              },
+              "required": ["chart_of_account_id"]
+            },
+            "minItems": 2
+          }
+        },
+        "required": ["date", "description", "fiscal_period_id", "lines"]
+      },
+      "CreateItemRequest": {
+        "type": "object",
+        "properties": {
+          "item_code": {"type": "string", "maxLength": 50},
+          "name": {"type": "string", "maxLength": 255},
+          "category_id": {"type": "integer"},
+          "type": {"type": "string", "enum": ["raw_material", "semi_finished", "finished_good", "consumable", "spare_part"]},
+          "unit_of_measure": {"type": "string"},
+          "description": {"type": "string"},
+          "reorder_point": {"type": "number"},
+          "reorder_qty": {"type": "number"},
+          "requires_iqc": {"type": "boolean", "default": false}
+        },
+        "required": ["item_code", "name", "category_id", "type", "unit_of_measure"]
+      },
+      "CreatePurchaseRequestRequest": {
+        "type": "object",
+        "properties": {
+          "department_id": {"type": "integer"},
+          "justification": {"type": "string"},
+          "urgency": {"type": "string", "enum": ["normal", "urgent", "critical"], "default": "normal"},
+          "required_date": {"type": "string", "format": "date"},
+          "notes": {"type": "string"},
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item_description": {"type": "string"},
+                "unit_of_measure": {"type": "string"},
+                "quantity": {"type": "number"},
+                "estimated_unit_cost": {"type": "number"}
+              },
+              "required": ["item_description", "unit_of_measure", "quantity"]
+            },
+            "minItems": 1
+          }
+        },
+        "required": ["department_id", "justification", "items"]
+      },
+      "PurchaseRequestListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "ulid": {"type": "string"},
+                "pr_reference": {"type": "string"},
+                "department_id": {"type": "integer"},
+                "status": {"type": "string"},
+                "urgency": {"type": "string"},
+                "justification": {"type": "string"},
+                "total_estimated_cost": {"type": "string"},
+                "created_at": {"type": "string"}
+              }
+            }
+          },
+          "meta": {"$ref": "#/components/schemas/PaginationMeta"}
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "current_page": {"type": "integer"},
+          "last_page": {"type": "integer"},
+          "per_page": {"type": "integer"},
+          "total": {"type": "integer"}
+        }
+      }
+    },
+    "securitySchemes": {
+      "sanctum": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "ogami_session",
+        "description": "Laravel Sanctum session cookie authentication"
+      }
+    }
+  }
+}

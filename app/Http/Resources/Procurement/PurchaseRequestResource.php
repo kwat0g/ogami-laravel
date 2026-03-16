@@ -17,79 +17,79 @@ final class PurchaseRequestResource extends JsonResource
         $pr = $this->resource;
 
         return [
-            'id'                    => $pr->id,
-            'ulid'                  => $pr->ulid,
-            'pr_reference'          => $pr->pr_reference,
-            'department_id'         => $pr->department_id,
-            'urgency'               => $pr->urgency,
-            'justification'         => $pr->justification,
-            'notes'                 => $pr->notes,
-            'status'                => $pr->status,
-            'total_estimated_cost'  => (float) $pr->total_estimated_cost,
+            'id' => $pr->id,
+            'ulid' => $pr->ulid,
+            'pr_reference' => $pr->pr_reference,
+            'department_id' => $pr->department_id,
+            'urgency' => $pr->urgency,
+            'justification' => $pr->justification,
+            'notes' => $pr->notes,
+            'status' => $pr->status,
+            'total_estimated_cost' => (float) $pr->total_estimated_cost,
 
             // Actors
-            'requested_by_id'   => $pr->requested_by_id,
-            'requested_by'      => $this->whenLoaded('requestedBy', fn () => [
-                'id'   => $pr->requestedBy->id,
+            'requested_by_id' => $pr->requested_by_id,
+            'requested_by' => $this->whenLoaded('requestedBy', fn () => [
+                'id' => $pr->requestedBy->id,
                 'name' => $pr->requestedBy->name,
             ]),
 
-            'submitted_by_id'   => $pr->submitted_by_id,
-            'submitted_at'      => $pr->submitted_at?->toIso8601String(),
-            'submitted_by'      => $this->whenLoaded('submittedBy', fn () => $pr->submittedBy ? [
+            'submitted_by_id' => $pr->submitted_by_id,
+            'submitted_at' => $pr->submitted_at?->toIso8601String(),
+            'submitted_by' => $this->whenLoaded('submittedBy', fn () => $pr->submittedBy ? [
                 'id' => $pr->submittedBy->id, 'name' => $pr->submittedBy->name,
             ] : null),
 
-            'noted_by_id'       => $pr->noted_by_id,
-            'noted_at'          => $pr->noted_at?->toIso8601String(),
-            'noted_comments'    => $pr->noted_comments,
-            'noted_by'          => $this->whenLoaded('notedBy', fn () => $pr->notedBy ? [
+            'noted_by_id' => $pr->noted_by_id,
+            'noted_at' => $pr->noted_at?->toIso8601String(),
+            'noted_comments' => $pr->noted_comments,
+            'noted_by' => $this->whenLoaded('notedBy', fn () => $pr->notedBy ? [
                 'id' => $pr->notedBy->id, 'name' => $pr->notedBy->name,
             ] : null),
 
-            'checked_by_id'     => $pr->checked_by_id,
-            'checked_at'        => $pr->checked_at?->toIso8601String(),
-            'checked_comments'  => $pr->checked_comments,
-            'checked_by'        => $this->whenLoaded('checkedBy', fn () => $pr->checkedBy ? [
+            'checked_by_id' => $pr->checked_by_id,
+            'checked_at' => $pr->checked_at?->toIso8601String(),
+            'checked_comments' => $pr->checked_comments,
+            'checked_by' => $this->whenLoaded('checkedBy', fn () => $pr->checkedBy ? [
                 'id' => $pr->checkedBy->id, 'name' => $pr->checkedBy->name,
             ] : null),
 
-            'reviewed_by_id'      => $pr->reviewed_by_id,
-            'reviewed_at'         => $pr->reviewed_at?->toIso8601String(),
-            'reviewed_comments'   => $pr->reviewed_comments,
-            'reviewed_by'         => $this->whenLoaded('reviewedBy', fn () => $pr->reviewedBy ? [
+            'reviewed_by_id' => $pr->reviewed_by_id,
+            'reviewed_at' => $pr->reviewed_at?->toIso8601String(),
+            'reviewed_comments' => $pr->reviewed_comments,
+            'reviewed_by' => $this->whenLoaded('reviewedBy', fn () => $pr->reviewedBy ? [
                 'id' => $pr->reviewedBy->id, 'name' => $pr->reviewedBy->name,
             ] : null),
 
-            'budget_checked_by_id'      => $pr->budget_checked_by_id,
-            'budget_checked_at'         => $pr->budget_checked_at?->toIso8601String(),
-            'budget_checked_comments'   => $pr->budget_checked_comments,
-            'budget_checked_by'         => $this->whenLoaded('budgetCheckedBy', fn () => $pr->budgetCheckedBy ? [
+            'budget_checked_by_id' => $pr->budget_checked_by_id,
+            'budget_checked_at' => $pr->budget_checked_at?->toIso8601String(),
+            'budget_checked_comments' => $pr->budget_checked_comments,
+            'budget_checked_by' => $this->whenLoaded('budgetCheckedBy', fn () => $pr->budgetCheckedBy ? [
                 'id' => $pr->budgetCheckedBy->id, 'name' => $pr->budgetCheckedBy->name,
             ] : null),
 
-            'vp_approved_by_id'  => $pr->vp_approved_by_id,
-            'vp_approved_at'     => $pr->vp_approved_at?->toIso8601String(),
-            'vp_comments'        => $pr->vp_comments,
-            'vp_approved_by'     => $this->whenLoaded('vpApprovedBy', fn () => $pr->vpApprovedBy ? [
+            'vp_approved_by_id' => $pr->vp_approved_by_id,
+            'vp_approved_at' => $pr->vp_approved_at?->toIso8601String(),
+            'vp_comments' => $pr->vp_comments,
+            'vp_approved_by' => $this->whenLoaded('vpApprovedBy', fn () => $pr->vpApprovedBy ? [
                 'id' => $pr->vpApprovedBy->id, 'name' => $pr->vpApprovedBy->name,
             ] : null),
 
-            'rejected_by_id'     => $pr->rejected_by_id,
-            'rejected_at'        => $pr->rejected_at?->toIso8601String(),
-            'rejection_reason'   => $pr->rejection_reason,
-            'rejection_stage'    => $pr->rejection_stage,
+            'rejected_by_id' => $pr->rejected_by_id,
+            'rejected_at' => $pr->rejected_at?->toIso8601String(),
+            'rejection_reason' => $pr->rejection_reason,
+            'rejection_stage' => $pr->rejection_stage,
 
             'converted_to_po_id' => $pr->converted_to_po_id,
-            'converted_at'       => $pr->converted_at?->toIso8601String(),
+            'converted_at' => $pr->converted_at?->toIso8601String(),
 
-            'items'              => PurchaseRequestItemResource::collection(
+            'items' => PurchaseRequestItemResource::collection(
                 $this->whenLoaded('items')
             ),
 
-            'deleted_at'  => $pr->deleted_at?->toIso8601String(),
-            'created_at'  => $pr->created_at?->toIso8601String(),
-            'updated_at'  => $pr->updated_at?->toIso8601String(),
+            'deleted_at' => $pr->deleted_at?->toIso8601String(),
+            'created_at' => $pr->created_at?->toIso8601String(),
+            'updated_at' => $pr->updated_at?->toIso8601String(),
         ];
     }
 }

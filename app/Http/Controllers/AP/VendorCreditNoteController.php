@@ -44,17 +44,17 @@ final class VendorCreditNoteController extends Controller
         $this->authorize('create', VendorCreditNote::class);
 
         $data = $request->validate([
-            'vendor_id'         => ['required', 'integer', 'exists:vendors,id'],
+            'vendor_id' => ['required', 'integer', 'exists:vendors,id'],
             'vendor_invoice_id' => ['nullable', 'integer', 'exists:vendor_invoices,id'],
-            'note_type'         => ['required', 'in:credit,debit'],
-            'note_date'         => ['required', 'date'],
-            'amount_centavos'   => ['required', 'integer', 'min:1'],
-            'reason'            => ['required', 'string', 'max:500'],
-            'ap_account_id'     => ['required', 'integer', 'exists:chart_of_accounts,id'],
+            'note_type' => ['required', 'in:credit,debit'],
+            'note_date' => ['required', 'date'],
+            'amount_centavos' => ['required', 'integer', 'min:1'],
+            'reason' => ['required', 'string', 'max:500'],
+            'ap_account_id' => ['required', 'integer', 'exists:chart_of_accounts,id'],
         ]);
 
         $vendor = Vendor::findOrFail($data['vendor_id']);
-        $note   = $this->service->create($vendor, $data, $request->user());
+        $note = $this->service->create($vendor, $data, $request->user());
 
         return response()->json($note->load('vendor', 'vendorInvoice'), 201);
     }

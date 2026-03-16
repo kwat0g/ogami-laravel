@@ -11,9 +11,28 @@ final class ISOPolicy
 {
     use HandlesAuthorization;
 
-    public function viewAny(User $user): bool  { return $user->hasPermissionTo('iso.view'); }
-    public function view(User $user): bool     { return $user->hasPermissionTo('iso.view'); }
-    public function create(User $user): bool   { return $user->hasPermissionTo('iso.manage'); }
-    public function update(User $user): bool   { return $user->hasPermissionTo('iso.manage'); }
-    public function audit(User $user): bool    { return $user->hasPermissionTo('iso.audit'); }
+    public function viewAny(User $user): bool
+    {
+        return $user->hasPermissionTo('iso.view');
+    }
+
+    public function view(User $user): bool
+    {
+        return $user->hasPermissionTo('iso.view');
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->hasPermissionTo('iso.manage');
+    }
+
+    public function update(User $user): bool
+    {
+        return $user->hasPermissionTo('iso.manage');
+    }
+
+    public function audit(User $user): bool
+    {
+        return $user->hasPermissionTo('iso.audit');
+    }
 }

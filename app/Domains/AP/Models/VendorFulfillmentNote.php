@@ -7,21 +7,22 @@ namespace App\Domains\AP\Models;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * VendorFulfillmentNote — tracks vendor-side fulfillment updates on a PO.
  *
- * @property int         $id
- * @property string      $ulid
- * @property int         $purchase_order_id
- * @property int         $vendor_user_id
- * @property string      $note_type         in_transit|delivered|partial
+ * @property int $id
+ * @property string $ulid
+ * @property int $purchase_order_id
+ * @property int $vendor_user_id
+ * @property string $note_type in_transit|delivered|partial
  * @property string|null $notes
- * @property array|null  $items             [{po_item_id, qty_delivered}]
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property array|null $items [{po_item_id, qty_delivered}]
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class VendorFulfillmentNote extends Model
 {

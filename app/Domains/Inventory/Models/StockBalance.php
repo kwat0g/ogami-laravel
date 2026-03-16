@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domains\Inventory\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property int    $item_id
- * @property int    $location_id
+ * @property int $item_id
+ * @property int $location_id
  * @property numeric-string $quantity_on_hand
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $updated_at
  */
 final class StockBalance extends Model
 {

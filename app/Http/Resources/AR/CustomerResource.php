@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\AR;
 
+use App\Domains\AR\Models\Customer;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\AR\Models\Customer
+ * @mixin Customer
  */
 final class CustomerResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\AR\Models\Customer $c */
+        /** @var Customer $c */
         $c = $this->resource;
-        /** @var \App\Models\User|null $portalUser */
+        /** @var User|null $portalUser */
         $portalUser = $c->relationLoaded('portalUser') ? $c->portalUser : null;
         $canManageUsers = $request->user()?->hasPermissionTo('system.manage_users') ?? false;
 

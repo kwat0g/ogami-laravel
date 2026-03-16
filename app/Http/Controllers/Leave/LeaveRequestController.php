@@ -14,6 +14,8 @@ use App\Http\Requests\Leave\ProcessLeaveRequestRequest;
 use App\Http\Requests\Leave\StoreLeaveRequestRequest;
 use App\Http\Resources\Leave\LeaveBalanceResource;
 use App\Http\Resources\Leave\LeaveRequestResource;
+use App\Models\HolidayCalendar;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -370,8 +372,8 @@ final class LeaveRequestController extends Controller
         $month = max(1, min(12, $request->integer('month', now()->month)));
         $departmentId = $request->integer('department_id', 0) ?: null;
 
-        $monthStart = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-        $monthEnd = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        $monthStart = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $monthEnd = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
 
         // Approved leave requests in the month, optionally scoped to a department
         $requests = LeaveRequest::with(['employee', 'leaveType'])
@@ -393,7 +395,7 @@ final class LeaveRequestController extends Controller
             ]);
 
         // Public holidays in the month
-        $holidays = \App\Models\HolidayCalendar::whereBetween('holiday_date', [$monthStart, $monthEnd])
+        $holidays = HolidayCalendar::whereBetween('holiday_date', [$monthStart, $monthEnd])
             ->orderBy('holiday_date')
             ->get(['holiday_date', 'name', 'holiday_type'])
             ->map(fn ($h) => [

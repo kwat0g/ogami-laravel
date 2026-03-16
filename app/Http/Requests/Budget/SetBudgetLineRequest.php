@@ -16,11 +16,11 @@ final class SetBudgetLineRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cost_center_id'           => ['required', 'integer', 'exists:cost_centers,id'],
-            'fiscal_year'              => ['required', 'integer', 'min:2000', 'max:2100'],
-            'account_id'               => ['required', 'integer', 'exists:chart_of_accounts,id'],
+            'cost_center_id' => ['required', 'integer', 'exists:cost_centers,id'],
+            'fiscal_year' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'account_id' => ['required', 'integer', 'exists:chart_of_accounts,id'],
             'budgeted_amount_centavos' => ['required', 'integer', 'min:0'],
-            'notes'                    => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

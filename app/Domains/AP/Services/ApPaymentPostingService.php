@@ -8,8 +8,10 @@ use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\AP\Models\VendorInvoice;
 use App\Domains\AP\Models\VendorPayment;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -45,7 +47,7 @@ final class ApPaymentPostingService implements ServiceContract
         }
 
         $amount = (float) $invoice->net_amount;
-        $date = $invoice->invoice_date instanceof \Carbon\Carbon
+        $date = $invoice->invoice_date instanceof Carbon
             ? $invoice->invoice_date->toDateString()
             : (string) $invoice->invoice_date;
 
@@ -100,7 +102,7 @@ final class ApPaymentPostingService implements ServiceContract
         }
 
         $amount = (float) $payment->amount;
-        $date = $payment->payment_date instanceof \Carbon\Carbon
+        $date = $payment->payment_date instanceof Carbon
             ? $payment->payment_date->toDateString()
             : (string) $payment->payment_date;
 
@@ -172,10 +174,10 @@ final class ApPaymentPostingService implements ServiceContract
 
         // Fallback: create a monthly period for the given date so payments
         // are never blocked by a missing fiscal period setup.
-        $carbon = \Carbon\Carbon::parse($date);
-        $name   = $carbon->format('M Y');           // e.g. "Mar 2026"
-        $from   = $carbon->startOfMonth()->toDateString();
-        $to     = $carbon->endOfMonth()->toDateString();
+        $carbon = Carbon::parse($date);
+        $name = $carbon->format('M Y');           // e.g. "Mar 2026"
+        $from = $carbon->startOfMonth()->toDateString();
+        $to = $carbon->endOfMonth()->toDateString();
 
         return FiscalPeriod::firstOrCreate(
             ['name' => $name],
@@ -185,8 +187,8 @@ final class ApPaymentPostingService implements ServiceContract
 
     private function systemUserId(): int
     {
-        return \App\Models\User::where('email', 'system-test@ogami.test')->value('id')
-            ?? \App\Models\User::value('id')
+        return User::where('email', 'system-test@ogami.test')->value('id')
+            ?? User::value('id')
             ?? 1;
     }
 }

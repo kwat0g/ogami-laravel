@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domains\QC\Models;
 
+use App\Domains\HR\Models\Employee;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\LotBatch;
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,8 +33,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int|null $inspector_id
  * @property string|null $remarks
  * @property int|null $created_by_id
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class Inspection extends Model implements AuditableContract
 {
@@ -81,16 +84,16 @@ final class Inspection extends Model implements AuditableContract
         return $this->belongsTo(LotBatch::class, 'lot_batch_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function inspector(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\HR\Models\Employee::class, 'inspector_id');
+        return $this->belongsTo(Employee::class, 'inspector_id');
     }
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 
     /** @return HasMany<InspectionResult, $this> */

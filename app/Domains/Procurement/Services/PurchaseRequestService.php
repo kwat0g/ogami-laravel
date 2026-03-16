@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Services;
 
+use App\Domains\HR\Models\Department;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Models\PurchaseRequestItem;
-use App\Domains\HR\Models\Department;
 use App\Models\User;
 use App\Notifications\Procurement\PurchaseRequestStatusNotification;
 use App\Shared\Contracts\ServiceContract;
@@ -249,8 +249,8 @@ final class PurchaseRequestService implements ServiceContract
         $dept = Department::find($pr->department_id);
         if ($dept !== null && $dept->annual_budget_centavos > 0) {
             $startMonth = (int) $dept->fiscal_year_start_month;
-            $now        = now();
-            $fyStart    = $now->copy()->month($startMonth)->startOfMonth();
+            $now = now();
+            $fyStart = $now->copy()->month($startMonth)->startOfMonth();
             if ($fyStart->gt($now)) {
                 $fyStart->subYear();
             }
@@ -264,7 +264,7 @@ final class PurchaseRequestService implements ServiceContract
             $prAmount = (int) $pr->total_estimated_cost;
 
             if (($ytdSpend + $prAmount) > $dept->annual_budget_centavos) {
-                $fmt = fn (int $c) => '₱' . number_format($c / 100, 2);
+                $fmt = fn (int $c) => '₱'.number_format($c / 100, 2);
                 throw new DomainException(
                     message: sprintf(
                         'Budget exceeded. Department budget: %s. YTD spend: %s. This PR: %s.',
@@ -279,10 +279,10 @@ final class PurchaseRequestService implements ServiceContract
         }
 
         $pr->update([
-            'status'                   => 'budget_checked',
-            'budget_checked_by_id'     => $actor->id,
-            'budget_checked_at'        => now(),
-            'budget_checked_comments'  => $comments,
+            'status' => 'budget_checked',
+            'budget_checked_by_id' => $actor->id,
+            'budget_checked_at' => now(),
+            'budget_checked_comments' => $comments,
         ]);
 
         $refreshed = $pr->refresh();
@@ -312,9 +312,9 @@ final class PurchaseRequestService implements ServiceContract
         }
 
         $pr->update([
-            'status'       => 'returned',
+            'status' => 'returned',
             'returned_by_id' => $actor->id,
-            'returned_at'  => now(),
+            'returned_at' => now(),
             'return_reason' => $reason,
         ]);
 

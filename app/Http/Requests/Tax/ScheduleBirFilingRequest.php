@@ -18,11 +18,11 @@ final class ScheduleBirFilingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'form_type'              => ['required', Rule::in(BirFilingService::FORM_TYPES)],
-            'fiscal_period_id'       => ['required', 'integer', 'exists:fiscal_periods,id'],
-            'due_date'               => ['nullable', 'date'],
+            'form_type' => ['required', Rule::in(BirFilingService::FORM_TYPES)],
+            'fiscal_period_id' => ['required', 'integer', 'exists:fiscal_periods,id'],
+            'due_date' => ['nullable', 'date'],
             'total_tax_due_centavos' => ['nullable', 'integer', 'min:0'],
-            'notes'                  => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

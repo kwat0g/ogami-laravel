@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Domains\Tax\Models;
 
 use App\Exceptions\DomainException;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use OwenIt\Auditing\Auditable as AuditableTrait;
@@ -25,7 +28,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property float $carry_forward_from_prior
  * @property float $net_vat storedAs: output_vat - input_vat
  * @property bool $is_closed
- * @property \Carbon\Carbon|null $closed_at
+ * @property Carbon|null $closed_at
  * @property int|null $closed_by
  * @property-read float $vat_payable
  */
@@ -58,7 +61,7 @@ class VatLedger extends Model implements Auditable
 
     public function closedByUser(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'closed_by');
+        return $this->belongsTo(User::class, 'closed_by');
     }
 
     // ── Computed Accessors ─────────────────────────────────────────────────────
@@ -76,7 +79,7 @@ class VatLedger extends Model implements Auditable
 
     // ── Scopes ─────────────────────────────────────────────────────────────────
 
-    public function scopeForPeriod(\Illuminate\Database\Eloquent\Builder $query, int $fiscalPeriodId): \Illuminate\Database\Eloquent\Builder
+    public function scopeForPeriod(Builder $query, int $fiscalPeriodId): Builder
     {
         return $query->where('fiscal_period_id', $fiscalPeriodId);
     }

@@ -225,7 +225,7 @@ export default function VicePresidentDashboard() {
           {[
             { label: 'Pending Approvals',   href: '/approvals/pending',                 icon: CheckCircle },
             { label: 'Purchase Requests',   href: '/procurement/purchase-requests',      icon: ClipboardList },
-            { label: 'Requisitions',        href: '/inventory/mrqs',                     icon: Box },
+            { label: 'Requisitions',        href: '/inventory/requisitions',             icon: Box },
             { label: 'Payroll Runs',        href: '/payroll/runs',                       icon: DollarSign },
             { label: 'Production Orders',   href: '/production/orders',                  icon: Wrench },
             { label: 'Govt Reports',        href: '/reports/government',                 icon: TrendingUp },

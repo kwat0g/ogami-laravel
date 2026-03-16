@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\CRM\Models;
 
+use App\Domains\AR\Models\Customer;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,23 +18,23 @@ use OwenIt\Auditing\Contracts\Auditable;
 /**
  * Ticket — CRM support ticket raised by a client or on behalf of a customer.
  *
- * @property int         $id
- * @property string      $ulid
- * @property int|null    $customer_id
- * @property int|null    $client_user_id
- * @property string      $ticket_number      TKT-YYYY-NNNNN
- * @property string      $subject
- * @property string      $description
- * @property string      $type               complaint|inquiry|request
- * @property string      $priority           low|normal|high|critical
- * @property string      $status             open|in_progress|pending_client|resolved|closed
- * @property int|null    $assigned_to_id
- * @property \Carbon\Carbon|null $resolved_at
- * @property \Carbon\Carbon|null $sla_due_at
- * @property \Carbon\Carbon|null $first_response_at
- * @property \Carbon\Carbon|null $sla_breached_at
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property int $id
+ * @property string $ulid
+ * @property int|null $customer_id
+ * @property int|null $client_user_id
+ * @property string $ticket_number TKT-YYYY-NNNNN
+ * @property string $subject
+ * @property string $description
+ * @property string $type complaint|inquiry|request
+ * @property string $priority low|normal|high|critical
+ * @property string $status open|in_progress|pending_client|resolved|closed
+ * @property int|null $assigned_to_id
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $sla_due_at
+ * @property Carbon|null $first_response_at
+ * @property Carbon|null $sla_breached_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class Ticket extends Model implements Auditable
 {
@@ -57,10 +59,10 @@ final class Ticket extends Model implements Auditable
     ];
 
     protected $casts = [
-        'resolved_at'       => 'datetime',
-        'sla_due_at'        => 'datetime',
+        'resolved_at' => 'datetime',
+        'sla_due_at' => 'datetime',
         'first_response_at' => 'datetime',
-        'sla_breached_at'   => 'datetime',
+        'sla_breached_at' => 'datetime',
     ];
 
     /**
@@ -71,9 +73,9 @@ final class Ticket extends Model implements Auditable
     {
         return match ($priority) {
             'critical' => 4,
-            'high'     => 24,
-            'low'      => 120,
-            default    => 48,  // normal
+            'high' => 24,
+            'low' => 120,
+            default => 48,  // normal
         };
     }
 
@@ -95,10 +97,10 @@ final class Ticket extends Model implements Auditable
 
     // ── Relations ────────────────────────────────────────────────────────────
 
-    /** @return BelongsTo<\App\Domains\AR\Models\Customer, Ticket> */
+    /** @return BelongsTo<Customer, Ticket> */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\AR\Models\Customer::class);
+        return $this->belongsTo(Customer::class);
     }
 
     /** @return BelongsTo<User, Ticket> */

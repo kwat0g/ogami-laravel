@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\AR;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 
@@ -43,7 +44,7 @@ class CreateCustomerInvoiceRequest extends FormRequest
         ];
     }
 
-    public function withValidator(\Illuminate\Contracts\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
         $validator->after(function ($v) {
             $vatAmount = (float) ($this->input('vat_amount') ?? 0);

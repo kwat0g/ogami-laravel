@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ISO\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,17 +26,17 @@ final class InternalAudit extends Model implements AuditableContract
 
     protected $casts = [
         'audit_date' => 'date',
-        'closed_at'  => 'datetime',
+        'closed_at' => 'datetime',
     ];
 
     public function leadAuditor(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'lead_auditor_id');
+        return $this->belongsTo(User::class, 'lead_auditor_id');
     }
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 
     public function findings(): HasMany

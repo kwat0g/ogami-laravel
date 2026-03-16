@@ -44,7 +44,7 @@ final class DepreciateFixedAssets extends Command
         }
 
         $actorId = (int) ($this->option('actor-id') ?? 1);
-        $actor   = User::find($actorId);
+        $actor = User::find($actorId);
 
         if ($actor === null) {
             $this->error("User ID {$actorId} not found.");

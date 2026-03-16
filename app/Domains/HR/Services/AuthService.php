@@ -9,7 +9,9 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Authentication orchestrator.
@@ -94,7 +96,7 @@ final class AuthService implements ServiceContract
         // Only delete if an actual DB token is in use (not a Sanctum TransientToken
         // used for session-based SPA auth).
         $accessToken = $user->currentAccessToken();
-        if ($accessToken instanceof \Laravel\Sanctum\PersonalAccessToken) {
+        if ($accessToken instanceof PersonalAccessToken) {
             $accessToken->delete();
         }
     }
@@ -139,7 +141,7 @@ final class AuthService implements ServiceContract
             ]);
         } catch (\Throwable $e) {
             // Never let an audit write failure bubble up and break the auth flow.
-            \Illuminate\Support\Facades\Log::warning('Auth audit write failed: '.$e->getMessage(), [
+            Log::warning('Auth audit write failed: '.$e->getMessage(), [
                 'event' => $event,
                 'email' => $metadata['email'] ?? null,
             ]);

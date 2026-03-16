@@ -8,8 +8,16 @@ import { useState, Fragment } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, ArrowRight, Flag, CheckSquare, AlertTriangle, Loader2,
-  Search, ChevronDown, ChevronUp, Ban,
+  ArrowLeft,
+  ArrowRight,
+  Flag,
+  CheckSquare,
+  AlertTriangle,
+  Loader2,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Ban,
 } from 'lucide-react'
 import {
   usePayrollRun,
@@ -29,10 +37,10 @@ function formatCentavos(c: number | null | undefined): string {
 
 // ── Breakdown tab ─────────────────────────────────────────────────────────────
 function BreakdownTab({ runId }: { runId: string | null }) {
-  const [page, setPage]                 = useState(1)
-  const [search, setSearch]             = useState('')
-  const [expandedId, setExpandedId]     = useState<number | null>(null)
-  const [flagFilter, setFlagFilter]     = useState<string>('')
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [flagFilter, setFlagFilter] = useState<string>('')
 
   const { data, isLoading } = usePayrollBreakdown(runId, {
     page,
@@ -76,14 +84,14 @@ function BreakdownTab({ runId }: { runId: string | null }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search employees…"
             className="w-full pl-9 pr-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
           />
         </div>
         <select
           value={flagFilter}
-          onChange={e => setFlagFilter(e.target.value)}
+          onChange={(e) => setFlagFilter(e.target.value)}
           className="border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
         >
           <option value="">All Employees</option>
@@ -112,9 +120,9 @@ function BreakdownTab({ runId }: { runId: string | null }) {
               </tr>
             </thead>
             <tbody>
-              {(data?.data ?? []).map(detail => {
+              {(data?.data ?? []).map((detail) => {
                 const isExpanded = expandedId === detail.id
-                const isFlagged  = detail.employee_flag === 'flagged'
+                const isFlagged = detail.employee_flag === 'flagged'
                 return (
                   <Fragment key={detail.id}>
                     <tr
@@ -122,7 +130,9 @@ function BreakdownTab({ runId }: { runId: string | null }) {
                     >
                       <td className="px-3 py-2">
                         <p className="font-medium text-neutral-800">
-                          {detail.employee ? `${detail.employee.first_name} ${detail.employee.last_name}` : `#${detail.employee_id}`}
+                          {detail.employee
+                            ? `${detail.employee.first_name} ${detail.employee.last_name}`
+                            : `#${detail.employee_id}`}
                         </p>
                         {detail.is_below_min_wage && (
                           <span className="text-xs text-red-600 font-medium">↓ Below min wage</span>
@@ -131,9 +141,15 @@ function BreakdownTab({ runId }: { runId: string | null }) {
                           <span className="ml-1 text-xs text-amber-600 font-medium">LN-007</span>
                         )}
                       </td>
-                      <td className="py-2 pr-4 text-right text-neutral-700">{formatCentavos(detail.gross_pay_centavos)}</td>
-                      <td className="py-2 pr-4 text-right text-neutral-700">{formatCentavos(detail.total_deductions_centavos)}</td>
-                      <td className="py-2 pr-4 text-right font-medium text-neutral-900">{formatCentavos(detail.net_pay_centavos)}</td>
+                      <td className="py-2 pr-4 text-right text-neutral-700">
+                        {formatCentavos(detail.gross_pay_centavos)}
+                      </td>
+                      <td className="py-2 pr-4 text-right text-neutral-700">
+                        {formatCentavos(detail.total_deductions_centavos)}
+                      </td>
+                      <td className="py-2 pr-4 text-right font-medium text-neutral-900">
+                        {formatCentavos(detail.net_pay_centavos)}
+                      </td>
                       <td className="py-2 pr-4 text-center">
                         <button
                           type="button"
@@ -151,7 +167,11 @@ function BreakdownTab({ runId }: { runId: string | null }) {
                           onClick={() => setExpandedId(isExpanded ? null : detail.id)}
                           className="p-1 rounded text-neutral-400 hover:text-neutral-700"
                         >
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -159,22 +179,68 @@ function BreakdownTab({ runId }: { runId: string | null }) {
                       <tr key={`${detail.id}-expanded`} className="bg-neutral-50">
                         <td colSpan={6} className="px-4 py-3">
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                            <div><p className="text-neutral-400">Basic Pay</p><p className="font-medium">{formatCentavos(detail.basic_pay_centavos)}</p></div>
-                            <div><p className="text-neutral-400">OT Pay</p><p className="font-medium">{formatCentavos(detail.overtime_pay_centavos)}</p></div>
-                            <div><p className="text-neutral-400">SSS (EE)</p><p className="font-medium">{formatCentavos(detail.sss_ee_centavos)}</p></div>
-                            <div><p className="text-neutral-400">PhilHealth (EE)</p><p className="font-medium">{formatCentavos(detail.philhealth_ee_centavos)}</p></div>
-                            <div><p className="text-neutral-400">Pag-IBIG (EE)</p><p className="font-medium">{formatCentavos(detail.pagibig_ee_centavos)}</p></div>
-                            <div><p className="text-neutral-400">Withholding Tax</p><p className="font-medium">{formatCentavos(detail.withholding_tax_centavos)}</p></div>
-                            <div><p className="text-neutral-400">Loan Deductions</p><p className="font-medium">{formatCentavos(detail.loan_deductions_centavos)}</p></div>
-                            <div><p className="text-neutral-400">Other Deductions</p><p className="font-medium">{formatCentavos(detail.other_deductions_centavos)}</p></div>
+                            <div>
+                              <p className="text-neutral-400">Basic Pay</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.basic_pay_centavos)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">OT Pay</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.overtime_pay_centavos)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">SSS (EE)</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.sss_ee_centavos)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">PhilHealth (EE)</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.philhealth_ee_centavos)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Pag-IBIG (EE)</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.pagibig_ee_centavos)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Withholding Tax</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.withholding_tax_centavos)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Loan Deductions</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.loan_deductions_centavos)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-400">Other Deductions</p>
+                              <p className="font-medium">
+                                {formatCentavos(detail.other_deductions_centavos)}
+                              </p>
+                            </div>
                             {detail.ln007_applied && (
                               <div className="col-span-2">
-                                <p className="text-amber-600">LN-007 Applied — Truncated: {formatCentavos(detail.ln007_truncated_amt)} · Carried Fwd: {formatCentavos(detail.ln007_carried_fwd)}</p>
+                                <p className="text-amber-600">
+                                  LN-007 Applied — Truncated:{' '}
+                                  {formatCentavos(detail.ln007_truncated_amt)} · Carried Fwd:{' '}
+                                  {formatCentavos(detail.ln007_carried_fwd)}
+                                </p>
                               </div>
                             )}
                             {detail.review_note && (
                               <div className="col-span-4 bg-amber-50 p-2 rounded">
-                                <p className="text-amber-800"><strong>Review Note:</strong> {detail.review_note}</p>
+                                <p className="text-amber-800">
+                                  <strong>Review Note:</strong> {detail.review_note}
+                                </p>
                               </div>
                             )}
                           </div>
@@ -192,20 +258,26 @@ function BreakdownTab({ runId }: { runId: string | null }) {
       {/* Pagination */}
       {data?.meta?.last_page > 1 && (
         <div className="flex items-center justify-between text-sm text-neutral-500">
-          <span>Page {data.meta?.current_page} of {data.meta?.last_page} ({data.meta?.total} employees)</span>
+          <span>
+            Page {data.meta?.current_page} of {data.meta?.last_page} ({data.meta?.total} employees)
+          </span>
           <div className="flex gap-2">
             <button
               type="button"
               disabled={page <= 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => setPage((p) => p - 1)}
               className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40"
-            >← Prev</button>
+            >
+              ← Prev
+            </button>
             <button
               type="button"
               disabled={page >= (data.meta?.last_page ?? 1)}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => setPage((p) => p + 1)}
               className="px-3 py-1 border border-neutral-300 rounded disabled:opacity-40"
-            >Next →</button>
+            >
+              Next →
+            </button>
           </div>
         </div>
       )}
@@ -218,8 +290,18 @@ function ExceptionsTab({ runId }: { runId: number }) {
   const { data, isLoading } = usePayrollExceptions(runId)
   const rows = (data?.data ?? []) as Record<string, unknown>[]
 
-  if (isLoading) return <div className="flex items-center gap-2 text-sm text-neutral-400 py-8"><Loader2 className="h-4 w-4 animate-spin" /> Loading exceptions…</div>
-  if (!rows.length) return <div className="py-8 text-center text-sm text-green-600"><CheckSquare className="h-6 w-6 mx-auto mb-2" /> No exceptions found for this run.</div>
+  if (isLoading)
+    return (
+      <div className="flex items-center gap-2 text-sm text-neutral-400 py-8">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading exceptions…
+      </div>
+    )
+  if (!rows.length)
+    return (
+      <div className="py-8 text-center text-sm text-green-600">
+        <CheckSquare className="h-6 w-6 mx-auto mb-2" /> No exceptions found for this run.
+      </div>
+    )
 
   return (
     <div className="space-y-2">
@@ -227,13 +309,29 @@ function ExceptionsTab({ runId }: { runId: number }) {
         <div key={i} className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-            <span className="font-medium text-amber-800">{(row.employee_name as string) ?? `Employee #${row.employee_id}`}</span>
-            {Boolean(row.department) && <span className="text-xs text-neutral-500">— {row.department as string}</span>}
+            <span className="font-medium text-amber-800">
+              {(row.employee_name as string) ?? `Employee #${row.employee_id}`}
+            </span>
+            {Boolean(row.department) && (
+              <span className="text-xs text-neutral-500">— {row.department as string}</span>
+            )}
           </div>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-neutral-600">
-            {Boolean(row.is_below_min_wage) && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Below Min Wage</span>}
-            {Boolean(row.ln007_applied)     && <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">LN-007 Applied</span>}
-            {Boolean(row.has_deferred_deductions) && <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Deferred Deductions</span>}
+            {Boolean(row.is_below_min_wage) && (
+              <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                Below Min Wage
+              </span>
+            )}
+            {Boolean(row.ln007_applied) && (
+              <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                LN-007 Applied
+              </span>
+            )}
+            {Boolean(row.has_deferred_deductions) && (
+              <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                Deferred Deductions
+              </span>
+            )}
           </div>
         </div>
       ))}
@@ -249,19 +347,19 @@ export default function PayrollRunReviewPage() {
   const runId = id ?? null
   const navigate = useNavigate()
 
-  const { data: run }       = usePayrollRun(runId)
-  const submitForHr          = useSubmitForHrApproval(runId)
-  const cancelRun            = useCancelPayrollRun(runId)
-  const [tab, setTab]        = useState<Tab>('breakdown')
+  const { data: run } = usePayrollRun(runId)
+  const submitForHr = useSubmitForHrApproval(runId)
+  const cancelRun = useCancelPayrollRun(runId)
+  const [tab, setTab] = useState<Tab>('breakdown')
   const [confirmCancel, setConfirmCancel] = useState(false)
 
   async function handleSubmitForHr() {
     try {
       await submitForHr.mutateAsync()
-      toast.success('Run submitted for Accounting Manager approval.')
-      navigate(`/payroll/runs/${runId}/acctg-review`)
+      toast.success('Run submitted for HR Manager approval.')
+      navigate(`/payroll/runs/${runId}/hr-review`)
     } catch {
-      toast.error('Failed to submit for Accounting approval.')
+      toast.error('Failed to submit for HR approval.')
     }
   }
 
@@ -277,19 +375,29 @@ export default function PayrollRunReviewPage() {
 
   if (!run) return null
 
-  // Prevent going back if already submitted or beyond
-  const isLocked = ['SUBMITTED', 'HR_APPROVED', 'ACCTG_APPROVED', 'APPROVED', 'POSTED', 'DISBURSED'].includes(run.status)
+  // Only show back button when in DRAFT status
+  const canGoBack = run.status === 'DRAFT' || run.status === 'draft'
+  // Lock editing if already submitted or beyond
+  const isLocked = [
+    'SUBMITTED',
+    'HR_APPROVED',
+    'ACCTG_APPROVED',
+    'APPROVED',
+    'POSTED',
+    'DISBURSED',
+    'PUBLISHED',
+  ].includes(run.status)
   const canSubmit = ['REVIEW', 'COMPUTED'].includes(run.status)
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: 'breakdown',  label: 'Breakdown' },
+    { key: 'breakdown', label: 'Breakdown' },
     { key: 'exceptions', label: 'Exceptions' },
-    { key: 'gov',        label: 'Gov Reports' },
+    { key: 'gov', label: 'Gov Reports' },
   ]
 
   return (
-    <div className="max-w-6xl space-y-6">
-      {!isLocked && (
+    <div className="max-w-5xl mx-auto space-y-6">
+      {canGoBack && (
         <button
           onClick={() => navigate(`/payroll/runs/${runId}/compute`)}
           className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
@@ -301,7 +409,7 @@ export default function PayrollRunReviewPage() {
       <WizardStepHeader
         step={5}
         title="Payroll Review"
-        description={`Run #${run.reference_no} — Review computed payslips, flag anomalies, then submit for Accounting approval.`}
+        description={`Run #${run.reference_no} — Review computed payslips, flag anomalies, then submit for HR approval.`}
       />
 
       {/* Tab strip */}
@@ -326,11 +434,12 @@ export default function PayrollRunReviewPage() {
 
       {/* Tab content */}
       <div>
-        {tab === 'breakdown'  && <BreakdownTab  runId={runId} />}
+        {tab === 'breakdown' && <BreakdownTab runId={runId} />}
         {tab === 'exceptions' && <ExceptionsTab runId={runId} />}
         {tab === 'gov' && (
           <div className="py-8 text-center text-sm text-neutral-400">
-            Gov report exports (SSS R3, PhilHealth RF-1, Pag-IBIG MCRF) available after disbursement.
+            Gov report exports (SSS R3, PhilHealth RF-1, Pag-IBIG MCRF) available after
+            disbursement.
           </div>
         )}
       </div>
@@ -347,14 +456,12 @@ export default function PayrollRunReviewPage() {
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
           ) : (
-            <div className="text-sm text-amber-600">
-              ⚠️ Payroll submitted — review only
-            </div>
+            <div className="text-sm text-amber-600">⚠️ Payroll submitted — review only</div>
           )}
-          
+
           {/* Cancel button - available until submitted to accounting */}
-          {!isLocked && (
-            confirmCancel ? (
+          {!isLocked &&
+            (confirmCancel ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-red-600">Cancel this run?</span>
                 <button
@@ -382,8 +489,7 @@ export default function PayrollRunReviewPage() {
               >
                 <Ban className="h-4 w-4" /> Cancel Run
               </button>
-            )
-          )}
+            ))}
         </div>
         <button
           type="button"
@@ -391,12 +497,17 @@ export default function PayrollRunReviewPage() {
           disabled={submitForHr.isPending || !canSubmit}
           className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
         >
-          {submitForHr.isPending
-            ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
-            : isLocked 
-              ? <>Already Submitted</>
-              : <>Submit for Accounting Approval <ArrowRight className="h-4 w-4" /></>
-          }
+          {submitForHr.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Submitting…
+            </>
+          ) : isLocked ? (
+            <>Already Submitted</>
+          ) : (
+            <>
+              Submit for HR Approval <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </div>
     </div>

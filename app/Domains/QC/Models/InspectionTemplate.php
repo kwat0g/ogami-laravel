@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\QC\Models;
 
+use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 final class InspectionTemplate extends Model implements AuditableContract
 {
-    use HasPublicUlid, Auditable, SoftDeletes;
+    use Auditable, HasPublicUlid, SoftDeletes;
 
     protected $table = 'inspection_templates';
 
@@ -30,10 +31,10 @@ final class InspectionTemplate extends Model implements AuditableContract
         'is_active' => 'boolean',
     ];
 
-    /** @return BelongsTo<\App\Models\User, $this> */
+    /** @return BelongsTo<User, $this> */
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 
     /** @return HasMany<InspectionTemplateItem, $this> */

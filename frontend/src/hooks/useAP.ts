@@ -27,14 +27,16 @@ interface Paginated<T> {
 // Vendors
 // ===========================================================================
 
-export function useVendors(params: {
-  is_active?: boolean
-  is_ewt_subject?: boolean
-  accreditation_status?: string
-  search?: string
-  per_page?: number
-  page?: number
-} = {}) {
+export function useVendors(
+  params: {
+    is_active?: boolean
+    is_ewt_subject?: boolean
+    accreditation_status?: string
+    search?: string
+    per_page?: number
+    page?: number
+  } = {},
+) {
   return useQuery({
     queryKey: ['vendors', params],
     queryFn: async () => {
@@ -63,14 +65,16 @@ export function useVendorItems(vendorId: number | null) {
   return useQuery({
     queryKey: ['vendor-items', vendorId],
     queryFn: async () => {
-      const res = await api.get<{ data: Array<{
-        id: number
-        item_code: string
-        name: string
-        unit_of_measure: string
-        unit_price_centavos: number
-        is_active: boolean
-      }> }>(`/accounting/vendors/${vendorId}/items`, { params: { is_active: true, per_page: 500 } })
+      const res = await api.get<{
+        data: Array<{
+          id: number
+          item_code: string
+          item_name: string
+          unit_of_measure: string
+          unit_price: number
+          is_active: boolean
+        }>
+      }>(`/accounting/vendors/${vendorId}/items`, { params: { is_active: true, per_page: 500 } })
       return res.data.data
     },
     enabled: vendorId !== null && vendorId > 0,
@@ -183,7 +187,7 @@ export function useAPInvoicesDueSoon(days = 7) {
       return res.data.data
     },
     staleTime: 60_000,
-    refetchInterval: 60_000,        // auto-refresh every 60s for the monitor page
+    refetchInterval: 60_000, // auto-refresh every 60s for the monitor page
     refetchIntervalInBackground: false,
   })
 }
@@ -246,7 +250,9 @@ export function useHeadNoteAPInvoice(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async () => {
-      const res = await api.patch<{ data: VendorInvoice }>(`/accounting/ap/invoices/${id}/head-note`)
+      const res = await api.patch<{ data: VendorInvoice }>(
+        `/accounting/ap/invoices/${id}/head-note`,
+      )
       return res.data.data
     },
     onSuccess: () => {
@@ -259,7 +265,9 @@ export function useManagerCheckAPInvoice(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async () => {
-      const res = await api.patch<{ data: VendorInvoice }>(`/accounting/ap/invoices/${id}/manager-check`)
+      const res = await api.patch<{ data: VendorInvoice }>(
+        `/accounting/ap/invoices/${id}/manager-check`,
+      )
       return res.data.data
     },
     onSuccess: () => {
@@ -272,7 +280,9 @@ export function useOfficerReviewAPInvoice(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async () => {
-      const res = await api.patch<{ data: VendorInvoice }>(`/accounting/ap/invoices/${id}/officer-review`)
+      const res = await api.patch<{ data: VendorInvoice }>(
+        `/accounting/ap/invoices/${id}/officer-review`,
+      )
       return res.data.data
     },
     onSuccess: () => {
@@ -313,9 +323,12 @@ export function useApAgingReport(asOfDate?: string) {
   return useQuery({
     queryKey: ['ap-aging-report', asOfDate],
     queryFn: async () => {
-      const res = await api.get<{ data: ApAgingRow[]; as_of_date: string }>('/accounting/ap/aging-report', {
-        params: asOfDate ? { as_of_date: asOfDate } : {},
-      })
+      const res = await api.get<{ data: ApAgingRow[]; as_of_date: string }>(
+        '/accounting/ap/aging-report',
+        {
+          params: asOfDate ? { as_of_date: asOfDate } : {},
+        },
+      )
       return res.data
     },
     staleTime: 60_000,
@@ -346,7 +359,9 @@ export function useCheckVoucher(paymentId: number | null) {
   return useQuery({
     queryKey: ['check-voucher', paymentId],
     queryFn: async () => {
-      const res = await api.get<{ data: CheckVoucherData }>(`/accounting/ap/check-voucher/${paymentId}`)
+      const res = await api.get<{ data: CheckVoucherData }>(
+        `/accounting/ap/check-voucher/${paymentId}`,
+      )
       return res.data.data
     },
     enabled: paymentId !== null,

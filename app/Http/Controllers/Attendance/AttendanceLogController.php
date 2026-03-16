@@ -87,10 +87,10 @@ final class AttendanceLogController extends Controller
 
         $validated = $request->validate([
             'employee_id' => 'required|integer|exists:employees,id',
-            'work_date'   => 'required|date|before_or_equal:today',
-            'time_in'     => 'nullable|date_format:H:i',
-            'time_out'    => 'nullable|date_format:H:i|after_or_equal:time_in',
-            'remarks'     => 'nullable|string|max:500',
+            'work_date' => 'required|date|before_or_equal:today',
+            'time_in' => 'nullable|date_format:H:i',
+            'time_out' => 'nullable|date_format:H:i|after_or_equal:time_in',
+            'remarks' => 'nullable|string|max:500',
         ]);
 
         // Check if log already exists for this employee + date
@@ -117,12 +117,12 @@ final class AttendanceLogController extends Controller
             [$sh, $sm] = array_pad(explode(':', $shift->start_time), 2, '00');
             [$eh, $em] = array_pad(explode(':', $shift->end_time), 2, '00');
             $shiftStartMins = (int) $sh * 60 + (int) $sm;
-            $shiftEndMins   = (int) $eh * 60 + (int) $em;
+            $shiftEndMins = (int) $eh * 60 + (int) $em;
             if ($shiftEndMins <= $shiftStartMins) {
                 $shiftEndMins += 1440; // overnight shift
             }
-            $windowOpen  = $shiftStartMins - 240; // 4 h before shift start
-            $windowClose = $shiftEndMins   + 240; // 4 h after shift end
+            $windowOpen = $shiftStartMins - 240; // 4 h before shift start
+            $windowClose = $shiftEndMins + 240; // 4 h after shift end
 
             [$tih, $tim] = explode(':', $validated['time_in']);
             $timeInMins = (int) $tih * 60 + (int) $tim;
@@ -154,18 +154,18 @@ final class AttendanceLogController extends Controller
         }
 
         // Build full timestamps by combining work_date + H:i time strings
-        $workDate  = $validated['work_date'];
-        $timeInTs  = $validated['time_in']  ? $workDate . ' ' . $validated['time_in']  . ':00' : null;
-        $timeOutTs = $validated['time_out'] ? $workDate . ' ' . $validated['time_out'] . ':00' : null;
+        $workDate = $validated['work_date'];
+        $timeInTs = $validated['time_in'] ? $workDate.' '.$validated['time_in'].':00' : null;
+        $timeOutTs = $validated['time_out'] ? $workDate.' '.$validated['time_out'].':00' : null;
 
         // Calculate worked / late / undertime using actual shift data where available
-        $workedMinutes    = 0;
-        $lateMinutes      = 0;
+        $workedMinutes = 0;
+        $lateMinutes = 0;
         $undertimeMinutes = 0;
-        $isPresent        = false;
+        $isPresent = false;
 
         if ($timeInTs && $timeOutTs) {
-            $timeInObj  = new \DateTime($timeInTs);
+            $timeInObj = new \DateTime($timeInTs);
             $timeOutObj = new \DateTime($timeOutTs);
 
             // Handle overnight: time_out < time_in means it crossed midnight
@@ -173,14 +173,14 @@ final class AttendanceLogController extends Controller
                 $timeOutObj->modify('+1 day');
             }
 
-            $grossMinutes  = (int) (($timeOutObj->getTimestamp() - $timeInObj->getTimestamp()) / 60);
-            $breakMinutes  = $shift ? $shift->break_minutes : ($grossMinutes >= 480 ? 60 : 0);
+            $grossMinutes = (int) (($timeOutObj->getTimestamp() - $timeInObj->getTimestamp()) / 60);
+            $breakMinutes = $shift ? $shift->break_minutes : ($grossMinutes >= 480 ? 60 : 0);
             $workedMinutes = max(0, $grossMinutes - $breakMinutes);
 
             // Late = time_in exceeds shift start + grace period
             $scheduledStartStr = $shift ? substr($shift->start_time, 0, 5) : '09:00';
-            $graceMins         = (int) ($shift ? $shift->grace_period_minutes : 0);
-            $scheduledStart    = new \DateTime($workDate . ' ' . $scheduledStartStr . ':00');
+            $graceMins = (int) ($shift ? $shift->grace_period_minutes : 0);
+            $scheduledStart = new \DateTime($workDate.' '.$scheduledStartStr.':00');
             if ($graceMins > 0) {
                 $scheduledStart->modify("+{$graceMins} minutes");
             }
@@ -198,19 +198,19 @@ final class AttendanceLogController extends Controller
         }
 
         $log = AttendanceLog::create([
-            'employee_id'       => $validated['employee_id'],
-            'work_date'         => $workDate,
-            'source'            => 'manual',
-            'time_in'           => $timeInTs,
-            'time_out'          => $timeOutTs,
-            'worked_minutes'    => $workedMinutes,
-            'late_minutes'      => $lateMinutes,
+            'employee_id' => $validated['employee_id'],
+            'work_date' => $workDate,
+            'source' => 'manual',
+            'time_in' => $timeInTs,
+            'time_out' => $timeOutTs,
+            'worked_minutes' => $workedMinutes,
+            'late_minutes' => $lateMinutes,
             'undertime_minutes' => $undertimeMinutes,
-            'overtime_minutes'  => 0,
-            'is_present'        => $isPresent,
-            'is_absent'         => ! $isPresent,
-            'remarks'           => $validated['remarks'] ?? null,
-            'processed_by'      => $request->user()->id,
+            'overtime_minutes' => 0,
+            'is_present' => $isPresent,
+            'is_absent' => ! $isPresent,
+            'remarks' => $validated['remarks'] ?? null,
+            'processed_by' => $request->user()->id,
         ]);
 
         return new AttendanceLogResource($log->load('employee'));
@@ -225,9 +225,9 @@ final class AttendanceLogController extends Controller
         $this->authorize('update', $attendanceLog);
 
         $validated = $request->validate([
-            'time_in'  => 'nullable|date_format:H:i',
+            'time_in' => 'nullable|date_format:H:i',
             'time_out' => 'nullable|date_format:H:i|after_or_equal:time_in',
-            'remarks'  => 'nullable|string|max:500',
+            'remarks' => 'nullable|string|max:500',
         ]);
 
         // Resolve the employee's active shift for this log's work date
@@ -243,34 +243,34 @@ final class AttendanceLogController extends Controller
             ?->shiftSchedule;
 
         // Build timestamps: new H:i input takes precedence, otherwise keep existing value
-        $timeInTs  = array_key_exists('time_in', $validated)
-            ? ($validated['time_in']  ? $workDate . ' ' . $validated['time_in']  . ':00' : null)
-            : ($attendanceLog->time_in  !== null ? (string) $attendanceLog->time_in  : null);
+        $timeInTs = array_key_exists('time_in', $validated)
+            ? ($validated['time_in'] ? $workDate.' '.$validated['time_in'].':00' : null)
+            : ($attendanceLog->time_in !== null ? (string) $attendanceLog->time_in : null);
         $timeOutTs = array_key_exists('time_out', $validated)
-            ? ($validated['time_out'] ? $workDate . ' ' . $validated['time_out'] . ':00' : null)
+            ? ($validated['time_out'] ? $workDate.' '.$validated['time_out'].':00' : null)
             : ($attendanceLog->time_out !== null ? (string) $attendanceLog->time_out : null);
 
         // Recalculate worked / late / undertime
-        $workedMinutes    = 0;
-        $lateMinutes      = 0;
+        $workedMinutes = 0;
+        $lateMinutes = 0;
         $undertimeMinutes = 0;
-        $isPresent        = false;
+        $isPresent = false;
 
         if ($timeInTs && $timeOutTs) {
-            $timeInObj  = new \DateTime($timeInTs);
+            $timeInObj = new \DateTime($timeInTs);
             $timeOutObj = new \DateTime($timeOutTs);
 
             if ($timeOutObj < $timeInObj) {
                 $timeOutObj->modify('+1 day');
             }
 
-            $grossMinutes  = (int) (($timeOutObj->getTimestamp() - $timeInObj->getTimestamp()) / 60);
-            $breakMinutes  = $shift ? $shift->break_minutes : ($grossMinutes >= 480 ? 60 : 0);
+            $grossMinutes = (int) (($timeOutObj->getTimestamp() - $timeInObj->getTimestamp()) / 60);
+            $breakMinutes = $shift ? $shift->break_minutes : ($grossMinutes >= 480 ? 60 : 0);
             $workedMinutes = max(0, $grossMinutes - $breakMinutes);
 
             $scheduledStartStr = $shift ? substr($shift->start_time, 0, 5) : '09:00';
-            $graceMins         = (int) ($shift ? $shift->grace_period_minutes : 0);
-            $scheduledStart    = new \DateTime($workDate . ' ' . $scheduledStartStr . ':00');
+            $graceMins = (int) ($shift ? $shift->grace_period_minutes : 0);
+            $scheduledStart = new \DateTime($workDate.' '.$scheduledStartStr.':00');
             if ($graceMins > 0) {
                 $scheduledStart->modify("+{$graceMins} minutes");
             }
@@ -287,15 +287,15 @@ final class AttendanceLogController extends Controller
         }
 
         $attendanceLog->update([
-            'time_in'           => $timeInTs,
-            'time_out'          => $timeOutTs,
-            'worked_minutes'    => $workedMinutes,
-            'late_minutes'      => $lateMinutes,
+            'time_in' => $timeInTs,
+            'time_out' => $timeOutTs,
+            'worked_minutes' => $workedMinutes,
+            'late_minutes' => $lateMinutes,
             'undertime_minutes' => $undertimeMinutes,
-            'is_present'        => $isPresent,
-            'is_absent'         => ! $isPresent,
-            'remarks'           => $validated['remarks'] ?? $attendanceLog->remarks,
-            'processed_by'      => $request->user()->id,
+            'is_present' => $isPresent,
+            'is_absent' => ! $isPresent,
+            'remarks' => $validated['remarks'] ?? $attendanceLog->remarks,
+            'processed_by' => $request->user()->id,
         ]);
 
         return new AttendanceLogResource($attendanceLog->load('employee'));

@@ -6,18 +6,18 @@ namespace App\Domains\Inventory\Models;
 
 use App\Domains\HR\Models\Department;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * @property int    $id
+ * @property int $id
  * @property string $code
  * @property string $name
  * @property string|null $zone
  * @property string|null $bin
  * @property int|null $department_id
- * @property bool   $is_active
+ * @property bool $is_active
  */
 final class WarehouseLocation extends Model
 {

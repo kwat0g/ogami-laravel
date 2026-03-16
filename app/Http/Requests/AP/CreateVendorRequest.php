@@ -21,10 +21,22 @@ final class CreateVendorRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:200'],
+            // MED-002: TIN format and uniqueness validation
             'tin' => [
                 'nullable',
                 'string',
                 'max:20',
+                'regex:/^\d{3}-\d{3}-\d{3}-\d{3}$/',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $value) {
+                        return;
+                    }
+                    // Validate format: XXX-XXX-XXX-XXX (12 digits + 3 dashes)
+                    $normalized = preg_replace('/[^0-9]/', '', $value);
+                    if (strlen($normalized) !== 12) {
+                        $fail('The TIN must be 12 digits in format XXX-XXX-XXX-XXX.');
+                    }
+                },
                 Rule::unique('vendors', 'tin')->ignore($vendorId)->whereNull('deleted_at'),
             ],
             'ewt_rate_id' => ['nullable', 'integer', 'exists:ewt_rates,id'],

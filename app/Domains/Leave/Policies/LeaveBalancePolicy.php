@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Leave\Policies;
 
+use App\Domains\HR\Models\Employee;
 use App\Domains\Leave\Models\LeaveBalance;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -32,7 +33,7 @@ final class LeaveBalancePolicy
     public function view(User $user, LeaveBalance $leaveBalance): bool
     {
         // Own balance
-        $employeeId = \App\Domains\HR\Models\Employee::where('user_id', $user->id)->value('id');
+        $employeeId = Employee::where('user_id', $user->id)->value('id');
         if ($employeeId !== null && (int) $leaveBalance->employee_id === (int) $employeeId) {
             return $user->hasPermissionTo('leaves.view_own');
         }

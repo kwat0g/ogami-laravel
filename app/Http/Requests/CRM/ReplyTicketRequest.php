@@ -16,7 +16,7 @@ final class ReplyTicketRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'body'        => ['required', 'string', 'min:1'],
+            'body' => ['required', 'string', 'min:1'],
             'is_internal' => ['boolean'],
         ];
     }

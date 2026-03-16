@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\AR;
 
+use App\Domains\AR\Models\CustomerInvoice;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\AR\Models\CustomerInvoice
+ * @mixin CustomerInvoice
  */
 final class CustomerInvoiceResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\AR\Models\CustomerInvoice $inv */
+        /** @var CustomerInvoice $inv */
         $inv = $this->resource;
 
         return [

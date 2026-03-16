@@ -17,9 +17,9 @@ final class StorePmScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'task_name'      => 'required|string|max:200',
+            'task_name' => 'required|string|max:200',
             'frequency_days' => 'required|integer|min:1',
-            'last_done_on'   => 'nullable|date',
+            'last_done_on' => 'nullable|date',
         ];
     }
 }

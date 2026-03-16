@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ClipboardCheck, AlertTriangle } from 'lucide-react'
 import { useVpPendingPurchaseRequests, useVpPendingLoans, useVpPendingMrqs } from '@/hooks/useVpApprovals'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useVpApprovePurchaseRequest, useRejectPurchaseRequest } from '@/hooks/usePurchaseRequests'
 import { useVpApproveLoan, useRejectLoan } from '@/hooks/useLoans'
 import api from '@/lib/api'
@@ -241,22 +243,26 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                       <td className="px-4 py-3 text-neutral-600">{pr.reviewed_by?.name ?? '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleApprovePR(pr.ulid)}
-                            disabled={vpApprovePR.isPending}
-                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => {
-                              setRejectPrTarget(pr.ulid)
-                              setRejectPrReason('')
-                            }}
-                            className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
-                          >
-                            Reject
-                          </button>
+                          <PermissionGuard permission={PERMISSIONS.approvals.vp.approve}>
+                            <button
+                              onClick={() => handleApprovePR(pr.ulid)}
+                              disabled={vpApprovePR.isPending}
+                              className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
+                            >
+                              Approve
+                            </button>
+                          </PermissionGuard>
+                          <PermissionGuard permission={PERMISSIONS.approvals.vp.approve}>
+                            <button
+                              onClick={() => {
+                                setRejectPrTarget(pr.ulid)
+                                setRejectPrReason('')
+                              }}
+                              className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </PermissionGuard>
                           <Link
                             to={`/procurement/purchase-requests/${pr.ulid}`}
                             className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
@@ -326,22 +332,26 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleApproveLoan(loan.ulid ?? String(loan.id))}
-                            disabled={vpApproveLoan.isPending}
-                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => {
-                              setRejectLoanTarget(loan.ulid ?? String(loan.id))
-                              setRejectLoanRemarks('')
-                            }}
-                            className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
-                          >
-                            Reject
-                          </button>
+                          <PermissionGuard permission={PERMISSIONS.loans.vp_approve}>
+                            <button
+                              onClick={() => handleApproveLoan(loan.ulid ?? String(loan.id))}
+                              disabled={vpApproveLoan.isPending}
+                              className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
+                            >
+                              Approve
+                            </button>
+                          </PermissionGuard>
+                          <PermissionGuard permission={PERMISSIONS.loans.vp_approve}>
+                            <button
+                              onClick={() => {
+                                setRejectLoanTarget(loan.ulid ?? String(loan.id))
+                                setRejectLoanRemarks('')
+                              }}
+                              className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </PermissionGuard>
                           <Link
                             to={`/hr/loans/${loan.ulid ?? loan.id}`}
                             className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
@@ -414,22 +424,26 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleApproveMRQ(mrq.ulid)}
-                            disabled={vpApproveMRQ.isPending}
-                            className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => {
-                              setRejectMrqTarget(mrq.ulid)
-                              setRejectMrqReason('')
-                            }}
-                            className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
-                          >
-                            Reject
-                          </button>
+                          <PermissionGuard permission={PERMISSIONS.inventory.mrq.vp_approve}>
+                            <button
+                              onClick={() => handleApproveMRQ(mrq.ulid)}
+                              disabled={vpApproveMRQ.isPending}
+                              className="text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 disabled:cursor-not-allowed text-white font-medium rounded transition-colors"
+                            >
+                              Approve
+                            </button>
+                          </PermissionGuard>
+                          <PermissionGuard permission={PERMISSIONS.inventory.mrq.vp_approve}>
+                            <button
+                              onClick={() => {
+                                setRejectMrqTarget(mrq.ulid)
+                                setRejectMrqReason('')
+                              }}
+                              className="text-xs px-3 py-1.5 border border-neutral-300 text-red-600 hover:bg-neutral-50 font-medium rounded transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </PermissionGuard>
                           <Link
                             to={`/inventory/requisitions/${mrq.ulid}`}
                             className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"

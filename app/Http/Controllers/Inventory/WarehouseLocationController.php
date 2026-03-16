@@ -27,14 +27,15 @@ final class WarehouseLocationController extends Controller
         $this->authorize('create', WarehouseLocation::class);
 
         $data = $request->validate([
-            'code'          => 'required|string|max:30|unique:warehouse_locations,code',
-            'name'          => 'required|string|max:100',
-            'zone'          => 'nullable|string|max:50',
-            'bin'           => 'nullable|string|max:50',
+            'code' => 'required|string|max:30|unique:warehouse_locations,code',
+            'name' => 'required|string|max:100',
+            'zone' => 'nullable|string|max:50',
+            'bin' => 'nullable|string|max:50',
             'department_id' => 'nullable|exists:departments,id',
         ]);
 
         $location = WarehouseLocation::create($data);
+
         return new WarehouseLocationResource($location->load('department'));
     }
 
@@ -43,14 +44,15 @@ final class WarehouseLocationController extends Controller
         $this->authorize('update', $warehouseLocation);
 
         $data = $request->validate([
-            'name'          => 'sometimes|string|max:100',
-            'zone'          => 'nullable|string|max:50',
-            'bin'           => 'nullable|string|max:50',
+            'name' => 'sometimes|string|max:100',
+            'zone' => 'nullable|string|max:50',
+            'bin' => 'nullable|string|max:50',
             'department_id' => 'nullable|exists:departments,id',
-            'is_active'     => 'sometimes|boolean',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $warehouseLocation->update($data);
+
         return new WarehouseLocationResource($warehouseLocation->load('department'));
     }
 }

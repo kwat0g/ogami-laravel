@@ -7,6 +7,7 @@ namespace App\Domains\Leave\Models;
 use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -29,8 +30,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property float $used days consumed by approved leave requests
  * @property float $monetized days converted to cash payout (LV-007)
  * @property float $balance stored computed = opening + accrued + adjusted - used - monetized
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read Employee $employee
  * @property-read LeaveType $leaveType
  */

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Accounting;
 
+use App\Domains\Accounting\Models\BankReconciliation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\Accounting\Models\BankReconciliation
+ * @mixin BankReconciliation
  */
 final class BankReconciliationResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\Accounting\Models\BankReconciliation $rec */
+        /** @var BankReconciliation $rec */
         $rec = $this->resource;
 
         return [

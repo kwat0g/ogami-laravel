@@ -6,9 +6,9 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Domains\Accounting\Models\RecurringJournalTemplate;
 use App\Domains\Accounting\Services\RecurringJournalTemplateService;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 
 final class RecurringJournalTemplateController extends Controller
 {
@@ -36,14 +36,14 @@ final class RecurringJournalTemplateController extends Controller
         $this->authorize('create', RecurringJournalTemplate::class);
 
         $data = $request->validate([
-            'description'         => 'required|string|max:500',
-            'frequency'           => 'required|string|in:daily,weekly,monthly,semi_monthly,annual',
-            'day_of_month'        => 'nullable|integer|min:1|max:28',
-            'next_run_date'       => 'required|date',
-            'lines'               => 'required|array|min:2',
-            'lines.*.account_id'  => 'required|integer|exists:chart_of_accounts,id',
-            'lines.*.debit'       => 'nullable|numeric|min:0',
-            'lines.*.credit'      => 'nullable|numeric|min:0',
+            'description' => 'required|string|max:500',
+            'frequency' => 'required|string|in:daily,weekly,monthly,semi_monthly,annual',
+            'day_of_month' => 'nullable|integer|min:1|max:28',
+            'next_run_date' => 'required|date',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|integer|exists:chart_of_accounts,id',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
             'lines.*.description' => 'nullable|string|max:500',
         ]);
 
@@ -64,14 +64,14 @@ final class RecurringJournalTemplateController extends Controller
         $this->authorize('update', $recurringJournalTemplate);
 
         $data = $request->validate([
-            'description'         => 'sometimes|string|max:500',
-            'frequency'           => 'sometimes|string|in:daily,weekly,monthly,semi_monthly,annual',
-            'day_of_month'        => 'nullable|integer|min:1|max:28',
-            'next_run_date'       => 'sometimes|date',
-            'lines'               => 'sometimes|array|min:2',
-            'lines.*.account_id'  => 'required_with:lines|integer|exists:chart_of_accounts,id',
-            'lines.*.debit'       => 'nullable|numeric|min:0',
-            'lines.*.credit'      => 'nullable|numeric|min:0',
+            'description' => 'sometimes|string|max:500',
+            'frequency' => 'sometimes|string|in:daily,weekly,monthly,semi_monthly,annual',
+            'day_of_month' => 'nullable|integer|min:1|max:28',
+            'next_run_date' => 'sometimes|date',
+            'lines' => 'sometimes|array|min:2',
+            'lines.*.account_id' => 'required_with:lines|integer|exists:chart_of_accounts,id',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
             'lines.*.description' => 'nullable|string|max:500',
         ]);
 

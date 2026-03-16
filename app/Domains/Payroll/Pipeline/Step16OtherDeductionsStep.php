@@ -43,7 +43,7 @@ final class Step16OtherDeductionsStep
                 // Apply full deduction
                 $remainingNet -= $amount;
                 $ctx->otherDeductionsCentavos += $amount;
-                
+
                 // Mark as applied
                 if ($adjustment->status !== 'applied') {
                     $adjustment->status = 'applied';

@@ -9,11 +9,12 @@ use App\Domains\AR\Models\Customer;
 use App\Domains\AR\Models\CustomerAdvancePayment;
 use App\Domains\AR\Models\CustomerInvoice;
 use App\Domains\AR\Models\CustomerPayment;
+use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Tax\Services\VatLedgerService;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\SodViolationException;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -48,6 +49,7 @@ final class CustomerInvoiceService implements ServiceContract
      *   vat_exemption_reason?: string,
      *   description?: string,
      *   bypass_credit_check?: bool,  AR-002 flag — must be separately authorized
+     *   delivery_receipt_id?: int,   HIGH-001: Link to delivery receipt
      * } $data
      */
     public function create(Customer $customer, array $data, int $userId): CustomerInvoice
@@ -58,6 +60,49 @@ final class CustomerInvoiceService implements ServiceContract
                 'AR_CUSTOMER_INACTIVE',
                 422
             );
+        }
+
+        // ── HIGH-001: Delivery receipt verification ────────────────────────────
+        $deliveryReceiptId = $data['delivery_receipt_id'] ?? null;
+        if ($deliveryReceiptId !== null) {
+            $deliveryReceipt = DeliveryReceipt::find($deliveryReceiptId);
+
+            if ($deliveryReceipt === null) {
+                throw new DomainException(
+                    'Delivery receipt not found.',
+                    'AR_DELIVERY_RECEIPT_NOT_FOUND',
+                    422
+                );
+            }
+
+            if ($deliveryReceipt->customer_id !== $customer->id) {
+                throw new DomainException(
+                    'Delivery receipt does not belong to this customer.',
+                    'AR_DELIVERY_CUSTOMER_MISMATCH',
+                    422
+                );
+            }
+
+            if ($deliveryReceipt->status !== 'delivered') {
+                throw new DomainException(
+                    "Cannot create invoice for delivery receipt with status '{$deliveryReceipt->status}'. Delivery must be completed first.",
+                    'AR_DELIVERY_NOT_COMPLETED',
+                    422
+                );
+            }
+
+            // Check if delivery receipt is already linked to another invoice
+            $existingInvoice = CustomerInvoice::where('delivery_receipt_id', $deliveryReceiptId)
+                ->where('status', '!=', 'cancelled')
+                ->first();
+
+            if ($existingInvoice !== null) {
+                throw new DomainException(
+                    "Delivery receipt is already linked to invoice #{$existingInvoice->invoice_number}.",
+                    'AR_DELIVERY_ALREADY_INVOICED',
+                    422
+                );
+            }
         }
 
         $subtotal = (float) $data['subtotal'];
@@ -91,6 +136,7 @@ final class CustomerInvoiceService implements ServiceContract
 
         return CustomerInvoice::create([
             'customer_id' => $customer->id,
+            'delivery_receipt_id' => $deliveryReceiptId,
             'fiscal_period_id' => $data['fiscal_period_id'],
             'ar_account_id' => $data['ar_account_id'],
             'revenue_account_id' => $data['revenue_account_id'],
@@ -347,7 +393,7 @@ final class CustomerInvoiceService implements ServiceContract
         $prefix = "INV-{$yyyy}-{$mm}-";
 
         $lastSeq = CustomerInvoice::where('invoice_number', 'like', "{$prefix}%")
-            ->max(DB::raw("CAST(RIGHT(invoice_number, 6) AS INTEGER)"));
+            ->max(DB::raw('CAST(RIGHT(invoice_number, 6) AS INTEGER)'));
 
         $seq = (int) $lastSeq + 1;
 

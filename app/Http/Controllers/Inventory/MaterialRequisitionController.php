@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Inventory;
 
 use App\Domains\Inventory\Models\MaterialRequisition;
-use App\Domains\Inventory\Models\WarehouseLocation;
 use App\Domains\Inventory\Services\MaterialRequisitionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreMaterialRequisitionRequest;
 use App\Http\Resources\Inventory\MaterialRequisitionResource;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -41,12 +39,14 @@ final class MaterialRequisitionController extends Controller
             items: $validated['items'],
             actor: $request->user(),
         );
+
         return new MaterialRequisitionResource($mrq->load(['requestedBy', 'department', 'items.item']));
     }
 
     public function show(MaterialRequisition $materialRequisition): MaterialRequisitionResource
     {
         $this->authorize('view', $materialRequisition);
+
         return new MaterialRequisitionResource(
             $materialRequisition->load(['requestedBy', 'department', 'items.item', 'notedBy', 'checkedBy', 'reviewedBy', 'vpApprovedBy', 'rejectedBy', 'fulfilledBy'])
         );
@@ -56,6 +56,7 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('update', $materialRequisition);
         $reason = $request->validate(['stock_override_reason' => 'nullable|string|max:500'])['stock_override_reason'] ?? null;
+
         return new MaterialRequisitionResource($this->service->submit($materialRequisition, $request->user(), $reason));
     }
 
@@ -63,6 +64,7 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('note', $materialRequisition);
         $comments = $request->validate(['comments' => 'nullable|string|max:1000'])['comments'] ?? null;
+
         return new MaterialRequisitionResource($this->service->note($materialRequisition, $request->user(), $comments));
     }
 
@@ -70,6 +72,7 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('check', $materialRequisition);
         $comments = $request->validate(['comments' => 'nullable|string|max:1000'])['comments'] ?? null;
+
         return new MaterialRequisitionResource($this->service->check($materialRequisition, $request->user(), $comments));
     }
 
@@ -77,6 +80,7 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('review', $materialRequisition);
         $comments = $request->validate(['comments' => 'nullable|string|max:1000'])['comments'] ?? null;
+
         return new MaterialRequisitionResource($this->service->review($materialRequisition, $request->user(), $comments));
     }
 
@@ -84,6 +88,7 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('vpApprove', $materialRequisition);
         $comments = $request->validate(['comments' => 'nullable|string|max:1000'])['comments'] ?? null;
+
         return new MaterialRequisitionResource($this->service->vpApprove($materialRequisition, $request->user(), $comments));
     }
 
@@ -91,12 +96,14 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('reject', $materialRequisition);
         $reason = $request->validate(['reason' => 'required|string|max:1000'])['reason'];
+
         return new MaterialRequisitionResource($this->service->reject($materialRequisition, $request->user(), $reason));
     }
 
     public function cancel(Request $request, MaterialRequisition $materialRequisition): MaterialRequisitionResource
     {
         $this->authorize('cancel', $materialRequisition);
+
         return new MaterialRequisitionResource($this->service->cancel($materialRequisition));
     }
 
@@ -104,6 +111,7 @@ final class MaterialRequisitionController extends Controller
     {
         $this->authorize('fulfill', $materialRequisition);
         $locationId = $request->validate(['location_id' => 'required|exists:warehouse_locations,id'])['location_id'];
+
         return new MaterialRequisitionResource($this->service->fulfill($materialRequisition, $request->user(), $locationId));
     }
 }

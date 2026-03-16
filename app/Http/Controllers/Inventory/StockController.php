@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\StockLedger;
 use App\Domains\Inventory\Services\StockService;
@@ -47,7 +48,7 @@ final class StockController extends Controller
             ->when($request->input('item_id'), fn ($q, $v) => $q->where('item_id', $v))
             ->when($request->input('location_id'), fn ($q, $v) => $q->where('location_id', $v))
             ->when($request->input('date_from'), fn ($q, $v) => $q->where('created_at', '>=', $v))
-            ->when($request->input('date_to'), fn ($q, $v) => $q->where('created_at', '<=', $v . ' 23:59:59'))
+            ->when($request->input('date_to'), fn ($q, $v) => $q->where('created_at', '<=', $v.' 23:59:59'))
             ->when($request->input('transaction_type'), fn ($q, $v) => $q->where('transaction_type', $v))
             ->orderByDesc('created_at')
             ->paginate(100);
@@ -57,7 +58,7 @@ final class StockController extends Controller
 
     public function adjust(StockAdjustmentRequest $request): JsonResponse
     {
-        $this->authorize('adjust', \App\Domains\Inventory\Models\ItemMaster::class);
+        $this->authorize('adjust', ItemMaster::class);
 
         $validated = $request->validated();
         $entry = $this->service->adjust(
@@ -70,7 +71,7 @@ final class StockController extends Controller
 
         return response()->json([
             'message' => 'Stock adjusted successfully.',
-            'data'    => new StockLedgerResource($entry),
+            'data' => new StockLedgerResource($entry),
         ]);
     }
 }

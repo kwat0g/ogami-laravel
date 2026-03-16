@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Procurement;
 
 use App\Domains\Procurement\Models\PurchaseOrder;
-use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Services\PurchaseOrderService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\StorePurchaseOrderRequest;
@@ -67,8 +66,8 @@ final class PurchaseOrderController extends Controller
 
         $validated = $request->validated();
         $po = $this->service->update(
-            po:    $purchaseOrder,
-            data:  $validated,
+            po: $purchaseOrder,
+            data: $validated,
             items: $validated['items'] ?? [],
         );
 
@@ -104,13 +103,13 @@ final class PurchaseOrderController extends Controller
         $this->authorize('manage', $purchaseOrder);
 
         $validated = $request->validate([
-            'vendor_id'              => ['required', 'integer', 'exists:vendors,id'],
-            'delivery_date'          => ['nullable', 'date'],
-            'payment_terms'          => ['nullable', 'string', 'max:100'],
-            'delivery_address'       => ['nullable', 'string'],
-            'notes'                  => ['nullable', 'string'],
-            'items'                  => ['required', 'array', 'min:1'],
-            'items.*.po_item_id'     => ['required', 'integer'],
+            'vendor_id' => ['required', 'integer', 'exists:vendors,id'],
+            'delivery_date' => ['nullable', 'date'],
+            'payment_terms' => ['nullable', 'string', 'max:100'],
+            'delivery_address' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.po_item_id' => ['required', 'integer'],
             'items.*.item_master_id' => ['nullable', 'integer', 'exists:item_masters,id'],
             'items.*.agreed_unit_cost' => ['required', 'numeric', 'min:0'],
         ]);

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Accounting;
 
+use App\Domains\Accounting\Models\BankAccount;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\Accounting\Models\BankAccount
+ * @mixin BankAccount
  */
 final class BankAccountResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\Accounting\Models\BankAccount $account */
+        /** @var BankAccount $account */
         $account = $this->resource;
 
         return [

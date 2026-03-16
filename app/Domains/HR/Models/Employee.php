@@ -11,16 +11,19 @@ use App\Domains\HR\Events\EmployeeActivated;
 use App\Domains\HR\Events\EmployeeResigned;
 use App\Domains\Leave\Models\LeaveBalance;
 use App\Domains\Leave\Models\LeaveRequest;
+use App\Infrastructure\Scopes\DepartmentScope;
 use App\Models\User;
 use App\Shared\Traits\HasDepartmentScope;
 use App\Shared\Traits\HasPublicUlid;
 use Database\Factories\EmployeeFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -42,7 +45,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $last_name
  * @property string|null $middle_name
  * @property string|null $suffix
- * @property \Illuminate\Support\Carbon $date_of_birth
+ * @property Carbon $date_of_birth
  * @property string $gender male|female|other
  * @property string|null $civil_status
  * @property string|null $citizenship
@@ -60,9 +63,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $basic_monthly_rate centavos
  * @property int $daily_rate centavos (stored computed: monthly/22)
  * @property int $hourly_rate centavos (stored computed: daily/8)
- * @property \Illuminate\Support\Carbon $date_hired
- * @property \Illuminate\Support\Carbon|null $regularization_date
- * @property \Illuminate\Support\Carbon|null $separation_date
+ * @property Carbon $date_hired
+ * @property Carbon|null $regularization_date
+ * @property Carbon|null $separation_date
  * @property string $onboarding_status draft|documents_pending|active|offboarding|offboarded
  * @property bool $is_active
  * @property string|null $sss_no_encrypted
@@ -77,9 +80,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $bank_name
  * @property string|null $bank_account_no
  * @property string|null $notes
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  * @property-read string $full_name
  * @property-read SalaryGrade|null $salaryGrade
  * @property-read Collection<int, EmployeeDocument> $documents
@@ -92,6 +95,28 @@ use OwenIt\Auditing\Contracts\Auditable;
 final class Employee extends Model implements Auditable
 {
     use AuditableTrait, HasDepartmentScope, HasFactory, HasPublicUlid, SoftDeletes;
+
+    /**
+     * Override the trait's resolveRouteBindingQuery so that route model binding
+     * always resolves by ULID across ALL departments.
+     *
+     * Why: DepartmentScope adds "WHERE department_id = X" to every query on this
+     * model.  For list endpoints that is intentional, but for single-record
+     * lookups (show / update / transition) it causes 404s whenever the target
+     * employee is in a different department than the requesting user.
+     * Authorization is enforced at the controller level via Policy gates
+     * ($this->authorize()), so bypassing the scope here is safe.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null): Builder
+    {
+        return $query
+            ->withTrashed()
+            ->withoutGlobalScope(DepartmentScope::class)
+            ->where('ulid', $value);
+    }
 
     /** @internal Point HasFactory to the explicit factory class. */
     protected static function newFactory(): EmployeeFactory
@@ -231,11 +256,22 @@ final class Employee extends Model implements Auditable
         return $this->sss_no_encrypted ? decrypt($this->sss_no_encrypted) : null;
     }
 
+    /**
+     * Normalize a government ID for hashing: strip all non-alphanumeric characters
+     * and uppercase the result. This ensures "12-3456789-0" and "1234567890"
+     * produce the same hash and are correctly detected as duplicates.
+     */
+    private static function normalizeGovId(string $value): string
+    {
+        return strtoupper((string) preg_replace('/[^A-Z0-9]/i', '', $value));
+    }
+
     /** Store SSS number encrypted + hash for uniqueness. */
     public function setSssNo(?string $value): self
     {
         $this->attributes['sss_no_encrypted'] = $value ? encrypt($value) : null;
-        $this->attributes['sss_no_hash'] = $value ? hash('sha256', $value) : null;
+        $normalized = $value ? self::normalizeGovId($value) : null;
+        $this->attributes['sss_no_hash'] = $normalized ? hash('sha256', $normalized) : null;
 
         return $this;
     }
@@ -250,7 +286,8 @@ final class Employee extends Model implements Auditable
     public function setTin(?string $value): self
     {
         $this->attributes['tin_encrypted'] = $value ? encrypt($value) : null;
-        $this->attributes['tin_hash'] = $value ? hash('sha256', $value) : null;
+        $normalized = $value ? self::normalizeGovId($value) : null;
+        $this->attributes['tin_hash'] = $normalized ? hash('sha256', $normalized) : null;
 
         return $this;
     }
@@ -265,7 +302,8 @@ final class Employee extends Model implements Auditable
     public function setPhilhealthNo(?string $value): self
     {
         $this->attributes['philhealth_no_encrypted'] = $value ? encrypt($value) : null;
-        $this->attributes['philhealth_no_hash'] = $value ? hash('sha256', $value) : null;
+        $normalized = $value ? self::normalizeGovId($value) : null;
+        $this->attributes['philhealth_no_hash'] = $normalized ? hash('sha256', $normalized) : null;
 
         return $this;
     }
@@ -280,7 +318,8 @@ final class Employee extends Model implements Auditable
     public function setPagibigNo(?string $value): self
     {
         $this->attributes['pagibig_no_encrypted'] = $value ? encrypt($value) : null;
-        $this->attributes['pagibig_no_hash'] = $value ? hash('sha256', $value) : null;
+        $normalized = $value ? self::normalizeGovId($value) : null;
+        $this->attributes['pagibig_no_hash'] = $normalized ? hash('sha256', $normalized) : null;
 
         return $this;
     }

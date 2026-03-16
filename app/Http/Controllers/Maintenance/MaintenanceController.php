@@ -14,7 +14,9 @@ use App\Http\Requests\Maintenance\StoreEquipmentRequest;
 use App\Http\Requests\Maintenance\StoreMaintenanceWorkOrderRequest;
 use App\Http\Requests\Maintenance\StorePmScheduleRequest;
 use App\Http\Resources\Maintenance\EquipmentResource;
+use App\Http\Resources\Maintenance\MaintenanceWorkOrderPartResource;
 use App\Http\Resources\Maintenance\MaintenanceWorkOrderResource;
+use App\Http\Resources\Maintenance\PmScheduleResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -28,6 +30,7 @@ final class MaintenanceController extends Controller
     public function indexEquipment(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Equipment::class);
+
         return EquipmentResource::collection(
             $this->service->paginateEquipment($request->only(['search', 'status', 'is_active', 'per_page', 'with_archived']))
         );
@@ -37,18 +40,21 @@ final class MaintenanceController extends Controller
     {
         $this->authorize('create', Equipment::class);
         $eq = $this->service->storeEquipment($request->validated(), $request->user()->id);
+
         return (new EquipmentResource($eq))->response()->setStatusCode(201);
     }
 
     public function showEquipment(Equipment $equipment): EquipmentResource
     {
         $this->authorize('view', $equipment);
+
         return new EquipmentResource($equipment->load('workOrders', 'pmSchedules'));
     }
 
     public function updateEquipment(StoreEquipmentRequest $request, Equipment $equipment): EquipmentResource
     {
         $this->authorize('update', $equipment);
+
         return new EquipmentResource($this->service->updateEquipment($equipment, $request->validated()));
     }
 
@@ -57,6 +63,7 @@ final class MaintenanceController extends Controller
     public function indexWorkOrders(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', MaintenanceWorkOrder::class);
+
         return MaintenanceWorkOrderResource::collection(
             $this->service->paginateWorkOrders($request->only(['status', 'type', 'priority', 'equipment_id', 'per_page', 'with_archived']))
         );
@@ -66,18 +73,21 @@ final class MaintenanceController extends Controller
     {
         $this->authorize('create', MaintenanceWorkOrder::class);
         $mwo = $this->service->storeWorkOrder($request->validated(), $request->user()->id);
+
         return (new MaintenanceWorkOrderResource($mwo))->response()->setStatusCode(201);
     }
 
     public function showWorkOrder(MaintenanceWorkOrder $maintenanceWorkOrder): MaintenanceWorkOrderResource
     {
         $this->authorize('view', $maintenanceWorkOrder);
+
         return new MaintenanceWorkOrderResource($maintenanceWorkOrder->load('equipment', 'assignedTo'));
     }
 
     public function startWorkOrder(MaintenanceWorkOrder $maintenanceWorkOrder): MaintenanceWorkOrderResource
     {
         $this->authorize('update', $maintenanceWorkOrder);
+
         return new MaintenanceWorkOrderResource($this->service->startWorkOrder($maintenanceWorkOrder));
     }
 
@@ -85,6 +95,7 @@ final class MaintenanceController extends Controller
     {
         $this->authorize('update', $maintenanceWorkOrder);
         $data = $request->validated();
+
         return new MaintenanceWorkOrderResource(
             $this->service->completeWorkOrder($maintenanceWorkOrder, $data, $request->user())
         );
@@ -92,11 +103,12 @@ final class MaintenanceController extends Controller
 
     // ── Work Order Parts ────────────────────────────────────────────────────
 
-    public function indexParts(MaintenanceWorkOrder $maintenanceWorkOrder): JsonResponse
+    public function indexParts(MaintenanceWorkOrder $maintenanceWorkOrder): AnonymousResourceCollection
     {
         $this->authorize('view', $maintenanceWorkOrder);
         $parts = $maintenanceWorkOrder->spareParts()->with(['item', 'location'])->get();
-        return response()->json(['data' => $parts]);
+
+        return MaintenanceWorkOrderPartResource::collection($parts);
     }
 
     public function addPart(AddMaintenancePartRequest $request, MaintenanceWorkOrder $maintenanceWorkOrder): JsonResponse
@@ -107,15 +119,16 @@ final class MaintenanceController extends Controller
 
         $part = $this->service->addPart($maintenanceWorkOrder, $validated, $request->user()->id);
 
-        return response()->json(['data' => $part->load(['item', 'location'])], 201);
+        return (new MaintenanceWorkOrderPartResource($part->load(['item', 'location'])))->response()->setStatusCode(201);
     }
 
     // ── PM Schedules ─────────────────────────────────────────────────────────
 
-    public function storePmSchedule(StorePmScheduleRequest $request, Equipment $equipment): \Illuminate\Http\JsonResponse
+    public function storePmSchedule(StorePmScheduleRequest $request, Equipment $equipment): JsonResponse
     {
         $this->authorize('update', $equipment);
         $schedule = $this->service->storePmSchedule($equipment, $request->validated());
-        return response()->json(['data' => $schedule], 201);
+
+        return (new PmScheduleResource($schedule))->response()->setStatusCode(201);
     }
 }

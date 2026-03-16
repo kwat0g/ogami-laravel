@@ -10,23 +10,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * @property int                             $id
- * @property string                          $ulid
- * @property string                          $name
- * @property string                          $code_prefix
- * @property int                             $default_useful_life_years
- * @property string                          $default_depreciation_method
- * @property int|null                        $gl_asset_account_id
- * @property int|null                        $gl_depreciation_expense_account_id
- * @property int|null                        $gl_accumulated_depreciation_account_id
- * @property int                             $created_by_id
- * @property \Illuminate\Support\Carbon      $created_at
- * @property \Illuminate\Support\Carbon      $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int $id
+ * @property string $ulid
+ * @property string $name
+ * @property string $code_prefix
+ * @property int $default_useful_life_years
+ * @property string $default_depreciation_method
+ * @property int|null $gl_asset_account_id
+ * @property int|null $gl_depreciation_expense_account_id
+ * @property int|null $gl_accumulated_depreciation_account_id
+ * @property int $created_by_id
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 final class FixedAssetCategory extends Model implements Auditable
 {

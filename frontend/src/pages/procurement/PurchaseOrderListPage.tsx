@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { useAuthStore } from '@/stores/authStore'
+
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type { PurchaseOrderStatus } from '@/types/procurement'
@@ -22,8 +22,7 @@ export default function PurchaseOrderListPage(): React.ReactElement {
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | ''>('')
   const [page, setPage] = useState(1)
   const [withArchived, setWithArchived] = useState(false)
-  const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('procurement.purchase-order.create')
+
 
   const { data, isLoading, isError } = usePurchaseOrders({
     ...(statusFilter ? { status: statusFilter } : {}),

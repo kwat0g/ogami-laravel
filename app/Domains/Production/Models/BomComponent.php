@@ -6,13 +6,13 @@ namespace App\Domains\Production\Models;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * @property int    $id
- * @property int    $bom_id
- * @property int    $component_item_id
+ * @property int $id
+ * @property int $bom_id
+ * @property int $component_item_id
  * @property string $qty_per_unit
  * @property string $unit_of_measure
  * @property string $scrap_factor_pct
@@ -36,7 +36,7 @@ final class BomComponent extends Model
     ];
 
     protected $casts = [
-        'qty_per_unit'     => 'decimal:4',
+        'qty_per_unit' => 'decimal:4',
         'scrap_factor_pct' => 'decimal:2',
     ];
 

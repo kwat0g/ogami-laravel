@@ -12,7 +12,6 @@ import { PayrollWizardProvider } from '@/contexts/PayrollWizardContext'
  * Wraps the New Payroll Run wizard routes (Steps 1-3) in a shared
  * PayrollWizardProvider so all three pages share the same context instance.
  */
-// eslint-disable-next-line react-refresh/only-export-components
 function PayrollNewRunLayout() {
   return (
     <PayrollWizardProvider>
@@ -25,7 +24,6 @@ function PayrollNewRunLayout() {
 // On page refresh the Zustand store is empty until /auth/me resolves, so we
 // must wait for isLoading to be false before denying access to avoid a false
 // 403 before the session is restored.
-// eslint-disable-next-line react-refresh/only-export-components
 function RequirePermission({ permission, children }: { permission: string; children: React.ReactNode }) {
   const { isLoading } = useAuth()
   const has = useAuthStore((s) => s.hasPermission(permission))
@@ -35,7 +33,6 @@ function RequirePermission({ permission, children }: { permission: string; child
 }
 
 // Role-aware landing route for authenticated users.
-// eslint-disable-next-line react-refresh/only-export-components
 function RoleLandingRedirect() {
   const { user, isLoading } = useAuth()
   if (isLoading) return <SkeletonLoader rows={6} />
@@ -435,12 +432,12 @@ const router = createBrowserRouter([
       { path: '/banking/reconciliations/:ulid', element: withSuspense(guard('bank_reconciliations.view', <BankReconciliationDetailPage />)) },
 
       // ── Employee self-service ──────────────────────────────────────────────
-      { path: '/self-service/payslips', element: withSuspense(<MyPayslipsPage />) },
-      { path: '/me/leaves', element: withSuspense(<MyLeavesPage />) },
-      { path: '/me/loans', element: withSuspense(<MyLoansPage />) },
-      { path: '/me/overtime', element: withSuspense(<MyOTPage />) },
-      { path: '/me/attendance', element: withSuspense(<MyAttendancePage />) },
-      { path: '/me/profile', element: withSuspense(<MyProfilePage />) },
+      { path: '/self-service/payslips', element: withSuspense(guard('payslips.view', <MyPayslipsPage />)) },
+      { path: '/me/leaves', element: withSuspense(guard('leaves.view_own', <MyLeavesPage />)) },
+      { path: '/me/loans', element: withSuspense(guard('loans.view_own', <MyLoansPage />)) },
+      { path: '/me/overtime', element: withSuspense(guard('overtime.view', <MyOTPage />)) },
+      { path: '/me/attendance', element: withSuspense(guard('attendance.view_own', <MyAttendancePage />)) },
+      { path: '/me/profile', element: withSuspense(guard('self.view_profile', <MyProfilePage />)) },
 
       // ── Account actions ────────────────────────────────────────────────────
       { path: '/account/change-password', element: withSuspense(<ChangePasswordPage />) },

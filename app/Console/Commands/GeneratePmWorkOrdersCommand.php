@@ -16,6 +16,7 @@ use Illuminate\Console\Command;
 final class GeneratePmWorkOrdersCommand extends Command
 {
     protected $signature = 'maintenance:generate-pm-work-orders';
+
     protected $description = 'Auto-create maintenance work orders from due PM schedules';
 
     public function handle(): int
@@ -26,7 +27,7 @@ final class GeneratePmWorkOrdersCommand extends Command
             ->where('is_active', true)
             ->where(function ($q) use ($today) {
                 $q->whereNull('last_done_on')
-                  ->orWhereRaw("last_done_on + (frequency_days || ' days')::interval <= ?", [$today]);
+                    ->orWhereRaw("last_done_on + (frequency_days || ' days')::interval <= ?", [$today]);
             })
             ->get();
 
@@ -45,14 +46,14 @@ final class GeneratePmWorkOrdersCommand extends Command
             }
 
             MaintenanceWorkOrder::create([
-                'equipment_id'   => $schedule->equipment_id,
-                'type'           => 'preventive',
-                'priority'       => 'medium',
-                'status'         => 'open',
-                'title'          => "PM: {$schedule->task_name}",
-                'description'    => "Auto-generated from PM schedule (frequency: every {$schedule->frequency_days} days). Equipment: " . ($schedule->equipment->name ?? "#{$schedule->equipment_id}"),
+                'equipment_id' => $schedule->equipment_id,
+                'type' => 'preventive',
+                'priority' => 'medium',
+                'status' => 'open',
+                'title' => "PM: {$schedule->task_name}",
+                'description' => "Auto-generated from PM schedule (frequency: every {$schedule->frequency_days} days). Equipment: ".($schedule->equipment->name ?? "#{$schedule->equipment_id}"),
                 'scheduled_date' => now(),
-                'created_by_id'  => 1, // System user
+                'created_by_id' => 1, // System user
             ]);
 
             $created++;

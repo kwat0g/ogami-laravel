@@ -16,11 +16,11 @@ final class StoreTicketRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'subject'        => ['required', 'string', 'max:200'],
-            'description'    => ['required', 'string', 'min:10'],
-            'type'           => ['required', 'in:complaint,inquiry,request'],
-            'priority'       => ['in:low,normal,high,critical'],
-            'customer_id'    => ['nullable', 'integer', 'exists:customers,id'],
+            'subject' => ['required', 'string', 'max:200'],
+            'description' => ['required', 'string', 'min:10'],
+            'type' => ['required', 'in:complaint,inquiry,request'],
+            'priority' => ['in:low,normal,high,critical'],
+            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
             'client_user_id' => ['nullable', 'integer', 'exists:users,id'],
         ];
     }

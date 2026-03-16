@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\AP;
 
+use App\Domains\AP\Models\VendorInvoice;
+use App\Domains\Procurement\Models\GoodsReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\AP\Models\VendorInvoice
+ * @mixin VendorInvoice
  */
 final class VendorInvoiceResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\AP\Models\VendorInvoice $inv */
+        /** @var VendorInvoice $inv */
         $inv = $this->resource;
 
         return [
@@ -57,7 +59,7 @@ final class VendorInvoiceResource extends JsonResource
                 'ulid' => $inv->purchaseOrder->ulid,
                 'po_reference' => $inv->purchaseOrder->po_reference,
             ] : null),
-            'goods_receipt' => ($gr = \App\Domains\Procurement\Models\GoodsReceipt::where('ap_invoice_id', $inv->id)->first()) ? [
+            'goods_receipt' => ($gr = GoodsReceipt::where('ap_invoice_id', $inv->id)->first()) ? [
                 'id' => $gr->id,
                 'ulid' => $gr->ulid,
                 'gr_reference' => $gr->gr_reference,

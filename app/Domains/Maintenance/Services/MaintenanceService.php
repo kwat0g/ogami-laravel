@@ -12,12 +12,14 @@ use App\Domains\Maintenance\Models\WorkOrderPart;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 final class MaintenanceService implements ServiceContract
 {
     public function __construct(private readonly StockService $stockService) {}
+
     /** @param array<string,mixed> $params */
     public function paginateEquipment(array $params = []): LengthAwarePaginator
     {
@@ -41,6 +43,7 @@ final class MaintenanceService implements ServiceContract
     public function updateEquipment(Equipment $equipment, array $data): Equipment
     {
         $equipment->update($data);
+
         return $equipment;
     }
 
@@ -70,24 +73,25 @@ final class MaintenanceService implements ServiceContract
             throw new DomainException('MAINT_WO_NOT_OPEN');
         }
         $mwo->update(['status' => 'in_progress']);
+
         return $mwo;
     }
 
     /** @param array<string,mixed> $data */
     public function completeWorkOrder(MaintenanceWorkOrder $mwo, array $data, User $actor): MaintenanceWorkOrder
     {
-        if (!in_array($mwo->status, ['open', 'in_progress'], true)) {
+        if (! in_array($mwo->status, ['open', 'in_progress'], true)) {
             throw new DomainException('MAINT_WO_CANNOT_COMPLETE');
         }
 
         return DB::transaction(function () use ($mwo, $data, $actor): MaintenanceWorkOrder {
             $mwo->update([
-                'status'           => 'completed',
-                'completed_at'     => !empty($data['actual_completion_date'])
-                    ? \Carbon\Carbon::parse($data['actual_completion_date'])
+                'status' => 'completed',
+                'completed_at' => ! empty($data['actual_completion_date'])
+                    ? Carbon::parse($data['actual_completion_date'])
                     : now(),
                 'completion_notes' => $data['completion_notes'],
-                'labor_hours'      => $data['labor_hours'] ?? null,
+                'labor_hours' => $data['labor_hours'] ?? null,
             ]);
 
             // C1: Issue spare parts from inventory on WO completion.
@@ -118,7 +122,7 @@ final class MaintenanceService implements ServiceContract
     /**
      * Add a spare part requirement to a work order.
      *
-     * @param array<string,mixed> $data
+     * @param  array<string,mixed>  $data
      */
     public function addPart(MaintenanceWorkOrder $mwo, array $data, int $userId): WorkOrderPart
     {
@@ -132,11 +136,11 @@ final class MaintenanceService implements ServiceContract
 
         return WorkOrderPart::create([
             'work_order_id' => $mwo->id,
-            'item_id'       => $data['item_id'],
-            'location_id'   => $data['location_id'],
-            'qty_required'  => $data['qty_required'],
-            'remarks'       => $data['remarks'] ?? null,
-            'added_by_id'   => $userId,
+            'item_id' => $data['item_id'],
+            'location_id' => $data['location_id'],
+            'qty_required' => $data['qty_required'],
+            'remarks' => $data['remarks'] ?? null,
+            'added_by_id' => $userId,
         ]);
     }
 

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\AP;
 
+use App\Domains\AP\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\AP\Models\Vendor
+ * @mixin Vendor
  */
 final class VendorResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\AP\Models\Vendor $v */
+        /** @var Vendor $v */
         $v = $this->resource;
         $portalUser = $v->relationLoaded('portalUser') ? $v->portalUser : null;
         $canManageUsers = $request->user()?->hasPermissionTo('system.manage_users') ?? false;

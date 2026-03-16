@@ -13,22 +13,22 @@ final class DeliveryScheduleResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                   => $this->id,
-            'ulid'                 => $this->ulid,
-            'ds_reference'         => $this->ds_reference,
-            'customer'             => $this->whenLoaded('customer', fn () => [
-                'id'   => $this->customer->id,
+            'id' => $this->id,
+            'ulid' => $this->ulid,
+            'ds_reference' => $this->ds_reference,
+            'customer' => $this->whenLoaded('customer', fn () => [
+                'id' => $this->customer->id,
                 'name' => $this->customer->name,
             ]),
-            'product_item'         => new ItemMasterResource($this->whenLoaded('productItem')),
-            'qty_ordered'          => $this->qty_ordered,
+            'product_item' => new ItemMasterResource($this->whenLoaded('productItem')),
+            'qty_ordered' => $this->qty_ordered,
             'target_delivery_date' => $this->target_delivery_date?->toDateString(),
-            'type'                 => $this->type,
-            'status'               => $this->status,
-            'notes'                => $this->notes,
-            'production_orders'    => ProductionOrderResource::collection($this->whenLoaded('productionOrders')),
-            'deleted_at'           => $this->deleted_at?->toIso8601String(),
-            'created_at'           => $this->created_at?->toIso8601String(),
+            'type' => $this->type,
+            'status' => $this->status,
+            'notes' => $this->notes,
+            'production_orders' => ProductionOrderResource::collection($this->whenLoaded('productionOrders')),
+            'deleted_at' => $this->deleted_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 }

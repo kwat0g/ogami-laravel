@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\AR\Models;
 
 use App\Exceptions\DomainException;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -57,9 +59,9 @@ class Customer extends Model implements Auditable
     /**
      * The client portal user linked to this customer (if provisioned).
      */
-    public function portalUser(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function portalUser(): HasOne
     {
-        return $this->hasOne(\App\Models\User::class, 'client_id');
+        return $this->hasOne(User::class, 'client_id');
     }
 
     public function invoices(): HasMany

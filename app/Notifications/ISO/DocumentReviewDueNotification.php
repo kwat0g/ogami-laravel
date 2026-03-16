@@ -34,8 +34,8 @@ final class DocumentReviewDueNotification extends Notification implements Should
             'title' => 'Document Review Due',
             'message' => sprintf(
                 'Controlled document "%s" (Rev. %s) is due for periodic review.',
-                $this->document->title ?? $this->document->document_code,
-                $this->document->revision ?? '—',
+                $this->document->title,
+                $this->document->current_version ?? '—',
             ),
             'action_url' => "/iso/documents/{$this->document->ulid}",
             'document_id' => $this->document->id,

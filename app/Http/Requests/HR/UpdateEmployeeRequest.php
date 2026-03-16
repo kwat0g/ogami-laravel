@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\HR;
 
+use App\Domains\HR\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -19,7 +21,7 @@ class UpdateEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        /** @var \App\Domains\HR\Models\Employee $employee */
+        /** @var Employee $employee */
         $employee = $this->route('employee');
 
         return $this->user()?->can('update', $employee) ?? false;
@@ -61,15 +63,83 @@ class UpdateEmployeeRequest extends FormRequest
             'regularization_date' => ['sometimes', 'nullable', 'date'],
             'separation_date' => ['sometimes', 'nullable', 'date'],
 
-            // Government IDs — unique ignoring this employee
-            'sss_no' => ['sometimes', 'nullable', 'string', 'max:12',
-                Rule::unique('employees', 'sss_no_hash')->ignore($employeeId)],
-            'tin' => ['sometimes', 'nullable', 'string', 'max:15',
-                Rule::unique('employees', 'tin_hash')->ignore($employeeId)],
-            'philhealth_no' => ['sometimes', 'nullable', 'string', 'max:14',
-                Rule::unique('employees', 'philhealth_no_hash')->ignore($employeeId)],
-            'pagibig_no' => ['sometimes', 'nullable', 'string', 'max:14',
-                Rule::unique('employees', 'pagibig_no_hash')->ignore($employeeId)],
+            // Government IDs — unique ignoring this employee.
+            // MED-002: Added format validation for Philippine government IDs.
+            // Closure validators normalize the input (strip dashes/spaces, uppercase) and
+            // hash it before checking the hash column, so "12-3456789-0" and "1234567890"
+            // are treated as the same ID and correctly detected as duplicates.
+            'sss_no' => ['sometimes', 'nullable', 'string', 'max:12', 'regex:/^\d{2}-\d{7}-\d$/',
+                function (string $attribute, mixed $value, \Closure $fail) use ($employeeId): void {
+                    if (! $value) {
+                        return;
+                    }
+                    // Validate format: XX-XXXXXXX-X (10 digits + 2 dashes)
+                    $normalized = preg_replace('/[^0-9]/', '', $value);
+                    if (strlen($normalized) !== 10) {
+                        $fail('The SSS number must be 10 digits in format XX-XXXXXXX-X.');
+
+                        return;
+                    }
+                    $hash = hash('sha256', strtoupper((string) preg_replace('/[^A-Z0-9]/i', '', $value)));
+                    if (DB::table('employees')->where('sss_no_hash', $hash)->where('id', '!=', $employeeId)->exists()) {
+                        $fail('This SSS number is already registered to another employee.');
+                    }
+                },
+            ],
+            'tin' => ['sometimes', 'nullable', 'string', 'max:15', 'regex:/^\d{3}-\d{3}-\d{3}-\d{3}$/',
+                function (string $attribute, mixed $value, \Closure $fail) use ($employeeId): void {
+                    if (! $value) {
+                        return;
+                    }
+                    // Validate format: XXX-XXX-XXX-XXX (12 digits + 3 dashes)
+                    $normalized = preg_replace('/[^0-9]/', '', $value);
+                    if (strlen($normalized) !== 12) {
+                        $fail('The TIN must be 12 digits in format XXX-XXX-XXX-XXX.');
+
+                        return;
+                    }
+                    $hash = hash('sha256', strtoupper((string) preg_replace('/[^A-Z0-9]/i', '', $value)));
+                    if (DB::table('employees')->where('tin_hash', $hash)->where('id', '!=', $employeeId)->exists()) {
+                        $fail('This TIN is already registered to another employee.');
+                    }
+                },
+            ],
+            'philhealth_no' => ['sometimes', 'nullable', 'string', 'max:14', 'regex:/^\d{2}-\d{9}-\d$/',
+                function (string $attribute, mixed $value, \Closure $fail) use ($employeeId): void {
+                    if (! $value) {
+                        return;
+                    }
+                    // Validate format: XX-XXXXXXXXX-X (12 digits + 2 dashes)
+                    $normalized = preg_replace('/[^0-9]/', '', $value);
+                    if (strlen($normalized) !== 12) {
+                        $fail('The PhilHealth number must be 12 digits in format XX-XXXXXXXXX-X.');
+
+                        return;
+                    }
+                    $hash = hash('sha256', strtoupper((string) preg_replace('/[^A-Z0-9]/i', '', $value)));
+                    if (DB::table('employees')->where('philhealth_no_hash', $hash)->where('id', '!=', $employeeId)->exists()) {
+                        $fail('This PhilHealth number is already registered to another employee.');
+                    }
+                },
+            ],
+            'pagibig_no' => ['sometimes', 'nullable', 'string', 'max:14', 'regex:/^\d{4}-\d{4}-\d{4}$/',
+                function (string $attribute, mixed $value, \Closure $fail) use ($employeeId): void {
+                    if (! $value) {
+                        return;
+                    }
+                    // Validate format: XXXX-XXXX-XXXX (12 digits + 2 dashes)
+                    $normalized = preg_replace('/[^0-9]/', '', $value);
+                    if (strlen($normalized) !== 12) {
+                        $fail('The Pag-IBIG number must be 12 digits in format XXXX-XXXX-XXXX.');
+
+                        return;
+                    }
+                    $hash = hash('sha256', strtoupper((string) preg_replace('/[^A-Z0-9]/i', '', $value)));
+                    if (DB::table('employees')->where('pagibig_no_hash', $hash)->where('id', '!=', $employeeId)->exists()) {
+                        $fail('This Pag-IBIG number is already registered to another employee.');
+                    }
+                },
+            ],
 
             // Bank
             'bank_name' => ['sometimes', 'nullable', 'string', 'max:100'],

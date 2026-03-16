@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Auth;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Redis;
@@ -26,14 +27,14 @@ use Illuminate\Support\Facades\Redis;
  *   "must_change_password": false
  * }
  *
- * @mixin \App\Models\User
+ * @mixin User
  */
 class UserPermissionsResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $this->resource;
 
         // Eager load employee relationship

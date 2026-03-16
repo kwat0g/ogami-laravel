@@ -20,7 +20,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, CheckCircle, XCircle, AlertTriangle, Loader2, PlayCircle, RefreshCw,
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Loader2,
+  PlayCircle,
+  RefreshCw,
 } from 'lucide-react'
 import api from '@/lib/api'
 import { usePayrollWizard } from '@/contexts/PayrollWizardContext'
@@ -39,22 +45,30 @@ type Phase =
 // ── Helper components ─────────────────────────────────────────────────────────
 
 function SeverityIcon({ check }: { check: PreRunCheckResult }) {
-  if (check.status === 'pass')  return <CheckCircle  className="h-5 w-5 text-green-500 shrink-0" />
-  if (check.status === 'block') return <XCircle      className="h-5 w-5 text-red-500 shrink-0" />
-  return                               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+  if (check.status === 'pass') return <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+  if (check.status === 'block') return <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+  return <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
 }
 
-function CheckRow({ check, acked, onAck }: {
+function CheckRow({
+  check,
+  acked,
+  onAck,
+}: {
   check: PreRunCheckResult
   acked: boolean
   onAck: () => void
 }) {
   return (
-    <div className={`flex items-start gap-3 p-3 rounded border ${
-      check.status === 'block' ? 'bg-red-50 border-red-200' :
-      check.status === 'warn'  ? 'bg-amber-50 border-amber-200' :
-      'bg-green-50 border-green-100'
-    }`}>
+    <div
+      className={`flex items-start gap-3 p-3 rounded border ${
+        check.status === 'block'
+          ? 'bg-red-50 border-red-200'
+          : check.status === 'warn'
+            ? 'bg-amber-50 border-amber-200'
+            : 'bg-green-50 border-green-100'
+      }`}
+    >
       <SeverityIcon check={check} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
@@ -70,7 +84,9 @@ function CheckRow({ check, acked, onAck }: {
               onChange={onAck}
               className="accent-neutral-700"
             />
-            <span className="text-xs text-amber-800">I acknowledge this warning and wish to proceed</span>
+            <span className="text-xs text-amber-800">
+              I acknowledge this warning and wish to proceed
+            </span>
           </label>
         )}
       </div>
@@ -90,12 +106,18 @@ export default function PayrollRunDraftValidatePage() {
 
   // Guard: redirect back if wizard data is missing
   useEffect(() => {
-    if (isNavigating) return  // Don't redirect if we're already navigating away
-    if (!step1) { navigate('/payroll/runs/new', { replace: true }); return }
-    if (!step2) { navigate('/payroll/runs/new/scope', { replace: true }); return }
+    if (isNavigating) return // Don't redirect if we're already navigating away
+    if (!step1) {
+      navigate('/payroll/runs/new', { replace: true })
+      return
+    }
+    if (!step2) {
+      navigate('/payroll/runs/new/scope', { replace: true })
+      return
+    }
   }, [step1, step2, navigate, isNavigating])
 
-  if (!step1 || !step2) return null   // waiting for redirect
+  if (!step1 || !step2) return null // waiting for redirect
   // Non-null aliases — TypeScript cannot narrow past the early return above
   const s1 = step1
   const s2 = step2
@@ -126,25 +148,25 @@ export default function PayrollRunDraftValidatePage() {
     try {
       // 1 — Create run record
       const createRes = await api.post<{ data: PayrollRun }>('/payroll/runs', {
-        run_type:      s1.run_type,
+        run_type: s1.run_type,
         pay_period_id: s1.pay_period_id,
-        cutoff_start:  s1.cutoff_start,
-        cutoff_end:    s1.cutoff_end,
-        pay_date:      s1.pay_date,
-        notes:         s1.notes,
+        cutoff_start: s1.cutoff_start,
+        cutoff_end: s1.cutoff_end,
+        pay_date: s1.pay_date,
+        notes: s1.notes,
       })
       runId = createRes.data.data.ulid
 
       // 2 — Confirm scope
       setPhase({ kind: 'running', label: 'Saving employee scope…' })
       await api.patch(`/payroll/runs/${runId}/scope`, {
-        departments:           s2.departments.length ? s2.departments : undefined,
-        employment_types:      s2.employment_types,
-        include_unpaid_leave:  s2.include_unpaid_leave,
+        departments: s2.departments.length ? s2.departments : undefined,
+        employment_types: s2.employment_types,
+        include_unpaid_leave: s2.include_unpaid_leave,
         include_probation_end: s2.include_probation_end,
-        exclusions:            s2.exclusions.map(e => ({
+        exclusions: s2.exclusions.map((e) => ({
           employee_id: e.employee_id,
-          reason:      e.reason,
+          reason: e.reason,
         })),
       })
 
@@ -157,12 +179,16 @@ export default function PayrollRunDraftValidatePage() {
 
       // 4a — Blockers: rollback and show errors
       if (checksData.has_blockers) {
-        try { await cancelAndArchiveRun(runId) } catch { /* ignore cleanup error */ }
+        try {
+          await cancelAndArchiveRun(runId)
+        } catch {
+          /* ignore cleanup error */
+        }
         setPhase({ kind: 'blocked', checks: checksData.checks })
         return
       }
 
-      const warnings = checksData.checks.filter(c => c.status === 'warn')
+      const warnings = checksData.checks.filter((c) => c.status === 'warn')
 
       // 4c — All pass, no warnings → proceed immediately
       if (warnings.length === 0) {
@@ -175,11 +201,14 @@ export default function PayrollRunDraftValidatePage() {
 
       // 4b — Warnings need acknowledgment
       setPhase({ kind: 'ack', runId, checks: checksData.checks, acked: {} })
-
     } catch (err) {
       // Clean up partially-created run
       if (runId) {
-        try { await cancelAndArchiveRun(runId) } catch { /* ignore cleanup error */ }
+        try {
+          await cancelAndArchiveRun(runId)
+        } catch {
+          /* ignore cleanup error */
+        }
       }
       setPhase({ kind: 'idle' })
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -192,15 +221,18 @@ export default function PayrollRunDraftValidatePage() {
   async function handleProceedFromAck() {
     if (phase.kind !== 'ack') return
 
-    const warnings = phase.checks.filter(c => c.status === 'warn')
-    const allAcked = warnings.every(c => !!phase.acked[c.code])
+    const warnings = phase.checks.filter((c) => c.status === 'warn')
+    const allAcked = warnings.every((c) => !!phase.acked[c.code])
     if (!allAcked) {
       toast.error('Acknowledge all warnings before proceeding.')
       return
     }
 
     try {
-      await doAcknowledgeAndCompute(phase.runId, warnings.map(c => c.code))
+      await doAcknowledgeAndCompute(
+        phase.runId,
+        warnings.map((c) => c.code),
+      )
       setIsNavigating(true)
       clear()
       navigate(`/payroll/runs/${phase.runId}/compute`, { replace: true })
@@ -218,18 +250,18 @@ export default function PayrollRunDraftValidatePage() {
   // ─────────────────────────────────────────────────────────────────────────
 
   const isRunning = phase.kind === 'running'
-  const runLabel  = RUN_TYPE_LABELS[s1.run_type] ?? s1.run_type
+  const runLabel = RUN_TYPE_LABELS[s1.run_type] ?? s1.run_type
 
   // Helper to format snake_case to proper label (e.g., 'project_based' → 'Project Based')
   const formatLabel = (value: string): string => {
     return value
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ')
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <button
         onClick={() => navigate('/payroll/runs/new/scope')}
         className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800 transition-colors"
@@ -247,7 +279,10 @@ export default function PayrollRunDraftValidatePage() {
       {/* Draft notice */}
       <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-4 py-2.5 text-xs text-amber-800">
         <span className="font-semibold">Not saved yet.</span>
-        <span>Everything above is still in draft. Clicking <strong>Begin Computation</strong> creates the run and starts processing.</span>
+        <span>
+          Everything above is still in draft. Clicking <strong>Begin Computation</strong> creates
+          the run and starts processing.
+        </span>
       </div>
 
       {/* Run summary card */}
@@ -304,9 +339,11 @@ export default function PayrollRunDraftValidatePage() {
             </div>
           </div>
           <div className="space-y-2">
-            {phase.checks.filter(c => c.status !== 'pass').map(check => (
-              <CheckRow key={check.code} check={check} acked={false} onAck={() => {}} />
-            ))}
+            {phase.checks
+              .filter((c) => c.status !== 'pass')
+              .map((check) => (
+                <CheckRow key={check.code} check={check} acked={false} onAck={() => {}} />
+              ))}
           </div>
           <button
             type="button"
@@ -331,7 +368,7 @@ export default function PayrollRunDraftValidatePage() {
             </div>
           </div>
           <div className="space-y-2">
-            {phase.checks.map(check => (
+            {phase.checks.map((check) => (
               <CheckRow
                 key={check.code}
                 check={check}
@@ -356,7 +393,9 @@ export default function PayrollRunDraftValidatePage() {
             <button
               type="button"
               onClick={() => void handleProceedFromAck()}
-              disabled={phase.checks.filter(c => c.status === 'warn').some(c => !phase.acked[c.code])}
+              disabled={phase.checks
+                .filter((c) => c.status === 'warn')
+                .some((c) => !phase.acked[c.code])}
               className="flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
             >
               <PlayCircle className="h-4 w-4" /> Acknowledge &amp; Begin Computation
@@ -384,9 +423,13 @@ export default function PayrollRunDraftValidatePage() {
             className="flex items-center gap-2 px-7 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
           >
             {isRunning ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> {phase.label}</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> {phase.label}
+              </>
             ) : (
-              <><PlayCircle className="h-4 w-4" /> Begin Computation</>
+              <>
+                <PlayCircle className="h-4 w-4" /> Begin Computation
+              </>
             )}
           </button>
         </div>

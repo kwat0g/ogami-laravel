@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Services;
 
 use App\Domains\Procurement\Models\GoodsReceipt;
-use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Events\Procurement\ThreeWayMatchPassed;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\Delivery\Models;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
@@ -46,6 +47,6 @@ final class DeliveryReceiptItem extends Model
 
     public function itemMaster(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Inventory\Models\ItemMaster::class);
+        return $this->belongsTo(ItemMaster::class);
     }
 }

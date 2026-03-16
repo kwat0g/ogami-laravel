@@ -14,21 +14,21 @@ import type { PurchaseRequestUrgency } from '@/types/procurement'
 // ── Zod schema ────────────────────────────────────────────────────────────────
 
 const itemSchema = z.object({
-  vendor_item_id:      z.coerce.number().positive('Vendor item is required'),
-  item_description:    z.string(),
-  unit_of_measure:     z.string(),
-  quantity:            z.coerce.number().gt(0, 'Must be > 0'),
+  vendor_item_id: z.coerce.number().positive('Vendor item is required'),
+  item_description: z.string(),
+  unit_of_measure: z.string(),
+  quantity: z.coerce.number().gt(0, 'Must be > 0'),
   estimated_unit_cost: z.coerce.number().gt(0, 'Must be > 0'),
-  specifications:      z.string().optional(),
+  specifications: z.string().optional(),
 })
 
 const schema = z.object({
-  vendor_id:      z.coerce.number().int().positive('Vendor is required'),
-  department_id:  z.coerce.number().int().positive('Department is required'),
-  urgency:        z.enum(['normal', 'urgent', 'critical']).default('normal'),
-  justification:  z.string().min(20, 'Justification must be at least 20 characters'),
-  notes:          z.string().optional(),
-  items:          z.array(itemSchema).min(1, 'At least one line item is required'),
+  vendor_id: z.coerce.number().int().positive('Vendor is required'),
+  department_id: z.coerce.number().int().positive('Department is required'),
+  urgency: z.enum(['normal', 'urgent', 'critical']).default('normal'),
+  justification: z.string().min(20, 'Justification must be at least 20 characters'),
+  notes: z.string().optional(),
+  items: z.array(itemSchema).min(1, 'At least one line item is required'),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -54,7 +54,15 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     defaultValues: {
       urgency: 'normal',
       vendor_id: 0,
-      items: [{ vendor_item_id: 0, item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0 }],
+      items: [
+        {
+          vendor_item_id: 0,
+          item_description: '',
+          unit_of_measure: '',
+          quantity: 1,
+          estimated_unit_cost: 0,
+        },
+      ],
     },
   })
 
@@ -73,35 +81,37 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
   // Live total computation
   const grandTotal = items.reduce((sum, item) => {
-    const qty  = Number(item.quantity)  || 0
+    const qty = Number(item.quantity) || 0
     const cost = Number(item.estimated_unit_cost) || 0
     return sum + qty * cost
   }, 0)
 
   // Handle vendor item selection — auto-fill description, UoM, price
   const handleVendorItemSelect = (index: number, vendorItemId: number): void => {
-    const vendorItem = vendorItems?.find(vi => vi.id === vendorItemId)
+    const vendorItem = vendorItems?.find((vi) => vi.id === vendorItemId)
     if (!vendorItem) return
 
     setValue(`items.${index}.vendor_item_id`, vendorItem.id)
-    setValue(`items.${index}.estimated_unit_cost`, vendorItem.unit_price_centavos / 100)
+    setValue(`items.${index}.item_description`, vendorItem.item_name)
+    setValue(`items.${index}.unit_of_measure`, vendorItem.unit_of_measure)
+    setValue(`items.${index}.estimated_unit_cost`, vendorItem.unit_price / 100)
   }
 
   const onSubmit = async (values: FormValues): Promise<void> => {
     try {
       const pr = await createPR.mutateAsync({
-        vendor_id:     values.vendor_id,
+        vendor_id: values.vendor_id,
         department_id: values.department_id,
-        urgency:       values.urgency as PurchaseRequestUrgency,
+        urgency: values.urgency as PurchaseRequestUrgency,
         justification: values.justification,
-        notes:         values.notes,
-        items:         values.items.map(item => ({
-          vendor_item_id:      item.vendor_item_id,
-          item_description:    item.item_description,
-          unit_of_measure:     item.unit_of_measure,
-          quantity:            item.quantity,
+        notes: values.notes,
+        items: values.items.map((item) => ({
+          vendor_item_id: item.vendor_item_id,
+          item_description: item.item_description,
+          unit_of_measure: item.unit_of_measure,
+          quantity: item.quantity,
           estimated_unit_cost: item.estimated_unit_cost,
-          specifications:      item.specifications,
+          specifications: item.specifications,
         })),
       })
       toast.success(`Purchase Request ${pr.pr_reference} created as draft.`)
@@ -113,10 +123,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <PageHeader
-        title="New Purchase Request"
-        backTo="/procurement/purchase-requests"
-      />
+      <PageHeader title="New Purchase Request" backTo="/procurement/purchase-requests" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Header Section */}
@@ -136,12 +143,14 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                     render={({ field }) => (
                       <select
                         {...field}
-                        onChange={e => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
                         className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                       >
                         <option value="">— Select Vendor —</option>
-                        {vendors.map(v => (
-                          <option key={v.id} value={v.id}>{v.name}</option>
+                        {vendors.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name}
+                          </option>
                         ))}
                       </select>
                     )}
@@ -161,12 +170,14 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                     render={({ field }) => (
                       <select
                         {...field}
-                        onChange={e => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
                         className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                       >
                         <option value="">— Select Department —</option>
-                        {departments.map(d => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
                         ))}
                       </select>
                     )}
@@ -177,9 +188,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    Urgency
-                  </label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Urgency</label>
                   <Controller
                     control={control}
                     name="urgency"
@@ -272,7 +281,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
                 <div className="space-y-3">
                   {fields.map((field, index) => {
-                    const qty  = Number(items[index]?.quantity)  || 0
+                    const qty = Number(items[index]?.quantity) || 0
                     const cost = Number(items[index]?.estimated_unit_cost) || 0
                     const lineTotal = qty * cost
 
@@ -281,16 +290,24 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                         <div className="grid grid-cols-12 gap-2 items-start">
                           {/* Item selection */}
                           <div className="col-span-4">
-                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Vendor Item *</p>}
+                            {index === 0 && (
+                              <p className="text-xs text-neutral-500 mb-1">Vendor Item *</p>
+                            )}
                             <select
                               value={items[index]?.vendor_item_id ?? ''}
-                              onChange={e => handleVendorItemSelect(index, Number(e.target.value))}
+                              onChange={(e) =>
+                                handleVendorItemSelect(index, Number(e.target.value))
+                              }
                               className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
                             >
                               <option value="">— Select Item —</option>
-                              {vendorItems?.map(vi => (
+                              {vendorItems?.map((vi) => (
                                 <option key={vi.id} value={vi.id}>
-                                  {vi.item_code} — {vi.name} (₱{(vi.unit_price_centavos / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })})
+                                  {vi.item_code} — {vi.item_name} (₱
+                                  {(vi.unit_price / 100).toLocaleString('en-PH', {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                  )
                                 </option>
                               ))}
                             </select>
@@ -327,7 +344,9 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
                           {/* Unit Cost */}
                           <div className="col-span-2">
-                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Unit Cost</p>}
+                            {index === 0 && (
+                              <p className="text-xs text-neutral-500 mb-1">Unit Cost</p>
+                            )}
                             <div className="text-sm text-neutral-700 font-medium py-1.5 px-2 bg-neutral-100 rounded">
                               ₱{cost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                             </div>
@@ -335,7 +354,9 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
                           {/* Line Total */}
                           <div className="col-span-2">
-                            {index === 0 && <p className="text-xs text-neutral-500 mb-1">Est. Total</p>}
+                            {index === 0 && (
+                              <p className="text-xs text-neutral-500 mb-1">Est. Total</p>
+                            )}
                             <div className="text-sm text-neutral-700 font-medium py-1.5 px-2">
                               ₱{lineTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                             </div>
@@ -343,7 +364,9 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
                           {/* Remove */}
                           <div className="col-span-1 flex items-end justify-center pb-1">
-                            {index === 0 && <p className="text-xs text-neutral-500 mb-1 opacity-0">—</p>}
+                            {index === 0 && (
+                              <p className="text-xs text-neutral-500 mb-1 opacity-0">—</p>
+                            )}
                             <button
                               type="button"
                               disabled={fields.length === 1}

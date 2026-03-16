@@ -17,14 +17,14 @@ final class StoreDeliveryScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_id'          => ['required', 'integer', 'exists:customers,id'],
-            'product_item_id'      => ['required', 'integer', 'exists:item_masters,id'],
-            'qty_ordered'          => ['required', 'numeric', 'min:0.0001'],
-            'unit_price'           => ['nullable', 'numeric', 'min:0'],
+            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'product_item_id' => ['required', 'integer', 'exists:item_masters,id'],
+            'qty_ordered' => ['required', 'numeric', 'min:0.0001'],
+            'unit_price' => ['nullable', 'numeric', 'min:0'],
             'target_delivery_date' => ['required', 'date', 'after_or_equal:today'],
-            'type'                 => ['sometimes', 'string', 'in:local,export'],
-            'status'               => ['sometimes', 'string', 'in:open,in_production,ready,dispatched,delivered,cancelled'],
-            'notes'                => ['nullable', 'string', 'max:500'],
+            'type' => ['sometimes', 'string', 'in:local,export'],
+            'status' => ['sometimes', 'string', 'in:open,in_production,ready,dispatched,delivered,cancelled'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

@@ -40,12 +40,12 @@ final class VendorItemController extends Controller
         $this->authorize('manage', $vendor);
 
         $validated = $request->validate([
-            'item_code'       => ['required', 'string', 'max:100'],
-            'item_name'       => ['required', 'string', 'max:255'],
-            'description'     => ['nullable', 'string'],
+            'item_code' => ['required', 'string', 'max:100'],
+            'item_name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
             'unit_of_measure' => ['nullable', 'string', 'max:50'],
-            'unit_price'      => ['required', 'integer', 'min:0'],
-            'is_active'       => ['nullable', 'boolean'],
+            'unit_price' => ['required', 'integer', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $item = $this->service->create($vendor, $validated, auth()->user());
@@ -59,12 +59,12 @@ final class VendorItemController extends Controller
         $this->authorize('manage', $vendor);
 
         $validated = $request->validate([
-            'item_code'       => ['sometimes', 'string', 'max:100'],
-            'item_name'       => ['sometimes', 'string', 'max:255'],
-            'description'     => ['nullable', 'string'],
+            'item_code' => ['sometimes', 'string', 'max:100'],
+            'item_name' => ['sometimes', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
             'unit_of_measure' => ['nullable', 'string', 'max:50'],
-            'unit_price'      => ['sometimes', 'integer', 'min:0'],
-            'is_active'       => ['nullable', 'boolean'],
+            'unit_price' => ['sometimes', 'integer', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $item = $this->service->update($vendorItem, $validated);
@@ -92,13 +92,13 @@ final class VendorItemController extends Controller
         $this->authorize('manage', $vendor);
 
         $request->validate([
-            'items'                    => ['required', 'array', 'min:1', 'max:500'],
-            'items.*.item_code'        => ['required', 'string', 'max:100'],
-            'items.*.item_name'        => ['required', 'string', 'max:255'],
-            'items.*.description'      => ['nullable', 'string'],
-            'items.*.unit_of_measure'  => ['nullable', 'string', 'max:50'],
-            'items.*.unit_price'       => ['required', 'numeric', 'min:0'],
-            'items.*.is_active'        => ['nullable', 'boolean'],
+            'items' => ['required', 'array', 'min:1', 'max:500'],
+            'items.*.item_code' => ['required', 'string', 'max:100'],
+            'items.*.item_name' => ['required', 'string', 'max:255'],
+            'items.*.description' => ['nullable', 'string'],
+            'items.*.unit_of_measure' => ['nullable', 'string', 'max:50'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.is_active' => ['nullable', 'boolean'],
         ]);
 
         $result = $this->service->importRows($vendor, $request->input('items'), auth()->user());

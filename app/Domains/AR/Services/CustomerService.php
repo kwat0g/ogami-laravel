@@ -126,7 +126,7 @@ final class CustomerService implements ServiceContract
                 );
             }
 
-            $tempPassword = 'Client' . Str::random(8) . '!';
+            $tempPassword = 'Client'.Str::random(8).'!';
 
             $user = User::create([
                 'name' => $customer->contact_person ?? $customer->name,
@@ -161,7 +161,7 @@ final class CustomerService implements ServiceContract
                 );
             }
 
-            $tempPassword = 'Client' . Str::random(8) . '!';
+            $tempPassword = 'Client'.Str::random(8).'!';
 
             $user->update([
                 'password' => $tempPassword,

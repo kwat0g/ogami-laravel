@@ -207,19 +207,19 @@ class RolePermissionSeeder extends Seeder
         // Fixed Assets
         'fixed_assets.view',
         'fixed_assets.manage',
-        // Payroll
+        // Payroll (SoD: finance_manager does NOT have initiate/hr_approve - those are HR Manager only)
         'payroll.view_own_payslip',
         'payroll.download_own_payslip',
         'payroll.view_runs',
         'payroll.manage_pay_periods',
-        'payroll.initiate',
-        'payroll.pre_run_validate',
-        'payroll.compute',
-        'payroll.review_breakdown',
-        'payroll.flag_employee',
-        'payroll.submit_for_hr',
-        'payroll.hr_approve',
-        'payroll.hr_return',
+        // 'payroll.initiate',       // REMOVED: SoD conflict with acctg_approve
+        // 'payroll.pre_run_validate', // REMOVED: SoD conflict
+        // 'payroll.compute',        // REMOVED: SoD conflict
+        // 'payroll.review_breakdown', // REMOVED: SoD conflict
+        // 'payroll.flag_employee',  // REMOVED: SoD conflict
+        // 'payroll.submit_for_hr',  // REMOVED: SoD conflict
+        // 'payroll.hr_approve',     // REMOVED: SoD conflict - HR Manager only
+        // 'payroll.hr_return',      // REMOVED: SoD conflict
         'payroll.acctg_approve',
         'payroll.acctg_reject',
         'payroll.disburse',
@@ -432,9 +432,14 @@ class RolePermissionSeeder extends Seeder
             // Payroll
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
             'payroll.view_runs', 'payroll.manage_pay_periods',
-            'payroll.initiate', 'payroll.pre_run_validate', 'payroll.compute',
-            'payroll.review_breakdown', 'payroll.flag_employee',
-            'payroll.submit_for_hr', 'payroll.hr_approve', 'payroll.hr_return',
+            'payroll.initiate',        // Legacy alias for payroll creation
+            // 'payroll.pre_run_validate', // REMOVED: permission not defined
+            // 'payroll.compute',         // REMOVED: permission not defined
+            // 'payroll.review_breakdown', // REMOVED: permission not defined
+            // 'payroll.flag_employee',   // REMOVED: permission not defined
+            // 'payroll.submit_for_hr',   // REMOVED: permission not defined
+            // 'payroll.hr_approve',      // REMOVED: permission not defined
+            // 'payroll.hr_return',       // REMOVED: permission not defined
             'payroll.disburse', 'payroll.download_bank_file',
             'payroll.publish', 'payroll.view_deduction_trace',
             'payroll.download_register', 'payroll.gov_reports',
@@ -573,7 +578,8 @@ class RolePermissionSeeder extends Seeder
             // Payroll (approve + disburse + publish)
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
             'payroll.view_runs', 'payroll.manage_pay_periods',
-            'payroll.review_breakdown', 'payroll.acctg_approve', 'payroll.acctg_reject',
+            // 'payroll.review_breakdown', // REMOVED: permission not defined
+            'payroll.acctg_approve', 'payroll.acctg_reject',
             'payroll.disburse', 'payroll.download_bank_file', 'payroll.publish', 'payroll.post',
             'payroll.download_register', 'payroll.gov_reports',
             // Loans (v1 accounting approval + v2 Step 3 reviewer)

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Leave;
 
+use App\Domains\Leave\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Domains\Leave\Models\LeaveRequest
+ * @mixin LeaveRequest
  */
 final class LeaveRequestResource extends JsonResource
 {
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var \App\Domains\Leave\Models\LeaveRequest $lr */
+        /** @var LeaveRequest $lr */
         $lr = $this->resource;
 
         return [

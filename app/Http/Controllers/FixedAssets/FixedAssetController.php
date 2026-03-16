@@ -14,8 +14,11 @@ use App\Http\Requests\FixedAssets\DisposeAssetRequest;
 use App\Http\Requests\FixedAssets\StoreFixedAssetCategoryRequest;
 use App\Http\Requests\FixedAssets\StoreFixedAssetRequest;
 use App\Http\Requests\FixedAssets\UpdateFixedAssetRequest;
+use App\Http\Resources\FixedAssets\FixedAssetCategoryResource;
+use App\Http\Resources\FixedAssets\FixedAssetResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class FixedAssetController extends Controller
 {
@@ -23,11 +26,11 @@ final class FixedAssetController extends Controller
 
     // ── Categories ───────────────────────────────────────────────────────────
 
-    public function indexCategories(): JsonResponse
+    public function indexCategories(): AnonymousResourceCollection
     {
         $this->authorize('viewAny', FixedAsset::class);
 
-        return response()->json(FixedAssetCategory::orderBy('name')->get());
+        return FixedAssetCategoryResource::collection(FixedAssetCategory::orderBy('name')->get());
     }
 
     public function storeCategory(StoreFixedAssetCategoryRequest $request): JsonResponse
@@ -38,12 +41,12 @@ final class FixedAssetController extends Controller
 
         $category = $this->service->storeCategory($data, $request->user());
 
-        return response()->json(['data' => $category], 201);
+        return (new FixedAssetCategoryResource($category))->response()->setStatusCode(201);
     }
 
     // ── Asset Register ───────────────────────────────────────────────────────
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', FixedAsset::class);
 
@@ -53,7 +56,7 @@ final class FixedAssetController extends Controller
             ->orderByDesc('acquisition_date')
             ->paginate((int) $request->input('per_page', 20));
 
-        return response()->json($assets);
+        return FixedAssetResource::collection($assets);
     }
 
     public function store(StoreFixedAssetRequest $request): JsonResponse
@@ -64,31 +67,29 @@ final class FixedAssetController extends Controller
 
         $asset = $this->service->register($data, $request->user());
 
-        return response()->json(['data' => $asset->load('category', 'department')], 201);
+        return (new FixedAssetResource($asset->load('category', 'department')))->response()->setStatusCode(201);
     }
 
-    public function show(FixedAsset $fixedAsset): JsonResponse
+    public function show(FixedAsset $fixedAsset): FixedAssetResource
     {
         $this->authorize('view', $fixedAsset);
 
-        return response()->json([
-            'data' => $fixedAsset->load('category', 'department', 'depreciationEntries.fiscalPeriod', 'disposal'),
-        ]);
+        return new FixedAssetResource($fixedAsset->load('category', 'department', 'depreciationEntries.fiscalPeriod', 'disposal'));
     }
 
-    public function update(UpdateFixedAssetRequest $request, FixedAsset $fixedAsset): JsonResponse
+    public function update(UpdateFixedAssetRequest $request, FixedAsset $fixedAsset): FixedAssetResource
     {
         $this->authorize('update', $fixedAsset);
 
         if ($fixedAsset->status === 'disposed') {
-            return response()->json(['message' => 'Disposed assets cannot be updated.'], 422);
+            abort(422, 'Disposed assets cannot be updated.');
         }
 
         $data = $request->validated();
 
         $fixedAsset->update($data);
 
-        return response()->json(['data' => $fixedAsset->refresh()]);
+        return new FixedAssetResource($fixedAsset->refresh());
     }
 
     // ── Depreciation ─────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ final class FixedAssetController extends Controller
 
         return response()->json([
             'message' => "Deprecated {$count} asset(s) for period {$period->name}.",
-            'count'   => $count,
+            'count' => $count,
         ]);
     }
 
@@ -120,6 +121,15 @@ final class FixedAssetController extends Controller
 
         $disposal = $this->service->dispose($fixedAsset, $data, $request->user());
 
-        return response()->json(['data' => $disposal], 201);
+        return response()->json([
+            'data' => [
+                'id' => $disposal->id,
+                'disposal_date' => $disposal->disposal_date?->toDateString(),
+                'disposal_amount_centavos' => $disposal->disposal_amount_centavos,
+                'disposal_amount' => $disposal->disposal_amount_centavos / 100,
+                'gain_loss_centavos' => $disposal->gain_loss_centavos,
+                'gain_loss' => $disposal->gain_loss_centavos / 100,
+            ],
+        ], 201);
     }
 }
