@@ -10,6 +10,8 @@ import {
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ShiftSchedule } from '@/types/hr'
 
 interface ShiftForm {
@@ -61,14 +63,13 @@ function shiftFromExisting(s: ShiftSchedule): ShiftForm {
 export default function ShiftsPage() {
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('attendance.manage_shifts')
-  const { data, isLoading, isError } = useShifts()
+  const { data, isLoading, isError, refetch } = useShifts()
   const create = useCreateShift()
   const upd    = useUpdateShift()
   const remove = useDeleteShift()
 
   const [form, setForm]         = useState<ShiftForm | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [deleteId, setDeleteId]   = useState<number | null>(null)
 
   const rows = data?.data ?? []
 
@@ -87,16 +88,39 @@ export default function ShiftsPage() {
     set('work_days_arr', days)
   }
 
-  const handleSave = () => {
+  const handleDelete = async (id: number) => {
+    try {
+      await remove.mutateAsync(id)
+      toast.success('Shift deleted successfully')
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to delete shift: ${message}`)
+      throw err
+    }
+  }
+
+  const handleSave = async () => {
     if (!form) return
     setFormError(null)
     if (!form.name.trim()) { setFormError('Shift name is required.'); return }
-    if (form.id) {
-      const { work_days_arr, ...rest } = form
-      upd.mutate({ ...rest, id: form.id, work_days: work_days_arr.join(',') }, { onSuccess: () => { toast.success('Shift updated.'); closeForm() }, onError: () => { toast.error('Failed to update shift.'); setFormError('Update failed.') } })
-    } else {
-      const { id: _id, work_days_arr, is_night_shift: _is_night_shift, ...rest } = form
-      create.mutate({ ...rest, work_days: work_days_arr.join(','), description: rest.description || null }, { onSuccess: () => { toast.success('Shift created.'); closeForm() }, onError: () => { toast.error('Failed to create shift.'); setFormError('Create failed.') } })
+    
+    try {
+      if (form.id) {
+        const { work_days_arr, ...rest } = form
+        await upd.mutateAsync({ ...rest, id: form.id, work_days: work_days_arr.join(',') })
+        toast.success('Shift updated successfully')
+      } else {
+        const { id: _id, work_days_arr, is_night_shift: _is_night_shift, ...rest } = form
+        await create.mutateAsync({ ...rest, work_days: work_days_arr.join(','), description: rest.description || null })
+        toast.success('Shift created successfully')
+      }
+      closeForm()
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to ${form.id ? 'update' : 'create'} shift: ${message}`)
+      setFormError(`${form.id ? 'Update' : 'Create'} failed: ${message}`)
     }
   }
 
@@ -159,30 +183,20 @@ export default function ShiftsPage() {
             {canManage && (
               <div className="flex gap-3">
                 <button onClick={() => openEdit(shift)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                <button onClick={() => setDeleteId(shift.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+                <ConfirmDestructiveDialog
+                  title="Delete Shift?"
+                  description={`This will permanently delete "${shift.name}". Any employees assigned to this shift will need to be reassigned. This action cannot be undone.`}
+                  confirmWord="DELETE"
+                  confirmLabel="Delete Shift"
+                  onConfirm={() => handleDelete(shift.id)}
+                >
+                  <button disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+                </ConfirmDestructiveDialog>
               </div>
             )}
           </div>
         ))}
       </div>
-
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => {
-          if (!deleteId) return
-          remove.mutate(deleteId, { 
-            onSuccess: () => { toast.success('Shift deleted.'); setDeleteId(null) }, 
-            onError: () => toast.error('Failed to delete shift.') 
-          })
-        }}
-        title="Delete Shift?"
-        description="This action cannot be undone. Any employees assigned to this shift will need to be reassigned."
-        confirmLabel="Delete"
-        variant="danger"
-        loading={remove.isPending}
-      />
 
       {/* Modal */}
       {form !== null && (
@@ -192,40 +206,68 @@ export default function ShiftsPage() {
             {formError && <div className="text-red-600 text-sm mb-3 bg-red-50 rounded px-3 py-2">{formError}</div>}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Shift Name</label>
-                <input value={form.name} onChange={(e) => set('name', e.target.value)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Shift Name <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  value={form.name} 
+                  onChange={(e) => set('name', e.target.value)}
+                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
+                    !form.name.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                  }`} 
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Description <span className="text-neutral-400">(optional)</span></label>
-                <input value={form.description} onChange={(e) => set('description', e.target.value)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                <input 
+                  value={form.description} 
+                  onChange={(e) => set('description', e.target.value)}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Start Time</label>
-                  <input type="time" value={form.start_time} onChange={(e) => set('start_time', e.target.value)}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                  <input 
+                    type="time" 
+                    value={form.start_time} 
+                    onChange={(e) => set('start_time', e.target.value)}
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">End Time</label>
-                  <input type="time" value={form.end_time} onChange={(e) => set('end_time', e.target.value)}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                  <input 
+                    type="time" 
+                    value={form.end_time} 
+                    onChange={(e) => set('end_time', e.target.value)}
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Break (minutes)</label>
-                  <input type="number" min="0" value={form.break_minutes} onChange={(e) => set('break_minutes', Number(e.target.value))}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                  <input 
+                    type="number" 
+                    min="0" 
+                    value={form.break_minutes} 
+                    onChange={(e) => set('break_minutes', Number(e.target.value))}
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Grace Period (minutes)</label>
-                  <input type="number" min="0" value={form.grace_period_minutes} onChange={(e) => set('grace_period_minutes', Number(e.target.value))}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                  <input 
+                    type="number" 
+                    min="0" 
+                    value={form.grace_period_minutes} 
+                    onChange={(e) => set('grace_period_minutes', Number(e.target.value))}
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                  />
                 </div>
               </div>
 
@@ -264,9 +306,12 @@ export default function ShiftsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
-              <button onClick={handleSave} disabled={create.isPending || upd.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                {form.id ? 'Save Changes' : 'Create Shift'}
+              <button 
+                onClick={handleSave} 
+                disabled={create.isPending || upd.isPending}
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {create.isPending || upd.isPending ? 'Saving…' : form.id ? 'Save Changes' : 'Create Shift'}
               </button>
             </div>
           </div>

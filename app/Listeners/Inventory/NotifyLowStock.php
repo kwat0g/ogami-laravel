@@ -34,7 +34,7 @@ final class NotifyLowStock implements ShouldQueue, ShouldBeUnique
 
     public function handle(LowStockDetected $event): void
     {
-        $notification = new LowStockNotification($event->item, $event->currentBalance);
+        $notification = LowStockNotification::fromModel($event->item, $event->currentBalance);
 
         User::role('purchasing_officer')
             ->where('is_active', true)

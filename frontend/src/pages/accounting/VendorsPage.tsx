@@ -11,16 +11,16 @@ import {
   useAccreditVendor,
   useSuspendVendor,
 } from '@/hooks/useAP'
-
+import { firstErrorMessage } from '@/lib/errorHandler'
+import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { DepartmentGuard, ActionButton } from '@/components/ui/guards'
 import type { Vendor, CreateVendorPayload, VendorAccreditationStatus } from '@/types/ap'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-
 
 function ArchiveVendorButton({ vendor }: { vendor: Vendor }) {
   const archiveMut = useArchiveVendor(vendor.id)
@@ -34,8 +34,8 @@ function ArchiveVendorButton({ vendor }: { vendor: Vendor }) {
         try {
           await archiveMut.mutateAsync()
           toast.success('Vendor archived.')
-        } catch {
-          toast.error('Failed to archive vendor.')
+        } catch (err) {
+          toast.error(firstErrorMessage(err))
         }
       }}
     >
@@ -45,6 +45,8 @@ function ArchiveVendorButton({ vendor }: { vendor: Vendor }) {
     </ConfirmDestructiveDialog>
   )
 }
+
+
 
 const accreditationBadgeClass: Record<VendorAccreditationStatus, string> = {
   pending:     'bg-neutral-100 text-neutral-600',
@@ -70,7 +72,7 @@ function AccreditVendorButton({ vendor }: { vendor: Vendor }) {
       onClick={() =>
         accreditMut.mutate(undefined, {
           onSuccess: () => toast.success(`${vendor.name} accredited.`),
-          onError: () => toast.error('Failed to accredit vendor.'),
+          onError: (err) => toast.error(firstErrorMessage(err)),
         })
       }
       className="text-xs text-green-600 hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -112,7 +114,7 @@ function SuspendVendorButton({ vendor }: { vendor: Vendor }) {
                 disabled={reason.trim().length < 5 || suspendMut.isPending}
                 onClick={() => suspendMut.mutate(reason.trim(), {
                   onSuccess: () => { toast.success('Vendor suspended.'); setOpen(false) },
-                  onError: () => toast.error('Failed to suspend vendor.'),
+                  onError: (err) => toast.error(firstErrorMessage(err)),
                 })}
                 className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -184,17 +186,55 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
 
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
+  const [touched, setTouched] = useState(false)
+
+  // Client-side validation
+  const nameError = touched && !form.name.trim() ? 'Vendor name is required.' : undefined
+  const emailError = touched && form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
+    ? 'Please enter a valid email address.'
+    : undefined
+  const tinError = touched && form.tin && !validators.tin(form.tin)
+    ? validationMessages.tin
+    : undefined
+  const phoneError = touched && form.phone && !validators.phone(form.phone)
+    ? validationMessages.phone
+    : undefined
+  const isValid = form.name.trim() 
+    && (!form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    && (!form.tin || validators.tin(form.tin))
+    && (!form.phone || validators.phone(form.phone))
+
+  // Normalize form data: convert empty strings to null
+  // Note: TIN is kept with dashes (backend expects XXX-XXX-XXX-XXX format)
+  const normalizeForm = (formData: CreateVendorPayload): CreateVendorPayload => ({
+    ...formData,
+    tin: formData.tin?.trim() || null,
+    atc_code: formData.atc_code?.trim() || null,
+    address: formData.address?.trim() || null,
+    contact_person: formData.contact_person?.trim() || null,
+    email: formData.email?.trim() || null,
+    phone: formData.phone?.trim() || null,
+    notes: formData.notes?.trim() || null,
+    payment_terms: formData.payment_terms?.trim() || null,
+    bank_name: formData.bank_name?.trim() || null,
+    bank_account_no: formData.bank_account_no?.trim() || null,
+    bank_account_name: formData.bank_account_name?.trim() || null,
+    accreditation_notes: formData.accreditation_notes?.trim() || null,
+  })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setTouched(true)
+    if (!isValid) return
     setError(null)
     setFieldErrors({})
+    const payload = normalizeForm(form)
     try {
       if (isEdit) {
-        await updateMut.mutateAsync(form)
+        await updateMut.mutateAsync(payload)
         toast.success('Vendor updated.')
       } else {
-        await createMut.mutateAsync(form)
+        await createMut.mutateAsync(payload)
         toast.success('Vendor created.')
       }
       onClose()
@@ -231,22 +271,34 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Vendor Name *</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Vendor Name <span className="text-red-500">*</span>
+              </label>
               <input
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  nameError ? 'border-red-400' : 'border-neutral-300'
+                }`}
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                onBlur={() => setTouched(true)}
                 required
               />
+              {nameError && <p className="mt-1 text-xs text-red-600">{nameError}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">TIN</label>
               <input
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  tinError ? 'border-red-400' : 'border-neutral-300'
+                }`}
                 value={form.tin ?? ''}
-                onChange={e => setForm(f => ({ ...f, tin: e.target.value || null }))}
+                onChange={e => setForm(f => ({ ...f, tin: formatTIN(e.target.value) || null }))}
+                onBlur={() => setTouched(true)}
                 placeholder="000-000-000-000"
+                maxLength={15}
               />
+              {tinError && <p className="mt-1 text-xs text-red-600">{tinError}</p>}
+              <p className="mt-1 text-xs text-neutral-400">{validationMessages.tin}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">ATC Code</label>
@@ -270,17 +322,24 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
               <input
                 className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.phone ?? ''}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value || null }))}
+                onChange={e => setForm(f => ({ ...f, phone: formatPhoneNumber(e.target.value) || null }))}
+                placeholder="09XX XXX XXXX"
+                maxLength={13}
               />
+              <p className="mt-1 text-xs text-neutral-400">{validationMessages.phone}</p>
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
               <input
                 type="email"
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  emailError ? 'border-red-400' : 'border-neutral-300'
+                }`}
                 value={form.email ?? ''}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value || null }))}
+                onBlur={() => setTouched(true)}
               />
+              {emailError && <p className="mt-1 text-xs text-red-600">{emailError}</p>}
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">Address</label>
@@ -361,7 +420,7 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || !isValid}
               className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Vendor'}
@@ -399,6 +458,7 @@ export default function VendorsPage() {
   const canSuspend = useAuthStore((s) => s.hasPermission('vendors.suspend'))
   const canArchive = useAuthStore((s) => s.hasPermission('vendors.archive'))
 
+
   return (
     <div className="space-y-6">
       <PageHeader title="Vendors" />
@@ -434,14 +494,16 @@ export default function VendorsPage() {
           <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50">
             <RefreshCw className="w-4 h-4 text-neutral-500" />
           </button>
-          {canManage && (
-            <button
-              onClick={() => { setEditing(null); setShowForm(true) }}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
-            >
-              <Plus className="w-4 h-4" /> Add Vendor
-            </button>
-          )}
+          <DepartmentGuard module="vendors">
+            {canManage && (
+              <button
+                onClick={() => { setEditing(null); setShowForm(true) }}
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+              >
+                <Plus className="w-4 h-4" /> Add Vendor
+              </button>
+            )}
+          </DepartmentGuard>
         </div>
       </div>
 
@@ -521,19 +583,21 @@ export default function VendorsPage() {
                     <AccreditationBadge status={vendor.accreditation_status ?? 'pending'} />
                   </td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center justify-end gap-2">
-                      {canManage && (
-                        <button
-                          onClick={() => { setEditing(vendor); setShowForm(true) }}
-                          className="text-xs text-neutral-600 hover:underline"
-                        >
-                          Edit
-                        </button>
-                      )}
-                      {canAccredit && <AccreditVendorButton vendor={vendor} />}
-                      {canSuspend && <SuspendVendorButton vendor={vendor} />}
-                      {canArchive && vendor.is_active && <ArchiveVendorButton vendor={vendor} />}
-                    </div>
+                    <DepartmentGuard module="vendors">
+                      <div className="flex items-center justify-end gap-2">
+                        {canManage && (
+                          <button
+                            onClick={() => { setEditing(vendor); setShowForm(true) }}
+                            className="text-xs text-neutral-600 hover:underline"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {canAccredit && <AccreditVendorButton vendor={vendor} />}
+                        {canSuspend && <SuspendVendorButton vendor={vendor} />}
+                        {canArchive && vendor.is_active && <ArchiveVendorButton vendor={vendor} />}
+                      </div>
+                    </DepartmentGuard>
                   </td>
                 </tr>
               ))}

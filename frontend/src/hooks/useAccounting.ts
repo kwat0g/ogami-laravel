@@ -8,6 +8,7 @@ import type {
   JournalEntry,
   CreateJournalEntryPayload,
   JournalEntryFilters,
+  JournalEntryTemplate,
 } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
@@ -329,3 +330,71 @@ export function useDeleteRecurringTemplate() {
   })
 }
 
+
+// ===========================================================================
+// Journal Entry Templates
+// ===========================================================================
+
+export function useJournalEntryTemplates() {
+  return useQuery({
+    queryKey: ['journal-entry-templates'],
+    queryFn: async () => {
+      const res = await api.get<{ data: JournalEntryTemplate[] }>('/accounting/journal-entry-templates')
+      return res.data.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+export function useApplyJournalEntryTemplate() {
+  return useMutation({
+    mutationFn: async (templateId: number) => {
+      const res = await api.get<{
+        template_id: number
+        template_name: string
+        lines: Array<{
+          account_id: number
+          account_name: string
+          account_code: string
+          debit_or_credit: 'debit' | 'credit'
+          description: string | null
+          amount: string
+        }>
+      }>(`/accounting/journal-entry-templates/${templateId}/apply`)
+      return res.data
+    },
+  })
+}
+
+export function useCreateJournalEntryTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: {
+      name: string
+      description?: string
+      lines: Array<{
+        account_id: number
+        debit_or_credit: 'debit' | 'credit'
+        description?: string
+      }>
+    }) => {
+      const res = await api.post('/accounting/journal-entry-templates', payload)
+      return res.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['journal-entry-templates'] })
+    },
+  })
+}
+
+export function useDeleteJournalEntryTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (templateId: number) => {
+      await api.delete(`/accounting/journal-entry-templates/${templateId}`)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['journal-entry-templates'] })
+    },
+  })
+}

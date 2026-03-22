@@ -146,7 +146,7 @@ export interface AttendanceFilters {
 
 // ── Overtime ─────────────────────────────────────────────────────────────────
 
-export type OvertimeStatus = 'pending' | 'supervisor_approved' | 'pending_executive' | 'approved' | 'rejected' | 'cancelled'
+export type OvertimeStatus = 'pending' | 'supervisor_approved' | 'manager_checked' | 'officer_reviewed' | 'pending_executive' | 'approved' | 'rejected' | 'cancelled'
 
 export interface OvertimeRequest {
   id:                number

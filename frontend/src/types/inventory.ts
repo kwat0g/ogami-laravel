@@ -17,11 +17,14 @@ export interface ItemMaster {
   name: string
   unit_of_measure: string
   description: string | null
+  standard_price_centavos: number | null
   reorder_point: string
   reorder_qty: string
   type: 'raw_material' | 'semi_finished' | 'finished_good' | 'consumable' | 'spare_part'
   requires_iqc: boolean
   is_active: boolean
+  preferred_vendor_id: number | null
+  preferred_vendor: { id: number; name: string } | null
   stock_balances?: StockBalance[]
   created_at: string | null
   updated_at: string | null
@@ -118,6 +121,9 @@ export interface MaterialRequisition {
   remarks: string | null
   status: MaterialRequisitionStatus
   is_cancellable: boolean
+  is_convertible_to_pr: boolean
+  converted_to_pr: boolean
+  converted_pr_id: number | null
   submitted_at: string | null
   noted_at: string | null
   noted_comments: string | null

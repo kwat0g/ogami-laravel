@@ -1,5 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import {
   useBankReconciliation,
   useUnmatchTransaction,
@@ -45,7 +47,21 @@ export default function BankReconciliationDetailPage() {
   const isDraft      = recon.status === 'draft'
 
   async function handleCertify() {
-    await certify.mutateAsync()
+    try {
+      await certify.mutateAsync()
+      toast.success('Bank reconciliation certified successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to certify reconciliation.'))
+    }
+  }
+
+  async function handleUnmatch(txId: number) {
+    try {
+      await unmatch.mutateAsync(txId)
+      toast.success('Transaction unmatched successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to unmatch transaction.'))
+    }
   }
 
   return (
@@ -129,7 +145,7 @@ export default function BankReconciliationDetailPage() {
         <TransactionTable
           transactions={matched}
           isDraft={isDraft}
-          onUnmatch={isDraft && canEdit ? (txId) => void unmatch.mutateAsync(txId) : null}
+          onUnmatch={isDraft && canEdit ? (txId) => void handleUnmatch(txId) : null}
           emptyMsg="No matched transactions yet."
         />
       </section>
@@ -156,12 +172,12 @@ function TransactionTable({ transactions, isDraft, onUnmatch, emptyMsg }: TxTabl
   return (
     <div className="overflow-x-auto rounded border border-neutral-200 bg-white">
       <table className="min-w-full divide-y divide-neutral-100 text-sm">
-        <thead className="bg-neutral-50">
+        <thead className="bg-neutral-50 border-b border-neutral-200">
           <tr>
             {['Date', 'Description', 'Type', 'Amount', 'Status', isDraft && onUnmatch ? 'Actions' : null]
               .filter(Boolean)
               .map(h => (
-                <th key={h as string} className="px-4 py-2 text-left text-xs font-semibold text-neutral-500">{h}</th>
+                <th key={h as string} className="text-left px-4 py-2 font-medium text-neutral-600">{h}</th>
               ))}
           </tr>
         </thead>

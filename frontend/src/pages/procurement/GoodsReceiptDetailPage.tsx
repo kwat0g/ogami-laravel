@@ -12,6 +12,8 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { GoodsReceiptCondition } from '@/types/procurement'
 
 const conditionBadgeClass: Record<GoodsReceiptCondition, string> = {
@@ -39,13 +41,15 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
 
   function handleDelete(): void {
     if (!gr) return
-    if (!window.confirm('Cancel this draft Goods Receipt? This cannot be undone.')) return
     deleteMutation.mutate(gr.ulid, {
       onSuccess: () => {
         toast.success('Goods Receipt cancelled.')
         navigate(-1)
       },
-      onError: () => toast.error('Failed to cancel Goods Receipt.'),
+      onError: (err) => {
+        const message = firstErrorMessage(err)
+        toast.error(message ?? 'Failed to cancel Goods Receipt.')
+      },
     })
   }
 
@@ -58,7 +62,10 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
           : 'Three-way match WARNING — discrepancy detected'
         toast.success(`GR confirmed. ${matchLabel}`)
       },
-      onError: () => toast.error('Failed to confirm Goods Receipt.'),
+      onError: (err) => {
+        const message = firstErrorMessage(err)
+        toast.error(message ?? 'Failed to confirm Goods Receipt.')
+      },
     })
   }
 
@@ -88,25 +95,35 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const headerActions = canConfirm ? (
     <>
       {canConfirmPermission && (
+        <ConfirmDialog
+          title="Post Goods Receipt?"
+          description="This will confirm the receipt and update inventory levels."
+          onConfirm={handleConfirm}
+        >
+          <button
+            type="button"
+            disabled={confirmMutation.isPending || deleteMutation.isPending}
+            className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ClipboardCheck className="w-4 h-4" />
+            {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
+          </button>
+        </ConfirmDialog>
+      )}
+      <ConfirmDialog
+        title="Cancel Goods Receipt?"
+        description="This will cancel the draft Goods Receipt. This action cannot be undone."
+        onConfirm={handleDelete}
+      >
         <button
           type="button"
-          onClick={handleConfirm}
           disabled={confirmMutation.isPending || deleteMutation.isPending}
-          className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <ClipboardCheck className="w-4 h-4" />
-          {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
+          <Trash2 className="w-4 h-4" />
+          Cancel GR
         </button>
-      )}
-      <button
-        type="button"
-        onClick={handleDelete}
-        disabled={confirmMutation.isPending || deleteMutation.isPending}
-        className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <Trash2 className="w-4 h-4" />
-        Cancel GR
-      </button>
+      </ConfirmDialog>
     </>
   ) : undefined
 
@@ -212,14 +229,14 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         <CardBody>
           <div className="overflow-x-auto -mx-6 -mb-6">
             <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50 text-left">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  <th className="px-4 py-3 font-medium text-neutral-600">#</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600">PO Item ID</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600 text-right">Qty Received</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600">UOM</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600">Condition</th>
-                  <th className="px-4 py-3 font-medium text-neutral-600">Remarks</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">#</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">PO Item ID</th>
+                  <th className="text-right px-4 py-3 font-medium text-neutral-600">Qty Received</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">UOM</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Condition</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Remarks</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">

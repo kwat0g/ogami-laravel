@@ -15,6 +15,8 @@ import {
   useExportPayrollBreakdown,
 } from '@/hooks/usePayroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function formatCentavos(c: number | null | undefined): string {
   if (c == null) return '—'
@@ -44,18 +46,48 @@ export default function PayrollRunDisbursePage() {
   const stage: Stage =
     run?.status === 'PUBLISHED' ? 'done' : run?.status === 'DISBURSED' ? 'publish' : 'disburse'
 
+  // ── Validation for disburse ───────────────────────────────────────────────
+  function validateDisburse(): boolean {
+    if (run?.status !== 'VP_APPROVED' && run?.status !== 'ACCTG_APPROVED') {
+      toast.error('Payroll run must be approved before disbursement.')
+      return false
+    }
+    return true
+  }
+
   async function handleDisburse() {
+    if (!validateDisburse()) return
     try {
       await disburse.mutateAsync()
       setDisburseDone(true)
       toast.success('Disbursement complete. GL journal entry posted.')
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Disbursement failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
+  // ── Validation for publish ────────────────────────────────────────────────
+  function validatePublish(): boolean {
+    if (!disburseDone && run?.status !== 'DISBURSED') {
+      toast.error('Disbursement must be completed before publishing payslips.')
+      return false
+    }
+    if (publishAt) {
+      const scheduledDate = new Date(publishAt)
+      if (isNaN(scheduledDate.getTime())) {
+        toast.error('Please enter a valid publish date and time.')
+        return false
+      }
+      if (scheduledDate < new Date()) {
+        toast.error('Publish date must be in the future.')
+        return false
+      }
+    }
+    return true
+  }
+
   async function handlePublish() {
+    if (!validatePublish()) return
     try {
       await publish.mutateAsync({
         publish_at: publishAt || null,
@@ -68,9 +100,8 @@ export default function PayrollRunDisbursePage() {
           : 'Payslips published. Employees can now view them.',
       )
       navigate('/payroll/runs')
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Publish failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -165,22 +196,28 @@ export default function PayrollRunDisbursePage() {
 
           <div className="flex items-center gap-3">
             {stage === 'disburse' && !disburseDone ? (
-              <button
-                type="button"
-                onClick={handleDisburse}
-                disabled={disburse.isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+              <ConfirmDialog
+                title="Post to GL & Disburse?"
+                description={`This will post the GL journal entry and generate the bank disbursement file for ${run.total_employees} employees. This action cannot be undone.`}
+                confirmLabel="Post & Disburse"
+                onConfirm={handleDisburse}
               >
-                {disburse.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Posting…
-                  </>
-                ) : (
-                  <>
-                    <Building2 className="h-4 w-4" /> Post to GL & Disburse
-                  </>
-                )}
-              </button>
+                <button
+                  type="button"
+                  disabled={disburse.isPending}
+                  className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+                >
+                  {disburse.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Posting…
+                    </>
+                  ) : (
+                    <>
+                      <Building2 className="h-4 w-4" /> Post to GL & Disburse
+                    </>
+                  )}
+                </button>
+              </ConfirmDialog>
             ) : (
               <span className="flex items-center gap-2 text-sm text-green-600 font-medium">
                 <CheckCircle className="h-4 w-4" /> GL posted. Disbursement complete.
@@ -236,8 +273,12 @@ export default function PayrollRunDisbursePage() {
               type="datetime-local"
               value={publishAt}
               onChange={(e) => setPublishAt(e.target.value)}
+              min={new Date().toISOString().slice(0, 16)}
               className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
             />
+            {publishAt && new Date(publishAt) < new Date() && (
+              <p className="text-xs text-red-500 mt-1">Publish date must be in the future.</p>
+            )}
           </div>
 
           {/* Notification options */}
@@ -266,22 +307,32 @@ export default function PayrollRunDisbursePage() {
             </label>
           </div>
 
-          <button
-            type="button"
-            onClick={handlePublish}
-            disabled={publish.isPending}
-            className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+          <ConfirmDialog
+            title={publishAt ? 'Schedule Payslip Publication?' : 'Publish Payslips Now?'}
+            description={
+              publishAt
+                ? `Payslips will be published on ${new Date(publishAt).toLocaleString('en-PH')} and employees will be notified.`
+                : `Payslips will be published immediately and ${run.total_employees} employees will be notified.`
+            }
+            confirmLabel={publishAt ? 'Schedule Publication' : 'Publish Now'}
+            onConfirm={handlePublish}
           >
-            {publish.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Publishing…
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4" /> {publishAt ? 'Schedule Publication' : 'Publish Now'}
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              disabled={publish.isPending || (!disburseDone && run?.status !== 'DISBURSED')}
+              className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+            >
+              {publish.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Publishing…
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" /> {publishAt ? 'Schedule Publication' : 'Publish Now'}
+                </>
+              )}
+            </button>
+          </ConfirmDialog>
         </div>
       </div>
     </div>

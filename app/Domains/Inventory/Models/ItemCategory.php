@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Inventory\Models;
 
+use Database\Factories\ItemCategoryFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -17,7 +19,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 final class ItemCategory extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected static function newFactory(): ItemCategoryFactory
+    {
+        return ItemCategoryFactory::new();
+    }
 
     protected $table = 'item_categories';
 

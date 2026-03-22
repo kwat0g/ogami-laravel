@@ -45,12 +45,15 @@ final class DeliverySchedule extends Model implements Auditable
         'type',
         'status',
         'notes',
+        'client_acknowledgment',
+        'combined_delivery_schedule_id',
     ];
 
     protected $casts = [
         'qty_ordered' => 'decimal:4',
         'unit_price' => 'decimal:4',
         'target_delivery_date' => 'date',
+        'client_acknowledgment' => 'array',
     ];
 
     public function customer(): BelongsTo

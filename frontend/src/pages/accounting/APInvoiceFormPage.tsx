@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useVendors, useCreateAPInvoice } from '@/hooks/useAP'
 import { useFiscalPeriods, useChartOfAccounts } from '@/hooks/useAccounting'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { CreateVendorInvoicePayload } from '@/types/ap'
 
 // ---------------------------------------------------------------------------
@@ -92,9 +93,9 @@ export default function APInvoiceFormPage() {
       toast.success('AP Invoice created.')
       navigate(`/accounting/ap/invoices/${invoice.ulid}`)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setError(msg ?? 'An unexpected error occurred.')
-      toast.error(msg ?? 'Failed to create AP invoice.')
+      const msg = firstErrorMessage(err)
+      setError(msg)
+      toast.error(msg)
     }
   }
 

@@ -1,16 +1,19 @@
 import { useParams, Link } from 'react-router-dom'
-import { useEmployee, useEmployeeTransition } from '@/hooks/useEmployees'
+import { useEmployee, useEmployeeTransition, useDeleteEmployee } from '@/hooks/useEmployees'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmployeeProfileView } from '@/components/employee'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useSodCheck } from '@/hooks/useSodCheck'
 import type { EmploymentStatus } from '@/types/hr'
-import { Edit3, ChevronDown } from 'lucide-react'
+import { Edit3, ChevronDown, Trash2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const ALLOWED_TRANSITIONS: Record<EmploymentStatus, EmploymentStatus[]> = {
   draft: ['active'],
@@ -48,13 +51,16 @@ function statusLabel(s: string | undefined | null) {
 
 export default function EmployeeDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
+  const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
   const canEdit = hasPermission('employees.update')
+  const canDelete = hasPermission('employees.delete')
   const canTransition = hasPermission('employees.suspend') || hasPermission('employees.terminate')
   const employeeId = id ?? null
 
-  const { data: employee, isLoading, isError } = useEmployee(employeeId)
+  const { data: employee, isLoading, isError, refetch } = useEmployee(employeeId)
   const transitionMutation = useEmployeeTransition(employeeId!)
+  const deleteMutation = useDeleteEmployee()
   const { isBlocked: activateBlocked, reason: activateReason } = useSodCheck(
     employee?.created_by_id ?? null,
   )
@@ -71,6 +77,32 @@ export default function EmployeeDetailPage() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleDelete = async () => {
+    if (!employee) return
+    try {
+      await deleteMutation.mutateAsync(employee.ulid)
+      toast.success('Employee deleted successfully')
+      navigate('/hr/employees/all')
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to delete employee: ${message}`)
+      throw err
+    }
+  }
+
+  const handleTransition = async (state: EmploymentStatus) => {
+    try {
+      await transitionMutation.mutateAsync(state)
+      toast.success(`Status changed to "${statusLabel(state)}"`)
+      setIsDropdownOpen(false)
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to change status: ${message}`)
+      throw err
+    }
+  }
 
   if (isLoading) return <SkeletonLoader rows={12} />
 
@@ -93,6 +125,24 @@ export default function EmployeeDetailPage() {
         </Link>
       )}
 
+      {canDelete && (
+        <ConfirmDestructiveDialog
+          title="Delete Employee?"
+          description={`This will permanently delete ${employee.full_name}'s record. This action cannot be undone.`}
+          confirmWord="DELETE"
+          confirmLabel="Delete Employee"
+          onConfirm={handleDelete}
+        >
+          <button
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </button>
+        </ConfirmDestructiveDialog>
+      )}
+
       {allowedNext.length > 0 && canTransition && (
         <div className="relative" ref={dropdownRef}>
           <button
@@ -112,22 +162,43 @@ export default function EmployeeDetailPage() {
               </div>
               {allowedNext.map((state) => {
                 const isSodBlocked = state === 'active' && activateBlocked
-                return (
+                const isDestructive = state === 'resigned' || state === 'terminated'
+                
+                return isDestructive ? (
+                  <ConfirmDestructiveDialog
+                    key={state}
+                    title={`${statusLabel(state)} Employee?`}
+                    description={`This will mark ${employee.full_name} as ${statusLabel(state)}. This action cannot be undone.`}
+                    confirmWord={state.toUpperCase()}
+                    confirmLabel={`Set ${statusLabel(state)}`}
+                    onConfirm={() => handleTransition(state)}
+                  >
+                    <button
+                      disabled={isSodBlocked}
+                      title={isSodBlocked ? (activateReason ?? undefined) : undefined}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+                        isSodBlocked ? 'text-neutral-400' : 'text-neutral-700'
+                      }`}
+                      onClick={(e) => {
+                        if (isSodBlocked) {
+                          e.preventDefault()
+                        }
+                      }}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${transitionColors[state].split(' ')[0].replace('bg-', 'bg-')}`}
+                      />
+                      {statusLabel(state)}
+                    </button>
+                  </ConfirmDestructiveDialog>
+                ) : (
                   <ConfirmDialog
                     key={state}
                     title={`Change Status to "${statusLabel(state)}"?`}
                     description={`This will transition ${employee.full_name}'s employment status to "${statusLabel(state)}". The action is recorded in the audit log.`}
                     confirmLabel={`Set ${statusLabel(state)}`}
-                    variant={state === 'resigned' || state === 'terminated' ? 'danger' : 'default'}
-                    onConfirm={async () => {
-                      try {
-                        await transitionMutation.mutateAsync(state)
-                        toast.success(`Status changed to "${statusLabel(state)}".`)
-                        setIsDropdownOpen(false)
-                      } catch {
-                        toast.error('Failed to change employee status.')
-                      }
-                    }}
+                    variant={state === 'suspended' ? 'danger' : 'default'}
+                    onConfirm={() => handleTransition(state)}
                   >
                     <button
                       disabled={isSodBlocked}

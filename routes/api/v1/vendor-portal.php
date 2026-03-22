@@ -24,6 +24,14 @@ Route::middleware(['auth:sanctum', 'vendor_scope'])->group(function () {
         Route::get('/{purchaseOrder}', [VendorPortalController::class, 'orderDetail'])
             ->name('show');
 
+        Route::post('/{purchaseOrder}/acknowledge', [VendorPortalController::class, 'acknowledge'])
+            ->middleware('throttle:api-action')
+            ->name('acknowledge');
+
+        Route::post('/{purchaseOrder}/propose-changes', [VendorPortalController::class, 'proposeChanges'])
+            ->middleware('throttle:api-action')
+            ->name('propose-changes');
+
         Route::post('/{purchaseOrder}/in-transit', [VendorPortalController::class, 'markInTransit'])
             ->middleware('throttle:api-action')
             ->name('in-transit');

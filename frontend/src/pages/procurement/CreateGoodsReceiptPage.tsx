@@ -9,6 +9,7 @@ import { useCreateGoodsReceipt } from '@/hooks/useGoodsReceipts'
 import { usePurchaseOrders, usePurchaseOrder } from '@/hooks/usePurchaseOrders'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { GoodsReceiptCondition } from '@/types/procurement'
 
 const CONDITIONS: GoodsReceiptCondition[] = ['good', 'damaged', 'partial', 'rejected']
@@ -94,8 +95,9 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
       })
       toast.success('Goods Receipt recorded.')
       navigate(`/procurement/goods-receipts/${gr.ulid}`)
-    } catch {
-      toast.error('Failed to record goods receipt.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to record goods receipt.')
     }
   }
 

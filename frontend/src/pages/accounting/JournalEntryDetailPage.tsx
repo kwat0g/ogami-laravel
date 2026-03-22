@@ -7,12 +7,15 @@ import {
   usePostJournalEntry,
   useReverseJournalEntry,
 } from '@/hooks/useAccounting'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SodActionButton from '@/components/ui/SodActionButton'
 import PageHeader from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { JournalEntryLine } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
@@ -116,14 +119,33 @@ export default function JournalEntryDetailPage() {
     )
   }
 
+  async function handlePost() {
+    try {
+      await postMutation.mutateAsync()
+      toast.success('Journal entry posted.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
   async function handleReverse() {
     const desc = window.prompt('Reversal description (optional):') ?? ''
     try {
       const reversed = await reverseMutation.mutateAsync(desc)
       toast.success('Reversal entry created.')
       navigate(`/accounting/journal-entries/${reversed.ulid}`)
-    } catch {
-      toast.error('Failed to create reversal.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      await deleteMutation.mutateAsync()
+      toast.success('Journal entry deleted.')
+      navigate('/accounting/journal-entries')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -143,6 +165,8 @@ export default function JournalEntryDetailPage() {
     </div>
   )
 
+  const canDelete = entry.status === 'draft' && !entry.is_auto_posted
+
   return (
     <div className="max-w-7xl mx-auto">
       <PageHeader
@@ -155,47 +179,60 @@ export default function JournalEntryDetailPage() {
           !entry.is_auto_posted && (
             <div className="flex items-center gap-2">
               {entry.status === 'draft' && (
-                <button
-                  onClick={async () => {
+                <ConfirmDialog
+                  title="Submit for Approval?"
+                  description="This will submit the journal entry for review and approval. Continue?"
+                  confirmLabel="Submit"
+                  onConfirm={async () => {
                     try {
                       await submitMutation.mutateAsync()
                       toast.success('Journal entry submitted for approval.')
-                    } catch {
-                      toast.error('Failed to submit entry.')
+                    } catch (err) {
+                      toast.error(firstErrorMessage(err))
                     }
                   }}
-                  disabled={busy}
-                  className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
-                </button>
+                  <button
+                    disabled={busy}
+                    className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
+                  </button>
+                </ConfirmDialog>
               )}
               {entry.status === 'submitted' && (
-                <SodActionButton
-                  initiatedById={entry.created_by}
-                  label="Post"
-                  onClick={async () => {
-                    try {
-                      await postMutation.mutateAsync()
-                      toast.success('Journal entry posted.')
-                    } catch {
-                      toast.error('Failed to post entry.')
-                    }
-                  }}
-                  isLoading={postMutation.isPending}
-                  disabled={submitMutation.isPending || reverseMutation.isPending}
-                  variant="primary"
-                />
+                <ConfirmDialog
+                  title="Post Journal Entry?"
+                  description="Posted entries cannot be edited. This will finalize the journal entry in the general ledger. Continue?"
+                  confirmLabel="Post Entry"
+                  onConfirm={handlePost}
+                >
+                  <SodActionButton
+                    initiatedById={entry.created_by}
+                    label="Post"
+                    onClick={() => {}} // Handled by ConfirmDialog
+                    isLoading={postMutation.isPending}
+                    disabled={submitMutation.isPending || reverseMutation.isPending}
+                    variant="primary"
+                  />
+                </ConfirmDialog>
               )}
               {entry.status === 'posted' && entry.reversal_of == null && (
-                <button
-                  onClick={() => void handleReverse()}
-                  disabled={busy}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                <ConfirmDestructiveDialog
+                  title="Reverse Journal Entry?"
+                  description="This will create a reversing journal entry to cancel this transaction. The original entry will remain posted. Continue?"
+                  confirmWord="REVERSE"
+                  confirmLabel="Reverse Entry"
+                  onConfirm={handleReverse}
                 >
-                  <RotateCcw className="h-4 w-4" />
-                  {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
-                </button>
+                  <button
+                    disabled={busy}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
+                  </button>
+                </ConfirmDestructiveDialog>
               )}
             </div>
           )

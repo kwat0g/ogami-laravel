@@ -259,12 +259,35 @@ export function useUnlockUser() {
 // Roles
 // ---------------------------------------------------------------------------
 
+// RBAC v2 - 7 Core Roles + Portal Roles
+// These are the only roles that should be assignable
+const VALID_ROLES = [
+  { id: 1, name: 'super_admin', label: 'Super Admin' },
+  { id: 2, name: 'admin', label: 'System Admin' },
+  { id: 3, name: 'executive', label: 'Executive' },
+  { id: 4, name: 'vice_president', label: 'Vice President' },
+  { id: 5, name: 'manager', label: 'Manager' },
+  { id: 6, name: 'officer', label: 'Officer' },
+  { id: 7, name: 'head', label: 'Department Head' },
+  { id: 8, name: 'staff', label: 'Staff' },
+  { id: 9, name: 'vendor', label: 'Vendor Portal' },
+  { id: 10, name: 'client', label: 'Client Portal' },
+]
+
 export function useRoles() {
   return useQuery({
     queryKey: ['admin-roles'],
     queryFn: async () => {
       const res = await api.get<{ data: Role[] }>('/admin/roles')
-      return res.data.data
+      // Filter to only show valid RBAC v2 roles
+      const apiRoles = res.data.data
+      return VALID_ROLES.map(validRole => {
+        const apiRole = apiRoles.find((r: Role) => r.name === validRole.name)
+        return {
+          ...validRole,
+          id: apiRole?.id ?? validRole.id,
+        }
+      })
     },
     staleTime: 300_000,
   })

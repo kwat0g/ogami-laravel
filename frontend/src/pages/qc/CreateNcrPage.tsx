@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCreateNcr, useInspections } from '@/hooks/useQC'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { NcrSeverity } from '@/types/qc'
 
 export default function CreateNcrPage(): React.ReactElement {
@@ -29,23 +30,48 @@ export default function CreateNcrPage(): React.ReactElement {
     if (!form.inspection_id) e.inspection_id = 'Linked inspection is required.'
     if (!form.title.trim()) e.title = 'Title is required.'
     if (!form.description.trim()) e.description = 'Description is required.'
+    if (form.description.trim().length < 10) e.description = 'Description must be at least 10 characters.'
     return e
   }, [form])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
+  const isFormValid = useMemo(() => {
+    return form.inspection_id && 
+           form.title.trim() && 
+           form.description.trim() && 
+           form.description.trim().length >= 10
+  }, [form])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Touch all fields for validation display
+    setTouched(new Set(['inspection_id', 'title', 'description']))
+
+    if (!form.inspection_id) {
+      toast.error('Please select a linked inspection.')
+      return
+    }
+    if (!form.title.trim()) {
+      toast.error('Title is required.')
+      return
+    }
+    if (!form.description.trim() || form.description.trim().length < 10) {
+      toast.error('Description must be at least 10 characters.')
+      return
+    }
+
     try {
       const ncr = await createMut.mutateAsync({
         inspection_id: form.inspection_id,
-        title: form.title,
-        description: form.description,
+        title: form.title.trim(),
+        description: form.description.trim(),
         severity: form.severity,
       })
-      toast.success('NCR created.')
+      toast.success('NCR created successfully.')
       navigate(`/qc/ncrs/${(ncr as { ulid?: string })?.ulid ?? ''}`)
-    } catch {
-      toast.error('Failed to create NCR.')
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -121,10 +147,13 @@ export default function CreateNcrPage(): React.ReactElement {
             value={form.description}
             onChange={e => set('description', e.target.value)}
             onBlur={() => touch('description')}
-            placeholder="Detailed description of the non-conformance"
+            placeholder="Detailed description of the non-conformance (minimum 10 characters)"
             required
           />
           {fe('description') && <p className="mt-1 text-xs text-red-600">{fe('description')}</p>}
+          <p className="mt-1 text-xs text-neutral-400">
+            {form.description.trim().length} / 10 characters minimum
+          </p>
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
@@ -137,7 +166,7 @@ export default function CreateNcrPage(): React.ReactElement {
           </button>
           <button
             type="submit"
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || !isFormValid}
             className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Raise NCR'}

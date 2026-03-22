@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateCustomerInvoice } from '@/hooks/useAR'
 import { useCustomers } from '@/hooks/useAR'
 import { useFiscalPeriods, useChartOfAccounts } from '@/hooks/useAccounting'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { CreateCustomerInvoicePayload } from '@/types/ar'
 
 // VAT rate will eventually come from system_settings via API.
@@ -100,6 +101,15 @@ export default function CustomerInvoiceFormPage() {
   }, [form])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
+  const isFormValid = useMemo(() => {
+    return Object.keys(ve).length === 0 &&
+      form.customer_id > 0 &&
+      form.fiscal_period_id > 0 &&
+      form.ar_account_id > 0 &&
+      form.revenue_account_id > 0 &&
+      form.subtotal > 0
+  }, [ve, form])
+
   // Auto-fill vat_amount when subtotal changes
   useEffect(() => {
     set('vat_amount', derivedVat)
@@ -108,12 +118,21 @@ export default function CustomerInvoiceFormPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Touch all fields to show validation errors
+    setTouched(new Set(['customer_id', 'fiscal_period_id', 'ar_account_id', 'revenue_account_id', 'invoice_date', 'due_date', 'subtotal', 'or_number']))
+    
+    if (!isFormValid) {
+      toast.error('Please fix the validation errors before submitting.')
+      return
+    }
+
     try {
       await createMut.mutateAsync(form)
-      toast.success('Customer invoice created.')
+      toast.success('Customer invoice created successfully.')
       navigate('/ar/invoices')
-    } catch {
-      toast.error('Failed to create invoice.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -123,7 +142,7 @@ export default function CustomerInvoiceFormPage() {
 
       {createMut.error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-          {(createMut.error as Error).message}
+          {firstErrorMessage(createMut.error)}
         </div>
       )}
 
@@ -333,7 +352,7 @@ export default function CustomerInvoiceFormPage() {
           </button>
           <button
             type="submit"
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || !isFormValid}
             className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Invoice (Draft)'}

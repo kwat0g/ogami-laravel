@@ -2,6 +2,7 @@
 
 use App\Infrastructure\Middleware\DepartmentScopeMiddleware;
 use App\Infrastructure\Middleware\EnsureJsonApiMiddleware;
+use App\Infrastructure\Middleware\ModuleAccessMiddleware;
 use App\Infrastructure\Middleware\SecurityHeadersMiddleware;
 use App\Infrastructure\Middleware\SodMiddleware;
 use App\Infrastructure\Middleware\VendorScopeMiddleware;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'sod' => SodMiddleware::class,
             'dept_scope' => DepartmentScopeMiddleware::class,
+            'module_access' => ModuleAccessMiddleware::class,
             'vendor_scope' => VendorScopeMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,

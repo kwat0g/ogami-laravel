@@ -24,10 +24,30 @@ final class LoanWrittenOffNotification extends Notification implements ShouldQue
     use Queueable;
 
     public function __construct(
-        private readonly Loan $loan,
+        private readonly int $loanId,
+        private readonly string $loanUlid,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $loanTypeName,
+        private readonly string $referenceNo,
+        private readonly int $outstandingBalanceCentavos,
         private readonly string $audience = 'hr',
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Loan $loan, string $audience = 'hr'): self
+    {
+        return new self(
+            loanId: $loan->id,
+            loanUlid: $loan->ulid,
+            employeeId: $loan->employee_id,
+            employeeName: $loan->employee->full_name,
+            loanTypeName: $loan->loanType->name,
+            referenceNo: $loan->reference_no,
+            outstandingBalanceCentavos: $loan->outstanding_balance_centavos,
+            audience: $audience,
+        );
     }
 
     /** @return list<string> */
@@ -39,10 +59,7 @@ final class LoanWrittenOffNotification extends Notification implements ShouldQue
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $loanTypeName = $this->loan->loanType->name;
-        $outstanding = number_format($this->loan->outstanding_balance_centavos / 100, 2);
-        $employeeName = $this->loan->employee->full_name;
-        $ref = $this->loan->reference_no;
+        $outstanding = number_format($this->outstandingBalanceCentavos / 100, 2);
 
         if ($this->audience === 'accounting') {
             return [
@@ -50,14 +67,14 @@ final class LoanWrittenOffNotification extends Notification implements ShouldQue
                 'title' => 'Loan Written Off — GL Adjustment Required',
                 'message' => sprintf(
                     'The %s loan for %s (ref: %s) has been written off. Outstanding balance of ₱%s may require a GL adjustment entry.',
-                    $loanTypeName,
-                    $employeeName,
-                    $ref,
+                    $this->loanTypeName,
+                    $this->employeeName,
+                    $this->referenceNo,
                     $outstanding,
                 ),
-                'action_url' => "/accounting/loans/{$this->loan->ulid}",
-                'loan_id' => $this->loan->id,
-                'employee_id' => $this->loan->employee_id,
+                'action_url' => "/accounting/loans/{$this->loanUlid}",
+                'loan_id' => $this->loanId,
+                'employee_id' => $this->employeeId,
             ];
         }
 
@@ -66,14 +83,14 @@ final class LoanWrittenOffNotification extends Notification implements ShouldQue
             'title' => 'Loan Written Off — Balance Flagged for Review',
             'message' => sprintf(
                 'The %s loan for %s (ref: %s) has been written off with ₱%s outstanding. Please review for final pay deduction (LN-009).',
-                $loanTypeName,
-                $employeeName,
-                $ref,
+                $this->loanTypeName,
+                $this->employeeName,
+                $this->referenceNo,
                 $outstanding,
             ),
-            'action_url' => "/hr/loans/{$this->loan->ulid}",
-            'loan_id' => $this->loan->id,
-            'employee_id' => $this->loan->employee_id,
+            'action_url' => "/hr/loans/{$this->loanUlid}",
+            'loan_id' => $this->loanId,
+            'employee_id' => $this->employeeId,
         ];
     }
 

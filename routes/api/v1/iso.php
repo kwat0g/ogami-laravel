@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\ISO\ISOController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->group(function (): void {
+Route::middleware(['auth:sanctum', 'module_access:iso'])->group(function (): void {
     // Controlled Documents
     Route::get('/documents', [ISOController::class, 'indexDocuments']);
     Route::post('/documents', [ISOController::class, 'storeDocument']);

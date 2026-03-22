@@ -15,9 +15,20 @@ final class ProductionOrderCompletedNotification extends Notification implements
     use Queueable;
 
     public function __construct(
-        private readonly ProductionOrder $order,
+        private readonly int $productionOrderId,
+        private readonly string $productionOrderUlid,
+        private readonly string $orderNumber,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(ProductionOrder $order): self
+    {
+        return new self(
+            productionOrderId: $order->id,
+            productionOrderUlid: $order->ulid,
+            orderNumber: $order->order_number ?? "PO-{$order->id}",
+        );
     }
 
     /** @return list<string> */
@@ -34,10 +45,10 @@ final class ProductionOrderCompletedNotification extends Notification implements
             'title' => 'Production Order Completed',
             'message' => sprintf(
                 'Production order %s has been completed. Output has been logged.',
-                $this->order->order_number ?? "PO-{$this->order->id}",
+                $this->orderNumber,
             ),
-            'action_url' => "/production/orders/{$this->order->ulid}",
-            'production_order_id' => $this->order->id,
+            'action_url' => "/production/orders/{$this->productionOrderUlid}",
+            'production_order_id' => $this->productionOrderId,
         ];
     }
 

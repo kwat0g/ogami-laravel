@@ -61,7 +61,7 @@ export function StatusBadge({ status, children, className }: StatusBadgeProps) {
   
   return (
     <span className={cn(
-      'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border capitalize shadow-sm',
+      'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border shadow-sm',
       style,
       className
     )}>

@@ -12,9 +12,11 @@ use App\Http\Requests\AR\CreateCustomerInvoiceRequest;
 use App\Http\Requests\AR\ReceivePaymentRequest;
 use App\Http\Requests\AR\WriteOffRequest;
 use App\Http\Resources\AR\CustomerInvoiceResource;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 final class CustomerInvoiceController extends Controller
 {
@@ -112,6 +114,26 @@ final class CustomerInvoiceController extends Controller
                 'payment_date' => $payment->payment_date->toDateString(),
             ],
         ], 201);
+    }
+
+    /** Export customer invoice as PDF. */
+    public function pdf(CustomerInvoice $customerInvoice): Response
+    {
+        $this->authorize('view', $customerInvoice);
+
+        $invoice = $customerInvoice->load(['customer', 'payments', 'items']);
+
+        $settings = [
+            'company_name'    => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_address' => config('app.company_address', ''),
+        ];
+
+        $pdf = Pdf::loadView('ar.customer-invoice-pdf', compact('invoice', 'settings'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'Invoice-' . ($invoice->invoice_number ?? $invoice->id) . '.pdf';
+
+        return $pdf->stream($filename);
     }
 
     /** AR-006: bad debt write-off — Accounting Manager only (Policy gate). */

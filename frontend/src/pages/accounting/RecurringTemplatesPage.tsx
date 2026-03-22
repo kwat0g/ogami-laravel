@@ -1,7 +1,11 @@
 import { toast } from 'sonner'
-import { useRecurringTemplates, useToggleRecurringTemplate, useDeleteRecurringTemplate, type RecurringJournalTemplate } from '@/hooks/useAccounting'
 import { Power, Trash2 } from 'lucide-react'
+import { useRecurringTemplates, useToggleRecurringTemplate, useDeleteRecurringTemplate, type RecurringJournalTemplate } from '@/hooks/useAccounting'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function RecurringTemplatesPage(): React.ReactElement {
   const { data: templates, isLoading } = useRecurringTemplates()
@@ -15,18 +19,17 @@ export default function RecurringTemplatesPage(): React.ReactElement {
     try {
       const result = await toggle.mutateAsync(id)
       toast.success(`Template ${result.is_active ? 'activated' : 'deactivated'}.`)
-    } catch {
-      toast.error('Toggle failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this recurring template?')) return
     try {
       await remove.mutateAsync(id)
       toast.success('Template deleted.')
-    } catch {
-      toast.error('Delete failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -34,8 +37,9 @@ export default function RecurringTemplatesPage(): React.ReactElement {
 
   return (
     <div className="max-w-5xl mx-auto">
+      <PageHeader title="Recurring Journal Templates" />
+
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-neutral-900">Recurring Journal Templates</h1>
         <p className="text-sm text-neutral-500">Manage templates that auto-generate journal entries on schedule.</p>
       </div>
 
@@ -67,14 +71,35 @@ export default function RecurringTemplatesPage(): React.ReactElement {
                   <td className="px-4 py-3 flex items-center gap-2">
                     {canManage && (
                       <>
-                        <button onClick={() => handleToggle(t.ulid)} title={t.is_active ? 'Deactivate' : 'Activate'}
-                          className="text-neutral-500 hover:text-neutral-800">
-                          <Power className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(t.ulid)} title="Delete"
-                          className="text-neutral-400 hover:text-red-600">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <ConfirmDialog
+                          title={t.is_active ? 'Deactivate Template?' : 'Activate Template?'}
+                          description={t.is_active 
+                            ? 'This template will no longer generate journal entries automatically. Continue?' 
+                            : 'This template will resume generating journal entries on schedule. Continue?'}
+                          confirmLabel={t.is_active ? 'Deactivate' : 'Activate'}
+                          onConfirm={() => handleToggle(t.ulid)}
+                        >
+                          <button 
+                            title={t.is_active ? 'Deactivate' : 'Activate'}
+                            className="text-neutral-500 hover:text-neutral-800"
+                          >
+                            <Power className="w-4 h-4" />
+                          </button>
+                        </ConfirmDialog>
+                        <ConfirmDestructiveDialog
+                          title="Delete Recurring Template?"
+                          description={`Delete "${t.description}"? This action cannot be undone and the template will no longer generate journal entries.`}
+                          confirmWord="DELETE"
+                          confirmLabel="Delete"
+                          onConfirm={() => handleDelete(t.ulid)}
+                        >
+                          <button 
+                            title="Delete"
+                            className="text-neutral-400 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </ConfirmDestructiveDialog>
                       </>
                     )}
                   </td>

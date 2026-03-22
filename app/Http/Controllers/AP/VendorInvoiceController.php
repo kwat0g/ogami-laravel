@@ -11,9 +11,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AP\CreateVendorInvoiceRequest;
 use App\Http\Requests\AP\RecordPaymentRequest;
 use App\Http\Resources\AP\VendorInvoiceResource;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 final class VendorInvoiceController extends Controller
 {
@@ -265,5 +267,53 @@ final class VendorInvoiceController extends Controller
                 'net_payable' => round((float) $apInvoice->net_payable, 2),
             ],
         ]);
+    }
+
+    /** Export AP invoice as PDF. */
+    public function pdf(VendorInvoice $apInvoice): Response
+    {
+        $this->authorize('view', $apInvoice);
+
+        $invoice = $apInvoice->load(['vendor', 'fiscalPeriod', 'payments', 'purchaseOrder']);
+
+        $settings = [
+            'company_name'    => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_address' => config('app.company_address', ''),
+        ];
+
+        $pdf = Pdf::loadView('ap.vendor-invoice-pdf', compact('invoice', 'settings'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'AP-Invoice-' . ($invoice->or_number ?? $invoice->id) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * POST /api/v1/finance/ap/invoices/from-po
+     * Create a draft AP Invoice from a Purchase Order.
+     * Pre-populates the invoice with PO data for manual review.
+     */
+    public function createFromPo(Request $request): JsonResponse
+    {
+        $this->authorize('create', VendorInvoice::class);
+
+        $validated = $request->validate([
+            'purchase_order_id' => ['required', 'integer', 'exists:purchase_orders,id'],
+        ]);
+
+        $result = $this->service->createInvoiceFromPo(
+            poId: $validated['purchase_order_id'],
+            userId: auth()->id(),
+        );
+
+        return response()->json([
+            'data' => [
+                'invoice' => new VendorInvoiceResource($result['invoice']->load('vendor', 'fiscalPeriod')),
+                'po_items' => $result['po_items'],
+                'po_reference' => $result['po_reference'],
+                'vendor_name' => $result['vendor_name'],
+            ],
+        ], 201);
     }
 }

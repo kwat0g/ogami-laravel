@@ -1,11 +1,14 @@
 import { useState } from 'react'
-import { AlertTriangle, AlertCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { AlertTriangle, AlertCircle, RefreshCw, MapPin } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useStockBalances, useWarehouseLocations, useStockAdjust } from '@/hooks/useInventory'
 import { usePermission } from '@/hooks/usePermission'
 import { isHandledApiError } from '@/lib/api'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { StockBalance } from '@/types/inventory'
 
 interface AdjustState {
@@ -20,12 +23,13 @@ export default function StockBalancePage(): React.ReactElement {
   const [lowStock, setLowStock]     = useState(false)
   const [page, setPage]             = useState(1)
   const [adjusting, setAdjusting]   = useState<AdjustState | null>(null)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const canAdjust = usePermission('inventory.adjustments.create')
   const adjustMut = useStockAdjust()
 
   const { data: locations } = useWarehouseLocations({ is_active: true })
-  const { data, isLoading, isError } = useStockBalances({
+  const { data, isLoading, isError, refetch } = useStockBalances({
     search: search || undefined,
     location_id: locationId || undefined,
     low_stock: lowStock || undefined,
@@ -33,20 +37,42 @@ export default function StockBalancePage(): React.ReactElement {
     per_page: 25,
   })
 
+  const handleRefresh = async () => {
+    await refetch()
+    toast.success('Stock balances refreshed.')
+  }
+
+  const validateAdjust = (): boolean => {
+    if (!adjusting) return false
+    const qty = parseFloat(adjusting.newQty)
+    if (isNaN(qty) || qty < 0) {
+      toast.error('Enter a valid quantity (0 or more).')
+      return false
+    }
+    if (adjusting.remarks.trim().length < 10) {
+      toast.error('Remarks must be at least 10 characters.')
+      return false
+    }
+    return true
+  }
+
+  const handleAdjustClick = () => {
+    if (!validateAdjust()) return
+    setShowConfirm(true)
+  }
+
   const handleAdjust = async () => {
     if (!adjusting) return
-    const qty = parseFloat(adjusting.newQty)
-    if (isNaN(qty) || qty < 0) { toast.error('Enter a valid quantity (0 or more).'); return }
-    if (adjusting.remarks.trim().length < 10) { toast.error('Remarks must be at least 10 characters.'); return }
     try {
       await adjustMut.mutateAsync({
         item_id:      adjusting.bal.item_id,
         location_id:  adjusting.bal.location_id,
-        adjusted_qty: qty,
+        adjusted_qty: parseFloat(adjusting.newQty),
         remarks:      adjusting.remarks.trim(),
       })
       toast.success('Stock balance adjusted.')
       setAdjusting(null)
+      setShowConfirm(false)
     } catch (err) {
       if (isHandledApiError(err)) return
       toast.error((err as { message?: string })?.message ?? 'Adjustment failed.')
@@ -55,7 +81,20 @@ export default function StockBalancePage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Stock Balances" />
+      <PageHeader
+        title="Stock Balances"
+        actions={
+          <div className="flex items-center gap-2">
+            <Link to="/inventory/valuation" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
+              Valuation
+            </Link>
+            <Link to="/inventory/locations" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
+              <MapPin className="w-4 h-4" />
+              Locations
+            </Link>
+          </div>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
@@ -83,6 +122,14 @@ export default function StockBalancePage(): React.ReactElement {
           />
           Low stock only
         </label>
+        <button
+          onClick={handleRefresh}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50"
+          title="Refresh stock balances"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
       </div>
 
       {isLoading && <SkeletonLoader rows={10} />}
@@ -190,7 +237,7 @@ export default function StockBalancePage(): React.ReactElement {
                               </div>
                               <div className="flex items-end gap-2 pb-0.5">
                                 <button
-                                  onClick={handleAdjust}
+                                  onClick={handleAdjustClick}
                                   disabled={adjustMut.isPending}
                                   className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
@@ -237,6 +284,28 @@ export default function StockBalancePage(): React.ReactElement {
             </div>
           )}
         </>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirm && adjusting && (
+        <ConfirmDialog
+          title="Confirm Stock Adjustment"
+          description={
+            <div className="space-y-2">
+              <p>You are about to adjust stock for <strong>{adjusting.bal.item?.item_code}</strong>:</p>
+              <ul className="text-sm text-neutral-700 list-disc pl-4 space-y-1">
+                <li><strong>Current:</strong> {parseFloat(adjusting.bal.quantity_on_hand).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</li>
+                <li><strong>New:</strong> {parseFloat(adjusting.newQty).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</li>
+                <li><strong>Location:</strong> {adjusting.bal.location?.code ?? `#${adjusting.bal.location_id}`}</li>
+              </ul>
+              <p className="text-amber-600 text-xs">This action will affect inventory levels immediately.</p>
+            </div>
+          }
+          confirmLabel="Confirm Adjustment"
+          onConfirm={handleAdjust}
+        >
+          <span />
+        </ConfirmDialog>
       )}
     </div>
   )

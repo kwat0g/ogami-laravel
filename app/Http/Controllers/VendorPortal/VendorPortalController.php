@@ -13,6 +13,8 @@ use App\Domains\AP\Services\VendorFulfillmentService;
 use App\Domains\AP\Services\VendorItemService;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
+use App\Domains\Procurement\Services\PurchaseOrderService;
+use App\Http\Resources\Procurement\PurchaseOrderResource;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AP\VendorItemResource;
 use App\Imports\VendorItemImport;
@@ -33,6 +35,7 @@ final class VendorPortalController extends Controller
         private readonly VendorFulfillmentService $fulfillmentService,
         private readonly VendorItemService $itemService,
         private readonly EwtService $ewtService,
+        private readonly PurchaseOrderService $poService,
     ) {}
 
     // ── Orders ───────────────────────────────────────────────────────────────
@@ -47,7 +50,7 @@ final class VendorPortalController extends Controller
 
         $query = PurchaseOrder::with(['items', 'purchaseRequest'])
             ->where('vendor_id', $vendorId)
-            ->whereIn('status', ['sent', 'partially_received', 'fully_received', 'closed']);
+            ->whereIn('status', ['sent', 'negotiating', 'acknowledged', 'in_transit', 'partially_received', 'fully_received', 'closed']);
 
         if ($request->query('status')) {
             $query->where('status', $request->query('status'));
@@ -66,9 +69,69 @@ final class VendorPortalController extends Controller
     {
         $this->assertVendorOwns($purchaseOrder);
 
-        $purchaseOrder->load(['items', 'purchaseRequest', 'fulfillmentNotes.vendorUser', 'goodsReceipts']);
+        $purchaseOrder->load([
+            'items',
+            'purchaseRequest',
+            'fulfillmentNotes.vendorUser',
+            'goodsReceipts',
+            'parentPo:id,ulid,po_reference',
+            'childPos:id,ulid,po_reference,status,total_po_amount',
+        ]);
 
         return response()->json(['data' => $purchaseOrder]);
+    }
+
+    /**
+     * POST /vendor-portal/orders/{purchaseOrder}/acknowledge
+     * Vendor confirms they can fulfil the PO as-is (all terms accepted).
+     * Transitions: sent → acknowledged
+     */
+    public function acknowledge(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    {
+        $this->assertVendorOwns($purchaseOrder);
+
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $po = $this->poService->vendorAcknowledge(
+            $purchaseOrder,
+            $request->user(),
+            $validated['notes'] ?? '',
+        );
+
+        $po->load(['vendor', 'items', 'fulfillmentNotes']);
+
+        return new PurchaseOrderResource($po);
+    }
+
+    /**
+     * POST /vendor-portal/orders/{purchaseOrder}/propose-changes
+     * Vendor cannot fulfil as-is — proposes adjusted quantities/dates.
+     * Transitions: sent → negotiating
+     */
+    public function proposeChanges(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    {
+        $this->assertVendorOwns($purchaseOrder);
+
+        $validated = $request->validate([
+            'remarks' => ['required', 'string', 'max:2000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.po_item_id' => ['required', 'integer'],
+            'items.*.negotiated_quantity' => ['required', 'numeric', 'gt:0'],
+            'items.*.vendor_item_notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $po = $this->poService->vendorProposeChanges(
+            $purchaseOrder,
+            $request->user(),
+            $validated['remarks'],
+            $validated['items'],
+        );
+
+        $po->load(['vendor', 'items', 'fulfillmentNotes']);
+
+        return new PurchaseOrderResource($po);
     }
 
     /**
@@ -107,21 +170,52 @@ final class VendorPortalController extends Controller
 
         $validated = $request->validate([
             'notes' => ['nullable', 'string', 'max:1000'],
+            'delivery_date' => ['nullable', 'date', 'date_format:Y-m-d', 'before_or_equal:today'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.po_item_id' => ['required', 'integer'],
-            'items.*.qty_delivered' => ['required', 'numeric', 'min:0.001'],
+            'items.*.qty_delivered' => ['required', 'numeric', 'gt:0'],
         ]);
 
-        $note = $this->fulfillmentService->markDelivered(
+        // Validate quantities don't exceed ordered amounts
+        $purchaseOrder->load('items');
+        foreach ($validated['items'] as $item) {
+            $poItem = $purchaseOrder->items->firstWhere('id', $item['po_item_id']);
+            if ($poItem === null) {
+                return response()->json([
+                    'message' => "PO item #{$item['po_item_id']} not found.",
+                    'error_code' => 'VALIDATION_ERROR',
+                ], 422);
+            }
+            if ($item['qty_delivered'] > $poItem->effectiveQuantity()) {
+                return response()->json([
+                    'message' => "Delivered quantity ({$item['qty_delivered']}) cannot exceed agreed quantity ({$poItem->effectiveQuantity()}) for item '{$poItem->item_description}'.",
+                    'error_code' => 'VALIDATION_ERROR',
+                    'errors' => ['qty_delivered' => ['Cannot exceed ordered quantity']],
+                ], 422);
+            }
+        }
+
+        $result = $this->fulfillmentService->markDelivered(
             $purchaseOrder,
             $request->user(),
             $validated['items'],
-            $validated['notes'] ?? ''
+            $validated['notes'] ?? '',
+            $validated['delivery_date'] ?? null
         );
 
         return response()->json([
-            'message' => 'Delivery confirmed. A Goods Receipt draft has been created for review.',
-            'data' => $note,
+            'message' => $result['split_po'] 
+                ? 'Partial delivery confirmed. A split PO has been created for remaining quantities.'
+                : 'Delivery confirmed. A Goods Receipt draft has been created for review.',
+            'data' => [
+                'note' => $result['note'],
+                'split_po' => $result['split_po'] ? [
+                    'id' => $result['split_po']->id,
+                    'ulid' => $result['split_po']->ulid,
+                    'reference' => $result['split_po']->po_reference,
+                    'total_amount' => $result['split_po']->total_po_amount,
+                ] : null,
+            ],
         ], 201);
     }
 

@@ -5,8 +5,10 @@ import {
   useBoms,
   useDeliverySchedules,
   useCreateProductionOrder,
+  useProductionSmartDefaults,
 } from '@/hooks/useProduction'
 import { useItems } from '@/hooks/useInventory'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function CreateProductionOrderPage(): React.ReactElement {
   const navigate = useNavigate()
@@ -16,6 +18,14 @@ export default function CreateProductionOrderPage(): React.ReactElement {
   const items = itemsData?.data ?? []
 
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
+  const [targetStartDate, setTargetStartDate] = useState<string>('')
+
+  // Fetch smart defaults when product or start date changes
+  const { data: smartDefaults } = useProductionSmartDefaults(
+    selectedItemId,
+    targetStartDate || undefined
+  )
+
   const { data: bomsData } = useBoms({
     product_item_id: selectedItemId ?? undefined,
     is_active: true,
@@ -28,10 +38,19 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     [selectedItemId, bomsData]
   )
 
-  // Auto-select BOM when only one active BOM exists for the chosen item
+  // Auto-select BOM when smart defaults provide one
   useEffect(() => {
-    if (selectedItemId && boms.length === 1) setForm(prev => ({ ...prev, bom_id: boms[0].id }))
-  }, [boms, selectedItemId])
+    if (selectedItemId && smartDefaults?.suggested_bom_id) {
+      setForm(prev => ({ ...prev, bom_id: smartDefaults.suggested_bom_id! }))
+    }
+  }, [smartDefaults?.suggested_bom_id, selectedItemId])
+
+  // Auto-populate end date when smart defaults provide calculated end date
+  useEffect(() => {
+    if (targetStartDate && smartDefaults?.calculated_end_date) {
+      setForm(prev => ({ ...prev, target_end_date: smartDefaults.calculated_end_date! }))
+    }
+  }, [smartDefaults?.calculated_end_date, targetStartDate])
 
   const { data: dsData } = useDeliverySchedules({ status: 'open', per_page: 200 })
   const deliverySchedules = dsData?.data ?? []
@@ -46,8 +65,13 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     notes: '',
   })
 
-  const set = (k: keyof typeof form, v: unknown) =>
+  const set = (k: keyof typeof form, v: unknown) => {
     setForm(prev => ({ ...prev, [k]: v }))
+    // Track target_start_date separately for smart defaults
+    if (k === 'target_start_date') {
+      setTargetStartDate(v as string)
+    }
+  }
 
   const selectedDs = deliverySchedules.find(d => d.id === form.delivery_schedule_id)
   const dsDueDate  = selectedDs?.target_delivery_date ?? null
@@ -66,12 +90,42 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     if (!form.qty_required || isNaN(qty) || qty <= 0) e.qty_required = 'Must be greater than 0.'
     if (!form.target_start_date) e.target_start_date = 'Start date is required.'
     if (!form.target_end_date) e.target_end_date = 'End date is required.'
+    // Validate date range
+    if (form.target_start_date && form.target_end_date && form.target_end_date < form.target_start_date) {
+      e.target_end_date = 'End date must be after start date.'
+    }
     return e
   }, [form])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
+  const validateForm = (): boolean => {
+    const errors: string[] = []
+    
+    if (!form.product_item_id) errors.push('Product item is required.')
+    if (!form.bom_id) errors.push('Bill of materials is required.')
+    const qty = Number(form.qty_required)
+    if (!form.qty_required || isNaN(qty) || qty <= 0) errors.push('Quantity required must be greater than 0.')
+    if (!form.target_start_date) errors.push('Target start date is required.')
+    if (!form.target_end_date) errors.push('Target end date is required.')
+    if (form.target_start_date && form.target_end_date && form.target_end_date < form.target_start_date) {
+      errors.push('Target end date must be after start date.')
+    }
+    
+    if (errors.length > 0) {
+      toast.error(errors[0])
+      // Touch all fields to show validation state
+      setTouched(new Set(['product_item_id', 'bom_id', 'qty_required', 'target_start_date', 'target_end_date']))
+      return false
+    }
+    
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateForm()) return
+    
     try {
       const order = await createMut.mutateAsync({
         product_item_id: form.product_item_id,
@@ -82,13 +136,13 @@ export default function CreateProductionOrderPage(): React.ReactElement {
         target_end_date: form.target_end_date,
         notes: form.notes || undefined,
       })
-      toast.success('Production order created.')
+      toast.success('Production order created successfully.')
       // @ts-expect-error mutation returns AxiosResponse wrapper
       const ulid: string | undefined = order?.data?.ulid
       if (ulid) navigate(`/production/orders/${ulid}`)
       else navigate('/production/orders')
-    } catch {
-      toast.error('Failed to create production order.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -128,7 +182,7 @@ export default function CreateProductionOrderPage(): React.ReactElement {
             onChange={e => set('bom_id', Number(e.target.value))}
             onBlur={() => touch('bom_id')}
             required
-            disabled={!selectedItemId || boms.length === 1}
+            disabled={!selectedItemId}
           >
             <option value="">— Select BOM —</option>
             {boms.map(b => (
@@ -138,6 +192,11 @@ export default function CreateProductionOrderPage(): React.ReactElement {
           {fe('bom_id') && <p className="mt-1 text-xs text-red-600">{fe('bom_id')}</p>}
           {selectedItemId && boms.length === 0 && (
             <p className="text-xs text-orange-600 mt-1">No active BOMs for this item. Create one first.</p>
+          )}
+          {smartDefaults?.suggested_bom_name && (
+            <p className="text-xs text-green-600 mt-1">
+              ✓ Auto-suggested: BOM v{smartDefaults.suggested_bom_name}
+            </p>
           )}
         </div>
 
@@ -211,6 +270,11 @@ export default function CreateProductionOrderPage(): React.ReactElement {
             {fe('target_end_date') && <p className="mt-1 text-xs text-red-600">{fe('target_end_date')}</p>}
             {!fe('target_end_date') && lateDateWarning && (
               <p className="mt-1 text-xs text-amber-600">⚠ {lateDateWarning}</p>
+            )}
+            {!fe('target_end_date') && smartDefaults?.calculated_end_date && (
+              <p className="mt-1 text-xs text-green-600">
+                ✓ Auto-calculated based on BOM production days
+              </p>
             )}
           </div>
         </div>

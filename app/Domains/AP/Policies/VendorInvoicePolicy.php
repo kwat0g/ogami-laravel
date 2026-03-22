@@ -25,7 +25,7 @@ final class VendorInvoicePolicy
     /** Admin bypass — admin role has unconditional access to all resources. */
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
             return true;
         }
 

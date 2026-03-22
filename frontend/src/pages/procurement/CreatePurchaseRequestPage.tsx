@@ -1,14 +1,18 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Trash2, Plus, AlertTriangle } from 'lucide-react'
-import { useCreatePurchaseRequest } from '@/hooks/usePurchaseRequests'
+import { useEffect, useState, useRef } from 'react'
+import { Trash2, Plus, AlertTriangle, CheckCircle2, XCircle, Search, RefreshCw } from 'lucide-react'
+import { useCreatePurchaseRequest, useUpdatePurchaseRequest, usePurchaseRequest, useCheckBudgetAvailability, useSuggestVendors, type BudgetCheckResult } from '@/hooks/usePurchaseRequests'
 import { useDepartments } from '@/hooks/useEmployees'
 import { useVendors, useVendorItems } from '@/hooks/useAP'
+import { useAuth } from '@/hooks/useAuth'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { PurchaseRequestUrgency } from '@/types/procurement'
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
@@ -37,9 +41,20 @@ type FormValues = z.infer<typeof schema>
 
 export default function CreatePurchaseRequestPage(): React.ReactElement {
   const navigate = useNavigate()
+  const { ulid } = useParams<{ ulid?: string }>()
+  const isEditMode = !!ulid
+
   const createPR = useCreatePurchaseRequest()
+  const updatePR = useUpdatePurchaseRequest(ulid ?? '')
+  const { data: existingPR, isLoading: isLoadingPR } = usePurchaseRequest(ulid ?? null)
+
+  const checkBudget = useCheckBudgetAvailability()
   const { data: deptData } = useDepartments()
+  const { data: authData } = useAuth()
   const departments = deptData?.data ?? []
+  const currentUser = authData?.user
+  const isDeptHead = currentUser?.roles?.includes('head')
+  const userDeptId = currentUser?.department_id
 
   const {
     register,
@@ -47,6 +62,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -54,6 +70,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     defaultValues: {
       urgency: 'normal',
       vendor_id: 0,
+      department_id: isDeptHead && userDeptId ? userDeptId : 0,
       items: [
         {
           vendor_item_id: 0,
@@ -66,11 +83,98 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     },
   })
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'items' })
+  // Populate form when editing an existing returned PR
+  useEffect(() => {
+    if (isEditMode && existingPR) {
+      reset({
+        vendor_id: existingPR.vendor_id ?? 0,
+        department_id: existingPR.department_id,
+        urgency: (existingPR.urgency as PurchaseRequestUrgency) ?? 'normal',
+        justification: existingPR.justification,
+        notes: existingPR.notes ?? '',
+        items: existingPR.items.map((item) => ({
+          vendor_item_id: item.vendor_item_id ?? 0,
+          item_description: item.item_description,
+          unit_of_measure: item.unit_of_measure,
+          quantity: item.quantity,
+          estimated_unit_cost: item.estimated_unit_cost,
+          specifications: item.specifications ?? '',
+        })),
+      })
+    }
+  }, [isEditMode, existingPR, reset])
+
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'items' })
 
   // Watch form values
   const watchedVendorId = watch('vendor_id')
+  const watchedDeptId = watch('department_id')
   const items = watch('items')
+
+  // Budget check state
+  const [budgetStatus, setBudgetStatus] = useState<BudgetCheckResult | null>(null)
+
+  // Vendor change confirmation state
+  const [pendingVendorId, setPendingVendorId] = useState<number | null>(null)
+
+  const handleVendorChange = (newVendorId: number, fieldOnChange: (val: number) => void): void => {
+    const hasItems = items.some((it) => it.vendor_item_id && it.vendor_item_id > 0)
+    if (hasItems && newVendorId !== watchedVendorId) {
+      setPendingVendorId(newVendorId)
+    } else {
+      fieldOnChange(newVendorId)
+    }
+  }
+
+  const confirmVendorChange = (fieldOnChange: (val: number) => void): void => {
+    if (pendingVendorId === null) return
+    fieldOnChange(pendingVendorId)
+    replace([{ vendor_item_id: 0, item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0, specifications: '' }])
+    setBudgetStatus(null)
+    setPendingVendorId(null)
+  }
+
+  // Vendor-by-item suggest state
+  const [itemSearchQuery, setItemSearchQuery] = useState('')
+  const itemSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [debouncedItemSearch, setDebouncedItemSearch] = useState('')
+
+  const handleItemSearchInput = (val: string): void => {
+    setItemSearchQuery(val)
+    if (itemSearchDebounceRef.current) clearTimeout(itemSearchDebounceRef.current)
+    itemSearchDebounceRef.current = setTimeout(() => setDebouncedItemSearch(val), 350)
+  }
+
+  const { data: vendorSuggestions } = useSuggestVendors(debouncedItemSearch)
+
+  // Check budget when department or items change
+  useEffect(() => {
+    const checkDeptBudget = async () => {
+      // Only check budget if we have valid department and items with cost
+      const hasValidItems = items.length > 0 && items.every(
+        (item) => item.quantity > 0 && item.estimated_unit_cost > 0
+      )
+      if (watchedDeptId > 0 && hasValidItems) {
+        try {
+          const result = await checkBudget.mutateAsync({
+            department_id: watchedDeptId,
+            items: items.map((item) => ({
+              quantity: item.quantity,
+              estimated_unit_cost: item.estimated_unit_cost,
+            })),
+          })
+          setBudgetStatus(result)
+        } catch {
+          // Ignore errors - backend will validate on submit
+          setBudgetStatus(null)
+        }
+      } else {
+        setBudgetStatus(null)
+      }
+    }
+
+    void checkDeptBudget()
+  }, [watchedDeptId, items])
 
   // Fetch vendors and vendor items
   const { data: vendorData } = useVendors({ is_active: true, per_page: 200 })
@@ -94,36 +198,50 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     setValue(`items.${index}.vendor_item_id`, vendorItem.id)
     setValue(`items.${index}.item_description`, vendorItem.item_name)
     setValue(`items.${index}.unit_of_measure`, vendorItem.unit_of_measure)
-    setValue(`items.${index}.estimated_unit_cost`, vendorItem.unit_price / 100)
+    setValue(`items.${index}.estimated_unit_cost`, vendorItem.unit_price)
   }
 
   const onSubmit = async (values: FormValues): Promise<void> => {
+    const payload = {
+      vendor_id: values.vendor_id,
+      department_id: values.department_id,
+      urgency: values.urgency as PurchaseRequestUrgency,
+      justification: values.justification,
+      notes: values.notes,
+      items: values.items.map((item) => ({
+        vendor_item_id: item.vendor_item_id,
+        item_description: item.item_description,
+        unit_of_measure: item.unit_of_measure,
+        quantity: item.quantity,
+        estimated_unit_cost: item.estimated_unit_cost,
+        specifications: item.specifications,
+      })),
+    }
+
     try {
-      const pr = await createPR.mutateAsync({
-        vendor_id: values.vendor_id,
-        department_id: values.department_id,
-        urgency: values.urgency as PurchaseRequestUrgency,
-        justification: values.justification,
-        notes: values.notes,
-        items: values.items.map((item) => ({
-          vendor_item_id: item.vendor_item_id,
-          item_description: item.item_description,
-          unit_of_measure: item.unit_of_measure,
-          quantity: item.quantity,
-          estimated_unit_cost: item.estimated_unit_cost,
-          specifications: item.specifications,
-        })),
-      })
-      toast.success(`Purchase Request ${pr.pr_reference} created as draft.`)
-      navigate(`/procurement/purchase-requests/${pr.ulid}`)
-    } catch {
-      toast.error('Failed to create purchase request. Please try again.')
+      if (isEditMode) {
+        await updatePR.mutateAsync(payload)
+        toast.success('Purchase Request updated.')
+        navigate(`/procurement/purchase-requests/${ulid}`)
+      } else {
+        const pr = await createPR.mutateAsync(payload)
+        toast.success(`Purchase Request ${pr.pr_reference} created as draft.`)
+        navigate(`/procurement/purchase-requests/${pr.ulid}`)
+      }
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? `Failed to ${isEditMode ? 'update' : 'create'} purchase request.`)
     }
   }
 
+  if (isEditMode && isLoadingPR) return <SkeletonLoader rows={8} />
+
   return (
     <div className="max-w-4xl mx-auto">
-      <PageHeader title="New Purchase Request" backTo="/procurement/purchase-requests" />
+      <PageHeader
+        title={isEditMode ? `Edit ${existingPR?.pr_reference ?? 'Purchase Request'}` : 'New Purchase Request'}
+        backTo={isEditMode ? `/procurement/purchase-requests/${ulid}` : '/procurement/purchase-requests'}
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Header Section */}
@@ -141,22 +259,103 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                     control={control}
                     name="vendor_id"
                     render={({ field }) => (
-                      <select
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                      >
-                        <option value="">— Select Vendor —</option>
-                        {vendors.map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.name}
-                          </option>
-                        ))}
-                      </select>
+                      <>
+                        <select
+                          {...field}
+                          onChange={(e) => handleVendorChange(Number(e.target.value), field.onChange)}
+                          className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                        >
+                          <option value="">— Select Vendor —</option>
+                          {vendors.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name}
+                            </option>
+                          ))}
+                        </select>
+                        {pendingVendorId !== null && (
+                          <div className="mt-2 bg-amber-50 border border-amber-300 rounded p-2.5 text-xs">
+                            <div className="flex items-start gap-1.5">
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                              <p className="text-amber-800 font-medium">
+                                Changing the vendor will clear all line items and prices.
+                              </p>
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                type="button"
+                                onClick={() => confirmVendorChange(field.onChange)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-medium"
+                              >
+                                <RefreshCw className="w-3 h-3" />
+                                Yes, change vendor
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPendingVendorId(null)}
+                                className="px-2.5 py-1 bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-300 rounded text-xs font-medium"
+                              >
+                                Keep current vendor
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   />
                   {errors.vendor_id && (
                     <p className="text-xs text-red-600 mt-1">{errors.vendor_id.message}</p>
+                  )}
+                  {/* Suggest-vendors reverse lookup */}
+                  {(!watchedVendorId || watchedVendorId <= 0) && (
+                    <div className="mt-1.5">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1.5 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={itemSearchQuery}
+                          onChange={(e) => handleItemSearchInput(e.target.value)}
+                          placeholder="Find vendor by item name…"
+                          className="w-full text-xs border border-neutral-200 rounded pl-7 pr-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-neutral-50"
+                        />
+                      </div>
+                      {vendorSuggestions && vendorSuggestions.length > 0 && (
+                        <ul className="mt-0.5 border border-neutral-200 rounded bg-white shadow-sm text-xs divide-y divide-neutral-100 max-h-40 overflow-y-auto">
+                          {vendorSuggestions.map((s) => (
+                            <li key={`${s.vendor_id}-${s.vendor_item_id}`}>
+                              <button
+                                type="button"
+                                className="w-full text-left px-2 py-1.5 hover:bg-neutral-50 flex items-center justify-between gap-2"
+                                onClick={() => {
+                                  setValue('vendor_id', s.vendor_id)
+                                  // Pre-fill the first empty item row with the suggested item
+                                  const targetIndex = items.findIndex(
+                                    (it) => !it.vendor_item_id || it.vendor_item_id === 0,
+                                  )
+                                  const idx = targetIndex >= 0 ? targetIndex : 0
+                                  setValue(`items.${idx}.vendor_item_id`, s.vendor_item_id)
+                                  setValue(`items.${idx}.item_description`, s.item_name)
+                                  setValue(`items.${idx}.unit_of_measure`, s.unit_of_measure)
+                                  setValue(`items.${idx}.estimated_unit_cost`, s.unit_price)
+                                  setItemSearchQuery('')
+                                  setDebouncedItemSearch('')
+                                }}
+                              >
+                                <span>
+                                  <span className="font-medium text-neutral-800">{s.vendor_name}</span>
+                                  <span className="text-neutral-500 ml-1">— {s.item_name} ({s.unit_of_measure})</span>
+                                </span>
+                                <span className="text-green-700 font-medium whitespace-nowrap">
+                                  ₱{s.unit_price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {debouncedItemSearch.length >= 3 && vendorSuggestions?.length === 0 && (
+                        <p className="text-xs text-neutral-400 mt-0.5 px-1">No vendors found for "{debouncedItemSearch}"</p>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -170,8 +369,9 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                     render={({ field }) => (
                       <select
                         {...field}
+                        disabled={isDeptHead}
                         onChange={(e) => field.onChange(Number(e.target.value))}
-                        className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                        className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400 disabled:bg-neutral-100 disabled:text-neutral-500"
                       >
                         <option value="">— Select Department —</option>
                         {departments.map((d) => (
@@ -184,6 +384,11 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                   />
                   {errors.department_id && (
                     <p className="text-xs text-red-600 mt-1">{errors.department_id.message}</p>
+                  )}
+                  {isDeptHead && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Department heads can only create PRs for their own department
+                    </p>
                   )}
                 </div>
 
@@ -235,6 +440,60 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
             </div>
           </CardBody>
         </Card>
+
+        {/* Budget Preview */}
+        {budgetStatus && budgetStatus.budget > 0 && (
+          <Card>
+            <CardHeader>Budget Status</CardHeader>
+            <CardBody>
+              <div className="space-y-3">
+                <div className="grid grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-neutral-500">Department Budget</p>
+                    <p className="font-medium">{budgetStatus.formatted.budget}</p>
+                  </div>
+                  <div>
+                    <p className="text-neutral-500">YTD Spend</p>
+                    <p className="font-medium">{budgetStatus.formatted.ytd_spend}</p>
+                  </div>
+                  <div>
+                    <p className="text-neutral-500">This PR</p>
+                    <p className="font-medium">{budgetStatus.formatted.this_pr}</p>
+                  </div>
+                  <div>
+                    <p className="text-neutral-500">Remaining</p>
+                    <p className={`font-medium ${budgetStatus.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {budgetStatus.formatted.remaining}
+                    </p>
+                  </div>
+                </div>
+                {!budgetStatus.available && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded p-3">
+                    <XCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-red-800">Budget Limit Exceeded</p>
+                      <p className="text-sm text-red-600">
+                        This purchase request exceeds the department&apos;s annual budget.
+                        You may still save as draft, but it will be blocked on submit.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {budgetStatus.available && budgetStatus.remaining > 0 && (
+                  <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded p-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-green-800">Within Budget</p>
+                      <p className="text-sm text-green-600">
+                        This purchase request is within the department&apos;s annual budget.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
         {/* Line Items */}
         <Card>
@@ -304,7 +563,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                               {vendorItems?.map((vi) => (
                                 <option key={vi.id} value={vi.id}>
                                   {vi.item_code} — {vi.item_name} (₱
-                                  {(vi.unit_price / 100).toLocaleString('en-PH', {
+                                  {vi.unit_price.toLocaleString('en-PH', {
                                     minimumFractionDigits: 2,
                                   })}
                                   )
@@ -419,7 +678,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
             disabled={isSubmitting}
             className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Saving…' : 'Save Draft'}
+            {isSubmitting ? 'Saving…' : isEditMode ? 'Save Changes' : 'Save Draft'}
           </button>
         </div>
       </form>

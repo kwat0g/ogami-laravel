@@ -91,14 +91,14 @@ export default function LoanListPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              {['Employee', 'Type', 'Principal', 'Term', 'Monthly Payment', 'Balance', 'Status', 'Actions'].map((h) => (
+              {['Employee', 'Type', 'Principal', 'Term', 'Monthly Payment', 'Balance', 'Status'].map((h) => (
                 <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-8 text-center text-neutral-400">No loans found.</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-neutral-400">No loans found.</td></tr>
             )}
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-neutral-50 even:bg-neutral-100 cursor-pointer transition-colors" onClick={() => navigate(`${loanBasePath}/${row.ulid}`)}>
@@ -109,14 +109,6 @@ export default function LoanListPage() {
                 <td className="px-3 py-2 text-neutral-700"><CurrencyAmount centavos={row.monthly_amortization_centavos} /></td>
                 <td className="px-3 py-2 text-neutral-700"><CurrencyAmount centavos={row.outstanding_balance_centavos} /></td>
                 <td className="px-3 py-2"><StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
-                <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => navigate(`${loanBasePath}/${row.ulid}`)}
-                    className="text-xs bg-neutral-100 text-neutral-700 hover:bg-neutral-200 px-3 py-1 rounded"
-                  >
-                    View
-                  </button>
-                </td>
               </tr>
             ))}
           </tbody>

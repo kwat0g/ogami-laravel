@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/authStore'
 import { useHeadDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -101,6 +102,7 @@ function PendingAlert({ count, label, href }: { count: number; label: string; hr
 
 export default function HeadDashboard() {
   useAuth()
+  const { hasPermission } = useAuthStore()
   const { data: stats, isLoading, error } = useHeadDashboardStats()
 
   if (isLoading) return <SkeletonLoader rows={8} />
@@ -257,19 +259,19 @@ export default function HeadDashboard() {
         )}
       </SectionCard>
 
-      {/* Operational quick links */}
+      {/* Operational quick links — shown only when head has the relevant module permission */}
       <SectionCard title="Operational Modules">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Work Orders',       href: '/maintenance/work-orders', icon: Wrench },
-            { label: 'Mold Masters',      href: '/mold/masters',            icon: Package },
-            { label: 'Production Orders', href: '/production/orders',       icon: ClipboardList },
-            { label: 'Delivery',          href: '/delivery',                icon: Truck },
-            { label: 'Inventory MRQ',     href: '/inventory/requisitions',  icon: Package },
-            { label: 'ISO Audits',        href: '/iso/audits',              icon: CheckCircle },
-            { label: 'OT Requests',       href: '/attendance/overtime',     icon: Timer },
-            { label: 'Leave Requests',    href: '/leave/requests',          icon: CalendarOff },
-          ].map((link) => (
+            { label: 'Work Orders',       href: '/maintenance/work-orders', icon: Wrench,       perm: 'maintenance.view' },
+            { label: 'Mold Masters',      href: '/mold/masters',            icon: Package,     perm: 'mold.view' },
+            { label: 'Production Orders', href: '/production/orders',       icon: ClipboardList, perm: 'production.orders.view' },
+            { label: 'Delivery',          href: '/delivery',                icon: Truck,       perm: 'delivery.view' },
+            { label: 'Inventory MRQ',     href: '/inventory/requisitions',  icon: Package,     perm: 'inventory.mrq.view' },
+            { label: 'ISO Audits',        href: '/iso/audits',              icon: CheckCircle, perm: 'iso.view' },
+            { label: 'OT Requests',       href: '/attendance/overtime',     icon: Timer,       perm: 'overtime.view' },
+            { label: 'Leave Requests',    href: '/leave/requests',          icon: CalendarOff, perm: 'leaves.view_team' },
+          ].filter((link) => hasPermission(link.perm)).map((link) => (
             <Link
               key={link.href}
               to={link.href}

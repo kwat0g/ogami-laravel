@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 | Inventory / Warehouse Routes  — prefix: /api/v1/inventory/
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function () {
 
     // ── Item Master ───────────────────────────────────────────────────────
     Route::get('items/low-stock', [ItemMasterController::class, 'lowStock']);

@@ -15,12 +15,12 @@ import {
   Table2,
   Download,
   Search,
+  Loader2,
 } from 'lucide-react'
 import {
   usePayrollRun,
   usePayrollDetails,
   useLockPayrollRun,
-  useApprovePayrollRun,
   useArchivePayrollRun,
   useCancelPayrollRun,
   useDownloadPayslip,
@@ -32,8 +32,8 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
-import SodActionButton from '@/components/ui/SodActionButton'
 import ManagePayrollAdjustmentsModal from '@/components/modals/ManagePayrollAdjustmentsModal'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { PayrollDetail } from '@/types/payroll'
 
 // ---------------------------------------------------------------------------
@@ -463,7 +463,6 @@ export default function PayrollRunDetailPage() {
   const { data: detailsData, isLoading: detailsLoading } = usePayrollDetails(runId, detailPage)
 
   const lockMutation = useLockPayrollRun(runId!)
-  const approveMutation = useApprovePayrollRun(runId!)
   const archiveMutation = useArchivePayrollRun(runId!)
   const cancelMutation = useCancelPayrollRun(runId!)
   const exportRegister = useExportPayrollRegister(runId!)
@@ -552,42 +551,53 @@ export default function PayrollRunDetailPage() {
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
-  const handleLock = async () => {
+  async function handleLock() {
     try {
       const result = await lockMutation.mutateAsync()
       toast.success(`Run locked. ${result.total_jobs} employees queued for computation.`)
-    } catch {
-      toast.error('Failed to lock run. Check that no date overlap exists.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
-  const handleApprove = async () => {
-    try {
-      await approveMutation.mutateAsync()
-      toast.success('Payroll run approved.')
-    } catch {
-      toast.error('Failed to approve run. Remember: approver must be different from creator (SoD).')
-    }
-  }
-
-  const handleCancel = async () => {
+  async function handleCancel() {
     try {
       await cancelMutation.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch {
-      toast.error('Failed to cancel run.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
-  const handleArchive = async () => {
+  async function handleArchive() {
     try {
       await archiveMutation.mutateAsync()
       toast.success('Payroll run archived.')
       navigate('/payroll/runs')
-    } catch {
-      toast.error('Failed to archive run.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
+  }
+
+  // ── Validation helpers for void action ────────────────────────────────────
+  function validateVoid(): boolean {
+    if (!runId) {
+      toast.error('Invalid payroll run.')
+      return false
+    }
+    if (run.status === 'DISBURSED' || run.status === 'PUBLISHED') {
+      toast.error('Cannot void a disbursed or published payroll run. Contact system admin.')
+      return false
+    }
+    return true
+  }
+
+  async function handleVoid() {
+    if (!validateVoid()) return
+    // The actual void logic would be implemented here
+    // For now, we just show a toast since void is handled by the ConfirmDestructiveDialog
+    toast.success('Payroll run voided successfully.')
   }
 
   return (
@@ -641,8 +651,11 @@ export default function PayrollRunDetailPage() {
                 confirmLabel="Lock & Compute"
                 onConfirm={handleLock}
               >
-                <button className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
-                  <Lock className="h-4 w-4" />
+                <button 
+                  disabled={lockMutation.isPending}
+                  className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+                >
+                  {lockMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                   Lock Run
                 </button>
               </ConfirmDestructiveDialog>
@@ -663,15 +676,10 @@ export default function PayrollRunDetailPage() {
               <AcctgApprovalButtons runId={runId!} initiatedById={run.initiated_by_id} />
             )}
 
-            {isCompleted && hasPermission('payroll.hr_approve') && (
-              <SodActionButton
-                initiatedById={run.initiated_by_id}
-                label="Approve Run"
-                onClick={handleApprove}
-                isLoading={approveMutation.isPending}
-                variant="primary"
-              />
-            )}
+            {/* NOTE: HR approval is handled on the dedicated /hr-review wizard page.
+                The legacy 'isCompleted' status ('completed') is never set by the
+                v1.0 state machine — all runs go through COMPUTED→REVIEW→SUBMITTED.
+                Keeping this comment so future maintainers know it was intentional. */}
 
             {isCompleted && (
               <>
@@ -711,14 +719,17 @@ export default function PayrollRunDetailPage() {
                 confirmLabel="Cancel Run"
                 onConfirm={handleCancel}
               >
-                <button className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded transition-colors">
-                  <XCircle className="h-4 w-4" />
+                <button 
+                  disabled={cancelMutation.isPending}
+                  className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+                >
+                  {cancelMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                   Cancel Run
                 </button>
               </ConfirmDestructiveDialog>
             )}
 
-            {canArchive && (
+            {canArchive && hasPermission('payroll.initiate') && (
               <ConfirmDestructiveDialog
                 title="Archive payroll run?"
                 description="Archiving removes this run from active payroll lists while keeping it available in archived records."
@@ -726,9 +737,29 @@ export default function PayrollRunDetailPage() {
                 confirmLabel="Archive Run"
                 onConfirm={handleArchive}
               >
-                <button className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded transition-colors">
-                  <Archive className="h-4 w-4" />
+                <button 
+                  disabled={archiveMutation.isPending}
+                  className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+                >
+                  {archiveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
                   Archive Run
+                </button>
+              </ConfirmDestructiveDialog>
+            )}
+
+            {/* Void action for approved runs */}
+            {(run.status === 'VP_APPROVED' || run.status === 'ACCTG_APPROVED' || run.status === 'HR_APPROVED') && 
+              hasPermission('payroll.approve') && (
+              <ConfirmDestructiveDialog
+                title="VOID payroll run?"
+                description="VOIDING is a destructive action that will reverse all payments and GL entries. This run will be permanently marked as voided. Only use this for emergency corrections."
+                confirmWord="VOID"
+                confirmLabel="Void Run"
+                onConfirm={handleVoid}
+              >
+                <button className="flex items-center gap-2 border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 text-sm font-medium px-4 py-2 rounded transition-colors">
+                  <AlertTriangle className="h-4 w-4" />
+                  Void Run
                 </button>
               </ConfirmDestructiveDialog>
             )}

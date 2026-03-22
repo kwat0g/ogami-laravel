@@ -41,6 +41,9 @@ final class GoodsReceiptPolicy
 
     public function create(User $user): bool
     {
+        // Both vendor users (via vendor portal markDelivered) and internal warehouse
+        // staff with the permission can create GRs. Vendor scope is enforced at the
+        // controller/service layer for vendor users.
         return $user->hasPermissionTo('procurement.goods-receipt.create');
     }
 
@@ -52,7 +55,9 @@ final class GoodsReceiptPolicy
 
     public function delete(User $user, GoodsReceipt $gr): bool
     {
+        // Only vendor users can delete draft GRs they created
         return $user->hasPermissionTo('procurement.goods-receipt.create')
+            && $user->vendor_id !== null
             && $gr->status === 'draft';
     }
 }

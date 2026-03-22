@@ -10,10 +10,16 @@ uses()->group('feature', 'fixed-assets');
 
 beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(\Database\Seeders\ModuleSeeder::class);
+    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
 
+    $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('officer');
+    $this->manager->assignRole('manager');
+    $this->manager->departments()->attach($acctgDept->id, ['is_primary' => true]);
 });
 
 it('lists asset categories', function () {

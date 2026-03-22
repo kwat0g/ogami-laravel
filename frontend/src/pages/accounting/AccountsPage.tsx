@@ -8,9 +8,11 @@ import {
   useUpdateAccount,
   useArchiveAccount,
 } from '@/hooks/useAccounting'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { ChartOfAccount, AccountType, NormalBalance, CreateAccountPayload } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
@@ -158,12 +160,20 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
   const [accountType, setAccountType] = useState<AccountType>(initial?.account_type ?? 'ASSET')
   const [normalBalance, setNormalBalance] = useState<NormalBalance>(initial?.normal_balance ?? 'DEBIT')
   const [parentId, setParentId] = useState<string>(initial?.parent_id?.toString() ?? '')
+  const [touched, setTouched] = useState(false)
 
   // Reset when initial changes
   if (!open) return null
 
+  // Client-side validation
+  const codeError = touched && !code.trim() ? 'Account code is required.' : undefined
+  const nameError = touched && !name.trim() ? 'Account name is required.' : undefined
+  const isValid = code.trim() && name.trim()
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setTouched(true)
+    if (!isValid) return
     onSave(
       {
         code,
@@ -184,24 +194,36 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Code</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Code <span className="text-red-500">*</span>
+            </label>
             <input
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none font-mono"
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none font-mono ${
+                codeError ? 'border-red-400' : 'border-neutral-300'
+              }`}
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              onBlur={() => setTouched(true)}
               required
               placeholder="e.g. 1010"
             />
+            {codeError && <p className="mt-1 text-xs text-red-600">{codeError}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
             <input
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none ${
+                nameError ? 'border-red-400' : 'border-neutral-300'
+              }`}
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => setTouched(true)}
               required
               placeholder="Account name"
             />
+            {nameError && <p className="mt-1 text-xs text-red-600">{nameError}</p>}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -256,7 +278,7 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || !isValid}
               className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving…' : 'Save'}
@@ -306,8 +328,8 @@ export default function AccountsPage() {
       }
       setModalOpen(false)
       setEditing(null)
-    } catch {
-      toast.error('Failed to save account. Please try again.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -316,8 +338,8 @@ export default function AccountsPage() {
     try {
       await archiveMutation.mutateAsync()
       toast.success('Account archived.')
-    } catch {
-      toast.error('Failed to archive account.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
     setArchiveTarget(null)
   }
@@ -424,6 +446,19 @@ export default function AccountsPage() {
 
       {/* Archive Confirm Dialog */}
       {archiveTarget && (
+        <ConfirmDestructiveDialog
+          title="Archive Account?"
+          description={`Archive "${archiveTarget.code} — ${archiveTarget.name}"? This account will no longer be available for new journal entries. Existing transactions will not be affected.`}
+          confirmWord="ARCHIVE"
+          confirmLabel="Archive"
+          onConfirm={handleArchive}
+        >
+          <span /> {/* Trigger is handled by setArchiveTarget */}
+        </ConfirmDestructiveDialog>
+      )}
+
+      {/* Archive Confirmation Modal - using ConfirmDestructiveDialog wrapper */}
+      {archiveTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded border border-neutral-200 w-full max-w-sm p-6">
             <h2 className="text-lg font-semibold text-neutral-900 mb-2">Archive Account?</h2>
@@ -437,13 +472,20 @@ export default function AccountsPage() {
               >
                 Cancel
               </button>
-              <button
-                onClick={() => void handleArchive()}
-                disabled={archiveMutation.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              <ConfirmDestructiveDialog
+                title="Archive Account?"
+                description={`Archive "${archiveTarget.code} — ${archiveTarget.name}"? This account will no longer be available for new journal entries. Existing transactions will not be affected.`}
+                confirmWord="ARCHIVE"
+                confirmLabel="Archive"
+                onConfirm={handleArchive}
               >
-                {archiveMutation.isPending ? 'Archiving…' : 'Archive'}
-              </button>
+                <button
+                  disabled={archiveMutation.isPending}
+                  className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {archiveMutation.isPending ? 'Archiving…' : 'Archive'}
+                </button>
+              </ConfirmDestructiveDialog>
             </div>
           </div>
         </div>

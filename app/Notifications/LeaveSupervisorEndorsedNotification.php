@@ -19,12 +19,34 @@ final class LeaveSupervisorEndorsedNotification extends Notification implements 
     use Queueable;
 
     public function __construct(
-        private readonly LeaveRequest $request,
+        private readonly int $leaveRequestId,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $leaveTypeName,
+        private readonly string $dateFrom,
+        private readonly string $dateTo,
         /** Name of the supervisor who endorsed. */
         private readonly string $supervisorName,
         private readonly ?string $remarks = null,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(
+        LeaveRequest $request,
+        string $supervisorName,
+        ?string $remarks = null
+    ): self {
+        return new self(
+            leaveRequestId: $request->id,
+            employeeId: $request->employee_id,
+            employeeName: $request->employee->full_name,
+            leaveTypeName: $request->leaveType->name,
+            dateFrom: $request->date_from->toFormattedDateString(),
+            dateTo: $request->date_to->toFormattedDateString(),
+            supervisorName: $supervisorName,
+            remarks: $remarks,
+        );
     }
 
     /** @return list<string> */
@@ -42,15 +64,15 @@ final class LeaveSupervisorEndorsedNotification extends Notification implements 
             'message' => sprintf(
                 '%s endorsed %s\'s %s leave request (%s – %s). The request is pending your approval.%s',
                 $this->supervisorName,
-                $this->request->employee->full_name,
-                $this->request->leaveType->name,
-                $this->request->date_from->toFormattedDateString(),
-                $this->request->date_to->toFormattedDateString(),
+                $this->employeeName,
+                $this->leaveTypeName,
+                $this->dateFrom,
+                $this->dateTo,
                 $this->remarks ? ' Supervisor remarks: '.$this->remarks : '',
             ),
             'action_url' => '/hr/leave',
-            'leave_request_id' => $this->request->id,
-            'employee_id' => $this->request->employee_id,
+            'leave_request_id' => $this->leaveRequestId,
+            'employee_id' => $this->employeeId,
         ];
     }
 

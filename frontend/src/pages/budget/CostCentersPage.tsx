@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { Plus, Building2 } from 'lucide-react'
 import { useCostCenters, useCreateCostCenter, type CostCenter } from '@/hooks/useBudget'
 import { useAuthStore } from '@/stores/authStore'
@@ -41,8 +42,8 @@ export default function CostCentersPage(): React.ReactElement {
       }
       setEditing(false)
       setForm(emptyForm())
-    } catch {
-      toast.error('Failed to save cost center.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to save cost center.'))
     }
   }
 

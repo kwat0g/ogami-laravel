@@ -192,6 +192,11 @@ export const PERMISSIONS = {
     tickets: perms('crm.tickets', ['view', 'create', 'reply', 'manage', 'assign', 'close']),
   },
 
+  // ── Sales / Client Orders ─────────────────────────────────────────────────
+  sales: {
+    orders: perms('sales', ['order_review', 'order_approve', 'order_reject', 'order_negotiate', 'order_vp_approve']),
+  },
+
   // ── VP Approvals ─────────────────────────────────────────────────────────
   approvals: {
     vp: perms('approvals.vp', ['view', 'approve']),

@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { AlertTriangle, Plus } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { AlertTriangle, Plus, Factory } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useDeliverySchedules } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { DeliveryScheduleStatus } from '@/types/production'
+import type { DeliverySchedule } from '@/types/production'
 
 const statusBadge: Record<DeliveryScheduleStatus, string> = {
   open:          'bg-neutral-100 text-neutral-700',
@@ -17,9 +18,10 @@ const statusBadge: Record<DeliveryScheduleStatus, string> = {
 }
 
 export default function DeliveryScheduleListPage(): React.ReactElement {
+  const navigate = useNavigate()
   const [status, setStatus] = useState('')
-  const [type, setType]     = useState('')
-  const [page, setPage]     = useState(1)
+  const [type, setType] = useState('')
+  const [page, setPage] = useState(1)
   const [withArchived, setWithArchived] = useState(false)
 
   const { data, isLoading, isError } = useDeliverySchedules({
@@ -31,21 +33,27 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('production.delivery-schedule.manage')
+  const canCreateWO = hasPermission('production.orders.create')
 
   return (
     <div>
       <PageHeader
         title="Delivery Schedules"
         actions={
-          canCreate && (
-            <Link
-              to="/production/delivery-schedules/new"
-              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Schedule
+          <div className="flex items-center gap-2">
+            <Link to="/production/combined-delivery-schedules" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+              Combined Schedules
             </Link>
-          )
+            {canCreate && (
+              <Link
+                to="/production/delivery-schedules/new"
+                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Schedule
+              </Link>
+            )}
+          </div>
         }
       />
 
@@ -99,33 +107,39 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
                     <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No delivery schedules found.</td>
                   </tr>
                 )}
-                {data?.data?.map((ds) => (
-                  <tr key={ds.id} className="even:bg-neutral-100 hover:bg-neutral-50">
-                    <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{ds.ds_reference}</td>
-                    <td className="px-4 py-3 text-neutral-600">{ds.customer?.name ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <div className="text-xs font-mono text-neutral-400">{ds.product_item?.item_code}</div>
-                      <div className="text-sm text-neutral-800">{ds.product_item?.name}</div>
-                    </td>
-                    <td className="px-4 py-3 tabular-nums font-semibold text-neutral-700">
-                      {parseFloat(ds.qty_ordered).toLocaleString('en-PH', { maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500">
-                      {new Date(ds.target_delivery_date).toLocaleDateString('en-PH')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${ds.type === 'export' ? 'bg-neutral-100 text-neutral-700' : 'bg-neutral-100 text-neutral-600'}`}>
-                        {ds.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {ds.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[ds.status]}`}>
-                        {ds.status?.replace('_', ' ') || 'Unknown'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+          {data?.data?.map((ds: DeliverySchedule) => (
+            <tr
+              key={ds.id}
+              onClick={() => navigate(`/production/delivery-schedules/${ds.ulid}`)}
+              className="even:bg-neutral-100 hover:bg-neutral-50 cursor-pointer"
+            >
+              <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{ds.ds_reference}</td>
+              <td className="px-4 py-3 text-neutral-600">{ds.customer?.name ?? '—'}</td>
+              <td className="px-4 py-3">
+                <div className="text-xs font-mono text-neutral-400">{ds.product_item?.item_code}</div>
+                <div className="text-sm text-neutral-800">{ds.product_item?.name}</div>
+              </td>
+              <td className="px-4 py-3 tabular-nums font-semibold text-neutral-700">
+                {parseFloat(String(ds.qty_ordered)).toLocaleString('en-PH', { maximumFractionDigits: 2 })}
+              </td>
+              <td className="px-4 py-3 text-neutral-500">
+                {new Date(ds.target_delivery_date).toLocaleDateString('en-PH')}
+              </td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${ds.type === 'export' ? 'bg-neutral-100 text-neutral-700' : 'bg-neutral-100 text-neutral-600'}`}>
+                  {ds.type}
+                </span>
+              </td>
+          <td className="px-4 py-3">
+            <div className="flex items-center gap-2">
+              {ds.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">Archived</span>}
+              <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[ds.status]}`}>
+                {ds.status?.replace('_', ' ') || 'Unknown'}
+              </span>
+            </div>
+          </td>
+            </tr>
+          ))}
               </tbody>
             </table>
           </div>

@@ -20,7 +20,12 @@ final class PurchaseRequestResource extends JsonResource
             'id' => $pr->id,
             'ulid' => $pr->ulid,
             'pr_reference' => $pr->pr_reference,
+            'vendor_id' => $pr->vendor_id,
             'department_id' => $pr->department_id,
+            'department' => $this->whenLoaded('department', fn () => $pr->department ? [
+                'id'   => $pr->department->id,
+                'name' => $pr->department->name,
+            ] : null),
             'urgency' => $pr->urgency,
             'justification' => $pr->justification,
             'notes' => $pr->notes,
@@ -82,6 +87,13 @@ final class PurchaseRequestResource extends JsonResource
 
             'converted_to_po_id' => $pr->converted_to_po_id,
             'converted_at' => $pr->converted_at?->toIso8601String(),
+
+            'material_requisition_id' => $pr->material_requisition_id,
+            'source_mrq' => $this->whenLoaded('sourceMrq', fn () => $pr->sourceMrq ? [
+                'id' => $pr->sourceMrq->id,
+                'ulid' => $pr->sourceMrq->ulid,
+                'mr_reference' => $pr->sourceMrq->mr_reference,
+            ] : null),
 
             'items' => PurchaseRequestItemResource::collection(
                 $this->whenLoaded('items')

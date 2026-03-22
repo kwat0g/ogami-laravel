@@ -7,6 +7,8 @@ namespace App\Domains\Maintenance\Models;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
+use Database\Factories\EquipmentFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,7 +36,12 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  */
 final class Equipment extends Model implements AuditableContract
 {
-    use Auditable, HasPublicUlid, SoftDeletes;
+    use Auditable, HasFactory, HasPublicUlid, SoftDeletes;
+
+    protected static function newFactory(): EquipmentFactory
+    {
+        return EquipmentFactory::new();
+    }
 
     protected $table = 'equipment';
 

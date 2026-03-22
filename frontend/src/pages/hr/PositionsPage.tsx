@@ -11,6 +11,8 @@ import {
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { Position } from '@/types/hr'
 
 interface PosFormState {
@@ -31,7 +33,7 @@ export default function PositionsPage() {
   const [deptFilter, setDeptFilter] = useState<number | undefined>()
 
   const { data: depts, isLoading: deptsLoading } = useDepartments()
-  const { data, isLoading, isError } = usePositions(deptFilter)
+  const { data, isLoading, isError, refetch } = usePositions(deptFilter)
   const create = useCreatePosition()
   const update = useUpdatePosition()
   const remove = useDeletePosition()
@@ -49,28 +51,41 @@ export default function PositionsPage() {
   }
   const closeForm = () => setForm(null)
 
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-
   const set = (field: keyof PosFormState, value: unknown) =>
     setForm((f) => f ? { ...f, [field]: value } : f)
 
-  const confirmDelete = () => {
-    if (!deleteId) return
-    remove.mutate(deleteId, { 
-      onSuccess: () => { toast.success('Position deleted.'); setDeleteId(null) }, 
-      onError: () => toast.error('Failed to delete position.') 
-    })
+  const handleDelete = async (id: number) => {
+    try {
+      await remove.mutateAsync(id)
+      toast.success('Position deleted successfully')
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to delete position: ${message}`)
+      throw err
+    }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form) return
     setFormError(null)
     if (!form.title.trim()) { setFormError('Title is required.'); return }
     if (!form.id && !form.code.trim()) { setFormError('Code is required.'); return }
-    if (form.id) {
-      update.mutate({ ...form, id: form.id as number }, { onSuccess: () => { toast.success('Position updated.'); closeForm() }, onError: () => { toast.error('Failed to update position.'); setFormError('Update failed.') } })
-    } else {
-      create.mutate(form, { onSuccess: () => { toast.success('Position created.'); closeForm() }, onError: () => { toast.error('Failed to create position.'); setFormError('Create failed.') } })
+    
+    try {
+      if (form.id) {
+        await update.mutateAsync({ ...form, id: form.id as number })
+        toast.success('Position updated successfully')
+      } else {
+        await create.mutateAsync(form)
+        toast.success('Position created successfully')
+      }
+      closeForm()
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to ${form.id ? 'update' : 'create'} position: ${message}`)
+      setFormError(`${form.id ? 'Update' : 'Create'} failed: ${message}`)
     }
   }
 
@@ -130,7 +145,15 @@ export default function PositionsPage() {
                 {canManage && (
                   <td className="px-3 py-2 flex gap-2">
                     <button onClick={() => openEdit(pos)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                    <button onClick={() => setDeleteId(pos.id)} disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+                    <ConfirmDestructiveDialog
+                      title="Delete Position?"
+                      description={`This will permanently delete "${pos.title}". Any employees assigned to this position will need to be reassigned. This action cannot be undone.`}
+                      confirmWord="DELETE"
+                      confirmLabel="Delete Position"
+                      onConfirm={() => handleDelete(pos.id)}
+                    >
+                      <button disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+                    </ConfirmDestructiveDialog>
                   </td>
                 )}
               </tr>
@@ -138,18 +161,6 @@ export default function PositionsPage() {
           </tbody>
         </table>
       </div>
-
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={confirmDelete}
-        title="Delete Position?"
-        description="This action cannot be undone. Any employees assigned to this position will need to be reassigned."
-        confirmLabel="Delete"
-        variant="danger"
-        loading={remove.isPending}
-      />
 
       {/* Modal */}
       {form !== null && (
@@ -159,28 +170,49 @@ export default function PositionsPage() {
             {formError && <div className="text-red-600 text-sm mb-3 bg-red-50 rounded px-3 py-2">{formError}</div>}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Code <span className="text-red-500">*</span></label>
-                <input value={form.code} onChange={(e) => set('code', e.target.value.toUpperCase())}
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Code <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  value={form.code} 
+                  onChange={(e) => set('code', e.target.value.toUpperCase())}
                   placeholder="e.g. HR-MGR"
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 font-mono" />
+                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 font-mono ${
+                    !form.code.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                  }`} 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Title <span className="text-red-500">*</span></label>
-                <input value={form.title} onChange={(e) => set('title', e.target.value)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  value={form.title} 
+                  onChange={(e) => set('title', e.target.value)}
+                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
+                    !form.title.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                  }`} 
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Department</label>
-                <select value={form.department_id ?? ''} onChange={(e) => set('department_id', Number(e.target.value) || undefined)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400">
+                <select 
+                  value={form.department_id ?? ''} 
+                  onChange={(e) => set('department_id', Number(e.target.value) || undefined)}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
+                >
                   <option value="">— None —</option>
                   {deptList.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
-                <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={2}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                <textarea 
+                  value={form.description} 
+                  onChange={(e) => set('description', e.target.value)} 
+                  rows={2}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                />
               </div>
               <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                 <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} className="rounded" />
@@ -189,9 +221,12 @@ export default function PositionsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
-              <button onClick={handleSave} disabled={create.isPending || update.isPending}
-                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                {form.id ? 'Save Changes' : 'Create'}
+              <button 
+                onClick={handleSave} 
+                disabled={create.isPending || update.isPending}
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {create.isPending || update.isPending ? 'Saving…' : form.id ? 'Save Changes' : 'Create'}
               </button>
             </div>
           </div>

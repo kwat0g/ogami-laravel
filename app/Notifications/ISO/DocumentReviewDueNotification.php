@@ -15,9 +15,22 @@ final class DocumentReviewDueNotification extends Notification implements Should
     use Queueable;
 
     public function __construct(
-        private readonly ControlledDocument $document,
+        private readonly int $documentId,
+        private readonly string $documentUlid,
+        private readonly string $title,
+        private readonly ?string $currentVersion,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(ControlledDocument $document): self
+    {
+        return new self(
+            documentId: $document->id,
+            documentUlid: $document->ulid,
+            title: $document->title,
+            currentVersion: $document->current_version ?? null,
+        );
     }
 
     /** @return list<string> */
@@ -34,11 +47,11 @@ final class DocumentReviewDueNotification extends Notification implements Should
             'title' => 'Document Review Due',
             'message' => sprintf(
                 'Controlled document "%s" (Rev. %s) is due for periodic review.',
-                $this->document->title,
-                $this->document->current_version ?? '—',
+                $this->title,
+                $this->currentVersion ?? '—',
             ),
-            'action_url' => "/iso/documents/{$this->document->ulid}",
-            'document_id' => $this->document->id,
+            'action_url' => "/iso/documents/{$this->documentUlid}",
+            'document_id' => $this->documentId,
         ];
     }
 

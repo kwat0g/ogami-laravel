@@ -6,6 +6,7 @@ namespace App\Domains\AP\Models;
 
 use App\Models\User;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $bank_account_no
  * @property string|null $bank_account_name
  * @property string|null $payment_terms
+ * @property int $lead_time_days  Default days from PO send to expected delivery
  * @property string|null $address
  * @property string|null $contact_person
  * @property string|null $email
@@ -40,9 +42,14 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class Vendor extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $table = 'vendors';
+
+    protected static function newFactory(): \Database\Factories\VendorFactory
+    {
+        return \Database\Factories\VendorFactory::new();
+    }
 
     protected $fillable = [
         'name',
@@ -57,6 +64,7 @@ final class Vendor extends Model implements Auditable
         'bank_account_no',
         'bank_account_name',
         'payment_terms',
+        'lead_time_days',
         'address',
         'contact_person',
         'email',
@@ -68,6 +76,7 @@ final class Vendor extends Model implements Auditable
     protected $casts = [
         'is_ewt_subject' => 'boolean',
         'is_active' => 'boolean',
+        'lead_time_days' => 'integer',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────

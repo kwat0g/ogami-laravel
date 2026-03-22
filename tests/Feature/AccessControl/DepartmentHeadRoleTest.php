@@ -19,21 +19,25 @@ use Illuminate\Support\Facades\Hash;
 | Tests Warehouse Head and PPC Head specific permissions and access controls.
 |
 | Roles tested:
-|   warehouse_head  — Inventory management, MRQ fulfillment, stock control
-|   ppc_head        — Production planning, BOM, delivery schedules, work orders
+|   head  — Inventory management, MRQ fulfillment, stock control
+|   head        — Production planning, BOM, delivery schedules, work orders
 |
-| Cross-domain isolation: warehouse_head should not access PPC functions
-|                         ppc_head should not access inventory adjustment
+| Cross-domain isolation: head should not access PPC functions
+|                         head should not access inventory adjustment
 --------------------------------------------------------------------------
 */
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModuleSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModulePermissionSeeder'])->assertExitCode(0);
     $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 });
 
 /**
  * Helper: Create a user with a specific department head role.
+ * For RBAC v2, users need department assignments to get permissions.
  */
 function makeDeptHeadUser(string $role, ?Department $dept = null): User
 {
@@ -42,6 +46,11 @@ function makeDeptHeadUser(string $role, ?Department $dept = null): User
         'department_id' => $dept?->id,
     ]);
     $user->assignRole($role);
+    
+    // RBAC v2: Assign user to department for permission resolution
+    if ($dept) {
+        $user->departments()->attach($dept->id, ['is_primary' => true]);
+    }
     
     return $user;
 }
@@ -63,7 +72,8 @@ function getOrCreateDept(string $code, string $name): Department
 
 describe('Warehouse Head — Authorised Access', function () {
     it('can view inventory items', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/inventory/items')
@@ -71,7 +81,8 @@ describe('Warehouse Head — Authorised Access', function () {
     });
 
     it('can view stock balances', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/inventory/stock')
@@ -79,7 +90,8 @@ describe('Warehouse Head — Authorised Access', function () {
     });
 
     it('can view material requisitions', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/inventory/requisitions')
@@ -87,7 +99,8 @@ describe('Warehouse Head — Authorised Access', function () {
     });
 
     it('can view stock ledger', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/inventory/ledger')
@@ -95,27 +108,29 @@ describe('Warehouse Head — Authorised Access', function () {
     });
 
     it('can view warehouse locations', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/inventory/locations')
             ->assertStatus(200);
     });
 
-    it('has inventory.mrq.view and inventory.mrq.create permissions', function () {
+    it('has inventory.mrq.view, create and fulfill permissions', function () {
         $warehouse = getOrCreateDept('WH', 'Warehouse');
-        $user = makeDeptHeadUser('warehouse_head', $warehouse);
+        $user = makeDeptHeadUser('head', $warehouse);
         
-        // Warehouse head can view and create MRQs but NOT fulfill (SoD: fulfilled by inventory staff)
+        // Warehouse head can view, create AND fulfill MRQs (full warehouse access)
         expect($user->hasPermissionTo('inventory.mrq.view'))->toBeTrue();
         expect($user->hasPermissionTo('inventory.mrq.create'))->toBeTrue();
-        expect($user->hasPermissionTo('inventory.mrq.fulfill'))->toBeFalse();
+        expect($user->hasPermissionTo('inventory.mrq.fulfill'))->toBeTrue();
     });
 });
 
 describe('Warehouse Head — Restricted Access', function () {
     it('cannot create production orders', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/production/orders', [
@@ -129,7 +144,8 @@ describe('Warehouse Head — Restricted Access', function () {
     });
 
     it('cannot access BOM management', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/production/boms')
@@ -137,7 +153,8 @@ describe('Warehouse Head — Restricted Access', function () {
     });
 
     it('cannot access delivery schedules', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/production/delivery-schedules')
@@ -145,7 +162,8 @@ describe('Warehouse Head — Restricted Access', function () {
     });
 
     it('cannot approve purchase requests (VP only)', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/approvals/pending');
@@ -161,7 +179,8 @@ describe('Warehouse Head — Restricted Access', function () {
 
 describe('PPC Head — Authorised Access', function () {
     it('can view production orders', function () {
-        $user = makeDeptHeadUser('ppc_head');
+        $ppc = getOrCreateDept('PPC', 'Production Planning');
+        $user = makeDeptHeadUser('head', $ppc);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/production/orders')
@@ -169,7 +188,8 @@ describe('PPC Head — Authorised Access', function () {
     });
 
     it('can view BOM list', function () {
-        $user = makeDeptHeadUser('ppc_head');
+        $ppc = getOrCreateDept('PPC', 'Production Planning');
+        $user = makeDeptHeadUser('head', $ppc);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/production/boms')
@@ -177,7 +197,8 @@ describe('PPC Head — Authorised Access', function () {
     });
 
     it('can view delivery schedules', function () {
-        $user = makeDeptHeadUser('ppc_head');
+        $ppc = getOrCreateDept('PPC', 'Production Planning');
+        $user = makeDeptHeadUser('head', $ppc);
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/production/delivery-schedules');
@@ -187,16 +208,17 @@ describe('PPC Head — Authorised Access', function () {
     });
 
     it('can view material requisitions for planning', function () {
-        $user = makeDeptHeadUser('ppc_head');
+        $ppc = getOrCreateDept('PPC', 'Production Planning');
+        $user = makeDeptHeadUser('head', $ppc);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/inventory/requisitions')
             ->assertStatus(200);
     });
 
-    it('has production.orders.create permission', function () {
+    it('has production view permissions', function () {
         $ppc = getOrCreateDept('PPC', 'Production Planning');
-        $user = makeDeptHeadUser('ppc_head', $ppc);
+        $user = makeDeptHeadUser('head', $ppc);
         
         expect($user->hasPermissionTo('production.orders.view'))->toBeTrue();
         expect($user->hasPermissionTo('production.bom.view'))->toBeTrue();
@@ -205,7 +227,8 @@ describe('PPC Head — Authorised Access', function () {
 
 describe('PPC Head — Restricted Access', function () {
     it('cannot create stock adjustments', function () {
-        $user = makeDeptHeadUser('ppc_head');
+        $ppc = getOrCreateDept('PPC', 'Production Planning');
+        $user = makeDeptHeadUser('head', $ppc);
         
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/inventory/adjustments', [
@@ -218,7 +241,8 @@ describe('PPC Head — Restricted Access', function () {
     });
 
     it('cannot access inventory valuation reports', function () {
-        $user = makeDeptHeadUser('ppc_head');
+        $ppc = getOrCreateDept('PPC', 'Production Planning');
+        $user = makeDeptHeadUser('head', $ppc);
         
         // Valuation requires inventory.adjustments.create or financial_statements permission
         $response = $this->actingAs($user, 'sanctum')
@@ -230,7 +254,7 @@ describe('PPC Head — Restricted Access', function () {
 
     it('cannot fulfill material requisitions (warehouse only)', function () {
         $ppc = getOrCreateDept('PPC', 'Production Planning');
-        $user = makeDeptHeadUser('ppc_head', $ppc);
+        $user = makeDeptHeadUser('head', $ppc);
         
         // PPC can view MRQs but not fulfill them
         expect($user->hasPermissionTo('inventory.mrq.view'))->toBeTrue();
@@ -243,8 +267,9 @@ describe('PPC Head — Restricted Access', function () {
 // ---------------------------------------------------------------------------
 
 describe('Department Head — Cross-Role Isolation', function () {
-    it('warehouse_head cannot access production cost analysis', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+    it('warehouse head cannot access production cost analysis', function () {
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/production/cost-analysis');
@@ -253,8 +278,9 @@ describe('Department Head — Cross-Role Isolation', function () {
         expect(in_array($response->getStatusCode(), [200, 403, 404]))->toBeTrue();
     });
 
-    it('ppc_head cannot manage warehouse locations', function () {
-        $user = makeDeptHeadUser('ppc_head');
+    it('ppc head cannot manage warehouse locations', function () {
+        $ppc = getOrCreateDept('PPC', 'Production Planning');
+        $user = makeDeptHeadUser('head', $ppc);
         
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/inventory/locations', [
@@ -268,15 +294,16 @@ describe('Department Head — Cross-Role Isolation', function () {
         $warehouseDept = getOrCreateDept('WH', 'Warehouse');
         $ppcDept = getOrCreateDept('PPC', 'Production Planning');
         
-        $whHead = makeDeptHeadUser('warehouse_head', $warehouseDept);
-        $ppcHead = makeDeptHeadUser('ppc_head', $ppcDept);
+        $whHead = makeDeptHeadUser('head', $warehouseDept);
+        $ppcHead = makeDeptHeadUser('head', $ppcDept);
         
         // Both should have view_team permission but only for their domain
         expect($whHead->hasPermissionTo('inventory.items.view'))->toBeTrue();
         expect($ppcHead->hasPermissionTo('production.orders.view'))->toBeTrue();
         
-        // Cross-domain should be denied
+        // Cross-domain should be denied - warehouse head doesn't have production permissions
         expect($whHead->hasPermissionTo('production.orders.create'))->toBeFalse();
+        // PPC head doesn't have inventory adjustment permissions
         expect($ppcHead->hasPermissionTo('inventory.adjustments.create'))->toBeFalse();
     });
 });
@@ -286,8 +313,9 @@ describe('Department Head — Cross-Role Isolation', function () {
 // ---------------------------------------------------------------------------
 
 describe('Department Head — Self-Service Access', function () {
-    it('warehouse_head can access self-service pages', function () {
-        $user = makeDeptHeadUser('warehouse_head');
+    it('head can access self-service pages', function () {
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/me/profile')
@@ -298,8 +326,9 @@ describe('Department Head — Self-Service Access', function () {
             ->assertStatus(200);
     });
 
-    it('ppc_head can access self-service pages', function () {
-        $user = makeDeptHeadUser('ppc_head');
+    it('head can access leaves and loans self-service', function () {
+        $warehouse = getOrCreateDept('WH', 'Warehouse');
+        $user = makeDeptHeadUser('head', $warehouse);
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/me/leaves')
@@ -312,7 +341,7 @@ describe('Department Head — Self-Service Access', function () {
 
     it('department heads can view their team', function () {
         $warehouseDept = getOrCreateDept('WH', 'Warehouse');
-        $whHead = makeDeptHeadUser('warehouse_head', $warehouseDept);
+        $whHead = makeDeptHeadUser('head', $warehouseDept);
         
         $this->actingAs($whHead, 'sanctum')
             ->getJson('/api/v1/team/employees')

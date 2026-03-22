@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Delivery\DeliveryController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->group(function (): void {
+Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function (): void {
     // Delivery Receipts
     Route::get('/receipts', [DeliveryController::class, 'indexReceipts']);
     Route::post('/receipts', [DeliveryController::class, 'storeReceipt']);

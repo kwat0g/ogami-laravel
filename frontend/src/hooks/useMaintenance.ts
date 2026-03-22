@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import api from '@/lib/api';
+import { firstErrorMessage } from '@/lib/errorHandler';
 import type {
   Equipment,
   MaintenanceWorkOrder,
@@ -30,19 +32,24 @@ export function useCreateEquipment() {
   return useMutation({
     mutationFn: (payload: CreateEquipmentPayload) =>
       api.post('/maintenance/equipment', payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['equipment'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['equipment'] });
+      toast.success('Equipment created successfully');
+    },
+    onError: (err) => toast.error(firstErrorMessage(err)),
   });
 }
 
-export function useUpdateEquipment(ulid: string) {
+export function useDeleteEquipment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Partial<CreateEquipmentPayload>) =>
-      api.put(`/maintenance/equipment/${ulid}`, payload).then(r => r.data),
+    mutationFn: (ulid: string) =>
+      api.delete(`/maintenance/equipment/${ulid}`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['equipment'] });
-      qc.invalidateQueries({ queryKey: ['equipment', ulid] });
+      toast.success('Equipment deleted successfully');
     },
+    onError: (err) => toast.error(firstErrorMessage(err)),
   });
 }
 
@@ -68,7 +75,11 @@ export function useCreateWorkOrder() {
   return useMutation({
     mutationFn: (payload: CreateWorkOrderPayload) =>
       api.post('/maintenance/work-orders', payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['work-orders'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] });
+      toast.success('Work order created successfully');
+    },
+    onError: (err) => toast.error(firstErrorMessage(err)),
   });
 }
 
@@ -80,7 +91,23 @@ export function useStartWorkOrder() {
     onSuccess: (_d, ulid) => {
       qc.invalidateQueries({ queryKey: ['work-orders'] });
       qc.invalidateQueries({ queryKey: ['work-orders', ulid] });
+      toast.success('Work order started');
     },
+    onError: (err) => toast.error(firstErrorMessage(err)),
+  });
+}
+
+export function useCancelWorkOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid: string) =>
+      api.patch(`/maintenance/work-orders/${ulid}/cancel`).then(r => r.data),
+    onSuccess: (_d, ulid) => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] });
+      qc.invalidateQueries({ queryKey: ['work-orders', ulid] });
+      toast.success('Work order cancelled');
+    },
+    onError: (err) => toast.error(firstErrorMessage(err)),
   });
 }
 
@@ -93,7 +120,9 @@ export function useCompleteWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work-orders'] });
       qc.invalidateQueries({ queryKey: ['work-orders', ulid] });
       qc.invalidateQueries({ queryKey: ['equipment'] });
+      toast.success('Work order completed');
     },
+    onError: (err) => toast.error(firstErrorMessage(err)),
   });
 }
 
@@ -107,6 +136,22 @@ export function useStorePmSchedule(equipmentUlid: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['equipment'] });
       qc.invalidateQueries({ queryKey: ['equipment', equipmentUlid] });
+      toast.success('PM schedule added');
     },
+    onError: (err) => toast.error(firstErrorMessage(err)),
+  });
+}
+
+export function useUpdateEquipment(ulid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Partial<CreateEquipmentPayload>) =>
+      api.put(`/maintenance/equipment/${ulid}`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['equipment'] });
+      qc.invalidateQueries({ queryKey: ['equipment', ulid] });
+      toast.success('Equipment updated');
+    },
+    onError: (err) => toast.error(firstErrorMessage(err)),
   });
 }

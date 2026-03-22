@@ -2,14 +2,17 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, AlertTriangle, X } from 'lucide-react'
+import { Plus, AlertTriangle, X, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
 import { useWarehouseLocations, useCreateLocation, useUpdateLocation } from '@/hooks/useInventory'
 import { useDepartments } from '@/hooks/useEmployees'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { useAuthStore } from '@/stores/authStore'
+import api from '@/lib/api'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { WarehouseLocation } from '@/types/inventory'
 
 const schema = z.object({
@@ -26,9 +29,11 @@ export default function WarehouseLocationsPage(): React.ReactElement {
   const [showForm, setShowForm]             = useState(false)
   const [editing, setEditing]               = useState<WarehouseLocation | null>(null)
   const [showInactive, setShowInactive]     = useState(false)
+  const [, setDeletingId]                   = useState<number | null>(null)
   const canManage = useAuthStore(s => s.hasPermission('inventory.locations.manage'))
+  const canDelete = useAuthStore(s => s.hasPermission('inventory.locations.delete'))
 
-  const { data: locations, isLoading, isError } = useWarehouseLocations({
+  const { data: locations, isLoading, isError, refetch } = useWarehouseLocations({
     is_active: showInactive ? undefined : true,
   })
 
@@ -64,10 +69,32 @@ export default function WarehouseLocationsPage(): React.ReactElement {
         toast.success('Location created.')
       }
       setShowForm(false)
-    } catch {
-      toast.error('Failed to save location.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   })
+
+  const handleDelete = async (id: number) => {
+    try {
+      await api.delete(`/inventory/locations/${id}`)
+      toast.success('Location deleted successfully.')
+      refetch()
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleToggleActive = async (loc: WarehouseLocation) => {
+    try {
+      await api.put(`/inventory/locations/${loc.id}`, { is_active: !loc.is_active })
+      toast.success(loc.is_active ? 'Location deactivated.' : 'Location activated.')
+      refetch()
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
 
   const fieldCls = (err?: { message?: string }) =>
     `w-full text-sm border rounded px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${err ? 'border-red-400' : 'border-neutral-300'}`
@@ -115,7 +142,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['Code', 'Name', 'Zone', 'Bin', 'Department', 'Status', ''].map((h) => (
+                  {['Code', 'Name', 'Zone', 'Bin', 'Department', 'Status', 'Actions'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                   ))}
                 </tr>
@@ -141,11 +168,41 @@ export default function WarehouseLocationsPage(): React.ReactElement {
                         : <StatusBadge className="bg-neutral-100 text-neutral-500">Inactive</StatusBadge>}
                     </td>
                     <td className="px-4 py-3">
-                      {canManage && (
-                        <button onClick={() => openEdit(loc)} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
-                          Edit
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {canManage && (
+                          <button 
+                            onClick={() => openEdit(loc)} 
+                            className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {canManage && (
+                          <button 
+                            onClick={() => handleToggleActive(loc)}
+                            className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium"
+                          >
+                            {loc.is_active ? 'Deactivate' : 'Activate'}
+                          </button>
+                        )}
+                        {canDelete && (
+                          <ConfirmDestructiveDialog
+                            title="Delete location?"
+                            description={`This will permanently delete "${loc.name}". Any stock at this location must be transferred first.`}
+                            confirmWord="DELETE"
+                            confirmLabel="Delete"
+                            onConfirm={() => handleDelete(loc.id)}
+                          >
+                            <button
+                              type="button"
+                              className="p-1.5 hover:bg-red-50 rounded text-neutral-400 hover:text-red-500 transition-colors"
+                              title="Delete location"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </ConfirmDestructiveDialog>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

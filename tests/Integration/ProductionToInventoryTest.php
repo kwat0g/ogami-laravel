@@ -35,7 +35,7 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
 
     $this->user = User::factory()->create();
-    $this->user->assignRole('production_manager');
+    $this->user->assignRole('manager');
 
     $this->department = Department::firstOrCreate(
         ['code' => 'PROD'],

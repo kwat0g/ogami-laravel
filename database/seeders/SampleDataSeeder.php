@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Domains\HR\Models\Employee;
 use App\Models\User;
+use Database\Seeders\Helpers\GovernmentIdHelper;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -131,6 +132,10 @@ class SampleDataSeeder extends Seeder
                 continue;
             }
 
+            // Generate government IDs and bank details
+            $govIds = GovernmentIdHelper::generateCompleteGovIds();
+            $bankDetails = GovernmentIdHelper::generateBankDetails($emp['first_name'], $emp['last_name']);
+            
             DB::table('employees')->insertOrIgnore([
                 'employee_code'        => $emp['code'],
                 'ulid'                 => (string) Str::ulid(),
@@ -147,9 +152,19 @@ class SampleDataSeeder extends Seeder
                 'bir_status'           => $emp['bir_status'],
                 'personal_email'       => $emp['email'],
                 'personal_phone'       => $emp['phone'],
-                'bank_name'            => $emp['bank_name'],
-                'bank_account_no'      => $emp['bank_account_no'],
-                'bank_account_name'    => $emp['first_name'].' '.$emp['last_name'],
+                // Bank details
+                'bank_name'            => $bankDetails['bank_name'],
+                'bank_account_no'      => $bankDetails['bank_account_number'],
+                'bank_account_name'    => $bankDetails['bank_account_name'],
+                // Government IDs (encrypted + hash)
+                'sss_no_encrypted'     => $govIds['sss_no_encrypted'],
+                'sss_no_hash'          => $govIds['sss_no_hash'],
+                'tin_encrypted'        => $govIds['tin_encrypted'],
+                'tin_hash'             => $govIds['tin_hash'],
+                'philhealth_no_encrypted' => $govIds['philhealth_no_encrypted'],
+                'philhealth_no_hash'   => $govIds['philhealth_no_hash'],
+                'pagibig_no_encrypted' => $govIds['pagibig_no_encrypted'],
+                'pagibig_no_hash'      => $govIds['pagibig_no_hash'],
                 'department_id'        => $deptId,
                 'position_id'          => $posId,
                 'salary_grade_id'      => $sgId,
@@ -158,8 +173,8 @@ class SampleDataSeeder extends Seeder
                 'date_hired'           => $emp['hired'],
                 'regularization_date'  => $emp['regularization'] ?? null,
                 'basic_monthly_rate'   => $emp['salary'],
-                'onboarding_status'    => 'documents_pending',
-                'is_active'            => false,
+                'onboarding_status'    => 'active',
+                'is_active'            => true,
                 'pay_basis'            => 'monthly',
                 'created_at'           => now(),
                 'updated_at'           => now(),
@@ -221,7 +236,7 @@ class SampleDataSeeder extends Seeder
                 'password_changed_at' => now(),
             ]
         );
-        $crmUser->syncRoles(['crm_manager']);
+        $crmUser->syncRoles(['manager']);
 
         $this->command->info('✓ User accounts ready:');
         $this->command->info('  admin   admin@ogamierp.local          Admin@1234567890!');

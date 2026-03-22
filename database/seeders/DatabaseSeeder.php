@@ -33,6 +33,10 @@ class DatabaseSeeder extends Seeder
 
             // ── RBAC (requires spatie/laravel-permission tables) ──────────────
             RolePermissionSeeder::class,
+            // ── Modules (v2 permission system) ───────────────────────────────
+            // Must run AFTER RolePermissionSeeder (creates module + role matrix)
+            ModuleSeeder::class,
+            ModulePermissionSeeder::class,
             SampleAccountsSeeder::class,
 
             // ── HR reference tables ───────────────────────────────────────────
@@ -47,12 +51,24 @@ class DatabaseSeeder extends Seeder
             // ── Organizational structure ──────────────────────────────────────
             FiscalPeriodSeeder::class,
             DepartmentPositionSeeder::class,
+            // ── Department module assignments (RBAC v2) ───────────────────────
+            // Must run AFTER ModuleSeeder + DepartmentPositionSeeder
+            DepartmentModuleAssignmentSeeder::class,
             // ── Department permission profiles (v2) ───────────────────────────
             // Must run AFTER DepartmentPositionSeeder (requires departments to exist)
             DepartmentPermissionProfileSeeder::class,
             DepartmentPermissionTemplateSeeder::class,
-            // ── Comprehensive test accounts with employee links ─────────────────
-            // Creates Manager/Officer/Head/Staff for each department with linked employees
+            // ── Reversed Hierarchy Permissions ────────────────────────────────
+            // Officer (full) → Manager → Head → Staff (minimal)
+            // Run BEFORE employee seeders so users get correct permissions
+            ReversedHierarchyPermissionSeeder::class,
+            // ── Consolidated employee seeder ──────────────────────────────────
+            // Creates Executive/Manager/Officer/Head/Staff for each department
+            // with properly linked user accounts and employee records
+            ConsolidatedEmployeeSeeder::class,
+            // ── Comprehensive test accounts ────────────────────────────────────
+            // Creates standardized {dept}.{role}@ogamierp.local accounts
+            // for consistent testing across all departments
             ComprehensiveTestAccountsSeeder::class,
             // ── Transactional sample data ─────────────────────────────────────
             // Must come last — depends on employees, leave_types, COA, fiscal_periods
@@ -60,15 +76,28 @@ class DatabaseSeeder extends Seeder
             // ── Leave balances ────────────────────────────────────────────────
             // Must run after SampleDataSeeder (requires employees to exist)
             LeaveBalanceSeeder::class,
-            // ── Manufacturing org chart employees (Sprints A–F roles) ─────────
-            // Must run after DepartmentPositionSeeder + RolePermissionSeeder
-            ManufacturingEmployeeSeeder::class,
+            // ── Attendance data (Jan-Feb 2026) ────────────────────────────────
+            // Must run after employees are seeded
+            SampleAttendanceJanFeb2026Seeder::class,
             // ── New modules (Sprints A-F) ─────────────────────────────────────
             // Must come last — depends on users, item_masters, vendors, customers
             NewModulesSeeder::class,
             // ── Fleet (delivery vehicles) ─────────────────────────────────────
             // Requires vehicles migration (000018) to have run
             FleetSeeder::class,
+            // ── Comprehensive test data for all modules ───────────────────────
+            // Inventory, Production, QC, Maintenance, Delivery test data
+            ComprehensiveTestDataSeeder::class,
+
+            // ── Client Order Workflow Test Data ───────────────────────────────
+            // Client orders, delivery schedules, production orders for testing
+            ClientOrderWorkflowTestSeeder::class,
+
+            // ── Manual / exploratory testing enrichment ───────────────────────
+            // Vendor portal users for all vendors, client portal users for all
+            // customers, FG standard prices, FG stock, extra vendor catalog items.
+            // Safe to re-run independently: php artisan db:seed --class=ManualTestingSeeder
+            ManualTestingSeeder::class,
         ]);
     }
 }

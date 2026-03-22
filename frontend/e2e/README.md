@@ -1,169 +1,204 @@
-# Ogami ERP E2E Testing Guide
+# Ogami ERP E2E Testing Documentation
 
-## Overview
+> **Note:** The `ManufacturingEmployeeSeeder` properly hashes passwords. Run it once and all test accounts work immediately!
 
-End-to-end tests using Playwright covering critical business workflows across all 20 domains.
+## 📚 Documentation Files
 
-**Total Test Coverage: 93+ test scenarios**
+| File | Purpose | When to Use |
+|------|---------|-------------|
+| [**QUICK_START.md**](QUICK_START.md) | Fastest way to start testing | **Start here!** (2 min read) |
+| [**MANUAL_RBAC_TEST_GUIDE.md**](MANUAL_RBAC_TEST_GUIDE.md) | Complete manual testing by role | Manual testing (15 min) |
+| [**WORKFLOW_QUICK_REFERENCE.md**](WORKFLOW_QUICK_REFERENCE.md) | Workflow diagrams & approval steps | Testing workflows (10 min) |
+| [**RBAC_STEP_BY_STEP_TEST_GUIDE.md**](RBAC_STEP_BY_STEP_TEST_GUIDE.md) | Automated test commands | Running E2E tests (20 min) |
 
-## Test Structure
+---
 
-```
-e2e/
-├── auth.spec.ts              # Authentication flows (5 tests)
-├── accounting.spec.ts        # GL, JE, Financial reports (8 tests)
-├── ap-workflow.spec.ts       # AP Invoice → Payment (7 tests) ⭐ NEW
-├── hr-onboarding.spec.ts     # Employee management (8 tests)
-├── leave.spec.ts             # Leave requests (7 tests)
-├── payroll.spec.ts           # Payroll runs (7 tests)
-├── procurement.spec.ts       # PR → PO → GR (10 tests)
-├── inventory-workflow.spec.ts # Items, MR, Stock (8 tests) ⭐ NEW
-├── production-workflow.spec.ts # Production orders (8 tests) ⭐ NEW
-├── qc-workflow.spec.ts       # Inspections, NCR, CAPA (8 tests) ⭐ NEW
-├── sod.spec.ts               # SoD compliance (15+ tests)
-└── setup/
-    └── auth.setup.ts         # Shared auth session setup
-```
+## 🚀 Quick Start (Choose Your Path)
 
-## Running Tests
-
-### Prerequisites
-
-Both servers must be running:
+### Option A: Manual Testing (Recommended - Fastest)
 
 ```bash
-# Terminal 1 - Backend
-php artisan serve --port=8000
+# 1. Start servers
+php artisan serve          # Terminal 1
+pnpm dev                   # Terminal 2
 
-# Terminal 2 - Frontend
-cd frontend && pnpm dev
+# 2. Seed test accounts (one-time)
+cd /home/kwat0g/Desktop/ogamiPHP
+php artisan db:seed --class=ManufacturingEmployeeSeeder
+
+# 3. Open browser and test
+open http://localhost:5173/login
 ```
 
-### Run All Tests
+Then follow: [**MANUAL_RBAC_TEST_GUIDE.md**](MANUAL_RBAC_TEST_GUIDE.md)
+
+---
+
+### Option B: Interactive Automated Tests
 
 ```bash
-cd frontend
-pnpm e2e
+cd /home/kwat0g/Desktop/ogamiPHP/frontend/e2e
+./test-rbac-interactive.sh
 ```
 
-### Run Specific Test File
+Select test groups from the interactive menu.
+
+---
+
+### Option C: Full Automated Suite
 
 ```bash
-pnpm e2e accounting.spec.ts
-pnpm e2e procurement.spec.ts
-pnpm e2e ap-workflow.spec.ts
+cd /home/kwat0g/Desktop/ogamiPHP/frontend/e2e
+./run-rbac-tests.sh
 ```
 
-### Run with UI Mode
+Runs all 40 automated tests (~10-15 minutes).
 
+---
+
+## 🎯 What to Test
+
+### Critical RBAC Tests (Must Pass)
+
+| # | Test | Login As | Action | Expected |
+|---|------|----------|--------|----------|
+| 1 | Production → Payroll blocked | prod.manager | Access /hr/payroll | 403 Forbidden |
+| 2 | Production → Inventory blocked | prod.manager | Access /inventory/categories | 403 Forbidden |
+| 3 | Warehouse → Inventory allowed | warehouse.head | Access /inventory/items | ✅ Can create items |
+| 4 | HR → Production blocked | hr.manager | Access /production/orders | 403 Forbidden |
+| 5 | Admin → Business blocked | admin | Access /hr/employees | 403 Forbidden |
+
+### Critical Workflow Tests (Must Pass)
+
+| Workflow | Test Steps | SoD Check |
+|----------|------------|-----------|
+| Purchase Request | Officer creates → Head approves → VP approves (if >100k) | Officer cannot approve own |
+| Payroll | HR computes → VP approves → Accounting posts | HR cannot approve own |
+| Leave | Staff submits → Manager approves → HR records | Manager cannot approve own |
+
+---
+
+## 👤 Test Account Credentials
+
+### Production & Manufacturing
+| Email | Password | Role |
+|-------|----------|------|
+| prod.manager@ogamierp.local | Manager@12345! | Production Manager |
+| production.head@ogamierp.local | Head@123456789! | Production Head |
+| qc.manager@ogamierp.local | Manager@12345! | QC Manager |
+| warehouse.head@ogamierp.local | Head@123456789! | Warehouse Head |
+| plant.manager@ogamierp.local | Manager@12345! | Plant Manager |
+| vp@ogamierp.local | VicePresident@1! | Vice President |
+
+### Support Departments
+| Email | Password | Role |
+|-------|----------|------|
+| hr.manager@ogamierp.local | HrManager@12345! | HR Manager |
+| acctg.manager@ogamierp.local | Manager@12345! | Accounting Manager |
+| purchasing.officer@ogamierp.local | Officer@12345! | Purchasing Officer |
+
+### System
+| Email | Password | Role |
+|-------|----------|------|
+| admin@ogamierp.local | Admin@12345! | System Admin |
+
+---
+
+## 📋 Quick Reference: What Each Role Sees
+
+### Production Manager
+**✅ Can Access:** Production, QC/QA, Inventory (MRQ only), Maintenance, Mold, Delivery, Team Management  
+**❌ Blocked From:** Payroll, Item Categories, Stock Ledger, Accounting, HR
+
+### Warehouse Head
+**✅ Can Access:** Full Inventory (items, categories, adjustments, stock ledger), Delivery, Team Management  
+**❌ Blocked From:** Payroll, Production, Accounting
+
+### HR Manager
+**✅ Can Access:** Full HR, Team Management, Attendance, Payroll, Leave, Loans  
+**❌ Blocked From:** Production, Inventory, Accounting
+
+### Accounting Manager
+**✅ Can Access:** Accounting, AP, AR, Banking, Fixed Assets, Budget, Reports, Tax  
+**❌ Blocked From:** Production, Inventory (except costs), Payroll (accounting view only)
+
+### VP
+**✅ Can Access:** VP Approvals, Dashboard, Production, QC, Maintenance, Delivery, Inventory, Reports  
+**✅ Can Approve:** Cross-department requests, Payroll, Journal Entries  
+**❌ Blocked From:** Individual salary details, System admin
+
+### Admin
+**✅ Can Access:** System Administration ONLY  
+**❌ Blocked From:** ALL business modules
+
+---
+
+## 🐛 Troubleshooting
+
+### Account Locked
 ```bash
-pnpm e2e:ui
+cd /home/kwat0g/Desktop/ogamiPHP
+php artisan tinker --execute="
+App\Models\User::where('email', 'prod.manager@ogamierp.local')
+  ->update(['failed_login_attempts' => 0, 'locked_until' => null]);
+"
 ```
 
-### Run Headed (visible browser)
-
+### Rate Limited
 ```bash
-pnpm e2e:headed
+php artisan cache:clear
 ```
 
-### View Test Report
-
+### Reset All Test Accounts
 ```bash
-pnpm e2e:report
+php artisan db:seed --class=ManufacturingEmployeeSeeder
 ```
 
-## Critical Workflow Coverage
+---
 
-### 1. Procurement → AP → GL (End-to-End)
-- PR-01: Create Purchase Request
-- PR-02: Submit for approval
-- PR-03: Head notes the PR
-- PR-04: Manager checks the PR
-- PR-05: Officer reviews the PR
-- PR-06: VP approves the PR
-- PO-01: Convert PR to PO
-- PO-02: Send PO to vendor
-- GR-01: Receive goods against PO
-- AP-01: Create invoice from GR
-- AP-02: Submit invoice for approval
-- AP-03: Process payment
-- GL-01: Verify AP entries posted
+## 📂 File Structure
 
-### 2. Production Workflow
-- PROD-01: Create production order
-- PROD-02: Check BOM components
-- PROD-03: Release order (stock check)
-- PROD-04: Record output
-- PROD-05: Complete order
-
-### 3. Quality Control
-- QC-01: Create inspection (IQC/IPQC/OQC)
-- QC-02: Record results
-- QC-03: Fail → Create NCR
-- QC-04: NCR → CAPA action
-
-## Test Data Requirements
-
-Tests assume the following seeded data exists:
-
-- Admin user: `admin@ogamierp.local` / `Admin@1234567890!`
-- Chart of Accounts (standard Philippine GL structure)
-- Departments (HR, Finance, Operations, etc.)
-- At least one active vendor
-- At least one active customer
-- Sample employees with completed profiles
-
-## Troubleshooting
-
-### Tests failing with connection errors
-Ensure both servers are running:
-- Backend: http://localhost:8000
-- Frontend: http://localhost:5173
-
-### Authentication failures
-Delete auth state and rerun setup:
-```bash
-rm frontend/e2e/.auth/admin.json
-pnpm e2e
+```
+frontend/e2e/
+├── README.md                          # This file - master index
+├── QUICK_START.md                     # Quick start guide
+├── MANUAL_RBAC_TEST_GUIDE.md          # Manual testing by role
+├── WORKFLOW_QUICK_REFERENCE.md        # Workflow diagrams
+├── RBAC_STEP_BY_STEP_TEST_GUIDE.md    # Automated test commands
+│
+├── rbac-comprehensive-ui.spec.ts      # 40 automated RBAC tests
+├── workflows-comprehensive.spec.ts    # Workflow tests
+├── api-integration.spec.ts            # API tests
+├── module-detailed.spec.ts            # Module tests
+│
+├── test-rbac-interactive.sh           # Interactive test runner
+├── run-rbac-tests.sh                  # Automated test runner
+├── setup-test-accounts.sh             # Account setup (legacy)
+│
+└── helpers/
+    ├── auth.ts                        # Auth utilities
+    └── rate-limit.ts                  # Rate limit utilities
 ```
 
-### Element not found errors
-Tests use timeouts and retries. If consistently failing:
-1. Check if UI selectors changed
-2. Verify test data exists
-3. Run with UI mode to debug: `pnpm e2e:ui`
+---
 
-## Adding New Tests
+## ⏱️ Testing Time Estimates
 
-Follow the naming convention:
-- `DOMAIN-XXX` for test IDs (e.g., `PROC-01`, `AP-WF-01`)
-- Group related tests in `test.describe()` blocks
-- Use `BASE` constant for URLs
-- Always check for 500 errors first
-- Use timeouts: `{ timeout: 10_000 }` or `{ timeout: 15_000 }`
+| Method | Tests | Time | Use Case |
+|--------|-------|------|----------|
+| Manual - Critical only | 5 | 5 min | Daily development |
+| Manual - Full | 40+ | 15 min | Weekly verification |
+| Interactive | 40 | 10-15 min | Regression testing |
+| Automated | 40 | 10-15 min | CI/CD pipeline |
 
-Example:
-```typescript
-test('DOMAIN-XX descriptive test name', async ({ page }) => {
-    await page.goto(`${BASE}/path/to/page`)
-    await page.waitForLoadState('networkidle')
-    
-    // Verify no error
-    await expect(page.locator('body')).not.toContainText('500')
-    
-    // Test assertions
-    await expect(page.locator('selector')).toBeVisible()
-})
-```
+---
 
-## CI/CD Integration
+## ✅ 5-Minute Quick Test Checklist
 
-Tests are configured to run sequentially (`workers: 1`) due to shared test data.
+If short on time, verify these critical scenarios:
 
-For CI environments:
-```bash
-# Headless with retries
-pnpm e2e -- --reporter=html
-
-# Upload report as artifact
-```
+- [ ] **Production Manager Login** - Sidebar shows Production, no Payroll module
+- [ ] **Production → Payroll URL** - http://localhost:5173/hr/payroll shows 403
+- [ ] **Warehouse Head Login** - Can access and create Inventory items
+- [ ] **Cross-Department Block** - HR cannot access Production
+- [ ] **Admin Restricted** - Admin sees only System Admin, 403 on business modules

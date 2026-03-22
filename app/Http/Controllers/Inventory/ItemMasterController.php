@@ -40,6 +40,8 @@ final class ItemMasterController extends Controller
 
     public function categories(): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', ItemMaster::class);
+
         return ItemCategoryResource::collection($this->service->allCategories());
     }
 

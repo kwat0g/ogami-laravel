@@ -15,11 +15,13 @@ interface AuthState {
   // RDAC helpers
   hasDepartmentAccess: (departmentId: number) => boolean
   primaryDepartmentId: () => number | null
+  primaryDepartmentCode: () => string | null
 
-  // Role helpers
+  // Role helpers (Reversed Hierarchy: Officer → Manager → Head → Staff)
+  isOfficer:       () => boolean
   isManager:       () => boolean
   isHead:          () => boolean
-  isOfficer:       () => boolean
+  isStaff:         () => boolean
   isVicePresident: () => boolean
   mustChangePassword: () => boolean
 }
@@ -40,7 +42,9 @@ export const useAuthStore = create<AuthState>()(
     hasPermission: (permission) => {
       const user = get().user
       if (!user) return false
-      // No wildcard for any role — permissions are checked strictly against
+      // Super admin bypasses all permission checks
+      if (user.roles.includes('super_admin')) return true
+      // No wildcard for other roles — permissions are checked strictly against
       // the Spatie permissions returned by the backend.
       // Admin's system.* permissions are seeded; they do NOT have HR/payroll
       // permissions (per ogami_role_permission_matrix.md).
@@ -63,6 +67,7 @@ export const useAuthStore = create<AuthState>()(
     },
 
     primaryDepartmentId: () => get().user?.primary_department_id ?? null,
+    primaryDepartmentCode: () => get().user?.primary_department_code ?? null,
 
     // ---- Role helpers ------------------------------------------------
     isMemberOf: (roles: AppRole[]) => {
@@ -70,19 +75,27 @@ export const useAuthStore = create<AuthState>()(
       return roles.some(r => userRoles.includes(r))
     },
 
+    // Reversed Hierarchy: Officer (highest) → Manager → Head → Staff (lowest)
+    // Each level has LESS access than the one above
+    
+    isOfficer: () => {
+      const roles = get().user?.roles ?? []
+      return roles.includes('officer')
+    },
+
     isManager: () => {
       const roles = get().user?.roles ?? []
-      return roles.some((r) => ['super_admin', 'manager', 'officer', 'vice_president', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'].includes(r))
+      return roles.includes('manager')
     },
 
     isHead: () => {
       const roles = get().user?.roles ?? []
-      return roles.some((r) => ['head', 'warehouse_head', 'ppc_head'].includes(r))
+      return roles.includes('head')
     },
-
-    isOfficer:       () => {
-       const roles = get().user?.roles ?? []
-       return roles.some((r) => ['officer', 'ga_officer', 'purchasing_officer', 'impex_officer'].includes(r))
+    
+    isStaff: () => {
+      const roles = get().user?.roles ?? []
+      return roles.includes('staff')
     },
 
     isVicePresident: () => get().user?.roles.includes('vice_president') ?? false,

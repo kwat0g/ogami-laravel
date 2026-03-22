@@ -24,6 +24,7 @@ use App\Domains\Payroll\Pipeline\Step14WithholdingTaxStep;
 use App\Domains\Payroll\Pipeline\Step15LoanDeductionsStep;
 use App\Domains\Payroll\Pipeline\Step16OtherDeductionsStep;
 use App\Domains\Payroll\Pipeline\Step17NetPayStep;
+use App\Domains\Payroll\Pipeline\Step18ThirteenthMonthStep;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pipeline\Pipeline;
@@ -83,6 +84,7 @@ final class PayrollComputationService implements ServiceContract
                 Step15LoanDeductionsStep::class,
                 Step16OtherDeductionsStep::class,
                 Step17NetPayStep::class,
+                Step18ThirteenthMonthStep::class,
             ])
             ->thenReturn();
 
@@ -133,6 +135,8 @@ final class PayrollComputationService implements ServiceContract
                 'other_deductions_centavos' => $ctx->otherDeductionsCentavos,
                 'total_deductions_centavos' => $ctx->totalDeductionsCentavos,
                 'net_pay_centavos' => $ctx->netPayCentavos,
+                'thirteenth_month_centavos' => $ctx->thirteenthMonthCentavos,
+                'thirteenth_month_taxable_centavos' => $ctx->thirteenthMonthTaxableCentavos,
                 'is_below_min_wage' => $ctx->isBelowMinWage,
                 'has_deferred_deductions' => $ctx->hasDeferredDeductions,
                 'deduction_stack_trace' => empty($ctx->deductionTrace) ? null : $ctx->deductionTrace,

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { Plus, Tags } from 'lucide-react'
 import { useFixedAssetCategories, useCreateFixedAssetCategory } from '@/hooks/useFixedAssets'
 import type { FixedAssetCategory } from '@/types/fixed_assets'
@@ -23,8 +24,8 @@ export default function FixedAssetCategoriesPage(): React.ReactElement {
       toast.success('Category created.')
       setShowForm(false)
       setForm({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' })
-    } catch {
-      toast.error('Failed to create category.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to create category.'))
     }
   }
 

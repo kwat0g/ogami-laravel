@@ -16,6 +16,8 @@ import {
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function formatPHP(n: number): string {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(n)
@@ -46,8 +48,21 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
   const sodViolation = user?.id === run?.initiated_by_id
   const isReadOnly = !hasVpApprove
 
+  // ── Validation for approval ───────────────────────────────────────────────
+  function validateApproval(): boolean {
+    if (sodViolation) {
+      toast.error('SoD Violation: You cannot approve a payroll run you initiated.')
+      return false
+    }
+    if (!allChecked) {
+      toast.error('Please check all items in the VP approval checklist.')
+      return false
+    }
+    return true
+  }
+
   async function handleApprove() {
-    if (!allChecked || sodViolation) return
+    if (!validateApproval()) return
     try {
       await vpApprove.mutateAsync({
         checkboxes_checked: VP_CHECKLIST_ITEMS.filter((_, i) => checked[i]),
@@ -55,9 +70,8 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
       })
       toast.success('VP approval recorded. Payroll is now ready for disbursement.')
       navigate(`/payroll/runs/${runId}/disburse`)
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'VP approval failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -245,23 +259,29 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
               <ArrowLeft className="h-4 w-4" /> Back to Payroll Runs
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={handleApprove}
-              disabled={vpApprove.isPending || !allChecked || run.status !== 'ACCTG_APPROVED'}
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+            <ConfirmDialog
+              title="Authorize Disbursement?"
+              description={`This is the final authorization for payroll disbursement. Once approved, the GL will be posted and employee payments will be processed. Please ensure all previous approvals are valid.`}
+              confirmLabel="Authorize Disbursement"
+              onConfirm={handleApprove}
             >
-              {vpApprove.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Processing…
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="h-4 w-4" /> Approve &amp; Authorize Disbursement{' '}
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
+              <button
+                type="button"
+                disabled={vpApprove.isPending || !allChecked || run.status !== 'ACCTG_APPROVED'}
+                className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+              >
+                {vpApprove.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Processing…
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4" /> Approve &amp; Authorize Disbursement{' '}
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </ConfirmDialog>
           )}
         </div>
       )}

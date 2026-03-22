@@ -1,13 +1,148 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, AlertTriangle } from 'lucide-react'
-import { useItems, useItemCategories } from '@/hooks/useInventory'
+import { Plus, AlertTriangle, Tags, Trash2, X } from 'lucide-react'
+import { useItems, useItemCategories, useCreateItemCategory } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/authStore'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
-import type { ItemMaster } from '@/types/inventory'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import api from '@/lib/api'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import { toast } from 'sonner'
+import type { ItemMaster, ItemCategory } from '@/types/inventory'
+
+// ---------------------------------------------------------------------------
+// Item Categories Modal
+// ---------------------------------------------------------------------------
+
+function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
+  const { data: categories, isLoading, refetch } = useItemCategories()
+  const { mutate: create, isPending } = useCreateItemCategory()
+  const canCreate = useAuthStore(s => s.hasPermission('inventory.items.create'))
+  const canDelete = useAuthStore(s => s.hasPermission('inventory.items.delete'))
+  const [form, setForm] = useState({ code: '', name: '', description: '' })
+  const [showForm, setShowForm] = useState(false)
+
+  const inputCls = 'w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none'
+
+  function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    create(
+      { code: form.code.trim(), name: form.name.trim(), description: form.description.trim() || undefined },
+      {
+        onSuccess: () => {
+          toast.success('Category created.')
+          setForm({ code: '', name: '', description: '' })
+          setShowForm(false)
+        },
+        onError: (err) => toast.error(firstErrorMessage(err)),
+      },
+    )
+  }
+
+  async function handleDelete(id: number) {
+    try {
+      await api.delete(`/inventory/items/categories/${id}`)
+      toast.success('Category deleted.')
+      refetch()
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-lg border border-neutral-200 w-full max-w-2xl max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+          <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
+            <Tags className="w-4 h-4 text-neutral-500" /> Item Categories
+          </h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-neutral-100 text-neutral-500">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+          {isLoading ? (
+            <SkeletonLoader rows={4} />
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-neutral-600">Code</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-neutral-600">Name</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-neutral-600">Description</th>
+                  {canDelete && <th className="px-3 py-2" />}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {(!categories || categories.length === 0) && (
+                  <tr><td colSpan={4} className="px-3 py-6 text-center text-neutral-400 text-sm">No categories yet.</td></tr>
+                )}
+                {categories?.map((cat: ItemCategory) => (
+                  <tr key={cat.id} className="hover:bg-neutral-50">
+                    <td className="px-3 py-2 font-mono font-medium text-neutral-900">{cat.code}</td>
+                    <td className="px-3 py-2 font-medium text-neutral-900">{cat.name}</td>
+                    <td className="px-3 py-2 text-neutral-500">{cat.description ?? '—'}</td>
+                    {canDelete && (
+                      <td className="px-3 py-2">
+                        <ConfirmDestructiveDialog
+                          title="Delete category?"
+                          description={`This will permanently delete "${cat.name}". Items using this category must be reassigned first.`}
+                          confirmWord="DELETE"
+                          confirmLabel="Delete"
+                          onConfirm={() => handleDelete(cat.id)}
+                        >
+                          <button type="button" className="p-1 rounded hover:bg-red-50 text-neutral-400 hover:text-red-500">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </ConfirmDestructiveDialog>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {canCreate && (
+            showForm ? (
+              <form onSubmit={handleCreate} className="border border-neutral-200 rounded p-3 space-y-3 bg-neutral-50">
+                <p className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">New Category</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Code <span className="text-red-500">*</span></label>
+                    <input className={inputCls} value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="e.g. RAW-MAT" required minLength={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Name <span className="text-red-500">*</span></label>
+                    <input className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Raw Materials" required minLength={2} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Description</label>
+                  <input className={inputCls} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional" />
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" disabled={isPending} className="px-3 py-1.5 bg-neutral-900 text-white text-xs font-medium rounded hover:bg-neutral-800 disabled:opacity-50">
+                    {isPending ? 'Saving…' : 'Save'}
+                  </button>
+                  <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 border border-neutral-300 text-xs rounded hover:bg-neutral-50">Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900">
+                <Plus className="w-4 h-4" /> Add Category
+              </button>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const TYPE_LABELS: Record<ItemMaster['type'], string> = {
   raw_material:   'Raw Material',
@@ -32,6 +167,7 @@ export default function ItemMasterListPage(): React.ReactElement {
   const [activeOnly, setActive]   = useState(true)
   const [page, setPage]           = useState(1)
   const [withArchived, setWithArchived] = useState(false)
+  const [showCategories, setShowCategories] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.items.create')
   const canEdit   = hasPermission('inventory.items.edit')
@@ -52,15 +188,24 @@ export default function ItemMasterListPage(): React.ReactElement {
       <PageHeader
         title="Item Master"
         actions={
-          canCreate && (
-            <Link
-              to="/inventory/items/new"
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCategories(true)}
+              className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50"
             >
-              <Plus className="w-4 h-4" />
-              New Item
-            </Link>
-          )
+              <Tags className="w-4 h-4" />
+              Categories
+            </button>
+            {canCreate && (
+              <Link
+                to="/inventory/items/new"
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+              >
+                <Plus className="w-4 h-4" />
+                New Item
+              </Link>
+            )}
+          </div>
         }
       />
 
@@ -195,6 +340,8 @@ export default function ItemMasterListPage(): React.ReactElement {
           )}
         </>
       )}
+
+      {showCategories && <ItemCategoriesModal onClose={() => setShowCategories(false)} />}
     </div>
   )
 }

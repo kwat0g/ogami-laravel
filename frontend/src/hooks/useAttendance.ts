@@ -388,3 +388,17 @@ export async function downloadDtr(employeeId: number, from: string, to: string):
   a.click()
   URL.revokeObjectURL(url)
 }
+
+// ── Attendance template download (Excel with pre-filled employee codes) ─────────
+
+export async function downloadAttendanceTemplate(): Promise<void> {
+  const res = await api.get('/attendance/template', {
+    responseType: 'blob',
+  })
+  const url = URL.createObjectURL(res.data as Blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `attendance_template_${new Date().toISOString().split('T')[0]}.xlsx`
+  a.click()
+  URL.revokeObjectURL(url)
+}

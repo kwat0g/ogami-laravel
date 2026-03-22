@@ -120,3 +120,27 @@ export interface JournalEntryFilters {
   date_to?: string
   page?: number
 }
+
+// ── Journal Entry Templates ────────────────────────────────────────────────
+
+export interface JournalEntryTemplate {
+  id: number
+  name: string
+  description: string | null
+  is_system: boolean
+  line_count: number
+  template_lines?: Array<{
+    account_id: number
+    debit_or_credit: 'debit' | 'credit'
+    description: string | null
+  }>
+}
+
+export interface JournalEntryTemplateLine {
+  account_id: number
+  account_name: string
+  account_code: string
+  debit_or_credit: 'debit' | 'credit'
+  description: string | null
+  amount: string
+}

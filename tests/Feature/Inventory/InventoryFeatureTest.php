@@ -14,7 +14,7 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('warehouse_head'); // warehouse_head has inventory.items.create permission
+    $this->manager->assignRole('head'); // head (warehouse module) has inventory.items.create permission
 
     $this->category = ItemCategory::create([
         'code'      => 'RM',

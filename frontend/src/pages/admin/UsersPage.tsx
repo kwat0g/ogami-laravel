@@ -28,6 +28,9 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Building2, User, Settings, CheckCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 // ── Role badge colors ─────────────────────────────────────────────────────────
 const roleBadgeClass: Record<string, string> = {
@@ -88,6 +91,56 @@ function isPortalRole(role: string): role is PortalRole {
 // Roles that don't require a linked employee (system/board-level + external portals)
 const ROLES_WITHOUT_EMPLOYEE = ['admin', 'executive', ...PORTAL_ROLES]
 
+// ── Form validation helpers ───────────────────────────────────────────────────
+interface ValidationError {
+  field: string
+  message: string
+}
+
+function validateUserForm(data: WizardState): ValidationError[] {
+  const errors: ValidationError[] = []
+  
+  if (!data.role) {
+    errors.push({ field: 'role', message: 'Role is required.' })
+  }
+  
+  if (!isPortalRole(data.role)) {
+    if (!data.skipEmployee && !data.department) {
+      errors.push({ field: 'department', message: 'Department is required.' })
+    }
+    
+    if (!data.skipEmployee && !data.employee && data.step >= 2) {
+      errors.push({ field: 'employee', message: 'Employee selection is required.' })
+    }
+    
+    if (data.step === 3) {
+      if (!data.name.trim()) {
+        errors.push({ field: 'name', message: 'Name is required.' })
+      }
+      if (!data.email.trim()) {
+        errors.push({ field: 'email', message: 'Email is required.' })
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        errors.push({ field: 'email', message: 'Please enter a valid email address.' })
+      }
+      if (!data.password) {
+        errors.push({ field: 'password', message: 'Password is required.' })
+      } else if (data.password.length < 8) {
+        errors.push({ field: 'password', message: 'Password must be at least 8 characters.' })
+      }
+    }
+  } else {
+    // Portal role validation
+    if (data.step === 2) {
+      const target = data.role === 'vendor' ? data.vendor : data.customer
+      if (!target) {
+        errors.push({ field: 'target', message: `${data.role === 'vendor' ? 'Vendor' : 'Customer'} selection is required.` })
+      }
+    }
+  }
+  
+  return errors
+}
+
 export default function UsersPage() {
   const { hasPermission } = useAuthStore()
 
@@ -131,10 +184,15 @@ export default function UsersPage() {
 
   // Reset Password State
   const [resetResult, setResetResult] = useState<{ name: string; password: string } | null>(null)
+  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null)
 
   // Role modal
   const [roleModal, setRoleModal]   = useState<RoleModal | null>(null)
   const [newRole, setNewRole]       = useState('')
+
+  // Destructive action targets
+  const [disableTarget, setDisableTarget] = useState<AdminUser | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
 
   const rows = data?.data ?? []
   const meta = data?.meta
@@ -165,8 +223,12 @@ export default function UsersPage() {
 
   const goStep1to2 = () => {
     if (!wizard) return
-    if (!wizard.role) {
-      setWizardError('Please select a role.')
+    
+    // Client-side validation
+    const errors = validateUserForm(wizard)
+    const roleError = errors.find(e => e.field === 'role')
+    if (roleError) {
+      setWizardError(roleError.message)
       return
     }
 
@@ -183,7 +245,9 @@ export default function UsersPage() {
       return
     }
 
-    if (!wizard.department) { setWizardError('Please select a department.'); return }
+    const deptError = errors.find(e => e.field === 'department')
+    if (deptError) { setWizardError(deptError.message); return }
+    
     setWizardError(null)
     setWizard((w) => w ? { ...w, step: 2 } : w)
   }
@@ -218,8 +282,10 @@ export default function UsersPage() {
     if (!wizard) return
     setWizardError(null)
 
-    if (!wizard.role) {
-      setWizardError('Role is required.')
+    // Client-side validation
+    const errors = validateUserForm(wizard)
+    if (errors.length > 0) {
+      setWizardError(errors[0].message)
       return
     }
 
@@ -239,19 +305,14 @@ export default function UsersPage() {
             setCopiedCredentials(false)
             toast.success(`${wizard.role === 'vendor' ? 'Vendor' : 'Client'} portal account created.`)
           },
-          onError: (e: unknown) => setWizardError(apiMsg(e) ?? 'Failed to create portal account.'),
+          onError: (e: unknown) => {
+            toast.error(firstErrorMessage(e) || 'Failed to create portal account.')
+            setWizardError(firstErrorMessage(e) || 'Failed to create portal account.')
+          },
         }
       )
 
       return
-    }
-
-    if (!wizard.name.trim())  { setWizardError('Name is required.'); return }
-    if (!wizard.email.trim()) { setWizardError('Email is required.'); return }
-    if (!wizard.password)     { setWizardError('Password is required.'); return }
-
-    if (!wizard.skipEmployee && !wizard.employee) {
-      setWizardError('An employee record is required. Please go back and select one.'); return
     }
 
     const payload: CreateUserPayload = {
@@ -263,8 +324,15 @@ export default function UsersPage() {
     }
 
     create.mutate(payload, {
-      onSuccess: closeWizard,
-      onError: (e: unknown) => setWizardError(apiMsg(e) ?? 'Failed to create user.'),
+      onSuccess: () => {
+        closeWizard()
+        toast.success('User created successfully.')
+      },
+      onError: (e: unknown) => {
+        const msg = firstErrorMessage(e)
+        toast.error(msg)
+        setWizardError(msg)
+      },
     })
   }
 
@@ -275,39 +343,57 @@ export default function UsersPage() {
       await navigator.clipboard.writeText(`Email: ${portalCredentials.email}\nPassword: ${portalCredentials.password}`)
       setCopiedCredentials(true)
       setTimeout(() => setCopiedCredentials(false), 2000)
-    } catch {
-      toast.error('Failed to copy credentials. Please copy manually.')
+      toast.success('Credentials copied to clipboard.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to copy credentials. Please copy manually.'))
     }
   }
 
   // ── Reset Password helpers ──────────────────────────────────────────────
   const handleResetPassword = (u: AdminUser) => {
-    if (!confirm(`Are you sure you want to reset the password for ${u.name}?`)) return
-    reset.mutate(u.id, {
+    setResetTarget(u)
+  }
+
+  const executeResetPassword = () => {
+    if (!resetTarget) return
+    reset.mutate(resetTarget.id, {
       onSuccess: (data) => {
-        setResetResult({ name: u.name, password: data.password })
+        setResetResult({ name: resetTarget.name, password: data.password })
+        setResetTarget(null)
         toast.success('Password reset successfully.')
       },
-      onError: (e: unknown) => toast.error(apiMsg(e) ?? 'Failed to reset password.'),
+      onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to reset password.'),
     })
   }
 
   const handleDisable = (u: AdminUser) => {
-    if (confirm(`Disable user ${u.email}? They will not be able to sign in until unlocked.`)) {
-      disable.mutate(u.id, {
-        onSuccess: () => toast.success('User account disabled.'),
-        onError: (e: unknown) => toast.error(apiMsg(e) ?? 'Failed to disable user account.'),
-      })
-    }
+    setDisableTarget(u)
+  }
+
+  const executeDisable = () => {
+    if (!disableTarget) return
+    disable.mutate(disableTarget.id, {
+      onSuccess: () => {
+        setDisableTarget(null)
+        toast.success('User account disabled.')
+      },
+      onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to disable user account.'),
+    })
   }
 
   const handleDelete = (u: AdminUser) => {
-    if (confirm(`Archive user ${u.email}? This removes the account from active user lists.`)) {
-      removeUser.mutate(u.id, {
-        onSuccess: () => toast.success('User account archived.'),
-        onError: (e: unknown) => toast.error(apiMsg(e) ?? 'Failed to archive user account.'),
-      })
-    }
+    setDeleteTarget(u)
+  }
+
+  const executeDelete = () => {
+    if (!deleteTarget) return
+    removeUser.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        setDeleteTarget(null)
+        toast.success('User account archived.')
+      },
+      onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to archive user account.'),
+    })
   }
 
   const openRoleModal = (u: AdminUser) => {
@@ -319,7 +405,13 @@ export default function UsersPage() {
     if (!roleModal || !newRole) return
     assignRole.mutate(
       { userId: roleModal.userId, role: newRole },
-      { onSuccess: () => setRoleModal(null) }
+      { 
+        onSuccess: () => {
+          setRoleModal(null)
+          toast.success('Role assigned successfully.')
+        },
+        onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to assign role.'),
+      }
     )
   }
 
@@ -422,7 +514,17 @@ export default function UsersPage() {
                 <td className="px-3 py-2">
                   <div className="flex gap-2">
                     {canUpdate && (
-                      <button onClick={() => handleResetPassword(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Reset Password</button>
+                      <ConfirmDialog
+                        title="Reset Password?"
+                        description={`This will generate a new temporary password for ${u.name}. The current password will no longer work.`}
+                        confirmLabel="Reset Password"
+                        variant="danger"
+                        onConfirm={() => handleResetPassword(u)}
+                      >
+                        <button className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
+                          Reset Password
+                        </button>
+                      </ConfirmDialog>
                     )}
                     {canAssignRole && (
                       <button onClick={() => openRoleModal(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Role</button>
@@ -431,10 +533,30 @@ export default function UsersPage() {
                       <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed">Unlock</button>
                     )}
                     {canDisable && !isLocked(u) && (
-                      <button onClick={() => handleDisable(u)} className="text-xs text-red-600 hover:text-red-700 font-medium">Disable</button>
+                      <ConfirmDialog
+                        title="Disable User Account?"
+                        description={`${u.name} (${u.email}) will not be able to sign in until their account is unlocked.`}
+                        confirmLabel="Disable Account"
+                        variant="danger"
+                        onConfirm={() => handleDisable(u)}
+                      >
+                        <button className="text-xs text-red-600 hover:text-red-700 font-medium">
+                          Disable
+                        </button>
+                      </ConfirmDialog>
                     )}
                     {canDisable && (
-                      <button onClick={() => handleDelete(u)} className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">Delete</button>
+                      <ConfirmDestructiveDialog
+                        title="Archive User Account?"
+                        description={`This will permanently archive ${u.name} (${u.email}). The account will be removed from active user lists. This action cannot be undone.`}
+                        confirmWord="DELETE"
+                        confirmLabel="Archive User"
+                        onConfirm={() => handleDelete(u)}
+                      >
+                        <button className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">
+                          Delete
+                        </button>
+                      </ConfirmDestructiveDialog>
                     )}
                   </div>
                 </td>
@@ -544,6 +666,45 @@ export default function UsersPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* ── Reset Password Confirmation Dialog ───────────────────────────── */}
+      {resetTarget && (
+        <ConfirmDialog
+          title="Reset Password?"
+          description={`This will generate a new temporary password for ${resetTarget.name} (${resetTarget.email}). The current password will no longer work.`}
+          confirmLabel="Reset Password"
+          variant="danger"
+          onConfirm={executeResetPassword}
+        >
+          <span />
+        </ConfirmDialog>
+      )}
+
+      {/* ── Disable Account Confirmation Dialog ──────────────────────────── */}
+      {disableTarget && (
+        <ConfirmDialog
+          title="Disable User Account?"
+          description={`${disableTarget.name} (${disableTarget.email}) will not be able to sign in until their account is unlocked.`}
+          confirmLabel="Disable Account"
+          variant="danger"
+          onConfirm={executeDisable}
+        >
+          <span />
+        </ConfirmDialog>
+      )}
+
+      {/* ── Delete Account Destructive Confirmation Dialog ──────────────── */}
+      {deleteTarget && (
+        <ConfirmDestructiveDialog
+          title="Archive User Account?"
+          description={`This will permanently archive ${deleteTarget.name} (${deleteTarget.email}). The account will be removed from active user lists. This action cannot be undone.`}
+          confirmWord="DELETE"
+          confirmLabel="Archive User"
+          onConfirm={executeDelete}
+        >
+          <span />
+        </ConfirmDestructiveDialog>
       )}
     </div>
   )
@@ -991,12 +1152,3 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 const inputCls     = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400'
 const btnPrimary   = 'bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded transition-colors flex items-center'
 const btnSecondary = 'border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors'
-
-// ── Extract API error message ─────────────────────────────────────────────────
-function apiMsg(err: unknown): string | null {
-  if (err && typeof err === 'object' && 'response' in err) {
-    const resp = (err as { response?: { data?: { message?: string } } }).response
-    return resp?.data?.message ?? null
-  }
-  return null
-}

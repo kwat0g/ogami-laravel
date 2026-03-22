@@ -746,7 +746,7 @@ final class LoanRequestService implements ServiceContract
         try {
             $hrManagers = User::permission('loans.approve')->get();
             if ($hrManagers->isNotEmpty()) {
-                Notification::send($hrManagers, new LoanRequestedNotification($loan->loadMissing('employee', 'loanType')));
+                Notification::send($hrManagers, LoanRequestedNotification::fromModel($loan->loadMissing('employee', 'loanType')));
             }
         } catch (\Throwable) {
             // Non-fatal — notification failure must not block the loan submission
@@ -764,17 +764,17 @@ final class LoanRequestService implements ServiceContract
             // Employee — their funds have been released
             $employeeUserId = $loan->employee->getAttribute('user_id');
             if ($employeeUserId) {
-                User::find($employeeUserId)?->notify(new LoanDisbursedNotification($loan, 'employee'));
+                User::find($employeeUserId)?->notify(LoanDisbursedNotification::fromModel($loan, 'employee'));
             }
 
             // HR Manager who approved the loan
             if ($loan->approved_by) {
-                User::find($loan->approved_by)?->notify(new LoanDisbursedNotification($loan, 'hr'));
+                User::find($loan->approved_by)?->notify(LoanDisbursedNotification::fromModel($loan, 'hr'));
             }
 
             // Accounting Manager who cleared the loan for disbursement
             if ($loan->accounting_approved_by) {
-                User::find($loan->accounting_approved_by)?->notify(new LoanDisbursedNotification($loan, 'accounting'));
+                User::find($loan->accounting_approved_by)?->notify(LoanDisbursedNotification::fromModel($loan, 'accounting'));
             }
         } catch (\Throwable) {
             // Non-fatal
@@ -794,7 +794,7 @@ final class LoanRequestService implements ServiceContract
             if ($acctgManagers->isNotEmpty()) {
                 Notification::send(
                     $acctgManagers,
-                    new LoanApprovedNotification($loan->loadMissing('employee', 'loanType'), 'accounting'),
+                    LoanApprovedNotification::fromModel($loan->loadMissing('employee', 'loanType'), 'accounting'),
                 );
             }
         } catch (\Throwable) {
@@ -813,7 +813,7 @@ final class LoanRequestService implements ServiceContract
             // Notify HR approver
             if ($loan->approved_by) {
                 $hrApprover = User::find($loan->approved_by);
-                $hrApprover?->notify(new LoanAccountingApprovedNotification($loan, 'hr'));
+                $hrApprover?->notify(LoanAccountingApprovedNotification::fromModel($loan, 'hr'));
             }
         } catch (\Throwable) {
             // Non-fatal
@@ -831,7 +831,7 @@ final class LoanRequestService implements ServiceContract
             // HR Managers — remove from their pending queue
             $hrManagers = User::permission('loans.approve')->get();
             if ($hrManagers->isNotEmpty()) {
-                Notification::send($hrManagers, new LoanCancelledNotification($loan, 'hr'));
+                Notification::send($hrManagers, LoanCancelledNotification::fromModel($loan, 'hr'));
             }
         } catch (\Throwable) {
             // Non-fatal
@@ -849,13 +849,13 @@ final class LoanRequestService implements ServiceContract
             // HR Managers — must review for final pay deduction
             $hrManagers = User::permission('loans.approve')->get();
             if ($hrManagers->isNotEmpty()) {
-                Notification::send($hrManagers, new LoanWrittenOffNotification($loan, 'hr'));
+                Notification::send($hrManagers, LoanWrittenOffNotification::fromModel($loan, 'hr'));
             }
 
             // Accounting Managers — may need a GL adjustment entry
             $acctgManagers = User::permission('loans.accounting_approve')->get();
             if ($acctgManagers->isNotEmpty()) {
-                Notification::send($acctgManagers, new LoanWrittenOffNotification($loan, 'accounting'));
+                Notification::send($acctgManagers, LoanWrittenOffNotification::fromModel($loan, 'accounting'));
             }
         } catch (\Throwable) {
             // Non-fatal

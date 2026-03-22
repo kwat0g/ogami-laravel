@@ -18,10 +18,24 @@ final class LoanRejectedNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly Loan $loan,
+        private readonly int $loanId,
+        private readonly string $loanTypeName,
+        private readonly string $referenceNo,
+        private readonly int $principalCentavos,
         private readonly string $remarks,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Loan $loan, string $remarks): self
+    {
+        return new self(
+            loanId: $loan->id,
+            loanTypeName: $loan->loanType->name,
+            referenceNo: $loan->reference_no,
+            principalCentavos: $loan->principal_centavos,
+            remarks: $remarks,
+        );
     }
 
     /** @return list<string> */
@@ -38,13 +52,13 @@ final class LoanRejectedNotification extends Notification implements ShouldQueue
             'title' => 'Your Loan Application Was Not Approved',
             'message' => sprintf(
                 'Your %s loan application of ₱%s (ref: %s) has been rejected. Reason: %s',
-                $this->loan->loanType->name,
-                number_format($this->loan->principal_centavos / 100, 2),
-                $this->loan->reference_no,
+                $this->loanTypeName,
+                number_format($this->principalCentavos / 100, 2),
+                $this->referenceNo,
                 $this->remarks,
             ),
             'action_url' => '/me/loans',
-            'loan_id' => $this->loan->id,
+            'loan_id' => $this->loanId,
         ];
     }
 

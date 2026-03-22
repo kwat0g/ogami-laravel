@@ -4,9 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Lock, Calendar } from 'lucide-react'
+import { Plus, Lock, Calendar, Loader2 } from 'lucide-react'
 import api from '@/lib/api'
-import { parseApiError } from '@/lib/errorHandler'
+import { parseApiError, firstErrorMessage } from '@/lib/errorHandler'
 import { PERMISSIONS } from '@/lib/permissions'
 import PageHeader from '@/components/ui/PageHeader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -14,6 +14,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import EmptyState from '@/components/ui/EmptyState'
 import FormField from '@/components/ui/FormField'
 import PermissionGuard from '@/components/ui/PermissionGuard'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { ApiSuccess } from '@/types/api'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -38,10 +39,22 @@ interface PaginatedPayPeriods {
 
 const createSchema = z.object({
   label:        z.string().min(1, 'Label is required').max(60),
-  cutoff_start: z.string().min(1, 'Required'),
-  cutoff_end:   z.string().min(1, 'Required'),
-  pay_date:     z.string().min(1, 'Required'),
+  cutoff_start: z.string().min(1, 'Cutoff start date is required'),
+  cutoff_end:   z.string().min(1, 'Cutoff end date is required'),
+  pay_date:     z.string().min(1, 'Pay date is required'),
   frequency:    z.enum(['semi_monthly', 'monthly', 'weekly']),
+}).refine((data) => {
+  // Validate cutoff_end is after cutoff_start
+  return new Date(data.cutoff_end) >= new Date(data.cutoff_start)
+}, {
+  message: 'Cutoff end date must be after cutoff start date',
+  path: ['cutoff_end'],
+}).refine((data) => {
+  // Validate pay_date is after cutoff_end
+  return new Date(data.pay_date) >= new Date(data.cutoff_end)
+}, {
+  message: 'Pay date must be on or after cutoff end date',
+  path: ['pay_date'],
 })
 
 type CreateFormValues = z.infer<typeof createSchema>
@@ -103,34 +116,49 @@ export default function PayPeriodListPage() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
+    watch,
   } = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
     mode: 'onBlur',
     defaultValues: { frequency: 'semi_monthly' },
   })
 
+  // Watch dates for validation feedback
+  const watchCutoffStart = watch('cutoff_start')
+  const watchCutoffEnd = watch('cutoff_end')
+  const watchPayDate = watch('pay_date')
+
   const onCreateSubmit = async (values: CreateFormValues) => {
     try {
       await create.mutateAsync(values)
-      toast.success('Pay period created.')
+      toast.success('Pay period created successfully.')
       setShowCreate(false)
       reset()
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
   const handleClose = async (period: PayPeriod) => {
-    if (!confirm(`Close pay period "${period.label}"? This cannot be undone.`)) return
     try {
       await close.mutateAsync(period.id)
-      toast.success('Pay period closed.')
+      toast.success(`Pay period "${period.label}" closed successfully.`)
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
+  // ── Validation helper for close ───────────────────────────────────────────
+  function validateClose(period: PayPeriod): boolean {
+    if (period.status === 'closed') {
+      toast.error('This pay period is already closed.')
+      return false
+    }
+    return true
+  }
+
   const inputCls = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500'
+  const inputErrorCls = 'w-full border border-red-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500'
 
   return (
     <div>
@@ -160,7 +188,12 @@ export default function PayPeriodListPage() {
           <h3 className="text-sm font-semibold text-neutral-700">Create Pay Period</h3>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Label" required error={errors.label?.message} htmlFor="pp_label">
-              <input id="pp_label" className={inputCls} placeholder="e.g. Feb 2026 1st" {...register('label')} />
+              <input 
+                id="pp_label" 
+                className={errors.label ? inputErrorCls : inputCls} 
+                placeholder="e.g. Feb 2026 1st" 
+                {...register('label')} 
+              />
             </FormField>
             <FormField label="Frequency" required error={errors.frequency?.message} htmlFor="pp_freq">
               <select id="pp_freq" className={inputCls} {...register('frequency')}>
@@ -170,22 +203,43 @@ export default function PayPeriodListPage() {
               </select>
             </FormField>
             <FormField label="Cutoff Start" required error={errors.cutoff_start?.message} htmlFor="pp_cs">
-              <input id="pp_cs" type="date" className={inputCls} {...register('cutoff_start')} />
+              <input 
+                id="pp_cs" 
+                type="date" 
+                className={errors.cutoff_start ? inputErrorCls : inputCls} 
+                {...register('cutoff_start')} 
+              />
             </FormField>
             <FormField label="Cutoff End" required error={errors.cutoff_end?.message} htmlFor="pp_ce">
-              <input id="pp_ce" type="date" className={inputCls} {...register('cutoff_end')} />
+              <input 
+                id="pp_ce" 
+                type="date" 
+                className={errors.cutoff_end ? inputErrorCls : inputCls} 
+                {...register('cutoff_end')} 
+              />
+              {watchCutoffStart && watchCutoffEnd && new Date(watchCutoffEnd) < new Date(watchCutoffStart) && (
+                <p className="text-xs text-red-500 mt-1">Cutoff end must be after start date.</p>
+              )}
             </FormField>
             <FormField label="Pay Date" required error={errors.pay_date?.message} htmlFor="pp_pd">
-              <input id="pp_pd" type="date" className={inputCls} {...register('pay_date')} />
+              <input 
+                id="pp_pd" 
+                type="date" 
+                className={errors.pay_date ? inputErrorCls : inputCls} 
+                {...register('pay_date')} 
+              />
+              {watchCutoffEnd && watchPayDate && new Date(watchPayDate) < new Date(watchCutoffEnd) && (
+                <p className="text-xs text-red-500 mt-1">Pay date must be on or after cutoff end.</p>
+              )}
             </FormField>
           </div>
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded"
+              disabled={isSubmitting || create.isPending}
+              className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded flex items-center gap-2"
             >
-              {isSubmitting ? 'Creating…' : 'Create Period'}
+              {create.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</> : 'Create Period'}
             </button>
             <button
               type="button"
@@ -245,14 +299,22 @@ export default function PayPeriodListPage() {
                     <td className="px-4 py-3">
                       {period.status === 'open' && (
                         <PermissionGuard permission={PERMISSIONS.payroll.approve}>
-                          <button
-                            type="button"
-                            onClick={() => handleClose(period)}
-                            disabled={close.isPending}
-                            className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          <ConfirmDestructiveDialog
+                            title={`Close pay period "${period.label}"?`}
+                            description="Closing a pay period prevents new payroll runs from using it. This action cannot be undone."
+                            confirmWord="CLOSE"
+                            confirmLabel="Close Period"
+                            onConfirm={() => handleClose(period)}
                           >
-                            <Lock className="h-3 w-3" /> Close
-                          </button>
+                            <button
+                              type="button"
+                              disabled={close.isPending}
+                              className="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {close.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock className="h-3 w-3" />}
+                              Close
+                            </button>
+                          </ConfirmDestructiveDialog>
                         </PermissionGuard>
                       )}
                     </td>

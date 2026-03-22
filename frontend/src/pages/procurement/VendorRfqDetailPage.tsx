@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { ArrowLeft } from 'lucide-react'
 import { useVendorRfq, useCloseVendorRfq, useCancelVendorRfq, useRecordQuote, useRecordDecline } from '@/hooks/useVendorRfqs'
 import { useAuthStore } from '@/stores/authStore'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function VendorRfqDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>()
@@ -25,37 +27,44 @@ export default function VendorRfqDetailPage(): React.ReactElement {
     try {
       await closeRfq.mutateAsync(rfq!.ulid)
       toast.success('RFQ closed.')
-    } catch {
-      toast.error('Failed to close RFQ.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to close RFQ.')
     }
   }
 
   async function handleCancel() {
-    if (!confirm('Cancel this RFQ?')) return
     try {
       await cancelRfq.mutateAsync(rfq!.ulid)
       toast.success('RFQ cancelled.')
       navigate('/procurement/rfqs')
-    } catch {
-      toast.error('Failed to cancel RFQ.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to cancel RFQ.')
     }
   }
 
   async function handleQuote(e: React.FormEvent) {
     e.preventDefault()
     if (!quoteVendor) return
+    const amount = Number(quoteAmount)
+    if (!amount || amount <= 0) {
+      toast.error('Quote amount must be greater than 0.')
+      return
+    }
     try {
       await recordQuote.mutateAsync({
         ulid: rfq!.ulid,
         vendorId: quoteVendor,
-        payload: { quoted_amount: Number(quoteAmount), notes: quoteNotes || undefined },
+        payload: { quoted_amount: amount, notes: quoteNotes || undefined },
       })
       toast.success('Quote recorded.')
       setQuoteVendor(null)
       setQuoteAmount('')
       setQuoteNotes('')
-    } catch {
-      toast.error('Failed to record quote.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to record quote.')
     }
   }
 
@@ -63,8 +72,9 @@ export default function VendorRfqDetailPage(): React.ReactElement {
     try {
       await recordDecline.mutateAsync({ ulid: rfq!.ulid, vendorId })
       toast.success('Decline recorded.')
-    } catch {
-      toast.error('Failed to record decline.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to record decline.')
     }
   }
 
@@ -87,12 +97,24 @@ export default function VendorRfqDetailPage(): React.ReactElement {
               rfq.status === 'cancelled' ? 'bg-red-100 text-red-600' : 'bg-neutral-100 text-neutral-500'
             }`}>{rfq.status}</span>
             {rfq.status === 'sent' && canManage && (
-              <button onClick={handleClose} disabled={closeRfq.isPending}
-                className="text-sm bg-neutral-900 text-white rounded px-3 py-1.5 hover:bg-neutral-800 disabled:opacity-50">Close RFQ</button>
+              <ConfirmDialog
+                title="Close RFQ?"
+                description="This will close the RFQ and no more quotes will be accepted."
+                onConfirm={handleClose}
+              >
+                <button disabled={closeRfq.isPending}
+                  className="text-sm bg-neutral-900 text-white rounded px-3 py-1.5 hover:bg-neutral-800 disabled:opacity-50">Close RFQ</button>
+              </ConfirmDialog>
             )}
             {['draft', 'sent'].includes(rfq.status) && canManage && (
-              <button onClick={handleCancel} disabled={cancelRfq.isPending}
-                className="text-sm text-red-600 border border-red-300 rounded px-3 py-1.5 hover:bg-red-50">Cancel</button>
+              <ConfirmDialog
+                title="Cancel RFQ?"
+                description="This will cancel the RFQ. This action cannot be undone."
+                onConfirm={handleCancel}
+              >
+                <button disabled={cancelRfq.isPending}
+                  className="text-sm text-red-600 border border-red-300 rounded px-3 py-1.5 hover:bg-red-50 disabled:opacity-50">Cancel</button>
+              </ConfirmDialog>
             )}
           </div>
         </div>
@@ -123,8 +145,14 @@ export default function VendorRfqDetailPage(): React.ReactElement {
                 {rfq.status === 'sent' && v.status === 'pending' && canManage && (
                   <div className="flex items-center gap-2">
                     <button onClick={() => setQuoteVendor(v.vendor_id)} className="text-xs text-neutral-600 hover:text-neutral-900 underline">Record Quote</button>
-                    <button onClick={() => handleDecline(v.vendor_id)} disabled={recordDecline.isPending}
-                      className="text-xs text-red-500 hover:text-red-700 underline">Decline</button>
+                    <ConfirmDialog
+                      title="Record Decline?"
+                      description={`Mark vendor "${v.vendor?.name ?? `Vendor #${v.vendor_id}`}" as declined?`}
+                      onConfirm={() => handleDecline(v.vendor_id)}
+                    >
+                      <button disabled={recordDecline.isPending}
+                        className="text-xs text-red-500 hover:text-red-700 underline disabled:opacity-50">Decline</button>
+                    </ConfirmDialog>
                   </div>
                 )}
               </div>

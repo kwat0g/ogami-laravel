@@ -23,11 +23,33 @@ final class LoanApprovedNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly Loan $loan,
+        private readonly int $loanId,
+        private readonly string $loanUlid,
+        private readonly string $employeeName,
+        private readonly string $loanTypeName,
+        private readonly string $referenceNo,
+        private readonly int $principalCentavos,
         private readonly string $audience = 'employee',
         private readonly ?string $remarks = null,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(
+        Loan $loan,
+        string $audience = 'employee',
+        ?string $remarks = null
+    ): self {
+        return new self(
+            loanId: $loan->id,
+            loanUlid: $loan->ulid,
+            employeeName: $loan->employee->full_name,
+            loanTypeName: $loan->loanType->name,
+            referenceNo: $loan->reference_no,
+            principalCentavos: $loan->principal_centavos,
+            audience: $audience,
+            remarks: $remarks,
+        );
     }
 
     /** @return list<string> */
@@ -39,19 +61,21 @@ final class LoanApprovedNotification extends Notification implements ShouldQueue
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
+        $amount = number_format($this->principalCentavos / 100, 2);
+
         if ($this->audience === 'accounting') {
             return [
                 'type' => 'loan.pending_accounting',
                 'title' => 'Loan Approved by HR — Awaiting Accounting Approval',
                 'message' => sprintf(
                     'HR has approved a %s loan of ₱%s for %s (ref: %s). Please review and approve for disbursement.',
-                    $this->loan->loanType->name,
-                    number_format($this->loan->principal_centavos / 100, 2),
-                    $this->loan->employee->full_name,
-                    $this->loan->reference_no,
+                    $this->loanTypeName,
+                    $amount,
+                    $this->employeeName,
+                    $this->referenceNo,
                 ),
-                'action_url' => "/accounting/loans/{$this->loan->ulid}",
-                'loan_id' => $this->loan->id,
+                'action_url' => "/accounting/loans/{$this->loanUlid}",
+                'loan_id' => $this->loanId,
             ];
         }
 
@@ -60,13 +84,13 @@ final class LoanApprovedNotification extends Notification implements ShouldQueue
             'title' => 'Your Loan Application Has Been Approved',
             'message' => sprintf(
                 'Your %s loan application of ₱%s (ref: %s) has been approved by HR.%s',
-                $this->loan->loanType->name,
-                number_format($this->loan->principal_centavos / 100, 2),
-                $this->loan->reference_no,
+                $this->loanTypeName,
+                $amount,
+                $this->referenceNo,
                 $this->remarks ? ' Remarks: '.$this->remarks : '',
             ),
             'action_url' => '/me/loans',
-            'loan_id' => $this->loan->id,
+            'loan_id' => $this->loanId,
         ];
     }
 

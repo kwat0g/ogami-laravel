@@ -58,7 +58,7 @@ final class SendApDueDateAlertJob implements ShouldQueue
             $accountingManagers = User::permission('vendor_invoices.approve')->get();
             foreach ($overdueInvoices as $invoice) {
                 $daysOverdue = (int) $invoice->due_date->diffInDays(now(), absolute: true);
-                $notification = new ApDueDateAlertNotification(
+                $notification = ApDueDateAlertNotification::fromModel(
                     $invoice,
                     ApDueDateAlertNotification::TYPE_OVERDUE,
                     $daysOverdue
@@ -94,7 +94,7 @@ final class SendApDueDateAlertJob implements ShouldQueue
             $accountingStaff = User::permission('vendor_invoices.view')->get();
             foreach ($dueSoonInvoices as $invoice) {
                 $daysUntil = (int) now()->diffInDays($invoice->due_date, absolute: true);
-                $notification = new ApDueDateAlertNotification(
+                $notification = ApDueDateAlertNotification::fromModel(
                     $invoice,
                     ApDueDateAlertNotification::TYPE_DUE_SOON,
                     $daysUntil

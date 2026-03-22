@@ -28,7 +28,7 @@ use Spatie\Permission\Models\Role;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Dashboard Stats

@@ -9,6 +9,7 @@ import {
 } from '@/hooks/useVendorPortal'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 const defaultForm = {
   goods_receipt_id: 0,
@@ -57,8 +58,7 @@ export default function VendorInvoicesPage(): React.ReactElement {
           setForm(defaultForm)
         },
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          toast.error(msg ?? 'Failed to submit invoice.')
+          toast.error(firstErrorMessage(err))
         },
       }
     )

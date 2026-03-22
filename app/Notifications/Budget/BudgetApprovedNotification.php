@@ -15,9 +15,20 @@ final class BudgetApprovedNotification extends Notification implements ShouldQue
     use Queueable;
 
     public function __construct(
-        private readonly AnnualBudget $budget,
+        private readonly int $budgetId,
+        private readonly string $costCenterName,
+        private readonly string $fiscalYear,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(AnnualBudget $budget): self
+    {
+        return new self(
+            budgetId: $budget->id,
+            costCenterName: $budget->costCenter?->name ?? "CC-{$budget->cost_center_id}",
+            fiscalYear: (string) ($budget->fiscal_year ?? ''),
+        );
     }
 
     /** @return list<string> */
@@ -34,11 +45,11 @@ final class BudgetApprovedNotification extends Notification implements ShouldQue
             'title' => 'Budget Approved',
             'message' => sprintf(
                 'Budget for "%s" (FY %s) has been approved.',
-                $this->budget->costCenter?->name ?? "CC-{$this->budget->cost_center_id}",
-                $this->budget->fiscal_year ?? '',
+                $this->costCenterName,
+                $this->fiscalYear,
             ),
             'action_url' => '/budget',
-            'budget_id' => $this->budget->id,
+            'budget_id' => $this->budgetId,
         ];
     }
 

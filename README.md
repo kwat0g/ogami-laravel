@@ -1,66 +1,178 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Ogami ERP - Manufacturing Resource Planning System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive ERP system designed for manufacturing businesses in the Philippines.
 
-## About Laravel
+## 📚 Documentation
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Essential Reading
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Document | Description |
+|----------|-------------|
+| [**AGENTS.md**](AGENTS.md) | Technical documentation for AI coding agents |
+| [**docs/testing/REAL_LIFE_ERP_TESTING_GUIDE.md**](docs/testing/REAL_LIFE_ERP_TESTING_GUIDE.md) | **Complete real-life ERP testing guide** |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### System Documentation
+- [**sod.md**](sod.md) - Segregation of Duties (SoD) implementation
+- [**system_specs.md**](system_specs.md) - System specifications
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🚀 Quick Start for Testing
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Step 1: Setup Environment
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+# Install dependencies
+composer install
+npm install
 
-## Laravel Sponsors
+# Setup environment
+cp .env.example .env
+php artisan key:generate
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Run migrations and seeders
+php artisan migrate:fresh --seed
+```
 
-### Premium Partners
+### Step 2: Start Servers
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```bash
+# Terminal 1 - Backend
+cd /home/kwat0g/Desktop/ogamiPHP
+php artisan serve
 
-## Contributing
+# Terminal 2 - Frontend
+cd /home/kwat0g/Desktop/ogamiPHP/frontend
+pnpm dev
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Step 3: Access Application
 
-## Code of Conduct
+- **Frontend:** http://localhost:5173
+- **Admin Login:** `admin@ogamierp.local` / `Admin@12345!`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 📖 Testing Guide
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+For complete testing instructions, see:
 
-## License
+### [**REAL_LIFE_ERP_TESTING_GUIDE.md**](docs/testing/REAL_LIFE_ERP_TESTING_GUIDE.md)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This guide covers:
+- **Phase 1:** Foundation Setup (Banking, Vendors, Customers, Items)
+- **Phase 2:** Procurement Workflow
+- **Phase 3:** Inventory Management
+- **Phase 4:** Production Workflow
+- **Phase 5:** Quality Control
+- **Phase 6:** Sales & Delivery
+- **Phase 7:** Accounting & Finance
+- **Phase 8:** HR & Payroll
+- **Phase 9:** Maintenance
+
+---
+
+## 👥 Test Accounts
+
+All test accounts are created by the `ConsolidatedEmployeeSeeder`.
+
+### Executive
+| Email | Password | Role |
+|-------|----------|------|
+| chairman@ogamierp.local | Executive@12345! | Executive |
+| president@ogamierp.local | Executive@12345! | Executive |
+| vp@ogamierp.local | VicePresident@1! | Vice President |
+
+### Department Managers
+| Email | Password | Department |
+|-------|----------|------------|
+| prod.manager@ogamierp.local | Manager@12345! | Production |
+| qc.manager@ogamierp.local | Manager@12345! | QC |
+| hr.manager@ogamierp.local | HrManager@12345! | HR |
+| acctg.manager@ogamierp.local | Manager@12345! | Accounting |
+| sales.manager@ogamierp.local | Manager@12345! | Sales |
+
+### Department Heads
+| Email | Password | Department |
+|-------|----------|------------|
+| warehouse.head@ogamierp.local | Head@123456789! | Warehouse |
+| production.head@ogamierp.local | Head@123456789! | Production |
+| maintenance.head@ogamierp.local | Head@123456789! | Maintenance |
+
+### Officers
+| Email | Password | Department |
+|-------|----------|------------|
+| purchasing.officer@ogamierp.local | Officer@12345! | Procurement |
+| accounting@ogamierp.local | Officer@12345! | Accounting |
+
+### System
+| Email | Password |
+|-------|----------|
+| admin@ogamierp.local | Admin@12345! |
+
+---
+
+## 🏗️ Architecture
+
+### Backend
+- **Framework:** Laravel 11
+- **Database:** PostgreSQL 16
+- **Queue:** Redis
+- **Authentication:** Laravel Sanctum
+
+### Frontend
+- **Framework:** React 18 + TypeScript
+- **Build:** Vite 6
+- **State:** TanStack Query + Zustand
+- **UI:** Tailwind CSS
+
+### Domains (20 Total)
+1. HR & Payroll
+2. Accounting (GL, AP, AR)
+3. Inventory
+4. Procurement
+5. Production
+6. Quality Control
+7. Sales & Delivery
+8. Maintenance
+9. And more...
+
+---
+
+## 🧪 Testing
+
+```bash
+# Backend tests
+./vendor/bin/pest
+
+# Frontend tests
+cd frontend && pnpm test
+
+# E2E tests
+cd frontend && pnpm exec playwright test
+```
+
+---
+
+## 🔐 Security
+
+- RBAC (Role-Based Access Control)
+- SoD (Segregation of Duties)
+- Session-based authentication
+- Rate limiting
+- Audit trails
+
+---
+
+## 📞 Support
+
+For issues and questions, refer to:
+- [AGENTS.md](AGENTS.md) - Technical details
+- [docs/testing/REAL_LIFE_ERP_TESTING_GUIDE.md](docs/testing/REAL_LIFE_ERP_TESTING_GUIDE.md) - Testing guide
+
+---
+
+RULES:
+1. Always use MCP Server (Context7 and Socraciticode)
+
+**Ogami ERP** - Built for Philippine Manufacturing

@@ -23,10 +23,30 @@ final class LoanDisbursedNotification extends Notification implements ShouldQueu
     use Queueable;
 
     public function __construct(
-        private readonly Loan $loan,
+        private readonly int $loanId,
+        private readonly string $loanUlid,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $loanTypeName,
+        private readonly string $referenceNo,
+        private readonly int $principalCentavos,
         private readonly string $audience = 'employee',
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Loan $loan, string $audience = 'employee'): self
+    {
+        return new self(
+            loanId: $loan->id,
+            loanUlid: $loan->ulid,
+            employeeId: $loan->employee_id,
+            employeeName: $loan->employee->full_name,
+            loanTypeName: $loan->loanType->name,
+            referenceNo: $loan->reference_no,
+            principalCentavos: $loan->principal_centavos,
+            audience: $audience,
+        );
     }
 
     /** @return list<string> */
@@ -38,10 +58,7 @@ final class LoanDisbursedNotification extends Notification implements ShouldQueu
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $employeeName = $this->loan->employee->full_name;
-        $loanTypeName = $this->loan->loanType->name;
-        $amount = number_format($this->loan->principal_centavos / 100, 2);
-        $ref = $this->loan->reference_no;
+        $amount = number_format($this->principalCentavos / 100, 2);
 
         return match ($this->audience) {
             'hr' => [
@@ -49,40 +66,40 @@ final class LoanDisbursedNotification extends Notification implements ShouldQueu
                 'title' => 'Loan Disbursed',
                 'message' => sprintf(
                     'The %s loan for %s (ref: %s, ₱%s) has been successfully disbursed.',
-                    $loanTypeName,
-                    $employeeName,
-                    $ref,
+                    $this->loanTypeName,
+                    $this->employeeName,
+                    $this->referenceNo,
                     $amount,
                 ),
-                'action_url' => "/hr/loans/{$this->loan->ulid}",
-                'loan_id' => $this->loan->id,
-                'employee_id' => $this->loan->employee_id,
+                'action_url' => "/hr/loans/{$this->loanUlid}",
+                'loan_id' => $this->loanId,
+                'employee_id' => $this->employeeId,
             ],
             'accounting' => [
                 'type' => 'loan.disbursed',
                 'title' => 'Loan Disbursed',
                 'message' => sprintf(
                     'The %s loan for %s (ref: %s, ₱%s) has been disbursed. GL entries have been posted.',
-                    $loanTypeName,
-                    $employeeName,
-                    $ref,
+                    $this->loanTypeName,
+                    $this->employeeName,
+                    $this->referenceNo,
                     $amount,
                 ),
-                'action_url' => "/accounting/loans/{$this->loan->ulid}",
-                'loan_id' => $this->loan->id,
-                'employee_id' => $this->loan->employee_id,
+                'action_url' => "/accounting/loans/{$this->loanUlid}",
+                'loan_id' => $this->loanId,
+                'employee_id' => $this->employeeId,
             ],
             default => [
                 'type' => 'loan.disbursed',
                 'title' => 'Your Loan Has Been Disbursed',
                 'message' => sprintf(
                     'Your %s loan of ₱%s (ref: %s) has been released. Please check with payroll for deduction start date.',
-                    $loanTypeName,
+                    $this->loanTypeName,
                     $amount,
-                    $ref,
+                    $this->referenceNo,
                 ),
                 'action_url' => '/me/loans',
-                'loan_id' => $this->loan->id,
+                'loan_id' => $this->loanId,
             ],
         };
     }

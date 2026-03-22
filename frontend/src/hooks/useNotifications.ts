@@ -30,7 +30,7 @@ interface NotificationsResponse {
 // ── Hooks ─────────────────────────────────────────────────────────────────────
 
 /** Paginated notification list with optional unread-only filter. */
-export function useNotifications(page = 1, unreadOnly = false) {
+export function useNotifications(page = 1, unreadOnly = false, enabled = true) {
   return useQuery<NotificationsResponse>({
     queryKey: ['notifications', page, unreadOnly],
     queryFn: async () => {
@@ -39,31 +39,33 @@ export function useNotifications(page = 1, unreadOnly = false) {
       })
       return res.data
     },
+    enabled,
     // Keep data fresh for the full polling cycle — prevents stale-on-mount
     // refetches in the 5min window between polls.
     staleTime: 5 * 60_000,
     // WebSocket (Reverb) pushes invalidations in real-time via useRealtimeEvents.
     // This poll is a fallback for when the WS connection is unavailable.
-    refetchInterval: 5 * 60_000,
+    refetchInterval: enabled ? 5 * 60_000 : false,
     refetchIntervalInBackground: false,
   })
 }
 
 /** Lightweight poll for the notification badge count. */
-export function useUnreadCount() {
+export function useUnreadCount(enabled = true) {
   return useQuery<{ count: number }>({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
       const res = await api.get<{ count: number }>('/notifications/unread-count')
       return res.data
     },
+    enabled,
     // Keep data fresh for the poll cycle.
     staleTime: 60_000,
     // WS push handles real-time updates; this is a 60s backstop if WS drops.
-    refetchInterval: 60_000,
+    refetchInterval: enabled ? 60_000 : false,
     refetchIntervalInBackground: false,
     // Refetch badge immediately when the user returns to the tab.
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: enabled,
   })
 }
 

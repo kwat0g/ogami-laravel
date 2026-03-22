@@ -10,7 +10,9 @@ use App\Domains\Production\Models\DeliverySchedule;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
+use Database\Factories\DeliveryReceiptFactory;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,7 +38,12 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  */
 final class DeliveryReceipt extends Model implements AuditableContract
 {
-    use Auditable, HasPublicUlid, SoftDeletes;
+    use Auditable, HasFactory, HasPublicUlid, SoftDeletes;
+
+    protected static function newFactory(): DeliveryReceiptFactory
+    {
+        return DeliveryReceiptFactory::new();
+    }
 
     protected $table = 'delivery_receipts';
 

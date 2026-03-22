@@ -19,6 +19,7 @@ import {
   Search
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function anomalyStatus(row: AttendanceLog): { label: string; className: string; icon: React.ElementType } {
   if (row.is_absent) return { label: 'Absent', className: 'bg-red-100 text-red-700 border-red-200', icon: XCircle }
@@ -254,6 +255,10 @@ export default function AttendanceListPage() {
         title="Attendance"
         actions={
           <div className="flex gap-2">
+            <Link to="/hr/attendance/summary"
+              className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+              Summary
+            </Link>
             {canManageShifts && (
               <button
                 onClick={openCreateModal}

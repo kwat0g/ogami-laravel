@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { PackagePlus, ShieldAlert } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useItems,
   useWarehouseLocations,
@@ -8,6 +10,8 @@ import {
   useStockLedger,
 } from '@/hooks/useInventory'
 import { useAuthStore } from '@/stores/authStore'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function StockAdjustmentsPage(): React.ReactElement {
   const canAdjust = useAuthStore(s => s.hasPermission('inventory.adjustments.create'))
@@ -15,6 +19,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
   const [locationId, setLocationId] = useState<number | ''>('')
   const [adjustedQty, setAdjustedQty] = useState('')
   const [remarks, setRemarks] = useState('')
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const { data: itemsData } = useItems({ is_active: true, per_page: 500 })
   const { data: locations } = useWarehouseLocations({ is_active: true })
@@ -33,33 +38,65 @@ export default function StockAdjustmentsPage(): React.ReactElement {
     )
   }
 
+  const validateForm = (): boolean => {
+    if (!itemId) {
+      toast.error('Please select an item.')
+      return false
+    }
+    if (!locationId) {
+      toast.error('Please select a warehouse location.')
+      return false
+    }
+    const qty = parseFloat(adjustedQty)
+    if (isNaN(qty) || qty < 0) {
+      toast.error('Please enter a valid quantity (0 or more).')
+      return false
+    }
+    if (remarks.trim().length < 10) {
+      toast.error('Remarks must be at least 10 characters.')
+      return false
+    }
+    return true
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!itemId || !locationId || !adjustedQty || remarks.length < 10) {
-      toast.error('Please fill all fields. Remarks must be at least 10 characters.')
-      return
-    }
-    adjustMutation.mutate(
-      { item_id: Number(itemId), location_id: Number(locationId), adjusted_qty: Number(adjustedQty), remarks },
-      {
-        onSuccess: () => {
-          toast.success('Stock adjustment recorded successfully.')
-          setItemId('')
-          setLocationId('')
-          setAdjustedQty('')
-          setRemarks('')
-        },
-        onError: () => toast.error('Adjustment failed. Check the form and try again.'),
-      },
-    )
+    if (!validateForm()) return
+    setShowConfirm(true)
   }
+
+  const handleConfirmAdjust = async () => {
+    try {
+      await adjustMutation.mutateAsync({
+        item_id: Number(itemId),
+        location_id: Number(locationId),
+        adjusted_qty: Number(adjustedQty),
+        remarks: remarks.trim(),
+      })
+      toast.success('Stock adjustment recorded successfully.')
+      setItemId('')
+      setLocationId('')
+      setAdjustedQty('')
+      setRemarks('')
+      setShowConfirm(false)
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  const selectedItem = items.find(i => i.id === itemId)
+  const selectedLocation = locations?.find(l => l.id === locationId)
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2 mb-6">
-        <PackagePlus className="w-6 h-6 text-teal-600" />
-        Stock Adjustments
-      </h1>
+      <PageHeader
+        title="Stock Adjustments"
+        actions={
+          <Link to="/inventory/physical-count" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+            Physical Count
+          </Link>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Form */}
@@ -67,7 +104,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
           <h2 className="font-semibold text-neutral-700 text-sm uppercase tracking-wide">New Adjustment</h2>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Item</label>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Item *</label>
             <select value={itemId} onChange={(e) => setItemId(e.target.value ? Number(e.target.value) : '')}
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm" required>
               <option value="">Select item…</option>
@@ -78,7 +115,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Warehouse Location</label>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Warehouse Location *</label>
             <select value={locationId} onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : '')}
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm" required>
               <option value="">Select location…</option>
@@ -89,7 +126,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Adjusted Quantity</label>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Adjusted Quantity *</label>
             <input type="number" min="0" step="0.01" value={adjustedQty}
               onChange={(e) => setAdjustedQty(e.target.value)}
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm" required
@@ -98,7 +135,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Remarks / Reason</label>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Remarks / Reason *</label>
             <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)}
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm" rows={3} required
               minLength={10} placeholder="Reason for adjustment (min 10 chars)" />
@@ -143,6 +180,28 @@ export default function StockAdjustmentsPage(): React.ReactElement {
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <ConfirmDialog
+          title="Confirm Stock Adjustment"
+          description={
+            <div className="space-y-2">
+              <p>You are about to adjust inventory levels for:</p>
+              <ul className="text-sm text-neutral-700 list-disc pl-4 space-y-1">
+                <li><strong>Item:</strong> {selectedItem?.item_code} — {selectedItem?.name}</li>
+                <li><strong>Location:</strong> {selectedLocation?.code} — {selectedLocation?.name}</li>
+                <li><strong>New Quantity:</strong> {adjustedQty}</li>
+              </ul>
+              <p className="text-amber-600 text-xs">This action will affect inventory levels immediately.</p>
+            </div>
+          }
+          confirmLabel="Confirm Adjustment"
+          onConfirm={handleConfirmAdjust}
+        >
+          <span />
+        </ConfirmDialog>
+      )}
     </div>
   )
 }

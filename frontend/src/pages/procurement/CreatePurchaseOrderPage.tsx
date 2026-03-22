@@ -11,6 +11,7 @@ import { useVendors } from '@/hooks/useAP'
 import { useItems } from '@/hooks/useInventory'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { Vendor } from '@/types/ap'
 
 /** Normalize vendor payment_terms values (e.g. "NET30" → "Net 30") to match PAYMENT_TERMS_OPTIONS */
@@ -42,7 +43,10 @@ const itemSchema = z.object({
 const schema = z.object({
   purchase_request_id: z.coerce.number().min(1, 'Select a Purchase Request'),
   vendor_id:           z.coerce.number().min(1, 'Select a vendor'),
-  delivery_date:       z.string().min(1, 'Delivery date required'),
+  delivery_date:       z.string().min(1, 'Delivery date required').refine(
+    (date) => new Date(date) >= new Date(new Date().toISOString().split('T')[0]),
+    { message: 'Delivery date cannot be in the past' }
+  ),
   payment_terms:       z.string().min(3, 'Payment terms required'),
   delivery_address:    z.string().optional(),
   notes:               z.string().optional(),
@@ -134,8 +138,9 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
       })
       toast.success('Purchase Order created.')
       navigate(`/procurement/purchase-orders/${po.ulid}`)
-    } catch {
-      toast.error('Failed to create purchase order.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to create purchase order.')
     }
   }
 
@@ -190,6 +195,11 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                         if (vendor?.payment_terms) {
                           setValue('payment_terms', normalizePaymentTerms(vendor.payment_terms), { shouldValidate: false })
                         }
+                        // Auto-default delivery date: today + vendor lead_time_days (default 7)
+                        const leadDays = vendor?.lead_time_days ?? 7
+                        const deliveryDate = new Date()
+                        deliveryDate.setDate(deliveryDate.getDate() + leadDays)
+                        setValue('delivery_date', deliveryDate.toISOString().split('T')[0], { shouldValidate: false })
                       },
                     })}
                     className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
@@ -212,6 +222,11 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
                     {...register('delivery_date')}
                     className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   />
+                  {selectedVendor?.lead_time_days && (
+                    <p className="text-xs mt-1 text-neutral-400">
+                      Vendor lead time: <span className="font-medium text-neutral-500">{selectedVendor.lead_time_days} days</span>
+                    </p>
+                  )}
                   {errors.delivery_date && (
                     <p className="text-red-500 text-xs mt-1">{errors.delivery_date.message}</p>
                   )}

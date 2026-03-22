@@ -15,9 +15,22 @@ final class JournalEntryPostedNotification extends Notification implements Shoul
     use Queueable;
 
     public function __construct(
-        private readonly JournalEntry $entry,
+        private readonly int $entryId,
+        private readonly string $entryUlid,
+        private readonly ?string $entryNumber,
+        private readonly ?string $reference,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(JournalEntry $entry): self
+    {
+        return new self(
+            entryId: $entry->id,
+            entryUlid: $entry->ulid,
+            entryNumber: $entry->entry_number ?? null,
+            reference: $entry->reference ?? null,
+        );
     }
 
     /** @return list<string> */
@@ -34,11 +47,11 @@ final class JournalEntryPostedNotification extends Notification implements Shoul
             'title' => 'Journal Entry Posted',
             'message' => sprintf(
                 'Journal entry %s has been posted. Reference: %s.',
-                $this->entry->entry_number ?? "JE-{$this->entry->id}",
-                $this->entry->reference ?? '—',
+                $this->entryNumber ?? "JE-{$this->entryId}",
+                $this->reference ?? '—',
             ),
-            'action_url' => "/accounting/journal-entries/{$this->entry->ulid}",
-            'journal_entry_id' => $this->entry->id,
+            'action_url' => "/accounting/journal-entries/{$this->entryUlid}",
+            'journal_entry_id' => $this->entryId,
         ];
     }
 

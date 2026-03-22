@@ -28,6 +28,46 @@ use App\Domains\AR\Models\CustomerInvoice;
 use App\Domains\AR\Policies\CustomerCreditNotePolicy;
 use App\Domains\AR\Policies\CustomerInvoicePolicy;
 use App\Domains\AR\Policies\CustomerPolicy;
+use App\Domains\Attendance\Models\AttendanceLog;
+use App\Domains\Attendance\Models\OvertimeRequest;
+use App\Domains\Attendance\Policies\AttendanceLogPolicy;
+use App\Domains\Attendance\Policies\OvertimeRequestPolicy;
+use App\Domains\Budget\Models\AnnualBudget;
+use App\Domains\Budget\Models\CostCenter;
+use App\Domains\Budget\Policies\BudgetPolicy;
+use App\Domains\CRM\Models\ClientOrder;
+use App\Domains\CRM\Models\Ticket;
+use App\Domains\CRM\Policies\TicketPolicy;
+use App\Domains\Delivery\Models\DeliveryReceipt;
+use App\Domains\Delivery\Policies\DeliveryPolicy;
+use App\Domains\FixedAssets\Models\FixedAsset;
+use App\Domains\FixedAssets\Policies\FixedAssetPolicy;
+use App\Domains\HR\Events\EmployeeActivated;
+use App\Domains\HR\Listeners\CreateLeaveBalances;
+use App\Domains\HR\Models\Employee;
+use App\Domains\HR\Policies\EmployeePolicy;
+use App\Domains\Inventory\Models\ItemMaster;
+use App\Domains\Inventory\Models\MaterialRequisition;
+use App\Domains\Inventory\Policies\ItemMasterPolicy;
+use App\Domains\Inventory\Policies\MaterialRequisitionPolicy;
+use App\Domains\ISO\Models\ControlledDocument;
+use App\Domains\ISO\Models\InternalAudit;
+use App\Domains\ISO\Policies\ISOPolicy;
+use App\Domains\Leave\Models\LeaveBalance;
+use App\Domains\Leave\Models\LeaveRequest;
+use App\Domains\Leave\Policies\LeaveBalancePolicy;
+use App\Domains\Leave\Policies\LeaveRequestPolicy;
+use App\Domains\Loan\Models\Loan;
+use App\Domains\Loan\Policies\LoanPolicy;
+use App\Domains\Maintenance\Models\Equipment;
+use App\Domains\Maintenance\Models\MaintenanceWorkOrder;
+use App\Domains\Maintenance\Policies\MaintenancePolicy;
+use App\Domains\Mold\Models\MoldMaster;
+use App\Domains\Mold\Policies\MoldPolicy;
+use App\Domains\Payroll\Models\PayPeriod;
+use App\Domains\Payroll\Models\PayrollRun;
+use App\Domains\Payroll\Policies\PayPeriodPolicy;
+use App\Domains\Payroll\Policies\PayrollRunPolicy;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseRequest;
@@ -36,21 +76,25 @@ use App\Domains\Procurement\Policies\GoodsReceiptPolicy;
 use App\Domains\Procurement\Policies\PurchaseOrderPolicy;
 use App\Domains\Procurement\Policies\PurchaseRequestPolicy;
 use App\Domains\Procurement\Policies\VendorRfqPolicy;
-use App\Domains\Attendance\Models\AttendanceLog;
-use App\Domains\Attendance\Models\OvertimeRequest;
-use App\Domains\Attendance\Policies\AttendanceLogPolicy;
-use App\Domains\Attendance\Policies\OvertimeRequestPolicy;
-use App\Domains\HR\Events\EmployeeActivated;
-use App\Domains\HR\Listeners\CreateLeaveBalances;
-use App\Domains\HR\Models\Employee;
-use App\Domains\HR\Policies\EmployeePolicy;
-use App\Domains\Leave\Models\LeaveBalance;
-use App\Domains\Leave\Models\LeaveRequest;
-use App\Domains\Loan\Models\Loan;
-use App\Domains\Loan\Policies\LoanPolicy;
-use App\Domains\Payroll\Models\PayrollRun;
+use App\Domains\Production\Models\BillOfMaterials;
+use App\Domains\Production\Models\ProductionOrder;
+use App\Domains\Production\Policies\ProductionOrderPolicy;
+use App\Domains\QC\Models\Inspection;
+use App\Domains\QC\Models\InspectionTemplate;
+use App\Domains\QC\Models\NonConformanceReport;
+use App\Domains\QC\Policies\InspectionPolicy;
+use App\Domains\QC\Policies\InspectionTemplatePolicy;
+use App\Domains\QC\Policies\NcrPolicy;
+use App\Domains\Tax\Models\BirFiling;
 use App\Domains\Tax\Models\VatLedger;
+use App\Domains\Tax\Policies\BirFilingPolicy;
+use App\Domains\Tax\Policies\VatLedgerPolicy;
+use App\Events\Procurement\ThreeWayMatchPassed;
+use App\Infrastructure\Boot\ValidateEnvironment;
 use App\Infrastructure\Observers\PayrollRunObserver;
+use App\Listeners\UpdateStockOnThreeWayMatch;
+use App\Domains\CRM\Policies\ClientOrderPolicy;
+use App\Services\DepartmentModuleService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +102,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use App\Infrastructure\Boot\ValidateEnvironment;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -90,11 +133,11 @@ class AppServiceProvider extends ServiceProvider
         // often happen when APP_ENV=local but DB_DATABASE accidentally points at
         // the real production database.
         $activeConnection = config('database.default', 'pgsql');
-        $activeDatabase   = config("database.connections.{$activeConnection}.database");
+        $activeDatabase = config("database.connections.{$activeConnection}.database");
         // Block only when BOTH the DB name is the production DB AND the env is
         // production. Checking DB name alone would block local dev since local
         // also uses ogami_erp as the database name.
-        $isProductionDb   = ($activeDatabase === 'ogami_erp') && $this->app->isProduction();
+        $isProductionDb = ($activeDatabase === 'ogami_erp') && $this->app->isProduction();
         DB::prohibitDestructiveCommands($isProductionDb || $this->app->isProduction());
 
         // ── Policy registrations ─────────────────────────────────────────────
@@ -114,36 +157,38 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(CustomerInvoice::class, CustomerInvoicePolicy::class);
         Gate::policy(CustomerCreditNote::class, CustomerCreditNotePolicy::class);
-        Gate::policy(VatLedger::class, \App\Domains\Tax\Policies\VatLedgerPolicy::class);
-        Gate::policy(\App\Domains\Tax\Models\BirFiling::class, \App\Domains\Tax\Policies\BirFilingPolicy::class);
+        Gate::policy(VatLedger::class, VatLedgerPolicy::class);
+        Gate::policy(BirFiling::class, BirFilingPolicy::class);
         Gate::policy(BankAccount::class, BankAccountPolicy::class);
         Gate::policy(BankReconciliation::class, BankReconciliationPolicy::class);
-        Gate::policy(PayrollRun::class, \App\Domains\Payroll\Policies\PayrollRunPolicy::class);
-        Gate::policy(\App\Domains\Payroll\Models\PayPeriod::class, \App\Domains\Payroll\Policies\PayPeriodPolicy::class);
-        Gate::policy(LeaveRequest::class, \App\Domains\Leave\Policies\LeaveRequestPolicy::class);
-        Gate::policy(LeaveBalance::class, \App\Domains\Leave\Policies\LeaveBalancePolicy::class);
+        Gate::policy(PayrollRun::class, PayrollRunPolicy::class);
+        Gate::policy(PayPeriod::class, PayPeriodPolicy::class);
+        Gate::policy(LeaveRequest::class, LeaveRequestPolicy::class);
+        Gate::policy(LeaveBalance::class, LeaveBalancePolicy::class);
+        Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(PurchaseRequest::class, PurchaseRequestPolicy::class);
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
         Gate::policy(GoodsReceipt::class, GoodsReceiptPolicy::class);
         Gate::policy(VendorRfq::class, VendorRfqPolicy::class);
+        Gate::policy(ClientOrder::class, ClientOrderPolicy::class);
 
         // ── Inventory + Production + QC + Maintenance + Mold + Delivery + ISO policies
-        Gate::policy(\App\Domains\Inventory\Models\ItemMaster::class, \App\Domains\Inventory\Policies\ItemMasterPolicy::class);
-        Gate::policy(\App\Domains\Inventory\Models\MaterialRequisition::class, \App\Domains\Inventory\Policies\MaterialRequisitionPolicy::class);
-        Gate::policy(\App\Domains\Production\Models\BillOfMaterials::class, \App\Domains\Production\Policies\ProductionOrderPolicy::class);
-        Gate::policy(\App\Domains\Production\Models\ProductionOrder::class, \App\Domains\Production\Policies\ProductionOrderPolicy::class);
-        Gate::policy(\App\Domains\QC\Models\Inspection::class, \App\Domains\QC\Policies\InspectionPolicy::class);
-        Gate::policy(\App\Domains\QC\Models\InspectionTemplate::class, \App\Domains\QC\Policies\InspectionTemplatePolicy::class);
-        Gate::policy(\App\Domains\QC\Models\NonConformanceReport::class, \App\Domains\QC\Policies\NcrPolicy::class);
-        Gate::policy(\App\Domains\Maintenance\Models\Equipment::class, \App\Domains\Maintenance\Policies\MaintenancePolicy::class);
-        Gate::policy(\App\Domains\Maintenance\Models\MaintenanceWorkOrder::class, \App\Domains\Maintenance\Policies\MaintenancePolicy::class);
-        Gate::policy(\App\Domains\Mold\Models\MoldMaster::class, \App\Domains\Mold\Policies\MoldPolicy::class);
-        Gate::policy(\App\Domains\Delivery\Models\DeliveryReceipt::class, \App\Domains\Delivery\Policies\DeliveryPolicy::class);
-        Gate::policy(\App\Domains\ISO\Models\ControlledDocument::class, \App\Domains\ISO\Policies\ISOPolicy::class);
-        Gate::policy(\App\Domains\ISO\Models\InternalAudit::class, \App\Domains\ISO\Policies\ISOPolicy::class);
-        Gate::policy(\App\Domains\FixedAssets\Models\FixedAsset::class, \App\Domains\FixedAssets\Policies\FixedAssetPolicy::class);
-        Gate::policy(\App\Domains\Budget\Models\CostCenter::class, \App\Domains\Budget\Policies\BudgetPolicy::class);
-        Gate::policy(\App\Domains\Budget\Models\AnnualBudget::class, \App\Domains\Budget\Policies\BudgetPolicy::class);
+        Gate::policy(ItemMaster::class, ItemMasterPolicy::class);
+        Gate::policy(MaterialRequisition::class, MaterialRequisitionPolicy::class);
+        Gate::policy(BillOfMaterials::class, ProductionOrderPolicy::class);
+        Gate::policy(ProductionOrder::class, ProductionOrderPolicy::class);
+        Gate::policy(Inspection::class, InspectionPolicy::class);
+        Gate::policy(InspectionTemplate::class, InspectionTemplatePolicy::class);
+        Gate::policy(NonConformanceReport::class, NcrPolicy::class);
+        Gate::policy(Equipment::class, MaintenancePolicy::class);
+        Gate::policy(MaintenanceWorkOrder::class, MaintenancePolicy::class);
+        Gate::policy(MoldMaster::class, MoldPolicy::class);
+        Gate::policy(DeliveryReceipt::class, DeliveryPolicy::class);
+        Gate::policy(ControlledDocument::class, ISOPolicy::class);
+        Gate::policy(InternalAudit::class, ISOPolicy::class);
+        Gate::policy(FixedAsset::class, FixedAssetPolicy::class);
+        Gate::policy(CostCenter::class, BudgetPolicy::class);
+        Gate::policy(AnnualBudget::class, BudgetPolicy::class);
 
         // ── Observer registrations ───────────────────────────────────────────
         // PayrollRun → GL auto-post when status transitions to 'approved'.
@@ -156,17 +201,26 @@ class AppServiceProvider extends ServiceProvider
         //
         // Only register listeners that live outside the auto-discovered path:
         Event::listen(EmployeeActivated::class, CreateLeaveBalances::class);
-        Event::listen(
-            \App\Events\Procurement\ThreeWayMatchPassed::class,
-            \App\Listeners\UpdateStockOnThreeWayMatch::class,
-        );
+        // UpdateStockOnThreeWayMatch is in app/Listeners/ — auto-discovered by Laravel.
+        // Do NOT register it here; that would cause it to fire twice per GR confirmation.
 
-        // ── Super Admin — bypass ALL gate / policy checks for testing ────────
-        // Users with the 'super_admin' role skip every Gate::check(), authorize(),
-        // @can directive, and policy method.  SoD and dept-scope are handled
-        // separately in their respective middleware.
-        Gate::before(function ($user, string $ability) {
-            return $user->hasRole('super_admin') ? true : null;
+        // ── RBAC v2: Dynamic permission resolution via DepartmentModuleService ──
+        // This integrates our module-based permission system with Laravel's Gate.
+        // We use Gate::after to override Spatie's permission check for department-assigned users.
+        Gate::after(function ($user, string $ability, ?bool $result) {
+            // Super admin bypass (already handled by Spatie, but double-check)
+            if ($user->hasRole('super_admin')) {
+                return true;
+            }
+
+            // For users WITH department assignments, ONLY use module permissions.
+            // Override Spatie's result if it differs from module permissions.
+            if ($user->departments()->exists()) {
+                return DepartmentModuleService::userHasPermission($user, $ability);
+            }
+
+            // For users without departments, use Spatie's result (pass through)
+            return $result;
         });
 
         // ── Monitoring dashboards ────────────────────────────────────────────
@@ -250,6 +304,28 @@ class AppServiceProvider extends ServiceProvider
                     'error_code' => 'RATE_LIMIT_EXCEEDED',
                 ], 429);
             });
+        });
+
+        // Client order actions: approve, reject, negotiate, respond, cancel
+        // 10 requests per minute per user
+        RateLimiter::for('client-order-actions', function (Request $request) {
+            if (app()->environment('testing')) {
+                return Limit::none();
+            }
+
+            return $request->user()
+                ? Limit::perMinute(10)->by('client-order-actions:'.$request->user()->id)
+                    ->response(fn () => response()->json([
+                        'success' => false,
+                        'message' => 'Too many client order requests. Please wait a moment.',
+                        'error_code' => 'CLIENT_ORDER_RATE_LIMIT_EXCEEDED',
+                    ], 429))
+                : Limit::perMinute(5)->by('client-order-actions:'.$request->ip())
+                    ->response(fn () => response()->json([
+                        'success' => false,
+                        'message' => 'Too many requests.',
+                        'error_code' => 'RATE_LIMIT_EXCEEDED',
+                    ], 429));
         });
     }
 }

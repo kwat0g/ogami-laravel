@@ -3,8 +3,10 @@ import { ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCapaActions, useCompleteCapaAction } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { CapaAction, CapaStatus } from '@/types/qc'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Card, CardBody } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -21,6 +23,7 @@ const TABS: Array<{ label: string; value: CapaStatus | 'all' }> = [
 export default function CapaListPage() {
   const [tab, setTab] = useState<CapaStatus | 'all'>('all')
   const [confirmCapa, setConfirmCapa] = useState<CapaAction | null>(null)
+  const [verifyCapa, setVerifyCapa] = useState<CapaAction | null>(null)
   const completeMut = useCompleteCapaAction()
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('qc.ncr.create')
@@ -37,8 +40,19 @@ export default function CapaListPage() {
       await completeMut.mutateAsync(confirmCapa.id)
       toast.success('CAPA marked as completed.')
       setConfirmCapa(null)
-    } catch {
-      toast.error('Failed to complete CAPA.')
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  const handleVerify = async () => {
+    if (!verifyCapa) return
+    try {
+      await completeMut.mutateAsync(verifyCapa.id)
+      toast.success('CAPA verified successfully.')
+      setVerifyCapa(null)
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -115,7 +129,37 @@ export default function CapaListPage() {
                       {capa.assigned_to?.name ?? <span className="text-neutral-400">Unassigned</span>}
                     </td>
                     <td className="px-4 py-3">
-                      {(capa.status === 'open' || capa.status === 'in_progress') && canManage && (
+                      {capa.status === 'open' && canManage && (
+                        <ConfirmDialog
+                          title="Complete CAPA?"
+                          description={`Mark this CAPA action as completed?\n\n"${capa.description}"\n\nThis indicates the action has been implemented.`}
+                          confirmLabel="Complete"
+                          onConfirm={handleComplete}
+                        >
+                          <button
+                            onClick={() => setConfirmCapa(capa)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
+                          >
+                            Complete
+                          </button>
+                        </ConfirmDialog>
+                      )}
+                      {capa.status === 'completed' && canManage && (
+                        <ConfirmDialog
+                          title="Verify CAPA?"
+                          description={`Verify this completed CAPA action?\n\n"${capa.description}"\n\nVerification confirms the action was effective.`}
+                          confirmLabel="Verify"
+                          onConfirm={handleVerify}
+                        >
+                          <button
+                            onClick={() => setVerifyCapa(capa)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-emerald-200 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
+                          >
+                            Verify
+                          </button>
+                        </ConfirmDialog>
+                      )}
+                      {(capa.status === 'in_progress') && canManage && (
                         <button
                           onClick={() => setConfirmCapa(capa)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
@@ -132,13 +176,38 @@ export default function CapaListPage() {
         </Card>
       )}
 
-      {confirmCapa && (
+      {/* Complete CAPA Confirmation Dialog (fallback for in_progress) */}
+      {confirmCapa && confirmCapa.status !== 'open' && (
         <ConfirmDialog
-          title="Complete CAPA"
-          description={`Mark this CAPA as completed?\n\n"${confirmCapa.description}"`}
+          title="Complete CAPA?"
+          description={`Mark this CAPA action as completed?\n\n"${confirmCapa.description}"`}
           confirmLabel="Complete"
           onConfirm={handleComplete}
+        >
+          <span />
+        </ConfirmDialog>
+      )}
+
+      {/* Complete CAPA Confirmation Dialog for open status */}
+      {confirmCapa && confirmCapa.status === 'open' && (
+        <ConfirmDialog
+          title="Complete CAPA?"
+          description={`Mark this CAPA as completed?\n\n"${confirmCapa.description}"`}
+          confirmLabel="Complete"
           onCancel={() => setConfirmCapa(null)}
+          onConfirm={handleComplete}
+          isLoading={completeMut.isPending}
+        />
+      )}
+
+      {/* Verify CAPA Confirmation Dialog */}
+      {verifyCapa && (
+        <ConfirmDialog
+          title="Verify CAPA?"
+          description={`Verify this CAPA action?\n\n"${verifyCapa.description}"\n\nThis confirms the action was effective and properly implemented.`}
+          confirmLabel="Verify"
+          onCancel={() => setVerifyCapa(null)}
+          onConfirm={handleVerify}
           isLoading={completeMut.isPending}
         />
       )}

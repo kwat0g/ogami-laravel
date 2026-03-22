@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function () {
     // Dashboard: anomaly feed + OT approval queue (department-scoped)
     Route::get('dashboard', [AttendanceLogController::class, 'dashboard'])->name('dashboard');
 
@@ -38,6 +38,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Attendance CSV import
     Route::post('import', [AttendanceImportController::class, 'store'])->name('import');
+
+    // Attendance template download (Excel with pre-filled active employees)
+    Route::get('template', [AttendanceImportController::class, 'downloadTemplate'])
+        ->middleware('permission:attendance.import')
+        ->name('template');
 
     // Overtime requests CRUD + workflow actions
     Route::get('overtime-requests', [OvertimeRequestController::class, 'index'])->name('overtime.index');

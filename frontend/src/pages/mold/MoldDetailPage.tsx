@@ -7,6 +7,7 @@ import { useProductionOrders } from '@/hooks/useProduction';
 import { useAuthStore } from '@/stores/authStore';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
+import { firstErrorMessage } from '@/lib/errorHandler'
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
@@ -76,8 +77,8 @@ export default function MoldDetailPage() {
       });
       toast.success('Mold updated.');
       setIsEditing(false);
-    } catch {
-      toast.error('Failed to update mold.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to update mold.'));
     }
   };
 
@@ -89,8 +90,8 @@ export default function MoldDetailPage() {
       toast.success('Shot log recorded.');
       reset({ log_date: new Date().toISOString().split('T')[0] });
       setShowForm(false);
-    } catch {
-      toast.error('Failed to log shots.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to log shots.'));
     }
   };
 

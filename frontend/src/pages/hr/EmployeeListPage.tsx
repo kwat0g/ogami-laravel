@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { DepartmentGuard, ActionButton } from '@/components/ui/guards'
 import type { EmployeeFilters, EmploymentStatus, EmploymentType } from '@/types/hr'
 
 const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
@@ -33,7 +34,6 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
   const canEdit = hasPermission('employees.update')
-  const canCreate = hasPermission('employees.create')
   const [filters, setFilters] = useState<EmployeeFilters>({ per_page: 25 })
   const [searchValue, setSearchValue] = useState('')
 
@@ -72,14 +72,15 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
       <PageHeader
         title="Employees"
         actions={
-          canCreate && (
-            <Link
-              to="/hr/employees/new"
-              className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              + Add Employee
-            </Link>
-          )
+          <DepartmentGuard module="employees">
+            <ActionButton
+              label="+ Add Employee"
+              permission="employees.create"
+              module="employees"
+              onClick={() => navigate('/hr/employees/new')}
+              variant="primary"
+            />
+          </DepartmentGuard>
         }
       />
 
@@ -307,20 +308,16 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                     </td>
                     <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => navigate(`/hr/employees/${emp.ulid}`)}
-                          className="px-2.5 py-1 text-xs text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded transition-colors"
-                        >
-                          View
-                        </button>
-                        {canEdit && (
-                          <button
-                            onClick={() => navigate(`/hr/employees/${emp.ulid}/edit`)}
-                            className="px-2.5 py-1 text-xs text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded transition-colors"
-                          >
-                            Edit
-                          </button>
-                        )}
+                        <DepartmentGuard module="employees">
+                          {canEdit && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); navigate(`/hr/employees/${emp.ulid}/edit`) }}
+                              className="px-2.5 py-1 text-xs text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded transition-colors"
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </DepartmentGuard>
                       </div>
                     </td>
                   </tr>

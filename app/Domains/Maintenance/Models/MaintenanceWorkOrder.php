@@ -6,6 +6,8 @@ namespace App\Domains\Maintenance\Models;
 
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Database\Factories\MaintenanceWorkOrderFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,7 +40,12 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  */
 final class MaintenanceWorkOrder extends Model implements AuditableContract
 {
-    use Auditable, HasPublicUlid, SoftDeletes;
+    use Auditable, HasFactory, HasPublicUlid, SoftDeletes;
+
+    protected static function newFactory(): MaintenanceWorkOrderFactory
+    {
+        return MaintenanceWorkOrderFactory::new();
+    }
 
     protected $table = 'maintenance_work_orders';
 

@@ -17,9 +17,27 @@ final class OvertimeRequestedNotification extends Notification implements Should
 {
     use Queueable;
 
-    public function __construct(private readonly OvertimeRequest $request)
-    {
+    public function __construct(
+        private readonly int $overtimeRequestId,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $workDate,
+        private readonly int $requestedMinutes,
+        private readonly string $reason,
+    ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(OvertimeRequest $request): self
+    {
+        return new self(
+            overtimeRequestId: $request->id,
+            employeeId: $request->employee_id,
+            employeeName: $request->employee->full_name,
+            workDate: $request->work_date->toFormattedDateString(),
+            requestedMinutes: $request->requested_minutes,
+            reason: $request->reason,
+        );
     }
 
     /** @return list<string> */
@@ -31,21 +49,21 @@ final class OvertimeRequestedNotification extends Notification implements Should
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $hours = round($this->request->requested_minutes / 60, 2);
+        $hours = round($this->requestedMinutes / 60, 2);
 
         return [
             'type' => 'overtime.requested',
             'title' => 'New Overtime Request',
             'message' => sprintf(
                 '%s has requested %s hour(s) of overtime on %s. Reason: %s',
-                $this->request->employee->full_name,
+                $this->employeeName,
                 $hours,
-                $this->request->work_date->toFormattedDateString(),
-                $this->request->reason,
+                $this->workDate,
+                $this->reason,
             ),
             'action_url' => '/hr/overtime',
-            'overtime_request_id' => $this->request->id,
-            'employee_id' => $this->request->employee_id,
+            'overtime_request_id' => $this->overtimeRequestId,
+            'employee_id' => $this->employeeId,
         ];
     }
 

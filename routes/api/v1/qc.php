@@ -13,13 +13,15 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:qc'])->group(function () {
 
     // Inspection templates
     Route::get('templates',                            [InspectionTemplateController::class, 'index']);
     Route::post('templates',                           [InspectionTemplateController::class, 'store']);
     Route::get('templates/{inspectionTemplate}',       [InspectionTemplateController::class, 'show']);
     Route::put('templates/{inspectionTemplate}',       [InspectionTemplateController::class, 'update']);
+    Route::delete('templates/{inspectionTemplate}',    [InspectionTemplateController::class, 'destroy'])
+        ->middleware('throttle:10,1');
 
     // Inspections
     Route::get('inspections',                          [InspectionController::class, 'index']);
@@ -61,11 +63,11 @@ Route::middleware('auth:sanctum')->group(function () {
             $months[] = ['month' => $label, 'total' => $total, 'passed' => $passed, 'failed' => $failed, 'defect_rate' => $defectRate];
         }
 
-        // Top defect categories from NCRs
+        // Top defect severities from NCRs (severity is the available column)
         $topDefects = \Illuminate\Support\Facades\DB::table('non_conformance_reports')
-            ->select('defect_category', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
-            ->whereNotNull('defect_category')
-            ->groupBy('defect_category')
+            ->select('severity', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->whereNotNull('severity')
+            ->groupBy('severity')
             ->orderByDesc('count')
             ->limit(10)
             ->get();

@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateAudit } from '@/hooks/useISO'
 import { useEmployees } from '@/hooks/useEmployees'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 const STANDARDS = [
   'ISO 9001:2015',
@@ -26,22 +28,52 @@ export default function CreateIsoAuditPage(): React.ReactElement {
     lead_auditor_id: '' as number | '',
     audit_date: '',
   })
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const set = (k: keyof typeof form, v: unknown) =>
     setForm(prev => ({ ...prev, [k]: v }))
 
   const [touched, setTouched] = useState<Set<string>>(new Set())
   const touch = (k: string) => setTouched(prev => new Set([...prev, k]))
+  
   const ve = useMemo(() => {
     const e: Record<string, string | undefined> = {}
     if (!form.audit_scope.trim()) e.audit_scope = 'Audit scope is required.'
     if (!form.audit_date) e.audit_date = 'Audit date is required.'
+    // Audit date should not be in the past (optional validation)
+    if (form.audit_date) {
+      const selectedDate = new Date(form.audit_date)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (selectedDate < today) {
+        e.audit_date = 'Audit date cannot be in the past.'
+      }
+    }
     return e
   }, [form])
+  
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
+
+  // Check if form is valid
+  const isFormValid = useMemo(() => {
+    return form.audit_scope.trim().length > 0 && 
+           form.audit_date && 
+           !ve.audit_date
+  }, [form, ve])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isFormValid) {
+      // Touch all fields to show errors
+      setTouched(new Set(['audit_scope', 'audit_date']))
+      if (!form.audit_scope.trim()) toast.error('Audit scope is required')
+      if (!form.audit_date) toast.error('Audit date is required')
+      return
+    }
+    setShowConfirm(true)
+  }
+
+  const handleConfirmCreate = async () => {
     try {
       await createMut.mutateAsync({
         audit_scope: form.audit_scope,
@@ -50,9 +82,10 @@ export default function CreateIsoAuditPage(): React.ReactElement {
         audit_date: form.audit_date,
       })
       toast.success('Internal audit scheduled.')
+      setShowConfirm(false)
       navigate('/iso/audits')
-    } catch {
-      toast.error('Failed to create audit.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -127,13 +160,22 @@ export default function CreateIsoAuditPage(): React.ReactElement {
           </button>
           <button
             type="submit"
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || !isFormValid}
             className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Schedule Audit'}
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        title="Schedule internal audit?"
+        description={`This will schedule a ${form.standard} audit for ${form.audit_date}. An audit reference number will be generated automatically.`}
+        confirmLabel="Schedule Audit"
+        onConfirm={handleConfirmCreate}
+      >
+        <span />
+      </ConfirmDialog>
     </div>
   )
 }

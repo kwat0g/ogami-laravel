@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Procurement;
 
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Services\PurchaseRequestService;
 use App\Http\Controllers\Controller;
@@ -24,7 +25,7 @@ final class PurchaseRequestController extends Controller
 
     /**
      * List PRs — scoped by department access.
-     *   ?status=draft|submitted|noted|checked|reviewed|approved|rejected|cancelled
+     *   ?status=draft|pending_review|reviewed|budget_verified|approved|rejected|cancelled|converted_to_po
      *   ?department_id=3
      *   ?urgency=normal|urgent|critical
      */
@@ -33,8 +34,19 @@ final class PurchaseRequestController extends Controller
         $this->authorize('viewAny', PurchaseRequest::class);
 
         $user = auth()->user();
-        $query = PurchaseRequest::with(['requestedBy', 'items'])
+
+        // Dept heads (create-dept only) are automatically scoped to their own department(s).
+        // Full-access roles (VP, Purchasing, admin) see all PRs.
+        $isDeptHeadScope = $user->hasPermissionTo('procurement.purchase-request.create-dept')
+            && ! $user->hasPermissionTo('procurement.purchase-request.create')
+            && ! $user->hasAnyRole(['executive', 'vice_president', 'admin', 'super_admin']);
+
+        $query = PurchaseRequest::with(['requestedBy', 'submittedBy', 'reviewedBy', 'department', 'items'])
             ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
+            ->when(
+                $isDeptHeadScope,
+                fn ($q) => $q->whereIn('department_id', $user->departments()->pluck('departments.id')),
+            )
             ->when(
                 $request->filled('status'),
                 fn ($q) => $q->where('status', $request->input('status')),
@@ -54,19 +66,51 @@ final class PurchaseRequestController extends Controller
 
     public function store(StorePurchaseRequestRequest $request): PurchaseRequestResource
     {
+        $validated = $request->validated();
+        $actor = auth()->user();
+
+        // Check general create permission
         $this->authorize('create', PurchaseRequest::class);
 
-        $validated = $request->validated();
+        // Additional check: department heads can only create for their own department
+        $this->authorize('createForDepartment', [
+            PurchaseRequest::class,
+            $validated['department_id'],
+        ]);
+
         $pr = $this->service->store(
             data: $validated,
             items: $validated['items'],
-            actor: auth()->user(),
+            actor: $actor,
         );
 
         return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
+    }
+
+    /**
+     * Create a Purchase Request from an approved Material Requisition.
+     * Used when stock is insufficient to fulfill the MRQ internally.
+     */
+    public function createFromMrq(Request $request, MaterialRequisition $materialRequisition): PurchaseRequestResource
+    {
+        $this->authorize('createFromMrq', [PurchaseRequest::class, $materialRequisition]);
+
+        $validated = $request->validate([
+            'justification' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $pr = $this->service->createFromMrq(
+            mrq: $materialRequisition,
+            actor: auth()->user(),
+            justification: $validated['justification'] ?? null,
+        );
+
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items', 'sourceMrq',
         ]));
     }
 
@@ -76,9 +120,8 @@ final class PurchaseRequestController extends Controller
 
         return new PurchaseRequestResource(
             $purchaseRequest->load([
-                'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-                'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-                'vpApprovedBy', 'rejectedBy', 'items',
+                'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+                'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items', 'department',
             ])
         );
     }
@@ -95,9 +138,8 @@ final class PurchaseRequestController extends Controller
         );
 
         return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
         ]));
     }
 
@@ -110,49 +152,12 @@ final class PurchaseRequestController extends Controller
         $pr = $this->service->submit($purchaseRequest, auth()->user());
 
         return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
         ]));
     }
 
-    /** HEAD notes the PR (SOD-011) */
-    public function note(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
-    {
-        $this->authorize('note', $purchaseRequest);
-
-        $pr = $this->service->note(
-            $purchaseRequest,
-            auth()->user(),
-            (string) $request->input('comments', ''),
-        );
-
-        return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
-        ]));
-    }
-
-    /** MANAGER checks the PR (SOD-012) */
-    public function check(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
-    {
-        $this->authorize('check', $purchaseRequest);
-
-        $pr = $this->service->check(
-            $purchaseRequest,
-            auth()->user(),
-            (string) $request->input('comments', ''),
-        );
-
-        return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
-        ]));
-    }
-
-    /** OFFICER reviews the PR (SOD-013) */
+    /** Purchasing Department reviews PR for technical validity (pending_review → reviewed) */
     public function review(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
     {
         $this->authorize('review', $purchaseRequest);
@@ -164,31 +169,12 @@ final class PurchaseRequestController extends Controller
         );
 
         return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
         ]));
     }
 
-    /** VP gives final approval (SOD-014) */
-    public function vpApprove(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
-    {
-        $this->authorize('vpApprove', $purchaseRequest);
-
-        $pr = $this->service->vpApprove(
-            $purchaseRequest,
-            auth()->user(),
-            (string) $request->input('comments', ''),
-        );
-
-        return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
-        ]));
-    }
-
-    /** Accounting Officer passes budget check — moves PR to budget_checked */
+    /** Accounting verifies budget commitment */
     public function budgetCheck(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
     {
         $this->authorize('budgetCheck', $purchaseRequest);
@@ -200,9 +186,25 @@ final class PurchaseRequestController extends Controller
         );
 
         return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
+    }
+
+    /** VP gives final approval */
+    public function vpApprove(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
+    {
+        $this->authorize('vpApprove', $purchaseRequest);
+
+        $pr = $this->service->vpApprove(
+            $purchaseRequest,
+            auth()->user(),
+            (string) $request->input('comments', ''),
+        );
+
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
         ]));
     }
 
@@ -222,9 +224,8 @@ final class PurchaseRequestController extends Controller
         );
 
         return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
         ]));
     }
 
@@ -245,9 +246,8 @@ final class PurchaseRequestController extends Controller
         );
 
         return new PurchaseRequestResource($pr->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
         ]));
     }
 
@@ -266,9 +266,8 @@ final class PurchaseRequestController extends Controller
         $this->authorize('view', $purchaseRequest);
 
         $pr = $purchaseRequest->load([
-            'requestedBy', 'submittedBy', 'notedBy', 'checkedBy',
-            'reviewedBy', 'budgetCheckedBy', 'returnedBy',
-            'vpApprovedBy', 'rejectedBy', 'department', 'items',
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'department', 'items',
         ]);
 
         $settings = [
@@ -280,5 +279,18 @@ final class PurchaseRequestController extends Controller
             ->setPaper('a4', 'portrait');
 
         return $pdf->stream("PR-{$pr->pr_reference}.pdf");
+    }
+
+    /** Duplicate an existing PR with a new reference number. */
+    public function duplicate(Request $request, PurchaseRequest $purchaseRequest): PurchaseRequestResource
+    {
+        $this->authorize('create', PurchaseRequest::class);
+
+        $pr = $this->service->duplicate($purchaseRequest->id, auth()->user());
+
+        return new PurchaseRequestResource($pr->load([
+            'requestedBy', 'submittedBy', 'reviewedBy', 'budgetCheckedBy',
+            'returnedBy', 'vpApprovedBy', 'rejectedBy', 'items',
+        ]));
     }
 }

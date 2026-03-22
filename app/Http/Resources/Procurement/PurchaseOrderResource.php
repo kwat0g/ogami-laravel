@@ -33,6 +33,24 @@ final class PurchaseOrderResource extends JsonResource
             'closed_at' => $po->closed_at?->toIso8601String(),
             'cancellation_reason' => $po->cancellation_reason,
 
+            // Negotiation fields
+            'vendor_remarks' => $po->vendor_remarks,
+            'negotiation_round' => $po->negotiation_round ?? 0,
+            'change_requested_at' => $po->change_requested_at?->toIso8601String(),
+            'change_reviewed_at' => $po->change_reviewed_at?->toIso8601String(),
+            'change_review_remarks' => $po->change_review_remarks,
+            'vendor_acknowledged_at' => $po->vendor_acknowledged_at?->toIso8601String(),
+            'in_transit_at' => $po->in_transit_at?->toIso8601String(),
+            'tracking_number' => $po->tracking_number,
+
+            'fulfillment_notes' => $this->whenLoaded('fulfillmentNotes', fn () => $po->fulfillmentNotes->map(fn ($note) => [
+                'id' => $note->id,
+                'note_type' => $note->note_type,
+                'notes' => $note->notes,
+                'items' => $note->items,
+                'created_at' => $note->created_at?->toIso8601String(),
+            ])),
+
             'created_by_id' => $po->created_by_id,
             'created_by' => $this->whenLoaded('createdBy', fn () => [
                 'id' => $po->createdBy->id,

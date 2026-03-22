@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useCreateMold } from '@/hooks/useMold';
 import type { MoldStatus } from '@/types/mold';
 
@@ -40,8 +41,8 @@ export default function CreateMoldPage(): React.ReactElement {
       });
       toast.success('Mold created.');
       navigate('/mold/masters');
-    } catch {
-      toast.error('Failed to create mold.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to create mold.'));
     }
   };
 

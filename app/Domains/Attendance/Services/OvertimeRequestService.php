@@ -632,7 +632,7 @@ final class OvertimeRequestService implements ServiceContract
                 if ($supervisorUserId) {
                     $supervisor = User::find($supervisorUserId);
                     if ($supervisor) {
-                        $supervisor->notify(new OvertimeRequestedNotification($request));
+                        $supervisor->notify(OvertimeRequestedNotification::fromModel($request));
 
                         return;
                     }
@@ -643,7 +643,7 @@ final class OvertimeRequestService implements ServiceContract
             if ($employee->department_id) {
                 User::permission('overtime.approve')
                     ->whereHas('departments', fn ($q) => $q->where('departments.id', $employee->department_id))
-                    ->each(fn (User $u) => $u->notify(new OvertimeRequestedNotification($request)));
+                    ->each(fn (User $u) => $u->notify(OvertimeRequestedNotification::fromModel($request)));
             }
         } catch (\Throwable) {
             // Non-fatal — notification failure must not block the submission
@@ -670,7 +670,7 @@ final class OvertimeRequestService implements ServiceContract
             User::permission('overtime.approve')
                 ->whereHas('departments', fn ($q) => $q->where('departments.id', $employee->department_id))
                 ->each(function (User $manager) use ($request, $supervisorName): void {
-                    $manager->notify(new OvertimeSupervisorEndorsedNotification(
+                    $manager->notify(OvertimeSupervisorEndorsedNotification::fromModel(
                         $request->loadMissing('employee'),
                         $supervisorName,
                         $request->supervisor_remarks,
@@ -694,7 +694,7 @@ final class OvertimeRequestService implements ServiceContract
             }
 
             foreach ($executives as $executive) {
-                $executive->notify(new OvertimeManagerRequestedNotification($request->loadMissing('employee')));
+                $executive->notify(OvertimeManagerRequestedNotification::fromModel($request->loadMissing('employee')));
             }
         } catch (\Throwable) {
             // Non-fatal
@@ -715,7 +715,7 @@ final class OvertimeRequestService implements ServiceContract
                 : null;
 
             if ($employeeUser) {
-                $employeeUser->notify(new OvertimeDecidedNotification($request, $decision, $remarks));
+                $employeeUser->notify(OvertimeDecidedNotification::fromModel($request, $decision, $remarks));
             }
         } catch (\Throwable) {
             // Non-fatal
@@ -740,7 +740,7 @@ final class OvertimeRequestService implements ServiceContract
                 if ($supervisorUserId) {
                     $supervisor = User::find($supervisorUserId);
                     if ($supervisor) {
-                        $supervisor->notify(new OvertimeCancelledNotification($request));
+                        $supervisor->notify(OvertimeCancelledNotification::fromModel($request));
 
                         return;
                     }
@@ -750,7 +750,7 @@ final class OvertimeRequestService implements ServiceContract
             if ($employee->department_id) {
                 User::permission('overtime.approve')
                     ->whereHas('departments', fn ($q) => $q->where('departments.id', $employee->department_id))
-                    ->each(fn (User $u) => $u->notify(new OvertimeCancelledNotification($request)));
+                    ->each(fn (User $u) => $u->notify(OvertimeCancelledNotification::fromModel($request)));
             }
         } catch (\Throwable) {
             // Non-fatal

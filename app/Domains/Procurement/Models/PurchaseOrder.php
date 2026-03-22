@@ -28,7 +28,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $delivery_date
  * @property string $payment_terms
  * @property string|null $delivery_address
- * @property string $status draft|sent|partially_received|fully_received|closed|cancelled
+ * @property string $status draft|sent|negotiating|acknowledged|in_transit|partially_received|fully_received|closed|cancelled
  * @property numeric-string $total_po_amount updated by trigger
  * @property int $created_by_id
  * @property Carbon|null $sent_at
@@ -45,18 +45,29 @@ final class PurchaseOrder extends Model implements Auditable
     protected $fillable = [
         'po_reference',
         'purchase_request_id',
+        'parent_po_id',
         'vendor_id',
         'po_date',
         'delivery_date',
         'payment_terms',
         'delivery_address',
         'status',
+        'po_type',
         'total_po_amount',
         'created_by_id',
         'sent_at',
         'closed_at',
         'cancellation_reason',
         'notes',
+        'vendor_remarks',
+        'negotiation_round',
+        'change_requested_at',
+        'change_reviewed_at',
+        'change_reviewed_by_id',
+        'change_review_remarks',
+        'vendor_acknowledged_at',
+        'in_transit_at',
+        'tracking_number',
     ];
 
     protected $casts = [
@@ -64,6 +75,12 @@ final class PurchaseOrder extends Model implements Auditable
         'delivery_date' => 'date',
         'sent_at' => 'datetime',
         'closed_at' => 'datetime',
+        'po_type' => 'string',
+        'change_requested_at' => 'datetime',
+        'change_reviewed_at' => 'datetime',
+        'vendor_acknowledged_at' => 'datetime',
+        'in_transit_at' => 'datetime',
+        'negotiation_round' => 'integer',
     ];
 
     // ── Relations ────────────────────────────────────────────────────────────
@@ -72,6 +89,18 @@ final class PurchaseOrder extends Model implements Auditable
     public function purchaseRequest(): BelongsTo
     {
         return $this->belongsTo(PurchaseRequest::class);
+    }
+
+    /** @return BelongsTo<PurchaseOrder, PurchaseOrder> */
+    public function parentPo(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'parent_po_id');
+    }
+
+    /** @return HasMany<PurchaseOrder, PurchaseOrder> */
+    public function childPos(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class, 'parent_po_id')->orderBy('created_at');
     }
 
     /** @return BelongsTo<Vendor, PurchaseOrder> */
@@ -108,6 +137,6 @@ final class PurchaseOrder extends Model implements Auditable
 
     public function canReceiveGoods(): bool
     {
-        return in_array($this->status, ['sent', 'partially_received'], true);
+        return in_array($this->status, ['acknowledged', 'in_transit', 'partially_received'], true);
     }
 }

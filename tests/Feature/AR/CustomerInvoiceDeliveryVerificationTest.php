@@ -15,28 +15,37 @@ beforeEach(function () {
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
     $this->seed(\Database\Seeders\FiscalPeriodSeeder::class);
 
-    $this->customer = Customer::factory()->create(['is_active' => true]);
+    $this->user = \App\Models\User::factory()->create();
+    $this->actingAs($this->user);
+
+    $this->customer = Customer::factory()->create(['is_active' => true, 'created_by' => $this->user->id]);
     $this->fiscalPeriod = \App\Domains\Accounting\Models\FiscalPeriod::first();
+
+    // Get real account IDs from database
+    $this->arAccount = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'ASSET')->first();
+    $this->revAccount = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'REVENUE')->first();
 
     $this->service = app(CustomerInvoiceService::class);
 });
 
 it('allows creating invoice with valid delivered receipt', function () {
+    $user = \App\Models\User::factory()->create();
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $this->customer->id,
         'status' => 'delivered',
+        'created_by_id' => $user->id,
     ]);
 
     $invoice = $this->service->create($this->customer, [
         'fiscal_period_id' => $this->fiscalPeriod->id,
-        'ar_account_id' => 1,
-        'revenue_account_id' => 2,
+        'ar_account_id' => $this->arAccount->id,
+        'revenue_account_id' => $this->revAccount->id,
         'invoice_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'subtotal' => 1000.00,
         'vat_amount' => 120.00,
         'delivery_receipt_id' => $deliveryReceipt->id,
-    ], 1);
+    ], $this->user->id);
 
     expect($invoice->delivery_receipt_id)->toBe($deliveryReceipt->id);
 });
@@ -44,95 +53,101 @@ it('allows creating invoice with valid delivered receipt', function () {
 it('throws exception when delivery receipt not found', function () {
     expect(fn () => $this->service->create($this->customer, [
         'fiscal_period_id' => $this->fiscalPeriod->id,
-        'ar_account_id' => 1,
-        'revenue_account_id' => 2,
+        'ar_account_id' => $this->arAccount->id,
+        'revenue_account_id' => $this->revAccount->id,
         'invoice_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'subtotal' => 1000.00,
         'vat_amount' => 120.00,
         'delivery_receipt_id' => 99999,
-    ], 1))->toThrow(DomainException::class, 'Delivery receipt not found.');
+    ], $this->user->id))->toThrow(DomainException::class, 'Delivery receipt not found.');
 });
 
 it('throws exception when delivery receipt belongs to different customer', function () {
-    $otherCustomer = Customer::factory()->create(['is_active' => true]);
+    $user = \App\Models\User::factory()->create();
+    $otherCustomer = Customer::factory()->create(['is_active' => true, 'created_by' => $user->id]);
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $otherCustomer->id,
         'status' => 'delivered',
+        'created_by_id' => $user->id,
     ]);
 
     expect(fn () => $this->service->create($this->customer, [
         'fiscal_period_id' => $this->fiscalPeriod->id,
-        'ar_account_id' => 1,
-        'revenue_account_id' => 2,
+        'ar_account_id' => $this->arAccount->id,
+        'revenue_account_id' => $this->revAccount->id,
         'invoice_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'subtotal' => 1000.00,
         'vat_amount' => 120.00,
         'delivery_receipt_id' => $deliveryReceipt->id,
-    ], 1))->toThrow(DomainException::class, 'Delivery receipt does not belong to this customer.');
+    ], $this->user->id))->toThrow(DomainException::class, 'Delivery receipt does not belong to this customer.');
 });
 
 it('throws exception when delivery is not completed', function () {
+    $user = \App\Models\User::factory()->create();
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $this->customer->id,
-        'status' => 'pending',
+        'status' => 'draft',
+        'created_by_id' => $user->id,
     ]);
 
     expect(fn () => $this->service->create($this->customer, [
         'fiscal_period_id' => $this->fiscalPeriod->id,
-        'ar_account_id' => 1,
-        'revenue_account_id' => 2,
+        'ar_account_id' => $this->arAccount->id,
+        'revenue_account_id' => $this->revAccount->id,
         'invoice_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'subtotal' => 1000.00,
         'vat_amount' => 120.00,
         'delivery_receipt_id' => $deliveryReceipt->id,
-    ], 1))->toThrow(DomainException::class, 'Delivery must be completed first.');
+    ], $this->user->id))->toThrow(DomainException::class, 'Delivery must be completed first.');
 });
 
 it('throws exception when delivery receipt is already invoiced', function () {
+    $user = \App\Models\User::factory()->create();
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $this->customer->id,
         'status' => 'delivered',
+        'created_by_id' => $user->id,
     ]);
 
     // Create first invoice
     $this->service->create($this->customer, [
         'fiscal_period_id' => $this->fiscalPeriod->id,
-        'ar_account_id' => 1,
-        'revenue_account_id' => 2,
+        'ar_account_id' => $this->arAccount->id,
+        'revenue_account_id' => $this->revAccount->id,
         'invoice_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'subtotal' => 1000.00,
         'vat_amount' => 120.00,
         'delivery_receipt_id' => $deliveryReceipt->id,
-    ], 1);
+    ], $this->user->id);
 
     // Try to create second invoice with same delivery receipt
     expect(fn () => $this->service->create($this->customer, [
         'fiscal_period_id' => $this->fiscalPeriod->id,
-        'ar_account_id' => 1,
-        'revenue_account_id' => 2,
+        'ar_account_id' => $this->arAccount->id,
+        'revenue_account_id' => $this->revAccount->id,
         'invoice_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'subtotal' => 2000.00,
         'vat_amount' => 240.00,
         'delivery_receipt_id' => $deliveryReceipt->id,
-    ], 1))->toThrow(DomainException::class, 'Delivery receipt is already linked to invoice');
+    ], $this->user->id))->toThrow(DomainException::class, 'Delivery receipt is already linked to invoice');
 });
 
 it('allows creating invoice without delivery receipt for non-delivery sales', function () {
     $invoice = $this->service->create($this->customer, [
         'fiscal_period_id' => $this->fiscalPeriod->id,
-        'ar_account_id' => 1,
-        'revenue_account_id' => 2,
+        'ar_account_id' => $this->arAccount->id,
+        'revenue_account_id' => $this->revAccount->id,
         'invoice_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
         'subtotal' => 1000.00,
         'vat_amount' => 120.00,
         // No delivery_receipt_id
-    ], 1);
+    ], $this->user->id);
 
     expect($invoice->delivery_receipt_id)->toBeNull();
 });

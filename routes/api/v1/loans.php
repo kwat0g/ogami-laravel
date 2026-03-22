@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:loans'])->group(function () {
     Route::get('', [LoanController::class, 'index'])->name('index');
     Route::get('team', [LoanController::class, 'team'])
         ->middleware('permission:loans.view_department')

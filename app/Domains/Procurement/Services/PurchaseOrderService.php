@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Services;
 
 use App\Domains\AP\Models\Vendor;
+use App\Domains\AP\Models\VendorFulfillmentNote;
+use App\Domains\AP\Models\VendorItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseOrderItem;
 use App\Domains\Procurement\Models\PurchaseRequest;
@@ -62,15 +64,31 @@ final class PurchaseOrderService implements ServiceContract
                 'created_by_id' => $pr->vp_approved_by_id ?? $pr->created_by_id ?? 1, // Fallback if needed
             ]);
 
+            // Pre-load vendor catalog for this vendor (centavos, keyed by normalised item_name)
+            $catalogPrices = $pr->vendor_id
+                ? VendorItem::where('vendor_id', $pr->vendor_id)
+                    ->where('is_active', true)
+                    ->get(['item_name', 'unit_price'])
+                    ->keyBy(fn ($vi) => mb_strtolower(trim($vi->item_name)))
+                : collect();
+
             foreach ($pr->items as $index => $item) {
+                $normalised = mb_strtolower(trim($item->item_description));
+                $catalogEntry = $catalogPrices->get($normalised);
+
+                // Use catalog price (centavos → PHP) if an exact match exists; fall back to PR estimate
+                $agreedCost = $catalogEntry
+                    ? $catalogEntry->unit_price / 100
+                    : $item->estimated_unit_cost;
+
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
                     'pr_item_id' => $item->id,
-                    'item_master_id' => null, // Optional unless matched later
+                    'item_master_id' => null,
                     'item_description' => $item->item_description,
                     'unit_of_measure' => $item->unit_of_measure,
                     'quantity_ordered' => $item->quantity,
-                    'agreed_unit_cost' => $item->estimated_unit_cost,
+                    'agreed_unit_cost' => $agreedCost,
                     'quantity_received' => 0,
                     'line_order' => $index + 1,
                 ]);
@@ -218,7 +236,7 @@ final class PurchaseOrderService implements ServiceContract
 
     // ── Send ─────────────────────────────────────────────────────────────────
 
-    public function send(PurchaseOrder $po): PurchaseOrder
+    public function send(PurchaseOrder $po, ?string $deliveryDate = null): PurchaseOrder
     {
         if ($po->status !== 'draft') {
             throw new DomainException(
@@ -236,7 +254,10 @@ final class PurchaseOrderService implements ServiceContract
             );
         }
 
-        if ($po->delivery_date === null) {
+        // Use provided delivery date or fall back to existing one
+        $finalDeliveryDate = $deliveryDate ?? $po->delivery_date;
+
+        if ($finalDeliveryDate === null) {
             throw new DomainException(
                 message: 'Cannot send — Delivery Date is required.',
                 errorCode: 'PO_DELIVERY_DATE_REQUIRED',
@@ -254,18 +275,19 @@ final class PurchaseOrderService implements ServiceContract
 
         $po->update([
             'status' => 'sent',
+            'delivery_date' => $finalDeliveryDate,
             'sent_at' => now(),
         ]);
 
         // 1. Notify warehouse staff (internal)
         $po->loadMissing('vendor');
-        $internalNotification = new PurchaseOrderSentNotification($po);
+        $internalNotification = PurchaseOrderSentNotification::fromModel($po);
         User::permission('procurement.goods-receipt.create')
             ->each(fn (User $u) => $u->notify($internalNotification));
 
         // 2. Notify vendor users (external) via the portal
         // Find users linked to this vendor
-        $vendorNotification = new PurchaseOrderSentToVendorNotification($po);
+        $vendorNotification = PurchaseOrderSentToVendorNotification::fromModel($po);
         User::where('vendor_id', $po->vendor_id)
             ->each(fn (User $u) => $u->notify($vendorNotification));
 
@@ -350,6 +372,207 @@ final class PurchaseOrderService implements ServiceContract
                     'agreed_unit_cost' => $upd['agreed_unit_cost'] ?? $poItem->agreed_unit_cost,
                 ]);
             }
+
+            return $po->refresh();
+        });
+    }
+
+    // ── Negotiation ──────────────────────────────────────────────────────────
+
+    /**
+     * Vendor acknowledges the PO — agrees to all terms as-is.
+     * Status: sent → acknowledged
+     */
+    public function vendorAcknowledge(PurchaseOrder $po, User $vendorUser, string $notes = ''): PurchaseOrder
+    {
+        if ($po->status !== 'sent') {
+            throw new DomainException(
+                message: "Cannot acknowledge — PO is in status '{$po->status}'. Only 'sent' POs can be acknowledged.",
+                errorCode: 'PO_CANNOT_ACKNOWLEDGE',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($po, $vendorUser, $notes): PurchaseOrder {
+            $po->update([
+                'status' => 'acknowledged',
+                'vendor_acknowledged_at' => now(),
+            ]);
+
+            VendorFulfillmentNote::create([
+                'purchase_order_id' => $po->id,
+                'vendor_user_id' => $vendorUser->id,
+                'note_type' => 'acknowledged',
+                'notes' => $notes ?: 'Vendor acknowledged PO — agrees to all terms.',
+                'items' => null,
+            ]);
+
+            return $po->refresh();
+        });
+    }
+
+    /**
+     * Vendor proposes changes (e.g. reduced qty, new delivery date due to stock shortage).
+     * Status: sent → negotiating
+     *
+     * @param  list<array{po_item_id: int, negotiated_quantity: float, vendor_item_notes?: string}>  $itemChanges
+     */
+    public function vendorProposeChanges(PurchaseOrder $po, User $vendorUser, string $remarks, array $itemChanges): PurchaseOrder
+    {
+        if ($po->status !== 'sent') {
+            throw new DomainException(
+                message: "Cannot propose changes — PO is in status '{$po->status}'. Only 'sent' POs can be negotiated.",
+                errorCode: 'PO_CANNOT_PROPOSE_CHANGES',
+                httpStatus: 422,
+            );
+        }
+
+        if (empty(trim($remarks))) {
+            throw new DomainException(
+                message: 'Vendor remarks are required when proposing changes.',
+                errorCode: 'PO_REMARKS_REQUIRED',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($po, $vendorUser, $remarks, $itemChanges): PurchaseOrder {
+            $round = ($po->negotiation_round ?? 0) + 1;
+
+            $po->update([
+                'status' => 'negotiating',
+                'vendor_remarks' => $remarks,
+                'negotiation_round' => $round,
+                'change_requested_at' => now(),
+                'change_reviewed_at' => null,
+                'change_reviewed_by_id' => null,
+                'change_review_remarks' => null,
+            ]);
+
+            // Update proposed quantities on line items
+            foreach ($itemChanges as $change) {
+                $poItem = PurchaseOrderItem::where('purchase_order_id', $po->id)
+                    ->findOrFail($change['po_item_id']);
+
+                if ($change['negotiated_quantity'] > (float) $poItem->quantity_ordered) {
+                    throw new DomainException(
+                        message: "Proposed quantity ({$change['negotiated_quantity']}) cannot exceed ordered quantity ({$poItem->quantity_ordered}) for '{$poItem->item_description}'.",
+                        errorCode: 'PO_NEGOTIATED_QTY_EXCEEDS_ORDERED',
+                        httpStatus: 422,
+                    );
+                }
+
+                $poItem->update([
+                    'negotiated_quantity' => $change['negotiated_quantity'],
+                    'vendor_item_notes' => $change['vendor_item_notes'] ?? $poItem->vendor_item_notes,
+                ]);
+            }
+
+            // Build items snapshot for the fulfillment note
+            $po->load('items');
+            $itemsSnapshot = $po->items->map(fn ($i) => [
+                'po_item_id' => $i->id,
+                'item_description' => $i->item_description,
+                'quantity_ordered' => $i->quantity_ordered,
+                'negotiated_quantity' => $i->negotiated_quantity,
+                'vendor_item_notes' => $i->vendor_item_notes,
+            ])->values()->all();
+
+            VendorFulfillmentNote::create([
+                'purchase_order_id' => $po->id,
+                'vendor_user_id' => $vendorUser->id,
+                'note_type' => 'change_requested',
+                'notes' => $remarks,
+                'items' => $itemsSnapshot,
+            ]);
+
+            return $po->refresh();
+        });
+    }
+
+    /**
+     * Purchasing Officer accepts the vendor's proposed changes.
+     * Status: negotiating → acknowledged
+     */
+    public function officerAcceptChanges(PurchaseOrder $po, User $officer, string $remarks = ''): PurchaseOrder
+    {
+        if ($po->status !== 'negotiating') {
+            throw new DomainException(
+                message: "Cannot accept changes — PO is in status '{$po->status}'.",
+                errorCode: 'PO_NOT_NEGOTIATING',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($po, $officer, $remarks): PurchaseOrder {
+            $po->update([
+                'status' => 'acknowledged',
+                'vendor_acknowledged_at' => now(),
+                'change_reviewed_at' => now(),
+                'change_reviewed_by_id' => $officer->id,
+                'change_review_remarks' => $remarks ?: 'Changes accepted.',
+            ]);
+
+            VendorFulfillmentNote::create([
+                'purchase_order_id' => $po->id,
+                'vendor_user_id' => null,
+                'note_type' => 'change_accepted',
+                'notes' => $remarks ?: 'Purchasing Officer accepted proposed changes.',
+                'items' => null,
+            ]);
+
+            return $po->refresh();
+        });
+    }
+
+    /**
+     * Purchasing Officer rejects the vendor's proposed changes (PO reverts to sent).
+     * Vendor must either acknowledge or propose new changes.
+     * Status: negotiating → sent
+     */
+    public function officerRejectChanges(PurchaseOrder $po, User $officer, string $remarks): PurchaseOrder
+    {
+        if ($po->status !== 'negotiating') {
+            throw new DomainException(
+                message: "Cannot reject changes — PO is in status '{$po->status}'.",
+                errorCode: 'PO_NOT_NEGOTIATING',
+                httpStatus: 422,
+            );
+        }
+
+        if (empty(trim($remarks))) {
+            throw new DomainException(
+                message: 'A rejection reason is required.',
+                errorCode: 'PO_REJECTION_REASON_REQUIRED',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($po, $officer, $remarks): PurchaseOrder {
+            // Revert negotiated quantities on items back to ordered quantities
+            $po->load('items');
+            foreach ($po->items as $item) {
+                $item->update([
+                    'negotiated_quantity' => null,
+                    'vendor_item_notes' => null,
+                ]);
+            }
+
+            $po->update([
+                'status' => 'sent',
+                'vendor_remarks' => null,
+                'change_requested_at' => null,
+                'change_reviewed_at' => now(),
+                'change_reviewed_by_id' => $officer->id,
+                'change_review_remarks' => $remarks,
+            ]);
+
+            VendorFulfillmentNote::create([
+                'purchase_order_id' => $po->id,
+                'vendor_user_id' => null,
+                'note_type' => 'change_rejected',
+                'notes' => $remarks,
+                'items' => null,
+            ]);
 
             return $po->refresh();
         });

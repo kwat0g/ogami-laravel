@@ -18,10 +18,16 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModuleSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModulePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 
     // Create a production manager user
+    $prodDept = \App\Domains\HR\Models\Department::where('code', 'PROD')->first();
     $this->manager = User::factory()->create(['email' => 'prod_mgr@test.com']);
-    $this->manager->assignRole('production_manager');
+    $this->manager->assignRole('manager');
+    $this->manager->departments()->attach($prodDept->id, ['is_primary' => true]);
 
     // Ensure admin user exists (may already exist from seeder)
     User::firstOrCreate(
@@ -275,7 +281,7 @@ it('allows head to override QC block with permission', function () {
         'created_by_id'       => $this->manager->id,
     ]);
 
-    // production_manager has production.qc-override permission
+    // manager (production module) has production.qc-override permission
     $response = $this->actingAs($this->manager)
         ->patchJson("/api/v1/production/orders/{$this->order->ulid}/release", [
             'force_release' => true,

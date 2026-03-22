@@ -45,7 +45,7 @@ beforeEach(function () {
         'payroll.view',
         'payroll.approve',
         'payroll.acctg_approve', // Explicitly needed for accounting-approve
-        'payroll.post',
+        'payroll.disburse',      // Required for post action
     ]);
 });
 

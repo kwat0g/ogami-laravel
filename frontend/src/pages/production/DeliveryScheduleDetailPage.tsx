@@ -1,0 +1,541 @@
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft, Package, Calendar, User, Truck, Factory, FileText, AlertTriangle, Plus } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { useDeliverySchedule, useCreateProductionOrder, useBoms, useFulfillFromStock } from '@/hooks/useProduction'
+import { useAuthStore } from '@/stores/authStore'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { toast } from 'sonner'
+
+interface CreateWOModalProps {
+  isOpen: boolean
+  onClose: () => void
+  schedule: {
+    id: number
+    ulid: string
+    ds_reference: string
+    product_item_id: number
+    qty_ordered: string
+    target_delivery_date: string
+  } | null
+}
+
+function CreateWOModal({ isOpen, onClose, schedule }: CreateWOModalProps): JSX.Element | null {
+  const navigate = useNavigate()
+  const [targetStartDate, setTargetStartDate] = useState('')
+  const [targetEndDate, setTargetEndDate] = useState('')
+  const [selectedBomId, setSelectedBomId] = useState<number | ''>('')
+
+  // Always fetch BOMs if we have a schedule, modal visibility controls rendering not hook calls
+  const { data: bomsData } = useBoms({ 
+    product_item_id: schedule?.product_item_id 
+  })
+  const createWOMutation = useCreateProductionOrder()
+
+  const boms = bomsData?.data || []
+  const activeBoms = boms.filter(b => b.is_active)
+
+  // Auto-select the first active BOM when data loads - only when modal is open
+  useEffect(() => {
+    if (!isOpen || !schedule) return
+    if (activeBoms.length === 1) {
+      setSelectedBomId(activeBoms[0].id)
+    } else if (activeBoms.length > 0 && !selectedBomId) {
+      // If multiple active BOMs, select the latest version
+      const sortedBoms = [...activeBoms].sort((a, b) => b.version.localeCompare(a.version))
+      setSelectedBomId(sortedBoms[0].id)
+    }
+  }, [activeBoms, isOpen, schedule])
+
+  // Don't render anything if modal is closed - but only after all hooks
+  if (!isOpen || !schedule) {
+    return null
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!selectedBomId) {
+      toast.error('Please select a BOM')
+      return
+    }
+
+    if (!targetStartDate || !targetEndDate) {
+      toast.error('Please set both start and end dates')
+      return
+    }
+
+    if (new Date(targetEndDate) < new Date(targetStartDate)) {
+      toast.error('End date must be after start date')
+      return
+    }
+
+    try {
+      const newOrder = await createWOMutation.mutateAsync({
+        product_item_id: schedule.product_item_id,
+        bom_id: Number(selectedBomId),
+        delivery_schedule_id: schedule.id,
+        qty_required: parseFloat(schedule.qty_ordered),
+        target_start_date: targetStartDate,
+        target_end_date: targetEndDate,
+        notes: `Created from Delivery Schedule ${schedule.ds_reference}`,
+      })
+
+      toast.success('Production Order created successfully')
+      navigate(`/production/orders/${newOrder.ulid}`)
+    } catch (error) {
+      toast.error('Failed to create Production Order')
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-md shadow-xl border border-neutral-200">
+        <div className="p-5 border-b border-neutral-100">
+          <h2 className="text-base font-semibold text-neutral-900">Create Production Order</h2>
+          <p className="text-sm text-neutral-500 mt-0.5">Create WO for {schedule.ds_reference}</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* BOM Selection */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+              Bill of Materials
+            </label>
+            <select
+              value={selectedBomId}
+              onChange={(e) => setSelectedBomId(e.target.value ? Number(e.target.value) : '')}
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 outline-none text-sm"
+              required
+            >
+              <option value="">Select BOM</option>
+              {activeBoms.map((bom) => (
+                <option key={bom.id} value={bom.id}>
+                  Version {bom.version} ({bom.components?.length || 0} components)
+                </option>
+              ))}
+            </select>
+            {activeBoms.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">No active BOM found for this product</p>
+            )}
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+              Quantity Required
+            </label>
+            <input
+              type="text"
+              value={parseFloat(schedule.qty_ordered).toLocaleString('en-PH')}
+              disabled
+              className="w-full border border-neutral-200 bg-neutral-50 rounded-lg px-3 py-2 text-sm text-neutral-500"
+            />
+            <p className="text-xs text-neutral-400 mt-1">From delivery schedule</p>
+          </div>
+
+          {/* Target Dates */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                Target Start Date
+              </label>
+              <input
+                type="date"
+                value={targetStartDate}
+                onChange={(e) => setTargetStartDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                max={schedule.target_delivery_date}
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 outline-none text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                Target End Date
+              </label>
+              <input
+                type="date"
+                value={targetEndDate}
+                onChange={(e) => setTargetEndDate(e.target.value)}
+                min={targetStartDate || new Date().toISOString().split('T')[0]}
+                max={schedule.target_delivery_date}
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 outline-none text-sm"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+            <p className="text-xs text-amber-700">
+              <strong>Delivery Due:</strong> {new Date(schedule.target_delivery_date).toLocaleDateString('en-PH')}
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 border border-neutral-200 text-neutral-700 font-medium rounded-lg hover:bg-neutral-50 transition-colors text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createWOMutation.isPending || !selectedBomId}
+              className="flex-1 py-2.5 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+            >
+              {createWOMutation.isPending ? 'Creating...' : 'Create WO'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  open: 'bg-neutral-100 text-neutral-700',
+  in_production: 'bg-blue-100 text-blue-700',
+  ready: 'bg-green-100 text-green-700',
+  dispatched: 'bg-purple-100 text-purple-700',
+  delivered: 'bg-emerald-100 text-emerald-700',
+  cancelled: 'bg-neutral-100 text-neutral-400',
+}
+
+export default function DeliveryScheduleDetailPage(): JSX.Element {
+  const { ulid } = useParams<{ ulid: string }>()
+  const navigate = useNavigate()
+  const { hasPermission } = useAuthStore()
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showFulfillConfirm, setShowFulfillConfirm] = useState(false)
+
+  const { data: schedule, isLoading, isError } = useDeliverySchedule(ulid || null)
+  const fulfillMutation = useFulfillFromStock(ulid || '')
+
+  const canCreateWO = hasPermission('production.orders.create')
+  const canManage = hasPermission('production.delivery-schedule.manage')
+  const canFulfill = hasPermission('production.delivery-schedule.manage')
+
+  const handleFulfillFromStock = async () => {
+    try {
+      await fulfillMutation.mutateAsync()
+      toast.success('Order fulfilled from stock successfully')
+      setShowFulfillConfirm(false)
+    } catch (error: any) {
+      // Extract specific error message from API response
+      const message = error?.response?.data?.message || error?.message || 'Failed to fulfill from stock'
+      toast.error(message)
+    }
+  }
+
+  if (isLoading) {
+    return <SkeletonLoader rows={5} />
+  }
+
+  if (isError || !schedule) {
+    return (
+      <div className="text-center py-16">
+        <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-neutral-900 mb-2">Delivery Schedule not found</h3>
+        <p className="text-sm text-neutral-500 mb-6">The schedule you&apos;re looking for doesn&apos;t exist or you don&apos;t have access.</p>
+        <button
+          onClick={() => navigate('/production/delivery-schedules')}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Schedules
+        </button>
+      </div>
+    )
+  }
+
+  const status = schedule.status as keyof typeof STATUS_COLORS
+
+  return (
+    <div className="space-y-5 max-w-6xl mx-auto">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/production/delivery-schedules')}
+        className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 font-medium"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Schedules
+      </button>
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900">{schedule.ds_reference}</h1>
+          <p className="text-sm text-neutral-500 mt-1">
+            Delivery Schedule Details
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Show Fulfill from Stock button if: status is open AND no production orders exist AND user has permission */}
+          {canFulfill && schedule.status === 'open' && (!schedule.production_orders || schedule.production_orders.length === 0) && (
+            <button
+              onClick={() => setShowFulfillConfirm(true)}
+              className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Package className="w-4 h-4" />
+              Fulfill from Stock
+            </button>
+          )}
+          {canCreateWO && schedule.status === 'open' && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create WO
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Status Banner */}
+      <div className={`px-4 py-3 rounded-lg border ${STATUS_COLORS[status] || 'bg-neutral-100'}`}>
+        <div className="flex items-center gap-2">
+          <Truck className="h-4 w-4" />
+          <span className="font-medium capitalize">{schedule.status?.replace('_', ' ')}</span>
+          {schedule.type && (
+            <span className="ml-2 text-xs uppercase tracking-wide opacity-70">({schedule.type})</span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-5">
+        {/* Left Column - Main Info */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Customer & Product Card */}
+          <Card>
+            <CardHeader>
+              <span className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-neutral-500" />
+                Order Information
+              </span>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Customer</p>
+                  <p className="font-medium text-neutral-900">{schedule.customer?.name || '—'}</p>
+                  {schedule.customer?.email && (
+                    <p className="text-sm text-neutral-500">{schedule.customer.email}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Product</p>
+                  <p className="font-medium text-neutral-900">{schedule.product_item?.name || '—'}</p>
+                  <p className="text-xs text-neutral-400 font-mono">{schedule.product_item?.item_code}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-neutral-100 pt-4">
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Quantity Ordered</p>
+                    <p className="text-lg font-semibold text-neutral-900">
+                      {parseFloat(schedule.qty_ordered).toLocaleString('en-PH', { maximumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-neutral-400">{schedule.product_item?.unit_of_measure}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Target Delivery</p>
+                    <p className="font-medium text-neutral-900">
+                      {new Date(schedule.target_delivery_date).toLocaleDateString('en-PH', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Days Until Due</p>
+                    <p className={`font-medium ${
+                      Math.ceil((new Date(schedule.target_delivery_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) < 3
+                        ? 'text-red-600'
+                        : 'text-neutral-900'
+                    }`}>
+                      {Math.ceil((new Date(schedule.target_delivery_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {schedule.notes && (
+                <div className="border-t border-neutral-100 pt-4">
+                  <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Notes</p>
+                  <p className="text-sm text-neutral-700 bg-neutral-50 p-3 rounded-lg">{schedule.notes}</p>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          {/* Production Orders */}
+          <Card>
+            <CardHeader>
+              <span className="flex items-center gap-2">
+                <Factory className="h-4 w-4 text-neutral-500" />
+                Production Orders
+              </span>
+            </CardHeader>
+            <CardBody>
+              {schedule.production_orders?.length === 0 ? (
+                <div className="text-center py-8 text-neutral-400">
+                  <Factory className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No production orders created yet</p>
+                  {canCreateWO && schedule.status === 'open' && (
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="mt-4 inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create Production Order
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral-100">
+                  {schedule.production_orders?.map((po) => (
+                    <Link
+                      key={po.id}
+                      to={`/production/orders/${po.ulid}`}
+                      className="flex items-center justify-between p-3 hover:bg-neutral-50 rounded-lg transition-colors"
+                    >
+                      <div>
+                        <p className="font-medium text-neutral-900">{po.po_reference}</p>
+                        <p className="text-xs text-neutral-500">
+                          Qty: {parseFloat(po.qty_required).toLocaleString('en-PH')} |
+                          Produced: {parseFloat(po.qty_produced).toLocaleString('en-PH')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${
+                          po.status === 'completed' ? 'bg-green-100 text-green-700' :
+                          po.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                          po.status === 'cancelled' ? 'bg-neutral-100 text-neutral-500' :
+                          'bg-neutral-100 text-neutral-700'
+                        }`}>
+                          {po.status?.replace('_', ' ')}
+                        </span>
+                        <p className="text-xs text-neutral-400 mt-1">
+                          {new Date(po.target_start_date).toLocaleDateString('en-PH')} -
+                          {new Date(po.target_end_date).toLocaleDateString('en-PH')}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Right Column - Metadata */}
+        <div className="space-y-5">
+          <Card>
+            <CardHeader>
+              <span className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-neutral-500" />
+                Details
+              </span>
+            </CardHeader>
+            <CardBody className="space-y-3">
+              <div>
+                <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Reference</p>
+                <p className="font-mono text-sm text-neutral-900">{schedule.ds_reference}</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Created</p>
+                <p className="text-sm text-neutral-700">
+                  {new Date(schedule.created_at).toLocaleDateString('en-PH')}
+                </p>
+              </div>
+              {schedule.deleted_at && (
+                <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                  <p className="text-xs text-amber-700 font-medium">Archived</p>
+                  <p className="text-xs text-amber-600">
+                    {new Date(schedule.deleted_at).toLocaleDateString('en-PH')}
+                  </p>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+
+      {/* Create WO Modal */}
+      <CreateWOModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        schedule={schedule}
+      />
+
+      {/* Fulfill from Stock Confirmation Modal */}
+      {showFulfillConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md shadow-xl border border-neutral-200">
+            <div className="p-5 border-b border-neutral-100">
+              <h2 className="text-base font-semibold text-neutral-900">Fulfill from Stock?</h2>
+              <p className="text-sm text-neutral-500 mt-0.5">
+                This will deduct stock immediately and mark the schedule as ready for delivery.
+              </p>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                <div className="flex justify-between text-sm">
+                  <span className="text-neutral-500">Product:</span>
+                  <span className="font-medium text-neutral-900">{schedule.product_item?.name}</span>
+                </div>
+                <div className="flex justify-between text-sm mt-2">
+                  <span className="text-neutral-500">Quantity:</span>
+                  <span className="font-medium text-neutral-900">
+                    {parseFloat(schedule.qty_ordered).toLocaleString('en-PH')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                <p className="text-xs text-amber-700">
+                  <strong>Note:</strong> This action will deduct stock from the warehouse.
+                  No Production Order will be created.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-neutral-100 flex gap-3">
+              <button
+                onClick={() => setShowFulfillConfirm(false)}
+                disabled={fulfillMutation.isPending}
+                className="flex-1 py-2.5 border border-neutral-200 text-neutral-700 font-medium rounded-lg hover:bg-neutral-50 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFulfillFromStock}
+                disabled={fulfillMutation.isPending}
+                className="flex-1 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+              >
+                {fulfillMutation.isPending ? (
+                  <>
+                    <span className="animate-spin">⟳</span>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-4 h-4" />
+                    Yes, Fulfill
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { Ticket } from 'lucide-react'
 import { useTicket, useReplyToTicket, useAssignTicket, useResolveTicket, useCloseTicket, useReopenTicket } from '@/hooks/useCRM'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -24,6 +26,7 @@ export default function TicketDetailPage() {
   const [resolutionNote, setResolutionNote] = useState('')
   const [reopenReason, setReopenReason] = useState('')
   const [activePanel, setActivePanel] = useState<'reply' | 'assign' | 'resolve' | 'reopen' | null>(null)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
 
   if (isLoading) return <SkeletonLoader rows={6} />
   if (!ticket) return (
@@ -35,34 +38,81 @@ export default function TicketDetailPage() {
     </div>
   )
 
+  // Validation
+  const replyError = touched.reply && !replyBody.trim() ? 'Reply message is required.' : undefined
+  const assignError = touched.assign && !assigneeId ? 'Assignee ID is required.' : undefined
+  const reopenError = touched.reopen && !reopenReason.trim() ? 'Reason is required to reopen.' : undefined
+
   async function submitReply() {
-    if (!replyBody.trim()) return
-    await replyMutation.mutateAsync({ body: replyBody, is_internal: isInternal })
-    setReplyBody('')
-    setActivePanel(null)
+    setTouched(prev => ({ ...prev, reply: true }))
+    if (!replyBody.trim()) {
+      toast.error('Please enter a reply message.')
+      return
+    }
+    try {
+      await replyMutation.mutateAsync({ body: replyBody, is_internal: isInternal })
+      toast.success('Reply sent successfully.')
+      setReplyBody('')
+      setIsInternal(false)
+      setActivePanel(null)
+      setTouched(prev => ({ ...prev, reply: false }))
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to send reply.'))
+    }
   }
 
   async function submitAssign() {
-    if (!assigneeId) return
-    await assignMutation.mutateAsync({ assigned_to_id: Number(assigneeId) })
-    setAssigneeId('')
-    setActivePanel(null)
+    setTouched(prev => ({ ...prev, assign: true }))
+    if (!assigneeId) {
+      toast.error('Please enter an assignee ID.')
+      return
+    }
+    try {
+      await assignMutation.mutateAsync({ assigned_to_id: Number(assigneeId) })
+      toast.success('Ticket assigned successfully.')
+      setAssigneeId('')
+      setActivePanel(null)
+      setTouched(prev => ({ ...prev, assign: false }))
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to assign ticket.'))
+    }
   }
 
   async function submitResolve() {
-    await resolveMutation.mutateAsync({ resolution_note: resolutionNote })
-    setResolutionNote('')
-    setActivePanel(null)
+    try {
+      await resolveMutation.mutateAsync({ resolution_note: resolutionNote })
+      toast.success('Ticket resolved successfully.')
+      setResolutionNote('')
+      setActivePanel(null)
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to resolve ticket.'))
+    }
   }
 
   async function submitClose() {
-    await closeMutation.mutateAsync()
+    try {
+      await closeMutation.mutateAsync()
+      toast.success('Ticket closed successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to close ticket.'))
+    }
   }
 
   async function submitReopen() {
-    await reopenMutation.mutateAsync({ reason: reopenReason })
-    setReopenReason('')
-    setActivePanel(null)
+    setTouched(prev => ({ ...prev, reopen: true }))
+    if (!reopenReason.trim()) {
+      toast.error('Please provide a reason for reopening.')
+      return
+    }
+    try {
+      await reopenMutation.mutateAsync({ reason: reopenReason })
+      toast.success('Ticket reopened successfully.')
+      setReopenReason('')
+      setActivePanel(null)
+      setTouched(prev => ({ ...prev, reopen: false }))
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to reopen ticket.'))
+    }
   }
 
   const canReply = ['open', 'in_progress'].includes(ticket.status)
@@ -163,16 +213,20 @@ export default function TicketDetailPage() {
             <textarea
               value={replyBody}
               onChange={e => setReplyBody(e.target.value)}
+              onBlur={() => setTouched(prev => ({ ...prev, reply: true }))}
               placeholder="Type your reply…"
               rows={4}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none"
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none ${
+                replyError ? 'border-red-400' : 'border-neutral-300'
+              }`}
             />
+            {replyError && <p className="mt-1 text-xs text-red-600">{replyError}</p>}
             <div className="flex items-center justify-between mt-3">
               <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
                 <input type="checkbox" checked={isInternal} onChange={e => setIsInternal(e.target.checked)} className="rounded border-neutral-300" />
                 Internal note (not visible to client)
               </label>
-              <button onClick={submitReply} disabled={replyMutation.isPending || !replyBody.trim()}
+              <button onClick={submitReply} disabled={replyMutation.isPending}
                 className="btn-primary disabled:opacity-50">
                 {replyMutation.isPending ? 'Sending…' : 'Send Reply'}
               </button>
@@ -190,14 +244,18 @@ export default function TicketDetailPage() {
                 type="number"
                 value={assigneeId}
                 onChange={e => setAssigneeId(e.target.value)}
+                onBlur={() => setTouched(prev => ({ ...prev, assign: true }))}
                 placeholder="User ID"
-                className="px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none w-32"
+                className={`px-3 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none w-32 ${
+                  assignError ? 'border-red-400' : 'border-neutral-300'
+                }`}
               />
-              <button onClick={submitAssign} disabled={assignMutation.isPending || !assigneeId}
+              <button onClick={submitAssign} disabled={assignMutation.isPending}
                 className="btn-primary disabled:opacity-50">
                 {assignMutation.isPending ? 'Assigning…' : 'Assign'}
               </button>
             </div>
+            {assignError && <p className="mt-1 text-xs text-red-600">{assignError}</p>}
           </CardBody>
         </Card>
       )}
@@ -229,9 +287,13 @@ export default function TicketDetailPage() {
               type="text"
               value={reopenReason}
               onChange={e => setReopenReason(e.target.value)}
-              placeholder="Reason for reopening (optional)…"
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
+              onBlur={() => setTouched(prev => ({ ...prev, reopen: true }))}
+              placeholder="Reason for reopening (required)…"
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-neutral-400 outline-none ${
+                reopenError ? 'border-red-400' : 'border-neutral-300'
+              }`}
             />
+            {reopenError && <p className="mt-1 text-xs text-red-600">{reopenError}</p>}
             <button onClick={submitReopen} disabled={reopenMutation.isPending}
               className="mt-3 btn-secondary disabled:opacity-50">
               {reopenMutation.isPending ? 'Reopening…' : 'Reopen'}

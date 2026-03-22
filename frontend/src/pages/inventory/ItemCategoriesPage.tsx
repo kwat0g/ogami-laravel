@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useItemCategories, useCreateItemCategory } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { useAuthStore } from '@/stores/authStore'
+import api from '@/lib/api'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ItemCategory } from '@/types/inventory'
 
 // ---------------------------------------------------------------------------
@@ -21,9 +25,25 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.code.trim() || form.code.trim().length < 2) {
+      toast.error('Code is required (min 2 characters)')
+      return
+    }
+    if (!form.name.trim() || form.name.trim().length < 2) {
+      toast.error('Name is required (min 2 characters)')
+      return
+    }
     create(
-      { code: form.code, name: form.name, description: form.description || undefined },
-      { onSuccess: onClose },
+      { code: form.code.trim(), name: form.name.trim(), description: form.description?.trim() || undefined },
+      { 
+        onSuccess: () => {
+          toast.success('Category created successfully.')
+          onClose()
+        },
+        onError: (err) => {
+          toast.error(firstErrorMessage(err))
+        }
+      },
     )
   }
 
@@ -48,6 +68,7 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
             onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
             placeholder="e.g. RAW-MAT"
             required
+            minLength={2}
           />
         </div>
 
@@ -59,6 +80,7 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
             onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
             placeholder="e.g. Raw Materials"
             required
+            minLength={2}
           />
         </div>
 
@@ -99,9 +121,24 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
 // ---------------------------------------------------------------------------
 
 export default function ItemCategoriesPage(): React.ReactElement {
-  const { data: categories, isLoading } = useItemCategories()
+  const { data: categories, isLoading, refetch } = useItemCategories()
   const [showForm, setShowForm] = useState(false)
+  const [, setDeletingId] = useState<number | null>(null)
   const canCreate = useAuthStore(s => s.hasPermission('inventory.items.create'))
+  const canDelete = useAuthStore(s => s.hasPermission('inventory.items.delete'))
+  useAuthStore(s => s.user)
+
+  const handleDelete = async (id: number) => {
+    try {
+      await api.delete(`/inventory/items/categories/${id}`)
+      toast.success('Category deleted successfully.')
+      refetch()
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <div>
@@ -133,12 +170,13 @@ export default function ItemCategoriesPage(): React.ReactElement {
                   <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Code</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Name</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Description</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {(!categories || categories.length === 0) && (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                    <td colSpan={4} className="px-4 py-8 text-center text-neutral-400 text-sm">
                       No categories yet. Create one above.
                     </td>
                   </tr>
@@ -148,6 +186,25 @@ export default function ItemCategoriesPage(): React.ReactElement {
                     <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{cat.code}</td>
                     <td className="px-4 py-3 text-neutral-900 font-medium">{cat.name}</td>
                     <td className="px-4 py-3 text-neutral-500">{cat.description ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      {canDelete && (
+                        <ConfirmDestructiveDialog
+                          title="Delete category?"
+                          description={`This will permanently delete "${cat.name}". Items using this category must be reassigned first.`}
+                          confirmWord="DELETE"
+                          confirmLabel="Delete"
+                          onConfirm={() => handleDelete(cat.id)}
+                        >
+                          <button
+                            type="button"
+                            className="p-1.5 hover:bg-red-50 rounded text-neutral-400 hover:text-red-500 transition-colors"
+                            title="Delete category"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </ConfirmDestructiveDialog>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

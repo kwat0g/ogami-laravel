@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Domains\HR\Models\Department;
 use Illuminate\Support\Facades\Hash;
 
 /*
@@ -23,17 +24,30 @@ use Illuminate\Support\Facades\Hash;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModuleSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModulePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 });
 
 /**
  * Helper: Create user with role.
  */
-function makeUserWithRole(string $role): User
+function makeUserWithRole(string $role, ?string $deptCode = null): User
 {
     $user = User::factory()->create([
         'password' => Hash::make('DashPass!789'),
     ]);
     $user->assignRole($role);
+    
+    // Assign department for RBAC v2 (Role + Module = Permissions)
+    if ($deptCode) {
+        $dept = Department::where('code', $deptCode)->first();
+        if ($dept) {
+            $user->departments()->attach($dept->id, ['is_primary' => true]);
+            $user->update(['department_id' => $dept->id]);
+        }
+    }
     
     return $user;
 }
@@ -59,7 +73,7 @@ describe('Dashboard API — Role-Based Access', function () {
     });
 
     it('manager can access manager dashboard', function () {
-        $user = makeUserWithRole('manager');
+        $user = makeUserWithRole('manager', 'HR');
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/manager')
@@ -67,7 +81,7 @@ describe('Dashboard API — Role-Based Access', function () {
     });
 
     it('officer can access officer dashboard', function () {
-        $user = makeUserWithRole('officer');
+        $user = makeUserWithRole('officer', 'ACCTG');
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/officer')
@@ -75,7 +89,7 @@ describe('Dashboard API — Role-Based Access', function () {
     });
 
     it('executive can access executive dashboard', function () {
-        $user = makeUserWithRole('executive');
+        $user = makeUserWithRole('executive', 'EXEC');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/executive');
@@ -85,15 +99,15 @@ describe('Dashboard API — Role-Based Access', function () {
     });
 
     it('vice_president can access vp dashboard', function () {
-        $user = makeUserWithRole('vice_president');
+        $user = makeUserWithRole('vice_president', 'EXEC');
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/vp')
             ->assertStatus(200);
     });
 
-    it('plant_manager can access manager dashboard', function () {
-        $user = makeUserWithRole('plant_manager');
+    it('manager (plant module) can access manager dashboard', function () {
+        $user = makeUserWithRole('manager', 'PLANT');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/manager');
@@ -101,8 +115,8 @@ describe('Dashboard API — Role-Based Access', function () {
         expect(in_array($response->getStatusCode(), [200, 403]))->toBeTrue();
     });
 
-    it('production_manager can access manager dashboard', function () {
-        $user = makeUserWithRole('production_manager');
+    it('manager (production module) can access manager dashboard', function () {
+        $user = makeUserWithRole('manager');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/manager');
@@ -110,8 +124,8 @@ describe('Dashboard API — Role-Based Access', function () {
         expect(in_array($response->getStatusCode(), [200, 403]))->toBeTrue();
     });
 
-    it('qc_manager can access manager dashboard', function () {
-        $user = makeUserWithRole('qc_manager');
+    it('manager (qc module) can access manager dashboard', function () {
+        $user = makeUserWithRole('manager');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/manager');
@@ -119,8 +133,8 @@ describe('Dashboard API — Role-Based Access', function () {
         expect(in_array($response->getStatusCode(), [200, 403]))->toBeTrue();
     });
 
-    it('mold_manager can access manager dashboard', function () {
-        $user = makeUserWithRole('mold_manager');
+    it('manager (mold module) can access manager dashboard', function () {
+        $user = makeUserWithRole('manager');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/manager');
@@ -129,7 +143,7 @@ describe('Dashboard API — Role-Based Access', function () {
     });
 
     it('head can access supervisor dashboard', function () {
-        $user = makeUserWithRole('head');
+        $user = makeUserWithRole('head', 'PROD');
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/supervisor')
@@ -137,7 +151,7 @@ describe('Dashboard API — Role-Based Access', function () {
     });
 
     it('staff can access staff dashboard', function () {
-        $user = makeUserWithRole('staff');
+        $user = makeUserWithRole('staff', 'PROD');
         
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/staff')
@@ -151,7 +165,7 @@ describe('Dashboard API — Role-Based Access', function () {
 
 describe('Dashboard API — Role-Specific Data', function () {
     it('manager dashboard returns valid JSON', function () {
-        $user = makeUserWithRole('manager');
+        $user = makeUserWithRole('manager', 'HR');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/manager')
@@ -163,7 +177,7 @@ describe('Dashboard API — Role-Specific Data', function () {
     });
 
     it('officer dashboard returns valid JSON', function () {
-        $user = makeUserWithRole('officer');
+        $user = makeUserWithRole('officer', 'ACCTG');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/officer')
@@ -174,7 +188,7 @@ describe('Dashboard API — Role-Specific Data', function () {
     });
 
     it('executive dashboard returns valid JSON when accessible', function () {
-        $user = makeUserWithRole('executive');
+        $user = makeUserWithRole('executive', 'EXEC');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/executive');
@@ -190,7 +204,7 @@ describe('Dashboard API — Role-Specific Data', function () {
     });
 
     it('vice_president dashboard returns valid JSON', function () {
-        $user = makeUserWithRole('vice_president');
+        $user = makeUserWithRole('vice_president', 'EXEC');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/vp')
@@ -201,7 +215,7 @@ describe('Dashboard API — Role-Specific Data', function () {
     });
 
     it('staff dashboard returns valid JSON', function () {
-        $user = makeUserWithRole('staff');
+        $user = makeUserWithRole('staff', 'PROD');
         
         $response = $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/dashboard/staff')
@@ -297,7 +311,12 @@ describe('Dashboard API — Permission Isolation', function () {
     });
 
     it('head cannot access manager dashboard', function () {
-        $user = makeUserWithRole('head');
+        $user = makeUserWithRole('head', 'PROD');
+        
+        // Debug: Check permissions (uncomment if needed)
+        // $perms = \App\Services\DepartmentModuleService::getUserPermissions($user);
+        // dump('User permissions: ' . count($perms), $perms);
+        // dump('Has employees.view_team: ' . (in_array('employees.view_team', $perms) ? 'YES' : 'NO'));
         
         // Head has supervisor dashboard access
         $this->actingAs($user, 'sanctum')

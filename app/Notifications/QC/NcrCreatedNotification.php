@@ -15,9 +15,22 @@ final class NcrCreatedNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly NonConformanceReport $ncr,
+        private readonly int $ncrId,
+        private readonly string $ncrUlid,
+        private readonly string $ncrNumber,
+        private readonly string $defectCategory,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(NonConformanceReport $ncr): self
+    {
+        return new self(
+            ncrId: $ncr->id,
+            ncrUlid: $ncr->ulid,
+            ncrNumber: $ncr->ncr_number ?? "NCR-{$ncr->id}",
+            defectCategory: $ncr->defect_category ?? 'Unspecified',
+        );
     }
 
     /** @return list<string> */
@@ -34,11 +47,11 @@ final class NcrCreatedNotification extends Notification implements ShouldQueue
             'title' => 'New Non-Conformance Report',
             'message' => sprintf(
                 'NCR %s has been raised. Category: %s. Immediate review required.',
-                $this->ncr->ncr_number ?? "NCR-{$this->ncr->id}",
-                $this->ncr->defect_category ?? 'Unspecified',
+                $this->ncrNumber,
+                $this->defectCategory,
             ),
-            'action_url' => "/qc/ncrs/{$this->ncr->ulid}",
-            'ncr_id' => $this->ncr->id,
+            'action_url' => "/qc/ncrs/{$this->ncrUlid}",
+            'ncr_id' => $this->ncrId,
         ];
     }
 

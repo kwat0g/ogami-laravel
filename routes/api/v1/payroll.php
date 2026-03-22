@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:payroll'])->group(function () {
 
     // ── Payroll Runs ──────────────────────────────────────────────────────────
     Route::get('runs', [PayrollRunController::class, 'index'])

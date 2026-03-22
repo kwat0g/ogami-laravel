@@ -60,7 +60,7 @@ export function useVendor(id: number | null) {
   })
 }
 
-/** Fetch a vendor's item catalog for PR creation dropdown. */
+/** Fetch a vendor's item catalog for PR/PO creation dropdowns. */
 export function useVendorItems(vendorId: number | null) {
   return useQuery({
     queryKey: ['vendor-items', vendorId],
@@ -71,11 +71,19 @@ export function useVendorItems(vendorId: number | null) {
           item_code: string
           item_name: string
           unit_of_measure: string
-          unit_price: number
+          unit_price: number        // centavos (from VendorItemResource)
           is_active: boolean
         }>
-      }>(`/accounting/vendors/${vendorId}/items`, { params: { is_active: true, per_page: 500 } })
-      return res.data.data
+      }>(`/accounting/vendors/${vendorId}/items`, { params: { active_only: true } })
+      // Normalize: convert centavos → pesos
+      return res.data.data.map((item) => ({
+        id: item.id,
+        item_code: item.item_code,
+        item_name: item.item_name,
+        unit_of_measure: item.unit_of_measure,
+        unit_price: item.unit_price / 100,
+        is_active: item.is_active,
+      }))
     },
     enabled: vendorId !== null && vendorId > 0,
     staleTime: 30_000,
@@ -205,6 +213,38 @@ export function useCreateAPInvoice() {
   })
 }
 
+export interface CreateInvoiceFromPOResponse {
+  invoice: VendorInvoice
+  po_items: Array<{
+    po_item_id: number
+    description: string
+    quantity_ordered: number
+    quantity_received: number
+    quantity_pending: number
+    unit_of_measure: string
+    unit_cost: number
+    total_cost: number
+  }>
+  po_reference: string
+  vendor_name: string
+}
+
+export function useCreateInvoiceFromPO() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (purchaseOrderId: number) => {
+      const res = await api.post<{ data: CreateInvoiceFromPOResponse }>(
+        '/accounting/ap/invoices/from-po',
+        { purchase_order_id: purchaseOrderId },
+      )
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
 export function useSubmitAPInvoice(id: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -239,6 +279,34 @@ export function useRejectAPInvoice(id: string) {
         rejection_note,
       })
       return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
+export function useCancelAPInvoice(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (reason?: string) => {
+      const res = await api.patch<{ data: VendorInvoice }>(`/accounting/ap/invoices/${id}/cancel`, {
+        reason,
+      })
+      return res.data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
+export function useDeleteAPInvoice(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.delete<{ message: string }>(`/accounting/ap/invoices/${id}`)
+      return res.data
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ap-invoices'] })

@@ -20,6 +20,9 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 
 export default function LoanDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
@@ -27,7 +30,7 @@ export default function LoanDetailPage() {
   const loanListPath = location.pathname.startsWith('/accounting') ? '/accounting/loans' : '/hr/loans'
   const { user, hasPermission } = useAuthStore()
   const loanId = id ?? null
-  const { data: loan, isLoading, isError } = useLoan(loanId)
+  const { data: loan, isLoading, isError, refetch } = useLoan(loanId)
 
   const isRequester = user?.id === loan?.requested_by
   const canApprove = hasPermission('loans.approve') && !isRequester
@@ -73,6 +76,112 @@ export default function LoanDetailPage() {
   const [officerReviewRemarks, setOfficerReviewRemarks] = useState('')
   const [showVpApproveModal, setShowVpApproveModal] = useState(false)
   const [vpApproveRemarks, setVpApproveRemarks] = useState('')
+
+  // Handler functions with toast notifications
+  const handleApprove = async () => {
+    if (!loan || !approveDate) return
+    try {
+      await approve.mutateAsync({ id: loan.ulid, first_deduction_date: approveDate, remarks: approveRemarks || undefined })
+      toast.success('Loan approved successfully')
+      setShowApproveModal(false)
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to approve loan: ${message}`)
+    }
+  }
+
+  const handleReject = async () => {
+    if (!loan || !remarks.trim()) return
+    try {
+      await reject.mutateAsync({ id: loan.ulid, remarks })
+      toast.success('Loan rejected')
+      setShowRejectModal(false)
+      setRemarks('')
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to reject loan: ${message}`)
+    }
+  }
+
+  const handleAccountingApprove = async () => {
+    if (!loan) return
+    try {
+      await accountingApprove.mutateAsync({ id: loan.ulid, remarks: accountingRemarks })
+      toast.success('Loan approved for disbursement')
+      setShowAccountingModal(false)
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to approve loan: ${message}`)
+    }
+  }
+
+  const handleDisburse = async () => {
+    if (!loan) return
+    try {
+      await disburse.mutateAsync(loan.ulid)
+      toast.success('Funds disbursed successfully')
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to disburse funds: ${message}`)
+      throw err
+    }
+  }
+
+  const handleHeadNote = async () => {
+    if (!loan) return
+    try {
+      await headNote.mutateAsync({ id: loan.ulid, remarks: headNoteRemarks || undefined })
+      toast.success('Head note recorded successfully')
+      setShowHeadNoteModal(false)
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to record head note: ${message}`)
+    }
+  }
+
+  const handleManagerCheck = async () => {
+    if (!loan) return
+    try {
+      await managerCheck.mutateAsync({ id: loan.ulid, remarks: managerCheckRemarks || undefined })
+      toast.success('Manager check recorded successfully')
+      setShowManagerCheckModal(false)
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to record manager check: ${message}`)
+    }
+  }
+
+  const handleOfficerReview = async () => {
+    if (!loan) return
+    try {
+      await officerReview.mutateAsync({ id: loan.ulid, remarks: officerReviewRemarks || undefined })
+      toast.success('Accounting review completed successfully')
+      setShowOfficerReviewModal(false)
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to complete accounting review: ${message}`)
+    }
+  }
+
+  const handleVpApprove = async () => {
+    if (!loan) return
+    try {
+      await vpApprove.mutateAsync({ id: loan.ulid, remarks: vpApproveRemarks || undefined })
+      toast.success('Loan approved by VP. Ready for disbursement.')
+      setShowVpApproveModal(false)
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to approve loan: ${message}`)
+    }
+  }
 
   if (isLoading) return <SkeletonLoader rows={8} />
   if (isError || !loan) return <div className="text-red-600 text-sm mt-4">Failed to load loan details.</div>
@@ -466,51 +575,87 @@ export default function LoanDetailPage() {
             <>
               {/* v2 Stage 1: Dept Head Note */}
               {canHeadNote && loan.status === 'pending' && (
-                <button
-                  onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
-                  disabled={headNote.isPending}
-                  className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                  <span>📋</span> Head Note
-                </button>
+                <ConfirmDialog
+                  title="Head Note — Loan Application"
+                  description="Add your endorsement note before forwarding to HR Manager review."
+                  confirmLabel="Confirm Head Note"
+                  onConfirm={handleHeadNote}
+                >
+                  <button
+                    onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
+                    disabled={headNote.isPending}
+                    className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>📋</span> Head Note
+                  </button>
+                </ConfirmDialog>
               )}
 
               {/* v2 Stage 2: Manager Check */}
               {canManagerCheck && loan.status === 'head_noted' && (
-                <button
-                  onClick={() => { setManagerCheckRemarks(''); setShowManagerCheckModal(true) }}
-                  disabled={managerCheck.isPending}
-                  className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                  <span>✓</span> Manager Check
-                </button>
+                <ConfirmDialog
+                  title="Manager Check — Loan Application"
+                  description="Review the loan application and add your endorsement before forwarding to Accounting for review."
+                  confirmLabel="Confirm Check"
+                  onConfirm={handleManagerCheck}
+                >
+                  <button
+                    onClick={() => { setManagerCheckRemarks(''); setShowManagerCheckModal(true) }}
+                    disabled={managerCheck.isPending}
+                    className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>✓</span> Manager Check
+                  </button>
+                </ConfirmDialog>
               )}
 
               {/* v2 Stage 3: Officer Review */}
               {canOfficerReview && loan.status === 'manager_checked' && (
-                <button
-                  onClick={() => { setOfficerReviewRemarks(''); setShowOfficerReviewModal(true) }}
-                  disabled={officerReview.isPending}
-                  className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                  <span>✓</span> Accounting Review
-                </button>
+                <ConfirmDialog
+                  title="Accounting Review — Loan Application"
+                  description="Review the loan terms and verify financial eligibility before forwarding to VP for final approval."
+                  confirmLabel="Confirm Review"
+                  onConfirm={handleOfficerReview}
+                >
+                  <button
+                    onClick={() => { setOfficerReviewRemarks(''); setShowOfficerReviewModal(true) }}
+                    disabled={officerReview.isPending}
+                    className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>✓</span> Accounting Review
+                  </button>
+                </ConfirmDialog>
               )}
 
               {/* v2 Stage 4: VP Approve */}
               {canVpApprove && loan.status === 'officer_reviewed' && (
-                <button
-                  onClick={() => { setVpApproveRemarks(''); setShowVpApproveModal(true) }}
-                  disabled={vpApprove.isPending}
-                  className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                  <span>✓</span> VP Approve
-                </button>
+                <ConfirmDialog
+                  title="VP Final Approval — Loan Application"
+                  description="This is the final approval step. Approving will generate the amortization schedule and mark the loan as ready for disbursement."
+                  confirmLabel="Confirm VP Approval"
+                  onConfirm={handleVpApprove}
+                >
+                  <button
+                    onClick={() => { setVpApproveRemarks(''); setShowVpApproveModal(true) }}
+                    disabled={vpApprove.isPending}
+                    className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>✓</span> VP Approve
+                  </button>
+                </ConfirmDialog>
               )}
 
               {/* Reject (any pending v2 step) */}
               {(loan.status === 'pending' || loan.status === 'head_noted' || loan.status === 'manager_checked' || loan.status === 'officer_reviewed') && (
-                <button onClick={() => setShowRejectModal(true)}
-                  disabled={reject.isPending}
-                  className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <span>✕</span> Reject
-                </button>
+                <ConfirmDestructiveDialog
+                  title="Reject Loan Application?"
+                  description="Are you sure you want to reject this loan application? This action cannot be undone."
+                  confirmWord="REJECT"
+                  confirmLabel="Confirm Rejection"
+                  onConfirm={handleReject}
+                >
+                  <button
+                    disabled={reject.isPending}
+                    className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>✕</span> Reject
+                  </button>
+                </ConfirmDestructiveDialog>
               )}
             </>
           )}
@@ -520,42 +665,82 @@ export default function LoanDetailPage() {
             <>
               {/* Head Note (optional in v1) */}
               {canHeadNote && loan.status === 'pending' && (
-                <button
-                  onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
-                  disabled={headNote.isPending}
-                  className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                  <span>📋</span> Head Note
-                </button>
+                <ConfirmDialog
+                  title="Head Note — Loan Application"
+                  description="Add your endorsement note before forwarding to HR Manager review."
+                  confirmLabel="Confirm Head Note"
+                  onConfirm={handleHeadNote}
+                >
+                  <button
+                    onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
+                    disabled={headNote.isPending}
+                    className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>📋</span> Head Note
+                  </button>
+                </ConfirmDialog>
               )}
 
               {/* HR Manager Actions */}
               {canApprove && loan.status === 'pending' && (
                 <>
-                  <button onClick={() => { setApproveDate(computeFirstDeductionDate(loan.deduction_cutoff)); setApproveRemarks(''); setShowApproveModal(true) }} disabled={approve.isPending}
-                    className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <span>✓</span> Approve (HR)
-                  </button>
-                  <button onClick={() => setShowRejectModal(true)}
-                    disabled={approve.isPending || reject.isPending}
-                    className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span>✕</span> Reject
-                  </button>
+                  <ConfirmDialog
+                    title="Approve Loan Application"
+                    description={`This will approve the loan application. Requested cut-off: ${loan.deduction_cutoff === '1st' ? '1st Cut-off (deducted every 1–15)' : '2nd Cut-off (deducted every 16–end)'}`}
+                    confirmLabel="Confirm Approval"
+                    onConfirm={handleApprove}
+                  >
+                    <button 
+                      onClick={() => { setApproveDate(computeFirstDeductionDate(loan.deduction_cutoff)); setApproveRemarks(''); setShowApproveModal(true) }} 
+                      disabled={approve.isPending}
+                      className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                      <span>✓</span> Approve (HR)
+                    </button>
+                  </ConfirmDialog>
+                  <ConfirmDestructiveDialog
+                    title="Reject Loan Application?"
+                    description="Are you sure you want to reject this loan application? This action cannot be undone."
+                    confirmWord="REJECT"
+                    confirmLabel="Confirm Rejection"
+                    onConfirm={handleReject}
+                  >
+                    <button
+                      disabled={approve.isPending || reject.isPending}
+                      className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <span>✕</span> Reject
+                    </button>
+                  </ConfirmDestructiveDialog>
                 </>
               )}
 
               {/* Accounting Manager Actions */}
               {canAccountingApprove && loan.status === 'approved' && (
                 <>
-                  <button onClick={() => setShowAccountingModal(true)}
-                    disabled={accountingApprove.isPending || reject.isPending}
-                    className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span>✓</span> Approve for Disbursement (Accounting)
-                  </button>
-                  <button onClick={() => setShowRejectModal(true)}
-                    disabled={accountingApprove.isPending || reject.isPending}
-                    className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span>✕</span> Reject
-                  </button>
+                  <ConfirmDialog
+                    title="Approve for Disbursement"
+                    description="This will create a GL entry debiting Loans Receivable and crediting Loans Payable. Please verify funds availability before proceeding."
+                    confirmLabel="Confirm Approval"
+                    onConfirm={handleAccountingApprove}
+                  >
+                    <button 
+                      onClick={() => setShowAccountingModal(true)}
+                      disabled={accountingApprove.isPending || reject.isPending}
+                      className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <span>✓</span> Approve for Disbursement (Accounting)
+                    </button>
+                  </ConfirmDialog>
+                  <ConfirmDestructiveDialog
+                    title="Reject Loan Application?"
+                    description="Are you sure you want to reject this loan application? This action cannot be undone."
+                    confirmWord="REJECT"
+                    confirmLabel="Confirm Rejection"
+                    onConfirm={handleReject}
+                  >
+                    <button
+                      disabled={accountingApprove.isPending || reject.isPending}
+                      className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <span>✕</span> Reject
+                    </button>
+                  </ConfirmDestructiveDialog>
                 </>
               )}
             </>
@@ -563,13 +748,18 @@ export default function LoanDetailPage() {
 
           {/* Disbursement Action (both v1 and v2) */}
           {canDisburse && loan.status === 'ready_for_disbursement' && (
-            <button onClick={() => disburse.mutate(loan.ulid, {
-              onSuccess: () => toast.success('Funds disbursed.'),
-              onError: () => toast.error('Failed to disburse funds.'),
-            })} disabled={disburse.isPending}
-              className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-              <span>💵</span> Disburse Funds
-            </button>
+            <ConfirmDialog
+              title="Disburse Funds?"
+              description="This will mark the loan as disbursed and release funds to the employee."
+              confirmLabel="Confirm Disbursement"
+              onConfirm={handleDisburse}
+            >
+              <button 
+                disabled={disburse.isPending}
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                <span>💵</span> Disburse Funds
+              </button>
+            </ConfirmDialog>
           )}
         </div>
       </div>
@@ -641,14 +831,8 @@ export default function LoanDetailPage() {
               </button>
               <button
                 disabled={!approveDate || approve.isPending}
-                onClick={() => approve.mutate(
-                  { id: loan.ulid, first_deduction_date: approveDate, remarks: approveRemarks || undefined },
-                  {
-                    onSuccess: () => { toast.success('Loan approved.'); setShowApproveModal(false) },
-                    onError: () => toast.error('Failed to approve loan.'),
-                  }
-                )}
-                className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-40"
+                onClick={handleApprove}
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-40"
               >
                 {approve.isPending ? 'Approving…' : 'Confirm Approval'}
               </button>
@@ -679,13 +863,7 @@ export default function LoanDetailPage() {
               </button>
               <button
                 disabled={headNote.isPending}
-                onClick={() => headNote.mutate(
-                  { id: loan.ulid, remarks: headNoteRemarks || undefined },
-                  {
-                    onSuccess: () => { toast.success('Head note recorded.'); setShowHeadNoteModal(false) },
-                    onError: () => toast.error('Failed to record head note.'),
-                  }
-                )}
+                onClick={handleHeadNote}
                 className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-40"
               >
                 {headNote.isPending ? 'Submitting…' : 'Confirm Head Note'}
@@ -716,16 +894,10 @@ export default function LoanDetailPage() {
               </button>
               <button 
                 disabled={!remarks.trim() || reject.isPending}
-                onClick={() => reject.mutate(
-                  { id: loan.ulid, remarks }, 
-                  {
-                    onSuccess: () => { toast.success('Loan rejected.'); setShowRejectModal(false) },
-                    onError: () => toast.error('Failed to reject loan.'),
-                  }
-                )}
+                onClick={handleReject}
                 className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-40"
               >
-                Confirm Rejection
+                {reject.isPending ? 'Rejecting…' : 'Confirm Rejection'}
               </button>
             </div>
           </div>
@@ -754,16 +926,10 @@ export default function LoanDetailPage() {
               </button>
               <button 
                 disabled={accountingApprove.isPending}
-                onClick={() => accountingApprove.mutate(
-                  { id: loan.ulid, remarks: accountingRemarks }, 
-                  {
-                    onSuccess: () => { toast.success('Loan approved for disbursement.'); setShowAccountingModal(false) },
-                    onError: () => toast.error('Failed to approve loan.'),
-                  }
-                )}
+                onClick={handleAccountingApprove}
                 className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-40"
               >
-                Confirm Approval
+                {accountingApprove.isPending ? 'Approving…' : 'Confirm Approval'}
               </button>
             </div>
           </div>
@@ -792,13 +958,7 @@ export default function LoanDetailPage() {
               </button>
               <button
                 disabled={managerCheck.isPending}
-                onClick={() => managerCheck.mutate(
-                  { id: loan.ulid, remarks: managerCheckRemarks || undefined },
-                  {
-                    onSuccess: () => { toast.success('Manager check recorded.'); setShowManagerCheckModal(false) },
-                    onError: () => toast.error('Failed to record manager check.'),
-                  }
-                )}
+                onClick={handleManagerCheck}
                 className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-40"
               >
                 {managerCheck.isPending ? 'Submitting…' : 'Confirm Check'}
@@ -831,13 +991,7 @@ export default function LoanDetailPage() {
               </button>
               <button
                 disabled={officerReview.isPending}
-                onClick={() => officerReview.mutate(
-                  { id: loan.ulid, remarks: officerReviewRemarks || undefined },
-                  {
-                    onSuccess: () => { toast.success('Accounting review completed.'); setShowOfficerReviewModal(false) },
-                    onError: () => toast.error('Failed to complete accounting review.'),
-                  }
-                )}
+                onClick={handleOfficerReview}
                 className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-40"
               >
                 {officerReview.isPending ? 'Submitting…' : 'Confirm Review'}
@@ -870,14 +1024,8 @@ export default function LoanDetailPage() {
               </button>
               <button
                 disabled={vpApprove.isPending}
-                onClick={() => vpApprove.mutate(
-                  { id: loan.ulid, remarks: vpApproveRemarks || undefined },
-                  {
-                    onSuccess: () => { toast.success('Loan approved by VP. Ready for disbursement.'); setShowVpApproveModal(false) },
-                    onError: () => toast.error('Failed to approve loan.'),
-                  }
-                )}
-                className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-40"
+                onClick={handleVpApprove}
+                className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-40"
               >
                 {vpApprove.isPending ? 'Approving…' : 'Confirm VP Approval'}
               </button>

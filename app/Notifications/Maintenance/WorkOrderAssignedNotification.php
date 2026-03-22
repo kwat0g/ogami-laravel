@@ -15,9 +15,24 @@ final class WorkOrderAssignedNotification extends Notification implements Should
     use Queueable;
 
     public function __construct(
-        private readonly MaintenanceWorkOrder $workOrder,
+        private readonly int $workOrderId,
+        private readonly string $workOrderUlid,
+        private readonly string $title,
+        private readonly string $priority,
+        private readonly string $equipmentName,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(MaintenanceWorkOrder $workOrder): self
+    {
+        return new self(
+            workOrderId: $workOrder->id,
+            workOrderUlid: $workOrder->ulid,
+            title: $workOrder->title,
+            priority: $workOrder->priority,
+            equipmentName: $workOrder->equipment?->name ?? '—',
+        );
     }
 
     /** @return list<string> */
@@ -34,12 +49,12 @@ final class WorkOrderAssignedNotification extends Notification implements Should
             'title' => 'Work Order Assigned to You',
             'message' => sprintf(
                 'Work order "%s" (%s priority) has been assigned to you. Equipment: %s.',
-                $this->workOrder->title,
-                $this->workOrder->priority,
-                $this->workOrder->equipment?->name ?? '—', // @phpstan-ignore-line
+                $this->title,
+                $this->priority,
+                $this->equipmentName,
             ),
-            'action_url' => "/maintenance/work-orders/{$this->workOrder->ulid}",
-            'work_order_id' => $this->workOrder->id,
+            'action_url' => "/maintenance/work-orders/{$this->workOrderUlid}",
+            'work_order_id' => $this->workOrderId,
         ];
     }
 

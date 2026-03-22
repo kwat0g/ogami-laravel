@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { AlertTriangle } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { AlertTriangle, AlertCircle, ShoppingCart } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import api, { isHandledApiError } from '@/lib/api'
 import {
   useMaterialRequisition,
@@ -17,8 +18,12 @@ import {
   useWarehouseLocations,
   useStockBalances,
 } from '@/hooks/useInventory'
+import { useConvertMrqToPr } from '@/hooks/usePurchaseRequests'
 import { usePermission } from '@/hooks/usePermission'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+
 import type { MaterialRequisitionStatus } from '@/types/inventory'
 
 const statusBadge: Record<MaterialRequisitionStatus, string> = {
@@ -44,6 +49,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 export default function MaterialRequisitionDetailPage(): React.ReactElement {
   const { ulid }   = useParams<{ ulid: string }>()
+  const navigate   = useNavigate()
   const [comments, setComments]   = useState('')
   const [reason, setReason]       = useState('')
   const [activeAction, setAction] = useState<string | null>(null)
@@ -65,21 +71,23 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
 
   const { data: mrq, isLoading, isError } = useMaterialRequisition(ulid ?? null)
 
-  const canNote       = usePermission('inventory.mrq.note')
-  const canCheck      = usePermission('inventory.mrq.check')
-  const canReview     = usePermission('inventory.mrq.review')
-  const canVpApprove  = usePermission('inventory.mrq.vp_approve')
-  const canFulfill    = usePermission('inventory.mrq.fulfill')
-  const canCreate     = usePermission('inventory.mrq.create')
+  const canNote           = usePermission('inventory.mrq.note')
+  const canCheck          = usePermission('inventory.mrq.check')
+  const canReview         = usePermission('inventory.mrq.review')
+  const canVpApprove      = usePermission('inventory.mrq.vp_approve')
+  const canFulfill        = usePermission('inventory.mrq.fulfill')
+  const canCreate         = usePermission('inventory.mrq.create')
+  const canCreatePr       = usePermission('procurement.purchase-request.create')
   
-  const submitMut   = useSubmitMRQ(ulid ?? '')
-  const noteMut     = useNoteMRQ(ulid ?? '')
-  const checkMut    = useCheckMRQ(ulid ?? '')
-  const reviewMut   = useReviewMRQ(ulid ?? '')
-  const vpMut       = useVpApproveMRQ(ulid ?? '')
-  const rejectMut   = useRejectMRQ(ulid ?? '')
-  const cancelMut   = useCancelMRQ(ulid ?? '')
-  const fulfillMut  = useFulfillMRQ(ulid ?? '')
+  const submitMut      = useSubmitMRQ(ulid ?? '')
+  const noteMut        = useNoteMRQ(ulid ?? '')
+  const checkMut       = useCheckMRQ(ulid ?? '')
+  const reviewMut      = useReviewMRQ(ulid ?? '')
+  const vpMut          = useVpApproveMRQ(ulid ?? '')
+  const rejectMut      = useRejectMRQ(ulid ?? '')
+  const cancelMut      = useCancelMRQ(ulid ?? '')
+  const fulfillMut     = useFulfillMRQ(ulid ?? '')
+  const convertToPrMut = useConvertMrqToPr()
 
   const handleSubmitWithStockCheck = async () => {
     if (!mrq) return
@@ -141,6 +149,14 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
   )
 
   const status = mrq.status
+
+  // Check for stock availability when fulfilling
+  const getStockShortages = (): string[] => {
+    if (!mrq || !locationId) return []
+    return (mrq.items ?? []).filter(
+      (line) => (stockMap.get(line.item_id) ?? 0) < parseFloat(line.qty_requested)
+    ).map((line) => line.item?.name ?? `Item #${line.item_id}`)
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -285,6 +301,9 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
               className="w-full text-sm border border-red-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-red-400"
               placeholder="Provide a reason for rejection…"
             />
+            {!reason.trim() && (
+              <p className="text-xs text-red-500 mt-1">Reason is required to reject.</p>
+            )}
           </div>
         )}
 
@@ -301,18 +320,27 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
                 <option key={loc.id} value={loc.id}>{loc.name}</option>
               ))}
             </select>
+            {!locationId && (
+              <p className="text-xs text-red-500 mt-1">Location is required to fulfill.</p>
+            )}
           </div>
         )}
 
         <div className="flex flex-wrap gap-2">
           {status === 'draft' && canCreate && (
-            <button
-              onClick={handleSubmitWithStockCheck}
-              disabled={submitMut.isPending}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            <ConfirmDialog
+              title="Submit for Approval?"
+              description="This will submit the requisition for review and approval."
+              confirmLabel="Submit"
+              onConfirm={handleSubmitWithStockCheck}
             >
-              {submitMut.isPending ? 'Checking…' : 'Submit for Approval'}
-            </button>
+              <button
+                disabled={submitMut.isPending}
+                className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitMut.isPending ? 'Checking…' : 'Submit for Approval'}
+              </button>
+            </ConfirmDialog>
           )}
           {status === 'submitted' && canNote && (
             <button
@@ -339,39 +367,135 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
             </button>
           )}
           {status === 'reviewed' && canVpApprove && (
-            <button
-              onClick={() => activeAction === 'approve' ? handleAction('approve') : setAction('approve')}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded"
+            <ConfirmDialog
+              title="Approve Requisition?"
+              description="This will approve the requisition for fulfillment. Stock will be reserved."
+              confirmLabel="Approve"
+              onConfirm={() => handleAction('approve')}
             >
-              {activeAction === 'approve' ? 'Confirm Approve' : 'VP Approve'}
-            </button>
+              <button
+                className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded"
+              >
+                VP Approve
+              </button>
+            </ConfirmDialog>
           )}
           {status === 'approved' && canFulfill && (
-            <button
-              onClick={() => activeAction === 'fulfill' ? handleAction('fulfill') : setAction('fulfill')}
-              disabled={fulfillMut.isPending || (activeAction === 'fulfill' && !locationId)}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            <>
+              {activeAction === 'fulfill' ? (
+                <ConfirmDialog
+                  title="Fulfill Requisition?"
+                  description={
+                    <div className="space-y-2">
+                      <p>You are about to issue stock from the selected location.</p>
+                      {getStockShortages().length > 0 && (
+                        <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-medium">Stock shortage detected:</p>
+                              <p>{getStockShortages().join(', ')}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-amber-600 text-xs">This will deduct inventory immediately.</p>
+                    </div>
+                  }
+                  confirmLabel="Confirm Fulfill"
+                  onConfirm={() => handleAction('fulfill')}
+                >
+                  <button
+                    disabled={fulfillMut.isPending || !locationId}
+                    className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {fulfillMut.isPending ? 'Processing…' : 'Confirm Fulfill'}
+                  </button>
+                </ConfirmDialog>
+              ) : (
+                <button
+                  onClick={() => setAction('fulfill')}
+                  className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded"
+                >
+                  Fulfill (Issue Stock)
+                </button>
+              )}
+            </>
+          )}
+          {/* Convert to PR — visible when approved, not yet converted, and user has PR create permission */}
+          {status === 'approved' && !mrq.converted_to_pr && canCreatePr && (
+            <ConfirmDialog
+              title="Convert to Purchase Request?"
+              description="This will create a draft Purchase Request with all items from this requisition pre-filled. You'll be redirected to the new PR to add pricing and vendor details."
+              confirmLabel="Convert to PR"
+              onConfirm={async () => {
+                try {
+                  const pr = await convertToPrMut.mutateAsync({ mrqUlid: mrq.ulid })
+                  toast.success('Purchase Request created from MRQ.')
+                  navigate(`/procurement/purchase-requests/${pr.ulid}`)
+                } catch (err) {
+                  if (isHandledApiError(err)) return
+                  toast.error((err as { message?: string })?.message ?? 'Failed to convert to PR.')
+                }
+              }}
             >
-              {activeAction === 'fulfill' ? 'Confirm Fulfill' : 'Fulfill (Issue Stock)'}
-            </button>
+              <button
+                disabled={convertToPrMut.isPending}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-700 hover:bg-blue-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                {convertToPrMut.isPending ? 'Converting…' : 'Convert to PR'}
+              </button>
+            </ConfirmDialog>
+          )}
+          {status === 'approved' && mrq.converted_to_pr && (
+            <div className="flex items-center gap-1.5 px-4 py-2 text-sm text-neutral-500 border border-neutral-200 rounded bg-neutral-50">
+              <ShoppingCart className="w-4 h-4" />
+              Already converted to PR
+            </div>
           )}
           {['submitted', 'noted', 'checked', 'reviewed'].includes(status) && (
-            <button
-              onClick={() => activeAction === 'reject' ? handleAction('reject') : setAction('reject')}
-              disabled={rejectMut.isPending}
-              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded"
-            >
-              {activeAction === 'reject' ? 'Confirm Rejection' : 'Reject'}
-            </button>
+            <>
+              {activeAction === 'reject' ? (
+                <ConfirmDestructiveDialog
+                  title="Reject Requisition?"
+                  description="This will reject the requisition. The requester will be notified."
+                  confirmWord="REJECT"
+                  confirmLabel="Confirm Rejection"
+                  onConfirm={() => handleAction('reject')}
+                >
+                  <button
+                    disabled={rejectMut.isPending || !reason.trim()}
+                    className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded disabled:opacity-50"
+                  >
+                    {rejectMut.isPending ? 'Processing…' : 'Confirm Rejection'}
+                  </button>
+                </ConfirmDestructiveDialog>
+              ) : (
+                <button
+                  onClick={() => setAction('reject')}
+                  className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-50 rounded"
+                >
+                  Reject
+                </button>
+              )}
+            </>
           )}
           {mrq.is_cancellable && (
-            <button
-              onClick={() => handleAction('cancel')}
-              disabled={cancelMut.isPending}
-              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-500 hover:bg-neutral-50 rounded"
+            <ConfirmDestructiveDialog
+              title="Cancel Requisition?"
+              description="This will cancel the requisition. This action cannot be undone."
+              confirmWord="CANCEL"
+              confirmLabel="Confirm Cancel"
+              onConfirm={() => handleAction('cancel')}
             >
-              Cancel
-            </button>
+              <button
+                disabled={cancelMut.isPending}
+                className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-500 hover:bg-neutral-50 rounded disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </ConfirmDestructiveDialog>
           )}
           {activeAction && (
             <button

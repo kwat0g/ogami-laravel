@@ -20,6 +20,9 @@ import {
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function formatPHP(n: number): string {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(n)
@@ -152,8 +155,35 @@ export default function PayrollRunAcctgReviewPage() {
   const sodViolation = user?.id === run?.initiated_by_id
   const isReadOnly = !hasAcctgApprove
 
+  // ── Validation for approval ───────────────────────────────────────────────
+  function validateApproval(): boolean {
+    if (sodViolation) {
+      toast.error('SoD Violation: You cannot approve a payroll run you initiated.')
+      return false
+    }
+    if (!allChecked) {
+      toast.error('Please check all items in the approval checklist.')
+      return false
+    }
+    return true
+  }
+
+  // ── Validation for rejection ──────────────────────────────────────────────
+  function validateRejection(): boolean {
+    const reason = rejectionReason.trim()
+    if (!reason) {
+      toast.error('Rejection reason is required.')
+      return false
+    }
+    if (reason.length < 10) {
+      toast.error('Rejection reason must be at least 10 characters.')
+      return false
+    }
+    return true
+  }
+
   async function handleApprove() {
-    if (!allChecked || sodViolation) return
+    if (!validateApproval()) return
     try {
       await acctgApprove.mutateAsync({
         action: 'APPROVED',
@@ -161,36 +191,22 @@ export default function PayrollRunAcctgReviewPage() {
       })
       toast.success('Accounting approval recorded. Forwarded to VP for final approval.')
       navigate(`/payroll/runs/${runId}/vp-review`) // After Accounting approval, go to VP review
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Approval failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
   async function handleReject() {
-    const reason = rejectionReason.trim()
-    if (!reason) {
-      toast.error('Rejection reason is required.')
-      return
-    }
-    if (reason.length < 10) {
-      toast.error('Rejection reason must be at least 10 characters.')
-      return
-    }
+    if (!validateRejection()) return
     try {
       await acctgApprove.mutateAsync({
         action: 'REJECTED',
-        rejection_reason: reason,
+        rejection_reason: rejectionReason.trim(),
       })
       toast.error('Payroll run rejected. The run must be restarted from Step 1.')
       navigate('/payroll/runs')
-    } catch (err: unknown) {
-      type ApiError = {
-        response?: { data?: { message?: string; errors?: Record<string, string[]> } }
-      }
-      const data = (err as ApiError)?.response?.data
-      const validationMsg = data?.errors ? Object.values(data.errors).flat()[0] : undefined
-      toast.error(validationMsg ?? data?.message ?? 'Rejection failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -374,9 +390,18 @@ export default function PayrollRunAcctgReviewPage() {
             rows={3}
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
-            placeholder="Rejection reason (min. 10 characters, required)…"
-            className="w-full border border-red-300 rounded px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-red-500 outline-none"
+            placeholder="Rejection reason (min. 10 characters, required)..."
+            className={`w-full border rounded px-3 py-2 text-sm resize-none focus:ring-2 outline-none ${
+              rejectionReason.trim() && rejectionReason.trim().length < 10
+                ? 'border-red-300 focus:ring-red-500'
+                : 'border-red-300 focus:ring-red-500'
+            }`}
           />
+          {rejectionReason.trim() && rejectionReason.trim().length < 10 && (
+            <p className="text-xs text-red-500">
+              Rejection reason must be at least 10 characters.
+            </p>
+          )}
           <div className="flex gap-2">
             <button
               type="button"
@@ -385,14 +410,21 @@ export default function PayrollRunAcctgReviewPage() {
             >
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={handleReject}
-              disabled={acctgApprove.isPending}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded"
+            <ConfirmDestructiveDialog
+              title="Permanently Reject Payroll Run?"
+              description={`This will permanently reject the payroll run. The initiator will need to create a new run from Step 1. This action cannot be undone.`}
+              confirmWord="REJECT"
+              confirmLabel="Confirm Rejection"
+              onConfirm={handleReject}
             >
-              {acctgApprove.isPending ? 'Rejecting…' : 'Confirm Permanent Rejection'}
-            </button>
+              <button
+                type="button"
+                disabled={acctgApprove.isPending || !rejectionReason.trim() || rejectionReason.trim().length < 10}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded"
+              >
+                {acctgApprove.isPending ? 'Rejecting…' : 'Confirm Permanent Rejection'}
+              </button>
+            </ConfirmDestructiveDialog>
           </div>
         </div>
       )}
@@ -422,27 +454,33 @@ export default function PayrollRunAcctgReviewPage() {
               <ArrowLeft className="h-4 w-4" /> Back to Payroll Runs
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={handleApprove}
-              disabled={
-                acctgApprove.isPending ||
-                !allChecked ||
-                (run.status !== 'HR_APPROVED' && run.status !== 'SUBMITTED')
-              }
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+            <ConfirmDialog
+              title="Approve & Forward to VP?"
+              description={`This will approve the payroll run and forward it to the VP for final authorization. Please ensure you have reviewed the GL entries and cash requirement.`}
+              confirmLabel="Approve & Forward"
+              onConfirm={handleApprove}
             >
-              {acctgApprove.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Processing…
-                </>
-              ) : (
-                <>
-                  <ThumbsUp className="h-4 w-4" /> Approve & Forward to VP{' '}
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
+              <button
+                type="button"
+                disabled={
+                  acctgApprove.isPending ||
+                  !allChecked ||
+                  (run.status !== 'HR_APPROVED' && run.status !== 'SUBMITTED')
+                }
+                className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+              >
+                {acctgApprove.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Processing…
+                  </>
+                ) : (
+                  <>
+                    <ThumbsUp className="h-4 w-4" /> Approve & Forward to VP{' '}
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </ConfirmDialog>
           )}
         </div>
       )}

@@ -15,9 +15,22 @@ final class AuditFindingNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly AuditFinding $finding,
+        private readonly int $findingId,
+        private readonly int $auditId,
+        private readonly string $title,
+        private readonly string $severity,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(AuditFinding $finding): self
+    {
+        return new self(
+            findingId: $finding->id,
+            auditId: $finding->audit_id,
+            title: $finding->description ?? "Finding #{$finding->id}",
+            severity: $finding->severity ?? 'unspecified',
+        );
     }
 
     /** @return list<string> */
@@ -34,11 +47,11 @@ final class AuditFindingNotification extends Notification implements ShouldQueue
             'title' => 'New Audit Finding Raised',
             'message' => sprintf(
                 'Audit finding "%s" (Severity: %s) requires corrective action.',
-                $this->finding->title ?? "Finding #{$this->finding->id}",
-                $this->finding->severity ?? 'unspecified',
+                $this->title,
+                $this->severity,
             ),
-            'action_url' => "/iso/audits/{$this->finding->audit_id}",
-            'finding_id' => $this->finding->id,
+            'action_url' => "/iso/audits/{$this->auditId}",
+            'finding_id' => $this->findingId,
         ];
     }
 

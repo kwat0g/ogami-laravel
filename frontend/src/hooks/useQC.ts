@@ -43,6 +43,14 @@ export function useCreateInspectionTemplate() {
   })
 }
 
+export function useDeleteInspectionTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (ulid: string) => api.delete(`/qc/templates/${ulid}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.templates }),
+  })
+}
+
 // ── Inspections ─────────────────────────────────────────────────────────────
 
 type InspectionParams = { stage?: string; status?: string; item_master_id?: number; per_page?: number; page?: number; with_archived?: boolean }

@@ -16,7 +16,7 @@ final class ListBudgetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cost_center_id' => ['required', 'integer', 'exists:cost_centers,id'],
+            'cost_center_id' => ['nullable', 'integer', 'exists:cost_centers,id'],
             'fiscal_year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ];
     }

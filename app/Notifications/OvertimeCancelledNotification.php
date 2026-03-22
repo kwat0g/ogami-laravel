@@ -19,9 +19,25 @@ final class OvertimeCancelledNotification extends Notification implements Should
 {
     use Queueable;
 
-    public function __construct(private readonly OvertimeRequest $request)
-    {
+    public function __construct(
+        private readonly int $overtimeRequestId,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $workDate,
+        private readonly int $requestedMinutes,
+    ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(OvertimeRequest $request): self
+    {
+        return new self(
+            overtimeRequestId: $request->id,
+            employeeId: $request->employee_id,
+            employeeName: $request->employee->full_name,
+            workDate: $request->work_date->toFormattedDateString(),
+            requestedMinutes: $request->requested_minutes,
+        );
     }
 
     /** @return list<string> */
@@ -38,13 +54,13 @@ final class OvertimeCancelledNotification extends Notification implements Should
             'title' => 'Overtime Request Cancelled',
             'message' => sprintf(
                 '%s has cancelled their overtime request for %s (%d min). No further action required.',
-                $this->request->employee->full_name,
-                $this->request->work_date->toFormattedDateString(),
-                $this->request->requested_minutes,
+                $this->employeeName,
+                $this->workDate,
+                $this->requestedMinutes,
             ),
             'action_url' => '/hr/overtime',
-            'overtime_request_id' => $this->request->id,
-            'employee_id' => $this->request->employee_id,
+            'overtime_request_id' => $this->overtimeRequestId,
+            'employee_id' => $this->employeeId,
         ];
     }
 

@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\Hash;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModuleSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModulePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 
     // Activate the SoD conflict matrix in system_settings
     DB::table('system_settings')->updateOrInsert(
@@ -49,7 +53,12 @@ beforeEach(function () {
                 ],
                 'loans' => [
                     'approve' => ['apply', 'request'],
+                    'vp_approve' => ['apply', 'request'],
                     'apply' => ['approve'],
+                ],
+                'overtime' => [
+                    'approve' => ['submit'],
+                    'submit' => ['approve'],
                 ],
                 'overtime_requests' => [
                     'approve' => ['submit'],
@@ -173,13 +182,16 @@ describe('SodMiddleware — SOD-002 leave request self-approval', function () {
             ->toThrow(\App\Shared\Exceptions\SodViolationException::class);
     });
 
-    it('HTTP 403 SOD_VIOLATION returned on loan approve when requester tries to approve — SOD-004', function () {
+    it('HTTP 403 SOD_VIOLATION returned on loan vp-approve when requester tries to approve — SOD-004', function () {
+        // Use HR department
+        $dept = \App\Domains\HR\Models\Department::where('code', 'HR')->first();
+        
+        // Create manager user with department (hr.manager has loans.vp_approve)
         $user = User::factory()->create();
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'loans.apply', 'guard_name' => 'web']
-        ));
+        $user->assignRole('manager');
+        $user->departments()->attach($dept->id, ['is_primary' => true]);
 
-        // Create an employee record with all NOT NULL fields to satisfy constraints
+        // Create employee linked to the user
         $employeeId = DB::table('employees')->insertGetId([
             'employee_code' => 'EMP-TEST-001',
             'ulid' => (string) \Illuminate\Support\Str::ulid(),
@@ -191,63 +203,72 @@ describe('SodMiddleware — SOD-002 leave request self-approval', function () {
             'bir_status' => 'S',
             'employment_type' => 'regular',
             'date_hired' => '2020-01-01',
-            'basic_monthly_rate' => 1500000,   // ₱15,000 in centavos
+            'basic_monthly_rate' => 1500000,
+            'department_id' => $dept->id,
+            'user_id' => $user->id, // Link employee to user
         ]);
 
-        // Create the loan via factory; override requested_by to be our test user
+        // Create the loan
         $loan = \App\Domains\Loan\Models\Loan::factory()->create([
             'employee_id' => $employeeId,
             'requested_by' => $user->id,
             'status' => 'pending',
         ]);
 
+        // Use vp-approve route which has SoD middleware
         $response = $this->actingAs($user)
-            ->patchJson("/api/v1/loans/{$loan->ulid}/approve");
+            ->patchJson("/api/v1/loans/{$loan->ulid}/vp-approve");
 
-        // SoD middleware runs before the controller and returns 403
         $response->assertStatus(403)
             ->assertJsonPath('error_code', 'SOD_VIOLATION');
     });
 });
 
 describe('SodMiddleware — SOD-003 overtime request self-approval', function () {
-    it('matrix declares overtime_requests.approve conflicts with overtime_requests.submit', function () {
+    it('matrix declares overtime.approve conflicts with overtime.submit', function () {
         $matrix = json_decode(
             DB::table('system_settings')->where('key', 'sod_conflict_matrix')->value('value'),
             true
         );
-        expect($matrix['overtime_requests']['approve'])->toContain('submit');
+        expect($matrix['overtime']['approve'])->toContain('submit');
     });
 
-    it('middleware blocks user with overtime_requests.submit from approving their own OT — SOD-003', function () {
+    it('middleware blocks user with overtime.submit from approving their own OT — SOD-003', function () {
         $middleware = new \App\Infrastructure\Middleware\SodMiddleware;
 
         $user = User::factory()->create();
         $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'overtime_requests.submit', 'guard_name' => 'web']
+            ['name' => 'overtime.submit', 'guard_name' => 'web']
         ));
 
         $request = \Illuminate\Http\Request::create('/api/v1/attendance/overtime-requests/1/approve', 'PATCH');
         $request->setUserResolver(fn () => $user);
 
-        // OT approve route has sod:overtime_requests,approve middleware applied
-        expect(fn () => $middleware->handle($request, fn ($r) => response('ok'), 'overtime_requests', 'approve'))
+        // OT approve route has sod:overtime,approve middleware applied
+        expect(fn () => $middleware->handle($request, fn ($r) => response('ok'), 'overtime', 'approve'))
             ->toThrow(\App\Shared\Exceptions\SodViolationException::class);
     });
 });
 
 describe('SodMiddleware — SOD-003 overtime HTTP enforcement', function () {
     it('HTTP 403 SOD_VIOLATION returned when OT submitter tries to approve — SOD-003', function () {
+        // Use existing HR department with module_key for RBAC v2
+        $dept = \App\Domains\HR\Models\Department::where('code', 'HR')->first();
+        if (!$dept) {
+            $dept = \App\Domains\HR\Models\Department::factory()->create([
+                'code' => 'HR',
+                'name' => 'Human Resources',
+                'module_key' => 'hr',
+            ]);
+        }
+        
+        // Create user with manager role (hr.manager has overtime.approve permission)
         $user = User::factory()->create();
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'overtime_requests.submit', 'guard_name' => 'web']
-        ));
-        // Also grant approve permission so the route doesn't 403 for missing perm
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'overtime_requests.approve', 'guard_name' => 'web']
-        ));
+        $user->assignRole('manager');
+        // Assign user to department for RBAC v2 department scoping
+        $user->departments()->attach($dept->id, ['is_primary' => true]);
 
-        // Create employee + OT request
+        // Create employee linked to the user (so SOD policy blocks self-approval)
         $employeeId = DB::table('employees')->insertGetId([
             'employee_code' => 'EMP-OT-SOD-001',
             'ulid' => (string) \Illuminate\Support\Str::ulid(),
@@ -260,6 +281,8 @@ describe('SodMiddleware — SOD-003 overtime HTTP enforcement', function () {
             'employment_type' => 'regular',
             'date_hired' => '2021-01-01',
             'basic_monthly_rate' => 1200000,
+            'department_id' => $dept->id,
+            'user_id' => $user->id, // Link employee to user for SOD check
         ]);
 
         $otId = DB::table('overtime_requests')->insertGetId([
@@ -270,11 +293,14 @@ describe('SodMiddleware — SOD-003 overtime HTTP enforcement', function () {
             'ot_end_time' => '20:00:00',
             'requested_minutes' => 120,
             'reason' => 'Urgent project deadline',
-            'status' => 'pending',
+            'status' => 'supervisor_approved',
+            'requester_role' => 'staff',
         ]);
 
         $response = $this->actingAs($user)
-            ->patchJson("/api/v1/attendance/overtime-requests/{$otId}/approve");
+            ->patchJson("/api/v1/attendance/overtime-requests/{$otId}/approve", [
+                'approved_minutes' => 120,
+            ]);
 
         $response->assertStatus(403)
             ->assertJsonPath('error_code', 'SOD_VIOLATION');
@@ -291,7 +317,15 @@ describe('SodMiddleware — SOD-010 journal entry self-posting', function () {
     });
 
     it('HTTP 403 SOD_VIOLATION returned when JE creator tries to post — SOD-010', function () {
+        // Assign user to the Accounting dept so module_access:accounting passes
+        $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+
         $user = User::factory()->create();
+        $user->assignRole('officer');
+        if ($acctgDept) {
+            $user->departments()->attach($acctgDept->id, ['is_primary' => true]);
+        }
+
         // User created the JE (has journal_entries.create permission)
         $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
             ['name' => 'journal_entries.create', 'guard_name' => 'web']

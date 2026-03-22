@@ -153,6 +153,12 @@ final class PayrollComputationContext implements ServiceContract
 
     public bool $hasDeferredDeductions = false;
 
+    // ─── 13th Month Pay (Step 18) ─────────────────────────────────────────────
+
+    public int $thirteenthMonthCentavos = 0;
+
+    public int $thirteenthMonthTaxableCentavos = 0;
+
     // ─── DED-004: per-step deduction audit trace ──────────────────────────────
     /** @var list<array<string, mixed>> Assembled by Step17; written to deduction_stack_trace. */
     public array $deductionTrace = [];

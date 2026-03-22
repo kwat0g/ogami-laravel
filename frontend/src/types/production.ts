@@ -15,8 +15,10 @@ export interface Bom {
   product_item: { id: number; item_code: string; name: string; unit_of_measure: string } | null
   product_item_id: number
   version: string
+  name?: string | null
   is_active: boolean
   notes: string | null
+  standard_production_days?: number
   components?: BomComponent[]
   created_at: string | null
   updated_at: string | null
@@ -30,8 +32,8 @@ export interface DeliverySchedule {
   id: number
   ulid: string
   ds_reference: string
-  customer: { id: number; name: string } | null
-  product_item: { id: number; item_code: string; name: string } | null
+  customer: { id: number; name: string; email?: string } | null
+  product_item: { id: number; item_code: string; name: string; unit_of_measure?: string } | null
   qty_ordered: string
   unit_price: string | null
   target_delivery_date: string
@@ -122,6 +124,12 @@ export interface LogProductionOutputPayload {
   remarks?: string
 }
 
+export interface SmartDefaults {
+  suggested_bom_id: number | null
+  suggested_bom_name: string | null
+  calculated_end_date: string | null
+}
+
 export interface Paginated<T> {
   data: T[]
   meta: {
@@ -130,4 +138,63 @@ export interface Paginated<T> {
     per_page: number
     total: number
   }
+}
+
+export type CombinedDeliveryScheduleStatus = 'planning' | 'ready' | 'partially_ready' | 'dispatched' | 'delivered' | 'cancelled'
+
+export interface ItemStatusSummary {
+  delivery_schedule_id: number
+  product_name: string
+  qty_ordered: string
+  status: string
+  is_ready: boolean
+  is_missing?: boolean
+  missing_reason?: string
+  expected_delivery?: string
+}
+
+export interface CombinedDeliverySchedule {
+  id: number
+  ulid: string
+  cds_reference: string
+  client_order_id: number
+  customer_id: number
+  status: CombinedDeliveryScheduleStatus
+  status_label?: string
+  target_delivery_date: string
+  actual_delivery_date: string | null
+  delivery_address: string | null
+  delivery_instructions: string | null
+  item_status_summary: ItemStatusSummary[] | null
+  total_items: number
+  ready_items: number
+  missing_items: number
+  progress_percentage: number
+  can_dispatch: boolean
+  is_ready: boolean
+  dispatched_at: string | null
+  has_dispute: boolean
+  dispute_summary: Record<string, unknown> | string | null
+  client_order?: {
+    id: number
+    order_reference: string
+    total_amount: string
+  }
+  customer?: {
+    id: number
+    name: string
+    email: string
+    phone: string
+  }
+  item_schedules: DeliverySchedule[]
+  created_at: string
+}
+
+export interface CombinedDeliveryScheduleFilters {
+  status?: string
+  customer_id?: number
+  date_from?: string
+  date_to?: string
+  per_page?: number
+  page?: number
 }

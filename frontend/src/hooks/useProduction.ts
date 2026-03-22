@@ -9,6 +9,7 @@ import type {
   CreateProductionOrderPayload,
   LogProductionOutputPayload,
   Paginated,
+  SmartDefaults,
 } from '@/types/production'
 
 // ── Bill of Materials ────────────────────────────────────────────────────────
@@ -102,6 +103,17 @@ export function useUpdateDeliverySchedule(ulid: string) {
     mutationFn: (payload: Partial<CreateDeliverySchedulePayload & { status: string }>) =>
       api.put(`/production/delivery-schedules/${ulid}`, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-schedules'] }),
+  })
+}
+
+export function useFulfillFromStock(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post<{ data: DeliverySchedule }>(`/production/delivery-schedules/${ulid}/fulfill`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['delivery-schedules'] })
+      qc.invalidateQueries({ queryKey: ['delivery-schedules', ulid] })
+    },
   })
 }
 
@@ -227,5 +239,25 @@ export function useForceRelease(ulid: string) {
       api.patch(`/production/orders/${ulid}/release`, { force_release: true }).then(() => {
         qc.invalidateQueries({ queryKey: ['production-orders'] })
       }),
+  })
+}
+
+// ── Smart Defaults ───────────────────────────────────────────────────────────
+
+export function useProductionSmartDefaults(productItemId: number | null, targetStartDate?: string) {
+  return useQuery({
+    queryKey: ['production-smart-defaults', productItemId, targetStartDate],
+    queryFn: async () => {
+      const params: { product_item_id: number; target_start_date?: string } = {
+        product_item_id: productItemId!,
+      }
+      if (targetStartDate) {
+        params.target_start_date = targetStartDate
+      }
+      const res = await api.get<{ data: SmartDefaults }>('/production/orders/smart-defaults', { params })
+      return res.data.data
+    },
+    enabled: productItemId !== null,
+    staleTime: 10_000,
   })
 }

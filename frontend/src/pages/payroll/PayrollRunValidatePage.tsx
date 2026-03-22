@@ -25,6 +25,9 @@ import {
 } from '@/hooks/usePayroll'
 import type { PreRunCheckResult } from '@/types/payroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function SeverityIcon({ check }: { check: PreRunCheckResult }) {
   if (check.status === 'pass') return <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
@@ -99,7 +102,6 @@ export default function PayrollRunValidatePage() {
   const cancelRun = useCancelPayrollRun(runId)
 
   const [warnAcked, setWarnAcked] = useState<Record<string, boolean>>({})
-  const [confirmCancel, setConfirmCancel] = useState(false)
 
   const cancellableStatuses = [
     // v1.0 workflow statuses
@@ -133,14 +135,28 @@ export default function PayrollRunValidatePage() {
     setWarnAcked((prev) => ({ ...prev, [code]: !prev[code] }))
   }
 
+  // ── Validation for acknowledgment ─────────────────────────────────────────
+  function validateAcknowledge(): boolean {
+    if (hasBlocker) {
+      toast.error('Please fix all blocking issues before proceeding.')
+      return false
+    }
+    if (!allWarnsAck && warnChecks.length > 0) {
+      toast.error('Please acknowledge all warnings to continue.')
+      return false
+    }
+    return true
+  }
+
   async function handleAcknowledge() {
+    if (!validateAcknowledge()) return
     const ackedWarnings = warnChecks.filter((c) => warnAcked[c.code]).map((c) => c.code)
     try {
       await acknowledge.mutateAsync(ackedWarnings)
-      toast.success('Pre-run checks acknowledged. Proceed to computation.')
+      toast.success('Pre-run checks acknowledged. Proceeding to computation.')
       navigate(`/payroll/runs/${runId}/compute`)
-    } catch {
-      toast.error('Failed to acknowledge pre-run checks.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -149,8 +165,8 @@ export default function PayrollRunValidatePage() {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch {
-      toast.error('Failed to cancel payroll run.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -239,60 +255,61 @@ export default function PayrollRunValidatePage() {
           >
             <ArrowLeft className="h-4 w-4" /> Back to Scope
           </button>
-          {canCancel &&
-            (confirmCancel ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-red-600">Cancel this run?</span>
-                <button
-                  type="button"
-                  onClick={() => void handleCancel()}
-                  disabled={cancelRun.isPending}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-md transition-colors"
-                >
-                  {cancelRun.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                  Confirm Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmCancel(false)}
-                  className="px-3 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 border border-neutral-200 rounded-md transition-colors"
-                >
-                  Keep
-                </button>
-              </div>
-            ) : (
+          {canCancel && (
+            <ConfirmDestructiveDialog
+              title="Cancel payroll run?"
+              description="Cancelling will permanently stop this payroll run. This action cannot be undone."
+              confirmWord="CANCEL"
+              confirmLabel="Cancel Run"
+              onConfirm={handleCancel}
+            >
               <button
                 type="button"
-                onClick={() => setConfirmCancel(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors"
+                disabled={cancelRun.isPending}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors disabled:opacity-50"
               >
-                <Ban className="h-4 w-4" /> Cancel Run
+                {cancelRun.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                Cancel Run
               </button>
-            ))}
-        </div>
-        <button
-          type="button"
-          onClick={handleAcknowledge}
-          disabled={!canProceed || acknowledge.isPending}
-          title={
-            hasBlocker
-              ? 'Fix all blocking issues first.'
-              : !allWarnsAck
-                ? 'Acknowledge all warnings to continue.'
-                : undefined
-          }
-          className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
-        >
-          {acknowledge.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Acknowledging…
-            </>
-          ) : (
-            <>
-              Proceed to Computation <ArrowRight className="h-4 w-4" />
-            </>
+            </ConfirmDestructiveDialog>
           )}
-        </button>
+        </div>
+
+        <ConfirmDialog
+          title="Proceed to Computation?"
+          description={
+            hasBlocker
+              ? 'Cannot proceed - blocking issues must be fixed first.'
+              : !allWarnsAck && warnChecks.length > 0
+                ? 'Cannot proceed - all warnings must be acknowledged first.'
+                : 'This will begin the payroll computation process for all in-scope employees. Proceed?'
+          }
+          confirmLabel="Proceed to Computation"
+          onConfirm={handleAcknowledge}
+        >
+          <button
+            type="button"
+            disabled={!canProceed || acknowledge.isPending}
+            title={
+              hasBlocker
+                ? 'Fix all blocking issues first.'
+                : !allWarnsAck
+                  ? 'Acknowledge all warnings to continue.'
+                  : undefined
+            }
+            className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+          >
+            {acknowledge.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Acknowledging…
+              </>
+            ) : (
+              <>
+                Proceed to Computation <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+        </ConfirmDialog>
       </div>
     </div>
   )

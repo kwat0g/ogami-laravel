@@ -28,11 +28,27 @@ final class PayrollApprovedNotification extends Notification implements ShouldQu
     use Queueable;
 
     public function __construct(
-        private readonly PayrollRun $run,
+        private readonly int $payrollRunId,
+        private readonly string $payrollRunUlid,
+        private readonly string $referenceNo,
+        private readonly string $payPeriodLabel,
+        private readonly ?string $payDate,
         /** 'payslip' targeting individual employee, 'approval' targeting HR Manager */
         private readonly string $audience = 'payslip',
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(PayrollRun $run, string $audience = 'payslip'): self
+    {
+        return new self(
+            payrollRunId: $run->id,
+            payrollRunUlid: $run->ulid,
+            referenceNo: $run->reference_no,
+            payPeriodLabel: $run->pay_period_label,
+            payDate: $run->pay_date ? (string) $run->pay_date : null,
+            audience: $audience,
+        );
     }
 
     /** @return list<string> */
@@ -50,18 +66,18 @@ final class PayrollApprovedNotification extends Notification implements ShouldQu
                 'title' => 'Your Payslip is Ready',
                 'message' => sprintf(
                     'Your payslip for %s (pay date: %s) is now available for download.',
-                    $this->run->pay_period_label,
-                    $this->run->pay_date
-                        ? Carbon::parse($this->run->pay_date)->toFormattedDateString()
+                    $this->payPeriodLabel,
+                    $this->payDate
+                        ? Carbon::parse($this->payDate)->toFormattedDateString()
                         : 'TBD',
                 ),
                 'action_url' => '/self-service/payslips',
-                'payroll_run_id' => $this->run->id,
+                'payroll_run_id' => $this->payrollRunId,
             ];
         }
 
-        $payDate = $this->run->pay_date
-            ? Carbon::parse($this->run->pay_date)->toFormattedDateString()
+        $payDate = $this->payDate
+            ? Carbon::parse($this->payDate)->toFormattedDateString()
             : 'TBD';
 
         return match ($this->audience) {
@@ -70,81 +86,81 @@ final class PayrollApprovedNotification extends Notification implements ShouldQu
                 'title' => 'Payroll Run HR-Approved — Awaiting Your Accounting Sign-Off',
                 'message' => sprintf(
                     'HR has approved payroll run %s (%s). Please review and give final accounting approval. Pay date: %s.',
-                    $this->run->reference_no,
-                    $this->run->pay_period_label,
+                    $this->referenceNo,
+                    $this->payPeriodLabel,
                     $payDate,
                 ),
-                'action_url' => "/payroll/runs/{$this->run->ulid}/acctg-review",
-                'payroll_run_id' => $this->run->id,
+                'action_url' => "/payroll/runs/{$this->payrollRunUlid}/acctg-review",
+                'payroll_run_id' => $this->payrollRunId,
             ],
             'HR_RETURNED' => [
                 'type' => 'payroll.returned',
                 'title' => 'Payroll Run Returned for Revision',
                 'message' => sprintf(
                     'Payroll run %s (%s) was returned for revision. Please review comments and resubmit.',
-                    $this->run->reference_no,
-                    $this->run->pay_period_label,
+                    $this->referenceNo,
+                    $this->payPeriodLabel,
                 ),
-                'action_url' => "/payroll/runs/{$this->run->ulid}",
-                'payroll_run_id' => $this->run->id,
+                'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+                'payroll_run_id' => $this->payrollRunId,
             ],
             'ACCOUNTING' => [
                 'type' => 'payroll.accounting_approved',
                 'title' => 'Payroll Run Fully Approved',
                 'message' => sprintf(
                     'Payroll run %s (%s) received final accounting approval. Pay date: %s. Proceed to disburse.',
-                    $this->run->reference_no,
-                    $this->run->pay_period_label,
+                    $this->referenceNo,
+                    $this->payPeriodLabel,
                     $payDate,
                 ),
-                'action_url' => "/payroll/runs/{$this->run->ulid}/disburse",
-                'payroll_run_id' => $this->run->id,
+                'action_url' => "/payroll/runs/{$this->payrollRunUlid}/disburse",
+                'payroll_run_id' => $this->payrollRunId,
             ],
             'ACCOUNTING_RETURNED' => [
                 'type' => 'payroll.accounting_returned',
                 'title' => 'Payroll Run Returned by Accounting for Rework',
                 'message' => sprintf(
                     'Payroll run %s (%s) was returned by Accounting for corrections. Please review comments and resubmit.',
-                    $this->run->reference_no,
-                    $this->run->pay_period_label,
+                    $this->referenceNo,
+                    $this->payPeriodLabel,
                 ),
-                'action_url' => "/payroll/runs/{$this->run->ulid}",
-                'payroll_run_id' => $this->run->id,
+                'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+                'payroll_run_id' => $this->payrollRunId,
             ],
             'ACCOUNTING_REJECTED' => [
                 'type' => 'payroll.accounting_rejected',
                 'title' => 'Payroll Run Rejected by Accounting',
                 'message' => sprintf(
                     'Payroll run %s (%s) was permanently rejected by Accounting. A new run must be initiated.',
-                    $this->run->reference_no,
-                    $this->run->pay_period_label,
+                    $this->referenceNo,
+                    $this->payPeriodLabel,
                 ),
-                'action_url' => "/payroll/runs/{$this->run->ulid}",
-                'payroll_run_id' => $this->run->id,
+                'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+                'payroll_run_id' => $this->payrollRunId,
             ],
             'DISBURSED' => [
                 'type' => 'payroll.disbursed',
                 'title' => 'Payroll Run Disbursed',
                 'message' => sprintf(
                     'Payroll run %s (%s) funds have been disbursed. Pay date: %s.',
-                    $this->run->reference_no,
-                    $this->run->pay_period_label,
+                    $this->referenceNo,
+                    $this->payPeriodLabel,
                     $payDate,
                 ),
-                'action_url' => "/payroll/runs/{$this->run->ulid}",
-                'payroll_run_id' => $this->run->id,
+                'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+                'payroll_run_id' => $this->payrollRunId,
             ],
             default => [
                 'type' => 'payroll.approved',
                 'title' => 'Payroll Run Approved',
                 'message' => sprintf(
                     'Payroll run %s (%s) has been approved. Pay date: %s.',
-                    $this->run->reference_no,
-                    $this->run->pay_period_label,
+                    $this->referenceNo,
+                    $this->payPeriodLabel,
                     $payDate,
                 ),
-                'action_url' => "/payroll/runs/{$this->run->ulid}",
-                'payroll_run_id' => $this->run->id,
+                'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+                'payroll_run_id' => $this->payrollRunId,
             ],
         };
     }

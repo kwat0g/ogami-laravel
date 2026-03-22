@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { ClipboardCheck, AlertTriangle, Plus } from 'lucide-react'
-import { useInspectionTemplates } from '@/hooks/useQC'
+import { ClipboardCheck, AlertTriangle, Plus, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useInspectionTemplates, useDeleteInspectionTemplate } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import type { InspectionStage } from '@/types/qc'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import type { InspectionStage, InspectionTemplate } from '@/types/qc'
 
 const STAGE_COLORS: Record<InspectionStage, string> = {
   iqc:  'bg-neutral-100 text-neutral-700',
@@ -23,12 +26,26 @@ export default function QcTemplateListPage(): React.ReactElement {
   const canManage = hasPermission('qc.templates.manage')
   const [stage, setStage] = useState('')
   const [withArchived, setWithArchived] = useState(false)
+  const [templateToDelete, setTemplateToDelete] = useState<InspectionTemplate | null>(null)
 
   const { data, isLoading, isError } = useInspectionTemplates({
     stage: stage || undefined,
     per_page: 50,
     with_archived: withArchived || undefined,
   })
+
+  const deleteMut = useDeleteInspectionTemplate()
+
+  const handleDelete = async () => {
+    if (!templateToDelete) return
+    try {
+      await deleteMut.mutateAsync(templateToDelete.ulid)
+      toast.success(`Template "${templateToDelete.name}" deleted successfully.`)
+      setTemplateToDelete(null)
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
 
   return (
     <div>
@@ -75,7 +92,7 @@ export default function QcTemplateListPage(): React.ReactElement {
           <table className="min-w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                {['Template Name', 'Stage', '# Criteria', 'Status', 'Created'].map((h) => (
+                {['Template Name', 'Stage', '# Criteria', 'Status', 'Created', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500">{h}</th>
                 ))}
               </tr>
@@ -83,7 +100,7 @@ export default function QcTemplateListPage(): React.ReactElement {
             <tbody className="divide-y divide-neutral-100">
               {data?.data?.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-neutral-400 text-sm">
+                  <td colSpan={6} className="px-4 py-10 text-center text-neutral-400 text-sm">
                     <ClipboardCheck size={32} className="mx-auto mb-2 opacity-30" />
                     No inspection templates found.
                     {canManage && <span className="block mt-1 text-xs">Click <strong>New Template</strong> to create one.</span>}
@@ -110,11 +127,35 @@ export default function QcTemplateListPage(): React.ReactElement {
                     )}
                   </td>
                   <td className="px-4 py-3 text-neutral-500 text-xs">{template.created_at.slice(0, 10)}</td>
+                  <td className="px-4 py-3">
+                    {canManage && !template.deleted_at && (
+                      <button
+                        onClick={() => setTemplateToDelete(template)}
+                        className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Delete template"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {templateToDelete && (
+        <ConfirmDestructiveDialog
+          title="Delete QC Template?"
+          description={`You are about to permanently delete the template "${templateToDelete.name}". This action cannot be undone and may affect existing inspections that use this template.`}
+          confirmWord="DELETE"
+          confirmLabel="Delete Template"
+          onConfirm={handleDelete}
+        >
+          <span />
+        </ConfirmDestructiveDialog>
       )}
     </div>
   )

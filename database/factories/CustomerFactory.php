@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Domains\AR\Models\Customer;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -37,8 +38,8 @@ final class CustomerFactory extends Factory
             'credit_limit' => 100000.00, // ₱100,000 default credit limit
             'is_active' => true,
             'notes' => null,
-            'created_by' => 1, // System user or override in tests
             'ar_account_id' => null,
+            'created_by' => User::factory(),
         ];
     }
 

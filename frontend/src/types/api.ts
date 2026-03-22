@@ -21,26 +21,24 @@ export type ApiResponse<T = unknown> = ApiSuccess<T> | ApiError
 // Auth types
 // ---------------------------------------------------------------------------
 
+/**
+ * RBAC v2 - 7 Core Roles + Portal Roles
+ * 
+ * Permissions are determined by: Role + Department Module
+ * Example: manager + HR dept = HR permissions
+ *          manager + ACCTG dept = Accounting permissions
+ */
 export type AppRole =
-  | 'admin'
-  | 'super_admin'
-  | 'executive'
-  | 'vice_president'
-  | 'manager'
-  | 'officer'
-  | 'ga_officer'
-  | 'purchasing_officer'
-  | 'impex_officer'
-  | 'plant_manager'
-  | 'production_manager'
-  | 'qc_manager'
-  | 'mold_manager'
-  | 'head'
-  | 'warehouse_head'
-  | 'ppc_head'
-  | 'staff'
-  | 'vendor'
-  | 'client'
+  | 'super_admin'     // System god mode - all permissions
+  | 'admin'           // System management only
+  | 'executive'       // Board level - read-only oversight
+  | 'vice_president'  // Final approver for financial requests
+  | 'manager'         // Full department module access
+  | 'officer'         // Department operations
+  | 'head'            // Team supervisor - first-level approvals
+  | 'staff'           // Basic access - self-service, create requests
+  | 'vendor'          // Vendor portal access
+  | 'client'          // Client portal access
 
 export interface AuthUser {
   id: number
@@ -52,6 +50,8 @@ export interface AuthUser {
   department_ids: number[]
   /** Primary department ID (is_primary = true in pivot, or first in list). */
   primary_department_id: number | null
+  /** Primary department code (e.g., 'ACCTG', 'HR', 'PROD') for SoD filtering. */
+  primary_department_code: string | null
   timezone: string
   employee_id?: number | null
   must_change_password: boolean

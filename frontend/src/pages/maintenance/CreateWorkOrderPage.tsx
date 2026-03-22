@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useEquipment, useCreateWorkOrder } from '@/hooks/useMaintenance'
 import { useEmployees } from '@/hooks/useEmployees'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { WorkOrderType, WorkOrderPriority } from '@/types/maintenance'
 
 export default function CreateWorkOrderPage(): React.ReactElement {
@@ -37,12 +39,32 @@ export default function CreateWorkOrderPage(): React.ReactElement {
     const e: Record<string, string | undefined> = {}
     if (!form.equipment_id) e.equipment_id = 'Equipment is required.'
     if (!form.title.trim()) e.title = 'Title is required.'
+    if (form.title.trim().length < 3) e.title = 'Title must be at least 3 characters.'
+    if (form.description && form.description.length > 2000) e.description = 'Description must be less than 2000 characters.'
+    if (form.scheduled_date) {
+      const scheduled = new Date(form.scheduled_date)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (scheduled < today) e.scheduled_date = 'Scheduled date cannot be in the past.'
+    }
     return e
   }, [form])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
+  const hasErrors = Object.keys(ve).length > 0
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setTouched(new Set(Object.keys(ve)))
+    if (hasErrors) {
+      toast.error('Please fix the errors before submitting.')
+      return
+    }
+    setShowConfirm(true)
+  }
+
+  const doSubmit = async () => {
     try {
       await createMut.mutateAsync({
         equipment_id: form.equipment_id,
@@ -53,10 +75,9 @@ export default function CreateWorkOrderPage(): React.ReactElement {
         assigned_to_id: form.assigned_to_id !== '' ? Number(form.assigned_to_id) : null,
         scheduled_date: form.scheduled_date || undefined,
       })
-      toast.success('Work order created.')
       navigate('/maintenance/work-orders')
-    } catch {
-      toast.error('Failed to create work order.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -131,11 +152,13 @@ export default function CreateWorkOrderPage(): React.ReactElement {
           <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
           <textarea
             rows={3}
-            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm resize-none focus:ring-1 focus:ring-neutral-400"
+            className={`w-full border rounded px-3 py-2 text-sm resize-none focus:ring-1 focus:ring-neutral-400 ${fe('description') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.description}
             onChange={e => set('description', e.target.value)}
+            onBlur={() => touch('description')}
             placeholder="Detailed description of the maintenance task"
           />
+          {fe('description') && <p className="mt-1 text-xs text-red-600">{fe('description')}</p>}
         </div>
 
         {/* Assigned To & Scheduled Date */}
@@ -157,10 +180,12 @@ export default function CreateWorkOrderPage(): React.ReactElement {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Scheduled Date</label>
             <input
               type="date"
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('scheduled_date') ? 'border-red-400' : 'border-neutral-300'}`}
               value={form.scheduled_date}
               onChange={e => set('scheduled_date', e.target.value)}
+              onBlur={() => touch('scheduled_date')}
             />
+            {fe('scheduled_date') && <p className="mt-1 text-xs text-red-600">{fe('scheduled_date')}</p>}
           </div>
         </div>
 
@@ -174,13 +199,22 @@ export default function CreateWorkOrderPage(): React.ReactElement {
           </button>
           <button
             type="submit"
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || hasErrors}
             className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Work Order'}
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        title="Create Work Order?"
+        description="This will create a new work order and notify the assigned technician."
+        confirmLabel="Create"
+        onConfirm={doSubmit}
+      >
+        <span className="hidden" />
+      </ConfirmDialog>
     </div>
   )
 }

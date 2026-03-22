@@ -6,6 +6,8 @@ import { useBoms, useDeleteBom } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 
 export default function BomListPage(): React.ReactElement {
   const [page, setPage] = useState(1)
@@ -16,13 +18,12 @@ export default function BomListPage(): React.ReactElement {
   const navigate  = useNavigate()
   const deleteMut = useDeleteBom()
 
-  const handleArchive = async (ulid: string, name: string) => {
-    if (!confirm(`Archive BOM for "${name}"? It will move to the Archived section.`)) return
+  const handleArchive = async (ulid: string) => {
     try {
       await deleteMut.mutateAsync(ulid)
-      toast.success('BOM archived.')
-    } catch {
-      toast.error('Failed to archive BOM.')
+      toast.success('BOM archived successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -100,13 +101,20 @@ export default function BomListPage(): React.ReactElement {
                           >
                             <Pencil className="w-3.5 h-3.5" /> Edit
                           </button>
-                          <button
-                            onClick={() => handleArchive(bom.ulid, bom.product_item?.name ?? 'BOM')}
-                            disabled={deleteMut.isPending}
-                            className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-red-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                          <ConfirmDestructiveDialog
+                            title="Archive BOM?"
+                            description={`This will archive the BOM for "${bom.product_item?.name ?? 'BOM'}". It will move to the Archived section and cannot be used for new production orders.`}
+                            confirmWord="ARCHIVE"
+                            confirmLabel="Archive"
+                            onConfirm={() => handleArchive(bom.ulid)}
                           >
-                            <Archive className="w-3.5 h-3.5" /> Archive
-                          </button>
+                            <button
+                              disabled={deleteMut.isPending}
+                              className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-red-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <Archive className="w-3.5 h-3.5" /> Archive
+                            </button>
+                          </ConfirmDestructiveDialog>
                         </div>
                       </td>
                     )}

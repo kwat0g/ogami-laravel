@@ -18,9 +18,27 @@ final class LeaveFiledNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly LeaveRequest $request)
-    {
+    public function __construct(
+        private readonly int $leaveRequestId,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $leaveTypeName,
+        private readonly string $dateFrom,
+        private readonly string $dateTo,
+    ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(LeaveRequest $request): self
+    {
+        return new self(
+            leaveRequestId: $request->id,
+            employeeId: $request->employee_id,
+            employeeName: $request->employee?->full_name ?? 'An employee',
+            leaveTypeName: $request->leaveType?->name ?? 'leave',
+            dateFrom: $request->date_from?->toFormattedDateString() ?? '',
+            dateTo: $request->date_to?->toFormattedDateString() ?? '',
+        );
     }
 
     /** @return list<string> */
@@ -37,14 +55,14 @@ final class LeaveFiledNotification extends Notification implements ShouldQueue
             'title' => 'New Leave Request',
             'message' => sprintf(
                 '%s filed a %s leave request (%s – %s).',
-                $this->request->employee?->full_name ?? 'An employee',
-                $this->request->leaveType?->name ?? 'leave',
-                $this->request->date_from?->toFormattedDateString(),
-                $this->request->date_to?->toFormattedDateString(),
+                $this->employeeName,
+                $this->leaveTypeName,
+                $this->dateFrom,
+                $this->dateTo,
             ),
             'action_url' => '/team/leave',
-            'leave_request_id' => $this->request->id,
-            'employee_id' => $this->request->employee_id,
+            'leave_request_id' => $this->leaveRequestId,
+            'employee_id' => $this->employeeId,
         ];
     }
 

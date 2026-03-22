@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useCreateInspection, useInspectionTemplates } from '@/hooks/useQC'
 import { useItems } from '@/hooks/useInventory'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { InspectionStage } from '@/types/qc'
 
 const STAGE_LABELS: Record<InspectionStage, string> = {
@@ -60,13 +61,28 @@ export default function CreateInspectionPage(): React.ReactElement {
   }, [form])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
+  const isFormValid = useMemo(() => {
+    const qty = Number(form.qty_inspected)
+    return form.inspection_date && !isNaN(qty) && qty > 0
+  }, [form])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Touch all fields for validation display
+    setTouched(new Set(['inspection_date', 'qty_inspected']))
+
     const parsedQty = Number(form.qty_inspected)
     if (!form.qty_inspected || parsedQty <= 0) {
       toast.error('Qty Inspected must be greater than 0.')
       return
     }
+
+    if (!form.inspection_date) {
+      toast.error('Inspection date is required.')
+      return
+    }
+
     try {
       const insp = await createMut.mutateAsync({
         stage: form.stage,
@@ -77,17 +93,10 @@ export default function CreateInspectionPage(): React.ReactElement {
         inspector_id: form.inspector_id !== '' ? Number(form.inspector_id) : undefined,
         remarks: form.remarks || undefined,
       })
-      toast.success('Inspection created.')
+      toast.success('Inspection created successfully.')
       navigate(`/qc/inspections/${(insp as { ulid?: string })?.ulid ?? ''}`)
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: { data?: Record<string, string[]> } } })?.response?.data
-      const fieldErrors = data?.data
-      if (fieldErrors) {
-        const first = Object.values(fieldErrors).flat()[0]
-        toast.error(first ?? 'Failed to create inspection.')
-      } else {
-        toast.error('Failed to create inspection.')
-      }
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -217,7 +226,7 @@ export default function CreateInspectionPage(): React.ReactElement {
           </button>
           <button
             type="submit"
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || !isFormValid}
             className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Inspection'}

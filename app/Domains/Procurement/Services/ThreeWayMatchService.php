@@ -38,11 +38,11 @@ final class ThreeWayMatchService implements ServiceContract
             );
         }
 
-        // Validate PO is sent
-        if (! in_array($po->status, ['sent', 'partially_received'], true)) {
+        // Validate PO is in a receivable status (acknowledged, in_transit, or partially_received)
+        if (! in_array($po->status, ['acknowledged', 'in_transit', 'partially_received'], true)) {
             throw new DomainException(
-                message: "Three-way match failed: Purchase Order #{$po->po_reference} is not in sent status.",
-                errorCode: 'TWM_PO_NOT_SENT',
+                message: "Three-way match failed: Purchase Order #{$po->po_reference} is not in a receivable status (current: {$po->status}).",
+                errorCode: 'TWM_PO_NOT_RECEIVABLE',
                 httpStatus: 422,
             );
         }
@@ -53,9 +53,9 @@ final class ThreeWayMatchService implements ServiceContract
                 $poItem = $grItem->poItem;
                 $newReceived = (float) $poItem->quantity_received + (float) $grItem->quantity_received;
 
-                if ($newReceived > (float) $poItem->quantity_ordered) {
+                if ($newReceived > $poItem->effectiveQuantity()) {
                     throw new DomainException(
-                        message: "Three-way match: received quantity ({$newReceived}) would exceed ordered quantity ({$poItem->quantity_ordered}) for item '{$poItem->item_description}'.",
+                        message: "Three-way match: received quantity ({$newReceived}) would exceed agreed quantity ({$poItem->effectiveQuantity()}) for item '{$poItem->item_description}'.",
                         errorCode: 'TWM_QTY_OVERFLOW',
                         httpStatus: 422,
                     );

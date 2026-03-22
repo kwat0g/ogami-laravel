@@ -265,6 +265,15 @@ class SystemSettingsSeeder extends Seeder
                         'create' => ['approve'],
                         'approve' => ['create'],
                     ],
+
+                    // ── SOD-CLIENT-001 ── Client orders: submitter ≠ approver/rejector ──
+                    // Record-level check also enforced in ClientOrderPolicy and ClientOrderService.
+                    // Route middleware: sod:client_orders,{action}
+                    'client_orders' => [
+                        'submit' => ['approve', 'reject'],
+                        'approve' => ['submit'],
+                        'reject' => ['submit'],
+                    ],
                 ]),
                 'data_type' => 'json',
                 'group' => 'security',
@@ -478,6 +487,32 @@ class SystemSettingsSeeder extends Seeder
                 'label' => 'Bad Debt Expense GL Account Code (AR-006)',
                 'value' => json_encode(''),
                 'data_type' => 'string',
+                'group' => 'ar',
+                'editable_by_role' => 'accounting_manager',
+            ],
+
+            // ─── Client Order Settings ────────────────────────────────────────
+            [
+                'key' => 'client_order_vp_threshold_centavos',
+                'label' => 'Client Order VP Escalation Threshold (centavos)',
+                'value' => json_encode(50_000_000), // ₱500,000
+                'data_type' => 'integer',
+                'group' => 'sales',
+                'editable_by_role' => 'admin',
+            ],
+            [
+                'key' => 'default_ar_account_id',
+                'label' => 'Default Accounts Receivable GL Account ID (for auto-invoicing)',
+                'value' => json_encode(null),
+                'data_type' => 'integer',
+                'group' => 'ar',
+                'editable_by_role' => 'accounting_manager',
+            ],
+            [
+                'key' => 'default_revenue_account_id',
+                'label' => 'Default Sales Revenue GL Account ID (for auto-invoicing)',
+                'value' => json_encode(null),
+                'data_type' => 'integer',
                 'group' => 'ar',
                 'editable_by_role' => 'accounting_manager',
             ],

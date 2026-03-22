@@ -10,9 +10,13 @@ import {
   usePostJournalEntry,
   useReverseJournalEntry,
 } from '@/hooks/useAccounting'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { ActionButton, DepartmentGuard } from '@/components/ui/guards'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { JournalEntry, JournalEntryStatus, JournalEntryFilters } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
@@ -57,10 +61,6 @@ function SourceTypeBadge({ sourceType }: { sourceType: string }) {
 // Row-level action buttons (hooks need specific id)
 // ---------------------------------------------------------------------------
 function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onReversed?: () => void }) {
-  const { hasPermission } = useAuthStore()
-  const canSubmit = hasPermission('journal_entries.submit')
-  const canPost = hasPermission('journal_entries.post')
-  const canReverse = hasPermission('journal_entries.reverse')
   const submitMutation = useSubmitJournalEntry(entry.ulid)
   const postMutation = usePostJournalEntry(entry.ulid)
   const reverseMutation = useReverseJournalEntry(entry.ulid)
@@ -72,57 +72,89 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
 
   return (
     <div className="flex items-center justify-end gap-2">
-      {entry.status === 'draft' && canSubmit && (
-        <button
-          onClick={async () => {
-            try {
-              await submitMutation.mutateAsync()
-              toast.success('Journal entry submitted.')
-            } catch {
-              toast.error('Failed to submit entry.')
-            }
-          }}
-          disabled={busy}
-          className="text-xs text-neutral-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitMutation.isPending ? 'Submitting…' : 'Submit'}
-        </button>
-      )}
-      {entry.status === 'submitted' && canPost && (
-        <button
-          onClick={async () => {
-            try {
-              await postMutation.mutateAsync()
-              toast.success('Journal entry posted.')
-            } catch {
-              toast.error('Failed to post entry.')
-            }
-          }}
-          disabled={busy}
-          className="text-xs text-neutral-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {postMutation.isPending ? 'Posting…' : 'Post'}
-        </button>
-      )}
-      {entry.status === 'posted' && !entry.reversal_of && canReverse && (
-        <button
-          onClick={async () => {
-            const desc = window.prompt('Reversal description (optional):') ?? ''
-            try {
-              await reverseMutation.mutateAsync(desc)
-              toast.success('Reversal entry created.')
-              onReversed?.()
-            } catch {
-              toast.error('Failed to create reversal.')
-            }
-          }}
-          disabled={busy}
-          className="text-xs text-neutral-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-        >
-          <RotateCcw className="h-3 w-3" />
-          {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
-        </button>
-      )}
+      <DepartmentGuard module="journal_entries">
+        {entry.status === 'draft' && (
+          <ConfirmDialog
+            title="Submit for Approval?"
+            description="This will submit the journal entry for review and approval. Continue?"
+            confirmLabel="Submit"
+            onConfirm={async () => {
+              try {
+                await submitMutation.mutateAsync()
+                toast.success('Journal entry submitted.')
+              } catch (err) {
+                toast.error(firstErrorMessage(err))
+              }
+            }}
+          >
+            <ActionButton
+              label="Submit"
+              permission="journal_entries.submit"
+              module="journal_entries"
+              onClick={() => {}} // Handled by ConfirmDialog
+              isLoading={submitMutation.isPending}
+              disabled={busy}
+              variant="ghost"
+              className="text-xs px-2 py-1"
+            />
+          </ConfirmDialog>
+        )}
+        {entry.status === 'submitted' && (
+          <ConfirmDialog
+            title="Post Journal Entry?"
+            description="Posted entries cannot be edited. This will finalize the journal entry in the general ledger. Continue?"
+            confirmLabel="Post"
+            onConfirm={async () => {
+              try {
+                await postMutation.mutateAsync()
+                toast.success('Journal entry posted.')
+              } catch (err) {
+                toast.error(firstErrorMessage(err))
+              }
+            }}
+          >
+            <ActionButton
+              label="Post"
+              permission="journal_entries.post"
+              module="journal_entries"
+              onClick={() => {}} // Handled by ConfirmDialog
+              isLoading={postMutation.isPending}
+              disabled={busy}
+              variant="success"
+              className="text-xs px-2 py-1"
+            />
+          </ConfirmDialog>
+        )}
+        {entry.status === 'posted' && !entry.reversal_of && (
+          <ConfirmDestructiveDialog
+            title="Reverse Journal Entry?"
+            description="This will create a reversing journal entry to cancel this transaction. The original entry will remain posted. Continue?"
+            confirmWord="REVERSE"
+            confirmLabel="Reverse"
+            onConfirm={async () => {
+              const desc = window.prompt('Reversal description (optional):') ?? ''
+              try {
+                await reverseMutation.mutateAsync(desc)
+                toast.success('Reversal entry created.')
+                onReversed?.()
+              } catch (err) {
+                toast.error(firstErrorMessage(err))
+              }
+            }}
+          >
+            <ActionButton
+              label="Reverse"
+              permission="journal_entries.reverse"
+              module="journal_entries"
+              onClick={() => {}} // Handled by ConfirmDestructiveDialog
+              isLoading={reverseMutation.isPending}
+              disabled={busy}
+              variant="warning"
+              className="text-xs px-2 py-1"
+            />
+          </ConfirmDestructiveDialog>
+        )}
+      </DepartmentGuard>
     </div>
   )
 }
@@ -181,15 +213,16 @@ export default function JournalEntriesPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
-          {canCreate && (
-            <button
+          <DepartmentGuard module="journal_entries">
+            <ActionButton
+              label="New Entry"
+              permission="journal_entries.create"
+              module="journal_entries"
               onClick={() => navigate('/accounting/journal-entries/new')}
-              className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              New Entry
-            </button>
-          )}
+              variant="primary"
+              className="flex items-center gap-2"
+            />
+          </DepartmentGuard>
         </div>
       </div>
 

@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FileText } from 'lucide-react';
+import { FileText, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDocument, useSubmitDocumentForReview, useApproveDocument } from '@/hooks/useISO';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
 import { useAuthStore } from '@/stores/authStore';
+import { firstErrorMessage } from '@/lib/errorHandler';
 import type { DocumentType } from '@/types/iso';
 
 const TYPE_LABELS: Record<DocumentType, string> = {
@@ -21,7 +23,7 @@ const TYPE_LABELS: Record<DocumentType, string> = {
   record: 'Record',
 };
 
-type ConfirmAction = 'submit_review' | 'approve' | null;
+type ConfirmAction = 'submit_review' | 'approve' | 'delete' | null;
 
 export default function IsoDocumentDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>();
@@ -53,14 +55,20 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
       if (confirmAction === 'submit_review') {
         await submitReviewMut.mutateAsync(doc.ulid);
         toast.success('Document submitted for review.');
-      } else {
+      } else if (confirmAction === 'approve') {
         await approveMut.mutateAsync(doc.ulid);
         toast.success('Document approved.');
       }
       setConfirmAction(null);
-    } catch {
-      toast.error('Action failed.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
     }
+  };
+
+  const handleDelete = async () => {
+    // Note: Delete functionality would need a corresponding hook
+    toast.info('Delete functionality requires backend API support');
+    setConfirmAction(null);
   };
 
   const isPending = submitReviewMut.isPending || approveMut.isPending;
@@ -88,13 +96,30 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
           canManage ? (
             <div className="flex items-center gap-2 shrink-0">
               {doc.status === 'draft' && (
-                <button
-                  type="button"
-                  onClick={() => setConfirmAction('submit_review')}
-                  className="px-4 py-2 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
-                >
-                  Submit for Review
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmAction('submit_review')}
+                    className="px-4 py-2 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
+                  >
+                    Submit for Review
+                  </button>
+                  <ConfirmDestructiveDialog
+                    title="Delete Document?"
+                    description={`This will permanently delete "${doc.title}". This action cannot be undone.`}
+                    confirmWord="DELETE"
+                    confirmLabel="Delete Document"
+                    onConfirm={handleDelete}
+                  >
+                    <button
+                      type="button"
+                      className="px-4 py-2 text-sm bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  </ConfirmDestructiveDialog>
+                </>
               )}
               {doc.status === 'under_review' && (
                 <button
@@ -126,7 +151,7 @@ export default function IsoDocumentDetailPage(): React.ReactElement {
       </Card>
 
       <ConfirmDialog
-        open={confirmAction !== null}
+        open={confirmAction !== null && confirmAction !== 'delete'}
         onClose={() => setConfirmAction(null)}
         onConfirm={handleConfirm}
         title={confirmAction === 'submit_review' ? 'Submit for review?' : 'Approve document?'}

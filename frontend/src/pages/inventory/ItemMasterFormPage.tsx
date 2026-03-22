@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Save, ToggleLeft } from 'lucide-react'
 import { toast } from 'sonner'
+import { useVendors } from '@/hooks/useAP'
 import {
   useItem,
   useCreateItem,
@@ -14,17 +15,21 @@ import {
 } from '@/hooks/useInventory'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ItemMaster } from '@/types/inventory'
 
 const schema = z.object({
+  item_code:       z.string().min(2, 'Item code is required (min 2 chars)'),
   category_id:     z.number({ required_error: 'Category is required' }),
   name:            z.string().min(2, 'Name must be at least 2 characters'),
   unit_of_measure: z.string().min(1, 'UOM is required'),
-  description:     z.string().optional(),
+  description:     z.string().min(5, 'Description must be at least 5 characters'),
   reorder_point:   z.number().min(0).default(0),
   reorder_qty:     z.number().min(0).default(0),
-  type:            z.enum(['raw_material', 'semi_finished', 'finished_good', 'consumable', 'spare_part']),
-  requires_iqc:    z.boolean().default(false),
+  type:                z.enum(['raw_material', 'semi_finished', 'finished_good', 'consumable', 'spare_part']),
+  requires_iqc:        z.boolean().default(false),
+  preferred_vendor_id: z.number().nullable().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -44,6 +49,8 @@ export default function ItemMasterFormPage(): React.ReactElement {
 
   const { data: item }         = useItem(isEdit ? ulid : null)
   const { data: categories }   = useItemCategories()
+  const { data: vendorData }   = useVendors({ accreditation_status: 'accredited', is_active: true, per_page: 500 })
+  const vendors                = vendorData?.data ?? []
   const createMutation         = useCreateItem()
   const updateMutation         = useUpdateItem(ulid ?? '')
   const toggleMutation         = useToggleItemActive(ulid ?? '')
@@ -57,14 +64,16 @@ export default function ItemMasterFormPage(): React.ReactElement {
   useEffect(() => {
     if (item) {
       reset({
+        item_code:       item.item_code,
         category_id:     item.category_id,
         name:            item.name,
         unit_of_measure: item.unit_of_measure,
         description:     item.description ?? '',
         reorder_point:   parseFloat(item.reorder_point),
-        reorder_qty:     parseFloat(item.reorder_qty),
-        type:            item.type,
-        requires_iqc:    item.requires_iqc,
+        reorder_qty:         parseFloat(item.reorder_qty),
+        type:                item.type,
+        requires_iqc:        item.requires_iqc,
+        preferred_vendor_id: item.preferred_vendor_id ?? null,
       })
     }
   }, [item, reset])
@@ -79,8 +88,8 @@ export default function ItemMasterFormPage(): React.ReactElement {
         toast.success('Item created.')
         navigate('/inventory/items')
       }
-    } catch {
-      toast.error('Failed to save item.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   })
 
@@ -88,8 +97,8 @@ export default function ItemMasterFormPage(): React.ReactElement {
     try {
       await toggleMutation.mutateAsync()
       toast.success(item?.is_active ? 'Item deactivated.' : 'Item activated.')
-    } catch {
-      toast.error('Failed to toggle status.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -107,6 +116,18 @@ export default function ItemMasterFormPage(): React.ReactElement {
         <CardHeader>Item Information</CardHeader>
         <CardBody>
           <form onSubmit={onSubmit} className="space-y-5">
+            {/* Item Code */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Item Code *</label>
+              <input
+                {...register('item_code')}
+                disabled={isEdit}
+                className={fieldCls(errors.item_code)}
+                placeholder="e.g. RAW-001"
+              />
+              {errors.item_code && <p className="text-red-500 text-xs mt-1">{errors.item_code.message}</p>}
+            </div>
+
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Category *</label>
@@ -182,13 +203,14 @@ export default function ItemMasterFormPage(): React.ReactElement {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Description *</label>
               <textarea
                 {...register('description')}
                 rows={3}
                 className={fieldCls(errors.description)}
-                placeholder="Optional notes about this item"
+                placeholder="Describe the item (min 5 characters)"
               />
+              {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
             </div>
 
             {/* Requires IQC */}
@@ -210,18 +232,52 @@ export default function ItemMasterFormPage(): React.ReactElement {
               </label>
             </div>
 
+            {/* Preferred Vendor */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Preferred Vendor
+                <span className="text-xs font-normal text-neutral-400 ml-2">(optional — auto-suggested in PRs)</span>
+              </label>
+              <Controller
+                control={control}
+                name="preferred_vendor_id"
+                render={({ field }) => (
+                  <select
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  >
+                    <option value="">— No preferred vendor —</option>
+                    {vendors.map((v) => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                )}
+              />
+            </div>
+
             {/* Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
               {isEdit && item && (
-                <button
-                  type="button"
-                  onClick={handleToggle}
-                  disabled={toggleMutation.isPending}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                <ConfirmDialog
+                  title={item.is_active ? 'Deactivate item?' : 'Activate item?'}
+                  description={
+                    item.is_active
+                      ? 'This item will no longer be available for new transactions. Existing records remain unchanged.'
+                      : 'This item will become available for new transactions.'
+                  }
+                  confirmLabel={item.is_active ? 'Deactivate' : 'Activate'}
+                  onConfirm={handleToggle}
                 >
-                  <ToggleLeft className="w-4 h-4" />
-                  {item.is_active ? 'Deactivate' : 'Activate'}
-                </button>
+                  <button
+                    type="button"
+                    disabled={toggleMutation.isPending}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ToggleLeft className="w-4 h-4" />
+                    {item.is_active ? 'Deactivate' : 'Activate'}
+                  </button>
+                </ConfirmDialog>
               )}
               <div className="ml-auto flex gap-3">
                 <button

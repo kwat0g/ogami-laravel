@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
 import {
   useTeamOvertimeRequests,
@@ -7,6 +9,7 @@ import {
 } from '@/hooks/useOvertime'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { SodActionButton } from '@/components/ui/SodActionButton'
 import type { OvertimeFilters } from '@/types/hr'
 
 export default function TeamOvertimePage() {
@@ -24,6 +27,9 @@ export default function TeamOvertimePage() {
   const [rejectId, setRejectId] = useState<number | null>(null)
   const [rejectRemarks, setRejectRemarks] = useState<string>('')
 
+  // Validation state
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
   const { data, isLoading, isError } = useTeamOvertimeRequests(filters)
   const approve = useApproveOvertimeRequest()
   const reject = useRejectOvertimeRequest()
@@ -32,22 +38,51 @@ export default function TeamOvertimePage() {
     setApprovingId(id)
     setApprovedMins(String(requestedMins))
     setApproveRemarks('')
+    setTouched(prev => ({ ...prev, approve: false }))
   }
 
+  // Validation
+  const approvedMinsError = touched.approve && (!approvedMins || Number(approvedMins) < 1)
+    ? 'Approved minutes must be at least 1.'
+    : undefined
+  const rejectRemarksError = touched.reject && !rejectRemarks.trim()
+    ? 'Rejection reason is required.'
+    : undefined
+
   async function submitApprove() {
-    if (!approvingId) return
-    await approve.mutateAsync({
-      id: approvingId,
-      approved_minutes: Number(approvedMins),
-      remarks: approveRemarks || undefined,
-    })
-    setApprovingId(null)
+    setTouched(prev => ({ ...prev, approve: true }))
+    if (!approvingId || !approvedMins || Number(approvedMins) < 1) {
+      toast.error('Please enter valid approved minutes.')
+      return
+    }
+    try {
+      await approve.mutateAsync({
+        id: approvingId,
+        approved_minutes: Number(approvedMins),
+        remarks: approveRemarks || undefined,
+      })
+      toast.success('Overtime request approved successfully.')
+      setApprovingId(null)
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to approve overtime request.'))
+    }
   }
 
   async function submitReject() {
-    if (!rejectId) return
-    await reject.mutateAsync({ id: rejectId, remarks: rejectRemarks || undefined })
-    setRejectId(null)
+    setTouched(prev => ({ ...prev, reject: true }))
+    if (!rejectId || !rejectRemarks.trim()) {
+      toast.error('Please provide a rejection reason.')
+      return
+    }
+    try {
+      await reject.mutateAsync({ id: rejectId, remarks: rejectRemarks })
+      toast.success('Overtime request rejected successfully.')
+      setRejectId(null)
+      setRejectRemarks('')
+      setTouched(prev => ({ ...prev, reject: false }))
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to reject overtime request.'))
+    }
   }
 
   if (isLoading) return <SkeletonLoader rows={10} />
@@ -146,20 +181,20 @@ export default function TeamOvertimePage() {
                 <td className="px-3 py-2 flex gap-2">
                   {canApprove && row.status === 'pending' && (
                     <>
-                      <button
+                      <SodActionButton
+                        initiatedById={row.created_by_id}
+                        label="Approve"
                         onClick={() => openApprove(row.id, row.requested_minutes)}
-                        disabled={approve.isPending || reject.isPending}
-                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => setRejectId(row.id)}
-                        disabled={approve.isPending || reject.isPending}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Reject
-                      </button>
+                        isLoading={approve.isPending || reject.isPending}
+                        variant="success"
+                      />
+                      <SodActionButton
+                        initiatedById={row.created_by_id}
+                        label="Reject"
+                        onClick={() => { setRejectId(row.id); setRejectRemarks(''); setTouched(prev => ({ ...prev, reject: false })) }}
+                        isLoading={approve.isPending || reject.isPending}
+                        variant="danger"
+                      />
                     </>
                   )}
                 </td>
@@ -202,10 +237,15 @@ export default function TeamOvertimePage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Approved Minutes</label>
                 <input
                   type="number"
+                  min={1}
                   value={approvedMins}
                   onChange={(e) => setApprovedMins(e.target.value)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none"
+                  onBlur={() => setTouched(prev => ({ ...prev, approve: true }))}
+                  className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none ${
+                    approvedMinsError ? 'border-red-400' : 'border-neutral-300'
+                  }`}
                 />
+                {approvedMinsError && <p className="mt-1 text-xs text-red-600">{approvedMinsError}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Remarks (optional)</label>
@@ -227,7 +267,7 @@ export default function TeamOvertimePage() {
               <button
                 onClick={submitApprove}
                 disabled={!approvedMins || approve.isPending}
-                className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Approve
               </button>
@@ -244,20 +284,24 @@ export default function TeamOvertimePage() {
             <textarea
               value={rejectRemarks}
               onChange={(e) => setRejectRemarks(e.target.value)}
+              onBlur={() => setTouched(prev => ({ ...prev, reject: true }))}
               placeholder="Enter rejection reason..."
-              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none mb-4"
+              className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none mb-2 ${
+                rejectRemarksError ? 'border-red-400' : 'border-neutral-300'
+              }`}
               rows={3}
             />
+            {rejectRemarksError && <p className="mb-2 text-xs text-red-600">{rejectRemarksError}</p>}
             <div className="flex justify-end gap-2">
               <button
-                onClick={() => setRejectId(null)}
+                onClick={() => { setRejectId(null); setRejectRemarks(''); setTouched(prev => ({ ...prev, reject: false })) }}
                 className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded"
               >
                 Cancel
               </button>
               <button
                 onClick={submitReject}
-                disabled={!rejectRemarks || reject.isPending}
+                disabled={!rejectRemarks.trim() || reject.isPending}
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Reject

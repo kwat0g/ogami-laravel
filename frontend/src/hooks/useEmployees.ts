@@ -125,6 +125,19 @@ export function useEmployeeTransition(id: string) {
   })
 }
 
+export function useDeleteEmployee() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/hr/employees/${id}`)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['employees'] })
+    },
+  })
+}
+
 // ── Salary grades reference ───────────────────────────────────────────────
 
 export function useSalaryGrades() {

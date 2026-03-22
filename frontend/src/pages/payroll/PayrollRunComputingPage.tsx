@@ -15,6 +15,9 @@ import {
   useCancelPayrollRun,
 } from '@/hooks/usePayroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function formatCentavos(c: number | null | undefined): string {
   if (c == null) return '—'
@@ -32,17 +35,25 @@ export default function PayrollRunComputingPage() {
   const cancelRun = useCancelPayrollRun(runId)
 
   const status = run?.status ?? progress?.status
-  const [confirmCancel, setConfirmCancel] = useState(false)
 
   // Note: Manual navigation only - user must click "Proceed to Review"
+
+  async function handleBeginComputation() {
+    try {
+      await beginComputation.mutateAsync()
+      toast.success('Computation started successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
 
   async function handleCancel() {
     try {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch {
-      toast.error('Failed to cancel payroll run.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -81,22 +92,28 @@ export default function PayrollRunComputingPage() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            disabled={beginComputation.isPending}
-            onClick={() => beginComputation.mutate()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
+          <ConfirmDialog
+            title="Begin Payroll Computation?"
+            description={`This will start the payroll computation for ${run.total_employees} employees. The process cannot be interrupted once started.`}
+            confirmLabel="Begin Computation"
+            onConfirm={handleBeginComputation}
           >
-            {beginComputation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Starting…
-              </>
-            ) : (
-              <>
-                <PlayCircle className="h-4 w-4" /> Begin Computation
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              disabled={beginComputation.isPending}
+              className="flex items-center gap-2 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded transition-colors"
+            >
+              {beginComputation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Starting…
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="h-4 w-4" /> Begin Computation
+                </>
+              )}
+            </button>
+          </ConfirmDialog>
         </div>
       )}
 
@@ -202,42 +219,30 @@ export default function PayrollRunComputingPage() {
             'APPROVED',
             'POSTED',
             'DISBURSED',
-          ].includes(status || '') &&
-            (confirmCancel ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-red-600">Cancel this run?</span>
-                <button
-                  type="button"
-                  onClick={() => void handleCancel()}
-                  disabled={cancelRun.isPending}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-md transition-colors"
-                >
-                  {cancelRun.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                  Confirm Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmCancel(false)}
-                  className="px-3 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 border border-neutral-200 rounded-md transition-colors"
-                >
-                  Keep
-                </button>
-              </div>
-            ) : (
+          ].includes(status || '') && (
+            <ConfirmDestructiveDialog
+              title="Cancel payroll run?"
+              description="Cancelling will permanently stop this payroll run. All computation progress will be lost. This action cannot be undone."
+              confirmWord="CANCEL"
+              confirmLabel="Cancel Run"
+              onConfirm={handleCancel}
+            >
               <button
                 type="button"
-                onClick={() => setConfirmCancel(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors"
+                disabled={cancelRun.isPending}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors disabled:opacity-50"
               >
-                <Ban className="h-4 w-4" /> Cancel Run
+                {cancelRun.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                Cancel Run
               </button>
-            ))}
+            </ConfirmDestructiveDialog>
+          )}
         </div>
         {isComputed && (
           <button
             type="button"
             onClick={() => navigate(`/payroll/runs/${runId}/review`)}
-            className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded transition-colors"
+            className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded transition-colors"
           >
             Proceed to Review <ArrowRight className="h-4 w-4" />
           </button>

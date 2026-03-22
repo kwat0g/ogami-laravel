@@ -8,10 +8,13 @@ use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\StockLedger;
 use App\Domains\Inventory\Models\WarehouseLocation;
 use App\Domains\Inventory\Services\MaterialRequisitionService;
+use App\Domains\Inventory\Services\StockReservationService;
 use App\Domains\Inventory\Services\StockService;
+use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\BomComponent;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Domains\Production\Models\ProductionOutputLog;
+use Carbon\Carbon;
 use App\Domains\QC\Models\Inspection;
 use App\Events\Production\ProductionOrderCompleted;
 use App\Models\User;
@@ -26,6 +29,7 @@ final class ProductionOrderService implements ServiceContract
     public function __construct(
         private readonly StockService $stockService,
         private readonly MaterialRequisitionService $mrqService,
+        private readonly StockReservationService $reservationService,
     ) {}
 
     /**
@@ -52,9 +56,88 @@ final class ProductionOrderService implements ServiceContract
         return $query->paginate((int) ($filters['per_page'] ?? 20));
     }
 
+    /**
+     * Suggest the most recently used BOM for a given product item.
+     * Returns the BOM ID or null if no BOM exists.
+     */
+    public function suggestBom(int $productItemId): ?BillOfMaterials
+    {
+        // Find the most recently used BOM for this product
+        $latestOrder = ProductionOrder::where('product_item_id', $productItemId)
+            ->whereNotNull('bom_id')
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($latestOrder !== null) {
+            /** @var BillOfMaterials|null $bom */
+            $bom = BillOfMaterials::where('id', $latestOrder->bom_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($bom !== null) {
+                return $bom;
+            }
+        }
+
+        // Fallback: return the first active BOM for this product
+        /** @var BillOfMaterials|null $bom */
+        $bom = BillOfMaterials::where('product_item_id', $productItemId)
+            ->where('is_active', true)
+            ->orderByDesc('version')
+            ->first();
+
+        return $bom;
+    }
+
+    /**
+     * Calculate target end date based on start date and BOM production days.
+     */
+    public function calculateEndDate(string $targetStartDate, int $bomId): string
+    {
+        /** @var BillOfMaterials|null $bom */
+        $bom = BillOfMaterials::find($bomId);
+
+        if ($bom === null) {
+            return $targetStartDate;
+        }
+
+        $startDate = Carbon::parse($targetStartDate);
+        $productionDays = $bom->standard_production_days ?? 1;
+
+        // End date = start date + production days (inclusive of start date)
+        // If production days = 5, end date = start + 4 days (start is day 1)
+        return $startDate->copy()->addDays(max(0, $productionDays - 1))->toDateString();
+    }
+
+    /**
+     * Get smart defaults for production order creation.
+     *
+     * @return array{suggested_bom_id: int|null, suggested_bom_name: string|null, calculated_end_date: string|null}
+     */
+    public function getSmartDefaults(int $productItemId, ?string $targetStartDate = null): array
+    {
+        $suggestedBom = $this->suggestBom($productItemId);
+
+        $calculatedEndDate = null;
+        if ($targetStartDate !== null && $suggestedBom !== null) {
+            $calculatedEndDate = $this->calculateEndDate($targetStartDate, $suggestedBom->id);
+        }
+
+        return [
+            'suggested_bom_id' => $suggestedBom?->id,
+            'suggested_bom_name' => $suggestedBom?->name ?? $suggestedBom?->version,
+            'calculated_end_date' => $calculatedEndDate,
+        ];
+    }
+
     /** @param array<string,mixed> $data */
     public function store(array $data, User $user): ProductionOrder
     {
+        // Auto-calculate end date if not provided but BOM and start date are present
+        if (empty($data['target_end_date']) && ! empty($data['target_start_date']) && ! empty($data['bom_id'])) {
+            $data['target_end_date'] = $this->calculateEndDate($data['target_start_date'], $data['bom_id']);
+        }
+
         /** @var ProductionOrder $order */
         $order = ProductionOrder::create([
             'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,

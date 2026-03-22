@@ -11,7 +11,8 @@ use Closure;
 /**
  * Step 10 — SSS Contribution (Employee + Employer).
  *
- * SSS is deducted once per month, on the 2nd pay period (2nd cutoff).
+ * SSS is deducted once per month, on the 2nd pay period (2nd cutoff) ONLY.
+ * SSS-003: If run = 1st cutoff → 0; if run = 2nd cutoff → full monthly contribution.
  * Zero contribution is applied if there is no gross pay (no-pay, no-contribution).
  *
  * Both EE and ER shares are computed and stored; ER share is for reporting

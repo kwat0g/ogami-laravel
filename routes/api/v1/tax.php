@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:tax'])->group(function () {
 
     // ── VAT Ledger (VAT-004) ─────────────────────────────────────────────────
     Route::get('vat-ledger', [VatLedgerController::class, 'index'])

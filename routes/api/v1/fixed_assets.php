@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(function (): void {
     // ── Asset Categories ─────────────────────────────────────────────────
     Route::get('categories', [FixedAssetController::class, 'indexCategories'])
         ->name('categories.index');

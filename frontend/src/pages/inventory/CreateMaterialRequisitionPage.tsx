@@ -3,22 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import { useFieldArray, useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCreateMRQ, useItems } from '@/hooks/useInventory'
 import { useDepartments } from '@/hooks/useEmployees'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { firstErrorMessage } from '@/lib/errorHandler'
+
+const itemSchema = z.object({
+  item_id:       z.number({ required_error: 'Item is required' }).positive('Please select an item'),
+  qty_requested: z.number({ required_error: 'Qty is required' }).positive('Must be greater than 0'),
+  remarks:       z.string().optional(),
+})
 
 const schema = z.object({
-  department_id: z.number({ required_error: 'Department is required' }),
+  department_id: z.number({ required_error: 'Department is required' }).positive('Please select a department'),
   purpose:       z.string().min(10, 'Purpose must be at least 10 characters'),
-  items: z.array(z.object({
-    item_id:       z.number({ required_error: 'Item is required' }),
-    qty_requested: z.number({ required_error: 'Qty is required' }).positive('Must be > 0'),
-    remarks:       z.string().optional(),
-  })).min(1, 'At least one item is required'),
+  items: z.array(itemSchema).min(1, 'At least one item is required'),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -42,14 +45,21 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
 
   const onSubmit = handleSubmit(async (values) => {
+    // Additional validation for items
+    const invalidItems = values.items.some(item => item.item_id <= 0 || item.qty_requested <= 0)
+    if (invalidItems) {
+      toast.error('Please ensure all items are selected with valid quantities.')
+      return
+    }
+
     try {
       const res = await createMRQ.mutateAsync(values)
       toast.success('Material requisition created.')
       // Navigate to the detail page
       const created = (res.data as { data: { ulid: string } }).data
       navigate(`/inventory/requisitions/${created.ulid}`)
-    } catch {
-      toast.error('Failed to create requisition.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   })
 
@@ -58,6 +68,21 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
 
   const departments = deptData?.data ?? []
   const items       = itemsData?.data ?? []
+
+  if (!canCreate) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <PageHeader
+          title="New Material Requisition"
+          backTo="/inventory/requisitions"
+        />
+        <div className="flex flex-col items-center justify-center py-20 text-neutral-500">
+          <AlertTriangle className="w-10 h-10 mb-3 text-neutral-400" />
+          <p className="text-sm font-medium">You do not have permission to create material requisitions.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -110,7 +135,7 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between w-full">
-              <span>Requested Items</span>
+              <span>Requested Items *</span>
               <div className="flex items-center gap-3">
                 <input
                   type="text"
@@ -131,7 +156,10 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
           </CardHeader>
           <CardBody>
             {errors.items && typeof errors.items.message === 'string' && (
-              <p className="text-red-500 text-xs mb-3">{errors.items.message}</p>
+              <div className="flex items-center gap-2 text-red-500 text-xs mb-3 p-2 bg-red-50 rounded border border-red-200">
+                <AlertTriangle className="w-4 h-4" />
+                {errors.items.message}
+              </div>
             )}
 
             <div className="space-y-3">
@@ -158,6 +186,9 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
                         </select>
                       )}
                     />
+                    {errors.items?.[idx]?.item_id && (
+                      <p className="text-red-500 text-xs mt-1">{errors.items[idx]?.item_id?.message}</p>
+                    )}
                   </div>
 
                   {/* Qty */}
@@ -167,9 +198,12 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
                       step="0.0001"
                       min="0.0001"
                       {...register(`items.${idx}.qty_requested`, { valueAsNumber: true })}
-                      placeholder="Qty"
+                      placeholder="Qty *"
                       className={`w-full text-sm border rounded px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${errors.items?.[idx]?.qty_requested ? 'border-red-400' : 'border-neutral-300'}`}
                     />
+                    {errors.items?.[idx]?.qty_requested && (
+                      <p className="text-red-500 text-xs mt-1">{errors.items[idx]?.qty_requested?.message}</p>
+                    )}
                   </div>
 
                   {/* Remarks */}

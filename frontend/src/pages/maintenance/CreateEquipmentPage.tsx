@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateEquipment } from '@/hooks/useMaintenance'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { EquipmentStatus } from '@/types/maintenance'
 
 export default function CreateEquipmentPage(): React.ReactElement {
@@ -51,10 +52,9 @@ export default function CreateEquipmentPage(): React.ReactElement {
         status: form.status,
         is_active: form.is_active,
       })
-      toast.success('Equipment created.')
       navigate(`/maintenance/equipment/${result.data.ulid}`)
-    } catch {
-      toast.error('Failed to create equipment.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 

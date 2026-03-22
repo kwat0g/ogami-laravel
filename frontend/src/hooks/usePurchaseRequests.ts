@@ -97,45 +97,9 @@ export function useSubmitPurchaseRequest() {
   })
 }
 
-// ── Note (Head) ──────────────────────────────────────────────────────────────
-
-export function useNotePurchaseRequest() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ ulid, payload }: { ulid: string; payload: PrActionPayload }) => {
-      const res = await api.post<{ data: PurchaseRequest }>(
-        `/procurement/purchase-requests/${ulid}/note`,
-        payload,
-      )
-      return res.data.data
-    },
-    onSuccess: (pr) => {
-      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
-      qc.setQueryData(['purchase-requests', pr.ulid], pr)
-    },
-  })
-}
-
-// ── Check (Manager) ──────────────────────────────────────────────────────────
-
-export function useCheckPurchaseRequest() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ ulid, payload }: { ulid: string; payload: PrActionPayload }) => {
-      const res = await api.post<{ data: PurchaseRequest }>(
-        `/procurement/purchase-requests/${ulid}/check`,
-        payload,
-      )
-      return res.data.data
-    },
-    onSuccess: (pr) => {
-      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
-      qc.setQueryData(['purchase-requests', pr.ulid], pr)
-    },
-  })
-}
-
-// ── Review (Officer) ─────────────────────────────────────────────────────────
+// ── Review (Purchasing Dept) ─────────────────────────────────────────────────
+// Note: useNotePurchaseRequest and useCheckPurchaseRequest removed
+// Workflow simplified: draft → pending_review → reviewed → budget_verified → approved
 
 export function useReviewPurchaseRequest() {
   const qc = useQueryClient()
@@ -209,7 +173,7 @@ export function useCancelPurchaseRequest() {
   })
 }
 
-// ── Budget Check ────────────────────────────────────────────────────────────
+// ── Budget Verification (Accounting) ─────────────────────────────────────────
 
 export function useBudgetCheckPurchaseRequest() {
   const qc = useQueryClient()
@@ -246,4 +210,107 @@ export function useReturnPurchaseRequest() {
     },
   })
 }
+
+// ── Budget Pre-Check (before creating PR) ────────────────────────────────────
+
+export interface BudgetCheckPayload {
+  department_id: number
+  items: Array<{
+    quantity: number
+    estimated_unit_cost: number
+  }>
+}
+
+export interface BudgetCheckResult {
+  available: boolean
+  budget: number
+  ytd_spend: number
+  this_pr: number
+  remaining: number
+  formatted: {
+    budget: string
+    ytd_spend: string
+    this_pr: string
+    remaining: string
+  }
+  message?: string
+}
+
+export function useCheckBudgetAvailability() {
+  return useMutation({
+    mutationFn: async (payload: BudgetCheckPayload) => {
+      const res = await api.post<BudgetCheckResult>(
+        '/procurement/budget-check',
+        payload,
+      )
+      return res.data
+    },
+  })
+}
+
+// ── Convert MRQ → Purchase Request ──────────────────────────────────────────
+
+export function useConvertMrqToPr() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ mrqUlid, justification }: { mrqUlid: string; justification?: string }) => {
+      const res = await api.post<{ data: PurchaseRequest }>(
+        `/procurement/purchase-requests/from-mrq/${mrqUlid}`,
+        { justification },
+      )
+      return res.data.data
+    },
+    onSuccess: (pr) => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+      void qc.invalidateQueries({ queryKey: ['material-requisitions'] })
+      qc.setQueryData(['purchase-requests', pr.ulid], pr)
+    },
+  })
+}
+
+// ── Suggest Vendors (reverse catalog lookup) ─────────────────────────────────
+
+export interface VendorSuggestion {
+  vendor_id: number
+  vendor_name: string
+  vendor_item_id: number
+  item_code: string
+  item_name: string
+  unit_of_measure: string
+  unit_price: number
+}
+
+export function useSuggestVendors(query: string) {
+  return useQuery({
+    queryKey: ['suggest-vendors', query],
+    queryFn: async () => {
+      const res = await api.get<{ data: VendorSuggestion[] }>(
+        '/procurement/items/suggest-vendors',
+        { params: { q: query } },
+      )
+      return res.data.data
+    },
+    enabled: query.trim().length >= 3,
+    staleTime: 60_000,
+  })
+}
+
+// ── Duplicate Purchase Request ───────────────────────────────────────────────
+
+export function useDuplicatePurchaseRequest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (ulid: string) => {
+      const res = await api.post<{ data: PurchaseRequest }>(
+        `/procurement/purchase-requests/${ulid}/duplicate`,
+      )
+      return res.data.data
+    },
+    onSuccess: (pr) => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+      qc.setQueryData(['purchase-requests', pr.ulid], pr)
+    },
+  })
+}
+
 

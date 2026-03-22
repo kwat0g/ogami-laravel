@@ -17,8 +17,10 @@ import {
 import { usePermission } from '@/hooks/usePermission'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
 import { isHandledApiError } from '@/lib/api'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { ProductionOrderStatus } from '@/types/production'
 
 type ConfirmAction = 'release' | 'start' | 'complete' | 'cancel' | null
@@ -44,7 +46,6 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const { ulid }  = useParams<{ ulid: string }>()
   const navigate  = useNavigate()
   const [showLogForm, setShowLogForm]   = useState(false)
-  const [showVoidConfirm, setShowVoidConfirm] = useState(false)
   const [logData, setLogData]           = useState({
     shift: 'A' as 'A' | 'B' | 'C',
     log_date: new Date().toISOString().split('T')[0],
@@ -53,6 +54,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     operator_id: '',
     remarks: '',
   })
+  const [logErrors, setLogErrors] = useState<Record<string, string>>({})
 
   // ── Stock Check + QC Override state ──────────────────────────────────────
   const [showStockModal, setShowStockModal] = useState(false)
@@ -84,6 +86,9 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [showVoidConfirm, setShowVoidConfirm] = useState(false)
 
   // ── PROD-001: Pre-release stock check flow ──────────────────────────────
   const handleReleaseClick = async () => {
@@ -117,13 +122,18 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       const produced  = parseFloat(order.qty_produced)
       const required  = parseFloat(order.qty_required)
       if (produced < required) {
-        const pct = ((produced / required) * 100).toFixed(1)
-        const ok  = window.confirm(
-          `Only ${produced.toLocaleString('en-PH')} of ${required.toLocaleString('en-PH')} units produced (${pct}%).\n\nComplete the work order short?`
-        )
-        if (!ok) return
+        setShowCompleteConfirm(true)
+        return
       }
+      setConfirmAction('complete')
+      return
     }
+    
+    if (action === 'cancel') {
+      setShowCancelConfirm(true)
+      return
+    }
+    
     setConfirmAction(action)
   }
 
@@ -133,7 +143,10 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     try {
       const map = { release: releaseMut, start: startMut, complete: completeMut, cancel: cancelMut }
       await map[confirmAction].mutateAsync()
-      toast.success(`Work order ${confirmAction}d.`)
+      const actionText = confirmAction === 'release' ? 'released' : 
+                        confirmAction === 'start' ? 'started' : 
+                        confirmAction === 'complete' ? 'completed' : 'cancelled'
+      toast.success(`Work order ${actionText} successfully.`)
       setConfirmAction(null)
     } catch (err) {
       setConfirmAction(null)
@@ -145,8 +158,40 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         return
       }
       if (isHandledApiError(err)) return
-      const msg = (err as { message?: string })?.message
-      toast.error(msg ?? `Failed to ${confirmAction} order.`)
+      toast.error(firstErrorMessage(err))
+    }
+  }
+  
+  const executeComplete = async () => {
+    try {
+      await completeMut.mutateAsync()
+      toast.success('Work order completed successfully.')
+      setShowCompleteConfirm(false)
+    } catch (err) {
+      if (isHandledApiError(err)) return
+      toast.error(firstErrorMessage(err))
+    }
+  }
+  
+  const executeCancel = async () => {
+    try {
+      await cancelMut.mutateAsync()
+      toast.success('Work order cancelled successfully.')
+      setShowCancelConfirm(false)
+    } catch (err) {
+      if (isHandledApiError(err)) return
+      toast.error(firstErrorMessage(err))
+    }
+  }
+  
+  const executeVoid = async () => {
+    try {
+      await voidMut.mutateAsync()
+      toast.success('Work order voided successfully.')
+      setShowVoidConfirm(false)
+    } catch (err) {
+      if (isHandledApiError(err)) return
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -158,11 +203,33 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       setShowQcOverrideModal(false)
     } catch (err) {
       if (isHandledApiError(err)) return
-      toast.error('Force release failed.')
+      toast.error(firstErrorMessage(err))
     }
   }
 
+  const validateLogData = (): boolean => {
+    const errors: Record<string, string> = {}
+    
+    if (!logData.qty_produced || parseFloat(logData.qty_produced) <= 0) {
+      errors.qty_produced = 'Quantity produced must be greater than 0.'
+    }
+    if (!logData.operator_id) {
+      errors.operator_id = 'Operator is required.'
+    }
+    
+    setLogErrors(errors)
+    
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors)[0])
+      return false
+    }
+    
+    return true
+  }
+
   const handleLogOutput = async () => {
+    if (!validateLogData()) return
+    
     try {
       await logMut.mutateAsync({
         shift:        logData.shift,
@@ -172,11 +239,20 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         operator_id:  parseInt(logData.operator_id),
         remarks:      logData.remarks || undefined,
       })
-      toast.success('Output logged.')
+      toast.success('Output logged successfully.')
       setShowLogForm(false)
+      setLogData({
+        shift: 'A',
+        log_date: new Date().toISOString().split('T')[0],
+        qty_produced: '',
+        qty_rejected: '0',
+        operator_id: '',
+        remarks: '',
+      })
+      setLogErrors({})
     } catch (err) {
       if (isHandledApiError(err)) return
-      toast.error('Failed to log output.')
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -186,6 +262,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       <AlertTriangle className="w-4 h-4" /> Failed to load work order.
     </div>
   )
+
+  const completionPercentage = order ? ((parseFloat(order.qty_produced || '0') / (parseFloat(order.qty_required || '1') || 1)) * 100).toFixed(1) : '0'
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -215,15 +293,15 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         <dl>
           <InfoRow label="Product" value={`${order.product_item?.item_code} — ${order.product_item?.name}`} />
           <InfoRow label="BOM Version" value={order.bom ? `v${order.bom.version}` : '—'} />
-          <InfoRow label="Qty Required" value={parseFloat(order.qty_required).toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
+          <InfoRow label="Qty Required" value={parseFloat(order.qty_required || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
           <InfoRow label="Qty Produced" value={
             <div className="flex items-center gap-2">
-              <span>{parseFloat(order.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>
+              <span>{parseFloat(order.qty_produced || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>
               <div className="flex items-center gap-1">
                 <div className="h-2 w-24 bg-neutral-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-neutral-600 rounded-full" style={{ width: `${Math.min(100, order.progress_pct)}%` }} />
+                  <div className="h-full bg-neutral-600 rounded-full" style={{ width: `${Math.min(100, order.progress_pct ?? 0)}%` }} />
                 </div>
-                <span className="text-xs text-neutral-400">{order.progress_pct.toFixed(1)}%</span>
+                <span className="text-xs text-neutral-400">{(order.progress_pct ?? 0).toFixed(1)}%</span>
               </div>
             </div>
           } />
@@ -333,33 +411,47 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Operator</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Operator *</label>
                 <select
                   value={logData.operator_id}
-                  onChange={(e) => setLogData((d) => ({ ...d, operator_id: e.target.value }))}
-                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  onChange={(e) => {
+                    setLogData((d) => ({ ...d, operator_id: e.target.value }))
+                    if (logErrors.operator_id) {
+                      setLogErrors(prev => ({ ...prev, operator_id: '' }))
+                    }
+                  }}
+                  className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.operator_id ? 'border-red-400' : 'border-neutral-300'}`}
                 >
                   <option value="">— Select Operator —</option>
                   {employees.map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : ''}</option>
                   ))}
                 </select>
+                {logErrors.operator_id && <p className="mt-1 text-xs text-red-600">{logErrors.operator_id}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Produced</label>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Produced *</label>
                 <input
                   type="number"
                   step="0.0001"
+                  min="0.0001"
                   value={logData.qty_produced}
-                  onChange={(e) => setLogData((d) => ({ ...d, qty_produced: e.target.value }))}
-                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  onChange={(e) => {
+                    setLogData((d) => ({ ...d, qty_produced: e.target.value }))
+                    if (logErrors.qty_produced) {
+                      setLogErrors(prev => ({ ...prev, qty_produced: '' }))
+                    }
+                  }}
+                  className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.qty_produced ? 'border-red-400' : 'border-neutral-300'}`}
                 />
+                {logErrors.qty_produced && <p className="mt-1 text-xs text-red-600">{logErrors.qty_produced}</p>}
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Rejected</label>
                 <input
                   type="number"
                   step="0.0001"
+                  min="0"
                   value={logData.qty_rejected}
                   onChange={(e) => setLogData((d) => ({ ...d, qty_rejected: e.target.value }))}
                   className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
@@ -377,12 +469,18 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
             <div className="flex gap-2">
               <button
                 onClick={handleLogOutput}
-                disabled={logMut.isPending || !logData.qty_produced}
+                disabled={logMut.isPending}
                 className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Submit Log
               </button>
-              <button onClick={() => setShowLogForm(false)} className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50">
+              <button 
+                onClick={() => {
+                  setShowLogForm(false)
+                  setLogErrors({})
+                }} 
+                className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50"
+              >
                 Cancel
               </button>
             </div>
@@ -391,24 +489,51 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
         <div className="flex flex-wrap gap-2">
           {order.status === 'draft' && canRelease && (
-            <button onClick={() => handleAction('release')} disabled={anyPending || stockCheckQ.isFetching} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-              {stockCheckQ.isFetching ? 'Checking stock…' : 'Release'}
-            </button>
+            <ConfirmDialog
+              title="Release Work Order?"
+              description="This will release the work order to production and deduct BOM materials from inventory."
+              confirmLabel="Release"
+              onConfirm={async () => {
+                await handleAction('release')
+              }}
+            >
+              <button disabled={anyPending || stockCheckQ.isFetching} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                {stockCheckQ.isFetching ? 'Checking stock…' : 'Release'}
+              </button>
+            </ConfirmDialog>
           )}
           {order.status === 'released' && canRelease && (
-            <button onClick={() => handleAction('start')} disabled={anyPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-              Start Production
-            </button>
+            <ConfirmDialog
+              title="Start Production?"
+              description="This will mark the work order as in progress."
+              confirmLabel="Start"
+              onConfirm={async () => {
+                setConfirmAction('start')
+                await executeAction()
+              }}
+            >
+              <button disabled={anyPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                Start Production
+              </button>
+            </ConfirmDialog>
           )}
           {order.status === 'in_progress' && canComplete && !showLogForm && (
-            <button
-              onClick={() => handleAction('complete')}
-              disabled={anyPending || parseFloat(order.qty_produced) <= 0}
-              title={parseFloat(order.qty_produced) <= 0 ? 'Log production output before completing' : undefined}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            <ConfirmDialog
+              title="Complete Work Order?"
+              description={`This will mark the work order as completed. Current progress: ${completionPercentage}%`}
+              confirmLabel="Complete"
+              onConfirm={async () => {
+                await handleAction('complete')
+              }}
             >
-              Mark Complete
-            </button>
+              <button
+                disabled={anyPending || parseFloat(order.qty_produced) <= 0}
+                title={parseFloat(order.qty_produced) <= 0 ? 'Log production output before completing' : undefined}
+                className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Mark Complete
+              </button>
+            </ConfirmDialog>
           )}
           {order.status === 'in_progress' && canLogOutput && !showLogForm && (
             <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded">
@@ -416,18 +541,35 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
             </button>
           )}
           {['draft', 'released'].includes(order.status) && canCreate && (
-            <button onClick={() => handleAction('cancel')} disabled={anyPending} className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded">
-              Cancel WO
-            </button>
+            <ConfirmDialog
+              title="Cancel Work Order?"
+              description="This will cancel the work order. This action cannot be undone."
+              confirmLabel="Cancel WO"
+              variant="danger"
+              onConfirm={async () => {
+                await handleAction('cancel')
+              }}
+            >
+              <button disabled={anyPending} className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded">
+                Cancel WO
+              </button>
+            </ConfirmDialog>
           )}
           {order.status === 'in_progress' && parseFloat(order.qty_produced) === 0 && !showLogForm && canCreate && (
-            <button
-              onClick={() => setShowVoidConfirm(true)}
-              disabled={voidMut.isPending}
-              className="px-4 py-2 text-sm font-medium border border-red-200 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            <ConfirmDestructiveDialog
+              title="Void Work Order?"
+              description="This work order will be voided and cannot be restarted. This action is irreversible."
+              confirmWord="VOID"
+              confirmLabel="Void WO"
+              onConfirm={executeVoid}
             >
-              Void WO
-            </button>
+              <button
+                disabled={voidMut.isPending}
+                className="px-4 py-2 text-sm font-medium border border-red-200 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Void WO
+              </button>
+            </ConfirmDestructiveDialog>
           )}
         </div>
       </div>
@@ -563,22 +705,38 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         }
         variant={confirmAction === 'cancel' ? 'warning' : 'primary'}
       />
+      
+      {/* Complete Short Production Confirmation */}
+      <ConfirmDialog
+        open={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={executeComplete}
+        title="Complete Work Order Short?"
+        description={`Only ${parseFloat(order.qty_produced).toLocaleString('en-PH')} of ${parseFloat(order.qty_required).toLocaleString('en-PH')} units produced (${completionPercentage}%). Complete the work order short?`}
+        confirmLabel="Complete Short"
+        loading={completeMut.isPending}
+        variant="warning"
+      />
+      
+      {/* Cancel Confirmation */}
+      <ConfirmDialog
+        open={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={executeCancel}
+        title="Cancel Work Order?"
+        description="This will cancel the work order. This action cannot be undone."
+        confirmLabel="Cancel WO"
+        loading={cancelMut.isPending}
+        variant="danger"
+      />
 
+      {/* Void Confirmation Dialog - using ConfirmDestructiveDialog inline */}
       <ConfirmDialog
         open={showVoidConfirm}
         onClose={() => setShowVoidConfirm(false)}
-        onConfirm={async () => {
-          try {
-            await voidMut.mutateAsync()
-            toast.success('Work order voided.')
-            setShowVoidConfirm(false)
-          } catch (err) {
-            if (isHandledApiError(err)) return
-            toast.error('Failed to void work order.')
-          }
-        }}
-        title="Void work order?"
-        description="This work order will be cancelled and cannot be restarted."
+        onConfirm={executeVoid}
+        title="Void Work Order?"
+        description="This work order will be voided and cannot be restarted."
         confirmLabel="Void WO"
         loading={voidMut.isPending}
         variant="danger"

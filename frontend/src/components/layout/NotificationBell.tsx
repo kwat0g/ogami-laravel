@@ -9,6 +9,7 @@ import {
   useNotificationPanel,
   type AppNotification,
 } from '@/hooks/useNotifications'
+import { useAuthStore } from '@/stores/authStore'
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -66,9 +67,10 @@ function NotificationRow({ n, onRead }: { n: AppNotification; onRead: (id: strin
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function NotificationBell() {
+  const isAuthenticated = useAuthStore(s => !!s.user)
   const { open, toggle, close } = useNotificationPanel()
-  const { data: countData } = useUnreadCount()
-  const { data, isLoading } = useNotifications(1, false)
+  const { data: countData } = useUnreadCount(isAuthenticated)
+  const { data, isLoading } = useNotifications(1, false, isAuthenticated)
   const markRead    = useMarkRead()
   const markAllRead = useMarkAllRead()
   const panelRef    = useRef<HTMLDivElement>(null)

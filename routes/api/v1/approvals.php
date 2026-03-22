@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:approvals'])->group(function () {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Pending Approvals Dashboard

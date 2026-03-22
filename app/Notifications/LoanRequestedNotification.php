@@ -17,9 +17,29 @@ final class LoanRequestedNotification extends Notification implements ShouldQueu
 {
     use Queueable;
 
-    public function __construct(private readonly Loan $loan)
-    {
+    public function __construct(
+        private readonly int $loanId,
+        private readonly string $loanUlid,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $loanTypeName,
+        private readonly string $referenceNo,
+        private readonly int $principalCentavos,
+    ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Loan $loan): self
+    {
+        return new self(
+            loanId: $loan->id,
+            loanUlid: $loan->ulid,
+            employeeId: $loan->employee_id,
+            employeeName: $loan->employee->full_name,
+            loanTypeName: $loan->loanType->name,
+            referenceNo: $loan->reference_no,
+            principalCentavos: $loan->principal_centavos,
+        );
     }
 
     /** @return list<string> */
@@ -36,14 +56,14 @@ final class LoanRequestedNotification extends Notification implements ShouldQueu
             'title' => 'New Loan Application',
             'message' => sprintf(
                 '%s has applied for a %s loan of ₱%s (ref: %s).',
-                $this->loan->employee->full_name,
-                $this->loan->loanType->name,
-                number_format($this->loan->principal_centavos / 100, 2),
-                $this->loan->reference_no,
+                $this->employeeName,
+                $this->loanTypeName,
+                number_format($this->principalCentavos / 100, 2),
+                $this->referenceNo,
             ),
-            'action_url' => "/hr/loans/{$this->loan->ulid}",
-            'loan_id' => $this->loan->id,
-            'employee_id' => $this->loan->employee_id,
+            'action_url' => "/hr/loans/{$this->loanUlid}",
+            'loan_id' => $this->loanId,
+            'employee_id' => $this->employeeId,
         ];
     }
 

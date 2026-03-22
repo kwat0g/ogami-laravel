@@ -10,9 +10,15 @@ uses()->group('feature', 'qc');
 
 beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(\Database\Seeders\ModuleSeeder::class);
+    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
 
+    $qcDept = \App\Domains\HR\Models\Department::where('code', 'QC')->first();
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('qc_manager');
+    $this->manager->assignRole('manager');
+    $this->manager->departments()->attach($qcDept->id, ['is_primary' => true]);
 });
 
 it('lists inspections', function () {

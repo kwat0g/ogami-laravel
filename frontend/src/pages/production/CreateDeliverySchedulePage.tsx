@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useCreateDeliverySchedule } from '@/hooks/useProduction'
 import { useCustomers } from '@/hooks/useAR'
 import { useItems } from '@/hooks/useInventory'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { DeliveryScheduleType } from '@/types/production'
 
 export default function CreateDeliverySchedulePage(): React.ReactElement {
@@ -38,12 +39,51 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
     const qty = Number(form.qty_ordered)
     if (!form.qty_ordered || isNaN(qty) || qty <= 0) e.qty_ordered = 'Must be greater than 0.'
     if (!form.target_delivery_date) e.target_delivery_date = 'Delivery date is required.'
+    // Validate that delivery date is not in the past
+    if (form.target_delivery_date) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const deliveryDate = new Date(form.target_delivery_date)
+      if (deliveryDate < today) {
+        e.target_delivery_date = 'Delivery date cannot be in the past.'
+      }
+    }
     return e
   }, [form])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
+  const validateForm = (): boolean => {
+    const errors: string[] = []
+    
+    if (!form.customer_id) errors.push('Customer is required.')
+    if (!form.product_item_id) errors.push('Product item is required.')
+    const qty = Number(form.qty_ordered)
+    if (!form.qty_ordered || isNaN(qty) || qty <= 0) errors.push('Quantity ordered must be greater than 0.')
+    if (!form.target_delivery_date) errors.push('Target delivery date is required.')
+    if (form.target_delivery_date) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const deliveryDate = new Date(form.target_delivery_date)
+      if (deliveryDate < today) {
+        errors.push('Delivery date cannot be in the past.')
+      }
+    }
+    
+    if (errors.length > 0) {
+      toast.error(errors[0])
+      // Touch all fields to show validation state
+      setTouched(new Set(['customer_id', 'product_item_id', 'qty_ordered', 'target_delivery_date']))
+      return false
+    }
+    
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateForm()) return
+    
     try {
       await createMut.mutateAsync({
         customer_id: form.customer_id,
@@ -54,10 +94,10 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
         type: form.type,
         notes: form.notes || undefined,
       })
-      toast.success('Delivery schedule created.')
+      toast.success('Delivery schedule created successfully.')
       navigate('/production/delivery-schedules')
-    } catch {
-      toast.error('Failed to create delivery schedule.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 

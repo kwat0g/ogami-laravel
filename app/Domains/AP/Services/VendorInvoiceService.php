@@ -343,7 +343,7 @@ final class VendorInvoiceService implements ServiceContract
             $invoice->loadMissing('vendor');
             User::permission('vendor_invoices.approve')
                 ->where('id', '!=', $invoice->submitted_by)
-                ->each(fn (User $u) => $u->notify(new VendorInvoiceSubmittedNotification($invoice)));
+                ->each(fn (User $u) => $u->notify(VendorInvoiceSubmittedNotification::fromModel($invoice)));
         } catch (\Throwable) {
             // Non-fatal
         }
@@ -361,7 +361,7 @@ final class VendorInvoiceService implements ServiceContract
 
             $invoice->loadMissing('vendor');
             User::find($invoice->submitted_by)?->notify(
-                new VendorInvoiceDecidedNotification($invoice, $decision, $rejectionNote)
+                VendorInvoiceDecidedNotification::fromModel($invoice, $decision, $rejectionNote)
             );
         } catch (\Throwable) {
             // Non-fatal
@@ -571,5 +571,156 @@ final class VendorInvoiceService implements ServiceContract
         $gr->update(['ap_invoice_created' => true]);
 
         return $invoice;
+    }
+
+    // ── Create from Purchase Order (Manual) ──────────────────────────────────
+
+    /**
+     * Create a draft AP Invoice from a Purchase Order for manual data entry.
+     * This differs from the GR-based auto-creation above — it pre-populates
+     * the invoice form with PO data for the user to review and adjust.
+     *
+     * @param int $poId The Purchase Order ID
+     * @param int $userId The user creating the invoice
+     * @return array{invoice: VendorInvoice, po_items: array} Pre-populated invoice data
+     * @throws DomainException When PO not found, invalid status, or invoice already exists
+     */
+    public function createInvoiceFromPo(int $poId, int $userId): array
+    {
+        // Find the PO with vendor and items
+        $po = \App\Domains\Procurement\Models\PurchaseOrder::with(['vendor', 'vendor.ewtRate', 'items'])
+            ->find($poId);
+
+        if ($po === null) {
+            throw new DomainException(
+                message: "Purchase order not found.",
+                errorCode: 'AP_PO_NOT_FOUND',
+                httpStatus: 404,
+            );
+        }
+
+        // Verify PO status is eligible for invoicing (sent or partially_received)
+        if (! in_array($po->status, ['sent', 'partially_received'], true)) {
+            throw new DomainException(
+                message: "Cannot create invoice from PO with status '{$po->status}'. PO must be 'sent' or 'partially_received'.",
+                errorCode: 'AP_PO_INVALID_STATUS',
+                httpStatus: 422,
+            );
+        }
+
+        // Check if an invoice already exists for this PO (prevent duplicate billing)
+        $existingInvoice = VendorInvoice::where('purchase_order_id', $po->id)
+            ->whereIn('status', ['draft', 'pending_approval', 'approved', 'partially_paid'])
+            ->first();
+
+        if ($existingInvoice !== null) {
+            throw new DomainException(
+                message: "An invoice already exists for this purchase order (Invoice #{$existingInvoice->id}).",
+                errorCode: 'AP_INVOICE_ALREADY_EXISTS',
+                httpStatus: 422,
+            );
+        }
+
+        // Verify vendor is active
+        $vendor = $po->vendor;
+        if ($vendor === null) {
+            throw new DomainException(
+                message: "Purchase order has no associated vendor.",
+                errorCode: 'AP_PO_NO_VENDOR',
+                httpStatus: 422,
+            );
+        }
+
+        $vendor->assertActive();
+
+        // Get open fiscal period
+        /** @var FiscalPeriod|null $fiscalPeriod */
+        $fiscalPeriod = FiscalPeriod::open()->latest('date_from')->first();
+
+        if ($fiscalPeriod === null) {
+            throw new DomainException(
+                message: "No open fiscal period found. Please open a fiscal period first.",
+                errorCode: 'AP_NO_OPEN_FISCAL_PERIOD',
+                httpStatus: 422,
+            );
+        }
+
+        // Parse payment terms for due date calculation
+        $paymentDays = 30;
+        if (filled($vendor->payment_terms)) {
+            preg_match('/\d+/', (string) $vendor->payment_terms, $matches);
+            if (! empty($matches)) {
+                $paymentDays = (int) $matches[0];
+            }
+        }
+
+        $invoiceDate = now()->toDateString();
+        $dueDate = now()->addDays($paymentDays)->toDateString();
+
+        // Calculate net amount from PO items (quantity_received or quantity_ordered × unit_cost)
+        // For partial receipts, we use what's actually been received
+        $netAmount = $po->items->reduce(
+            fn (float $carry, \App\Domains\Procurement\Models\PurchaseOrderItem $item): float => $carry + ((float) $item->quantity_received * (float) $item->agreed_unit_cost),
+            0.0,
+        );
+
+        // If nothing received yet, use ordered quantity (pre-payment scenario)
+        if ($netAmount <= 0) {
+            $netAmount = $po->items->reduce(
+                fn (float $carry, \App\Domains\Procurement\Models\PurchaseOrderItem $item): float => $carry + ((float) $item->quantity_ordered * (float) $item->agreed_unit_cost),
+                0.0,
+            );
+        }
+
+        // Resolve default GL accounts
+        $apAccount = ChartOfAccount::where('code', '2001')->first();
+        $expenseAccount = ChartOfAccount::where('code', '6001')->first();
+
+        // Compute EWT preview
+        $ewtAmount = $vendor->is_ewt_subject
+            ? $this->ewtService->computeForInvoice(
+                vendor: $vendor,
+                netAmount: $netAmount,
+                invoiceDate: Carbon::parse($invoiceDate),
+            )
+            : 0.00;
+
+        // Create the draft invoice
+        $invoice = VendorInvoice::create([
+            'vendor_id' => $vendor->id,
+            'fiscal_period_id' => $fiscalPeriod->id,
+            'ap_account_id' => $apAccount?->id,
+            'expense_account_id' => $expenseAccount?->id,
+            'invoice_date' => $invoiceDate,
+            'due_date' => $dueDate,
+            'net_amount' => $netAmount,
+            'vat_amount' => 0.00,
+            'ewt_amount' => $ewtAmount,
+            'ewt_rate' => $vendor->is_ewt_subject ? $vendor->ewtRate?->rate : null,
+            'atc_code' => $vendor->is_ewt_subject ? $vendor->atc_code : null,
+            'description' => "From PO {$po->po_reference}",
+            'purchase_order_id' => $po->id,
+            'status' => 'draft',
+            'created_by' => $userId,
+        ]);
+
+        // Format PO items for the frontend (to pre-populate invoice lines)
+        $poItems = $po->items->map(fn ($item) => [
+            'po_item_id' => $item->id,
+            'description' => $item->item_description,
+            'quantity_ordered' => (float) $item->quantity_ordered,
+            'quantity_received' => (float) $item->quantity_received,
+            'quantity_pending' => (float) $item->quantity_pending,
+            'unit_of_measure' => $item->unit_of_measure,
+            'unit_cost' => (float) $item->agreed_unit_cost,
+            'total_cost' => (float) $item->total_cost,
+        ])->toArray();
+
+        return [
+            'invoice' => $invoice,
+            'po_items' => $poItems,
+            'po_reference' => $po->po_reference,
+            'vendor_name' => $vendor->name,
+        ];
     }
 }

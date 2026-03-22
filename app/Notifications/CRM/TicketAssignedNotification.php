@@ -15,9 +15,24 @@ final class TicketAssignedNotification extends Notification implements ShouldQue
     use Queueable;
 
     public function __construct(
-        private readonly Ticket $ticket,
+        private readonly int $ticketId,
+        private readonly string $ticketUlid,
+        private readonly string $ticketNumber,
+        private readonly string $subject,
+        private readonly string $priority,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Ticket $ticket): self
+    {
+        return new self(
+            ticketId: $ticket->id,
+            ticketUlid: $ticket->ulid,
+            ticketNumber: (string) ($ticket->ticket_number ?? $ticket->id),
+            subject: (string) ($ticket->subject ?? ''),
+            priority: (string) ($ticket->priority ?? 'normal'),
+        );
     }
 
     /** @return list<string> */
@@ -34,12 +49,12 @@ final class TicketAssignedNotification extends Notification implements ShouldQue
             'title' => 'Ticket Assigned to You',
             'message' => sprintf(
                 'Ticket #%s "%s" (%s priority) has been assigned to you.',
-                $this->ticket->ticket_number ?? $this->ticket->id,
-                $this->ticket->subject ?? '',
-                $this->ticket->priority ?? 'normal',
+                $this->ticketNumber,
+                $this->subject,
+                $this->priority,
             ),
-            'action_url' => "/crm/tickets/{$this->ticket->ulid}",
-            'ticket_id' => $this->ticket->id,
+            'action_url' => "/crm/tickets/{$this->ticketUlid}",
+            'ticket_id' => $this->ticketId,
         ];
     }
 

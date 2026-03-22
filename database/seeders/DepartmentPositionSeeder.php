@@ -113,6 +113,12 @@ class DepartmentPositionSeeder extends Seeder
                 'cost_center_code' => 'CC-013',
                 'is_active' => true,
             ],
+            [
+                'code' => 'PURCH',
+                'name' => 'Procurement & Purchasing',
+                'cost_center_code' => 'CC-014',
+                'is_active' => true,
+            ],
         ];
 
         foreach ($departments as $dept) {
@@ -129,7 +135,7 @@ class DepartmentPositionSeeder extends Seeder
         // Re-fetch inserted IDs by code
         $deptIds = DB::table('departments')
             ->whereIn('code', ['HR', 'IT', 'ACCTG', 'PROD', 'SALES',
-                               'EXEC', 'PLANT', 'QC', 'MOLD', 'WH', 'PPC', 'MAINT', 'ISO'])
+                               'EXEC', 'PLANT', 'QC', 'MOLD', 'WH', 'PPC', 'MAINT', 'ISO', 'PURCH'])
             ->pluck('id', 'code');
 
         // ── Seed all positions ───────────────────────────────────────────────
@@ -184,8 +190,11 @@ class DepartmentPositionSeeder extends Seeder
             ['ISO-STAFF','Management System Staff',  'ISO',   'SG-05'],
             // Additional Accounting/Admin officers
             ['GA-OFF',   'General Administration Officer', 'HR',    'SG-10'],
-            ['PURCH-OFF','Purchasing Officer',       'ACCTG', 'SG-10'],
+            ['PURCH-OFF','Purchasing Officer',       'PURCH', 'SG-10'],
             ['IMPEX-OFF','Import/Export Officer',    'ACCTG', 'SG-10'],
+            // Purchasing
+            ['PURCH-MGR','Purchasing Manager',       'PURCH', 'SG-12'],
+            ['PURCH-OFF-2','Purchasing Officer',     'PURCH', 'SG-09'],
         ];
 
         foreach ($positions as [$code, $title, $deptCode, $payGrade]) {

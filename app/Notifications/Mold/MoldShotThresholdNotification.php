@@ -15,10 +15,22 @@ final class MoldShotThresholdNotification extends Notification implements Should
     use Queueable;
 
     public function __construct(
-        private readonly MoldMaster $mold,
+        private readonly int $moldId,
+        private readonly string $moldUlid,
+        private readonly string $moldCode,
         private readonly float $percentage,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(MoldMaster $mold, float $percentage): self
+    {
+        return new self(
+            moldId: $mold->id,
+            moldUlid: $mold->ulid,
+            moldCode: $mold->mold_code ?? "MOLD-{$mold->id}",
+            percentage: $percentage,
+        );
     }
 
     /** @return list<string> */
@@ -37,12 +49,12 @@ final class MoldShotThresholdNotification extends Notification implements Should
             'title' => $critical ? '⚠️ Mold Shot Count EXCEEDED' : 'Mold Shot Count Warning',
             'message' => sprintf(
                 'Mold %s has reached %.1f%% of max shot count. %s',
-                $this->mold->mold_code ?? "MOLD-{$this->mold->id}",
+                $this->moldCode,
                 $this->percentage,
                 $critical ? 'Immediate maintenance required.' : 'Schedule maintenance soon.',
             ),
-            'action_url' => "/mold/{$this->mold->ulid}",
-            'mold_id' => $this->mold->id,
+            'action_url' => "/mold/{$this->moldUlid}",
+            'mold_id' => $this->moldId,
         ];
     }
 

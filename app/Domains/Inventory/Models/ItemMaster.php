@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\Inventory\Models;
 
+use App\Domains\AP\Models\Vendor;
 use App\Shared\Traits\HasPublicUlid;
+use Database\Factories\ItemMasterFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -25,10 +28,17 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $type raw_material|semi_finished|finished_good|consumable|spare_part
  * @property bool $requires_iqc
  * @property bool $is_active
+ * @property int|null $preferred_vendor_id
+ * @property-read Vendor|null $preferredVendor
  */
 final class ItemMaster extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, HasFactory, HasPublicUlid, SoftDeletes;
+
+    protected static function newFactory(): ItemMasterFactory
+    {
+        return ItemMasterFactory::new();
+    }
 
     protected $table = 'item_masters';
 
@@ -38,11 +48,13 @@ final class ItemMaster extends Model implements Auditable
         'name',
         'unit_of_measure',
         'description',
+        'standard_price_centavos',
         'reorder_point',
         'reorder_qty',
         'type',
         'requires_iqc',
         'is_active',
+        'preferred_vendor_id',
     ];
 
     protected $casts = [
@@ -54,6 +66,12 @@ final class ItemMaster extends Model implements Auditable
     public function category(): BelongsTo
     {
         return $this->belongsTo(ItemCategory::class, 'category_id');
+    }
+
+    /** @return BelongsTo<Vendor, $this> */
+    public function preferredVendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'preferred_vendor_id');
     }
 
     /** @return HasMany<StockBalance, ItemMaster> */

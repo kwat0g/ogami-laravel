@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import { ClipboardCheck, Save } from 'lucide-react'
+import { ClipboardCheck, Save, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useItems, useWarehouseLocations, useStockBalances, useStockAdjust } from '@/hooks/useInventory'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+
 
 interface CountItem {
   item_id: number
@@ -16,6 +19,7 @@ interface CountItem {
 
 export default function PhysicalCountPage(): React.ReactElement {
   const [locationId, setLocationId] = useState<number | ''>('')
+  const [showConfirm, setShowConfirm] = useState(false)
   const { data: locations } = useWarehouseLocations({ is_active: true })
   const { data: itemsData } = useItems({ is_active: true, per_page: 500 })
   const { data: balancesData } = useStockBalances(locationId ? { location_id: locationId, per_page: 500 } : {})
@@ -48,9 +52,14 @@ export default function PhysicalCountPage(): React.ReactElement {
     })
     setCountItems(rows)
     setIsInitialized(true)
+    toast.success(`Count sheet initialized with ${rows.length} items.`)
   }
 
   const updateCount = (idx: number, value: string) => {
+    // Validate input is a non-negative number
+    if (value !== '' && (isNaN(Number(value)) || Number(value) < 0)) {
+      return
+    }
     setCountItems((prev) => {
       const next = [...prev]
       next[idx] = { ...next[idx], counted_qty: value, variance: value ? Number(value) - next[idx].system_qty : 0 }
@@ -60,14 +69,37 @@ export default function PhysicalCountPage(): React.ReactElement {
 
   const [posting, setPosting] = useState(false)
 
-  const postAdjustments = async () => {
+  const validateCounts = (): boolean => {
+    const itemsWithCounts = countItems.filter((c) => c.counted_qty !== '')
+    if (itemsWithCounts.length === 0) {
+      toast.error('Please enter at least one count.')
+      return false
+    }
+    for (const item of itemsWithCounts) {
+      const qty = Number(item.counted_qty)
+      if (isNaN(qty) || qty < 0) {
+        toast.error(`Invalid count for ${item.item_code}. Must be 0 or greater.`)
+        return false
+      }
+    }
+    return true
+  }
+
+  const handlePostClick = () => {
+    if (!validateCounts()) return
     const adjustments = countItems.filter((c) => c.counted_qty !== '' && c.variance !== 0)
     if (adjustments.length === 0) {
       toast.info('No variances to post.')
       return
     }
+    setShowConfirm(true)
+  }
+
+  const postAdjustments = async () => {
+    const adjustments = countItems.filter((c) => c.counted_qty !== '' && c.variance !== 0)
     setPosting(true)
     let success = 0
+    let failed = 0
     for (const adj of adjustments) {
       try {
         await adjustMutation.mutateAsync({
@@ -77,18 +109,25 @@ export default function PhysicalCountPage(): React.ReactElement {
           remarks: `Physical inventory count. System: ${adj.system_qty}, Counted: ${adj.counted_qty}, Variance: ${adj.variance > 0 ? '+' : ''}${adj.variance}`,
         })
         success++
-      } catch {
-        toast.error(`Failed to adjust ${adj.item_code}`)
+      } catch (err) {
+        failed++
+        toast.error(firstErrorMessage(err, `Failed to adjust ${adj.item_code}`))
       }
     }
     setPosting(false)
-    toast.success(`Posted ${success} adjustments successfully.`)
-    setIsInitialized(false)
-    setCountItems([])
+    setShowConfirm(false)
+    if (success > 0) {
+      toast.success(`Posted ${success} adjustments successfully.`)
+    }
+    if (failed === 0) {
+      setIsInitialized(false)
+      setCountItems([])
+    }
   }
 
   const totalVariance = countItems.filter((c) => c.counted_qty !== '').reduce((s, c) => s + Math.abs(c.variance), 0)
   const countedCount = countItems.filter((c) => c.counted_qty !== '').length
+  const adjustmentsToPost = countItems.filter((c) => c.counted_qty !== '' && c.variance !== 0).length
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -101,7 +140,7 @@ export default function PhysicalCountPage(): React.ReactElement {
         <div className="bg-white border border-neutral-200 rounded-lg p-6 max-w-md">
           <h2 className="font-semibold text-neutral-700 mb-4">Start Count Session</h2>
           <div className="mb-4">
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Warehouse Location</label>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Warehouse Location *</label>
             <select value={locationId} onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : '')}
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm">
               <option value="">Select location…</option>
@@ -123,13 +162,16 @@ export default function PhysicalCountPage(): React.ReactElement {
           <div className="flex items-center justify-between">
             <div className="text-sm text-neutral-500">
               {countedCount} of {countItems.length} items counted · {totalVariance > 0 ? `${totalVariance} total variance units` : 'No variances'}
+              {adjustmentsToPost > 0 && (
+                <span className="ml-2 text-orange-600 font-medium">({adjustmentsToPost} adjustments to post)</span>
+              )}
             </div>
             <div className="flex gap-2">
               <button onClick={() => { setIsInitialized(false); setCountItems([]) }}
                 className="text-sm text-neutral-500 hover:text-neutral-700 px-3 py-2 border border-neutral-300 rounded">
                 Cancel
               </button>
-              <button onClick={postAdjustments} disabled={posting || countedCount === 0}
+              <button onClick={handlePostClick} disabled={posting || countedCount === 0}
                 className="flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded transition-colors text-sm disabled:opacity-50">
                 <Save className="w-4 h-4" /> {posting ? 'Posting…' : 'Post Adjustments'}
               </button>
@@ -143,7 +185,7 @@ export default function PhysicalCountPage(): React.ReactElement {
                   <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500">Code</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500">Item</th>
                   <th className="px-3 py-2 text-right text-xs font-medium text-neutral-500">System Qty</th>
-                  <th className="px-3 py-2 text-center text-xs font-medium text-neutral-500 w-32">Counted</th>
+                  <th className="px-3 py-2 text-center text-xs font-medium text-neutral-500 w-32">Counted *</th>
                   <th className="px-3 py-2 text-right text-xs font-medium text-neutral-500">Variance</th>
                 </tr>
               </thead>
@@ -154,10 +196,15 @@ export default function PhysicalCountPage(): React.ReactElement {
                     <td className="px-3 py-2 text-neutral-800">{item.item_name}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{item.system_qty}</td>
                     <td className="px-3 py-2 text-center">
-                      <input type="number" min="0" step="1" value={item.counted_qty}
+                      <input 
+                        type="number" 
+                        min="0" 
+                        step="1" 
+                        value={item.counted_qty}
                         onChange={(e) => updateCount(i, e.target.value)}
                         className="w-24 border border-neutral-300 rounded px-2 py-1 text-sm text-center tabular-nums"
-                        placeholder="—" />
+                        placeholder="—" 
+                      />
                     </td>
                     <td className={`px-3 py-2 text-right tabular-nums font-medium ${
                       item.variance > 0 ? 'text-emerald-600' : item.variance < 0 ? 'text-red-600' : 'text-neutral-400'
@@ -170,6 +217,28 @@ export default function PhysicalCountPage(): React.ReactElement {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <ConfirmDialog
+          title="Post Physical Count Adjustments?"
+          description={
+            <div className="space-y-2">
+              <p>You are about to post <strong>{adjustmentsToPost}</strong> stock adjustments to the system.</p>
+              <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <p>This will immediately update inventory levels based on your physical counts. This action cannot be undone.</p>
+                </div>
+              </div>
+            </div>
+          }
+          confirmLabel="Post Adjustments"
+          onConfirm={postAdjustments}
+        >
+          <span />
+        </ConfirmDialog>
       )}
     </div>
   )

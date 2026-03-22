@@ -4,11 +4,14 @@ import { ClipboardCheck, AlertTriangle, Plus, Trash2, CheckCircle2, XCircle } fr
 import { toast } from 'sonner'
 import { useCancelResults, useInspection, useRecordResults } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { InspectionStage, InspectionStatus } from '@/types/qc'
 
 interface ResultRow {
@@ -55,6 +58,10 @@ export default function InspectionDetailPage(): React.ReactElement {
   const [cancelReason, setCancelReason]     = useState('')
   const [cancelTouched, setCancelTouched]   = useState(false)
 
+  // ── Confirmation dialogs ──────────────────────────────────────────────────
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+
   const cancelReasonError = useMemo(() => {
     if (!cancelTouched) return undefined
     if (!cancelReason.trim()) return 'Reason is required.'
@@ -68,16 +75,22 @@ export default function InspectionDetailPage(): React.ReactElement {
     setCancelTouched(false)
   }
 
-  async function handleCancelResults(e: React.FormEvent) {
-    e.preventDefault()
-    setCancelTouched(true)
-    if (!cancelReason.trim() || cancelReason.trim().length < 10) return
+  async function handleCancelResults() {
+    if (!cancelReason.trim() || cancelReason.trim().length < 10) {
+      setCancelTouched(true)
+      return
+    }
+    setShowCancelConfirm(true)
+  }
+
+  async function executeCancelResults() {
     try {
       await cancelMut.mutateAsync(cancelReason.trim())
       toast.success('Inspection results cancelled — status reset to open.')
       closeCancelForm()
-    } catch {
-      toast.error('Failed to cancel inspection results.')
+      setShowCancelConfirm(false)
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -133,7 +146,7 @@ export default function InspectionDetailPage(): React.ReactElement {
     setRows(prev => prev.filter((_, i) => i !== idx))
   }
 
-  async function handleSubmitResults(e: React.FormEvent) {
+  function handleSubmitResults(e: React.FormEvent) {
     e.preventDefault()
     setTouchedQty(true)
     const passed = Number(qtyPassed)
@@ -152,6 +165,13 @@ export default function InspectionDetailPage(): React.ReactElement {
       return
     }
 
+    setShowSubmitConfirm(true)
+  }
+
+  async function executeSubmitResults() {
+    const passed = Number(qtyPassed)
+    const failed = Number(qtyFailed)
+
     try {
       await recordMut.mutateAsync({
         qty_passed: passed,
@@ -164,10 +184,11 @@ export default function InspectionDetailPage(): React.ReactElement {
           remarks: r.remarks || undefined,
         })),
       })
-      toast.success('Results recorded.')
+      toast.success('Results recorded successfully.')
       closeForm()
-    } catch {
-      toast.error('Failed to record results.')
+      setShowSubmitConfirm(false)
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -212,13 +233,20 @@ export default function InspectionDetailPage(): React.ReactElement {
               </button>
             )}
             {!isOpen && inspection.status !== 'voided' && !showCancelForm && canEdit && (
-              <button
-                onClick={() => setShowCancelForm(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-300 text-sm font-medium rounded-md hover:bg-red-50 hover:border-red-400 transition-colors"
+              <ConfirmDestructiveDialog
+                title="Cancel Inspection Results?"
+                description="This will reset the inspection back to 'open' status and clear all recorded results. This action cannot be undone."
+                confirmWord="CANCEL"
+                confirmLabel="Cancel Results"
+                onConfirm={() => setShowCancelForm(true)}
               >
-                <XCircle className="w-4 h-4" />
-                Cancel Results
-              </button>
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white text-red-600 border border-red-300 text-sm font-medium rounded-md hover:bg-red-50 hover:border-red-400 transition-colors"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Cancel Results
+                </button>
+              </ConfirmDestructiveDialog>
             )}
             {!isOpen && inspection.status !== 'voided' && showCancelForm && (
               <button
@@ -239,9 +267,9 @@ export default function InspectionDetailPage(): React.ReactElement {
           <InfoList>
             <InfoRow label="Item" value={inspection.item_master ? `${inspection.item_master.item_code} — ${inspection.item_master.name}` : null} />
             <InfoRow label="Lot / Batch" value={inspection.lot_batch?.batch_number} />
-            <InfoRow label="Qty Inspected" value={parseFloat(inspection.qty_inspected).toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
-            <InfoRow label="Qty Passed" value={<span className="text-neutral-700 font-medium">{parseFloat(inspection.qty_passed).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
-            <InfoRow label="Qty Failed" value={<span className="text-neutral-600 font-medium">{parseFloat(inspection.qty_failed).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
+            <InfoRow label="Qty Inspected" value={parseFloat(inspection.qty_inspected || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
+            <InfoRow label="Qty Passed" value={<span className="text-neutral-700 font-medium">{parseFloat(inspection.qty_passed || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
+            <InfoRow label="Qty Failed" value={<span className="text-neutral-600 font-medium">{parseFloat(inspection.qty_failed || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>} />
             <InfoRow label="Date" value={inspection.inspection_date} />
             <InfoRow label="Inspector" value={inspection.inspector?.name} />
             <InfoRow label="Remarks" value={inspection.remarks} />
@@ -279,7 +307,7 @@ export default function InspectionDetailPage(): React.ReactElement {
               </button>
               <button
                 type="submit"
-                disabled={cancelMut.isPending}
+                disabled={cancelMut.isPending || !!cancelReasonError}
                 onClick={handleCancelResults}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -289,6 +317,19 @@ export default function InspectionDetailPage(): React.ReactElement {
             </div>
           </CardBody>
         </Card>
+      )}
+
+      {/* Cancel Results Confirmation Dialog */}
+      {showCancelConfirm && (
+        <ConfirmDestructiveDialog
+          title="Confirm Cancel Results"
+          description={`You are about to cancel the inspection results. This will permanently reset the inspection status to 'open' and clear all recorded data.\n\nReason: "${cancelReason.trim()}"`}
+          confirmWord="CONFIRM"
+          confirmLabel="Yes, Cancel Results"
+          onConfirm={executeCancelResults}
+        >
+          <span />
+        </ConfirmDestructiveDialog>
       )}
 
       {/* Record Results Form */}
@@ -361,8 +402,8 @@ export default function InspectionDetailPage(): React.ReactElement {
                         onClick={() => updateRow(idx, 'is_conforming', row.is_conforming === true ? null : true)}
                         className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium border transition-colors ${
                           row.is_conforming === true
-                            ? 'bg-green-600 border-green-600 text-white'
-                            : 'border-neutral-300 text-neutral-500 hover:border-green-400 hover:text-green-600'
+                            ? 'bg-neutral-900 border-neutral-900 text-white'
+                            : 'border-neutral-300 text-neutral-500 hover:border-neutral-500 hover:text-neutral-700'
                         }`}
                       >
                         <CheckCircle2 className="w-3 h-3" />Pass
@@ -372,8 +413,8 @@ export default function InspectionDetailPage(): React.ReactElement {
                         onClick={() => updateRow(idx, 'is_conforming', row.is_conforming === false ? null : false)}
                         className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium border transition-colors ${
                           row.is_conforming === false
-                            ? 'bg-red-600 border-red-600 text-white'
-                            : 'border-neutral-300 text-neutral-500 hover:border-red-400 hover:text-red-600'
+                            ? 'bg-neutral-500 border-neutral-500 text-white'
+                            : 'border-neutral-300 text-neutral-500 hover:border-neutral-500 hover:text-neutral-700'
                         }`}
                       >
                         <XCircle className="w-3 h-3" />Fail
@@ -420,7 +461,7 @@ export default function InspectionDetailPage(): React.ReactElement {
               </button>
               <button
                 type="submit"
-                disabled={recordMut.isPending}
+                disabled={recordMut.isPending || !!qtyError}
                 onClick={handleSubmitResults}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -430,6 +471,18 @@ export default function InspectionDetailPage(): React.ReactElement {
             </div>
           </CardBody>
         </Card>
+      )}
+
+      {/* Submit Results Confirmation Dialog */}
+      {showSubmitConfirm && (
+        <ConfirmDialog
+          title="Submit Inspection Results?"
+          description={`You are about to record inspection results:\n• Units Passed: ${qtyPassed}\n• Units Failed: ${qtyFailed}\n\nThis will update the inspection status based on the results. Are you sure?`}
+          confirmLabel="Submit Results"
+          onConfirm={executeSubmitResults}
+        >
+          <span />
+        </ConfirmDialog>
       )}
 
       {/* Results */}

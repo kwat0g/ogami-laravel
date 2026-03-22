@@ -210,7 +210,7 @@ test.describe('Dashboard Permission Guards', () => {
 test.describe('Dashboard Cross-Role Isolation', () => {
     
     // ── DASH-ISO-01 ────────────────────────────────────────────────────────────
-    test('DASH-ISO-01 Staff cannot access admin dashboard features', async ({ page, _request }) => {
+    test('DASH-ISO-01 Staff cannot access admin dashboard features', async ({ page }) => {
         // Try to access admin settings as regular user
         await page.goto(`${BASE}/admin/users`)
         await page.waitForLoadState('networkidle')

@@ -61,7 +61,7 @@ final class FlagStaleJournalEntriesJob implements ShouldQueue
                 $creator = User::find($creatorId);
                 if ($creator) {
                     foreach ($entries as $entry) {
-                        $creator->notify(new JournalEntryStaleNotification($entry, $staleDays));
+                        $creator->notify(JournalEntryStaleNotification::fromModel($entry, $staleDays));
                     }
                 }
             }

@@ -58,6 +58,13 @@ Schedule::command('backup:run --only-db')
 // Weekly cleanup — remove backups that no longer satisfy the retention policy.
 Schedule::command('backup:clean')->weekly()->at('03:00');
 
+// ── CRM: Expire stale client order negotiations ───────────────────────────────
+// Runs daily at 09:00 AM. Flags negotiations that exceeded SLA deadline (default: 7 days).
+Schedule::command('crm:expire-stale-negotiations')
+    ->dailyAt('09:00')
+    ->name('crm.expire-stale-negotiations')
+    ->withoutOverlapping();
+
 // ── CRM: SLA breach detection ─────────────────────────────────────────────────
 // Runs every 15 minutes. Sets sla_breached_at on tickets that have passed their
 // SLA deadline without being resolved or closed.
@@ -113,14 +120,22 @@ Schedule::command('mold:check-shot-counts')
 
 // ── Inventory: Reorder point alerts ──────────────────────────────────────────
 // Runs daily at 07:00 AM. Notifies when stock falls below reorder point.
-Schedule::command('inventory:check-reorder-points')
+// Also auto-creates draft PRs for low stock items.
+Schedule::command('inventory:check-reorder-points --auto-create-pr')
     ->dailyAt('07:00')
     ->name('inventory.reorder-alerts')
     ->withoutOverlapping();
 
-// ── Fixed Assets: Monthly depreciation ───────────────────────────────────────
-// Runs on the 1st of each month at 03:00 AM. Posts depreciation entries + JEs.
-Schedule::command('assets:depreciate-monthly')
-    ->monthlyOn(1, '03:00')
-    ->name('assets.depreciate-monthly')
+// ── HR: Leave balance auto-accrual ───────────────────────────────────────────
+// Runs on the 1st of each month at 02:00 AM. Accrues leave based on tenure.
+Schedule::command('leave:accrue-balances')
+    ->monthlyOn(1, '02:00')
+    ->name('leave.accrue-balances')
+    ->withoutOverlapping();
+
+// ── Inventory: Expire old stock reservations ─────────────────────────────────
+// Runs daily at 01:00 AM. Cleans up expired reservations.
+Schedule::command('inventory:expire-reservations')
+    ->dailyAt('01:00')
+    ->name('inventory.expire-reservations')
     ->withoutOverlapping();

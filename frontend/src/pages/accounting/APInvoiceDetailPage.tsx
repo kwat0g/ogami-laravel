@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CheckCircle, XCircle, FileText, CreditCard } from 'lucide-react'
+import { CheckCircle, XCircle, FileText, CreditCard, Trash2, Ban } from 'lucide-react'
 import {
   useAPInvoice,
   useSubmitAPInvoice,
@@ -11,9 +11,12 @@ import {
   useManagerCheckAPInvoice,
   useOfficerReviewAPInvoice,
   useRecordPayment,
+  useCancelAPInvoice,
+  useDeleteAPInvoice,
 } from '@/hooks/useAP'
-import { parseApiError } from '@/lib/errorHandler'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SodActionButton from '@/components/ui/SodActionButton'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -36,6 +39,8 @@ export default function APInvoiceDetailPage() {
   const managerCheck   = useManagerCheckAPInvoice(invoiceId ?? '')
   const officerReview  = useOfficerReviewAPInvoice(invoiceId ?? '')
   const recordPayment  = useRecordPayment(invoiceId ?? '')
+  const cancel         = useCancelAPInvoice(invoiceId ?? '')
+  const deleteInvoice  = useDeleteAPInvoice(invoiceId ?? '')
 
   const [rejectNote, setRejectNote]           = useState('')
   const [showRejectForm, setShowRejectForm]   = useState(false)
@@ -45,6 +50,8 @@ export default function APInvoiceDetailPage() {
   const [payDate, setPayDate]                 = useState(new Date().toISOString().slice(0, 10))
   const [payMethod, setPayMethod]             = useState<'bank_transfer' | 'check' | 'cash' | ''>('')
   const [payRef, setPayRef]                   = useState('')
+  const [cancelReason, setCancelReason]       = useState('')
+  const [showCancelForm, setShowCancelForm]   = useState(false)
 
   if (isLoading) return <SkeletonLoader rows={8} />
   if (isError || !invoice) {
@@ -61,16 +68,16 @@ export default function APInvoiceDetailPage() {
       await submit.mutateAsync()
       toast.success('Invoice submitted for approval.')
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
   const handleApprove = async () => {
     try {
       await approve.mutateAsync()
-      toast.success('Invoice approved.')
+      toast.success('Invoice approved. An official invoice number has been generated.')
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -85,7 +92,7 @@ export default function APInvoiceDetailPage() {
       setShowRejectForm(false)
       setRejectNote('')
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -94,7 +101,7 @@ export default function APInvoiceDetailPage() {
       await headNote.mutateAsync()
       toast.success('Head note recorded.')
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -103,7 +110,7 @@ export default function APInvoiceDetailPage() {
       await managerCheck.mutateAsync()
       toast.success('Manager check recorded.')
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -112,7 +119,7 @@ export default function APInvoiceDetailPage() {
       await officerReview.mutateAsync()
       toast.success('Officer review recorded.')
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -144,7 +151,28 @@ export default function APInvoiceDetailPage() {
       setPayRef('')
       setPayMethod('')
     } catch (err) {
-      toast.error(parseApiError(err).message)
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  const handleCancel = async () => {
+    try {
+      await cancel.mutateAsync(cancelReason || undefined)
+      toast.success('Invoice cancelled.')
+      setShowCancelForm(false)
+      setCancelReason('')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      await deleteInvoice.mutateAsync()
+      toast.success('Invoice deleted.')
+      navigate('/accounting/ap/invoices')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -155,9 +183,14 @@ export default function APInvoiceDetailPage() {
   const isOfficerReviewed = invoice.status === 'officer_reviewed'
   const isApproved        = invoice.status === 'approved'
   const isPartiallyPaid   = invoice.status === 'partially_paid'
+  const isCancelled       = invoice.status === 'cancelled'
   const canPay            = isApproved || isPartiallyPaid
   // Reject is available at any in-progress step after submission
   const isInProgress = isPendingApproval || isHeadNoted || isManagerChecked || isOfficerReviewed
+  // Cancel is available for draft or in-progress invoices
+  const canCancel = isDraft || isInProgress
+  // Delete is only available for draft invoices
+  const canDelete = isDraft
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -168,71 +201,105 @@ export default function APInvoiceDetailPage() {
         icon={<FileText className="w-5 h-5" />}
         status={<StatusBadge status={invoice.status}>{invoice.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Submit for approval */}
             {isDraft && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.update}>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={submit.isPending}
-                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded"
+                <ConfirmDialog
+                  title="Submit for Approval?"
+                  description="This will submit the invoice for the approval workflow. Once submitted, it cannot be edited."
+                  confirmLabel="Submit"
+                  onConfirm={handleSubmit}
                 >
-                  <FileText className="h-4 w-4" />
-                  {submit.isPending ? 'Submitting…' : 'Submit for Approval'}
-                </button>
+                  <button
+                    type="button"
+                    disabled={submit.isPending}
+                    className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {submit.isPending ? 'Submitting…' : 'Submit for Approval'}
+                  </button>
+                </ConfirmDialog>
               </PermissionGuard>
             )}
 
             {/* Head Note (step 2) */}
             {isPendingApproval && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <SodActionButton
-                  initiatedById={invoice.created_by}
-                  label="Head Note"
-                  onClick={handleHeadNote}
-                  isLoading={headNote.isPending}
-                  variant="primary"
-                />
+                <ConfirmDialog
+                  title="Record Head Note?"
+                  description="This will record your review as Head and move the invoice to Manager Check."
+                  confirmLabel="Confirm"
+                  onConfirm={handleHeadNote}
+                >
+                  <SodActionButton
+                    initiatedById={invoice.created_by}
+                    label="Head Note"
+                    onClick={() => {}}
+                    isLoading={headNote.isPending}
+                    variant="primary"
+                  />
+                </ConfirmDialog>
               </PermissionGuard>
             )}
 
             {/* Manager Check (step 3) */}
             {isHeadNoted && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <SodActionButton
-                  initiatedById={invoice.created_by}
-                  label="Manager Check"
-                  onClick={handleManagerCheck}
-                  isLoading={managerCheck.isPending}
-                  variant="primary"
-                />
+                <ConfirmDialog
+                  title="Manager Check?"
+                  description="This will record Manager approval and move the invoice to Officer Review."
+                  confirmLabel="Confirm"
+                  onConfirm={handleManagerCheck}
+                >
+                  <SodActionButton
+                    initiatedById={invoice.created_by}
+                    label="Manager Check"
+                    onClick={() => {}}
+                    isLoading={managerCheck.isPending}
+                    variant="primary"
+                  />
+                </ConfirmDialog>
               </PermissionGuard>
             )}
 
             {/* Officer Review (step 4) */}
             {isManagerChecked && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <SodActionButton
-                  initiatedById={invoice.created_by}
-                  label="Officer Review"
-                  onClick={handleOfficerReview}
-                  isLoading={officerReview.isPending}
-                  variant="primary"
-                />
+                <ConfirmDialog
+                  title="Officer Review?"
+                  description="This will record Officer review and make the invoice ready for final approval."
+                  confirmLabel="Confirm"
+                  onConfirm={handleOfficerReview}
+                >
+                  <SodActionButton
+                    initiatedById={invoice.created_by}
+                    label="Officer Review"
+                    onClick={() => {}}
+                    isLoading={officerReview.isPending}
+                    variant="primary"
+                  />
+                </ConfirmDialog>
               </PermissionGuard>
             )}
 
             {/* Approve (step 5 — only available after officer review) */}
             {isOfficerReviewed && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <SodActionButton
-                  initiatedById={invoice.created_by}
-                  label="Approve"
-                  onClick={handleApprove}
-                  isLoading={approve.isPending}
-                  variant="primary"
-                />
+                <ConfirmDialog
+                  title="Approve Invoice?"
+                  description="This will approve the invoice and generate an official invoice number (INV-XXXX). This action cannot be undone."
+                  confirmLabel="Approve"
+                  onConfirm={handleApprove}
+                >
+                  <SodActionButton
+                    initiatedById={invoice.created_by}
+                    label="Approve"
+                    onClick={() => {}}
+                    isLoading={approve.isPending}
+                    variant="primary"
+                  />
+                </ConfirmDialog>
               </PermissionGuard>
             )}
 
@@ -250,6 +317,50 @@ export default function APInvoiceDetailPage() {
               </PermissionGuard>
             )}
 
+            {/* Cancel — available for draft or in-progress */}
+            {canCancel && (
+              <PermissionGuard permission={PERMISSIONS.vendor_invoices.update}>
+                <ConfirmDialog
+                  title="Cancel Invoice?"
+                  description="This will cancel the invoice. Cancelled invoices cannot be processed further."
+                  confirmLabel="Cancel Invoice"
+                  variant="danger"
+                  onConfirm={handleCancel}
+                >
+                  <button
+                    type="button"
+                    disabled={cancel.isPending}
+                    className="inline-flex items-center gap-1.5 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium px-4 py-2 rounded"
+                  >
+                    <Ban className="h-4 w-4" />
+                    {cancel.isPending ? 'Cancelling…' : 'Cancel'}
+                  </button>
+                </ConfirmDialog>
+              </PermissionGuard>
+            )}
+
+            {/* Delete — only available for draft */}
+            {canDelete && (
+              <PermissionGuard permission={PERMISSIONS.vendor_invoices.delete}>
+                <ConfirmDialog
+                  title="Delete Invoice?"
+                  description="This will permanently delete this draft invoice. This action cannot be undone."
+                  confirmLabel="Delete"
+                  variant="danger"
+                  onConfirm={handleDelete}
+                >
+                  <button
+                    type="button"
+                    disabled={deleteInvoice.isPending}
+                    className="inline-flex items-center gap-1.5 bg-white text-red-600 border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium px-4 py-2 rounded"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {deleteInvoice.isPending ? 'Deleting…' : 'Delete'}
+                  </button>
+                </ConfirmDialog>
+              </PermissionGuard>
+            )}
+
             {/* Record Payment — available when approved or partially paid */}
             {canPay && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.update}>
@@ -263,6 +374,17 @@ export default function APInvoiceDetailPage() {
                 </button>
               </PermissionGuard>
             )}
+
+            {/* Export invoice as PDF */}
+            <a
+              href={`/api/v1/accounting/ap/invoices/${invoice.ulid ?? invoice.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded"
+            >
+              <FileText className="h-4 w-4" />
+              Export PDF
+            </a>
 
             {/* Download BIR Form 2307 — available when EWT applies and invoice is approved/paid */}
             {(invoice.ewt_amount > 0) && ['approved', 'partially_paid', 'paid'].includes(invoice.status) && (
@@ -468,6 +590,13 @@ export default function APInvoiceDetailPage() {
                 <p className="text-sm text-red-700">{invoice.rejection_note}</p>
               </div>
             )}
+
+            {isCancelled && (
+              <div className="mt-4 p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                <p className="text-xs font-medium text-neutral-600 mb-1">Cancelled</p>
+                <p className="text-sm text-neutral-700">This invoice has been cancelled.</p>
+              </div>
+            )}
           </CardBody>
         </Card>
 
@@ -503,7 +632,7 @@ export default function APInvoiceDetailPage() {
         )}
 
         {/* Overdue badge */}
-        {invoice.is_overdue && (
+        {invoice.is_overdue && !isCancelled && (
           <div className="flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded px-4 py-3 text-sm text-neutral-700">
             <CheckCircle className="h-4 w-4 flex-shrink-0" />
             This invoice is <span className="font-semibold">overdue</span>.

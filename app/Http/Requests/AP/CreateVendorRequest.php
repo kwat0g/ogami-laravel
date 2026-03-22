@@ -14,6 +14,30 @@ final class CreateVendorRequest extends FormRequest
         return true; // Policy enforced in VendorController
     }
 
+    /**
+     * Prepare the data for validation.
+     * Convert empty strings to null for optional fields.
+     */
+    protected function prepareForValidation(): void
+    {
+        $nullableFields = [
+            'tin', 'atc_code', 'address', 'contact_person', 'email', 'phone',
+            'notes', 'payment_terms', 'bank_name', 'bank_account_no',
+            'bank_account_name', 'accreditation_status', 'accreditation_notes',
+        ];
+
+        $normalized = [];
+        foreach ($nullableFields as $field) {
+            if ($this->has($field) && $this->input($field) === '') {
+                $normalized[$field] = null;
+            }
+        }
+
+        if (! empty($normalized)) {
+            $this->merge($normalized);
+        }
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {

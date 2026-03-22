@@ -47,4 +47,16 @@ final class DeliveryScheduleController extends Controller
 
         return new DeliveryScheduleResource($this->service->update($deliverySchedule, $request->validated()));
     }
+
+    /**
+     * Fulfill delivery schedule directly from stock (no Production Order needed)
+     */
+    public function fulfillFromStock(Request $request, DeliverySchedule $deliverySchedule): DeliveryScheduleResource
+    {
+        $this->authorize('update', $deliverySchedule);
+
+        $userId = $request->user()?->id ?? 1;
+
+        return new DeliveryScheduleResource($this->service->fulfillFromStock($deliverySchedule, $userId));
+    }
 }

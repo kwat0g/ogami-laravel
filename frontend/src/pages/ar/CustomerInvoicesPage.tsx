@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { Plus, RefreshCw } from 'lucide-react'
 import {
@@ -9,7 +10,9 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { CustomerInvoice, CustomerInvoiceStatus } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -52,31 +55,78 @@ const TABS: Array<{ label: string; value: CustomerInvoiceStatus | 'all' }> = [
 
 function ApproveDraftButton({ invoice }: { invoice: CustomerInvoice }) {
   const approveMut = useApproveCustomerInvoice()
+  
+  const handleApprove = async () => {
+    try {
+      await approveMut.mutateAsync(invoice.ulid)
+      toast.success('Invoice approved successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+      throw err // Re-throw to let dialog know it failed
+    }
+  }
+
   return (
-    <ConfirmDestructiveDialog
-      title="Approve Invoice"
-      description={`Approve invoice and auto-post journal entry? Invoice number (INV-YYYY-MM-NNNNNN) will be generated upon approval.`}
-      confirmWord="APPROVE"
+    <ConfirmDialog
+      title="Approve Invoice?"
+      description={`Approve invoice ${invoice.invoice_number || 'Draft'}? An invoice number (INV-YYYY-MM-NNNNNN) will be generated and a journal entry will be auto-posted.`}
       confirmLabel="Approve"
-      onConfirm={async () => { await approveMut.mutateAsync(invoice.ulid) }}
+      onConfirm={handleApprove}
     >
       <button className="text-xs text-neutral-600 hover:underline">Approve</button>
-    </ConfirmDestructiveDialog>
+    </ConfirmDialog>
   )
 }
 
 function CancelDraftButton({ invoice }: { invoice: CustomerInvoice }) {
   const cancelMut = useCancelCustomerInvoice()
+  
+  const handleCancel = async () => {
+    try {
+      await cancelMut.mutateAsync(invoice.ulid)
+      toast.success('Invoice cancelled successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+      throw err // Re-throw to let dialog know it failed
+    }
+  }
+
   return (
     <ConfirmDestructiveDialog
-      title="Cancel Invoice"
-      description={`Cancel this draft invoice? This action cannot be undone.`}
+      title="Cancel Invoice?"
+      description={`Cancel invoice ${invoice.invoice_number || 'Draft'}? This action cannot be undone.`}
       confirmWord="CANCEL"
       confirmLabel="Cancel Invoice"
-      onConfirm={async () => { await cancelMut.mutateAsync(invoice.ulid) }}
+      onConfirm={handleCancel}
     >
       <button className="text-xs text-neutral-500 hover:underline">Cancel</button>
     </ConfirmDestructiveDialog>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Bulk Actions Component
+// ---------------------------------------------------------------------------
+
+function BulkActions({ 
+  selectedCount, 
+  onClear 
+}: { 
+  selectedCount: number
+  onClear: () => void 
+}) {
+  if (selectedCount === 0) return null
+
+  return (
+    <div className="flex items-center gap-2 bg-neutral-50 px-3 py-2 rounded border border-neutral-200">
+      <span className="text-sm text-neutral-600">{selectedCount} selected</span>
+      <button 
+        onClick={onClear}
+        className="text-xs text-neutral-500 hover:text-neutral-700 underline"
+      >
+        Clear
+      </button>
+    </div>
   )
 }
 
@@ -90,10 +140,34 @@ export default function CustomerInvoicesPage() {
   const canApprove = useAuthStore(s => s.hasPermission('customer_invoices.approve'))
   const canCancel = useAuthStore(s => s.hasPermission('customer_invoices.cancel'))
   const [activeTab, setActiveTab] = useState<CustomerInvoiceStatus | 'all'>('all')
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
 
   const filters = activeTab === 'all' ? {} : { status: activeTab }
   const { data, isLoading, refetch } = useCustomerInvoices(filters)
   const invoices = data?.data ?? []
+
+  const handleRefresh = async () => {
+    try {
+      await refetch()
+      toast.success('Invoice list refreshed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  const toggleSelection = (ulid: string) => {
+    setSelectedInvoices(prev => {
+      const next = new Set(prev)
+      if (next.has(ulid)) {
+        next.delete(ulid)
+      } else {
+        next.add(ulid)
+      }
+      return next
+    })
+  }
+
+  const clearSelection = () => setSelectedInvoices(new Set())
 
   return (
     <div className="p-6 space-y-4">
@@ -105,7 +179,11 @@ export default function CustomerInvoicesPage() {
           <p className="text-sm text-neutral-500">Track and manage AR invoices</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
+          <BulkActions 
+            selectedCount={selectedInvoices.size} 
+            onClear={clearSelection}
+          />
+          <button onClick={handleRefresh} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
             <RefreshCw className="w-4 h-4" />
           </button>
           {canCreate && (
@@ -124,7 +202,10 @@ export default function CustomerInvoicesPage() {
         {TABS.map((tab) => (
           <button
             key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
+            onClick={() => {
+              setActiveTab(tab.value)
+              clearSelection()
+            }}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.value
                 ? 'border-neutral-900 text-neutral-900'
@@ -144,7 +225,21 @@ export default function CustomerInvoicesPage() {
           <table className="min-w-full divide-y divide-neutral-100 text-sm">
             <thead className="bg-neutral-50">
               <tr>
-                {['Invoice #', 'Customer', 'Date', 'Due Date', 'Total', 'Balance Due', 'Status', ''].map((h) => (
+                <th className="px-3 py-2.5 text-left">
+                  <input 
+                    type="checkbox"
+                    checked={invoices.length > 0 && selectedInvoices.size === invoices.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedInvoices(new Set(invoices.map(i => i.ulid)))
+                      } else {
+                        clearSelection()
+                      }
+                    }}
+                    className="rounded border-neutral-300"
+                  />
+                </th>
+                {['Invoice #', 'Customer', 'Date', 'Due Date', 'Total', 'Balance Due', 'Status'].map((h) => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500">
                     {h}
                   </th>
@@ -154,7 +249,7 @@ export default function CustomerInvoicesPage() {
             <tbody className="bg-white divide-y divide-neutral-100">
               {invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-neutral-400">
+                  <td colSpan={9} className="px-3 py-8 text-center text-neutral-400">
                     No invoices found.
                   </td>
                 </tr>
@@ -162,8 +257,17 @@ export default function CustomerInvoicesPage() {
                 invoices.map((inv) => (
                   <tr
                     key={inv.id}
-                    className={`hover:bg-neutral-50 transition-colors ${inv.is_overdue ? 'bg-neutral-50' : ''}`}
+                    onClick={() => navigate(`/ar/invoices/${inv.ulid}`)}
+                    className={`hover:bg-neutral-50 transition-colors cursor-pointer ${inv.is_overdue ? 'bg-neutral-50' : ''}`}
                   >
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedInvoices.has(inv.ulid)}
+                        onChange={() => toggleSelection(inv.ulid)}
+                        className="rounded border-neutral-300"
+                      />
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs text-neutral-700">
                       {inv.invoice_number ?? <span className="text-neutral-400 italic">Draft</span>}
                     </td>
@@ -180,21 +284,13 @@ export default function CustomerInvoicesPage() {
                     <td className="px-3 py-2">
                       <StatusBadge status={inv.status}>{inv.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => navigate(`/ar/invoices/${inv.ulid}`)}
-                          className="text-xs text-neutral-600 hover:underline"
-                        >
-                          View
-                        </button>
-                        {inv.status === 'draft' && (
-                          <>
-                            {canApprove && <ApproveDraftButton invoice={inv} />}
-                            {canCancel && <CancelDraftButton invoice={inv} />}
-                          </>
-                        )}
-                      </div>
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {inv.status === 'draft' && (
+                        <div className="flex items-center gap-3">
+                          {canApprove && <ApproveDraftButton invoice={inv} />}
+                          {canCancel && <CancelDraftButton invoice={inv} />}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))

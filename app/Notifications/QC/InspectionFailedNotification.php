@@ -15,9 +15,20 @@ final class InspectionFailedNotification extends Notification implements ShouldQ
     use Queueable;
 
     public function __construct(
-        private readonly Inspection $inspection,
+        private readonly int $inspectionId,
+        private readonly string $inspectionUlid,
+        private readonly string $inspectionNumber,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Inspection $inspection): self
+    {
+        return new self(
+            inspectionId: $inspection->id,
+            inspectionUlid: $inspection->ulid,
+            inspectionNumber: $inspection->inspection_number ?? "INS-{$inspection->id}",
+        );
     }
 
     /** @return list<string> */
@@ -34,10 +45,10 @@ final class InspectionFailedNotification extends Notification implements ShouldQ
             'title' => 'QC Inspection Failed',
             'message' => sprintf(
                 'Inspection %s has FAILED. An NCR may be required.',
-                $this->inspection->inspection_number ?? "INS-{$this->inspection->id}",
+                $this->inspectionNumber,
             ),
-            'action_url' => "/qc/inspections/{$this->inspection->ulid}",
-            'inspection_id' => $this->inspection->id,
+            'action_url' => "/qc/inspections/{$this->inspectionUlid}",
+            'inspection_id' => $this->inspectionId,
         ];
     }
 

@@ -7,6 +7,8 @@ import { useCreateDeliveryReceipt } from '@/hooks/useDelivery'
 import { useVendors } from '@/hooks/useAP'
 import { useCustomers } from '@/hooks/useAR'
 import { useItems } from '@/hooks/useInventory'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { DrDirection } from '@/types/delivery'
 
 const UOM_OPTIONS = ['pcs', 'kg', 'g', 'L', 'mL', 'm', 'cm', 'box', 'roll', 'set', 'pair']
@@ -41,6 +43,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { item_master_id: 0, quantity_expected: '', quantity_received: '', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' },
   ])
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const items = direction === 'outbound'
     ? allItems.filter(i => i.type === 'finished_good' || i.type === 'semi_finished')
@@ -51,6 +54,23 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
     () => (touchedDate && !receiptDate ? 'Receipt date is required.' : undefined),
     [touchedDate, receiptDate],
   )
+
+  // Validation for the entire form
+  const validationErrors = useMemo(() => {
+    const errors: string[] = []
+    if (!receiptDate) errors.push('Receipt date is required')
+    const validItems = lineItems.filter(it => it.item_master_id)
+    if (validItems.length === 0) errors.push('At least one item is required')
+    validItems.forEach((it, idx) => {
+      if (!it.quantity_expected || Number(it.quantity_expected) <= 0) {
+        errors.push(`Item ${idx + 1}: Expected quantity must be greater than 0`)
+      }
+      if (!it.quantity_received || Number(it.quantity_received) <= 0) {
+        errors.push(`Item ${idx + 1}: Received quantity must be greater than 0`)
+      }
+    })
+    return errors
+  }, [receiptDate, lineItems])
 
   const addRow = () =>
     setLineItems(prev => [
@@ -66,6 +86,14 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (validationErrors.length > 0) {
+      validationErrors.forEach(err => toast.error(err))
+      return
+    }
+    setShowConfirm(true)
+  }
+
+  const handleConfirmCreate = async () => {
     try {
       await createMut.mutateAsync({
         direction,
@@ -85,9 +113,10 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
           })),
       })
       toast.success('Delivery receipt created.')
+      setShowConfirm(false)
       navigate('/delivery/receipts')
-    } catch {
-      toast.error('Failed to create delivery receipt.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -287,13 +316,22 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
           </button>
           <button
             type="submit"
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || validationErrors.length > 0}
             className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMut.isPending ? 'Saving…' : 'Create Receipt'}
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        title="Create delivery receipt?"
+        description="This will create a new delivery receipt record. Please verify all quantities and details are correct before proceeding."
+        confirmLabel="Create Receipt"
+        onConfirm={handleConfirmCreate}
+      >
+        <span />
+      </ConfirmDialog>
     </div>
   )
 }

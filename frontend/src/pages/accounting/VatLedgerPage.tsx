@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { FileText } from 'lucide-react'
 import { useVatLedgerList, useCloseVatPeriod } from '@/hooks/useTax'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import type { VatLedger } from '@/types/tax'
 
@@ -44,8 +47,8 @@ function ClosePeriodButton({ ledger }: { ledger: VatLedger }) {
             nextPeriodId ? { next_fiscal_period_id: parseInt(nextPeriodId) } : {}
           )
           toast.success('VAT period closed.')
-        } catch {
-          toast.error('Failed to close VAT period.')
+        } catch (err) {
+          toast.error(firstErrorMessage(err))
         }
       }}
     >
@@ -55,6 +58,35 @@ function ClosePeriodButton({ ledger }: { ledger: VatLedger }) {
     </ConfirmDestructiveDialog>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Generate Report Button (placeholder - hook needs to be implemented)
+// ---------------------------------------------------------------------------
+
+function GenerateReportButton({ ledger }: { ledger: VatLedger }) {
+  const handleGenerate = () => {
+    // Placeholder: This would generate a VAT report when the hook is available
+    toast.info('VAT report generation coming soon.')
+  }
+
+  return (
+    <ConfirmDialog
+      title="Generate VAT Report?"
+      description={`Generate VAT report for fiscal period #${ledger.fiscal_period_id}? This will create a detailed breakdown of input/output VAT for filing purposes.`}
+      confirmLabel="Generate"
+      onConfirm={handleGenerate}
+    >
+      <button 
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-neutral-300 text-neutral-700 text-xs font-medium hover:bg-neutral-50"
+      >
+        <FileText className="w-3.5 h-3.5" />
+        Generate Report
+      </button>
+    </ConfirmDialog>
+  )
+}
+
+
 
 // ---------------------------------------------------------------------------
 // VAT Ledger Page
@@ -93,14 +125,20 @@ export default function VatLedgerPage() {
                     </p>
                   )}
                 </div>
-                {ledger.is_closed ? (
-                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">Closed</span>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">Open</span>
-                    <ClosePeriodButton ledger={ledger} />
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {ledger.is_closed ? (
+                    <>
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">Closed</span>
+
+                    </>
+                  ) : (
+                    <>
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">Open</span>
+                      <GenerateReportButton ledger={ledger} />
+                      <ClosePeriodButton ledger={ledger} />
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* VAT cards */}

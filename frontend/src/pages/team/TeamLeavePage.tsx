@@ -9,6 +9,7 @@ import {
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { SodActionButton } from '@/components/ui/SodActionButton'
 import { parseApiError } from '@/lib/errorHandler'
 import { toast } from 'sonner'
 import type { LeaveFilters, LeaveRequest } from '@/types/hr'
@@ -40,51 +41,51 @@ export default function TeamLeavePage() {
   const getActionButtons = (row: LeaveRequest) => {
     const buttons = []
 
-    // Step 2: Dept Head approves submitted requests
+    // Step 2: Dept Head approves submitted requests (with SoD)
     if (canHeadApprove && row.status === 'submitted') {
       buttons.push(
-        <button
+        <SodActionButton
           key="head-approve"
+          initiatedById={row.submitted_by}
+          label="Approve"
           onClick={() => setApproveId(row.id)}
-          disabled={headApprove.isPending}
-          className="px-2.5 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Approve
-        </button>
+          isLoading={headApprove.isPending}
+          variant="success"
+        />
       )
       buttons.push(
-        <button
+        <SodActionButton
           key="head-reject"
+          initiatedById={row.submitted_by}
+          label="Reject"
           onClick={() => setRejectId(row.id)}
-          disabled={headApprove.isPending || reject.isPending}
-          className="px-2.5 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Reject
-        </button>
+          isLoading={headApprove.isPending || reject.isPending}
+          variant="danger"
+        />
       )
     }
 
-    // Step 3: Plant Manager checks head-approved requests
+    // Step 3: Plant Manager checks head-approved requests (with SoD)
     if (canManagerCheck && row.status === 'head_approved') {
       buttons.push(
-        <button
+        <SodActionButton
           key="manager-check"
+          initiatedById={row.submitted_by}
+          label="Check"
           onClick={() => setCheckId(row.id)}
-          disabled={managerCheck.isPending}
-          className="px-2.5 py-1 text-xs font-medium bg-neutral-800 text-white rounded-md hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Check
-        </button>
+          isLoading={managerCheck.isPending}
+          variant="primary"
+        />
       )
       buttons.push(
-        <button
+        <SodActionButton
           key="manager-reject"
+          initiatedById={row.submitted_by}
+          label="Reject"
           onClick={() => setRejectId(row.id)}
-          disabled={managerCheck.isPending || reject.isPending}
-          className="px-2.5 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Reject
-        </button>
+          isLoading={managerCheck.isPending || reject.isPending}
+          variant="danger"
+        />
       )
     }
 

@@ -22,10 +22,28 @@ final class LoanCancelledNotification extends Notification implements ShouldQueu
     use Queueable;
 
     public function __construct(
-        private readonly Loan $loan,
+        private readonly int $loanId,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $loanTypeName,
+        private readonly string $referenceNo,
+        private readonly int $principalCentavos,
         private readonly string $audience = 'employee',
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Loan $loan, string $audience = 'employee'): self
+    {
+        return new self(
+            loanId: $loan->id,
+            employeeId: $loan->employee_id,
+            employeeName: $loan->employee->full_name,
+            loanTypeName: $loan->loanType->name,
+            referenceNo: $loan->reference_no,
+            principalCentavos: $loan->principal_centavos,
+            audience: $audience,
+        );
     }
 
     /** @return list<string> */
@@ -37,9 +55,7 @@ final class LoanCancelledNotification extends Notification implements ShouldQueu
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $loanTypeName = $this->loan->loanType->name;
-        $amount = number_format($this->loan->principal_centavos / 100, 2);
-        $ref = $this->loan->reference_no;
+        $amount = number_format($this->principalCentavos / 100, 2);
 
         if ($this->audience === 'hr') {
             return [
@@ -47,14 +63,14 @@ final class LoanCancelledNotification extends Notification implements ShouldQueu
                 'title' => 'Loan Application Cancelled',
                 'message' => sprintf(
                     '%s has cancelled their %s loan application of ₱%s (ref: %s). No further action required.',
-                    $this->loan->employee->full_name,
-                    $loanTypeName,
+                    $this->employeeName,
+                    $this->loanTypeName,
                     $amount,
-                    $ref,
+                    $this->referenceNo,
                 ),
                 'action_url' => '/hr/loans',
-                'loan_id' => $this->loan->id,
-                'employee_id' => $this->loan->employee_id,
+                'loan_id' => $this->loanId,
+                'employee_id' => $this->employeeId,
             ];
         }
 
@@ -63,12 +79,12 @@ final class LoanCancelledNotification extends Notification implements ShouldQueu
             'title' => 'Your Loan Application Has Been Cancelled',
             'message' => sprintf(
                 'Your %s loan application of ₱%s (ref: %s) has been cancelled. You may submit a new application if needed.',
-                $loanTypeName,
+                $this->loanTypeName,
                 $amount,
-                $ref,
+                $this->referenceNo,
             ),
             'action_url' => '/me/loans',
-            'loan_id' => $this->loan->id,
+            'loan_id' => $this->loanId,
         ];
     }
 

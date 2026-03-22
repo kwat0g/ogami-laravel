@@ -5,25 +5,34 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { getLandingPath } from '@/lib/roleLanding'
 
-// Lazy load all dashboard variants
-const EmployeeDashboard       = lazy(() => import('@/pages/dashboard/EmployeeDashboard'))
-const ManagerDashboard        = lazy(() => import('@/pages/dashboard/ManagerDashboard'))
-const PlantManagerDashboard      = lazy(() => import('@/pages/dashboard/PlantManagerDashboard'))
-const ProductionManagerDashboard = lazy(() => import('@/pages/dashboard/ProductionManagerDashboard'))
-const QcManagerDashboard         = lazy(() => import('@/pages/dashboard/QcManagerDashboard'))
-const MoldManagerDashboard       = lazy(() => import('@/pages/dashboard/MoldManagerDashboard'))
-const HeadDashboard           = lazy(() => import('@/pages/dashboard/HeadDashboard'))
-const OfficerDashboard        = lazy(() => import('@/pages/dashboard/OfficerDashboard'))
-const GaOfficerDashboard      = lazy(() => import('@/pages/dashboard/GaOfficerDashboard'))
-const PurchasingOfficerDashboard = lazy(() => import('@/pages/dashboard/PurchasingOfficerDashboard'))
-const ImpexOfficerDashboard   = lazy(() => import('@/pages/dashboard/ImpexOfficerDashboard'))
-const VicePresidentDashboard  = lazy(() => import('@/pages/dashboard/VicePresidentDashboard'))
-const AdminDashboard          = lazy(() => import('@/pages/dashboard/AdminDashboard'))
-const ExecutiveDashboard      = lazy(() => import('@/pages/dashboard/ExecutiveDashboard'))
+// Lazy load dashboard variants
+// RBAC v2: 7 core roles + system roles
+const EmployeeDashboard           = lazy(() => import('@/pages/dashboard/EmployeeDashboard'))
+const ManagerDashboard            = lazy(() => import('@/pages/dashboard/ManagerDashboard'))
+const HeadDashboard               = lazy(() => import('@/pages/dashboard/HeadDashboard'))
+const OfficerDashboard            = lazy(() => import('@/pages/dashboard/OfficerDashboard'))
+const PurchasingOfficerDashboard  = lazy(() => import('@/pages/dashboard/PurchasingOfficerDashboard'))
+const VicePresidentDashboard      = lazy(() => import('@/pages/dashboard/VicePresidentDashboard'))
+const AdminDashboard              = lazy(() => import('@/pages/dashboard/AdminDashboard'))
+const ExecutiveDashboard          = lazy(() => import('@/pages/dashboard/ExecutiveDashboard'))
 
+/**
+ * Dashboard Router - RBAC v2
+ * 
+ * In the new role system, permissions are determined by:
+ *   Role + Department Module = Effective Permissions
+ * 
+ * Example:
+ *   - Manager in HR dept → HR Manager dashboard
+ *   - Manager in ACCTG dept → Accounting Manager dashboard
+ *   - Manager in PLANT dept → Plant Manager dashboard
+ * 
+ * The specific dashboard content is determined by the user's department module,
+ * not by a specific role name.
+ */
 export default function Dashboard() {
   const { user, isLoading } = useAuth()
-  const { hasRole } = useAuthStore()
+  const { hasRole, hasPermission } = useAuthStore()
 
   if (isLoading) {
     return <SkeletonLoader rows={8} />
@@ -36,8 +45,8 @@ export default function Dashboard() {
 
   // Priority order: most privileged → least privileged
 
-  // Admin — System administration only
-  if (hasRole('admin')) {
+  // Super Admin / Admin — System administration
+  if (hasRole('super_admin') || hasRole('admin')) {
     return (
       <Suspense fallback={<SkeletonLoader rows={8} />}>
         <AdminDashboard />
@@ -63,43 +72,8 @@ export default function Dashboard() {
     )
   }
 
-  // Officer — Accounting Officer: full financial management dashboard
-  if (hasRole('officer')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <OfficerDashboard />
-      </Suspense>
-    )
-  }
-
-  // GA Officer — HR administrative support dashboard
-  if (hasRole('ga_officer')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <GaOfficerDashboard />
-      </Suspense>
-    )
-  }
-
-  // Purchasing Officer — procurement and ordering management dashboard
-  if (hasRole('purchasing_officer')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <PurchasingOfficerDashboard />
-      </Suspense>
-    )
-  }
-
-  // ImpEx Officer — import/export and delivery management dashboard
-  if (hasRole('impex_officer')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <ImpexOfficerDashboard />
-      </Suspense>
-    )
-  }
-
-  // Manager (HR Manager) — full HR and payroll dashboard
+  // Manager — Full department module access
+  // The specific dashboard content depends on the department module
   if (hasRole('manager')) {
     return (
       <Suspense fallback={<SkeletonLoader rows={8} />}>
@@ -108,44 +82,40 @@ export default function Dashboard() {
     )
   }
 
-  // Plant Manager — oversees ALL plant operations
-  if (hasRole('plant_manager')) {
+  // Officer — route by department so each officer sees relevant KPIs
+  if (hasRole('officer')) {
+    const dept = user?.primary_department_code ?? ''
+
+    // Purchasing dept officers
+    if (dept === 'PURCH' || hasPermission('procurement.rfq.create')) {
+      return (
+        <Suspense fallback={<SkeletonLoader rows={8} />}>
+          <PurchasingOfficerDashboard />
+        </Suspense>
+      )
+    }
+
+    // Accounting dept officers
+    if (dept === 'ACCTG' || hasPermission('journal_entries.post')) {
+      return (
+        <Suspense fallback={<SkeletonLoader rows={8} />}>
+          <OfficerDashboard />
+        </Suspense>
+      )
+    }
+
+    // HR, Production, QC, Warehouse, Sales, Maint, ISO, etc.
+    // Use ManagerDashboard — it is already department-aware and shows
+    // the correct team/HR metrics based on the user's department.
     return (
       <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <PlantManagerDashboard />
+        <ManagerDashboard />
       </Suspense>
     )
   }
 
-  // Production Manager — supervises production activities only
-  if (hasRole('production_manager')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <ProductionManagerDashboard />
-      </Suspense>
-    )
-  }
-
-  // QC/QA Manager — manages quality control and assurance
-  if (hasRole('qc_manager')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <QcManagerDashboard />
-      </Suspense>
-    )
-  }
-
-  // Mold Manager — oversees mold department
-  if (hasRole('mold_manager')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <MoldManagerDashboard />
-      </Suspense>
-    )
-  }
-
-  // Head — Department head team oversight & notation dashboard
-  if (hasRole('head') || hasRole('warehouse_head') || hasRole('ppc_head')) {
+  // Head — Department head team oversight
+  if (hasRole('head')) {
     return (
       <Suspense fallback={<SkeletonLoader rows={8} />}>
         <HeadDashboard />

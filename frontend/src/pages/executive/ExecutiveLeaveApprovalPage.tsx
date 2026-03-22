@@ -9,6 +9,7 @@ import type { GaProcessPayload } from '@/hooks/useLeave'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { SodActionButton } from '@/components/ui/SodActionButton'
 import { parseApiError } from '@/lib/errorHandler'
 import { toast } from 'sonner'
 import type { LeaveFilters } from '@/types/hr'
@@ -174,14 +175,16 @@ export default function ExecutiveLeaveApprovalPage() {
                   )}
                   {canVpNote && row.status === 'ga_processed' && (
                     <>
-                      <button
+                      <SodActionButton
+                        initiatedById={row.submitted_by}
+                        label="VP Approve"
                         onClick={() => { setVpNoteId(row.id); setVpRemarks('') }}
-                        disabled={vpNote.isPending}
-                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        VP Approve
-                      </button>
-                      <button
+                        isLoading={vpNote.isPending}
+                        variant="success"
+                      />
+                      <SodActionButton
+                        initiatedById={row.submitted_by}
+                        label="Reject"
                         onClick={() => {
                           reject.mutate(
                             { id: row.id, remarks: '' },
@@ -191,11 +194,9 @@ export default function ExecutiveLeaveApprovalPage() {
                             }
                           )
                         }}
-                        disabled={reject.isPending}
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Reject
-                      </button>
+                        isLoading={reject.isPending}
+                        variant="danger"
+                      />
                     </>
                   )}
                 </td>
@@ -349,7 +350,7 @@ export default function ExecutiveLeaveApprovalPage() {
                   )
                 }}
                 disabled={vpNote.isPending}
-                className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {vpNote.isPending ? 'Approving…' : 'Approve (VP)'}
               </button>

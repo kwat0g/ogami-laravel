@@ -12,6 +12,7 @@ use App\Http\Resources\QC\InspectionTemplateResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 final class InspectionTemplateController extends Controller
 {
@@ -48,5 +49,13 @@ final class InspectionTemplateController extends Controller
         return new InspectionTemplateResource(
             $this->service->update($inspectionTemplate, $request->validated())
         );
+    }
+
+    public function destroy(InspectionTemplate $inspectionTemplate): Response
+    {
+        $this->authorize('delete', $inspectionTemplate);
+        $this->service->delete($inspectionTemplate);
+
+        return response()->noContent();
     }
 }

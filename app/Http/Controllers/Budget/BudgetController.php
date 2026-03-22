@@ -70,11 +70,16 @@ final class BudgetController extends Controller
 
         $data = $request->validated();
 
-        $budgets = AnnualBudget::with('account')
-            ->where('cost_center_id', $data['cost_center_id'])
+        $query = AnnualBudget::with('account')
             ->where('fiscal_year', $data['fiscal_year'])
-            ->orderBy('account_id')
-            ->get();
+            ->orderBy('account_id');
+
+        // Filter by cost center if provided, otherwise return all for fiscal year
+        if (! empty($data['cost_center_id'])) {
+            $query->where('cost_center_id', $data['cost_center_id']);
+        }
+
+        $budgets = $query->get();
 
         return response()->json(['data' => $budgets]);
     }

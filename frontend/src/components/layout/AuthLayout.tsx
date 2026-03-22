@@ -10,15 +10,10 @@ import { getLandingPath } from '@/lib/roleLanding'
 export default function AuthLayout() {
   const { isAuthenticated, isLoading, user } = useAuth()
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <SkeletonLoader rows={3} />
-      </div>
-    )
-  }
-
-  if (isAuthenticated) {
+  // Only redirect once we know for certain the user is authenticated.
+  // Do NOT show a skeleton here — it unmounts <Outlet /> which wipes
+  // the login form's react-hook-form state (typed email/password lost).
+  if (!isLoading && isAuthenticated) {
     return <Navigate to={getLandingPath(user)} replace />
   }
 

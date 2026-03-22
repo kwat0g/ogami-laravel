@@ -10,6 +10,10 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModuleSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModulePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 });
 
 function createVendor(array $overrides = []): Vendor
@@ -48,8 +52,10 @@ test('staff cannot accredit a vendor', function () {
 });
 
 test('purchasing officer can accredit a vendor', function () {
+    $purchDept = \App\Domains\HR\Models\Department::where('code', 'PURCH')->first();
     $purchOfficer = User::factory()->create();
-    $purchOfficer->assignRole('purchasing_officer');
+    $purchOfficer->assignRole('officer');
+    $purchOfficer->departments()->attach($purchDept->id, ['is_primary' => true]);
 
     $vendor = createVendor(['accreditation_status' => 'pending']);
 
@@ -75,8 +81,10 @@ test('accounting officer cannot suspend a vendor', function () {
 });
 
 test('suspending a vendor locks any linked portal user account', function () {
+    $purchDept = \App\Domains\HR\Models\Department::where('code', 'PURCH')->first();
     $purchOfficer = User::factory()->create();
-    $purchOfficer->assignRole('purchasing_officer');
+    $purchOfficer->assignRole('officer');
+    $purchOfficer->departments()->attach($purchDept->id, ['is_primary' => true]);
 
     $vendor = createVendor(['accreditation_status' => 'accredited']);
 
@@ -97,8 +105,10 @@ test('suspending a vendor locks any linked portal user account', function () {
 });
 
 test('suspending a vendor with no portal account does not error', function () {
+    $purchDept = \App\Domains\HR\Models\Department::where('code', 'PURCH')->first();
     $purchOfficer = User::factory()->create();
-    $purchOfficer->assignRole('purchasing_officer');
+    $purchOfficer->assignRole('officer');
+    $purchOfficer->departments()->attach($purchDept->id, ['is_primary' => true]);
 
     $vendor = createVendor(['accreditation_status' => 'accredited']);
 

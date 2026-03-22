@@ -24,9 +24,11 @@ function PayrollNewRunLayout() {
 // On page refresh the Zustand store is empty until /auth/me resolves, so we
 // must wait for isLoading to be false before denying access to avoid a false
 // 403 before the session is restored.
+// Supports pipe-separated permissions (OR logic): 'perm1|perm2' checks if user has EITHER permission.
 function RequirePermission({ permission, children }: { permission: string; children: React.ReactNode }) {
   const { isLoading } = useAuth()
-  const has = useAuthStore((s) => s.hasPermission(permission))
+  const permissions = permission.split('|')
+  const has = useAuthStore((s) => permissions.some((p) => s.hasPermission(p)))
   if (isLoading) return <SkeletonLoader rows={6} />
   if (!has) return <Navigate to="/403" replace />
   return <>{children}</>
@@ -190,9 +192,12 @@ const MaterialRequisitionDetailPage    = lazy(() => import('@/pages/inventory/Ma
 const BomListPage                    = lazy(() => import('@/pages/production/BomListPage'))
 const CreateBomPage                  = lazy(() => import('@/pages/production/CreateBomPage'))
 const EditBomPage                    = lazy(() => import('@/pages/production/EditBomPage'))
-const DeliveryScheduleListPage       = lazy(() => import('@/pages/production/DeliveryScheduleListPage'))
-const CreateDeliverySchedulePage     = lazy(() => import('@/pages/production/CreateDeliverySchedulePage'))
-const ProductionOrderListPage        = lazy(() => import('@/pages/production/ProductionOrderListPage'))
+const DeliveryScheduleListPage = lazy(() => import('@/pages/production/DeliveryScheduleListPage'))
+const CreateDeliverySchedulePage = lazy(() => import('@/pages/production/CreateDeliverySchedulePage'))
+const DeliveryScheduleDetailPage = lazy(() => import('@/pages/production/DeliveryScheduleDetailPage'))
+const CombinedDeliveryScheduleListPage = lazy(() => import('@/pages/production/CombinedDeliveryScheduleListPage'))
+const CombinedDeliveryScheduleDetailPage = lazy(() => import('@/pages/production/CombinedDeliveryScheduleDetailPage'))
+const ProductionOrderListPage = lazy(() => import('@/pages/production/ProductionOrderListPage'))
 const CreateProductionOrderPage      = lazy(() => import('@/pages/production/CreateProductionOrderPage'))
 const ProductionOrderDetailPage      = lazy(() => import('@/pages/production/ProductionOrderDetailPage'))
 const ProductionCostPage             = lazy(() => import('@/pages/production/ProductionCostPage'))
@@ -246,9 +251,7 @@ const APInvoiceDetailPage = lazy(() => import('@/pages/accounting/APInvoiceDetai
 // Pay periods
 const PayPeriodListPage = lazy(() => import('@/pages/payroll/PayPeriodListPage'))
 
-// Executive
-const ExecutiveLeaveApprovalPage    = lazy(() => import('@/pages/executive/ExecutiveLeaveApprovalPage'))
-const ExecutiveOvertimeApprovalPage = lazy(() => import('@/pages/executive/ExecutiveOvertimeApprovalPage'))
+// (ExecutiveLeaveApprovalPage and ExecutiveOvertimeApprovalPage consolidated into VpApprovalsDashboardPage)
 
 // Employee self-service — profile
 const MyProfilePage = lazy(() => import('@/pages/employee/MyProfilePage'))
@@ -271,6 +274,7 @@ const CrmDashboardPage    = lazy(() => import('@/pages/crm/CrmDashboardPage'))
 const CostCentersPage = lazy(() => import('@/pages/budget/CostCentersPage'))
 const BudgetLinesPage = lazy(() => import('@/pages/budget/BudgetLinesPage'))
 const BudgetVsActualPage = lazy(() => import('@/pages/budget/BudgetVsActualPage'))
+const DepartmentBudgetsPage = lazy(() => import('@/pages/budget/DepartmentBudgetsPage'))
 
 // Fixed Assets domain
 const FixedAssetsPage          = lazy(() => import('@/pages/fixed-assets/FixedAssetsPage'))
@@ -293,9 +297,16 @@ const VendorRfqDetailPage = lazy(() => import('@/pages/procurement/VendorRfqDeta
 
 // Client Portal
 const ClientPortalLayout        = lazy(() => import('@/pages/client-portal/ClientPortalLayout'))
+const ClientDashboardPage       = lazy(() => import('@/pages/client-portal/ClientDashboardPage'))
 const ClientTicketsPage         = lazy(() => import('@/pages/client-portal/ClientTicketsPage'))
 const ClientTicketDetailPage    = lazy(() => import('@/pages/client-portal/ClientTicketDetailPage'))
 const ClientNewTicketPage       = lazy(() => import('@/pages/client-portal/ClientNewTicketPage'))
+const ClientShopPage            = lazy(() => import('@/pages/client-portal/ClientShopPage'))
+const ClientOrdersPage = lazy(() => import('@/pages/client-portal/ClientOrdersPage'))
+const ClientOrderDetailPage = lazy(() => import('@/pages/client-portal/ClientOrderDetailPage'))
+const OrderReceiptPage = lazy(() => import('@/pages/client-portal/OrderReceiptPage'))
+const ClientOrdersReviewPage    = lazy(() => import('@/pages/sales/ClientOrdersReviewPage'))
+const ClientOrderReviewDetailPage = lazy(() => import('@/pages/sales/ClientOrderDetailPage'))
 
 const withSuspense = (node: React.ReactNode) => (
   <Suspense fallback={<SkeletonLoader rows={6} />}>{node}</Suspense>
@@ -358,9 +369,9 @@ const router = createBrowserRouter([
       { path: '/team/loans', element: withSuspense(guard('loans.view_department', <TeamLoanPage />)) },
       { path: '/team/shifts', element: withSuspense(guard('attendance.manage_shifts', <ShiftsPage />)) },
 
-      // ── Executive domain ──────────────────────────────────────────────────
-      { path: '/executive/leave-approvals', element: withSuspense(guard('leaves.ga_process', <ExecutiveLeaveApprovalPage />)) },
-      { path: '/executive/overtime-approvals', element: withSuspense(guard('overtime.executive_approve', <ExecutiveOvertimeApprovalPage />)) },
+      // ── Executive domain (redirects to unified approvals page) ───────────
+      { path: '/executive/leave-approvals', element: <Navigate to="/approvals/pending" replace /> },
+      { path: '/executive/overtime-approvals', element: <Navigate to="/approvals/pending" replace /> },
 
       // ── Payroll domain ────────────────────────────────────────────────────
       { path: '/payroll/runs', element: withSuspense(guard('payroll.view_runs', <PayrollRunListPage />)) },
@@ -444,7 +455,8 @@ const router = createBrowserRouter([
 
       // ── Procurement domain ────────────────────────────────────────────────
       { path: '/procurement/purchase-requests', element: withSuspense(guard('procurement.purchase-request.view', <PurchaseRequestListPage />)) },
-      { path: '/procurement/purchase-requests/new', element: withSuspense(guard('procurement.purchase-request.create', <CreatePurchaseRequestPage />)) },
+      { path: '/procurement/purchase-requests/new', element: withSuspense(guard('procurement.purchase-request.create|procurement.purchase-request.create-dept', <CreatePurchaseRequestPage />)) },
+      { path: '/procurement/purchase-requests/:ulid/edit', element: withSuspense(guard('procurement.purchase-request.create|procurement.purchase-request.create-dept', <CreatePurchaseRequestPage />)) },
       { path: '/procurement/purchase-requests/:ulid', element: withSuspense(guard('procurement.purchase-request.view', <PurchaseRequestDetailPage />)) },
       { path: '/procurement/purchase-orders', element: withSuspense(guard('procurement.purchase-order.view', <PurchaseOrderListPage />)) },
       { path: '/procurement/purchase-orders/new', element: withSuspense(guard('procurement.purchase-order.create', <CreatePurchaseOrderPage />)) },
@@ -473,9 +485,12 @@ const router = createBrowserRouter([
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
       { path: '/production/boms/new', element: withSuspense(guard('production.bom.manage', <CreateBomPage />)) },
       { path: '/production/boms/:ulid/edit', element: withSuspense(guard('production.bom.manage', <EditBomPage />)) },
-      { path: '/production/delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
-      { path: '/production/delivery-schedules/new', element: withSuspense(guard('production.delivery-schedule.manage', <CreateDeliverySchedulePage />)) },
-      { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
+    { path: '/production/delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
+    { path: '/production/delivery-schedules/new', element: withSuspense(guard('production.delivery-schedule.manage', <CreateDeliverySchedulePage />)) },
+    { path: '/production/delivery-schedules/:ulid', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleDetailPage />)) },
+    { path: '/production/combined-delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleListPage />)) },
+    { path: '/production/combined-delivery-schedules/:ulid', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleDetailPage />)) },
+    { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
       { path: '/production/orders/new', element: withSuspense(guard('production.orders.create', <CreateProductionOrderPage />)) },
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
       { path: '/production/cost-analysis', element: withSuspense(guard('production.orders.view', <ProductionCostPage />)) },
@@ -520,7 +535,7 @@ const router = createBrowserRouter([
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────
       { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve', <VpApprovalsDashboardPage />)) },
-      { path: '/approvals/loans',   element: withSuspense(guard('loans.vp_approve', <LoanListPage />)) },
+      { path: '/approvals/loans',   element: <Navigate to="/approvals/pending" replace /> },
       { path: '/approvals/loans/:ulid', element: withSuspense(guard('loans.vp_approve', <LoanDetailPage />)) },
 
       // ── Admin ──────────────────────────────────────────────────────────────
@@ -536,14 +551,15 @@ const router = createBrowserRouter([
       { path: '/crm/tickets/:ulid',  element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
 
       // ── Budget ────────────────────────────────────────────────────────────
-      { path: '/budget/cost-centers', element: withSuspense(guard('budget.view', <CostCentersPage />)) },
-      { path: '/budget/lines',        element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
-      { path: '/budget/vs-actual',    element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
+      { path: '/budget/cost-centers',       element: withSuspense(guard('budget.view', <CostCentersPage />)) },
+      { path: '/budget/department-budgets', element: withSuspense(guard('budget.view', <DepartmentBudgetsPage />)) },
+      { path: '/budget/lines',              element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
+      { path: '/budget/vs-actual',          element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
 
       // ── Fixed Assets ──────────────────────────────────────────────────────
       { path: '/fixed-assets',             element: withSuspense(guard('fixed_assets.view', <FixedAssetsPage />)) },
       { path: '/fixed-assets/categories',  element: withSuspense(guard('fixed_assets.view', <FixedAssetCategoriesPage />)) },
-      { path: '/fixed-assets/disposals',    element: withSuspense(guard('fixed_assets.view', <AssetDisposalPage />)) },
+      { path: '/fixed-assets/disposals',    element: withSuspense(guard('fixed_assets.manage', <AssetDisposalPage />)) },
       { path: '/fixed-assets/:ulid',       element: withSuspense(guard('fixed_assets.view', <FixedAssetDetailPage />)) },
 
       // ── Recurring Journal Templates ────────────────────────────────────────
@@ -556,6 +572,10 @@ const router = createBrowserRouter([
       // ── Vendor RFQs ───────────────────────────────────────────────────────
       { path: '/procurement/rfqs',        element: withSuspense(guard('procurement.purchase-request.view', <VendorRfqListPage />)) },
       { path: '/procurement/rfqs/:ulid',  element: withSuspense(guard('procurement.purchase-request.view', <VendorRfqDetailPage />)) },
+
+    // ── Sales / Client Orders Review ───────────────────────────────────────
+    { path: '/sales/client-orders', element: withSuspense(guard('sales.order_review', <ClientOrdersReviewPage />)) },
+    { path: '/sales/client-orders/:ulid', element: withSuspense(guard('sales.order_review', <ClientOrderReviewDetailPage />)) },
     ],
   },
 
@@ -580,7 +600,11 @@ const router = createBrowserRouter([
     path: '/client-portal',
     element: <Suspense fallback={null}><ClientPortalLayout /></Suspense>,
     children: [
-      { index: true, element: <Navigate to="/client-portal/tickets" replace /> },
+      { index: true, element: withSuspense(<ClientDashboardPage />) },
+      { path: 'shop',            element: withSuspense(<ClientShopPage />) },
+      { path: 'orders', element: withSuspense(<ClientOrdersPage />) },
+      { path: 'orders/:ulid', element: withSuspense(<ClientOrderDetailPage />) },
+      { path: 'deliveries/:ulid', element: withSuspense(<OrderReceiptPage />) },
       { path: 'tickets',         element: withSuspense(guard('crm.tickets.view', <ClientTicketsPage />)) },
       { path: 'change-password', element: withSuspense(<ChangePasswordPage />) },
       { path: 'tickets/new',     element: withSuspense(guard('crm.tickets.create', <ClientNewTicketPage />)) },

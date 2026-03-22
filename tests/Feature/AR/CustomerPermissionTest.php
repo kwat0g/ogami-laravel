@@ -10,11 +10,18 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModuleSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'ModulePermissionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder'])->assertExitCode(0);
+    $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 });
 
 test('purchasing officer can create customer with customers.manage permission', function (): void {
+    $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+    
     $officer = User::factory()->create();
-    $officer->assignRole('purchasing_officer');
+    $officer->assignRole('officer');
+    $officer->departments()->attach($acctgDept->id, ['is_primary' => true]);
 
     $this->actingAs($officer)
         ->postJson('/api/v1/ar/customers', [
@@ -32,8 +39,11 @@ test('purchasing officer can create customer with customers.manage permission', 
 });
 
 test('purchasing officer can update active customer with customers.manage permission', function (): void {
+    $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+    
     $officer = User::factory()->create();
-    $officer->assignRole('purchasing_officer');
+    $officer->assignRole('officer');
+    $officer->departments()->attach($acctgDept->id, ['is_primary' => true]);
 
     $customer = Customer::create([
         'name' => 'Acme Industries',
@@ -42,7 +52,7 @@ test('purchasing officer can update active customer with customers.manage permis
     ]);
 
     $this->actingAs($officer)
-        ->putJson("/api/v1/ar/customers/{$customer->id}", [
+        ->putJson("/api/v1/ar/customers/{$customer->ulid}", [
             'name' => 'Acme Industries Updated',
         ])
         ->assertOk()

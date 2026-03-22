@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
+import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import {
   useBankReconciliations,
@@ -9,6 +11,7 @@ import {
   useMatchTransaction,
   useUnmatchTransaction,
   useCertifyReconciliation,
+  useBankAccounts,
 } from '@/hooks/useBanking'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -28,11 +31,19 @@ import type {
 
 function CertifyButton({ reconciliationId, createdBy }: { reconciliationId: string; createdBy: number }) {
   const { mutate: certify, isPending } = useCertifyReconciliation(reconciliationId)
+  
+  const handleCertify = () => {
+    certify(undefined, {
+      onSuccess: () => toast.success('Bank reconciliation certified successfully.'),
+      onError: (err) => toast.error(firstErrorMessage(err, 'Failed to certify reconciliation.')),
+    })
+  }
+  
   return (
     <SodActionButton
       initiatedById={createdBy}
       label="Certify"
-      onClick={() => certify()}
+      onClick={handleCertify}
       isLoading={isPending}
       variant="primary"
     />
@@ -54,27 +65,125 @@ const EMPTY: CreateBankReconciliationPayload = {
 
 function CreateReconciliationModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState<CreateBankReconciliationPayload>(EMPTY)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const { mutate: create, isPending } = useCreateBankReconciliation()
+  const { data: bankAccounts, isLoading: loadingAccounts } = useBankAccounts()
   const inputCls = 'border border-neutral-300 rounded px-3 py-2 text-sm w-full focus:ring-1 focus:ring-neutral-400 focus:outline-none'
+  const errorCls = 'border-red-400'
+
+  // Validation
+  const errors: Record<string, string | undefined> = {
+    bank_account_id: touched.bank_account_id && !form.bank_account_id ? 'Bank account is required.' : undefined,
+    period_from: touched.period_from && !form.period_from ? 'Period from is required.' : undefined,
+    period_to: touched.period_to && !form.period_to ? 'Period to is required.' : undefined,
+  }
+
+  const isValid = form.bank_account_id && form.period_from && form.period_to
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setTouched({ bank_account_id: true, period_from: true, period_to: true })
+    
+    if (!isValid) {
+      toast.error('Please fill in all required fields.')
+      return
+    }
+
+    create(form, { 
+      onSuccess: () => {
+        toast.success('Bank reconciliation created successfully.')
+        onClose()
+      },
+      onError: (err) => toast.error(firstErrorMessage(err, 'Failed to create reconciliation.')),
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <ExecutiveReadOnlyBanner />
-      <form onSubmit={e => { e.preventDefault(); create(form, { onSuccess: onClose }) }} className="bg-white rounded border border-neutral-200 p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white rounded border border-neutral-200 p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto space-y-4">
         <h2 className="text-lg font-semibold text-neutral-900">New Reconciliation</h2>
-        {[
-          ['Bank Account ID', <input type="number" min={1} className={inputCls} value={form.bank_account_id || ''} onChange={e => setForm(f => ({ ...f, bank_account_id: parseInt(e.target.value) || 0 }))} required />],
-          ['Period From', <input type="date" className={inputCls} value={form.period_from} onChange={e => setForm(f => ({ ...f, period_from: e.target.value }))} required />],
-          ['Period To', <input type="date" className={inputCls} value={form.period_to} onChange={e => setForm(f => ({ ...f, period_to: e.target.value }))} required />],
-          ['Opening Balance', <input type="number" step="0.01" className={inputCls} value={form.opening_balance} onChange={e => setForm(f => ({ ...f, opening_balance: parseFloat(e.target.value) || 0 }))} />],
-          ['Closing Balance', <input type="number" step="0.01" className={inputCls} value={form.closing_balance} onChange={e => setForm(f => ({ ...f, closing_balance: parseFloat(e.target.value) || 0 }))} />],
-          ['Notes', <input className={inputCls} value={form.notes ?? ''} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />],
-        ].map(([label, input]) => (
-          <div key={label as string} className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-neutral-600">{label as string}</label>
-            {input as React.ReactNode}
-          </div>
-        ))}
+        
+        {/* Bank Account Dropdown */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-neutral-600">Bank Account <span className="text-red-500">*</span></label>
+          <select 
+            className={`${inputCls} ${errors.bank_account_id ? errorCls : ''}`} 
+            value={form.bank_account_id || ''} 
+            onChange={e => setForm(f => ({ ...f, bank_account_id: parseInt(e.target.value) || 0 }))} 
+            onBlur={() => setTouched(t => ({ ...t, bank_account_id: true }))}
+            disabled={loadingAccounts}
+          >
+            <option value="">{loadingAccounts ? 'Loading accounts...' : 'Select bank account'}</option>
+            {bankAccounts?.map(account => (
+              <option key={account.id} value={account.id}>
+                {account.account_name} - {account.bank_name} (₱{account.current_balance?.toLocaleString() || '0'})
+              </option>
+            ))}
+          </select>
+          {errors.bank_account_id && <p className="text-xs text-red-600">{errors.bank_account_id}</p>}
+        </div>
+
+        {/* Period From */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-neutral-600">Period From <span className="text-red-500">*</span></label>
+          <input 
+            type="date" 
+            className={`${inputCls} ${errors.period_from ? errorCls : ''}`} 
+            value={form.period_from} 
+            onChange={e => setForm(f => ({ ...f, period_from: e.target.value }))} 
+            onBlur={() => setTouched(t => ({ ...t, period_from: true }))}
+          />
+          {errors.period_from && <p className="text-xs text-red-600">{errors.period_from}</p>}
+        </div>
+
+        {/* Period To */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-neutral-600">Period To <span className="text-red-500">*</span></label>
+          <input 
+            type="date" 
+            className={`${inputCls} ${errors.period_to ? errorCls : ''}`} 
+            value={form.period_to} 
+            onChange={e => setForm(f => ({ ...f, period_to: e.target.value }))} 
+            onBlur={() => setTouched(t => ({ ...t, period_to: true }))}
+          />
+          {errors.period_to && <p className="text-xs text-red-600">{errors.period_to}</p>}
+        </div>
+
+        {/* Opening Balance */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-neutral-600">Opening Balance</label>
+          <input 
+            type="number" 
+            step="0.01" 
+            className={inputCls} 
+            value={form.opening_balance} 
+            onChange={e => setForm(f => ({ ...f, opening_balance: parseFloat(e.target.value) || 0 }))} 
+          />
+        </div>
+
+        {/* Closing Balance */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-neutral-600">Closing Balance</label>
+          <input 
+            type="number" 
+            step="0.01" 
+            className={inputCls} 
+            value={form.closing_balance} 
+            onChange={e => setForm(f => ({ ...f, closing_balance: parseFloat(e.target.value) || 0 }))} 
+          />
+        </div>
+
+        {/* Notes */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-neutral-600">Notes</label>
+          <input 
+            className={inputCls} 
+            value={form.notes ?? ''} 
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} 
+          />
+        </div>
+
         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
           <button type="submit" disabled={isPending}
             className="flex-1 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -128,6 +237,35 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
 
   const isCertified = recon.status === 'certified'
 
+  const handleImport = () => {
+    importStmt({ transactions: csvLines }, {
+      onSuccess: () => toast.success('Bank statement imported successfully.'),
+      onError: (err) => toast.error(firstErrorMessage(err, 'Failed to import statement.')),
+    })
+  }
+
+  const handleUnmatch = (txId: number) => {
+    unmatch(txId, {
+      onSuccess: () => toast.success('Transaction unmatched successfully.'),
+      onError: (err) => toast.error(firstErrorMessage(err, 'Failed to unmatch transaction.')),
+    })
+  }
+
+  const handleMatch = () => {
+    if (!selectedBankTx || !jeLineId) return
+    match(
+      { bank_transaction_id: selectedBankTx, journal_entry_line_id: parseInt(jeLineId) },
+      { 
+        onSuccess: () => {
+          toast.success('Transaction matched successfully.')
+          setSelectedBankTx(null)
+          setJeLineId('')
+        },
+        onError: (err) => toast.error(firstErrorMessage(err, 'Failed to match transaction.')),
+      }
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-6 bg-white border border-neutral-200 rounded p-4 items-center">
@@ -157,7 +295,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
               <button
                 type="button"
                 disabled={importing}
-                onClick={() => importStmt({ transactions: csvLines })}
+                onClick={handleImport}
                 className="px-3 py-2 rounded border border-neutral-300 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {importing ? 'Importing…' : 'Import Statement'}
@@ -171,15 +309,15 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
       {/* Transactions table */}
       <div className="bg-white border border-neutral-200 rounded overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-50 text-xs font-semibold text-neutral-500">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              <th className="px-3 py-2 text-left">Date</th>
-              <th className="px-3 py-2 text-left">Description</th>
-              <th className="px-3 py-2 text-left">Ref</th>
-              <th className="px-3 py-2 text-left">Type</th>
-              <th className="px-3 py-2 text-right">Amount</th>
-              <th className="px-3 py-2 text-left">Status</th>
-              {!isCertified && canEdit && <th className="px-3 py-2 text-left">Action</th>}
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">Date</th>
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">Description</th>
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">Ref</th>
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">Type</th>
+              <th className="text-right px-3 py-2 font-medium text-neutral-600">Amount</th>
+              <th className="text-left px-3 py-2 font-medium text-neutral-600">Status</th>
+              {!isCertified && canEdit && <th className="text-left px-3 py-2 font-medium text-neutral-600">Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -210,7 +348,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
                     {tx.status === 'matched' && (
                       <button
                         type="button"
-                        onClick={() => unmatch(tx.id)}
+                        onClick={() => handleUnmatch(tx.id)}
                         className="px-2 py-1 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900"
                       >
                         Unmatch
@@ -252,12 +390,7 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
           <button
             type="button"
             disabled={matching || !jeLineId}
-            onClick={() => {
-              match(
-                { bank_transaction_id: selectedBankTx!, journal_entry_line_id: parseInt(jeLineId) },
-                { onSuccess: () => { setSelectedBankTx(null); setJeLineId('') } }
-              )
-            }}
+            onClick={handleMatch}
             className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {matching ? 'Matching…' : 'Confirm Match'}
@@ -307,15 +440,15 @@ export default function BankReconciliationPage() {
       {!selected && (
         <div className="bg-white border border-neutral-200 rounded overflow-auto">
           <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-xs font-semibold text-neutral-500">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-4 py-2 text-left">Period</th>
-                <th className="px-4 py-2 text-left">Bank Account</th>
-                <th className="px-4 py-2 text-right">Opening</th>
-                <th className="px-4 py-2 text-right">Closing</th>
-                <th className="px-4 py-2 text-left">Status</th>
-                <th className="px-4 py-2 text-left">Unmatched</th>
-                <th className="px-4 py-2 text-left">Action</th>
+                <th className="text-left px-4 py-2 font-medium text-neutral-600">Period</th>
+                <th className="text-left px-4 py-2 font-medium text-neutral-600">Bank Account</th>
+                <th className="text-right px-4 py-2 font-medium text-neutral-600">Opening</th>
+                <th className="text-right px-4 py-2 font-medium text-neutral-600">Closing</th>
+                <th className="text-left px-4 py-2 font-medium text-neutral-600">Status</th>
+                <th className="text-left px-4 py-2 font-medium text-neutral-600">Unmatched</th>
+                <th className="text-left px-4 py-2 font-medium text-neutral-600">Action</th>
               </tr>
             </thead>
             <tbody>

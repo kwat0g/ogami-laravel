@@ -8,6 +8,7 @@ import SodActionButton from '@/components/ui/SodActionButton'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { useApproveOvertimeRequest, useRejectOvertimeRequest } from '@/hooks/useAttendance'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function AttendanceDashboardPage() {
   const { hasPermission } = useAuthStore()
@@ -29,8 +30,8 @@ export default function AttendanceDashboardPage() {
     try {
       await approve.mutateAsync({ id: approvingId, approved_minutes: Number(approvedMins) })
       toast.success('Overtime request approved.')
-    } catch {
-      toast.error('Failed to approve overtime request.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to approve overtime request.'))
     }
     setApprovingId(null)
     void refetch()
@@ -41,8 +42,8 @@ export default function AttendanceDashboardPage() {
     try {
       await reject.mutateAsync({ id: rejectId, remarks: rejectRemarks })
       toast.success('Overtime request rejected.')
-    } catch {
-      toast.error('Failed to reject overtime request.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to reject overtime request.'))
     }
     setRejectId(null)
     void refetch()
@@ -188,7 +189,7 @@ export default function AttendanceDashboardPage() {
             </label>
             <div className="flex justify-end gap-2">
               <button onClick={() => setApprovingId(null)} className="text-sm px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-              <button onClick={() => void submitApprove()} disabled={approve.isPending} className="text-sm px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => void submitApprove()} disabled={approve.isPending} className="text-sm px-3 py-1.5 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed">
                 {approve.isPending ? 'Approving…' : 'Confirm'}
               </button>
             </div>

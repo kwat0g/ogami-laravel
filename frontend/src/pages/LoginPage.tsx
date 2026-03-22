@@ -27,7 +27,7 @@ export default function LoginPage() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    mode: 'onBlur',
+    mode: 'onChange',
   })
 
   const onSubmit = async (values: FormValues) => {
@@ -44,9 +44,9 @@ export default function LoginPage() {
       const result = res.data.data
 
       if (result.user) {
-        // Session cookie is set by the server — no token stored in localStorage.
-        // Warm the TanStack Query cache so AppLayout's useAuth() gets a cache
-        // hit on mount instead of immediately firing a redundant /auth/me request.
+        // Cancel any in-flight /auth/me probe (old session → 401) so it cannot
+        // race with the new session and trigger a spurious clearAuth().
+        await queryClient.cancelQueries({ queryKey: ['auth', 'me'] })
         queryClient.setQueryData(['auth', 'me'], result.user)
         setAuth(result.user)
         bumpAuthEpoch()

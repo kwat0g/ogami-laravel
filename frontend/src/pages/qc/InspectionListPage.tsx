@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus } from 'lucide-react'
 import { useInspections } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { DepartmentGuard } from '@/components/ui/guards'
 import type { InspectionStage, InspectionStatus } from '@/types/qc'
 
 const stageBadge: Record<InspectionStage, string> = {
@@ -22,6 +23,7 @@ const statusBadge: Record<InspectionStatus, string> = {
 }
 
 export default function InspectionListPage(): React.ReactElement {
+  const navigate = useNavigate()
   const [stage, setStage]   = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
@@ -42,15 +44,25 @@ export default function InspectionListPage(): React.ReactElement {
       <PageHeader
         title="Inspections"
         actions={
-          canCreate ? (
-            <Link
-              to="/qc/inspections/new"
-              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Inspection
+          <div className="flex items-center gap-2">
+            <Link to="/qc/templates" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+              Templates
             </Link>
-          ) : undefined
+            <Link to="/qc/defect-rate" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+              Defect Rate
+            </Link>
+            <DepartmentGuard module="inspections">
+              {canCreate ? (
+                <Link
+                  to="/qc/inspections/new"
+                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Inspection
+                </Link>
+              ) : undefined}
+            </DepartmentGuard>
+          </div>
         }
       />
 
@@ -95,7 +107,7 @@ export default function InspectionListPage(): React.ReactElement {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['Reference', 'Stage', 'Item', 'Qty Inspected', 'Pass / Fail', 'Date', 'Status', ''].map((h) => (
+                  {['Reference', 'Stage', 'Item', 'Qty Inspected', 'Pass / Fail', 'Date', 'Status'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500">{h}</th>
                   ))}
                 </tr>
@@ -103,11 +115,11 @@ export default function InspectionListPage(): React.ReactElement {
               <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-neutral-400 text-sm">No inspections found.</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No inspections found.</td>
                   </tr>
                 )}
                 {data?.data?.map((insp) => (
-                  <tr key={insp.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                  <tr key={insp.id} className="even:bg-neutral-100 hover:bg-neutral-50 cursor-pointer" onClick={() => navigate(`/qc/inspections/${insp.ulid}`)}>
                     <td className="px-4 py-3 font-mono text-neutral-700 font-medium">{insp.inspection_reference}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${stageBadge[insp.stage]}`}>{insp.stage}</span>
@@ -128,11 +140,6 @@ export default function InspectionListPage(): React.ReactElement {
                       <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${statusBadge[insp.status]}`}>
                         {insp.status?.replace('_', ' ') || 'Unknown'}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/qc/inspections/${insp.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
-                        View →
-                      </Link>
                     </td>
                   </tr>
                 ))}

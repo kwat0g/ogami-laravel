@@ -64,7 +64,7 @@ final class PayrollWorkflowService implements ServiceContract
                 ->get()
                 ->filter(fn (User $u) => $u->hasPermissionTo('payroll.acctg_approve'));
             if ($acctgManagers->isNotEmpty()) {
-                Notification::send($acctgManagers, new PayrollSubmittedNotification($run));
+                Notification::send($acctgManagers, PayrollSubmittedNotification::fromModel($run));
             }
         } catch (\Throwable) {
             // Non-fatal — notification failure should not block the workflow
@@ -123,7 +123,7 @@ final class PayrollWorkflowService implements ServiceContract
                 ->get()
                 ->filter(fn (User $u) => $u->hasPermissionTo('payroll.acctg_approve'));
             if ($acctgManagers->isNotEmpty()) {
-                Notification::send($acctgManagers, new PayrollApprovedNotification($run, 'HR'));
+                Notification::send($acctgManagers, PayrollApprovedNotification::fromModel($run, 'HR'));
             }
         } catch (\Throwable) {
         }
@@ -171,7 +171,7 @@ final class PayrollWorkflowService implements ServiceContract
             if ($run->initiated_by_id) {
                 $initiator = User::find($run->initiated_by_id);
                 if ($initiator) {
-                    $initiator->notify(new PayrollApprovedNotification($run, 'HR_RETURNED'));
+                    $initiator->notify(PayrollApprovedNotification::fromModel($run, 'HR_RETURNED'));
                 }
             }
         } catch (\Throwable) {
@@ -229,7 +229,7 @@ final class PayrollWorkflowService implements ServiceContract
                 $run->initiated_by_id,
                 $run->hr_approved_by_id,
             ]))->get();
-            $notif = new PayrollApprovedNotification($run, 'ACCOUNTING');
+            $notif = PayrollApprovedNotification::fromModel($run, 'ACCOUNTING');
             Notification::send($acctgManagers, $notif);
         } catch (\Throwable) {
         }
@@ -280,7 +280,7 @@ final class PayrollWorkflowService implements ServiceContract
                 $run->initiated_by_id,
                 $run->hr_approved_by_id,
             ]))->get();
-            $notif = new PayrollApprovedNotification($run, 'ACCOUNTING_REJECTED');
+            $notif = PayrollApprovedNotification::fromModel($run, 'ACCOUNTING_REJECTED');
             Notification::send($notify, $notif);
         } catch (\Throwable) {
         }
@@ -331,7 +331,7 @@ final class PayrollWorkflowService implements ServiceContract
                 $run->initiated_by_id,
                 $run->hr_approved_by_id,
             ]))->get();
-            $notif = new PayrollApprovedNotification($run, 'ACCOUNTING_RETURNED');
+            $notif = PayrollApprovedNotification::fromModel($run, 'ACCOUNTING_RETURNED');
             Notification::send($notify, $notif);
         } catch (\Throwable) {
         }
@@ -389,7 +389,7 @@ final class PayrollWorkflowService implements ServiceContract
                 $run->hr_approved_by_id,
                 $run->acctg_approved_by_id,
             ]))->get();
-            $notif = new PayrollApprovedNotification($run, 'VP');
+            $notif = PayrollApprovedNotification::fromModel($run, 'VP');
             Notification::send($notify, $notif);
         } catch (\Throwable) {
         }
@@ -425,7 +425,7 @@ final class PayrollWorkflowService implements ServiceContract
                 $run->acctg_approved_by_id,
             ]))->get();
             if ($notify->isNotEmpty()) {
-                Notification::send($notify, new PayrollApprovedNotification($run, 'DISBURSED'));
+                Notification::send($notify, PayrollApprovedNotification::fromModel($run, 'DISBURSED'));
             }
         } catch (\Throwable) {
         }
@@ -472,7 +472,7 @@ final class PayrollWorkflowService implements ServiceContract
                 $users = User::whereHas('employee', fn ($q) => $q->whereIn('id', $employeeIds))->get();
                 foreach ($users as $user) {
                     try {
-                        $user->notify(new PayrollApprovedNotification($run, 'payslip'));
+                        $user->notify(PayrollApprovedNotification::fromModel($run, 'payslip'));
                     } catch (\Throwable) {
                         // Non-fatal — one user failing must not block others
                     }
@@ -542,7 +542,7 @@ final class PayrollWorkflowService implements ServiceContract
             ]))->where('id', '!=', $actorId)->get();
 
             if ($notify->isNotEmpty()) {
-                Notification::send($notify, new PayrollCancelledNotification($run, $reason));
+                Notification::send($notify, PayrollCancelledNotification::fromModel($run, $reason));
             }
         } catch (\Throwable) {
             // Non-fatal

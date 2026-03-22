@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
 
     // ── Customers ─────────────────────────────────────────────────────────────
     Route::get('customers', [CustomerController::class, 'index'])
@@ -23,21 +23,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('customers', [CustomerController::class, 'store'])
         ->name('customers.store');
 
-    Route::get('customers/{customer}', [CustomerController::class, 'show'])
+    Route::get('customers/{customer:ulid}', [CustomerController::class, 'show'])
         ->name('customers.show');
 
-    Route::put('customers/{customer}', [CustomerController::class, 'update'])
+    Route::put('customers/{customer:ulid}', [CustomerController::class, 'update'])
         ->name('customers.update');
 
-    Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
+    Route::delete('customers/{customer:ulid}', [CustomerController::class, 'destroy'])
         ->name('customers.destroy');
 
     // Client Portal Account provisioning (admin only)
-    Route::post('customers/{customer}/provision-account', [CustomerController::class, 'provisionPortalAccount'])
+    Route::post('customers/{customer:ulid}/provision-account', [CustomerController::class, 'provisionPortalAccount'])
         ->middleware(['permission:system.manage_users', 'throttle:api-action'])
         ->name('customers.provision-account');
 
-    Route::post('customers/{customer}/reset-account', [CustomerController::class, 'resetPortalAccountPassword'])
+    Route::post('customers/{customer:ulid}/reset-account', [CustomerController::class, 'resetPortalAccountPassword'])
         ->middleware(['permission:system.manage_users', 'throttle:api-action'])
         ->name('customers.reset-account');
 
@@ -54,6 +54,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('invoices/{customerInvoice}', [CustomerInvoiceController::class, 'show'])
         ->name('ar-invoices.show');
+
+    Route::get('invoices/{customerInvoice}/pdf', [CustomerInvoiceController::class, 'pdf'])
+        ->name('ar-invoices.pdf');
 
     // AR-003: approve draft → generate INV number + auto-post JE
     Route::patch('invoices/{customerInvoice}/approve', [CustomerInvoiceController::class, 'approve'])
@@ -92,7 +95,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('aging-report', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
         $asOfDate = \Carbon\Carbon::parse($request->input('as_of_date', now()->toDateString()));
 
-        $invoices = \App\Domains\AR\Models\CustomerInvoice::with('customer:id,company_name')
+        $invoices = \App\Domains\AR\Models\CustomerInvoice::with('customer:id,name')
             ->whereNotIn('status', ['cancelled', 'written_off'])
             ->whereColumn('total_amount', '>', \Illuminate\Support\Facades\DB::raw("COALESCE((SELECT SUM(amount) FROM customer_payments WHERE customer_payments.customer_invoice_id = customer_invoices.id), 0)"))
             ->get(['id', 'customer_id', 'invoice_number', 'due_date', 'total_amount', 'status']);
@@ -116,7 +119,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             if (!isset($buckets[$custId])) {
                 $buckets[$custId] = [
                     'customer_id'   => $custId,
-                    'customer_name' => $inv->customer->company_name ?? "Customer #{$custId}",
+                    'customer_name' => $inv->customer->name ?? "Customer #{$custId}",
                     'current'       => 0.0, '1_30' => 0.0, '31_60' => 0.0, '61_90' => 0.0, 'over_90' => 0.0,
                     'total'         => 0.0,
                 ];
@@ -132,7 +135,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     })->middleware('permission:reports.ar_aging')->name('ar.aging-report');
 
     // ── Customer Statement Export (CSV) ─────────────────────────────────────
-    Route::get('customers/{customer}/statement', function (\App\Domains\AR\Models\Customer $customer): \Symfony\Component\HttpFoundation\StreamedResponse {
+    Route::get('customers/{customer:ulid}/statement', function (\App\Domains\AR\Models\Customer $customer): \Symfony\Component\HttpFoundation\StreamedResponse {
         $invoices = \Illuminate\Support\Facades\DB::table('customer_invoices')
             ->where('customer_id', $customer->id)
             ->select('invoice_number', 'invoice_date', 'due_date', 'total_amount', 'amount_paid', 'balance_due', 'status')

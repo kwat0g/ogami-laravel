@@ -12,10 +12,12 @@ import {
 } from '@/hooks/useISO';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
+import { firstErrorMessage } from '@/lib/errorHandler';
 import type { FindingSeverity, FindingType } from '@/types/iso';
 
 const SEVERITY_COLORS: Record<FindingSeverity, string> = {
@@ -51,6 +53,10 @@ export default function IsoAuditDetailPage(): React.ReactElement {
     confirmLabel: 'Confirm',
     onConfirm: async () => {},
   });
+  const [closeFindingConfirm, setCloseFindingConfirm] = useState<{ open: boolean; findingUlid: string | null }>({
+    open: false,
+    findingUlid: null,
+  });
   const closeConfirm = () => setConfirmState(s => ({ ...s, open: false }));
 
   const [showFindingForm, setShowFindingForm] = useState(false);
@@ -62,6 +68,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
     description: '',
     severity: 'minor' as FindingSeverity,
   });
+  const [findingFormErrors, setFindingFormErrors] = useState<string[]>([]);
 
   if (isLoading) return <SkeletonLoader rows={6} />;
 
@@ -82,12 +89,16 @@ export default function IsoAuditDetailPage(): React.ReactElement {
     setConfirmState({
       open: true,
       title: 'Start audit?',
-      description: 'This will mark the audit as in progress.',
+      description: 'This will mark the audit as in progress. You will be able to add findings once started.',
       confirmLabel: 'Start Audit',
       onConfirm: async () => {
-        await startMut.mutateAsync(audit.ulid);
-        toast.success('Audit started.');
-        closeConfirm();
+        try {
+          await startMut.mutateAsync(audit.ulid);
+          toast.success('Audit started.');
+          closeConfirm();
+        } catch (err) {
+          toast.error(firstErrorMessage(err));
+        }
       },
     });
   };
@@ -98,14 +109,25 @@ export default function IsoAuditDetailPage(): React.ReactElement {
       toast.success('Audit completed.');
       setShowCompleteDialog(false);
       setSummaryInput('');
-    } catch {
-      toast.error('Failed to complete audit.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
     }
+  };
+
+  const validateFindingForm = (): boolean => {
+    const errors: string[] = [];
+    if (!findingForm.description.trim()) errors.push('Description is required');
+    if (!findingForm.clause_ref.trim()) errors.push('Clause reference is required');
+    setFindingFormErrors(errors);
+    return errors.length === 0;
   };
 
   const handleAddFinding = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!findingForm.description.trim()) { toast.error('Description is required.'); return; }
+    if (!validateFindingForm()) {
+      findingFormErrors.forEach(err => toast.error(err));
+      return;
+    }
     try {
       await createFindingMut.mutateAsync({
         finding_type: findingForm.finding_type,
@@ -116,24 +138,28 @@ export default function IsoAuditDetailPage(): React.ReactElement {
       toast.success('Finding added.');
       setFindingForm({ finding_type: 'nonconformity', clause_ref: '', description: '', severity: 'minor' });
       setShowFindingForm(false);
-    } catch {
-      toast.error('Failed to add finding.');
+      setFindingFormErrors([]);
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
     }
   };
 
-  const handleCloseFinding = (findingUlid: string) => {
-    setConfirmState({
-      open: true,
-      title: 'Close finding?',
-      description: 'This will mark the finding as closed.',
-      confirmLabel: 'Close Finding',
-      onConfirm: async () => {
-        await closeFindingMut.mutateAsync({ findingUlid, auditUlid: audit.ulid });
-        toast.success('Finding closed.');
-        closeConfirm();
-      },
-    });
+  const initiateCloseFinding = (findingUlid: string) => {
+    setCloseFindingConfirm({ open: true, findingUlid });
   };
+
+  const handleCloseFinding = async () => {
+    if (!closeFindingConfirm.findingUlid) return;
+    try {
+      await closeFindingMut.mutateAsync({ findingUlid: closeFindingConfirm.findingUlid, auditUlid: audit.ulid });
+      toast.success('Finding closed.');
+      setCloseFindingConfirm({ open: false, findingUlid: null });
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
+    }
+  };
+
+  const canAddFinding = (audit.status === 'in_progress' || audit.status === 'completed') && canAudit;
 
   return (
     <div className="max-w-7xl mx-auto space-y-5">
@@ -185,7 +211,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
       <Card>
         <CardHeader
           actions={
-            (audit.status === 'in_progress' || audit.status === 'completed') && canAudit && (
+            canAddFinding && (
               <button
                 type="button"
                 onClick={() => setShowFindingForm(s => !s)}
@@ -204,7 +230,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
             <form onSubmit={handleAddFinding} className="mb-4 bg-neutral-50 border border-neutral-200 rounded p-4 space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Type *</label>
                   <select
                     className={INPUT}
                     value={findingForm.finding_type}
@@ -216,7 +242,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Severity</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Severity *</label>
                   <select
                     className={INPUT}
                     value={findingForm.severity}
@@ -228,19 +254,20 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Clause Reference</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Clause Reference *</label>
                 <input
                   type="text"
-                  className={INPUT}
+                  className={`${INPUT} ${findingFormErrors.includes('Clause reference is required') ? 'border-red-400' : ''}`}
                   value={findingForm.clause_ref}
                   onChange={e => setFindingForm(s => ({ ...s, clause_ref: e.target.value }))}
                   placeholder="e.g. 8.4.1"
+                  required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Description *</label>
                 <textarea
-                  className={INPUT}
+                  className={`${INPUT} ${findingFormErrors.includes('Description is required') ? 'border-red-400' : ''}`}
                   rows={3}
                   value={findingForm.description}
                   onChange={e => setFindingForm(s => ({ ...s, description: e.target.value }))}
@@ -250,7 +277,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowFindingForm(false)}
+                  onClick={() => { setShowFindingForm(false); setFindingFormErrors([]); }}
                   className="px-3 py-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50"
                 >
                   Cancel
@@ -298,7 +325,7 @@ export default function IsoAuditDetailPage(): React.ReactElement {
                           {finding.status !== 'closed' && finding.status !== 'verified' && canAudit && (
                             <button
                               type="button"
-                              onClick={() => handleCloseFinding(finding.ulid)}
+                              onClick={() => initiateCloseFinding(finding.ulid)}
                               className="text-xs text-neutral-600 bg-white border border-neutral-300 rounded px-2 py-0.5 hover:bg-neutral-50"
                             >
                               Close
@@ -341,14 +368,20 @@ export default function IsoAuditDetailPage(): React.ReactElement {
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                disabled={completeMut.isPending}
-                onClick={handleComplete}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              <ConfirmDialog
+                title="Complete audit?"
+                description="This will mark the audit as completed. No further findings can be added after completion."
+                confirmLabel="Complete Audit"
+                onConfirm={handleComplete}
               >
-                {completeMut.isPending ? 'Completing…' : 'Complete Audit'}
-              </button>
+                <button
+                  type="button"
+                  disabled={completeMut.isPending}
+                  className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {completeMut.isPending ? 'Completing…' : 'Complete Audit'}
+                </button>
+              </ConfirmDialog>
             </div>
           </div>
         </div>
@@ -362,7 +395,18 @@ export default function IsoAuditDetailPage(): React.ReactElement {
         description={confirmState.description}
         confirmLabel={confirmState.confirmLabel}
         variant="warning"
-        loading={startMut.isPending || closeFindingMut.isPending}
+        loading={startMut.isPending}
+      />
+
+      <ConfirmDialog
+        open={closeFindingConfirm.open}
+        onClose={() => setCloseFindingConfirm({ open: false, findingUlid: null })}
+        onConfirm={handleCloseFinding}
+        title="Close finding?"
+        description="This will mark the finding as closed. Make sure all corrective actions have been completed."
+        confirmLabel="Close Finding"
+        variant="warning"
+        loading={closeFindingMut.isPending}
       />
     </div>
   );

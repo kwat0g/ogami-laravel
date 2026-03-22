@@ -43,6 +43,7 @@ import {
   Truck,
   ShieldCheck,
   Landmark,
+  Building,
 } from 'lucide-react'
 
 interface NavChild {
@@ -52,6 +53,8 @@ interface NavChild {
   end?: boolean
   /** When true, renders as a non-clickable section header instead of a link. */
   divider?: boolean
+  /** Additional path prefixes that keep this section active (e.g. detail pages reachable from here). */
+  activePaths?: string[]
 }
 
 interface NavSection {
@@ -60,6 +63,12 @@ interface NavSection {
   permission?: string
   /** If provided, only users with at least one of these roles (or the admin role) can see this section. */
   roles?: string[]
+  /** 
+   * If provided, only users from these departments can see this section.
+   * This enforces SoD - e.g., Accounting managers don't see Production modules.
+   * Use 'ALL' to allow all departments.
+   */
+  departments?: string[]
   children: NavChild[]
 }
 
@@ -67,284 +76,250 @@ const TOP_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, permission: null },
 ]
 
+/**
+ * Sidebar Sections - Combined Parent Modules with SoD Enforcement
+ * 
+ * Sub-modules grouped under parent modules with internal dividers:
+ * 1. HR & Payroll (People)
+ * 2. Financial Management (Money)
+ * 3. Supply Chain (Materials)
+ * 4. Production & Quality (Operations)
+ * 5. Sales & Delivery (Fulfillment)
+ * 6. Compliance & Governance
+ */
 const SECTIONS: NavSection[] = [
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 1: HR & PAYROLL (People Management)
+  // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'Team Management',
-    icon: Users,
-    permission: 'employees.view_team',
-    roles: ['manager', 'head', 'warehouse_head', 'ppc_head', 'ga_officer', 'plant_manager', 'production_manager', 'qc_manager', 'mold_manager'],
-    children: [
-      { label: 'My Team', href: '/team/employees', permission: 'employees.view_team' },
-      { label: 'Team Attendance', href: '/team/attendance', permission: 'attendance.view_team' },
-      { label: 'Team Leave', href: '/team/leave', permission: 'leaves.view_team', end: true },
-      { label: 'Team Overtime', href: '/team/overtime', permission: 'overtime.view' },
-      { label: 'Team Loans', href: '/team/loans', permission: 'loans.view_department' },
-      { label: 'Shift Schedules', href: '/team/shifts', permission: 'attendance.manage_shifts' },
-    ],
-  },
-  {
-    label: 'Human Resources',
+    label: 'HR & Payroll',
     icon: Users,
     permission: 'hr.full_access',
-    roles: ['manager'],
+    roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
+    departments: ['HR', 'ACCTG', 'EXEC'],
     children: [
-      { label: 'All Employees', href: '/hr/employees/all', permission: 'hr.full_access' },
-      { label: 'Attendance Logs', href: '/hr/attendance', permission: 'hr.full_access' },
-      { label: 'Leave Requests', href: '/hr/leave', permission: 'hr.full_access', end: true },
-      { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
-      { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
+      // ── Human Resources ─────────────────────────────────────────────────────
+      { divider: true, label: 'Human Resources' },
+      { label: 'Employees', href: '/hr/employees/all', permission: 'hr.full_access' },
       { label: 'Departments', href: '/hr/departments', permission: 'hr.full_access' },
       { label: 'Positions', href: '/hr/positions', permission: 'hr.full_access' },
       { label: 'Shifts', href: '/hr/shifts', permission: 'hr.full_access' },
+      { label: 'Attendance', href: '/hr/attendance', permission: 'hr.full_access' },
+      { label: 'Leave', href: '/hr/leave', permission: 'hr.full_access', end: true },
+      { label: 'Leave Balances', href: '/hr/leave/balances', permission: 'hr.full_access' },
+      { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
+      { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
       { label: 'HR Reports', href: '/hr/reports', permission: 'hr.full_access' },
-    ],
-  },
-  {
-    label: 'Payroll',
-    icon: DollarSign,
-    permission: 'payroll.view_runs',
-    roles: ['manager', 'officer', 'executive', 'vice_president'],
-    children: [
+      // ── Payroll ─────────────────────────────────────────────────────────────
+      { divider: true, label: 'Payroll' },
       { label: 'Payroll Runs', href: '/payroll/runs', permission: 'payroll.view_runs' },
       { label: 'Pay Periods', href: '/payroll/periods', permission: 'payroll.manage_pay_periods' },
-    ],
-  },
-  {
-    label: 'Accounting',
-    icon: BookOpen,
-    permission: 'chart_of_accounts.view',
-    // officer = full write, executive/vice_president/head = view-only (children gated individually)
-    roles: ['officer', 'executive', 'vice_president', 'head'],
-    children: [
-      { label: 'Chart of Accounts',   href: '/accounting/accounts',            permission: 'chart_of_accounts.view' },
-      { label: 'Journal Entries',      href: '/accounting/journal-entries',     permission: 'journal_entries.view' },
-      { label: 'General Ledger',       href: '/accounting/gl',                  permission: 'journal_entries.view' },
-      { label: 'Loan Approvals',       href: '/accounting/loans',               permission: 'loans.accounting_approve' },
-      { label: 'Recurring Templates',  href: '/accounting/recurring-templates', permission: 'journal_entries.view' },
-    ],
-  },
-   {
-    label: 'Payables (AP)',
-    icon: FileText,
-    permission: 'vendors.view',
-    // officer = full AP, purchasing_officer = vendor lifecycle, impex_officer = vendor view
-    // executive/vice_president/head/manager = view-only (invoices children self-gate)
-    roles: ['officer', 'executive', 'vice_president', 'purchasing_officer', 'impex_officer', 'head', 'manager'],
-    children: [
-      { label: 'Vendors',       href: '/accounting/vendors',          permission: 'vendors.view' },
-      { label: 'Invoices',      href: '/accounting/ap/invoices',      permission: 'vendor_invoices.view' },
-      { label: 'Credit Notes',  href: '/accounting/ap/credit-notes',  permission: 'vendor_invoices.view' },
-    ],
-  },
-  {
-    label: 'Receivables (AR)',
-    icon: Wallet,
-    permission: 'customers.view',
-    // officer = full write, executive/vice_president/head = view-only
-    roles: ['officer', 'executive', 'vice_president', 'head', 'purchasing_officer'],
-    children: [
-      { label: 'Customers',     href: '/ar/customers',       permission: 'customers.view' },
-      { label: 'Invoices',      href: '/ar/invoices',        permission: 'customer_invoices.view' },
-      { label: 'Credit Notes',  href: '/ar/credit-notes',    permission: 'customer_invoices.view' },
-    ],
-  },
-  {
-    label: 'Banking',
-    icon: Landmark,
-    permission: 'bank_accounts.view',
-    roles: ['officer'],
-    children: [
-      { label: 'Bank Accounts',   href: '/banking/accounts',          permission: 'bank_accounts.view' },
-      { label: 'Reconciliations', href: '/banking/reconciliations',   permission: 'bank_reconciliations.view' },
-    ],
-  },
-  {
-    label: 'Financial Reports',
-    icon: BarChart3,
-    permission: 'reports.financial_statements',
-    roles: ['officer', 'executive', 'vice_president'],
-    children: [
-      { label: 'Trial Balance',     href: '/accounting/trial-balance',    permission: 'reports.financial_statements' },
-      { label: 'Balance Sheet',     href: '/accounting/balance-sheet',    permission: 'reports.financial_statements' },
-      { label: 'Income Statement',  href: '/accounting/income-statement', permission: 'reports.financial_statements' },
-      { label: 'Cash Flow',         href: '/accounting/cash-flow',        permission: 'reports.financial_statements' },
-      { label: 'AP Aging',          href: '/accounting/ap/aging-report',  permission: 'vendor_invoices.view' },
-      { label: 'AR Aging',          href: '/ar/aging-report',             permission: 'customer_invoices.view' },
-      { label: 'VAT Ledger',        href: '/accounting/vat-ledger',       permission: 'reports.vat' },
-      { label: 'Tax Summary',       href: '/accounting/tax-summary',      permission: 'reports.vat' },
-    ],
-  },
-  {
-    label: 'Fixed Assets',
-    icon: Landmark,
-    permission: 'fixed_assets.view',
-    roles: ['officer', 'executive', 'vice_president', 'head'],
-    children: [
-      { label: 'Asset Register', href: '/fixed-assets',             permission: 'fixed_assets.view' },
-      { label: 'Categories',    href: '/fixed-assets/categories',  permission: 'fixed_assets.view' },
-      { label: 'Disposals',     href: '/fixed-assets/disposals',   permission: 'fixed_assets.view' },
-    ],
-  },
-  {
-    label: 'Budget',
-    icon: TrendingUp,
-    permission: 'budget.view',
-    children: [
-      { label: 'Cost Centers',    href: '/budget/cost-centers', permission: 'budget.view' },
-      { label: 'Budget Lines',    href: '/budget/lines',        permission: 'budget.view' },
-      { label: 'Budget vs Actual', href: '/budget/vs-actual',   permission: 'budget.view' },
-    ],
-  },
-  {
-    label: 'Reports',
-    icon: BarChart3,
-    permission: 'payroll.gov_reports',
-    roles: ['manager', 'officer', 'executive', 'vice_president'],
-    children: [
       { label: 'Government Reports', href: '/reports/government', permission: 'payroll.gov_reports' },
     ],
   },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 1B: MY TEAM (visible to all dept officers/heads — not HR-dept-gated)
+  // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'GA Processing',
-    icon: Shield,
-    permission: 'leaves.ga_process',
-    roles: ['ga_officer', 'vice_president'],
+    label: 'My Team',
+    icon: Users,
+    permission: 'employees.view_team',
+    roles: ['officer', 'manager', 'head'],
+    departments: ['ALL'],
     children: [
-      { label: 'GA Leave Processing', href: '/executive/leave-approvals',    permission: 'leaves.ga_process' },
+      { label: 'Team Members', href: '/team/employees', permission: 'employees.view_team' },
+      { label: 'Team Attendance', href: '/team/attendance', permission: 'attendance.view_team' },
+      { label: 'Team Leave', href: '/team/leave', permission: 'leaves.view_team' },
+      { label: 'Team Overtime', href: '/team/overtime', permission: 'overtime.view' },
+      { label: 'Team Loans', href: '/team/loans', permission: 'loans.view_department' },
     ],
   },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 2: FINANCIAL MANAGEMENT
+  // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'Executive Approvals',
-    icon: Shield,
-    permission: 'overtime.executive_approve',
-    roles: ['executive'],
+    label: 'Financial Management',
+    icon: BookOpen,
+    permission: 'chart_of_accounts.view',
+    roles: ['officer', 'manager', 'head', 'staff'],
+    departments: ['ACCTG', 'SALES', 'PURCH'],
     children: [
-      { label: 'Overtime Approvals', href: '/executive/overtime-approvals', permission: 'overtime.executive_approve' },
+      // ── General Ledger ───────────────────────────────────────────────────────
+      { divider: true, label: 'General Ledger' },
+      { label: 'Chart of Accounts', href: '/accounting/accounts', permission: 'chart_of_accounts.view' },
+      { label: 'Journal Entries', href: '/accounting/journal-entries', permission: 'journal_entries.view' },
+      { label: 'Fiscal Periods', href: '/accounting/fiscal-periods', permission: 'fiscal_periods.view' },
+      // ── Accounts Payable ────────────────────────────────────────────────────
+      { divider: true, label: 'Accounts Payable' },
+      { label: 'Vendors', href: '/accounting/vendors', permission: 'vendors.view' },
+      { label: 'Vendor Invoices', href: '/accounting/ap/invoices', permission: 'vendor_invoices.view' },
+      { label: 'Loan Review', href: '/accounting/loans', permission: 'loans.accounting_approve' },
+      // ── Accounts Receivable ─────────────────────────────────────────────────
+      { divider: true, label: 'Accounts Receivable' },
+      { label: 'Customers', href: '/ar/customers', permission: 'customers.view' },
+      { label: 'Customer Invoices', href: '/ar/invoices', permission: 'customer_invoices.view' },
+      // ── Banking ─────────────────────────────────────────────────────────────
+      { divider: true, label: 'Banking' },
+      { label: 'Bank Accounts', href: '/banking/accounts', permission: 'bank_accounts.view' },
+      { label: 'Reconciliations', href: '/banking/reconciliations', permission: 'bank_reconciliations.view' },
+      // ── Reports ─────────────────────────────────────────────────────────────
+      { divider: true, label: 'Reports' },
+      { label: 'VAT Ledger', href: '/accounting/vat-ledger', permission: 'reports.vat' },
+      { label: 'Trial Balance', href: '/accounting/trial-balance', permission: 'reports.financial_statements' },
+      { label: 'AP Aging', href: '/accounting/ap/aging-report', permission: 'reports.ap_aging' },
+      { label: 'AR Aging', href: '/ar/aging-report', permission: 'reports.ar_aging' },
     ],
   },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 2B: FINANCE APPROVALS (Accounting dept only — budget & loan review)
+  // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'Procurement',
-    icon: ShoppingCart,
-    permission: 'procurement.purchase-request.view',
+    label: 'Finance Approvals',
+    icon: ClipboardCheck,
+    permission: 'procurement.purchase-request.budget-check',
+    roles: ['officer', 'manager', 'head'],
+    departments: ['ACCTG'],
     children: [
-      { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
-      { label: 'Purchase Orders',   href: '/procurement/purchase-orders',   permission: 'procurement.purchase-order.view' },
-      { label: 'Goods Receipts',    href: '/procurement/goods-receipts',    permission: 'procurement.goods-receipt.view' },
-      { label: 'RFQs',              href: '/procurement/rfqs',               permission: 'procurement.purchase-order.create' },
-      { label: 'Analytics',          href: '/procurement/analytics',          permission: 'procurement.purchase-order.create' },
+      { label: 'Budget Verification', href: '/procurement/purchase-requests?status=reviewed', permission: 'procurement.purchase-request.budget-check' },
+      { label: 'Loan Review', href: '/accounting/loans', permission: 'loans.accounting_approve' },
     ],
   },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 2C: BUDGET & ASSETS
+  // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'Inventory',
+    label: 'Budget & Assets',
+    icon: Building,
+    permission: 'budget.view',
+    roles: ['officer', 'manager', 'head'],
+    departments: ['ACCTG'],
+    children: [
+      { divider: true, label: 'Budget' },
+      { label: 'Cost Centers', href: '/budget/cost-centers', permission: 'budget.view' },
+      { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
+      { label: 'Budget Lines', href: '/budget/lines', permission: 'budget.view' },
+      { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
+      { divider: true, label: 'Fixed Assets' },
+      { label: 'Asset Register', href: '/fixed-assets', permission: 'fixed_assets.view' },
+      { label: 'Asset Disposals', href: '/fixed-assets/disposals', permission: 'fixed_assets.manage' },
+    ],
+  },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 3: SUPPLY CHAIN
+  // ═════════════════════════════════════════════════════════════════════════════
+  {
+    label: 'Supply Chain',
     icon: Package,
-    permission: 'inventory.items.view',
+    permission: 'procurement.purchase-request.view',
+    roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
+    departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH', 'SALES'],
     children: [
-      { label: 'Item Categories',     href: '/inventory/categories',     permission: 'inventory.items.view' },
-      { label: 'Item Master',         href: '/inventory/items',          permission: 'inventory.items.view' },
-      { label: 'Warehouse Locations', href: '/inventory/locations',       permission: 'inventory.locations.view' },
-      { label: 'Stock Balances',      href: '/inventory/stock',           permission: 'inventory.stock.view' },
-      { label: 'Stock Ledger',        href: '/inventory/ledger',          permission: 'inventory.stock.view' },
-      { label: 'Requisitions',        href: '/inventory/requisitions',    permission: 'inventory.mrq.view' },
-      { label: 'Stock Adjustments',  href: '/inventory/adjustments',     permission: 'inventory.adjustments.create' },
-      { label: 'Valuation',          href: '/inventory/valuation',       permission: 'reports.financial_statements' },
-
+      // ── Procurement ─────────────────────────────────────────────────────────
+      { divider: true, label: 'Procurement' },
+      { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
+      { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
+      { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
+      { label: 'Vendor RFQs', href: '/procurement/rfqs', permission: 'procurement.purchase-request.view' },
+      // ── Inventory ────────────────────────────────────────────────────────────
+      { divider: true, label: 'Inventory' },
+      { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
+      { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
+      { label: 'Stock Ledger', href: '/inventory/ledger', permission: 'inventory.stock.view' },
+      { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
+      { label: 'Stock Adjustments', href: '/inventory/adjustments', permission: 'inventory.adjustments.create' },
     ],
   },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 4: PRODUCTION & QUALITY
+  // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'Production',
+    label: 'Production & Quality',
     icon: Factory,
     permission: 'production.orders.view',
-    roles: ['plant_manager', 'production_manager', 'head', 'ppc_head', 'warehouse_head', 'staff'],
+    roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
+    departments: ['PROD', 'PLANT', 'PPC', 'QC', 'MAINT', 'MOLD'],
     children: [
-      { label: 'Bill of Materials',   href: '/production/boms',                 permission: 'production.bom.view' },
-      { label: 'Delivery Schedules',  href: '/production/delivery-schedules',   permission: 'production.delivery-schedule.view' },
-      { label: 'Work Orders',         href: '/production/orders',               permission: 'production.orders.view' },
-      { label: 'Cost Analysis',      href: '/production/cost-analysis',        permission: 'production.orders.view' },
-    ],
-  },
-  {
-    label: 'QC / QA',
-    icon: ClipboardCheck,
-    permission: 'qc.inspections.view',
-    roles: ['plant_manager', 'qc_manager', 'head'],
-    children: [
+      // ── Production ──────────────────────────────────────────────────────────
+      { divider: true, label: 'Production' },
+      { label: 'Work Orders', href: '/production/orders', permission: 'production.orders.view' },
+      { label: 'Bill of Materials', href: '/production/boms', permission: 'production.bom.view' },
+      { label: 'Delivery Schedules', href: '/production/delivery-schedules', permission: 'production.delivery-schedule.view' },
+      // ── Quality Control ─────────────────────────────────────────────────────
+      { divider: true, label: 'Quality Control' },
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
-      { label: 'NCR',         href: '/qc/ncrs',        permission: 'qc.ncr.view' },
-      { label: 'CAPA',        href: '/qc/capa',        permission: 'qc.ncr.view' },
-      { label: 'Templates',   href: '/qc/templates',   permission: 'qc.templates.view' },
-      { label: 'Defect Rate', href: '/qc/defect-rate', permission: 'qc.inspections.view' },
-    ],
-  },
-  {
-    label: 'Maintenance',
-    icon: Wrench,
-    permission: 'maintenance.view',
-    children: [
-      { label: 'Equipment',   href: '/maintenance/equipment',    permission: 'maintenance.view' },
-      { label: 'Work Orders', href: '/maintenance/work-orders',  permission: 'maintenance.view' },
-    ],
-  },
-  {
-    label: 'Mold',
-    icon: Settings,
-    permission: 'mold.view',
-    children: [
+      { label: 'NCRs', href: '/qc/ncrs', permission: 'qc.ncr.view' },
+      // ── Maintenance ─────────────────────────────────────────────────────────
+      { divider: true, label: 'Maintenance' },
+      { label: 'Equipment', href: '/maintenance/equipment', permission: 'maintenance.view' },
+      { label: 'Work Orders', href: '/maintenance/work-orders', permission: 'maintenance.view' },
+      // ── Mold ────────────────────────────────────────────────────────────────
+      { divider: true, label: 'Mold' },
       { label: 'Mold Masters', href: '/mold/masters', permission: 'mold.view' },
+      // ── ISO / IATF ──────────────────────────────────────────────────────────
+      { divider: true, label: 'ISO / IATF' },
+      { label: 'Document Register', href: '/iso/documents', permission: 'iso.view' },
+      { label: 'Audit Records', href: '/iso/audits', permission: 'iso.view' },
     ],
   },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 5: CRM & DELIVERY
+  // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'Delivery',
+    label: 'CRM & Delivery',
     icon: Truck,
-    permission: 'delivery.view',
+    permission: 'customers.view',
+    roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
+    departments: ['SALES', 'WH', 'PROD', 'PLANT'],
     children: [
-      { label: 'Receipts',  href: '/delivery/receipts',  permission: 'delivery.view' },
+      { divider: true, label: 'CRM' },
+      { label: 'Client Orders', href: '/sales/client-orders', permission: 'sales.order_review' },
+      { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
+      { divider: true, label: 'Delivery' },
+      { label: 'Delivery Receipts', href: '/delivery/receipts', permission: 'delivery.view' },
       { label: 'Shipments', href: '/delivery/shipments', permission: 'delivery.view' },
     ],
   },
-  {
-    label: 'ISO / IATF',
-    icon: ShieldCheck,
-    permission: 'iso.view',
-    children: [
-      { label: 'Documents', href: '/iso/documents', permission: 'iso.view' },
-      { label: 'Audits',    href: '/iso/audits',    permission: 'iso.view' },
-    ],
-  },
-  {
-    label: 'CRM',
-    icon: Users,
-    permission: 'crm.tickets.view',
-    roles: ['crm_manager'],
-    children: [
-      { label: 'CRM Dashboard',   href: '/crm/dashboard', permission: 'crm.tickets.view' },
-      { label: 'Support Tickets', href: '/crm/tickets',    permission: 'crm.tickets.view' },
-    ],
-  },
-  {
-    label: 'VP Approvals',
-    icon: ClipboardList,
-    permission: 'loans.vp_approve',
-    roles: ['vice_president'],
-    children: [
-      { label: 'Pending Approvals',        href: '/approvals/pending',                     permission: 'loans.vp_approve' },
-      { label: 'Purchase Requests',        href: '/procurement/purchase-requests',          permission: 'procurement.purchase-request.view' },
-      { label: 'Material Requisitions',    href: '/inventory/requisitions',                permission: 'inventory.mrq.view' },
-      { label: 'Loans',                    href: '/approvals/loans',                       permission: 'loans.vp_approve' },
-    ],
-  },
+  // Note: Executive users have a separate default dashboard at /approvals/pending
+  // defined in EXECUTIVE_SECTION below - not mixed with operational modules
 ]
 
+// ═════════════════════════════════════════════════════════════════════════════
+// EXECUTIVE DASHBOARD SECTION - Default landing for VP/Executive users
+// ═════════════════════════════════════════════════════════════════════════════
+const EXECUTIVE_SECTION: NavSection = {
+  label: 'Executive',
+  icon: LayoutDashboard,
+  permission: undefined,
+  roles: ['vice_president', 'executive', 'super_admin'],
+  departments: ['ALL'],
+  children: [
+    // ── Approvals ────────────────────────────────────────────────────────────
+    { divider: true, label: 'Approvals' },
+    { label: 'Pending Approvals', href: '/approvals/pending', permission: 'procurement.purchase-request.view', activePaths: ['/procurement/purchase-requests', '/hr/loans', '/inventory/requisitions', '/payroll/runs'] },
+    // ── Financial Reports (exec read-only view) ───────────────────────────────
+    { divider: true, label: 'Reports' },
+    { label: 'Trial Balance', href: '/accounting/trial-balance', permission: 'reports.financial_statements' },
+    { label: 'AP Aging', href: '/accounting/ap/aging-report', permission: 'reports.ap_aging' },
+    { label: 'AR Aging', href: '/ar/aging-report', permission: 'reports.ar_aging' },
+    { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
+  ],
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ADMINISTRATION SECTION - System Configuration
+// ═════════════════════════════════════════════════════════════════════════════
 const ADMIN_SECTION: NavSection = {
   label: 'Administration',
   icon: Shield,
   permission: 'system.manage_users',
+  roles: ['admin', 'super_admin', 'executive', 'vice_president'],
+  departments: ['IT', 'EXEC'],
   children: [
     { label: 'Users', href: '/admin/users', permission: 'system.manage_users' },
     { label: 'System Settings', href: '/admin/settings', permission: 'system.edit_settings' },
     { label: 'Reference Tables', href: '/admin/reference-tables', permission: 'system.edit_settings' },
-    { label: 'Fiscal Periods', href: '/accounting/fiscal-periods', permission: 'fiscal_periods.view' },
     { label: 'Audit Logs', href: '/admin/audit-logs', permission: 'system.view_audit_log' },
-    { label: 'Backup & Restore', href: '/admin/backup', permission: 'system.manage_backups' },
+    { label: 'Backup', href: '/admin/backup', permission: 'system.manage_backups' },
   ],
 }
 
@@ -362,18 +337,31 @@ const compactLinkStyle = ({ isActive }: { isActive: boolean }) =>
     : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
   }`
 
-function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; hasPermission: (p: string) => boolean; hasRole: (r: string) => boolean }) {
+function SectionNav({ section, hasPermission, hasRole, userDept }: { section: NavSection; hasPermission: (p: string) => boolean; hasRole: (r: string) => boolean; userDept: string | null }) {
   const { pathname } = useLocation()
   const Icon = section.icon
   const isInitialMount = useRef(true)
 
-  const visibleChildren = section.children.filter(
+  const withPermission = section.children.filter(
     (c) => c.divider || !c.permission || hasPermission(c.permission),
   )
+  // Remove dividers that have no visible link items before the next divider (orphaned headers)
+  const visibleChildren = withPermission.filter((child, index) => {
+    if (!child.divider) return true
+    for (let i = index + 1; i < withPermission.length; i++) {
+      if (!withPermission[i].divider) return true
+      break
+    }
+    return false
+  })
 
   const isCurrentSection = visibleChildren
     .filter((c) => !c.divider)
-    .some((c) => pathname === c.href || pathname.startsWith(c.href! + '/'))
+    .some((c) =>
+      pathname === c.href ||
+      pathname.startsWith(c.href! + '/') ||
+      (c.activePaths ?? []).some((p) => pathname === p || pathname.startsWith(p + '/')),
+    )
   const [open, setOpen] = useState(isCurrentSection)
 
   // Auto-collapse when navigating away from this section (but not on initial mount)
@@ -387,18 +375,39 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
     }
   }, [isCurrentSection])
 
+  // Permission check
   if (section.permission && !hasPermission(section.permission)) return null
+  
+  // Role check
   if (section.roles && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
+  
+  // Department check (SoD enforcement) - FAIL CLOSED
+  // super_admin and admin bypass all dept checks; executive/vice_president are restricted to their own dept
+  if (section.departments && !hasRole('super_admin') && !hasRole('admin')) {
+    // Allow if explicitly ALL departments
+    if (section.departments[0] === 'ALL') {
+      // Continue to show
+    }
+    // Hide if no user department (fail closed for security)
+    else if (!userDept) {
+      return null
+    }
+    // Hide if user's department not in allowed list
+    else if (!section.departments.includes(userDept)) {
+      return null
+    }
+  }
+
   if (visibleChildren.length === 0) return null
 
   return (
     <div className="mb-0.5">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between px-2.5 py-1.5 text-sm rounded transition-colors border-l-2 ${
-          isCurrentSection 
-            ? 'bg-neutral-50 text-neutral-900 font-medium border-neutral-300' 
-            : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 border-transparent'
+        className={`w-full flex items-center justify-between px-2.5 py-1.5 text-sm rounded transition-colors ${
+          isCurrentSection
+            ? 'bg-neutral-100 text-neutral-900 font-medium'
+            : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50'
         }`}
       >
         <span className="flex items-center gap-3">
@@ -431,7 +440,7 @@ function SectionNav({ section, hasPermission, hasRole }: { section: NavSection; 
 }
 
 // Compact section nav for collapsed sidebar
-function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSection; hasPermission: (p: string) => boolean; hasRole: (r: string) => boolean }) {
+function CompactSectionNav({ section, hasPermission, hasRole, userDept }: { section: NavSection; hasPermission: (p: string) => boolean; hasRole: (r: string) => boolean; userDept: string | null }) {
   const { pathname } = useLocation()
   const Icon = section.icon
   const [open, setOpen] = useState(false)
@@ -449,15 +458,46 @@ function CompactSectionNav({ section, hasPermission, hasRole }: { section: NavSe
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  // Permission check
   if (section.permission && !hasPermission(section.permission)) return null
+  
+  // Role check
   if (section.roles && !hasRole('super_admin') && !section.roles.some((r) => hasRole(r))) return null
+  
+  // Department check (SoD enforcement) - FAIL CLOSED
+  if (section.departments && !hasRole('super_admin') && !hasRole('admin')) {
+    // Allow if explicitly ALL departments
+    if (section.departments[0] === 'ALL') {
+      // Continue to show
+    }
+    // Hide if no user department (fail closed for security)
+    else if (!userDept) {
+      return null
+    }
+    // Hide if user's department not in allowed list
+    else if (!section.departments.includes(userDept)) {
+      return null
+    }
+  }
 
-  const visibleChildren = section.children.filter(
+  const withPermission2 = section.children.filter(
     (c) => c.divider || !c.permission || hasPermission(c.permission),
   )
+  const visibleChildren = withPermission2.filter((child, index) => {
+    if (!child.divider) return true
+    for (let i = index + 1; i < withPermission2.length; i++) {
+      if (!withPermission2[i].divider) return true
+      break
+    }
+    return false
+  })
 
   const linkChildren = visibleChildren.filter((c) => !c.divider)
-  const isCurrentSection = linkChildren.some((c) => pathname === c.href || pathname.startsWith(c.href! + '/'))
+  const isCurrentSection = linkChildren.some((c) =>
+    pathname === c.href ||
+    pathname.startsWith(c.href! + '/') ||
+    (c.activePaths ?? []).some((p) => pathname === p || pathname.startsWith(p + '/')),
+  )
 
   if (linkChildren.length === 0) return null
 
@@ -595,6 +635,10 @@ export default function AppLayout() {
   const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
   const { clearAuth, hasPermission, hasRole } = useAuthStore()
+  
+  // Get user's primary department code for SoD filtering
+  const userDept = user?.primary_department_code ?? null
+  
   const queryClient = useQueryClient()
 
   // Sidebar collapse state - persist in localStorage
@@ -688,19 +732,30 @@ export default function AppLayout() {
               
               <div className="my-3 border-t border-neutral-200" />
               
+              {/* Executive Dashboard for VP/Executive users */}
+              {(hasRole('vice_president') || hasRole('executive')) && (
+                <CompactSectionNav 
+                  section={EXECUTIVE_SECTION} 
+                  hasPermission={hasPermission} 
+                  hasRole={hasRole} 
+                  userDept={userDept} 
+                />
+              )}
+              
               {SECTIONS.map((section) => (
                 <CompactSectionNav
                   key={section.label}
                   section={section}
                   hasPermission={hasPermission}
                   hasRole={hasRole}
+                  userDept={userDept}
                 />
               ))}
 
               {(hasPermission('system.manage_users') || hasPermission('system.edit_settings') || hasPermission('system.view_audit_log')) && (
                 <>
                   <div className="my-3 border-t border-neutral-200" />
-                  <CompactSectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} />
+                  <CompactSectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} userDept={userDept} />
                 </>
               )}
             </>
@@ -714,11 +769,23 @@ export default function AppLayout() {
                 </NavLink>
               ))}
 
-              <div className="pt-4 pb-2 flex items-center gap-2">
-                <div className="h-px flex-1 bg-neutral-200" />
-                <p className="px-2 text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Modules</p>
-                <div className="h-px flex-1 bg-neutral-200" />
-              </div>
+              {/* Executive Dashboard - Primary for VP/Executive users */}
+              {(hasRole('vice_president') || hasRole('executive')) && (
+                <SectionNav 
+                  section={EXECUTIVE_SECTION} 
+                  hasPermission={hasPermission} 
+                  hasRole={hasRole} 
+                  userDept={userDept} 
+                />
+              )}
+
+              {!hasRole('vice_president') && !hasRole('executive') && (
+                <div className="pt-4 pb-2 flex items-center gap-2">
+                  <div className="h-px flex-1 bg-neutral-200" />
+                  <p className="px-2 text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Modules</p>
+                  <div className="h-px flex-1 bg-neutral-200" />
+                </div>
+              )}
 
               {SECTIONS.map((section) => (
                 <SectionNav
@@ -726,6 +793,7 @@ export default function AppLayout() {
                   section={section}
                   hasPermission={hasPermission}
                   hasRole={hasRole}
+                  userDept={userDept}
                 />
               ))}
 
@@ -736,7 +804,7 @@ export default function AppLayout() {
                     <p className="px-2 text-[11px] font-medium text-neutral-400 uppercase tracking-wider">Administration</p>
                     <div className="h-px flex-1 bg-neutral-200" />
                   </div>
-                  <SectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} />
+                  <SectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} userDept={userDept} />
                 </>
               )}
             </>
@@ -782,6 +850,7 @@ export default function AppLayout() {
                         section={section}
                         hasPermission={hasPermission}
                         hasRole={hasRole}
+                        userDept={userDept}
                       />
                     ))}
 
@@ -790,7 +859,7 @@ export default function AppLayout() {
                         <div className="pt-4 pb-2">
                           <p className="px-3 text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Administration</p>
                         </div>
-                        <SectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} />
+                        <SectionNav section={ADMIN_SECTION} hasPermission={hasPermission} hasRole={hasRole} userDept={userDept} />
                       </>
                     )}
                   </nav>

@@ -1,25 +1,18 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Settings, Pencil, PowerOff, Power, Plus } from 'lucide-react';
+import { Settings, Pencil, PowerOff, Power, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useEquipmentDetail, useUpdateEquipment, useStorePmSchedule } from '@/hooks/useMaintenance';
+import { useEquipmentDetail, useUpdateEquipment, useStorePmSchedule, useDeleteEquipment } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
+import { firstErrorMessage } from '@/lib/errorHandler';
 import type { EquipmentStatus } from '@/types/maintenance';
-
-interface ConfirmState {
-  open: boolean;
-  title: string;
-  description: string;
-  confirmLabel: string;
-  variant: 'danger' | 'warning';
-  onConfirm: () => void;
-}
 
 const _STATUS_LABEL: Record<string, string> = {
   operational: 'Operational',
@@ -29,6 +22,15 @@ const _STATUS_LABEL: Record<string, string> = {
 
 const INPUT = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 bg-white';
 
+interface ValidationErrors {
+  name?: string;
+  category?: string;
+  manufacturer?: string;
+  model_number?: string;
+  serial_number?: string;
+  location?: string;
+}
+
 export default function EquipmentDetailPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>();
   const navigate = useNavigate();
@@ -36,16 +38,14 @@ export default function EquipmentDetailPage(): React.ReactElement {
   const { data, isLoading, isError } = useEquipmentDetail(ulid ?? '');
   const updateMut = useUpdateEquipment(ulid ?? '');
   const storePmMut = useStorePmSchedule(ulid ?? '');
+  const deleteMut = useDeleteEquipment();
 
   const canManage = hasPermission('maintenance.manage');
 
   const [isEditing, setIsEditing] = useState(false);
   const [showAddPm, setShowAddPm] = useState(false);
   const [pmForm, setPmForm] = useState({ task_name: '', frequency_days: '', last_done_on: '' });
-  const [confirm, setConfirm] = useState<ConfirmState>({
-    open: false, title: '', description: '', confirmLabel: 'Confirm', variant: 'danger', onConfirm: () => {},
-  });
-  const closeConfirm = () => setConfirm(s => ({ ...s, open: false }));
+  const [editErrors, setEditErrors] = useState<ValidationErrors>({});
 
   const [form, setForm] = useState({
     name: '',
@@ -73,6 +73,19 @@ export default function EquipmentDetailPage(): React.ReactElement {
 
   const eq = data.data;
 
+  const validateEditForm = (): boolean => {
+    const errors: ValidationErrors = {};
+    if (!form.name.trim()) errors.name = 'Name is required.';
+    else if (form.name.trim().length < 2) errors.name = 'Name must be at least 2 characters.';
+    if (form.category && form.category.length > 100) errors.category = 'Category must be less than 100 characters.';
+    if (form.manufacturer && form.manufacturer.length > 100) errors.manufacturer = 'Manufacturer must be less than 100 characters.';
+    if (form.model_number && form.model_number.length > 100) errors.model_number = 'Model number must be less than 100 characters.';
+    if (form.serial_number && form.serial_number.length > 100) errors.serial_number = 'Serial number must be less than 100 characters.';
+    if (form.location && form.location.length > 200) errors.location = 'Location must be less than 200 characters.';
+    setEditErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const startEdit = () => {
     setForm({
       name: eq.name,
@@ -84,12 +97,16 @@ export default function EquipmentDetailPage(): React.ReactElement {
       commissioned_on: eq.commissioned_on ?? '',
       status: eq.status,
     });
+    setEditErrors({});
     setIsEditing(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { toast.error('Name is required.'); return; }
+    if (!validateEditForm()) {
+      toast.error('Please fix the errors before saving.');
+      return;
+    }
     try {
       await updateMut.mutateAsync({
         name: form.name,
@@ -101,70 +118,83 @@ export default function EquipmentDetailPage(): React.ReactElement {
         commissioned_on: form.commissioned_on || undefined,
         status: form.status,
       });
-      toast.success('Equipment updated.');
       setIsEditing(false);
-    } catch {
-      toast.error('Failed to update equipment.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
     }
   };
 
-  const handleDecommission = () => {
-    setConfirm({
-      open: true,
-      title: 'Decommission equipment?',
-      description: 'This marks the equipment as permanently retired. All action buttons will be locked.',
-      confirmLabel: 'Decommission',
-      variant: 'danger',
-      onConfirm: async () => {
-        try {
-          await updateMut.mutateAsync({ status: 'decommissioned', is_active: false });
-          toast.success('Equipment decommissioned.');
-        } catch {
-          toast.error('Failed to decommission equipment.');
-        }
-      },
-    });
+  const handleDecommission = async () => {
+    try {
+      await updateMut.mutateAsync({ status: 'decommissioned', is_active: false });
+      toast.success('Equipment decommissioned.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
+    }
   };
 
-  const handleToggleActive = () => {
+  const handleToggleActive = async () => {
     const isActive = eq.is_active;
-    setConfirm({
-      open: true,
-      title: isActive ? 'Deactivate this equipment?' : 'Activate this equipment?',
-      description: isActive
-        ? 'The equipment will be hidden from active lists until reactivated.'
-        : 'The equipment will be made active and visible in all lists.',
-      confirmLabel: isActive ? 'Deactivate' : 'Activate',
-      variant: isActive ? 'danger' : 'warning',
-      onConfirm: async () => {
-        try {
-          await updateMut.mutateAsync({ is_active: !isActive });
-          toast.success(`Equipment ${isActive ? 'deactivated' : 'activated'}.`);
-        } catch {
-          toast.error('Failed to update equipment.');
-        }
-      },
-    });
+    try {
+      await updateMut.mutateAsync({ is_active: !isActive });
+      toast.success(`Equipment ${isActive ? 'deactivated' : 'activated'}.`);
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
+    }
   };
 
-  const set = (k: keyof typeof form, v: string) => setForm(prev => ({ ...prev, [k]: v }));
+  const handleDelete = async () => {
+    try {
+      await deleteMut.mutateAsync(ulid ?? '');
+      navigate('/maintenance/equipment');
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
+    }
+  };
+
+  const set = (k: keyof typeof form, v: string) => {
+    setForm(prev => ({ ...prev, [k]: v }));
+    // Clear error when user starts typing
+    if (editErrors[k as keyof ValidationErrors]) {
+      setEditErrors(prev => ({ ...prev, [k]: undefined }));
+    }
+  };
+
+  const validatePmForm = (): boolean => {
+    if (!pmForm.task_name.trim()) {
+      toast.error('Task name is required.');
+      return false;
+    }
+    if (pmForm.task_name.trim().length < 2) {
+      toast.error('Task name must be at least 2 characters.');
+      return false;
+    }
+    const freqDays = parseInt(pmForm.frequency_days, 10);
+    if (!freqDays || freqDays < 1) {
+      toast.error('Frequency must be at least 1 day.');
+      return false;
+    }
+    if (freqDays > 3650) {
+      toast.error('Frequency cannot exceed 3650 days (10 years).');
+      return false;
+    }
+    return true;
+  };
 
   const handleAddPm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pmForm.task_name.trim()) { toast.error('Task name is required.'); return; }
+    if (!validatePmForm()) return;
     const freqDays = parseInt(pmForm.frequency_days, 10);
-    if (!freqDays || freqDays < 1) { toast.error('Frequency must be at least 1 day.'); return; }
     try {
       await storePmMut.mutateAsync({
         task_name: pmForm.task_name.trim(),
         frequency_days: freqDays,
         ...(pmForm.last_done_on ? { last_done_on: pmForm.last_done_on } : {}),
       });
-      toast.success('PM schedule added.');
       setPmForm({ task_name: '', frequency_days: '', last_done_on: '' });
       setShowAddPm(false);
-    } catch {
-      toast.error('Failed to add PM schedule.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
     }
   };
 
@@ -203,27 +233,59 @@ export default function EquipmentDetailPage(): React.ReactElement {
                 </button>
               )}
               {!isDecommissioned && (
-                <button
-                  type="button"
-                  onClick={handleToggleActive}
-                  disabled={updateMut.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                <ConfirmDialog
+                  title={eq.is_active ? 'Deactivate this equipment?' : 'Activate this equipment?'}
+                  description={eq.is_active
+                    ? 'The equipment will be hidden from active lists until reactivated.'
+                    : 'The equipment will be made active and visible in all lists.'}
+                  confirmLabel={eq.is_active ? 'Deactivate' : 'Activate'}
+                  variant={eq.is_active ? 'danger' : 'default'}
+                  onConfirm={handleToggleActive}
                 >
-                  {eq.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
-                  {eq.is_active ? 'Deactivate' : 'Activate'}
-                </button>
+                  <button
+                    type="button"
+                    disabled={updateMut.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {eq.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                    {eq.is_active ? 'Deactivate' : 'Activate'}
+                  </button>
+                </ConfirmDialog>
               )}
               {!isDecommissioned && (
+                <ConfirmDestructiveDialog
+                  title="Decommission equipment?"
+                  description="This marks the equipment as permanently retired. All action buttons will be locked."
+                  confirmWord="DECOMMISSION"
+                  confirmLabel="Decommission"
+                  onConfirm={handleDecommission}
+                >
+                  <button
+                    type="button"
+                    disabled={updateMut.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-red-600 border border-red-300 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <PowerOff className="w-3.5 h-3.5" />
+                    Decommission
+                  </button>
+                </ConfirmDestructiveDialog>
+              )}
+              <ConfirmDestructiveDialog
+                title="Delete equipment?"
+                description="This action cannot be undone. All associated PM schedules and work order history will be permanently removed."
+                confirmWord="DELETE"
+                confirmLabel="Delete"
+                onConfirm={handleDelete}
+              >
                 <button
                   type="button"
-                  onClick={handleDecommission}
-                  disabled={updateMut.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-red-600 border border-red-300 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={deleteMut.isPending}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-red-600 text-white border border-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <PowerOff className="w-3.5 h-3.5" />
-                  Decommission
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
                 </button>
-              )}
+              </ConfirmDestructiveDialog>
             </div>
           )
         }
@@ -251,12 +313,24 @@ export default function EquipmentDetailPage(): React.ReactElement {
         <form onSubmit={handleSave} className="bg-white border border-neutral-200 rounded p-6 mb-5 space-y-5">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Name *</label>
-            <input type="text" className={INPUT} value={form.name} onChange={e => set('name', e.target.value)} required />
+            <input
+              type="text"
+              className={`${INPUT} ${editErrors.name ? 'border-red-400' : ''}`}
+              value={form.name}
+              onChange={e => set('name', e.target.value)}
+            />
+            {editErrors.name && <p className="mt-1 text-xs text-red-600">{editErrors.name}</p>}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Category</label>
-              <input type="text" className={INPUT} value={form.category} onChange={e => set('category', e.target.value)} />
+              <input
+                type="text"
+                className={`${INPUT} ${editErrors.category ? 'border-red-400' : ''}`}
+                value={form.category}
+                onChange={e => set('category', e.target.value)}
+              />
+              {editErrors.category && <p className="mt-1 text-xs text-red-600">{editErrors.category}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Status</label>
@@ -270,21 +344,45 @@ export default function EquipmentDetailPage(): React.ReactElement {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Manufacturer</label>
-              <input type="text" className={INPUT} value={form.manufacturer} onChange={e => set('manufacturer', e.target.value)} />
+              <input
+                type="text"
+                className={`${INPUT} ${editErrors.manufacturer ? 'border-red-400' : ''}`}
+                value={form.manufacturer}
+                onChange={e => set('manufacturer', e.target.value)}
+              />
+              {editErrors.manufacturer && <p className="mt-1 text-xs text-red-600">{editErrors.manufacturer}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Model No.</label>
-              <input type="text" className={INPUT} value={form.model_number} onChange={e => set('model_number', e.target.value)} />
+              <input
+                type="text"
+                className={`${INPUT} ${editErrors.model_number ? 'border-red-400' : ''}`}
+                value={form.model_number}
+                onChange={e => set('model_number', e.target.value)}
+              />
+              {editErrors.model_number && <p className="mt-1 text-xs text-red-600">{editErrors.model_number}</p>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Serial No.</label>
-              <input type="text" className={INPUT} value={form.serial_number} onChange={e => set('serial_number', e.target.value)} />
+              <input
+                type="text"
+                className={`${INPUT} ${editErrors.serial_number ? 'border-red-400' : ''}`}
+                value={form.serial_number}
+                onChange={e => set('serial_number', e.target.value)}
+              />
+              {editErrors.serial_number && <p className="mt-1 text-xs text-red-600">{editErrors.serial_number}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Location</label>
-              <input type="text" className={INPUT} value={form.location} onChange={e => set('location', e.target.value)} />
+              <input
+                type="text"
+                className={`${INPUT} ${editErrors.location ? 'border-red-400' : ''}`}
+                value={form.location}
+                onChange={e => set('location', e.target.value)}
+              />
+              {editErrors.location && <p className="mt-1 text-xs text-red-600">{editErrors.location}</p>}
             </div>
           </div>
           <div>
@@ -348,6 +446,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
                   <input
                     type="number"
                     min={1}
+                    max={3650}
                     className={INPUT}
                     value={pmForm.frequency_days}
                     onChange={e => setPmForm(s => ({ ...s, frequency_days: e.target.value }))}
@@ -425,17 +524,6 @@ export default function EquipmentDetailPage(): React.ReactElement {
           </button>
         </p>
       )}
-
-      <ConfirmDialog
-        open={confirm.open}
-        onClose={closeConfirm}
-        onConfirm={confirm.onConfirm}
-        title={confirm.title}
-        description={confirm.description}
-        confirmLabel={confirm.confirmLabel}
-        variant={confirm.variant}
-        loading={updateMut.isPending}
-      />
     </div>
   );
 }

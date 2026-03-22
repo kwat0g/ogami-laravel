@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { Package } from 'lucide-react'
 import { useFixedAsset, useDisposeAsset } from '@/hooks/useFixedAssets'
 import { useAuthStore } from '@/stores/authStore'
@@ -39,8 +40,8 @@ export default function FixedAssetDetailPage(): React.ReactElement {
       })
       toast.success('Asset disposed.')
       setShowDispose(false)
-    } catch {
-      toast.error('Disposal failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Disposal failed.'))
     }
   }
 
@@ -64,18 +65,18 @@ export default function FixedAssetDetailPage(): React.ReactElement {
 
       {/* Value Summary Cards */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Acquisition Cost</p>
-          <p className="text-xl font-bold text-emerald-700 font-mono mt-1">{fmt(asset.acquisition_cost_centavos)}</p>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4">
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Acquisition Cost</p>
+          <p className="text-xl font-bold text-neutral-900 font-mono mt-1">{fmt(asset.acquisition_cost_centavos)}</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Current Book Value</p>
-          <p className="text-xl font-bold text-blue-700 font-mono mt-1">{fmt(asset.book_value_centavos)}</p>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4">
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Current Book Value</p>
+          <p className="text-xl font-bold text-neutral-900 font-mono mt-1">{fmt(asset.book_value_centavos)}</p>
         </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">Accumulated Depreciation</p>
-          <p className="text-xl font-bold text-amber-700 font-mono mt-1">{fmt(accumulatedDepreciation)}</p>
-          <p className="text-xs text-amber-600 mt-1">{depreciationPercent}% depreciated</p>
+        <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Accumulated Depreciation</p>
+          <p className="text-xl font-bold text-neutral-700 font-mono mt-1">{fmt(accumulatedDepreciation)}</p>
+          <p className="text-xs text-neutral-400 mt-1">{depreciationPercent}% depreciated</p>
         </div>
       </div>
 

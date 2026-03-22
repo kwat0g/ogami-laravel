@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { ClipboardList, Download } from 'lucide-react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import {
   useAttendanceSummary,
   downloadDtr,
@@ -42,8 +43,8 @@ export default function AttendanceSummaryPage(): React.ReactElement {
     try {
       await downloadDtr(row.employee_id, from, to)
       toast.success(`DTR downloaded for ${row.employee_name}`)
-    } catch {
-      toast.error('DTR download failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'DTR download failed.'))
     }
   }
 

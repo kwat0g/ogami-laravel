@@ -6,6 +6,8 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ChevronDown, ChevronRight, Search, X, Info, Calendar, Plus, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
@@ -51,6 +53,7 @@ export default function LeaveBalancesPage() {
   })
   const [employeeSearch, setEmployeeSearch] = useState('')
   const debouncedEmployeeSearch = useDebounce(employeeSearch, 500)
+  const [showConfirmGrant, setShowConfirmGrant] = useState(false)
   
   const { data: employeesData } = useEmployees(
     debouncedEmployeeSearch.length >= 3
@@ -62,7 +65,7 @@ export default function LeaveBalancesPage() {
   // Fetch the selected employee's balances so we can show which special
   // leave types have already been granted and disable them in the dropdown.
   const selectedEmployeeIdNum = Number(grantForm.employee_id) || null
-  const { data: selectedEmpBalances } = useLeaveBalances(
+  const { data: selectedEmpBalances, refetch: refetchSelectedBalances } = useLeaveBalances(
     selectedEmployeeIdNum
       ? { employee_id: selectedEmployeeIdNum, year, per_page: 50 }
       : {},
@@ -97,7 +100,7 @@ export default function LeaveBalancesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmployeeIdNum, selectedEmpBalances])
 
-  const { data, isLoading, isFetching, isError } = useLeaveBalances({
+  const { data, isLoading, isFetching, isError, refetch } = useLeaveBalances({
     year,
     department_id: departmentId,
     search: debouncedSearch || undefined,
@@ -131,6 +134,76 @@ export default function LeaveBalancesPage() {
       }
       return next
     })
+  }
+
+  const handleGrantLeave = async () => {
+    const selectedEmployee = employeesData?.data.find(e => e.id === Number(grantForm.employee_id))
+    if (!selectedEmployee) {
+      toast.error('Please select an employee')
+      return
+    }
+
+    // Find the leave type ID
+    const leaveType = data?.leave_types.find(t => t.code === grantForm.leave_type)
+    if (!leaveType) {
+      toast.error('Leave type not found')
+      return
+    }
+
+    // Guard: prevent double-granting
+    const existingGrant = selectedEmpBalanceMap[grantForm.leave_type]
+    if (existingGrant?.granted) {
+      toast.error(`${grantForm.leave_type} has already been granted to this employee (${existingGrant.opening} days opening balance)`)
+      return
+    }
+
+    try {
+      await createBalanceMutation.mutateAsync({
+        employee_id: Number(grantForm.employee_id),
+        leave_type_id: leaveType.id,
+        year: year,
+        opening_balance: grantForm.days,
+        accrued: 0,
+        adjusted: 0,
+        used: 0,
+      })
+      toast.success(`Granted ${grantForm.days} days ${grantForm.leave_type} to ${selectedEmployee.full_name}`)
+      setShowGrantModal(false)
+      setShowConfirmGrant(false)
+      setGrantForm({ employee_id: '', leave_type: 'SPL', days: 7 })
+      setEmployeeSearch('')
+      refetch()
+      refetchSelectedBalances()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to grant leave: ${message}`)
+    }
+  }
+
+  const openConfirmGrant = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const selectedEmployee = employeesData?.data.find(e => e.id === Number(grantForm.employee_id))
+    if (!selectedEmployee) {
+      toast.error('Please select an employee')
+      return
+    }
+
+    // Find the leave type ID
+    const leaveType = data?.leave_types.find(t => t.code === grantForm.leave_type)
+    if (!leaveType) {
+      toast.error('Leave type not found')
+      return
+    }
+
+    // Guard: prevent double-granting
+    const existingGrant = selectedEmpBalanceMap[grantForm.leave_type]
+    if (existingGrant?.granted) {
+      toast.error(`${grantForm.leave_type} has already been granted to this employee`)
+      return
+    }
+
+    setShowConfirmGrant(true)
   }
 
   // Only show full skeleton on initial load, not when refetching
@@ -477,71 +550,7 @@ export default function LeaveBalancesPage() {
               </p>
             </div>
             <form 
-              onSubmit={async (e) => {
-                e.preventDefault()
-                
-                const selectedEmployee = employeesData?.data.find(e => e.id === Number(grantForm.employee_id))
-                if (!selectedEmployee) {
-                  toast.error('Please select an employee')
-                  return
-                }
-
-                // Find the leave type ID
-                const leaveType = data?.leave_types.find(t => t.code === grantForm.leave_type)
-                if (!leaveType) {
-                  toast.error('Leave type not found')
-                  return
-                }
-
-                // Guard: prevent double-granting (in case select was somehow not disabled)
-                const existingGrant = selectedEmpBalanceMap[grantForm.leave_type]
-                if (existingGrant?.granted) {
-                  toast.error(`${grantForm.leave_type} has already been granted to this employee (${existingGrant.opening} days opening balance)`)
-                  return
-                }
-
-                // Eligibility confirmations per leave type
-                if (grantForm.leave_type === 'ML') {
-                  const confirmed = window.confirm(
-                    'Maternity Leave (RA 11210) is for female employees who are pregnant or have recently given birth/miscarried.\n\n' +
-                    'Please confirm this employee has submitted the required medical certificate before proceeding.'
-                  )
-                  if (!confirmed) return
-                }
-                if (grantForm.leave_type === 'PL') {
-                  const confirmed = window.confirm(
-                    'Paternity Leave (RA 8187) is for married male employees on the birth or miscarriage of a legitimate child.\n\n' +
-                    'Please confirm this employee is eligible (married, maximum 4 deliveries) before proceeding.'
-                  )
-                  if (!confirmed) return
-                }
-                if (grantForm.leave_type === 'VAWCL') {
-                  const confirmed = window.confirm(
-                    'VAWC Leave (RA 9262) is specifically for women and children victims of violence.\n\n' +
-                    'Please confirm this employee is eligible before proceeding.'
-                  )
-                  if (!confirmed) return
-                }
-
-                try {
-                  await createBalanceMutation.mutateAsync({
-                    employee_id: Number(grantForm.employee_id),
-                    leave_type_id: leaveType.id,
-                    year: year,
-                    opening_balance: grantForm.days,
-                    accrued: 0,
-                    adjusted: 0,
-                    used: 0,
-                  })
-                  toast.success(`Granted ${grantForm.days} days ${grantForm.leave_type} to ${selectedEmployee.full_name}`)
-                  setShowGrantModal(false)
-                  setGrantForm({ employee_id: '', leave_type: 'SPL', days: 7 })
-                  setEmployeeSearch('')
-                } catch (err: unknown) {
-                  const error = err as { response?: { data?: { message?: string } } }
-                  toast.error(error.response?.data?.message || 'Failed to grant leave')
-                }
-              }}
+              onSubmit={openConfirmGrant}
               className="p-6 space-y-4"
             >
               {/* Employee Search */}
@@ -695,6 +704,7 @@ export default function LeaveBalancesPage() {
                     setShowGrantModal(false)
                     setGrantForm({ employee_id: '', leave_type: 'SPL', days: 7 })
                     setEmployeeSearch('')
+                    setShowConfirmGrant(false)
                   }}
                   className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 text-sm font-medium"
                 >
@@ -717,6 +727,34 @@ export default function LeaveBalancesPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog for Granting Leave */}
+      <ConfirmDialog
+        title={`Grant ${grantForm.leave_type}?`}
+        description={(() => {
+          const selectedEmployee = employeesData?.data.find(e => e.id === Number(grantForm.employee_id))
+          const typeLabel = SPECIAL_LEAVE_TYPES.find(t => t.code === grantForm.leave_type)?.label ?? grantForm.leave_type
+          let eligibilityText = ''
+          
+          if (grantForm.leave_type === 'ML') {
+            eligibilityText = 'Maternity Leave (RA 11210) is for female employees who are pregnant or have recently given birth/miscarried. Please confirm this employee has submitted the required medical certificate.'
+          } else if (grantForm.leave_type === 'PL') {
+            eligibilityText = 'Paternity Leave (RA 8187) is for married male employees on the birth or miscarriage of a legitimate child. Please confirm this employee is eligible (married, maximum 4 deliveries).'
+          } else if (grantForm.leave_type === 'VAWCL') {
+            eligibilityText = 'VAWC Leave (RA 9262) is specifically for women and children victims of violence. Please confirm this employee is eligible.'
+          } else if (grantForm.leave_type === 'SPL') {
+            eligibilityText = 'Solo Parent Leave (RA 8972) is for solo parents (single mothers/fathers, widowed, legally separated, etc.).'
+          }
+          
+          return `Grant ${grantForm.days} days of ${typeLabel} to ${selectedEmployee?.full_name ?? 'selected employee'}? ${eligibilityText}`
+        })()}
+        confirmLabel="Confirm Grant"
+        open={showConfirmGrant}
+        onClose={() => setShowConfirmGrant(false)}
+        onConfirm={handleGrantLeave}
+      >
+        <div />
+      </ConfirmDialog>
     </div>
   )
 }

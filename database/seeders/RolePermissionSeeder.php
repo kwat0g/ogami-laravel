@@ -9,35 +9,45 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 /**
- * Role & Permission seeder — implements ogami_role_permission_matrix.md v2.0
- *
- * ## Role hierarchy (11 roles)
- *   admin               — system custodian, zero business data access
- *   executive           — Chairman/President, read-only board observers
- *   vice_president      — VP, final approver of all financial requests (SOD-011–014)
- *   manager             — HR Manager only: full HR, payroll, employee management
- *   plant_manager       — Plant Manager only: oversees ALL plant operations (Production, QC, Maintenance, Mold, Delivery, ISO)
- *   production_manager  — Production Manager: supervises production activities only
- *   qc_manager          — QC/QA Manager: manages quality control and assurance only
- *   mold_manager        — Mold Manager: oversees mold department only
- *   officer             — Accounting Officer: full financial management (GL/AP/AR/Payroll/Banking)
- *   ga_officer          — GA Officer: HR admin support (HR, attendance, leave) — NO financials
- *   purchasing_officer  — Purchasing Officer: procurement + ordering management — NO financials
- *   impex_officer       — ImpEx Officer: delivery/shipments + import-export — NO financials
- *   head                — All Department Heads, Step 2 approver (renamed from supervisor)
- *   staff               — Rank-and-file, creates and submits requests
- *   super_admin         — Testing superuser: ALL permissions, bypasses Gate + SoD + dept-scope
- *
+ * Role & Permission seeder — RBAC v2.0
+ * 
+ * ## Simplified Role Hierarchy (7 core roles + 2 portal roles)
+ * 
+ * Permissions are determined by: Role + Department Module
+ * 
+ * ### Core Roles:
+ *   super_admin         — System god mode: ALL permissions, bypasses all checks
+ *   admin               — System custodian: users, settings, no business data
+ *   executive           — Chairman/President: read-only board oversight
+ *   vice_president      — VP: final approver for financial requests
+ *   manager             — Full department module access (HR/Accounting/Production/etc)
+ *   officer             — Department operations (create, process, but not final approve)
+ *   head                — Team supervisor: first-level approvals
+ *   staff               — Rank-and-file: self-service, create requests
+ * 
+ * ### Portal Roles:
+ *   vendor              — Vendor portal: view POs, update fulfillment
+ *   client              — Client portal: view tickets, create support requests
+ * 
+ * ### Department Modules (determine effective permissions):
+ *   hr          → employees.*, attendance.*, payroll.*, leaves.*, loans.*
+ *   accounting  → journal_entries.*, ap.*, ar.*, banking.*, reports.*
+ *   production  → production.*, qc.*, maintenance.*, mold.*, inventory.view
+ *   sales       → crm.*, customers.view
+ *   warehouse   → inventory.*, mrq.*, delivery.view
+ *   purchasing  → procurement.*, vendors.view
+ *   operations  → limited access (IT, Executive, ISO)
+ * 
  * ## SoD rules encoded in permissions (enforced in Policies):
- *   SOD-001 → employees.activate
- *   SOD-002 → leaves.approve
- *   SOD-003 → overtime.approve
- *   SOD-004 → loans.hr_approve
- *   SOD-005/006 → payroll.hr_approve
- *   SOD-007 → payroll.acctg_approve
- *   SOD-008 → journal_entries.post
- *   SOD-009 → vendor_invoices.approve
- *   SOD-010 → customer_invoices.approve
+ *   SOD-001 → employees.activate (creator ≠ activator)
+ *   SOD-002 → leaves.approve (supervisor ≠ requester)
+ *   SOD-003 → overtime.approve (supervisor ≠ requester)
+ *   SOD-004 → loans.hr_approve (HR ≠ requester)
+ *   SOD-005/006 → payroll.hr_approve (HR prepares, Accounting approves)
+ *   SOD-007 → payroll.acctg_approve (Accounting ≠ HR who prepared)
+ *   SOD-008 → journal_entries.post (creator ≠ poster)
+ *   SOD-009 → vendor_invoices.approve (creator ≠ approver)
+ *   SOD-010 → customer_invoices.approve (creator ≠ approver)
  *   SOD-011 → loans.head_note (head ≠ requester)
  *   SOD-012 → loans.manager_check (manager ≠ head)
  *   SOD-013 → loans.officer_review (officer ≠ manager)
@@ -129,6 +139,7 @@ class RolePermissionSeeder extends Seeder
         // Procurement
         'procurement.purchase-request.view',
         'procurement.purchase-request.create',
+        'procurement.purchase-request.create-dept',  // For department heads creating PRs for their own dept
         'procurement.purchase-request.note',
         'procurement.purchase-request.check',
         'procurement.purchase-request.review',
@@ -151,6 +162,12 @@ class RolePermissionSeeder extends Seeder
         'crm.tickets.manage',
         'crm.tickets.assign',
         'crm.tickets.close',
+        // CRM Client Orders (Sales)
+        'sales.order_review',
+        'sales.order_approve',
+        'sales.order_reject',
+        'sales.order_negotiate',
+        'sales.order_vp_approve',
         // Inventory / Warehouse
         'inventory.items.view',
         'inventory.items.create',
@@ -218,8 +235,8 @@ class RolePermissionSeeder extends Seeder
         // 'payroll.review_breakdown', // REMOVED: SoD conflict
         // 'payroll.flag_employee',  // REMOVED: SoD conflict
         // 'payroll.submit_for_hr',  // REMOVED: SoD conflict
-        // 'payroll.hr_approve',     // REMOVED: SoD conflict - HR Manager only
-        // 'payroll.hr_return',      // REMOVED: SoD conflict
+        'payroll.hr_approve',        // SoD-005/006: HR prepares, Accounting approves
+        'payroll.hr_return',
         'payroll.acctg_approve',
         'payroll.acctg_reject',
         'payroll.disburse',
@@ -342,24 +359,21 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($name, self::GUARD);
         }
 
+        // ── RBAC v2: 7 Core Roles + 2 Portal Roles ──────────────────────────
         $admin         = Role::findOrCreate('admin',          self::GUARD);
         $superAdmin    = Role::findOrCreate('super_admin',    self::GUARD);
         $executive     = Role::findOrCreate('executive',      self::GUARD);
         $vicePresident = Role::findOrCreate('vice_president', self::GUARD);
         $manager       = Role::findOrCreate('manager',        self::GUARD);
-        $plantManager       = Role::findOrCreate('plant_manager',       self::GUARD);
-        $productionManager  = Role::findOrCreate('production_manager',  self::GUARD);
-        $qcManager          = Role::findOrCreate('qc_manager',          self::GUARD);
-        $moldManager        = Role::findOrCreate('mold_manager',        self::GUARD);
-        $officer            = Role::findOrCreate('officer',             self::GUARD);
-        $gaOfficer          = Role::findOrCreate('ga_officer',           self::GUARD);
-        $purchasingOfficer  = Role::findOrCreate('purchasing_officer',   self::GUARD);
-        $impexOfficer       = Role::findOrCreate('impex_officer',        self::GUARD);
+        $officer       = Role::findOrCreate('officer',        self::GUARD);
         $head          = Role::findOrCreate('head',           self::GUARD);
         $staff         = Role::findOrCreate('staff',          self::GUARD);
         $vendor        = Role::findOrCreate('vendor',         self::GUARD);
         $client        = Role::findOrCreate('client',         self::GUARD);
-        $crmManager    = Role::findOrCreate('crm_manager',    self::GUARD);
+        
+        // Note: Old specific roles (plant_manager, ga_officer, etc.) have been
+        // removed in RBAC v2. Use generic roles + department modules instead.
+        // Run: php artisan rbac:cleanup-old-roles to migrate existing users.
 
         // Note: The rename migration (2026_03_05_000001) already renamed the
         //   old hr_manager → manager, accounting_manager → officer, supervisor → head.
@@ -380,7 +394,7 @@ class RolePermissionSeeder extends Seeder
         $executive->syncPermissions([
             'employees.view',
             'attendance.view_team', 'overtime.view', 'overtime.executive_approve',
-            'leaves.view_own', 'leaves.view_team',
+            'leaves.view_own', 'leaves.view_team', 'leaves.executive_approve',
             'loans.view_own', 'loans.view_department',
             'payroll.view_runs', 'payroll.view_own_payslip', 'payroll.download_own_payslip', 'payroll.view',
             'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
@@ -394,9 +408,58 @@ class RolePermissionSeeder extends Seeder
             // Self-service (executive can file own overtime)
             'overtime.submit',
             'self.view_profile', 'self.view_attendance',
+            // Extended view access
+            'bank_accounts.view', 'bank_reconciliations.view',
+            'procurement.purchase-request.view', 'procurement.purchase-order.view',
+            'inventory.items.view', 'inventory.stock.view',
+            'production.orders.view', 'qc.inspections.view', 'qc.ncr.view',
+            'maintenance.view', 'mold.view',
         ]);
 
-        // ── Manager (HR Manager only) — full HR and Payroll access ──
+        // ── Vice President — final approver with broad access
+        $vicePresident->syncPermissions([
+            // Employee view
+            'employees.view', 'employees.view_team', 'employees.view_full_record',
+            // Approvals
+            'approvals.vp.view', 'approvals.vp.approve',
+            // Payroll VP approval
+            'payroll.view_runs', 'payroll.vp_approve',
+            'payroll.view_own_payslip', 'payroll.download_own_payslip',
+            // Procurement VP approval
+            'procurement.purchase-request.view', 'procurement.purchase-request.review',
+            'procurement.purchase-order.view',
+            // MRQ VP approval
+            'inventory.mrq.view', 'inventory.mrq.vp_approve',
+            // Accounting view
+            'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
+            'vendors.view', 'vendor_invoices.view', 'vendor_invoices.approve',
+            'customers.view', 'customer_invoices.view', 'customer_invoices.approve',
+            'bank_accounts.view', 'bank_reconciliations.view',
+            // AR/AP Aging
+            'reports.ap_aging', 'reports.ar_aging',
+            'reports.financial_statements', 'reports.gl', 'reports.trial_balance',
+            'reports.vat', 'reports.bank_reconciliation',
+            // Budget
+            'budget.view', 'budget.approve',
+            // Fixed Assets
+            'fixed_assets.view',
+            // Loans VP approval
+            'loans.view_department', 'loans.vp_approve',
+            // Production view
+            'production.orders.view', 'production.delivery-schedule.view',
+            // QC view
+            'qc.inspections.view', 'qc.ncr.view',
+            // Sales/Client Orders
+            'sales.order_review', 'sales.order_approve', 'sales.order_reject', 'sales.order_negotiate',
+            'sales.order_vp_approve',
+            // Self-service
+            'self.view_profile', 'self.view_attendance',
+            'leaves.view_own', 'leaves.view_team',
+            'overtime.view',
+        ]);
+
+        // ── Manager — Department Managers (HR Manager, Accounting Manager, etc.)
+        // Full access to their respective department modules
         $manager->syncPermissions([
             // HR Employee
             'employees.view', 'employees.view_team', 'employees.view_full_record', 'employees.view_salary',
@@ -417,32 +480,69 @@ class RolePermissionSeeder extends Seeder
             'leave_balances.view', 'leave_balances.adjust', 'leave_balances.manage',
             // Loans (v1 + v2 Step 2 checker)
             'loans.view_own', 'loans.view_department', 'loans.apply',
-            'loans.hr_approve', 'loans.view_ln007_log', 'loans.configure_types',
-            'loans.manager_check',
+            'loans.hr_approve', 'loans.accounting_approve', 'loans.view_ln007_log', 'loans.configure_types',
+            'loans.manager_check', 'loans.officer_review',
+            // NOTE: loans.vp_approve is EXCLUSIVE to vice_president role (SoD-014)
             // Budget (view-only)
-            'budget.view',
-            // Procurement (Step 2 checker)
+            'budget.view', 'budget.manage', 'budget.approve',
+            // Fixed Assets
+            'fixed_assets.view', 'fixed_assets.manage',
+            // Accounting / GL / AP / AR (for Accounting Manager)
+            'journal_entries.view', 'journal_entries.create', 'journal_entries.update',
+            'journal_entries.submit', 'journal_entries.post', 'journal_entries.reverse',
+            'journal_entries.export',
+            'chart_of_accounts.view', 'chart_of_accounts.manage',
+            'fiscal_periods.view', 'fiscal_periods.manage',
+            // Vendors/AP
+            'vendors.view', 'vendors.manage', 'vendors.archive', 'vendors.accredit', 'vendors.suspend',
+            'vendor_invoices.view', 'vendor_invoices.create', 'vendor_invoices.update',
+            'vendor_invoices.submit', 'vendor_invoices.approve', 'vendor_invoices.reject',
+            'vendor_invoices.record_payment', 'vendor_invoices.cancel', 'vendor_invoices.export',
+            'vendor_payments.view', 'vendor_payments.create',
+            'bir_2307.generate',
+            // Customers/AR
+            'customers.view', 'customers.manage', 'customers.archive',
+            'customer_invoices.view', 'customer_invoices.create', 'customer_invoices.update',
+            'customer_invoices.approve', 'customer_invoices.cancel',
+            'customer_invoices.override_credit', 'customer_invoices.receive_payment',
+            'customer_invoices.write_off', 'customer_invoices.apply_payment', 'customer_invoices.export',
+            // Banking
+            'bank_accounts.view', 'bank_accounts.create', 'bank_accounts.update', 'bank_accounts.delete',
+            'bank_reconciliations.view', 'bank_reconciliations.create', 'bank_reconciliations.certify',
+            // Tax
+            'reports.vat',
+            // Financial Reports
+            'reports.financial_statements', 'reports.gl', 'reports.trial_balance',
+            'reports.ap_aging', 'reports.ar_aging', 'reports.bank_reconciliation',
+            // Procurement (full access for Procurement/Warehouse managers)
             'procurement.purchase-request.view', 'procurement.purchase-request.create',
-            'procurement.purchase-request.check',
-            'procurement.purchase-order.view',
-            'vendors.view',
+            'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            // Production/QC/Maintenance view access
+            'production.bom.view', 'production.delivery-schedule.view', 'production.orders.view',
+            'production.orders.create', 'production.orders.release', 'production.orders.complete', 'production.orders.log_output',
+            'qc.inspections.view', 'qc.inspections.create', 'qc.ncr.view', 'qc.ncr.create', 'qc.ncr.close', 'qc.templates.view',
+            'maintenance.view', 'maintenance.manage',
+            'mold.view', 'mold.manage', 'mold.log_shots',
+            'delivery.view', 'delivery.manage',
+            // Inventory (full access for Warehouse/Procurement managers)
+            'inventory.items.view', 'inventory.items.create', 'inventory.items.edit',
+            'inventory.stock.view', 'inventory.locations.view', 'inventory.locations.manage',
+            'inventory.adjustments.create',
             // Inventory (Step 3 checker for MRQ — view context only; no warehouse operations)
-            'inventory.items.view', 'inventory.locations.view', 'inventory.stock.view',
-            'inventory.mrq.view', 'inventory.mrq.check',
-            // Payroll
+            'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note', 'inventory.mrq.check', 'inventory.mrq.review', 'inventory.mrq.vp_approve', 'inventory.mrq.fulfill',
+            // Payroll (Accounting Manager needs acctg_approve, not hr_approve)
             'payroll.view_own_payslip', 'payroll.download_own_payslip',
             'payroll.view_runs', 'payroll.manage_pay_periods',
             'payroll.initiate',        // Legacy alias for payroll creation
-            // 'payroll.pre_run_validate', // REMOVED: permission not defined
-            // 'payroll.compute',         // REMOVED: permission not defined
-            // 'payroll.review_breakdown', // REMOVED: permission not defined
-            // 'payroll.flag_employee',   // REMOVED: permission not defined
-            // 'payroll.submit_for_hr',   // REMOVED: permission not defined
-            // 'payroll.hr_approve',      // REMOVED: permission not defined
-            // 'payroll.hr_return',       // REMOVED: permission not defined
+            'payroll.hr_approve',      // SoD-005/006: HR reviews payroll before Accounting
+            'payroll.acctg_approve',   // SoD-007: Accounting approves after HR
+            'payroll.acctg_reject',
+            'payroll.hr_return',
             'payroll.disburse', 'payroll.download_bank_file',
             'payroll.publish', 'payroll.view_deduction_trace',
             'payroll.download_register', 'payroll.gov_reports',
+            // NOTE: payroll.vp_approve is EXCLUSIVE to vice_president role (SoD — VP is final approver)
             // BIR & Gov Reports
             'reports.bir_2316', 'reports.bir_alphalist', 'reports.bir_1601c',
             'reports.sss_sbr2', 'reports.philhealth_rf1', 'reports.pagibig_mc',
@@ -458,345 +558,139 @@ class RolePermissionSeeder extends Seeder
             'overtime.create', 'overtime.update',
         ]);
 
-        // ── Plant Manager — ALL plant operations ─────────────────────────────
-        // Responsibility: "Oversees all plant operations and activities."
-        // Oversees Production, QC, Maintenance, Mold, Delivery, ISO teams.
-        $plantManager->syncPermissions([
-            // Production / PPC (full control)
-            'production.bom.view', 'production.bom.manage',
-            'production.delivery-schedule.view', 'production.delivery-schedule.manage',
-            'production.orders.view', 'production.orders.create',
-            'production.orders.release', 'production.orders.complete', 'production.orders.log_output',
-            'production.qc-override',
-            // QC / QA (full)
-            'qc.templates.view', 'qc.templates.manage',
-            'qc.inspections.view', 'qc.inspections.create',
-            'qc.ncr.view', 'qc.ncr.create', 'qc.ncr.close',
-            // Maintenance (full)
-            'maintenance.view', 'maintenance.manage',
-            // Mold (full)
-            'mold.view', 'mold.manage', 'mold.log_shots',
-            // Delivery / Logistics (full)
-            'delivery.view', 'delivery.manage',
-            // ISO / IATF (full)
-            'iso.view', 'iso.manage', 'iso.audit',
-            // Inventory — view stock for plant operations visibility + create MRQs
-            'inventory.items.view',
-            'inventory.stock.view',
-            'inventory.locations.view',
-            'inventory.mrq.view',
-            'inventory.mrq.create',
-            // Self-service only
-            'attendance.view_own',
-            'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.cancel',
-            'leaves.manager_check',
-            'loans.view_own', 'loans.apply',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-        ]);
-
-        // ── Production Manager — supervises production activities only ──────────
-        // Responsibility: "Supervises overall production activities."
-        $productionManager->syncPermissions([
-            // Production / PPC (full control)
-            'production.bom.view', 'production.bom.manage',
-            'production.delivery-schedule.view', 'production.delivery-schedule.manage',
-            'production.orders.view', 'production.orders.create',
-            'production.orders.release', 'production.orders.complete', 'production.orders.log_output',
-            // Inventory — view only (need to know material availability)
-            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view', 'inventory.mrq.view',
-            // Self-service
-            'attendance.view_own',
-            'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'loans.view_own', 'loans.apply',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-        ]);
-
-        // ── QC/QA Manager — quality control and assurance only ──────────────────
-        // Responsibility: "Manages quality control and quality assurance operations."
-        $qcManager->syncPermissions([
-            // QC / QA (full)
-            'qc.templates.view', 'qc.templates.manage',
-            'qc.inspections.view', 'qc.inspections.create',
-            'qc.ncr.view', 'qc.ncr.create', 'qc.ncr.close',
-            'production.qc-override',
-            // Inventory — view only (items & stock for QC context)
-            'inventory.items.view', 'inventory.stock.view',
-            // Self-service
-            'attendance.view_own',
-            'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'loans.view_own', 'loans.apply',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-        ]);
-
-        // ── Mold Manager — mold department only ─────────────────────────────────
-        // Responsibility: "Oversees the mold department and related operations."
-        $moldManager->syncPermissions([
-            // Mold (full)
-            'mold.view', 'mold.manage', 'mold.log_shots',
-            // Inventory — view only
-            'inventory.items.view', 'inventory.stock.view',
-            // Self-service
-            'attendance.view_own',
-            'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'loans.view_own', 'loans.apply',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-        ]);
-
-        // ── Officer (Accounting Officer) — Financial management only ────────────
-        // Responsibility: "Manages all accounting and financial operations of the company."
+        // ── Officer (Accounting/Finance) ─────────────────────────────────────
         $officer->syncPermissions([
-            // GL & Journal Entries
+            // Accounting - full CRUD
             'journal_entries.view', 'journal_entries.create', 'journal_entries.update',
-            'journal_entries.submit', 'journal_entries.post', 'journal_entries.reverse', 'journal_entries.export',
+            'journal_entries.submit', 'journal_entries.post', 'journal_entries.reverse',
+            'journal_entries.export',
             'chart_of_accounts.view', 'chart_of_accounts.manage',
             'fiscal_periods.view', 'fiscal_periods.manage',
-            // AP
-            'vendors.view', // Can view but cannot create/manage (SoD: purchasing_officer creates)
-            'vendor_invoices.view', 'vendor_invoices.create', 'vendor_invoices.update',
-            'vendor_invoices.submit', 'vendor_invoices.approve', 'vendor_invoices.reject',
-            'vendor_invoices.record_payment', 'vendor_invoices.cancel', 'vendor_invoices.export',
-            'vendor_payments.view', 'vendor_payments.create', 'bir_2307.generate',
-            // AR
-            'customers.view', // Can view but cannot create/manage (SoD: purchasing_officer creates)
-            'customer_invoices.view', 'customer_invoices.create', 'customer_invoices.update',
-            'customer_invoices.approve', 'customer_invoices.cancel', 'customer_invoices.override_credit',
-            'customer_invoices.receive_payment', 'customer_invoices.write_off',
-            'customer_invoices.apply_payment', 'customer_invoices.export',
+            // Vendors/AP
+            'vendors.view', 'vendors.manage', 'vendors.archive', 'vendors.accredit', 'vendors.suspend',
+            'vendor_invoices.view', 'vendor_invoices.create', 'vendor_invoices.update', 'vendor_invoices.approve',
+            'vendor_invoices.submit', 'vendor_invoices.reject', 'vendor_invoices.cancel',
+            'vendor_invoices.record_payment', 'vendor_invoices.export',
+            'vendor_payments.view', 'vendor_payments.create',
+            'bir_2307.generate',
+            // Customers/AR - full access including credit notes
+            'customers.view', 'customers.manage', 'customers.archive',
+            'customer_invoices.view', 'customer_invoices.create', 'customer_invoices.update', 'customer_invoices.approve',
+            'customer_invoices.cancel', 'customer_invoices.override_credit', 'customer_invoices.receive_payment',
+            'customer_invoices.write_off', 'customer_invoices.apply_payment', 'customer_invoices.export',
             // Banking
-            'bank_accounts.view', 'bank_accounts.create', 'bank_accounts.update', 'bank_accounts.delete',            'bank_reconciliations.view', 'bank_reconciliations.create', 'bank_reconciliations.certify',
-            // Financial Reports
-            'reports.financial_statements', 'reports.gl', 'reports.trial_balance',
-            'reports.ap_aging', 'reports.ar_aging', 'reports.vat', 'reports.bank_reconciliation',
-            // Payroll (approve + disburse + publish)
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            'payroll.view_runs', 'payroll.manage_pay_periods',
-            // 'payroll.review_breakdown', // REMOVED: permission not defined
-            'payroll.acctg_approve', 'payroll.acctg_reject',
-            'payroll.disburse', 'payroll.download_bank_file', 'payroll.publish', 'payroll.post',
-            'payroll.download_register', 'payroll.gov_reports',
-            // Loans (v1 accounting approval + v2 Step 3 reviewer)
-            'loans.view_own', 'loans.view_department', 'loans.accounting_approve',
-            'loans.officer_review',
-            // Budget (full management)
-            'budget.view', 'budget.manage',
-            // Procurement (Step 3 reviewer + budget check + PO management)
-            'procurement.purchase-request.view', 'procurement.purchase-request.review',
-            'procurement.purchase-request.budget-check',
-            'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
-            'procurement.goods-receipt.view',
-            // Inventory (Step 4 reviewer for MRQ + stock management)
-            'inventory.items.view', 'inventory.items.create', 'inventory.items.edit',
-            'inventory.locations.view', 'inventory.locations.manage',
-            'inventory.stock.view', 'inventory.adjustments.create',
-            'inventory.mrq.view', 'inventory.mrq.review',
-            // Fixed Assets (full management)
-            'fixed_assets.view', 'fixed_assets.manage',
-            // Self-service
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            // Basic employee/team view
-            'employees.view', 'employees.view_full_record',
-            'attendance.view_own',
-            'leaves.view_own',
-            'overtime.view', 'overtime.submit',
-        ]);
-
-        // ── GA Officer — General Affairs / HR Administrative Support ──────────
-        // Responsibility: "Supports HR and administrative operations of the company."
-        $gaOfficer->syncPermissions([
-            // HR — team visibility for admin support
-            'employees.view', 'employees.view_team', 'employees.view_full_record',
-            'employees.upload_documents', 'employees.download_documents',
-            // Attendance management
-            'attendance.view_own', 'attendance.view_team', 'attendance.import_csv',
-            'attendance.view_anomalies', 'attendance.resolve_anomalies', 'attendance.manage_shifts',
-            // Overtime
-            'overtime.view', 'overtime.submit', 'overtime.supervise',
-            // Leave
-            'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.file_on_behalf',
-            'leaves.cancel', 'leaves.ga_process',
-            'leave_balances.view',
-            // Loans (own only)
-            'loans.view_own', 'loans.apply',
-            // Self-service
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-        ]);
-
-        // ── Purchasing Officer — Procurement and Materials Ordering ───────────
-        // Responsibility: "Responsible for ordering all materials required by the company."
-        $purchasingOfficer->syncPermissions([
-            // Procurement (full cycle)
-            'procurement.purchase-request.view', 'procurement.purchase-request.create',
-            'procurement.purchase-request.review',
-            'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
-            'procurement.goods-receipt.view', // Can view but NOT create/confirm (SoD: Warehouse creates)
-            // Vendors (manage + accredit + suspend + archive)
-            'vendors.view', 'vendors.manage', 'vendors.accredit', 'vendors.suspend', 'vendors.archive',
-            // Customers (manage - for AR master data setup)
-            'customers.view', 'customers.manage',
-            // Inventory (view for sourcing context)
-            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
-            'inventory.mrq.view', 'inventory.mrq.review',
-            // Delivery (view — inbound receipts)
-            'delivery.view',
-            // Loans (own only — PO does not review loans)
-            'loans.view_own', 'loans.apply',
-            // Employee view
-            'employees.view',
-            // Self-service
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            'attendance.view_own', 'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-        ]);
-
-        // ── ImpEx Officer — Import / Export and Delivery Management ──────────
-        // Responsibility: "Manages import/export shipments and delivery documentation."
-        $impexOfficer->syncPermissions([
-            // Delivery (full — primary responsibility)
-            'delivery.view', 'delivery.manage',
-            // Procurement (view for shipment context)
-            'procurement.purchase-request.view',
-            'procurement.purchase-order.view',
-            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
-            // Vendors (view only)
-            'vendors.view',
-            // Inventory (view for shipment context)
-            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
-            // Loans (own only — per company flow, ImpEx Officer is not a loan reviewer)
-            'loans.view_own', 'loans.apply',
-            // Employee view
-            'employees.view',
-            // Self-service
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            'attendance.view_own', 'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-        ]);
-
-        // ── Head (renamed from Supervisor) — dept heads, Step 2 approver ───
-        // Base permissions common to ALL Department Heads
-        $baseHeadPermissions = [
-            // HR / Team Management
-            'employees.view', 'employees.view_team', 'employees.view_full_record',
-            'employees.view_unmasked_gov_ids', 'employees.view_masked_gov_ids',
-            'employees.create', 'employees.upload_documents', 'employees.download_documents',
-            // Attendance
-            'attendance.view_own', 'attendance.view_team', 'attendance.import_csv',
-            'attendance.view_anomalies', 'attendance.resolve_anomalies', 'attendance.manage_shifts',
-            'overtime.view', 'overtime.submit', 'overtime.supervise',
-            // Leave
-            'leaves.view_own', 'leaves.view_team', 'leaves.file_own',
-            'leaves.file_on_behalf', 'leaves.cancel', 'leaves.head_approve',
-            // Loans
-            'loans.view_own', 'loans.apply', 'loans.supervisor_review', 'loans.head_note',
-            // Payroll (Own)
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            // Self Service
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            // Legacy / Compat
-            'payslips.view', 'payslips.download', 'leaves.view', 'leaves.create',
-            'leave_balances.view', 'loans.view', 'attendance.view', 'attendance.create',
-            'attendance.update', 'attendance.export', 'overtime.create', 'overtime.update',
-            // Basic Procurement (View/Note for approvals)
-            'procurement.purchase-request.view', 'procurement.purchase-request.note',
-            // Finance View (Context)
-            'vendors.view', 'vendor_invoices.view', 'vendor_invoices.export', 'vendor_payments.view',
-            'customers.view', 'customer_invoices.view', 'customer_invoices.export',
-            'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
-            'reports.gl', 'reports.ap_aging', 'fixed_assets.view',
-            // Common Inventory (View/Note MRQ for approvals)
-            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
-            'inventory.mrq.view', 'inventory.mrq.note',
-        ];
-
-        // Generic Head Role (Legacy/Catch-all) — keeps full access for backward compatibility
-        $head->syncPermissions(array_merge($baseHeadPermissions, [
-            // Extra Procurement
-            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
-            // Extra Inventory
-            'inventory.mrq.create', 'inventory.mrq.fulfill',
-            // Production
-            'production.bom.view', 'production.delivery-schedule.view',
-            'production.orders.view', 'production.orders.log_output',
-            // QC
-            'qc.templates.view', 'qc.inspections.view', 'qc.inspections.create', 'qc.ncr.view',
-            // Maintenance
-            'maintenance.view', 'maintenance.manage',
-            // Mold
-            'mold.view', 'mold.manage', 'mold.log_shots',
-            // Delivery
-            'delivery.view',
-            // ISO
-            'iso.view', 'iso.audit',
-        ]));
-
-        // ── Warehouse Head — Focused Inventory & Delivery role ────────────────
-        $warehouseHead = Role::findOrCreate('warehouse_head', self::GUARD);
-        $warehouseHead->syncPermissions(array_merge($baseHeadPermissions, [
-            // Inventory Management (Full)
-            'inventory.items.create', 'inventory.items.edit',
-            'inventory.mrq.create', // Can create requests but NOT fulfill (SoD: Inventory Staff fulfills)
-            // Procurement (Goods Receipt is critical for WH)
-            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
-            'procurement.purchase-order.view',
-            // Delivery & Schedules
-            'production.delivery-schedule.manage',
-            'delivery.view', 'delivery.manage',
-        ]));
-
-        // ── PPC Head — Production Planning & Control ──────────────────────────
-        $ppcHead = Role::findOrCreate('ppc_head', self::GUARD);
-        $ppcHead->syncPermissions(array_merge($baseHeadPermissions, [
-            // Production Planning
-            'production.bom.view',
-            'production.delivery-schedule.view', 'production.delivery-schedule.manage',
-            'production.orders.view', 'production.orders.create', 'production.orders.release',
-            // Inventory visibility (but not management)
-            'inventory.mrq.create', // PPC creates MRQs for production materials
-        ]));
-
-        // ── Vice President — final financial approver, cross-department visibility
-        $vicePresident->syncPermissions([
-            // Final approval across all financial modules
-            'approvals.vp.view', 'approvals.vp.approve',
-            // Loans v2 final approval
-            'loans.vp_approve',
-            // Budget (approve only)
-            'budget.view', 'budget.approve',
-            // Payroll VP approval
-            'payroll.vp_approve',
-            // Procurement VP approval
-            'procurement.purchase-request.view',
-            'procurement.purchase-order.view',
-            'procurement.goods-receipt.view',
-            // Inventory VP approval for MRQ + read-only
-            'inventory.items.view', 'inventory.stock.view',
-            'inventory.mrq.view', 'inventory.mrq.vp_approve',
-            // Production / PPC (VP: view-only)
-            'production.bom.view', 'production.delivery-schedule.view', 'production.orders.view',
-            // Read-only across all modules (context for approvals)
-            'employees.view',
-            'loans.view_own', 'loans.view_department',
+            'bank_accounts.view', 'bank_accounts.create', 'bank_accounts.update', 'bank_accounts.delete',
+            'bank_reconciliations.view', 'bank_reconciliations.create', 'bank_reconciliations.certify',
+            // Payroll view (for dashboard)
             'payroll.view_runs', 'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            'reports.financial_statements', 'reports.trial_balance', 'reports.gl',
-            'reports.ap_aging', 'reports.ar_aging',
-            'journal_entries.view', 'chart_of_accounts.view', 'fiscal_periods.view',
-            'vendors.view', 'vendor_invoices.view', 'customers.view', 'customer_invoices.view',
-            // Fixed Assets (view-only)
+            // Loans view
+            'loans.view_department',
+            // Budget view
+            'budget.view',
+            // PR Budget verification (Accounting Officer commits funds)
+            'procurement.purchase-request.budget-check',
+            // Fixed Assets view
             'fixed_assets.view',
+            // Tax
+            'reports.vat',
+            // BIR Reports
+            'reports.bir_2316', 'reports.bir_alphalist', 'reports.bir_1601c',
+            'reports.sss_sbr2', 'reports.philhealth_rf1', 'reports.pagibig_mc',
+            // Reports
+            'reports.financial_statements', 'reports.gl', 'reports.trial_balance',
+            'reports.ap_aging', 'reports.ar_aging', 'reports.bank_reconciliation',
+            // Self-service
+            'self.view_profile', 'self.view_attendance',
+            'overtime.view', 'overtime.submit',
+            // HR view (for cross-reference)
+            'employees.view',
+            // Legacy aliases
+            'payroll.view', 'loans.view',
+            // ═══════════════════════════════════════════════════════════════════════
+            // TEAM MANAGEMENT (for officers in ALL departments)
+            // ═══════════════════════════════════════════════════════════════════════
+            'employees.view_team', 'employees.view_full_record', 'employees.view_masked_gov_ids',
+            'employees.upload_documents', 'employees.download_documents',
+            'attendance.view_team', 'attendance.view_anomalies', 'attendance.manage_shifts',
+            'overtime.view', 'overtime.submit', 'overtime.supervise', 'overtime.approve', 'overtime.reject',
+            'leaves.view_team', 'leaves.file_on_behalf', 'leaves.approve', 'leaves.reject',
+            'loans.view_department',
+            // ═══════════════════════════════════════════════════════════════════════
+            // PURCHASING OFFICER permissions (same role, PURCH department)
+            // ═══════════════════════════════════════════════════════════════════════
+            // Inventory view (to see items when creating PRs)
+            'inventory.items.view', 'inventory.items.create', 'inventory.items.edit',
+            'inventory.stock.view', 'inventory.locations.view',
+            'inventory.mrq.view', 'inventory.mrq.create',
+            'inventory.adjustments.create',
+            // Procurement full access (Purchasing Officer does technical review)
+            'procurement.purchase-request.view', 'procurement.purchase-request.create',
+            'procurement.purchase-request.review',  // Technical review of PRs
+            'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            // Production view (for PPC officers)
+            'production.bom.view', 'production.delivery-schedule.view', 'production.orders.view',
+            // Vendors (Purchasing Officers can create/manage vendors)
+            'vendors.view', 'vendors.manage', 'vendors.archive', 'vendors.accredit', 'vendors.suspend',
+            'vendor_invoices.view',
+        ]);
+
+        // ── Head (Department Supervisor) ─────────────────────────────────────
+        $head->syncPermissions([
+            // Team view (full team management for supervisors)
+            'employees.view', 'employees.view_team', 'employees.view_full_record', 'employees.view_masked_gov_ids',
+            'employees.upload_documents', 'employees.download_documents',
+            // Attendance - view team and endorse OT
+            'attendance.view_team', 'attendance.view_anomalies', 'attendance.manage_shifts',
+            'overtime.view', 'overtime.submit', 'overtime.supervise', 'overtime.approve', 'overtime.reject',
+            // Leave - first-level approval
+            'leaves.view_team', 'leaves.file_on_behalf', 'leaves.head_approve', 'leaves.approve', 'leaves.reject',
+            // Loans - head note
+            'loans.view_department', 'loans.head_note', 'loans.apply',
+            // Payroll - view only
+            'payroll.view_runs',
+            // Inventory (for Warehouse Head, Production Head)
+            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
+            'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note',
+            'inventory.adjustments.create',
+            // Procurement (for Purchasing Head, Production Head)
+            'procurement.purchase-request.view', 'procurement.purchase-request.create',
+            'procurement.purchase-request.create-dept',  // Dept heads create for own dept only
+            'procurement.purchase-order.view', 'procurement.goods-receipt.view',
+            // Production (for Production Head, Plant Head)
+            'production.bom.view', 'production.delivery-schedule.view', 'production.orders.view',
+            'production.orders.create', 'production.orders.release',
+            // QC (for QC Head, Production Head)
+            'qc.templates.view', 'qc.inspections.view', 'qc.inspections.create',
+            'qc.ncr.view', 'qc.ncr.create',
+            // Maintenance (for Maintenance Head, Plant Head)
+            'maintenance.view', 'maintenance.manage',
+            // Mold (for Production Head)
+            'mold.view', 'mold.manage', 'mold.log_shots',
+            // Delivery (for Warehouse Head)
+            'delivery.view', 'delivery.manage',
+            // ISO (for QC Head)
+            'iso.view', 'iso.audit',
+            // CRM (for Sales Head)
+            'crm.tickets.view', 'crm.tickets.create', 'crm.tickets.reply', 'crm.tickets.manage',
+            // Sales/Client Orders — head can review only; approve/reject/negotiate is Sales Manager/VP scope
+            'sales.order_review',
+            // Fixed Assets (view)
+            'fixed_assets.view',
+            // Budget (view)
+            'budget.view',
+            // Accounting view (for cross-reference)
+            'journal_entries.view', 'chart_of_accounts.view',
+            'vendors.view', 'customers.view',
             // Self-service
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.cancel', 'leaves.vp_note',
-            'attendance.view_own', 'overtime.view', 'overtime.submit',
+            'leaves.view_own', 'leaves.file_own',
+            'loans.view_own', 'loans.apply',
+            'overtime.view', 'overtime.submit',
+            'payroll.view_own_payslip', 'payroll.download_own_payslip',
+            'employees.view_masked_gov_ids',
+            // Legacy aliases
+            'attendance.view', 'leaves.view', 'loans.view', 'payroll.view',
         ]);
 
         // ── Staff ────────────────────────────────────────────────────────────
@@ -809,12 +703,20 @@ class RolePermissionSeeder extends Seeder
             'attendance.view_own',
             'overtime.view', 'overtime.submit',
             // Inventory (Staff creates MRQ + view for sidebar navigation)
-            'inventory.items.view', 'inventory.stock.view',
+            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
             'inventory.mrq.view', 'inventory.mrq.create',
             // Production (Staff: log output)
-            'production.orders.view', 'production.orders.log_output',
+            'production.bom.view', 'production.orders.view', 'production.orders.log_output',
+            'production.delivery-schedule.view',
+            // QC (Staff: incoming/in-process inspection)
+            'qc.inspections.view', 'qc.inspections.create',
+            'qc.ncr.view', 'qc.ncr.create',
+            // Maintenance (Staff: view equipment, create corrective WO)
+            'maintenance.view',
             // Mold (Staff: view for navigation + log shots)
             'mold.view', 'mold.log_shots',
+            // Delivery (Staff: view for warehouse staff)
+            'delivery.view',
             // Legacy
             'payslips.view', 'payslips.download', 'leaves.view', 'leaves.create',
             'leave_balances.view', 'loans.view', 'attendance.view',
@@ -838,17 +740,6 @@ class RolePermissionSeeder extends Seeder
             'crm.tickets.reply',
         ]);
 
-        // ── CRM Manager — manages support tickets, assigns agents, closes tickets ──
-        $crmManager->syncPermissions([
-            'crm.tickets.view', 'crm.tickets.create', 'crm.tickets.reply',
-            'crm.tickets.manage', 'crm.tickets.assign', 'crm.tickets.close',
-            // Self-service
-            'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            'attendance.view_own', 'overtime.view', 'overtime.submit',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'loans.view_own', 'loans.apply',
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-        ]);
 
         // ── Bootstrap admin user (only system account; no employee record needed) ──
         $adminUser = \App\Models\User::firstOrCreate(

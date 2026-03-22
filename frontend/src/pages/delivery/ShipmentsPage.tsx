@@ -3,6 +3,9 @@ import { Package, AlertTriangle, Plus, ChevronDown, ChevronUp } from 'lucide-rea
 import { useShipments, useCreateShipment, useUpdateShipmentStatus, useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { toast } from 'sonner';
+import { firstErrorMessage } from '@/lib/errorHandler';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import type { ShipmentStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<ShipmentStatus, string> = {
@@ -44,6 +47,11 @@ export default function ShipmentsPage() {
     estimated_arrival: '',
     notes: '',
   });
+  const [confirmStatusUpdate, setConfirmStatusUpdate] = useState<{
+    open: boolean;
+    ulid: string | null;
+    nextStatus: ShipmentStatus | null;
+  }>({ open: false, ulid: null, nextStatus: null });
 
   const params: Record<string, string> = {};
   if (status) params.status = status;
@@ -55,8 +63,22 @@ export default function ShipmentsPage() {
   const updateStatusMut = useUpdateShipmentStatus();
   const canManage = useAuthStore(s => s.hasPermission('delivery.manage'));
 
+  // Validation for create form
+  const createFormErrors = () => {
+    const errors: string[] = [];
+    if (!deliveryReceiptId) errors.push('Delivery receipt is required');
+    if (!createForm.shipped_at) errors.push('Shipped date is required');
+    if (!createForm.carrier.trim()) errors.push('Carrier is required');
+    return errors;
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = createFormErrors();
+    if (errors.length > 0) {
+      errors.forEach(err => toast.error(err));
+      return;
+    }
     try {
       await createMut.mutateAsync({
         delivery_receipt_id: deliveryReceiptId ?? undefined,
@@ -66,29 +88,39 @@ export default function ShipmentsPage() {
         estimated_arrival: createForm.estimated_arrival || undefined,
         notes: createForm.notes || undefined,
       });
-      import('sonner').then(({ toast }) => toast.success('Shipment created.'));
+      toast.success('Shipment created.');
       setCreateForm({ carrier: '', tracking_number: '', shipped_at: '', estimated_arrival: '', notes: '' });
       setDeliveryReceiptId(null);
       setShowCreate(false);
-    } catch {
-      import('sonner').then(({ toast }) => toast.error('Failed to create shipment.'));
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
     }
   };
 
-  const handleStatusUpdate = async (ulid: string, nextStatus: ShipmentStatus) => {
+  const initiateStatusUpdate = (ulid: string, nextStatus: ShipmentStatus) => {
+    if (nextStatus === 'delivered' && !actualArrival) {
+      toast.error('Please enter the actual arrival date');
+      return;
+    }
+    setConfirmStatusUpdate({ open: true, ulid, nextStatus });
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!confirmStatusUpdate.ulid || !confirmStatusUpdate.nextStatus) return;
     try {
       await updateStatusMut.mutateAsync({
-        ulid,
+        ulid: confirmStatusUpdate.ulid,
         payload: {
-          status: nextStatus,
-          ...(nextStatus === 'delivered' && actualArrival ? { actual_arrival: actualArrival } : {}),
+          status: confirmStatusUpdate.nextStatus,
+          ...(confirmStatusUpdate.nextStatus === 'delivered' && actualArrival ? { actual_arrival: actualArrival } : {}),
         },
       });
-      import('sonner').then(({ toast }) => toast.success('Status updated.'));
+      toast.success('Status updated.');
       setExpandedUlid(null);
       setActualArrival('');
-    } catch {
-      import('sonner').then(({ toast }) => toast.error('Failed to update status.'));
+      setConfirmStatusUpdate({ open: false, ulid: null, nextStatus: null });
+    } catch (err) {
+      toast.error(firstErrorMessage(err));
     }
   };
 
@@ -111,13 +143,14 @@ export default function ShipmentsPage() {
       {showCreate && (
         <form onSubmit={handleCreate} className="bg-white border border-neutral-200 rounded p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Delivery Receipt</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Delivery Receipt *</label>
             <select
               className={INPUT}
               value={deliveryReceiptId ?? ''}
               onChange={e => setDeliveryReceiptId(e.target.value ? Number(e.target.value) : null)}
+              required
             >
-              <option value="">— None —</option>
+              <option value="">— Select Receipt —</option>
               {confirmedDrs.map(dr => (
                 <option key={dr.id} value={dr.id}>
                   {dr.dr_reference} — {dr.customer?.name ?? dr.vendor?.name ?? dr.direction}
@@ -127,8 +160,8 @@ export default function ShipmentsPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Carrier</label>
-              <input type="text" className={INPUT} value={createForm.carrier} onChange={e => setCreateForm(s => ({ ...s, carrier: e.target.value }))} placeholder="e.g. LBC Express" />
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Carrier *</label>
+              <input type="text" className={INPUT} value={createForm.carrier} onChange={e => setCreateForm(s => ({ ...s, carrier: e.target.value }))} placeholder="e.g. LBC Express" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Tracking No.</label>
@@ -137,8 +170,8 @@ export default function ShipmentsPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Shipped Date</label>
-              <input type="date" className={INPUT} value={createForm.shipped_at} onChange={e => setCreateForm(s => ({ ...s, shipped_at: e.target.value }))} />
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Shipped Date *</label>
+              <input type="date" className={INPUT} value={createForm.shipped_at} onChange={e => setCreateForm(s => ({ ...s, shipped_at: e.target.value }))} required />
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Estimated Arrival</label>
@@ -259,19 +292,20 @@ export default function ShipmentsPage() {
                           <div className="flex items-end gap-4">
                             {NEXT_STATUS[shipment.status] === 'delivered' && (
                               <div>
-                                <label className="block text-xs font-medium text-neutral-600 mb-1">Actual Arrival Date</label>
+                                <label className="block text-xs font-medium text-neutral-600 mb-1">Actual Arrival Date *</label>
                                 <input
                                   type="date"
                                   className="border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 bg-white"
                                   value={actualArrival}
                                   onChange={e => setActualArrival(e.target.value)}
+                                  required
                                 />
                               </div>
                             )}
                             <button
                               type="button"
                               disabled={updateStatusMut.isPending}
-                              onClick={() => handleStatusUpdate(shipment.ulid, NEXT_STATUS[shipment.status]!)}
+                              onClick={() => initiateStatusUpdate(shipment.ulid, NEXT_STATUS[shipment.status]!)}
                               className="px-3 py-1.5 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {updateStatusMut.isPending ? 'Updating…' : `Confirm: ${NEXT_STATUS_LABEL[shipment.status]}`}
@@ -294,6 +328,19 @@ export default function ShipmentsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        title={`${confirmStatusUpdate.nextStatus === 'delivered' ? 'Mark as delivered?' : 'Mark as in transit?'}`}
+        description={
+          confirmStatusUpdate.nextStatus === 'delivered'
+            ? 'This will mark the shipment as delivered and record the actual arrival date. This action cannot be undone.'
+            : 'This will mark the shipment as in transit. Continue?'
+        }
+        confirmLabel={confirmStatusUpdate.nextStatus === 'delivered' ? 'Mark Delivered' : 'Mark In Transit'}
+        onConfirm={handleStatusUpdate}
+      >
+        <span />
+      </ConfirmDialog>
     </div>
   );
 }

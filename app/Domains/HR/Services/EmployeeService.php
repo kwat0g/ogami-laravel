@@ -34,6 +34,7 @@ final class EmployeeService implements ServiceContract
 {
     public function __construct(
         private readonly EmployeeStateMachine $stateMachine,
+        private readonly EmployeeClearanceService $clearanceService,
     ) {}
 
     // ── Queries ───────────────────────────────────────────────────────────────
@@ -211,9 +212,18 @@ final class EmployeeService implements ServiceContract
         // SoD: HR manager cannot self-approve their own status change
         // (In practice enforced via Policy; belt-and-suspenders here for employee.user_id if it exists)
 
-        return DB::transaction(function () use ($employee, $toState): Employee {
+        return DB::transaction(function () use ($employee, $toState, $requestedByUserId): Employee {
+            $originalState = $employee->employment_status;
+            
             $this->stateMachine->transition($employee, $toState);
             $employee->save();
+
+            // Generate clearance checklist when transitioning to resigned/terminated
+            if (in_array($toState, ['resigned', 'terminated'], true) && 
+                !in_array($originalState, ['resigned', 'terminated'], true)) {
+                $user = User::find($requestedByUserId);
+                $this->clearanceService->generateClearanceChecklist($employee, $user);
+            }
 
             if ($toState === 'terminated' && ! $employee->trashed()) {
                 // Terminated employees are archived automatically.

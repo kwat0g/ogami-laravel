@@ -26,7 +26,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $department_id
  * @property int|null $production_order_id
  * @property string $purpose
- * @property string $status draft|submitted|noted|checked|reviewed|approved|rejected|cancelled|fulfilled
+ * @property string $status draft|submitted|noted|checked|reviewed|approved|rejected|cancelled|fulfilled|converted_to_pr
  * @property string|null $remarks
  * @property int|null $submitted_by_id
  * @property Carbon|null $submitted_at
@@ -47,6 +47,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $rejection_reason
  * @property int|null $fulfilled_by_id
  * @property Carbon|null $fulfilled_at
+ * @property bool $converted_to_pr
+ * @property int|null $converted_pr_id
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
@@ -72,6 +74,7 @@ final class MaterialRequisition extends Model implements Auditable
         'vp_approved_by_id', 'vp_approved_at', 'vp_comments',
         'rejected_by_id', 'rejected_at', 'rejection_reason',
         'fulfilled_by_id', 'fulfilled_at',
+        'converted_to_pr', 'converted_pr_id',
     ];
 
     protected $casts = [
@@ -82,6 +85,7 @@ final class MaterialRequisition extends Model implements Auditable
         'vp_approved_at' => 'datetime',
         'rejected_at' => 'datetime',
         'fulfilled_at' => 'datetime',
+        'converted_to_pr' => 'boolean',
     ];
 
     /** @return HasMany<MaterialRequisitionItem, MaterialRequisition> */
@@ -147,5 +151,13 @@ final class MaterialRequisition extends Model implements Auditable
     public function isCancellable(): bool
     {
         return in_array($this->status, ['draft', 'submitted'], true);
+    }
+
+    public function isConvertibleToPr(): bool
+    {
+        // Only approved MRQs that haven't been fulfilled or already converted can become PRs
+        return $this->status === 'approved'
+            && ! $this->converted_to_pr
+            && $this->fulfilled_at === null;
     }
 }

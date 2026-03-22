@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import { toast } from 'sonner';
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useDeliveryReceipt, useConfirmDeliveryReceipt } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -46,8 +47,8 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       await confirmMut.mutateAsync(dr.ulid);
       toast.success('Delivery receipt confirmed.');
       setConfirmOpen(false);
-    } catch {
-      toast.error('Failed to confirm receipt.');
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to confirm receipt.'));
     }
   };
 

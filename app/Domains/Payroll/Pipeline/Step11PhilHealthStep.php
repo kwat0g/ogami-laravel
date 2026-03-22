@@ -11,8 +11,9 @@ use Closure;
 /**
  * Step 11 — PhilHealth Contribution (Employee + Employer).
  *
- * PhilHealth premium is deducted once per month (2nd cut-off only).
- * Skipped entirely on the 1st cut-off and on zero-gross-pay periods.
+ * PhilHealth premium is deducted on BOTH cut-offs (semi-monthly split).
+ * PHL-004: Semi-monthly deduction = employee_premium / 2 (deducted each cutoff).
+ * Skipped on zero-gross-pay periods only.
  *
  * The ER share mirrors the EE share (50 / 50 split) and is stored for
  * journal-entry and government-remittance reporting.
@@ -25,7 +26,8 @@ final class Step11PhilHealthStep
 
     public function __invoke(PayrollComputationContext $ctx, Closure $next): PayrollComputationContext
     {
-        if (! $ctx->isSecondCutoff || $ctx->grossPayCentavos === 0) {
+        // PHL-004: Deduct on BOTH cutoffs (semi-monthly), skip only if no gross pay
+        if ($ctx->grossPayCentavos === 0) {
             return $next($ctx);
         }
 

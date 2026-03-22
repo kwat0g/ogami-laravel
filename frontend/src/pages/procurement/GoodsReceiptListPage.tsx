@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, AlertTriangle } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { AlertTriangle } from 'lucide-react'
 import { useGoodsReceipts } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { useAuthStore } from '@/stores/authStore'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import type { GoodsReceiptStatus } from '@/types/procurement'
@@ -15,11 +15,12 @@ const statusBadge: Record<GoodsReceiptStatus, string> = {
 }
 
 export default function GoodsReceiptListPage(): React.ReactElement {
+  const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<GoodsReceiptStatus | ''>('')
   const [page, setPage] = useState(1)
   const [withArchived, setWithArchived] = useState(false)
-  const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('procurement.goods-receipt.create')
+  // Note: GRs are auto-created by vendors via markDelivered
+  // Internal users can only view and confirm GRs, not create them
 
   const { data, isLoading, isError } = useGoodsReceipts({
     ...(statusFilter ? { status: statusFilter } : {}),
@@ -31,17 +32,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
     <div>
       <PageHeader
         title="Goods Receipts"
-        actions={
-          canCreate && (
-            <Link
-              to="/procurement/goods-receipts/new"
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-            >
-              <Plus className="w-4 h-4" />
-              Record Receipt
-            </Link>
-          )
-        }
+        description="View and confirm goods receipts created by vendors"
       />
 
       {/* Filters */}
@@ -77,7 +68,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['GR Number', 'PO Number', 'Received Date', 'Status', 'Confirmed By', ''].map((h) => (
+                  {['GR Number', 'PO Number', 'Received Date', 'Status', 'Confirmed By'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">
                       {h}
                     </th>
@@ -87,17 +78,17 @@ export default function GoodsReceiptListPage(): React.ReactElement {
               <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                    <td colSpan={5} className="px-4 py-8 text-center text-neutral-400 text-sm">
                       No goods receipts found.
                     </td>
                   </tr>
                 )}
                 {data?.data?.map((gr) => (
-                  <tr key={gr.id} className="hover:bg-neutral-50/50 transition-colors">
+                  <tr key={gr.id} className="hover:bg-neutral-50/50 transition-colors cursor-pointer" onClick={() => navigate(`/procurement/goods-receipts/${gr.ulid}`)}>
                     <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{gr.gr_reference}</td>
                     <td className="px-4 py-3 text-neutral-600">
                       {gr.purchase_order
-                        ? <Link to={`/procurement/purchase-orders/${gr.purchase_order.ulid}`} className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2 font-mono text-xs">{gr.purchase_order.po_reference}</Link>
+                        ? <Link to={`/procurement/purchase-orders/${gr.purchase_order.ulid}`} className="text-neutral-700 hover:text-neutral-900 underline underline-offset-2 font-mono text-xs" onClick={(e) => e.stopPropagation()}>{gr.purchase_order.po_reference}</Link>
                         : `#${gr.purchase_order_id}`
                       }
                     </td>
@@ -111,11 +102,6 @@ export default function GoodsReceiptListPage(): React.ReactElement {
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-neutral-500">{gr.confirmed_by?.name ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <Link to={`/procurement/goods-receipts/${gr.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-300 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-900 font-medium">
-                        View
-                      </Link>
-                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -16,6 +16,10 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     // Seed required data
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
+    $this->seed(\Database\Seeders\ModuleSeeder::class);
+    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
 
     // Create fiscal period for current date
     FiscalPeriod::create([
@@ -40,6 +44,9 @@ beforeEach(function () {
         'is_active' => true,
     ]);
 
+    // Get HR department for user assignments (RBAC v2)
+    $hrDept = \App\Domains\HR\Models\Department::where('code', 'HR')->first();
+
     // Create users with different roles
     $this->employeeUser = User::factory()->create();
     $this->employeeUser->syncRoles(['staff']);
@@ -47,19 +54,24 @@ beforeEach(function () {
 
     $this->head = User::factory()->create();
     $this->head->syncRoles(['head']);
+    $this->head->departments()->attach($hrDept->id, ['is_primary' => true]);
 
     $this->manager = User::factory()->create();
     $this->manager->syncRoles(['manager']);
+    $this->manager->departments()->attach($hrDept->id, ['is_primary' => true]);
 
     $this->officer = User::factory()->create();
     $this->officer->syncRoles(['officer']);
+    $this->officer->departments()->attach($hrDept->id, ['is_primary' => true]);
 
     $this->vp = User::factory()->create();
     $this->vp->syncRoles(['vice_president']);
+    $this->vp->departments()->attach($hrDept->id, ['is_primary' => true]);
     
     $this->disburser = User::factory()->create();
     // Use an officer role but a different user for SoD
     $this->disburser->syncRoles(['officer']);
+    $this->disburser->departments()->attach($hrDept->id, ['is_primary' => true]);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

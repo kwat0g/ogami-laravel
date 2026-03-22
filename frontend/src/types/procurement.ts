@@ -18,23 +18,29 @@ export interface Paginated<T> {
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
+/**
+ * 4-stage SoD workflow:
+ * Draft → pending_review → reviewed → budget_verified → approved → converted_to_po
+ */
 export type PurchaseRequestStatus =
   | 'draft'
-  | 'submitted'
-  | 'noted'
-  | 'checked'
+  | 'pending_review'
   | 'reviewed'
-  | 'budget_checked'
+  | 'budget_verified'
   | 'approved'
   | 'rejected'
   | 'cancelled'
   | 'converted_to_po'
+  | 'returned'
 
 export type PurchaseRequestUrgency = 'normal' | 'urgent' | 'critical'
 
 export type PurchaseOrderStatus =
   | 'draft'
   | 'sent'
+  | 'negotiating'
+  | 'acknowledged'
+  | 'in_transit'
   | 'partially_received'
   | 'fully_received'
   | 'closed'
@@ -48,6 +54,7 @@ export type GoodsReceiptCondition = 'good' | 'damaged' | 'partial' | 'rejected'
 
 export interface PurchaseRequestItem {
   id: number
+  vendor_item_id: number | null
   item_description: string
   unit_of_measure: string
   quantity: number
@@ -61,7 +68,9 @@ export interface PurchaseRequest {
   id: number
   ulid: string
   pr_reference: string
+  vendor_id: number | null
   department_id: number
+  department: { id: number; name: string } | null
   urgency: PurchaseRequestUrgency
   justification: string
   notes: string | null
@@ -119,12 +128,28 @@ export interface PurchaseRequest {
   deleted_at?: string | null
 }
 
+export interface FulfillmentNote {
+  id: number
+  note_type: 'in_transit' | 'delivered' | 'partial' | 'acknowledged' | 'change_requested' | 'change_accepted' | 'change_rejected'
+  notes: string | null
+  items: Array<{
+    po_item_id: number
+    item_description: string
+    quantity_ordered: number
+    negotiated_quantity: number | null
+    vendor_item_notes: string | null
+  }> | null
+  created_at: string
+}
+
 export interface PurchaseOrderItem {
   id: number
   pr_item_id: number | null
   item_description: string
   unit_of_measure: string
   quantity_ordered: number
+  negotiated_quantity: number | null
+  vendor_item_notes: string | null
   agreed_unit_cost: number
   total_cost: number
   quantity_received: number
@@ -154,7 +179,18 @@ export interface PurchaseOrder {
   vendor: { id: number; name: string } | null
   purchase_request: { id: number; ulid: string; pr_reference: string } | null
 
+  // Negotiation
+  vendor_remarks: string | null
+  negotiation_round: number
+  change_requested_at: string | null
+  change_reviewed_at: string | null
+  change_review_remarks: string | null
+  vendor_acknowledged_at: string | null
+  in_transit_at: string | null
+  tracking_number: string | null
+
   items: PurchaseOrderItem[]
+  fulfillment_notes?: FulfillmentNote[]
 
   created_at: string
   updated_at: string

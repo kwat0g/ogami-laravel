@@ -13,6 +13,8 @@ import { ArrowLeft, ArrowRight, ThumbsUp, RotateCcw, Loader2 } from 'lucide-reac
 import { usePayrollRun, useHrApprove, usePayrollApprovals } from '@/hooks/usePayroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import { useAuth } from '@/hooks/useAuth'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function formatCentavos(c: number | null | undefined): string {
   if (c == null) return '—'
@@ -46,8 +48,35 @@ export default function PayrollRunHrReviewPage() {
   const isInitiator = user?.id === run?.initiated_by_id
   const sodViolation = isInitiator
 
+  // ── Validation for approval ───────────────────────────────────────────────
+  function validateApproval(): boolean {
+    if (sodViolation) {
+      toast.error('SoD Violation: You cannot approve a payroll run you initiated.')
+      return false
+    }
+    if (!allChecked) {
+      toast.error('Please check all items in the approval checklist.')
+      return false
+    }
+    return true
+  }
+
+  // ── Validation for return ─────────────────────────────────────────────────
+  function validateReturn(): boolean {
+    if (!returnReason.trim()) {
+      toast.error('Please provide a return reason before confirming.')
+      return false
+    }
+    if (returnReason.trim().length < 10) {
+      toast.error('Return reason must be at least 10 characters.')
+      return false
+    }
+    return true
+  }
+
   async function handleAction(act: 'APPROVED' | 'RETURNED') {
-    if (act === 'APPROVED' && (!allChecked || sodViolation)) return
+    if (act === 'APPROVED' && !validateApproval()) return
+    if (act === 'RETURNED' && !validateReturn()) return
 
     try {
       await hrApprove.mutateAsync({
@@ -65,9 +94,8 @@ export default function PayrollRunHrReviewPage() {
         toast.info('Run returned to initiator with your comments.')
         navigate(`/payroll/runs`)
       }
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Action failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -186,51 +214,84 @@ export default function PayrollRunHrReviewPage() {
             rows={3}
             value={returnReason}
             onChange={(e) => setReturnReason(e.target.value)}
-            placeholder="Explain why the run is being returned for rework…"
-            className="w-full border border-red-300 rounded px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-red-500 outline-none"
+            placeholder="Explain why the run is being returned for rework (minimum 10 characters)..."
+            className={`w-full border rounded px-3 py-2 text-sm resize-none focus:ring-2 outline-none ${
+              returnReason.trim() && returnReason.trim().length < 10
+                ? 'border-red-300 focus:ring-red-500'
+                : 'border-red-300 focus:ring-red-500'
+            }`}
           />
+          {returnReason.trim() && returnReason.trim().length < 10 && (
+            <p className="text-xs text-red-500 mt-1">
+              Return reason must be at least 10 characters.
+            </p>
+          )}
         </div>
       )}
 
       {/* Actions - only show if not SoD violation */}
       {!sodViolation && (
         <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
-          <button
-            type="button"
-            onClick={() => {
-              if (action !== 'RETURNED') {
-                setAction('RETURNED')
-                return
-              }
-              if (!returnReason.trim()) {
-                toast.error('Please provide a return reason before confirming.')
-                return
-              }
-              void handleAction('RETURNED')
-            }}
-            disabled={hrApprove.isPending}
-            className="flex items-center gap-2 px-5 py-2 border border-neutral-300 text-neutral-700 hover:bg-neutral-50 text-sm font-medium rounded transition-colors"
-          >
-            <RotateCcw className="h-4 w-4" />
-            {action === 'RETURNED' ? 'Confirm Return' : 'Return for Rework'}
-          </button>
+          {action !== 'RETURNED' ? (
+            <button
+              type="button"
+              onClick={() => setAction('RETURNED')}
+              disabled={hrApprove.isPending}
+              className="flex items-center gap-2 px-5 py-2 border border-neutral-300 text-neutral-700 hover:bg-neutral-50 text-sm font-medium rounded transition-colors"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Return for Rework
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAction(null)}
+                disabled={hrApprove.isPending}
+                className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 border border-neutral-200 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <ConfirmDialog
+                title="Return Payroll Run for Rework?"
+                description={`This will return the payroll run to the initiator with your comments. The initiator will need to fix any issues and resubmit.`}
+                confirmLabel="Confirm Return"
+                onConfirm={() => handleAction('RETURNED')}
+              >
+                <button
+                  type="button"
+                  disabled={hrApprove.isPending || !returnReason.trim() || returnReason.trim().length < 10}
+                  className="flex items-center gap-2 px-5 py-2 border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 text-sm font-medium rounded transition-colors disabled:opacity-50"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Confirm Return
+                </button>
+              </ConfirmDialog>
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={() => handleAction('APPROVED')}
-            disabled={hrApprove.isPending || !allChecked || run.status !== 'SUBMITTED'}
-            className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+          <ConfirmDialog
+            title="Approve Payroll Run?"
+            description={`This will approve the payroll run and forward it to the Accounting Manager for review. Please ensure you have reviewed all flagged items.`}
+            confirmLabel="Approve & Forward"
+            onConfirm={() => handleAction('APPROVED')}
           >
-            {hrApprove.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Processing…
-              </>
-            ) : (
-              <>
-                <ThumbsUp className="h-4 w-4" /> Approve <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              disabled={hrApprove.isPending || !allChecked || run.status !== 'SUBMITTED'}
+              className="flex items-center gap-2 px-6 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+            >
+              {hrApprove.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Processing…
+                </>
+              ) : (
+                <>
+                  <ThumbsUp className="h-4 w-4" /> Approve <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </ConfirmDialog>
         </div>
       )}
     </div>

@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Redis;
  *   "permissions": ["employees.view", "payroll.initiate", ...],
  *   "department_ids": [1, 2],
  *   "primary_department_id": 1,
+ *   "primary_department_code": "ACCTG",
  *   "employee_id": 5,
  *   "timezone": "Asia/Manila",
  *   "must_change_password": false
@@ -37,27 +38,54 @@ class UserPermissionsResource extends JsonResource
         /** @var User $user */
         $user = $this->resource;
 
-        // Eager load employee relationship
-        $user->loadMissing('employee');
+        // Eager load relationships
+        $user->loadMissing(['employee', 'employee.department', 'departments']);
 
-        // Resolve department IDs: pivot table first, fall back to legacy column.
-        $deptRows = $user->departments()->get(['departments.id', 'user_department_access.is_primary']);
+        // Resolve department IDs: pivot table first, fall back to legacy column, then employee department
+        $deptRows = $user->departments()->get(['departments.id', 'departments.code', 'user_department_access.is_primary']);
         $deptIds = $deptRows->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+        
+        // Fallback 1: legacy department_id column
         if (empty($deptIds) && $user->department_id) {
             $deptIds = [(int) $user->department_id];
         }
-        $primaryDeptId = $deptRows->firstWhere('pivot.is_primary', true)?->id
-            ?? ($deptIds[0] ?? null);
+        
+        // Fallback 2: employee's department
+        if (empty($deptIds) && $user->employee?->department_id) {
+            $deptIds = [(int) $user->employee->department_id];
+        }
+        
+        // Get primary department from pivot table
+        $primaryDeptRow = $deptRows->firstWhere('pivot.is_primary', true) ?? ($deptRows->first() ?? null);
+        $primaryDeptId = $primaryDeptRow?->id;
+        $primaryDeptCode = $primaryDeptRow?->code;
+        
+        // Fallback: get department code from employee's department if pivot table is empty
+        if (!$primaryDeptCode && $user->employee?->department) {
+            $primaryDeptCode = $user->employee->department->code;
+        }
+        
+        // Fallback: get department code from legacy column
+        if (!$primaryDeptCode && $user->department_id) {
+            $dept = \App\Domains\HR\Models\Department::find($user->department_id);
+            $primaryDeptCode = $dept?->code;
+        }
 
         // Get employee_id from loaded relationship
         $employeeId = $user->employee?->id;
 
-        // Track user activity for "active users" count
-        Redis::setex(
-            "user_activity:{$user->id}",
-            1800, // 30 minutes in seconds
-            now()->timestamp
-        );
+        // Track user activity for "active users" count (only if Redis is available)
+        if (config('database.redis.default') !== null) {
+            try {
+                Redis::setex(
+                    "user_activity:{$user->id}",
+                    1800, // 30 minutes in seconds
+                    now()->timestamp
+                );
+            } catch (\Throwable $e) {
+                // Redis not available, skip activity tracking
+            }
+        }
 
         $roles = $user->getRoleNames()->values();
 
@@ -69,6 +97,7 @@ class UserPermissionsResource extends JsonResource
             'permissions' => $user->getEffectivePermissions()->values(),
             'department_ids' => $deptIds,
             'primary_department_id' => $primaryDeptId ? (int) $primaryDeptId : null,
+            'primary_department_code' => $primaryDeptCode,
             'employee_id' => $employeeId,
             'timezone' => $user->timezone ?? config('app.timezone', 'Asia/Manila'),
             'must_change_password' => $user->password_changed_at === null,

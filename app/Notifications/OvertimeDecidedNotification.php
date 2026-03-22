@@ -18,12 +18,30 @@ final class OvertimeDecidedNotification extends Notification implements ShouldQu
     use Queueable;
 
     public function __construct(
-        private readonly OvertimeRequest $request,
+        private readonly int $overtimeRequestId,
+        private readonly string $workDate,
+        private readonly int $requestedMinutes,
+        private readonly ?int $approvedMinutes,
         /** approved | rejected */
         private readonly string $decision,
         private readonly ?string $remarks = null,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(
+        OvertimeRequest $request,
+        string $decision,
+        ?string $remarks = null
+    ): self {
+        return new self(
+            overtimeRequestId: $request->id,
+            workDate: $request->work_date->toFormattedDateString(),
+            requestedMinutes: $request->requested_minutes,
+            approvedMinutes: $request->approved_minutes ?? null,
+            decision: $decision,
+            remarks: $remarks,
+        );
     }
 
     /** @return list<string> */
@@ -36,19 +54,19 @@ final class OvertimeDecidedNotification extends Notification implements ShouldQu
     public function toArray(object $notifiable): array
     {
         if ($this->decision === 'approved') {
-            $approvedHours = round(($this->request->approved_minutes ?? $this->request->requested_minutes) / 60, 2);
+            $approvedHours = round(($this->approvedMinutes ?? $this->requestedMinutes) / 60, 2);
 
             return [
                 'type' => 'overtime.approved',
                 'title' => 'Overtime Request Approved',
                 'message' => sprintf(
                     'Your overtime request for %s has been approved for %s hour(s).%s',
-                    $this->request->work_date->toFormattedDateString(),
+                    $this->workDate,
                     $approvedHours,
                     $this->remarks ? ' Remarks: '.$this->remarks : '',
                 ),
                 'action_url' => '/me/overtime',
-                'overtime_request_id' => $this->request->id,
+                'overtime_request_id' => $this->overtimeRequestId,
                 'decision' => 'approved',
             ];
         }
@@ -58,11 +76,11 @@ final class OvertimeDecidedNotification extends Notification implements ShouldQu
             'title' => 'Overtime Request Not Approved',
             'message' => sprintf(
                 'Your overtime request for %s has been rejected.%s',
-                $this->request->work_date->toFormattedDateString(),
+                $this->workDate,
                 $this->remarks ? ' Reason: '.$this->remarks : '',
             ),
             'action_url' => '/me/overtime',
-            'overtime_request_id' => $this->request->id,
+            'overtime_request_id' => $this->overtimeRequestId,
             'decision' => 'rejected',
         ];
     }

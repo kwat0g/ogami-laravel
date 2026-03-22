@@ -18,10 +18,24 @@ final class PayrollCancelledNotification extends Notification implements ShouldQ
     use Queueable;
 
     public function __construct(
-        private readonly PayrollRun $run,
+        private readonly int $payrollRunId,
+        private readonly string $payrollRunUlid,
+        private readonly string $referenceNo,
+        private readonly string $payPeriodLabel,
         private readonly ?string $reason = null,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(PayrollRun $run, ?string $reason = null): self
+    {
+        return new self(
+            payrollRunId: $run->id,
+            payrollRunUlid: $run->ulid,
+            referenceNo: $run->reference_no,
+            payPeriodLabel: $run->pay_period_label,
+            reason: $reason,
+        );
     }
 
     /** @return list<string> */
@@ -38,12 +52,12 @@ final class PayrollCancelledNotification extends Notification implements ShouldQ
             'title' => 'Payroll Run Cancelled',
             'message' => sprintf(
                 'Payroll run %s (%s) has been cancelled.%s',
-                $this->run->reference_no,
-                $this->run->pay_period_label,
+                $this->referenceNo,
+                $this->payPeriodLabel,
                 $this->reason ? ' Reason: '.$this->reason : '',
             ),
-            'action_url' => "/payroll/runs/{$this->run->ulid}",
-            'payroll_run_id' => $this->run->id,
+            'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+            'payroll_run_id' => $this->payrollRunId,
         ];
     }
 

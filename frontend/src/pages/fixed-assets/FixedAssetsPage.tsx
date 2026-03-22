@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, Eye, Package } from 'lucide-react'
-import { useFixedAssets, useFixedAssetCategories, useDepreciatePeriod } from '@/hooks/useFixedAssets'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import { Plus, Eye, Package, Tags, X } from 'lucide-react'
+import { useFixedAssets, useFixedAssetCategories, useDepreciatePeriod, useCreateFixedAssetCategory } from '@/hooks/useFixedAssets'
 import { useFiscalPeriods } from '@/hooks/useAccounting'
-import type { FixedAsset } from '@/types/fixed_assets'
+import type { FixedAsset, FixedAssetCategory } from '@/types/fixed_assets'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -12,9 +13,107 @@ import EmptyState from '@/components/ui/EmptyState'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
+// ---------------------------------------------------------------------------
+// Asset Categories Modal
+// ---------------------------------------------------------------------------
+function AssetCategoriesModal({ onClose }: { onClose: () => void }) {
+  const { data: categories, isLoading } = useFixedAssetCategories()
+  const create = useCreateFixedAssetCategory()
+  const canManage = useAuthStore(s => s.hasPermission('fixed_assets.manage'))
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' as const })
+
+  const list: FixedAssetCategory[] = categories ?? []
+  const inputCls = 'w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none'
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      await create.mutateAsync(form as unknown as Omit<FixedAssetCategory, 'id'>)
+      toast.success('Category created.')
+      setShowForm(false)
+      setForm({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' })
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to create category.'))
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-lg border border-neutral-200 w-full max-w-2xl max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+          <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
+            <Tags className="w-4 h-4 text-neutral-500" /> Asset Categories
+          </h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-neutral-100 text-neutral-500">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+          {isLoading ? (
+            <SkeletonLoader rows={4} />
+          ) : list.length === 0 ? (
+            <p className="text-sm text-neutral-400 text-center py-6">No categories defined.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  {['Name', 'Useful Life', 'Depreciation Method'].map(h => (
+                    <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {list.map((c) => (
+                  <tr key={c.id} className="hover:bg-neutral-50">
+                    <td className="px-3 py-2 font-medium text-neutral-900">{c.name}</td>
+                    <td className="px-3 py-2 text-neutral-600">{c.default_useful_life_years} years</td>
+                    <td className="px-3 py-2 text-neutral-600 capitalize">{c.default_depreciation_method.replace(/_/g, ' ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {canManage && (
+            showForm ? (
+              <form onSubmit={handleCreate} className="border border-neutral-200 rounded p-3 space-y-3 bg-neutral-50">
+                <p className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">New Category</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Name <span className="text-red-500">*</span></label>
+                    <input className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Machinery" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Useful Life (years)</label>
+                    <input type="number" min={1} className={inputCls} value={form.default_useful_life_years}
+                      onChange={e => setForm(f => ({ ...f, default_useful_life_years: Number(e.target.value) }))} />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" disabled={create.isPending} className="px-3 py-1.5 bg-neutral-900 text-white text-xs font-medium rounded hover:bg-neutral-800 disabled:opacity-50">
+                    {create.isPending ? 'Saving…' : 'Save'}
+                  </button>
+                  <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 border border-neutral-300 text-xs rounded hover:bg-neutral-50">Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900">
+                <Plus className="w-4 h-4" /> Add Category
+              </button>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function FixedAssetsPage(): React.ReactElement {
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>()
   const [showDepreciate, setShowDepreciate] = useState(false)
+  const [showCategories, setShowCategories] = useState(false)
   const [depPeriod, setDepPeriod] = useState(0)
 
   const { data, isLoading } = useFixedAssets({ category_id: categoryFilter })
@@ -37,8 +136,8 @@ export default function FixedAssetsPage(): React.ReactElement {
       const result = await depreciate.mutateAsync({ fiscal_period_id: depPeriod })
       toast.success(`Depreciation complete: ${result.processed} processed, ${result.skipped} skipped.`)
       setShowDepreciate(false)
-    } catch {
-      toast.error('Depreciation failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Depreciation failed.'))
     }
   }
 
@@ -56,10 +155,9 @@ export default function FixedAssetsPage(): React.ReactElement {
                 Run Depreciation
               </button>
             )}
-            <Link to="/fixed-assets/categories"
-              className="btn-ghost">
-              Categories
-            </Link>
+            <button onClick={() => setShowCategories(true)} className="btn-ghost">
+              <Tags className="w-3.5 h-3.5" /> Categories
+            </button>
             {canManage && (
               <Link to="/fixed-assets/new"
                 className="btn-primary">
@@ -103,21 +201,21 @@ export default function FixedAssetsPage(): React.ReactElement {
       {/* Summary Stats */}
       {!isLoading && assets.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Total Acquisition Cost</p>
-            <p className="text-xl font-bold text-emerald-700 font-mono mt-1">
+          <div className="bg-white border border-neutral-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total Acquisition Cost</p>
+            <p className="text-xl font-bold text-neutral-900 font-mono mt-1">
               ₱{(totalCost / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Book Value</p>
-            <p className="text-xl font-bold text-blue-700 font-mono mt-1">
+          <div className="bg-white border border-neutral-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total Book Value</p>
+            <p className="text-xl font-bold text-neutral-900 font-mono mt-1">
               ₱{(totalBookValue / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">Accumulated Depreciation</p>
-            <p className="text-xl font-bold text-amber-700 font-mono mt-1">
+          <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+            <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Accumulated Depreciation</p>
+            <p className="text-xl font-bold text-neutral-700 font-mono mt-1">
               ₱{(totalDepreciation / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
@@ -176,6 +274,8 @@ export default function FixedAssetsPage(): React.ReactElement {
           </table>
         </Card>
       )}
+
+      {showCategories && <AssetCategoriesModal onClose={() => setShowCategories(false)} />}
     </div>
   )
 }

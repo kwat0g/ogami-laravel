@@ -10,9 +10,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\StorePurchaseOrderRequest;
 use App\Http\Requests\Procurement\UpdatePurchaseOrderRequest;
 use App\Http\Resources\Procurement\PurchaseOrderResource;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 final class PurchaseOrderController extends Controller
 {
@@ -56,7 +58,7 @@ final class PurchaseOrderController extends Controller
         $this->authorize('view', $purchaseOrder);
 
         return new PurchaseOrderResource(
-            $purchaseOrder->load(['vendor', 'purchaseRequest', 'createdBy', 'items', 'goodsReceipts'])
+            $purchaseOrder->load(['vendor', 'purchaseRequest', 'createdBy', 'items', 'goodsReceipts', 'fulfillmentNotes'])
         );
     }
 
@@ -74,11 +76,15 @@ final class PurchaseOrderController extends Controller
         return new PurchaseOrderResource($po->load(['vendor', 'items']));
     }
 
-    public function send(PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    public function send(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
         $this->authorize('send', $purchaseOrder);
 
-        $po = $this->service->send($purchaseOrder);
+        $validated = $request->validate([
+            'delivery_date' => ['required', 'date', 'after_or_equal:today'],
+        ]);
+
+        $po = $this->service->send($purchaseOrder, $validated['delivery_date'] ?? null);
 
         return new PurchaseOrderResource($po->load(['vendor', 'items']));
     }
@@ -92,6 +98,60 @@ final class PurchaseOrderController extends Controller
         $this->service->cancel($purchaseOrder, $request->string('reason')->value());
 
         return response()->json(['success' => true, 'message' => 'Purchase Order cancelled.']);
+    }
+
+    public function acceptChanges(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    {
+        $this->authorize('manage', $purchaseOrder);
+
+        $validated = $request->validate([
+            'remarks' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $po = $this->service->officerAcceptChanges(
+            $purchaseOrder,
+            auth()->user(),
+            $validated['remarks'] ?? '',
+        );
+
+        return new PurchaseOrderResource($po->load(['vendor', 'purchaseRequest', 'items', 'fulfillmentNotes']));
+    }
+
+    public function rejectChanges(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    {
+        $this->authorize('manage', $purchaseOrder);
+
+        $validated = $request->validate([
+            'remarks' => ['required', 'string', 'min:5', 'max:1000'],
+        ]);
+
+        $po = $this->service->officerRejectChanges(
+            $purchaseOrder,
+            auth()->user(),
+            $validated['remarks'],
+        );
+
+        return new PurchaseOrderResource($po->load(['vendor', 'purchaseRequest', 'items', 'fulfillmentNotes']));
+    }
+
+    /** Export PO as PDF. */
+    public function pdf(PurchaseOrder $purchaseOrder): Response
+    {
+        $this->authorize('view', $purchaseOrder);
+
+        $po = $purchaseOrder->load([
+            'vendor', 'purchaseRequest', 'createdBy', 'items',
+        ]);
+
+        $settings = [
+            'company_name'    => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_address' => config('app.company_address', ''),
+        ];
+
+        $pdf = Pdf::loadView('procurement.purchase-order-pdf', compact('po', 'settings'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream("PO-{$po->po_reference}.pdf");
     }
 
     /**

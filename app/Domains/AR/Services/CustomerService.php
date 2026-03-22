@@ -40,6 +40,14 @@ final class CustomerService implements ServiceContract
             $query->with('portalUser');
         }
 
+        // Eagerly aggregate billed/paid totals to avoid N+1 when current_outstanding is accessed
+        $query
+            ->withSum(
+                ['invoices as billed_total' => fn ($q) => $q->whereIn('status', ['approved', 'partially_paid', 'paid'])],
+                'total_amount'
+            )
+            ->withSum('payments as total_paid', 'amount');
+
         return $query
             ->orderBy('name')
             ->paginate($filters['per_page'] ?? 25);

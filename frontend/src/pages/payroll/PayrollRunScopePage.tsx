@@ -29,6 +29,9 @@ import {
 } from '@/hooks/usePayroll'
 import { useEmployeeSearch } from '@/hooks/useEmployees'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 const EMPLOYMENT_TYPES = [
   { value: 'regular', label: 'Regular' },
@@ -204,7 +207,6 @@ export default function PayrollRunScopePage() {
   const removeExclusion = useRemoveExclusion(runId)
   const cancelRun = useCancelPayrollRun(runId)
 
-  const [confirmCancel, setConfirmCancel] = useState(false)
   const [showMissingBankConfirm, setShowMissingBankConfirm] = useState(false)
 
   // ── Auto-excluded employees (missing bank account) ──────────────────────────
@@ -268,39 +270,58 @@ export default function PayrollRunScopePage() {
     )
   }
 
-  async function handleAddExclusion() {
+  // ── Validation helpers ────────────────────────────────────────────────────
+  function validateAddExclusion(): boolean {
     if (!selectedEmployee || selectedEmployee.id <= 0) {
       toast.error('Please search and select an employee.')
-      return
+      return false
     }
     if (!exclReason.trim()) {
       toast.error('A reason for exclusion is required.')
-      return
+      return false
     }
     if (exclReason.trim().length < 5) {
       toast.error('Reason must be at least 5 characters.')
-      return
+      return false
     }
+    return true
+  }
+
+  async function handleAddExclusion() {
+    if (!validateAddExclusion()) return
     try {
       await addExclusion.mutateAsync({
-        employee_id: selectedEmployee.id,
+        employee_id: selectedEmployee!.id,
         reason: exclReason.trim(),
       })
       setSelectedEmployee(null)
       setExclReason('')
-      toast.success('Exclusion added.')
-    } catch {
-      toast.error('Failed to add exclusion.')
+      toast.success('Exclusion added successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
   async function handleRemoveExclusion(employeeId: number) {
     try {
       await removeExclusion.mutateAsync(employeeId)
-      toast.success('Exclusion removed.')
-    } catch {
-      toast.error('Failed to remove exclusion.')
+      toast.success('Exclusion removed successfully.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
+  }
+
+  // ── Confirm scope ─────────────────────────────────────────────────────────
+  function validateConfirmScope(): boolean {
+    if (!employmentTypes.length) {
+      toast.error('Select at least one employment type.')
+      return false
+    }
+    if (!preview || preview.net_in_scope === 0) {
+      toast.error('No employees match the current filters.')
+      return false
+    }
+    return true
   }
 
   async function doConfirmScope() {
@@ -313,33 +334,31 @@ export default function PayrollRunScopePage() {
         include_probation_end: includeProbationEnd,
         exclude_no_attendance: excludeNoAttendance,
       })
-      toast.success('Scope confirmed.')
+      toast.success('Scope confirmed. Proceeding to validation.')
       navigate(`/payroll/runs/${runId}/validate`)
-    } catch {
-      toast.error('Failed to confirm scope.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
-  async function handleConfirm() {
-    if (!employmentTypes.length) {
-      toast.error('Select at least one employment type.')
-      return
-    }
+  function handleConfirmClick() {
+    if (!validateConfirmScope()) return
     // Warn if any in-scope employees still have no bank account
     if (preview?.missing_bank_employees && preview.missing_bank_employees.length > 0) {
       setShowMissingBankConfirm(true)
       return
     }
-    await doConfirmScope()
+    void doConfirmScope()
   }
 
+  // ── Cancel run ────────────────────────────────────────────────────────────
   async function handleCancel() {
     try {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch {
-      toast.error('Failed to cancel payroll run.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -354,35 +373,23 @@ export default function PayrollRunScopePage() {
         >
           <ArrowLeft className="h-4 w-4" /> Back to Payroll Runs
         </button>
-        {confirmCancel ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-red-600">Cancel this run?</span>
-            <button
-              type="button"
-              onClick={() => void handleCancel()}
-              disabled={cancelRun.isPending}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-md transition-colors"
-            >
-              {cancelRun.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-              Confirm
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmCancel(false)}
-              className="px-3 py-1.5 text-xs text-neutral-600 hover:text-neutral-900 border border-neutral-200 rounded-md transition-colors"
-            >
-              Keep
-            </button>
-          </div>
-        ) : (
+
+        <ConfirmDestructiveDialog
+          title="Cancel payroll run?"
+          description="Cancelling will permanently stop this payroll run. Employees will not be paid from this run. This action cannot be undone."
+          confirmWord="CANCEL"
+          confirmLabel="Cancel Run"
+          onConfirm={handleCancel}
+        >
           <button
             type="button"
-            onClick={() => setConfirmCancel(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors"
+            disabled={cancelRun.isPending}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 rounded transition-colors disabled:opacity-50"
           >
-            <Ban className="h-4 w-4" /> Cancel Run
+            {cancelRun.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+            Cancel Run
           </button>
-        )}
+        </ConfirmDestructiveDialog>
       </div>
 
       <WizardStepHeader
@@ -400,7 +407,7 @@ export default function PayrollRunScopePage() {
 
             {/* Employment Types */}
             <div>
-              <p className="text-sm font-medium text-neutral-700 mb-2">Employment Types</p>
+              <p className="text-sm font-medium text-neutral-700 mb-2">Employment Types <span className="text-red-500">*</span></p>
               <div className="flex flex-wrap gap-2">
                 {EMPLOYMENT_TYPES.map(({ value, label }) => (
                   <label
@@ -421,6 +428,9 @@ export default function PayrollRunScopePage() {
                   </label>
                 ))}
               </div>
+              {employmentTypes.length === 0 && (
+                <p className="text-xs text-red-500 mt-2">Select at least one employment type.</p>
+              )}
             </div>
 
             {/* Toggles */}
@@ -650,22 +660,28 @@ export default function PayrollRunScopePage() {
               <p className="text-xs text-neutral-400">Adjust filters to see live counts.</p>
             )}
 
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={confirmScope.isPending || !preview || preview.net_in_scope === 0}
-              className="w-full px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors flex items-center justify-center gap-2"
+            <ConfirmDialog
+              title="Confirm Scope Settings?"
+              description={`This will set the employee scope for ${preview?.net_in_scope ?? 0} employees and proceed to pre-run validation. This action cannot be undone.`}
+              confirmLabel="Confirm Scope"
+              onConfirm={doConfirmScope}
             >
-              {confirmScope.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Confirming…
-                </>
-              ) : (
-                <>
-                  Confirm Scope <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
+              <button
+                type="button"
+                disabled={confirmScope.isPending || !preview || preview.net_in_scope === 0 || employmentTypes.length === 0}
+                className="w-full px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors flex items-center justify-center gap-2"
+              >
+                {confirmScope.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Confirming…
+                  </>
+                ) : (
+                  <>
+                    Confirm Scope <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </ConfirmDialog>
 
             {preview?.net_in_scope === 0 && (
               <p className="text-xs text-red-600 text-center">
@@ -687,7 +703,7 @@ export default function PayrollRunScopePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-neutral-900">
                   {preview.missing_bank_employees.length} employee

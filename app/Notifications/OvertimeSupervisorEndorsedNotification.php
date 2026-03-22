@@ -19,12 +19,32 @@ final class OvertimeSupervisorEndorsedNotification extends Notification implemen
     use Queueable;
 
     public function __construct(
-        private readonly OvertimeRequest $request,
+        private readonly int $overtimeRequestId,
+        private readonly int $employeeId,
+        private readonly string $employeeName,
+        private readonly string $workDate,
+        private readonly int $requestedMinutes,
         /** Name of the supervisor who endorsed. */
         private readonly string $supervisorName,
         private readonly ?string $remarks = null,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(
+        OvertimeRequest $request,
+        string $supervisorName,
+        ?string $remarks = null
+    ): self {
+        return new self(
+            overtimeRequestId: $request->id,
+            employeeId: $request->employee_id,
+            employeeName: $request->employee->full_name,
+            workDate: $request->work_date->toFormattedDateString(),
+            requestedMinutes: $request->requested_minutes,
+            supervisorName: $supervisorName,
+            remarks: $remarks,
+        );
     }
 
     /** @return list<string> */
@@ -36,7 +56,7 @@ final class OvertimeSupervisorEndorsedNotification extends Notification implemen
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $hours = round($this->request->requested_minutes / 60, 2);
+        $hours = round($this->requestedMinutes / 60, 2);
 
         return [
             'type' => 'overtime.supervisor_endorsed',
@@ -44,14 +64,14 @@ final class OvertimeSupervisorEndorsedNotification extends Notification implemen
             'message' => sprintf(
                 '%s endorsed %s\'s overtime request for %s (%.2fh). The request is pending your final approval.%s',
                 $this->supervisorName,
-                $this->request->employee->full_name,
-                $this->request->work_date->toFormattedDateString(),
+                $this->employeeName,
+                $this->workDate,
                 $hours,
                 $this->remarks ? ' Supervisor remarks: '.$this->remarks : '',
             ),
             'action_url' => '/team/overtime',
-            'overtime_request_id' => $this->request->id,
-            'employee_id' => $this->request->employee_id,
+            'overtime_request_id' => $this->overtimeRequestId,
+            'employee_id' => $this->employeeId,
         ];
     }
 

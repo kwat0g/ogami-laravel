@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Domains\AR\Models;
 
-use App\Exceptions\DomainException;
+use App\Shared\Exceptions\DomainException;
 use App\Models\User;
+use App\Shared\Traits\HasPublicUlid;
+use Database\Factories\CustomerFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -32,7 +36,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 class Customer extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, HasFactory, HasPublicUlid, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -53,6 +57,11 @@ class Customer extends Model implements Auditable
         'credit_limit' => 'decimal:2',
         'is_active' => 'boolean',
     ];
+
+    protected static function newFactory(): CustomerFactory
+    {
+        return CustomerFactory::new();
+    }
 
     // ── Relationships ──────────────────────────────────────────────────────────
 
@@ -85,11 +94,15 @@ class Customer extends Model implements Auditable
     //
     public function getCurrentOutstandingAttribute(): float
     {
-        $billed = (float) $this->invoices()
-            ->whereIn('status', ['approved', 'partially_paid', 'paid'])
-            ->sum('total_amount');
+        // Use pre-loaded aggregate sums when available (avoids N+1 in list contexts).
+        // CustomerService::list() eager-loads `billed_total` and `total_paid` via withSum().
+        $billed = isset($this->attributes['billed_total'])
+            ? (float) $this->attributes['billed_total']
+            : (float) $this->invoices()->whereIn('status', ['approved', 'partially_paid', 'paid'])->sum('total_amount');
 
-        $paid = (float) $this->payments()->sum('amount');
+        $paid = isset($this->attributes['total_paid'])
+            ? (float) $this->attributes['total_paid']
+            : (float) $this->payments()->sum('amount');
 
         $unappliedAdvances = (float) $this->advancePayments()
             ->where('status', '!=', 'fully_applied')

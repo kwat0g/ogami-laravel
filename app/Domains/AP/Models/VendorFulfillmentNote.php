@@ -35,11 +35,13 @@ final class VendorFulfillmentNote extends Model
         'vendor_user_id',
         'note_type',
         'notes',
+        'delivery_date',
         'items',
     ];
 
     protected $casts = [
         'items' => 'array',
+        'delivery_date' => 'date',
     ];
 
     /** @return BelongsTo<PurchaseOrder, VendorFulfillmentNote> */

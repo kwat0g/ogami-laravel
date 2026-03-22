@@ -11,10 +11,18 @@ uses()->group('feature', 'ar');
 
 beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(\Database\Seeders\ModuleSeeder::class);
+    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
 
+    // Get accounting department for RBAC v2
+    $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('officer', 'purchasing_officer');
+    $this->manager->assignRole('officer');
+    $this->manager->departments()->attach($acctgDept->id, ['is_primary' => true]);
 
     $this->customer = Customer::create([
         'name'           => 'Acme Corp',
@@ -48,7 +56,7 @@ it('creates a customer', function () {
 
 it('shows a single customer', function () {
     $this->actingAs($this->manager)
-        ->getJson("/api/v1/ar/customers/{$this->customer->id}")
+        ->getJson("/api/v1/ar/customers/{$this->customer->ulid}")
         ->assertOk()
         ->assertJsonPath('data.name', 'Acme Corp');
 });

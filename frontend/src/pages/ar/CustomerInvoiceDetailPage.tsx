@@ -1,20 +1,23 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useParams, useNavigate } from 'react-router-dom'
-import { FileText } from 'lucide-react'
+import { FileText, Download } from 'lucide-react'
 import {
   useCustomerInvoice,
   useReceivePayment,
   useWriteOffInvoice,
   useApproveCustomerInvoice,
+  useCancelCustomerInvoice,
 } from '@/hooks/useAR'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import PageHeader from '@/components/ui/PageHeader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow } from '@/components/ui/InfoRow'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ReceivePaymentPayload, WriteOffPayload } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -39,6 +42,38 @@ function ReceivePaymentPanel({
     ar_account_id: 0,
   })
 
+  const [touched, setTouched] = useState<Set<string>>(new Set())
+  const touch = (k: string) => setTouched(prev => new Set([...prev, k]))
+
+  const validationErrors = (() => {
+    const e: Record<string, string | undefined> = {}
+    if (!form.amount || form.amount <= 0) e.amount = 'Amount must be greater than 0.'
+    if (!form.payment_date) e.payment_date = 'Payment date is required.'
+    if (!form.cash_account_id) e.cash_account_id = 'Cash account is required.'
+    if (!form.ar_account_id) e.ar_account_id = 'AR account is required.'
+    return e
+  })()
+
+  const fe = (k: string) => (touched.has(k) ? validationErrors[k] : undefined)
+
+  const handleSubmit = async () => {
+    // Touch all fields
+    setTouched(new Set(['amount', 'payment_date', 'cash_account_id', 'ar_account_id']))
+    
+    if (Object.keys(validationErrors).length > 0) {
+      toast.error('Please fix the validation errors before submitting.')
+      return
+    }
+
+    try {
+      await payMut.mutateAsync(form)
+      toast.success('Payment recorded successfully.')
+      setOpen(false)
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
   if (!open) {
     return (
       <button
@@ -54,7 +89,7 @@ function ReceivePaymentPanel({
     <div className="rounded border border-neutral-200 bg-white p-4 space-y-3">
       <h3 className="font-semibold text-neutral-800">Record Payment</h3>
       {payMut.error && (
-        <p className="text-sm text-red-600">{(payMut.error as Error).message}</p>
+        <p className="text-sm text-red-600">{firstErrorMessage(payMut.error)}</p>
       )}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
@@ -63,10 +98,12 @@ function ReceivePaymentPanel({
             type="number"
             min={0.01}
             step="0.01"
-            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('amount') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.amount}
             onChange={(e) => setForm((p) => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
+            onBlur={() => touch('amount')}
           />
+          {fe('amount') && <p className="text-xs text-red-600 mt-0.5">{fe('amount')}</p>}
           {form.amount > balanceDue && (
             <p className="text-xs text-neutral-600 mt-0.5">
               ₱{(form.amount - balanceDue).toLocaleString()} excess → advance payment (AR-005)
@@ -77,28 +114,36 @@ function ReceivePaymentPanel({
           <span className="text-xs font-medium text-neutral-600">Payment Date *</span>
           <input
             type="date"
-            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('payment_date') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.payment_date}
             onChange={(e) => setForm((p) => ({ ...p, payment_date: e.target.value }))}
+            onBlur={() => touch('payment_date')}
           />
+          {fe('payment_date') && <p className="text-xs text-red-600 mt-0.5">{fe('payment_date')}</p>}
         </label>
         <label className="block">
           <span className="text-xs font-medium text-neutral-600">Cash Account ID *</span>
           <input
             type="number"
-            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+            min={1}
+            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('cash_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.cash_account_id || ''}
             onChange={(e) => setForm((p) => ({ ...p, cash_account_id: parseInt(e.target.value) || 0 }))}
+            onBlur={() => touch('cash_account_id')}
           />
+          {fe('cash_account_id') && <p className="text-xs text-red-600 mt-0.5">{fe('cash_account_id')}</p>}
         </label>
         <label className="block">
           <span className="text-xs font-medium text-neutral-600">AR Account ID *</span>
           <input
             type="number"
-            className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+            min={1}
+            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('ar_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
             value={form.ar_account_id || ''}
             onChange={(e) => setForm((p) => ({ ...p, ar_account_id: parseInt(e.target.value) || 0 }))}
+            onBlur={() => touch('ar_account_id')}
           />
+          {fe('ar_account_id') && <p className="text-xs text-red-600 mt-0.5">{fe('ar_account_id')}</p>}
         </label>
         <label className="block">
           <span className="text-xs font-medium text-neutral-600">Reference #</span>
@@ -111,15 +156,7 @@ function ReceivePaymentPanel({
       </div>
       <div className="flex gap-2">
         <button
-          onClick={async () => {
-            try {
-              await payMut.mutateAsync(form)
-              toast.success('Payment recorded.')
-              setOpen(false)
-            } catch {
-              toast.error('Failed to record payment.')
-            }
-          }}
+          onClick={handleSubmit}
           disabled={payMut.isPending}
           className="px-4 py-1.5 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed"
         >
@@ -147,23 +184,80 @@ function WriteOffSection({ invoiceId }: { invoiceId: string }) {
 
   return (
     <ConfirmDestructiveDialog
-      title="Write Off Invoice (AR-006)"
-      description="This will write off the remaining balance as bad debt. A journal entry (DR Bad Debt Expense / CR Accounts Receivable) will be auto-posted. This action requires the `manager` role with accounting department access."
-      confirmWord="WRITEOFF"
+      title="Write Off Invoice?"
+      description="This will mark the invoice as bad debt and cannot be undone. A journal entry (DR Bad Debt Expense / CR Accounts Receivable) will be auto-posted."
+      confirmWord="WRITE OFF"
       confirmLabel="Write Off"
       onConfirm={async () => {
         try {
           await writeOffMut.mutateAsync(form)
-          toast.success('Invoice written off.')
-        } catch {
-          toast.error('Failed to write off invoice.')
+          toast.success('Invoice written off successfully.')
+        } catch (err) {
+          toast.error(firstErrorMessage(err))
         }
       }}
     >
       <button className="px-4 py-2 rounded bg-white text-red-600 border border-red-300 text-sm font-medium hover:bg-red-50">
-        Write Off (AR-006)
+        Write Off
       </button>
     </ConfirmDestructiveDialog>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Cancel Invoice Button
+// ---------------------------------------------------------------------------
+
+function CancelSection({ invoiceId }: { invoiceId: string }) {
+  const cancelMut = useCancelCustomerInvoice()
+
+  return (
+    <ConfirmDestructiveDialog
+      title="Cancel Invoice?"
+      description="This will cancel the invoice and cannot be undone. Any associated journal entries may need to be reversed manually."
+      confirmWord="CANCEL"
+      confirmLabel="Cancel Invoice"
+      onConfirm={async () => {
+        try {
+          await cancelMut.mutateAsync(invoiceId)
+          toast.success('Invoice cancelled successfully.')
+        } catch (err) {
+          toast.error(firstErrorMessage(err))
+        }
+      }}
+    >
+      <button className="px-4 py-2 rounded bg-white text-neutral-600 border border-neutral-300 text-sm font-medium hover:bg-neutral-50">
+        Cancel Invoice
+      </button>
+    </ConfirmDestructiveDialog>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Approve Invoice Button
+// ---------------------------------------------------------------------------
+
+function ApproveSection({ invoiceId }: { invoiceId: string }) {
+  const approveMut = useApproveCustomerInvoice()
+
+  return (
+    <ConfirmDialog
+      title="Approve Invoice?"
+      description="An invoice number (INV-YYYY-MM-NNNNNN) will be generated and a journal entry will be auto-posted to the General Ledger."
+      confirmLabel="Approve"
+      onConfirm={async () => {
+        try {
+          await approveMut.mutateAsync(invoiceId)
+          toast.success('Invoice approved successfully.')
+        } catch (err) {
+          toast.error(firstErrorMessage(err))
+        }
+      }}
+    >
+      <button className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800">
+        Approve Invoice
+      </button>
+    </ConfirmDialog>
   )
 }
 
@@ -176,13 +270,13 @@ export default function CustomerInvoiceDetailPage() {
   const _navigate = useNavigate()
   const invoiceId = id ?? null
   const { data: invoice, isLoading } = useCustomerInvoice(invoiceId)
-  const approveMut = useApproveCustomerInvoice()
   const { hasPermission } = useAuthStore()
 
   if (isLoading) return <SkeletonLoader rows={10} />
   if (!invoice) return <p className="p-6 text-gray-500">Invoice not found.</p>
 
   const canApprove = invoice.status === 'draft' && hasPermission('customer_invoices.approve')
+  const canCancel = invoice.status === 'draft' && hasPermission('customer_invoices.cancel')
   const canReceivePayment =
     (invoice.status === 'approved' || invoice.status === 'partially_paid') &&
     hasPermission('customer_invoices.receive_payment')
@@ -199,30 +293,23 @@ export default function CustomerInvoiceDetailPage() {
         subtitle={invoice.customer?.name ?? `Customer #${invoice.customer_id}`}
         icon={<FileText className="w-5 h-5" />}
         status={<StatusBadge status={invoice.status}>{invoice.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
+        actions={
+          <a
+            href={`/api/v1/ar/invoices/${invoiceId}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded"
+          >
+            <Download className="w-4 h-4" />
+            Export PDF
+          </a>
+        }
       />
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
-        {canApprove && (
-          <ConfirmDestructiveDialog
-            title="Approve Invoice"
-            description="Approve this invoice? An invoice number (INV-YYYY-MM-NNNNNN) will be generated and a journal entry will be auto-posted."
-            confirmWord="APPROVE"
-            confirmLabel="Approve"
-            onConfirm={async () => {
-              try {
-                await approveMut.mutateAsync(invoiceId ?? '')
-                toast.success('Invoice approved.')
-              } catch {
-                toast.error('Failed to approve invoice.')
-              }
-            }}
-          >
-            <button className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800">
-              Approve Invoice
-            </button>
-          </ConfirmDestructiveDialog>
-        )}
+        {canApprove && <ApproveSection invoiceId={invoiceId ?? ''} />}
+        {canCancel && <CancelSection invoiceId={invoiceId ?? ''} />}
         {canWriteOff && <WriteOffSection invoiceId={invoiceId ?? ''} />}
       </div>
 

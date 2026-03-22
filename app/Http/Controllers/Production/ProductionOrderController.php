@@ -14,6 +14,7 @@ use App\Http\Resources\Production\ProductionOutputLogResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\ValidationException;
 
 final class ProductionOrderController extends Controller
 {
@@ -108,5 +109,28 @@ final class ProductionOrderController extends Controller
         return new ProductionOutputLogResource(
             $this->service->logOutput($productionOrder, $request->validated(), $request->user())
         );
+    }
+
+    /**
+     * Get smart defaults for production order creation.
+     * Suggests BOM and calculates end date based on product item.
+     */
+    public function smartDefaults(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', ProductionOrder::class);
+
+        $validated = $request->validate([
+            'product_item_id' => ['required', 'integer', 'exists:item_masters,id'],
+            'target_start_date' => ['nullable', 'date', 'date_format:Y-m-d'],
+        ]);
+
+        $defaults = $this->service->getSmartDefaults(
+            $validated['product_item_id'],
+            $validated['target_start_date'] ?? null
+        );
+
+        return response()->json([
+            'data' => $defaults,
+        ]);
     }
 }

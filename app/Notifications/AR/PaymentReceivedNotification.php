@@ -18,10 +18,24 @@ final class PaymentReceivedNotification extends Notification implements ShouldQu
     use Queueable;
 
     public function __construct(
-        private readonly CustomerInvoice $invoice,
-        private readonly float $amountReceived,
+        private readonly int $invoiceId,
+        private readonly string $invoiceUlid,
+        private readonly ?string $invoiceNumber,
+        private readonly string $customerName,
+        private readonly int $amountReceivedCentavos,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(CustomerInvoice $invoice, float $amountReceived): self
+    {
+        return new self(
+            invoiceId: $invoice->id,
+            invoiceUlid: $invoice->ulid,
+            invoiceNumber: $invoice->invoice_number ?? null,
+            customerName: (string) ($invoice->customer->company_name ?? "Customer #{$invoice->customer_id}"),
+            amountReceivedCentavos: (int) round($amountReceived * 100),
+        );
     }
 
     /** @return list<string> */
@@ -33,9 +47,8 @@ final class PaymentReceivedNotification extends Notification implements ShouldQu
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $customerName = (string) ($this->invoice->customer->company_name ?? "Customer #{$this->invoice->customer_id}");
-        $amount = number_format($this->amountReceived, 2);
-        $invoiceNo = $this->invoice->invoice_number ?? "INV-{$this->invoice->id}";
+        $amount = number_format($this->amountReceivedCentavos / 100, 2);
+        $invoiceNo = $this->invoiceNumber ?? "INV-{$this->invoiceId}";
 
         return [
             'type' => 'ar.payment_received',
@@ -43,11 +56,11 @@ final class PaymentReceivedNotification extends Notification implements ShouldQu
             'message' => sprintf(
                 'Payment of ₱%s received from %s for invoice %s.',
                 $amount,
-                $customerName,
+                $this->customerName,
                 $invoiceNo,
             ),
-            'action_url' => "/ar/invoices/{$this->invoice->ulid}",
-            'customer_invoice_id' => $this->invoice->id,
+            'action_url' => "/ar/invoices/{$this->invoiceUlid}",
+            'customer_invoice_id' => $this->invoiceId,
         ];
     }
 

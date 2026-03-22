@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { Plus, Eye, Send } from 'lucide-react'
 import { useVendorRfqs, useCreateVendorRfq, useSendVendorRfq, type VendorRfq } from '@/hooks/useVendorRfqs'
 import { useAuthStore } from '@/stores/authStore'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function VendorRfqListPage(): React.ReactElement {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
@@ -20,18 +22,32 @@ export default function VendorRfqListPage(): React.ReactElement {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.title.trim()) {
+      toast.error('Title is required.')
+      return
+    }
+    if (form.deadline && new Date(form.deadline) < new Date()) {
+      toast.error('Deadline cannot be in the past.')
+      return
+    }
+    const vendorIds = form.vendor_ids.split(',').map(Number).filter(Boolean)
+    if (vendorIds.length === 0) {
+      toast.error('At least one vendor ID is required.')
+      return
+    }
     try {
       await create.mutateAsync({
         title: form.title,
         description: form.description || undefined,
         deadline: form.deadline || undefined,
-        vendor_ids: form.vendor_ids.split(',').map(Number).filter(Boolean),
+        vendor_ids: vendorIds,
       })
       toast.success('RFQ created.')
       setShowForm(false)
       setForm({ title: '', description: '', deadline: '', vendor_ids: '' })
-    } catch {
-      toast.error('Failed to create RFQ.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to create RFQ.')
     }
   }
 
@@ -39,8 +55,9 @@ export default function VendorRfqListPage(): React.ReactElement {
     try {
       await send.mutateAsync(ulid)
       toast.success('RFQ sent to vendors.')
-    } catch {
-      toast.error('Failed to send RFQ.')
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(message ?? 'Failed to send RFQ.')
     }
   }
 
@@ -139,10 +156,16 @@ export default function VendorRfqListPage(): React.ReactElement {
                       <Eye className="w-4 h-4" />
                     </Link>
                     {rfq.status === 'draft' && canManage && (
-                      <button onClick={() => handleSend(rfq.ulid)} disabled={send.isPending}
-                        className="text-neutral-500 hover:text-blue-600">
-                        <Send className="w-4 h-4" />
-                      </button>
+                      <ConfirmDialog
+                        title="Send RFQ to Vendors?"
+                        description="This will send the RFQ to all selected vendors."
+                        onConfirm={() => handleSend(rfq.ulid)}
+                      >
+                        <button disabled={send.isPending}
+                          className="text-neutral-500 hover:text-blue-600 disabled:opacity-50">
+                          <Send className="w-4 h-4" />
+                        </button>
+                      </ConfirmDialog>
                     )}
                   </td>
                 </tr>

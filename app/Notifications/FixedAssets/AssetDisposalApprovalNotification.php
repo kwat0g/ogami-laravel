@@ -15,9 +15,20 @@ final class AssetDisposalApprovalNotification extends Notification implements Sh
     use Queueable;
 
     public function __construct(
-        private readonly AssetDisposal $disposal,
+        private readonly int $disposalId,
+        private readonly string $assetName,
+        private readonly string $disposalMethod,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(AssetDisposal $disposal): self
+    {
+        return new self(
+            disposalId: $disposal->id,
+            assetName: $disposal->fixedAsset->name ?? "Asset #{$disposal->fixed_asset_id}",
+            disposalMethod: $disposal->disposal_method ?? 'unspecified',
+        );
     }
 
     /** @return list<string> */
@@ -34,11 +45,11 @@ final class AssetDisposalApprovalNotification extends Notification implements Sh
             'title' => 'Asset Disposal Approval Required',
             'message' => sprintf(
                 'Asset disposal request for "%s" (method: %s) requires your approval.',
-                $this->disposal->fixedAsset->name ?? "Asset #{$this->disposal->fixed_asset_id}",
-                $this->disposal->disposal_method ?? 'unspecified',
+                $this->assetName,
+                $this->disposalMethod,
             ),
             'action_url' => '/fixed-assets',
-            'disposal_id' => $this->disposal->id,
+            'disposal_id' => $this->disposalId,
         ];
     }
 

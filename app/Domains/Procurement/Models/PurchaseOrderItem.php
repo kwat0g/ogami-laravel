@@ -40,6 +40,8 @@ final class PurchaseOrderItem extends Model
         'item_description',
         'unit_of_measure',
         'quantity_ordered',
+        'negotiated_quantity',
+        'vendor_item_notes',
         'agreed_unit_cost',
         'quantity_received',
         'line_order',
@@ -47,6 +49,10 @@ final class PurchaseOrderItem extends Model
 
     /** @var list<string> DB-computed columns */
     protected $guarded = ['total_cost', 'quantity_pending'];
+
+    protected $casts = [
+        'negotiated_quantity' => 'decimal:4',
+    ];
 
     /** @return BelongsTo<PurchaseOrder, PurchaseOrderItem> */
     public function purchaseOrder(): BelongsTo
@@ -64,5 +70,16 @@ final class PurchaseOrderItem extends Model
     public function itemMaster(): BelongsTo
     {
         return $this->belongsTo(ItemMaster::class, 'item_master_id');
+    }
+
+    /**
+     * Effective quantity = negotiated (if agreed) or original ordered quantity.
+     * This is the ceiling for received quantities and invoice calculation.
+     */
+    public function effectiveQuantity(): float
+    {
+        return $this->negotiated_quantity !== null
+            ? (float) $this->negotiated_quantity
+            : (float) $this->quantity_ordered;
     }
 }

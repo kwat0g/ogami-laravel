@@ -26,7 +26,7 @@ final class LeaveRequestPolicy
 
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
             return true;
         }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, forwardRef, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -16,7 +16,8 @@ import {
 import { useShifts, useAssignShift } from '@/hooks/useAttendance'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import type { ApiError } from '@/types/api'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import { formatSSS, formatTIN, formatPhilHealth, formatPagIBIG, formatPhoneNumber } from '@/lib/inputFormatters'
 import type { CreateEmployeePayload } from '@/types/hr'
 
 const employeeSchema = z.object({
@@ -160,6 +161,7 @@ export default function EmployeeFormPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     setValue,
@@ -377,7 +379,7 @@ export default function EmployeeFormPage() {
             effective_from: new Date().toISOString().split('T')[0],
           })
         }
-        toast.success('Employee updated.')
+        toast.success('Employee updated successfully')
       } else {
         const newEmployee = await createMutation.mutateAsync(
           payload as unknown as CreateEmployeePayload,
@@ -389,19 +391,19 @@ export default function EmployeeFormPage() {
             effective_from: data.date_hired,
           })
         }
-        toast.success('Employee created.')
+        toast.success('Employee created successfully')
       }
       navigate('/hr/employees/all')
     } catch (err: unknown) {
-      const apiErr = err as ApiError
-      if (apiErr.errors) {
-        Object.entries(apiErr.errors).forEach(([field, msgs]) => {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to ${isEditing ? 'update' : 'create'} employee: ${message}`)
+      
+      // Set field errors if available
+      const errorObj = err as { response?: { data?: { errors?: Record<string, string[]> } } }
+      if (errorObj.response?.data?.errors) {
+        Object.entries(errorObj.response.data.errors).forEach(([field, msgs]) => {
           setError(field as keyof EmployeeFormData, { message: msgs[0] })
         })
-      }
-      // Show general error message (e.g., duplicate gov ID)
-      if (apiErr.message && !apiErr.errors) {
-        toast.error(apiErr.message)
       }
     }
   }
@@ -452,7 +454,19 @@ export default function EmployeeFormPage() {
               <Input type="email" {...register('personal_email')} placeholder="juan@email.com" />
             </FormField>
             <FormField label="Personal Phone" error={errors.personal_phone?.message}>
-              <Input {...register('personal_phone')} placeholder="+63 9XX XXX XXXX" />
+              <Controller
+                name="personal_phone"
+                control={control}
+                render={({ field }) => (
+                  <Input 
+                    {...field} 
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(formatPhoneNumber(e.target.value))}
+                    placeholder="09XX XXX XXXX"
+                    maxLength={13}
+                  />
+                )}
+              />
             </FormField>
             <FormField label="Citizenship" error={errors.citizenship?.message}>
               <Input {...register('citizenship')} placeholder="Filipino" />
@@ -658,9 +672,18 @@ export default function EmployeeFormPage() {
               }
               error={errors.sss_no?.message}
             >
-              <Input
-                {...register('sss_no')}
-                placeholder={isEditing && existing?.has_sss_no ? '(unchanged)' : '03-XXXXXXX-X'}
+              <Controller
+                name="sss_no"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(formatSSS(e.target.value))}
+                    placeholder={isEditing && existing?.has_sss_no ? '(unchanged)' : 'XX-XXXXXXX-X'}
+                    maxLength={12}
+                  />
+                )}
               />
             </FormField>
             <FormField
@@ -673,9 +696,18 @@ export default function EmployeeFormPage() {
               }
               error={errors.tin?.message}
             >
-              <Input
-                {...register('tin')}
-                placeholder={isEditing && existing?.has_tin ? '(unchanged)' : 'XXX-XXX-XXX-XXX'}
+              <Controller
+                name="tin"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(formatTIN(e.target.value))}
+                    placeholder={isEditing && existing?.has_tin ? '(unchanged)' : 'XXX-XXX-XXX-XXX'}
+                    maxLength={15}
+                  />
+                )}
               />
             </FormField>
             <FormField
@@ -688,11 +720,18 @@ export default function EmployeeFormPage() {
               }
               error={errors.philhealth_no?.message}
             >
-              <Input
-                {...register('philhealth_no')}
-                placeholder={
-                  isEditing && existing?.has_philhealth_no ? '(unchanged)' : 'XX-XXXXXXXXX-X'
-                }
+              <Controller
+                name="philhealth_no"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(formatPhilHealth(e.target.value))}
+                    placeholder={isEditing && existing?.has_philhealth_no ? '(unchanged)' : 'XX-XXXXXXXXX-X'}
+                    maxLength={14}
+                  />
+                )}
               />
             </FormField>
             <FormField
@@ -705,11 +744,18 @@ export default function EmployeeFormPage() {
               }
               error={errors.pagibig_no?.message}
             >
-              <Input
-                {...register('pagibig_no')}
-                placeholder={
-                  isEditing && existing?.has_pagibig_no ? '(unchanged)' : 'XXXX-XXXX-XXXX'
-                }
+              <Controller
+                name="pagibig_no"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(formatPagIBIG(e.target.value))}
+                    placeholder={isEditing && existing?.has_pagibig_no ? '(unchanged)' : 'XXXX-XXXX-XXXX'}
+                    maxLength={14}
+                  />
+                )}
               />
             </FormField>
           </div>
@@ -754,11 +800,15 @@ export default function EmployeeFormPage() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || (isEditing && !isDirty)}
+            disabled={isSubmitting || createMutation.isPending || updateMutation.isPending || (isEditing && !isDirty)}
             className="px-5 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800
                        disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Employee'}
+            {isSubmitting || createMutation.isPending || updateMutation.isPending
+              ? 'Saving…' 
+              : isEditing 
+                ? 'Save Changes' 
+                : 'Create Employee'}
           </button>
         </div>
       </form>

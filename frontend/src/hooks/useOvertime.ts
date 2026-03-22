@@ -131,7 +131,7 @@ export function useHeadEndorseOvertimeRequest() {
 
 // ── Pending Executive List ────────────────────────────────────────────────────
 
-export function usePendingExecutiveOvertimeRequests(filters: OvertimeFilters = {}) {
+export function usePendingExecutiveOvertimeRequests(filters: OvertimeFilters = {}, enabled = true) {
   return useQuery({
     queryKey: ['executive-overtime-requests', filters],
     queryFn: async () => {
@@ -141,6 +141,7 @@ export function usePendingExecutiveOvertimeRequests(filters: OvertimeFilters = {
       )
       return res.data
     },
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })

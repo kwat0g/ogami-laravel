@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:accounting'])->group(function () {
 
     // ── Chart of Accounts (COA-001 to COA-006) ───────────────────────────────
     Route::get('accounts', [ChartOfAccountController::class, 'index'])
@@ -86,6 +86,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('journal-entries/{journalEntry}', [JournalEntryController::class, 'cancel'])
         ->name('journal-entries.cancel');
 
+    // ── Journal Entry Templates ──────────────────────────────────────────────
+    Route::get('journal-entry-templates', [JournalEntryController::class, 'templates'])
+        ->name('journal-entry-templates.index');
+
+    Route::post('journal-entry-templates', [JournalEntryController::class, 'storeTemplate'])
+        ->name('journal-entry-templates.store');
+
+    Route::get('journal-entry-templates/{templateId}/apply', [JournalEntryController::class, 'applyTemplate'])
+        ->name('journal-entry-templates.apply');
+
+    Route::delete('journal-entry-templates/{templateId}', [JournalEntryController::class, 'deleteTemplate'])
+        ->name('journal-entry-templates.destroy');
+
     // ── Recurring Journal Entry Templates (GL-REC-001/002) ────────────────────
     Route::get('recurring-templates', [RecurringJournalTemplateController::class, 'index'])
         ->name('recurring-templates.index');
@@ -103,6 +116,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('recurring-templates/{recurringJournalTemplate}', [RecurringJournalTemplateController::class, 'destroy'])
         ->name('recurring-templates.destroy');
 
+}); // end module_access:accounting
+
+// ── Vendors & Vendor Items — accessible by ACCTG and PURCH departments ────────
+// module_access:vendors maps to ['ACCTG', 'PURCH'] in ModuleAccessMiddleware
+Route::middleware(['auth:sanctum', 'module_access:vendors'])->group(function () {
     // ── Vendors (AP-002, AP-004, AP-011) ─────────────────────────────────────
     Route::get('vendors', [VendorController::class, 'index'])->name('vendors.index');
     Route::post('vendors', [VendorController::class, 'store'])->name('vendors.store');
@@ -129,6 +147,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('vendors/{vendor}/items/{vendorItem}', [VendorItemController::class, 'update'])->name('vendors.items.update');
     Route::delete('vendors/{vendor}/items/{vendorItem}', [VendorItemController::class, 'destroy'])->name('vendors.items.destroy');
     Route::post('vendors/{vendor}/items/import', [VendorItemController::class, 'import'])->name('vendors.items.import');
+});
+
+// Re-open accounting group for AP Invoices and remaining accounting routes
+Route::middleware(['auth:sanctum', 'module_access:accounting'])->group(function () {
 
     // ── AP Invoices (AP-001 to AP-011) ───────────────────────────────────────
     // AP operational dashboard: totals by status, overdue summary, aging buckets
@@ -144,8 +166,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('ap/invoices', [VendorInvoiceController::class, 'store'])
         ->name('ap-invoices.store');
 
+    Route::post('ap/invoices/from-po', [VendorInvoiceController::class, 'createFromPo'])
+        ->middleware('throttle:api-action')
+        ->name('ap-invoices.from-po');
+
     Route::get('ap/invoices/{apInvoice}', [VendorInvoiceController::class, 'show'])
         ->name('ap-invoices.show');
+
+    Route::get('ap/invoices/{apInvoice}/pdf', [VendorInvoiceController::class, 'pdf'])
+        ->name('ap-invoices.pdf');
 
     // BIR Form 2307 (Certificate of Creditable Tax Withheld at Source)
     Route::get('ap/invoices/{apInvoice}/form-2307', [VendorInvoiceController::class, 'form2307'])
@@ -177,6 +206,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('ap/invoices/{apInvoice}/payments', [VendorInvoiceController::class, 'recordPayment'])
         ->name('ap-invoices.record-payment');
+
+    // ── Vendor Credit Notes ──────────────────────────────────────────────────
+    Route::get('ap/credit-notes', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'index'])
+        ->name('vendor-credit-notes.index');
+
+    Route::post('ap/credit-notes', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'store'])
+        ->name('vendor-credit-notes.store');
+
+    Route::get('ap/credit-notes/{creditNote}', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'show'])
+        ->name('vendor-credit-notes.show');
+
+    Route::patch('ap/credit-notes/{creditNote}/post', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'post'])
+        ->name('vendor-credit-notes.post');
 
     // ── Financial Reports (GL-001 to GL-005) ─────────────────────────────────
     Route::get('reports/gl', GeneralLedgerController::class)

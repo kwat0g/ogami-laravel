@@ -118,15 +118,27 @@ class ManufacturingEmployeeSeeder extends Seeder
     private function seedUserAccounts(): void
     {
         foreach ($this->getUserAccountData() as $account) {
-            $user = User::firstOrCreate(
-                ['email' => $account['email']],
-                [
+            // Check if user exists
+            $user = User::where('email', $account['email'])->first();
+            
+            if (! $user) {
+                // Create new user with password
+                $user = User::create([
                     'name'               => $account['name'],
+                    'email'              => $account['email'],
                     'password'           => $account['password'],
                     'email_verified_at'  => now(),
                     'password_changed_at'=> now(),
-                ]
-            );
+                ]);
+            } else {
+                // Update existing user's password to ensure it's properly hashed
+                $user->password = $account['password'];
+                $user->save();
+            }
+            
+            // Reset failed login attempts and unlock account
+            $user->update(['failed_login_attempts' => 0, 'locked_until' => null]);
+            
             $user->syncRoles([$account['role']]);
         }
     }
@@ -354,7 +366,7 @@ class ManufacturingEmployeeSeeder extends Seeder
                 'dob' => '1985-02-28', 'gender' => 'male', 'civil_status' => 'MARRIED', 'dependents' => 1,
                 'bir_status' => 'ME1', 'personal_email' => 'marlon.torres@email.com', 'phone' => '09191110002',
                 'address' => '78 Antipolo St., Cainta, Rizal',
-                'dept' => 'ACCTG', 'pos' => 'PURCH-OFF', 'sg' => 'SG-10',
+                'dept' => 'PURCH', 'pos' => 'PURCH-OFF', 'sg' => 'SG-10',
                 'hired' => '2020-07-01', 'salary' => 15000000,
                 'bank_name' => 'Metrobank', 'bank_account_no' => '6001000002',
             ],
@@ -451,15 +463,15 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['email' => 'chairman@ogamierp.local',        'name' => 'Roberto Ogami',       'password' => 'Executive@12345!', 'role' => 'executive'],
             ['email' => 'president@ogamierp.local',       'name' => 'Eduardo Ogami',        'password' => 'Executive@12345!', 'role' => 'executive'],
             ['email' => 'vp@ogamierp.local',              'name' => 'Lorenzo Ogami',        'password' => 'VicePresident@1!', 'role' => 'vice_president'],
-            ['email' => 'plant.manager@ogamierp.local',   'name' => 'Carlos Reyes',         'password' => 'Manager@12345!',   'role' => 'plant_manager'],
-            ['email' => 'prod.manager@ogamierp.local',    'name' => 'Renaldo Mendoza',      'password' => 'Manager@12345!',   'role' => 'production_manager'],
-            ['email' => 'qc.manager@ogamierp.local',      'name' => 'Josephine Villanueva', 'password' => 'Manager@12345!',   'role' => 'qc_manager'],
-            ['email' => 'mold.manager@ogamierp.local',    'name' => 'Victor Castillo',      'password' => 'Manager@12345!',   'role' => 'mold_manager'],
-            ['email' => 'ga.officer@ogamierp.local',      'name' => 'Rachel Garcia',        'password' => 'Officer@12345!',   'role' => 'ga_officer'],
-            ['email' => 'purchasing.officer@ogamierp.local', 'name' => 'Marlon Torres',     'password' => 'Officer@12345!',   'role' => 'purchasing_officer'],
-            ['email' => 'impex.officer@ogamierp.local',   'name' => 'Cristina Aquino',      'password' => 'Officer@12345!',   'role' => 'impex_officer'],
-            ['email' => 'warehouse.head@ogamierp.local',  'name' => 'Ernesto Bautista',     'password' => 'Head@123456789!',  'role' => 'warehouse_head'],
-            ['email' => 'ppc.head@ogamierp.local',        'name' => 'Jerome Florido',       'password' => 'Head@123456789!',  'role' => 'ppc_head'],
+            ['email' => 'plant.manager@ogamierp.local',   'name' => 'Carlos Reyes',         'password' => 'Manager@12345!',   'role' => 'manager'],
+            ['email' => 'prod.manager@ogamierp.local',    'name' => 'Renaldo Mendoza',      'password' => 'Manager@12345!',   'role' => 'manager'],
+            ['email' => 'qc.manager@ogamierp.local',      'name' => 'Josephine Villanueva', 'password' => 'Manager@12345!',   'role' => 'manager'],
+            ['email' => 'mold.manager@ogamierp.local',    'name' => 'Victor Castillo',      'password' => 'Manager@12345!',   'role' => 'manager'],
+            ['email' => 'ga.officer@ogamierp.local',      'name' => 'Rachel Garcia',        'password' => 'Officer@12345!',   'role' => 'officer'],
+            ['email' => 'purchasing.officer@ogamierp.local', 'name' => 'Marlon Torres',     'password' => 'Officer@12345!',   'role' => 'officer'],
+            ['email' => 'impex.officer@ogamierp.local',   'name' => 'Cristina Aquino',      'password' => 'Officer@12345!',   'role' => 'officer'],
+            ['email' => 'warehouse.head@ogamierp.local',  'name' => 'Ernesto Bautista',     'password' => 'Head@123456789!',  'role' => 'head'],
+            ['email' => 'ppc.head@ogamierp.local',        'name' => 'Jerome Florido',       'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'maintenance.head@ogamierp.local','name' => 'Armando Dela Torre',   'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'production.head@ogamierp.local', 'name' => 'Danilo Espiritu',      'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'processing.head@ogamierp.local', 'name' => 'Eliza Navarro',        'password' => 'Head@123456789!',  'role' => 'head'],
@@ -501,15 +513,15 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['chairman@ogamierp.local',           'Executive@12345!', 'executive',      'Chairman'],
             ['president@ogamierp.local',          'Executive@12345!', 'executive',      'President'],
             ['vp@ogamierp.local',                 'VicePresident@1!', 'vice_president', 'Vice President'],
-            ['plant.manager@ogamierp.local',      'Manager@12345!',   'plant_manager',      'Plant Manager'],
-            ['prod.manager@ogamierp.local',       'Manager@12345!',   'production_manager', 'Production Manager'],
-            ['qc.manager@ogamierp.local',         'Manager@12345!',   'qc_manager',         'QC/QA Manager'],
-            ['mold.manager@ogamierp.local',       'Manager@12345!',   'mold_manager',       'Mold Manager'],
-            ['ga.officer@ogamierp.local',         'Officer@12345!',   'ga_officer',         'GA Officer'],
-            ['purchasing.officer@ogamierp.local', 'Officer@12345!',   'purchasing_officer', 'Purchasing Officer'],
-            ['impex.officer@ogamierp.local',      'Officer@12345!',   'impex_officer',      'ImpEx Officer'],
-            ['warehouse.head@ogamierp.local',     'Head@123456789!',  'warehouse_head', 'Warehouse Head'],
-            ['ppc.head@ogamierp.local',           'Head@123456789!',  'ppc_head',       'PPC Head'],
+            ['plant.manager@ogamierp.local',      'Manager@12345!',   'manager',      'Plant Manager'],
+            ['prod.manager@ogamierp.local',       'Manager@12345!',   'manager', 'Production Manager'],
+            ['qc.manager@ogamierp.local',         'Manager@12345!',   'manager',         'QC/QA Manager'],
+            ['mold.manager@ogamierp.local',       'Manager@12345!',   'manager',       'Mold Manager'],
+            ['ga.officer@ogamierp.local',         'Officer@12345!',   'officer',         'GA Officer'],
+            ['purchasing.officer@ogamierp.local', 'Officer@12345!',   'officer', 'Purchasing Officer'],
+            ['impex.officer@ogamierp.local',      'Officer@12345!',   'officer',      'ImpEx Officer'],
+            ['warehouse.head@ogamierp.local',     'Head@123456789!',  'head', 'Warehouse Head'],
+            ['ppc.head@ogamierp.local',           'Head@123456789!',  'head',       'PPC Head'],
             ['maintenance.head@ogamierp.local',   'Head@123456789!',  'head',           'Maintenance Head'],
             ['production.head@ogamierp.local',    'Head@123456789!',  'head',           'Production Head'],
             ['processing.head@ogamierp.local',    'Head@123456789!',  'head',           'Processing Head'],

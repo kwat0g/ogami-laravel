@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Models;
 
 use App\Domains\HR\Models\Department;
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -16,7 +17,13 @@ use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * PurchaseRequest — 5-stage SoD approval chain (Staff → Head → Manager → Officer → VP).
+ * PurchaseRequest — Simplified 3-stage approval (Review → Budget → VP).
+ * 
+ * Workflow: Draft → Pending Review → Reviewed → Budget Verified → Approved
+ * - Budget check happens at creation (hard block)
+ * - Purchasing reviews technical validity
+ * - Accounting commits budget
+ * - VP gives final authority
  *
  * @property int $id
  * @property string $ulid
@@ -26,7 +33,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $urgency normal|urgent|critical
  * @property string $justification
  * @property string|null $notes
- * @property string $status draft|submitted|noted|checked|reviewed|budget_checked|returned|approved|rejected|cancelled|converted_to_po
+ * @property string $status draft|pending_review|reviewed|budget_verified|returned|approved|rejected|cancelled|converted_to_po
  * @property int|null $submitted_by_id
  * @property Carbon|null $submitted_at
  * @property int|null $noted_by_id
@@ -53,7 +60,10 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $rejection_stage
  * @property int|null $converted_to_po_id
  * @property Carbon|null $converted_at
+ * @property int|null $cancelled_by_id
+ * @property Carbon|null $cancelled_at
  * @property numeric-string $total_estimated_cost
+ * @property int|null $material_requisition_id
  */
 final class PurchaseRequest extends Model implements Auditable
 {
@@ -96,7 +106,10 @@ final class PurchaseRequest extends Model implements Auditable
         'rejection_stage',
         'converted_to_po_id',
         'converted_at',
+        'cancelled_by_id',
+        'cancelled_at',
         'total_estimated_cost',
+        'material_requisition_id',
     ];
 
     protected $casts = [
@@ -109,6 +122,7 @@ final class PurchaseRequest extends Model implements Auditable
         'returned_at' => 'datetime',
         'rejected_at' => 'datetime',
         'converted_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     // ── Relations ────────────────────────────────────────────────────────────
@@ -173,6 +187,12 @@ final class PurchaseRequest extends Model implements Auditable
         return $this->belongsTo(User::class, 'rejected_by_id');
     }
 
+    /** @return BelongsTo<User, PurchaseRequest> */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by_id');
+    }
+
     /** @return BelongsTo<Department, PurchaseRequest> */
     public function department(): BelongsTo
     {
@@ -189,6 +209,6 @@ final class PurchaseRequest extends Model implements Auditable
 
     public function isCancellable(): bool
     {
-        return in_array($this->status, ['draft', 'submitted'], true);
+        return in_array($this->status, ['draft', 'returned'], true);
     }
 }

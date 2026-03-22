@@ -9,8 +9,12 @@ import {
 } from '@/hooks/useAR'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { useActionConfirmation } from '@/hooks/useActionConfirmation'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
 import type { Customer, CreateCustomerPayload } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -46,22 +50,32 @@ function StatusBadge({ active }: { active: boolean }) {
   )
 }
 
-function ArchiveCustomerButton({ customer }: { customer: Customer }) {
+// ---------------------------------------------------------------------------
+// Archive Customer Button with Confirmation
+// ---------------------------------------------------------------------------
+
+function ArchiveCustomerButton({ customer, onSuccess }: { customer: Customer; onSuccess?: () => void }) {
   const archiveMut = useArchiveCustomer()
+  
+  const handleArchive = async () => {
+    try {
+      await archiveMut.mutateAsync(customer.id)
+      toast.success(`Customer "${customer.name}" has been archived successfully`)
+      onSuccess?.()
+    } catch (err) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to archive customer: ${message}`)
+      throw err
+    }
+  }
+
   return (
     <ConfirmDestructiveDialog
       title="Archive Customer"
       description={`Archive "${customer.name}"? This will prevent new invoices from being created for this customer.`}
       confirmWord="ARCHIVE"
       confirmLabel="Archive"
-      onConfirm={async () => {
-        try {
-          await archiveMut.mutateAsync(customer.id)
-          toast.success('Customer archived.')
-        } catch {
-          toast.error('Failed to archive customer.')
-        }
-      }}
+      onConfirm={handleArchive}
     >
       <button className="text-xs text-neutral-500 hover:underline flex items-center gap-1">
         <Archive className="w-3 h-3" /> Archive
@@ -71,7 +85,7 @@ function ArchiveCustomerButton({ customer }: { customer: Customer }) {
 }
 
 // ---------------------------------------------------------------------------
-// Customer Form Modal
+// Customer Form Modal with Validation
 // ---------------------------------------------------------------------------
 
 const EMPTY_FORM: CreateCustomerPayload = {
@@ -90,9 +104,10 @@ const EMPTY_FORM: CreateCustomerPayload = {
 interface CustomerFormModalProps {
   initial?: Customer
   onClose: () => void
+  onSuccess?: () => void
 }
 
-function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
+function CustomerFormModal({ initial, onClose, onSuccess }: CustomerFormModalProps) {
   const [form, setForm] = useState<CreateCustomerPayload>(
     initial
       ? {
@@ -109,90 +124,201 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
         }
       : { ...EMPTY_FORM }
   )
+  
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState(false)
 
   const createMut = useCreateCustomer()
   const updateMut = useUpdateCustomer(initial?.id ?? 0)
 
-  const set = (k: keyof CreateCustomerPayload, v: unknown) =>
+  const set = (k: keyof CreateCustomerPayload, v: unknown) => {
     setForm((prev) => ({ ...prev, [k]: v }))
+    // Clear error when field is edited
+    if (errors[k]) {
+      setErrors((prev) => ({ ...prev, [k]: '' }))
+    }
+  }
+
+  // Client-side validation with real-time error messages
+  const tinError = touched && form.tin && !validators.tin(form.tin)
+    ? validationMessages.tin
+    : undefined
+  const phoneError = touched && form.phone && !validators.phone(form.phone)
+    ? validationMessages.phone
+    : undefined
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {}
+    
+    if (!form.name?.trim()) {
+      newErrors.name = 'Customer name is required'
+    } else if (form.name.length < 2) {
+      newErrors.name = 'Name must be at least 2 characters'
+    } else if (form.name.length > 100) {
+      newErrors.name = 'Name must not exceed 100 characters'
+    }
+    
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+    
+    if (form.credit_limit < 0) {
+      newErrors.credit_limit = 'Credit limit cannot be negative'
+    }
+    
+    if (form.tin && !validators.tin(form.tin)) {
+      newErrors.tin = validationMessages.tin
+    }
+    
+    if (form.phone && !validators.phone(form.phone)) {
+      newErrors.phone = validationMessages.phone
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // Normalize form data: convert empty strings to null
+  // Note: TIN is kept with dashes (backend expects XXX-XXX-XXX-XXX format)
+  const normalizeForm = (formData: CreateCustomerPayload): CreateCustomerPayload => ({
+    ...formData,
+    tin: formData.tin?.trim() || null,
+    phone: formData.phone?.trim() || null,
+    email: formData.email?.trim() || null,
+    address: formData.address?.trim() || null,
+    billing_address: formData.billing_address?.trim() || null,
+    contact_person: formData.contact_person?.trim() || null,
+    notes: formData.notes?.trim() || null,
+  })
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (initial) {
-      await updateMut.mutateAsync(form)
-      toast.success('Customer updated.')
-    } else {
-      await createMut.mutateAsync(form)
-      toast.success('Customer created.')
+    setTouched(true)
+    
+    // Validate before submission
+    if (!validate()) {
+      toast.error('Please fix the validation errors before submitting')
+      return
     }
-    onClose()
+    
+    try {
+      const normalizedForm = normalizeForm(form)
+      if (initial) {
+        await updateMut.mutateAsync(normalizedForm)
+        toast.success(`Customer "${form.name}" has been updated successfully`)
+      } else {
+        await createMut.mutateAsync(normalizedForm)
+        toast.success(`Customer "${form.name}" has been created successfully`)
+      }
+      onSuccess?.()
+      onClose()
+    } catch (err) {
+      const parsed = firstErrorMessage(err)
+      toast.error(`${initial ? 'Update' : 'Create'} failed: ${parsed}`)
+      // Don't close modal on error so user can fix
+    }
   }
 
   const isPending = createMut.isPending || updateMut.isPending
-  const error = createMut.error || updateMut.error
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded border border-neutral-200 w-full max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <h2 className="text-lg font-semibold text-neutral-900 mb-4">{initial ? 'Edit Customer' : 'New Customer'}</h2>
-        {error && (
-          <p className="text-sm text-red-600 mb-3">{(error as Error).message}</p>
-        )}
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">
+          {initial ? 'Edit Customer' : 'New Customer'}
+        </h2>
+        
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Name Field */}
             <label className="col-span-2 block">
-              <span className="text-sm font-medium text-neutral-700">Name *</span>
+              <span className="text-sm font-medium text-neutral-700">
+                Name <span className="text-red-500">*</span>
+              </span>
               <input
-                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  errors.name ? 'border-red-500' : 'border-neutral-300'
+                }`}
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
-                required
+                placeholder="Enter customer name"
               />
+              {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
             </label>
+            
+            {/* TIN Field */}
             <label className="block">
               <span className="text-sm font-medium text-neutral-700">TIN</span>
               <input
-                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  tinError ? 'border-red-400' : 'border-neutral-300'
+                }`}
                 value={form.tin ?? ''}
-                onChange={(e) => set('tin', e.target.value || null)}
+                onChange={(e) => set('tin', formatTIN(e.target.value) || null)}
+                placeholder="000-000-000-000"
               />
+              {tinError && <p className="mt-1 text-xs text-red-600">{tinError}</p>}
+              <p className="mt-1 text-xs text-neutral-400">{validationMessages.tin}</p>
             </label>
+            
+            {/* Credit Limit Field */}
             <label className="block">
               <span className="text-sm font-medium text-neutral-700">Credit Limit (₱)</span>
               <input
                 type="number"
                 min={0}
                 step="0.01"
-                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  errors.credit_limit ? 'border-red-500' : 'border-neutral-300'
+                }`}
                 value={form.credit_limit ?? 0}
                 onChange={(e) => set('credit_limit', parseFloat(e.target.value) || 0)}
               />
+              {errors.credit_limit && <p className="text-xs text-red-600 mt-1">{errors.credit_limit}</p>}
             </label>
+            
+            {/* Contact Person Field */}
             <label className="block">
               <span className="text-sm font-medium text-neutral-700">Contact Person</span>
               <input
                 className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.contact_person ?? ''}
                 onChange={(e) => set('contact_person', e.target.value || null)}
+                placeholder="Primary contact name"
               />
             </label>
+            
+            {/* Phone Field */}
             <label className="block">
               <span className="text-sm font-medium text-neutral-700">Phone</span>
               <input
-                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  phoneError ? 'border-red-400' : 'border-neutral-300'
+                }`}
                 value={form.phone ?? ''}
-                onChange={(e) => set('phone', e.target.value || null)}
+                onChange={(e) => set('phone', formatPhoneNumber(e.target.value) || null)}
+                placeholder="09XX XXX XXXX"
               />
+              {phoneError && <p className="mt-1 text-xs text-red-600">{phoneError}</p>}
+              <p className="mt-1 text-xs text-neutral-400">{validationMessages.phone}</p>
             </label>
+            
+            {/* Email Field */}
             <label className="col-span-2 block">
               <span className="text-sm font-medium text-neutral-700">Email</span>
               <input
                 type="email"
-                className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+                className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${
+                  errors.email ? 'border-red-500' : 'border-neutral-300'
+                }`}
                 value={form.email ?? ''}
                 onChange={(e) => set('email', e.target.value || null)}
+                placeholder="contact@company.com"
               />
+              {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
             </label>
+            
+            {/* Address Field */}
             <label className="col-span-2 block">
               <span className="text-sm font-medium text-neutral-700">Address</span>
               <textarea
@@ -200,11 +326,17 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
                 className="mt-1 block w-full border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
                 value={form.address ?? ''}
                 onChange={(e) => set('address', e.target.value || null)}
+                placeholder="Complete business address"
               />
             </label>
           </div>
+          
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-1.5 rounded border border-neutral-300 text-sm hover:bg-neutral-50">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              className="px-4 py-1.5 rounded border border-neutral-300 text-sm hover:bg-neutral-50"
+            >
               Cancel
             </button>
             <button
@@ -212,7 +344,7 @@ function CustomerFormModal({ initial, onClose }: CustomerFormModalProps) {
               disabled={isPending}
               className="px-4 py-1.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isPending ? 'Saving…' : initial ? 'Update' : 'Create Customer'}
+              {isPending ? 'Saving…' : initial ? 'Update Customer' : 'Create Customer'}
             </button>
           </div>
         </form>
@@ -234,6 +366,15 @@ export default function CustomersPage() {
 
   const customers = data?.data ?? []
 
+  const handleRefresh = async () => {
+    try {
+      await refetch()
+      toast.success('Customer list refreshed')
+    } catch (err) {
+      toast.error('Failed to refresh customer list')
+    }
+  }
+
   return (
     <div className="p-6 space-y-4">
       <PageHeader title="Customers" />
@@ -245,19 +386,22 @@ export default function CustomersPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => refetch()}
+            onClick={handleRefresh}
             className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500"
+            title="Refresh list"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          {canManage && (
-            <button
-              onClick={() => setModalCustomer(null)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-            >
-              <Plus className="w-4 h-4" /> New Customer
-            </button>
-          )}
+          <DepartmentGuard module="customers">
+            {canManage && (
+              <button
+                onClick={() => setModalCustomer(null)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+              >
+                <Plus className="w-4 h-4" /> New Customer
+              </button>
+            )}
+          </DepartmentGuard>
         </div>
       </div>
 
@@ -316,7 +460,9 @@ export default function CustomersPage() {
                             <CreditCard className="w-3 h-3" /> Edit
                           </button>
                         )}
-                        {canArchive && c.is_active && <ArchiveCustomerButton customer={c} />}
+                        {canArchive && c.is_active && (
+                          <ArchiveCustomerButton customer={c} onSuccess={() => refetch()} />
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -332,6 +478,7 @@ export default function CustomersPage() {
         <CustomerFormModal
           initial={modalCustomer ?? undefined}
           onClose={() => setModalCustomer(undefined)}
+          onSuccess={() => refetch()}
         />
       )}
     </div>

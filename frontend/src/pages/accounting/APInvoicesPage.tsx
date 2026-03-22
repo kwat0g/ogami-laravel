@@ -1,11 +1,14 @@
 import { useState } from 'react'
-import { Plus, RefreshCw, ChevronRight } from 'lucide-react'
+import { Plus, RefreshCw, FilePlus, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { useAPInvoices } from '@/hooks/useAP'
+import { useAPInvoices, useCreateInvoiceFromPO } from '@/hooks/useAP'
+import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { toast } from 'sonner'
 import type { VendorInvoiceStatus } from '@/types/ap'
+import type { PurchaseOrder } from '@/types/procurement'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -46,6 +49,117 @@ function formatCurrency(n: number) {
 }
 
 // ---------------------------------------------------------------------------
+// Create From PO Modal
+// ---------------------------------------------------------------------------
+
+interface CreateFromPOModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSelect: (poId: number) => void
+  isLoading: boolean
+}
+
+function CreateFromPOModal({ isOpen, onClose, onSelect, isLoading }: CreateFromPOModalProps) {
+  const [selectedPoId, setSelectedPoId] = useState<number | null>(null)
+  
+  // Fetch eligible POs only when modal is open (avoids 403 for non-procurement roles)
+  const { data: poData, isLoading: isLoadingPOs } = usePurchaseOrders(
+    isOpen ? { per_page: 100 } : undefined,
+  )
+  
+  const purchaseOrders = poData?.data ?? []
+  // Filter to only show POs that are sent or partially_received
+  const eligiblePOs = purchaseOrders.filter(
+    (po: PurchaseOrder) => po.status === 'sent' || po.status === 'partially_received'
+  )
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+          <h2 className="text-lg font-semibold text-neutral-900">Create Invoice from PO</h2>
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-neutral-100 text-neutral-500"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto p-4">
+          <p className="text-sm text-neutral-600 mb-4">
+            Select a purchase order to create a new AP invoice. The invoice will be pre-populated with PO data.
+          </p>
+          
+          {isLoadingPOs ? (
+            <div className="text-center py-8 text-neutral-500">Loading purchase orders...</div>
+          ) : eligiblePOs.length === 0 ? (
+            <div className="text-center py-8 text-neutral-500">
+              No eligible purchase orders found.
+              <p className="text-xs mt-2 text-neutral-400">
+                POs must have status sent or partially_received.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {eligiblePOs.map((po: PurchaseOrder) => (
+                <button
+                  key={po.id}
+                  onClick={() => setSelectedPoId(po.id)}
+                  className={`w-full text-left p-3 rounded border transition-colors ${
+                    selectedPoId === po.id
+                      ? 'border-neutral-900 bg-neutral-50'
+                      : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-neutral-900">{po.po_reference}</div>
+                      <div className="text-sm text-neutral-500">
+                        {po.vendor?.name ?? `Vendor #${po.vendor_id}`}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-mono text-neutral-700">
+                        {formatCurrency(po.total_po_amount)}
+                      </div>
+                      <div className="text-xs text-neutral-400 capitalize">
+                        {po.status.replace('_', ' ')}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-neutral-200">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm rounded border border-neutral-300 hover:bg-neutral-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => selectedPoId && onSelect(selectedPoId)}
+            disabled={!selectedPoId || isLoading}
+            className="px-4 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Creating...' : 'Create Invoice'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
 
@@ -54,18 +168,41 @@ export default function APInvoicesPage() {
   const canCreate = useAuthStore(s => s.hasPermission('vendor_invoices.create'))
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const { data, isLoading, refetch } = useAPInvoices({
     status: activeStatus ?? undefined,
     due_soon: dueSoonOnly || undefined,
   })
 
+  const createFromPOMutation = useCreateInvoiceFromPO()
+
   const invoices = data?.data ?? []
   const meta = data?.meta
 
+  const handleCreateFromPO = async (poId: number) => {
+    try {
+      const result = await createFromPOMutation.mutateAsync(poId)
+      toast.success(`Invoice created from PO ${result.po_reference}`)
+      setIsModalOpen(false)
+      // Navigate to the invoice detail page where user can edit
+      navigate(`/accounting/ap/invoices/${result.invoice.ulid}`)
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      toast.error(error.response?.data?.message ?? 'Failed to create invoice from PO')
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader title="AP Invoices" />
+      <PageHeader
+        title="AP Invoices"
+        actions={
+          <Link to="/accounting/ap/monitor" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+            Due Date Monitor
+          </Link>
+        }
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -77,12 +214,20 @@ export default function APInvoicesPage() {
             <RefreshCw className="w-4 h-4 text-neutral-500" />
           </button>
           {canCreate && (
-            <button
-              onClick={() => navigate('/accounting/ap/invoices/new')}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
-            >
-              <Plus className="w-4 h-4" /> New Invoice
-            </button>
+            <>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-100 text-neutral-800 text-sm rounded hover:bg-neutral-200 border border-neutral-300"
+              >
+                <FilePlus className="w-4 h-4" /> From PO
+              </button>
+              <button
+                onClick={() => navigate('/accounting/ap/invoices/new')}
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+              >
+                <Plus className="w-4 h-4" /> New Invoice
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -128,12 +273,11 @@ export default function APInvoicesPage() {
                 <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Net Payable</th>
                 <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Balance Due</th>
                 <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Status</th>
-                <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {invoices.map(inv => (
-                <tr key={inv.id} className={`hover:bg-neutral-50 transition-colors ${inv.is_overdue ? 'bg-neutral-50' : ''}`}>
+                <tr key={inv.id} onClick={() => navigate(`/accounting/ap/invoices/${inv.ulid}`)} className={`hover:bg-neutral-50 transition-colors cursor-pointer ${inv.is_overdue ? 'bg-neutral-50' : ''}`}>
                   <td className="px-3 py-2 font-medium text-neutral-900">
                     {inv.vendor?.name ?? `Vendor #${inv.vendor_id}`}
                     {inv.description && (
@@ -148,14 +292,6 @@ export default function APInvoicesPage() {
                   <td className="px-3 py-2 text-right font-mono text-neutral-800">{formatCurrency(inv.net_payable)}</td>
                   <td className="px-3 py-2 text-right font-mono text-neutral-600">{formatCurrency(inv.balance_due)}</td>
                   <td className="px-3 py-2"><StatusBadge status={inv.status} /></td>
-                  <td className="px-3 py-2 text-right">
-                    <Link
-                      to={`/accounting/ap/invoices/${inv.ulid}`}
-                      className="inline-flex items-center gap-1 text-xs text-neutral-700 hover:text-neutral-900 font-medium"
-                    >
-                      View <ChevronRight className="w-3 h-3" />
-                    </Link>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -167,6 +303,14 @@ export default function APInvoicesPage() {
           )}
         </div>
       )}
+
+      {/* Create From PO Modal */}
+      <CreateFromPOModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleCreateFromPO}
+        isLoading={createFromPOMutation.isPending}
+      />
     </div>
   )
 }

@@ -6,6 +6,8 @@ namespace App\Domains\FixedAssets\Models;
 
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
+use Database\Factories\FixedAssetCategoryFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -31,7 +33,12 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class FixedAssetCategory extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, HasFactory, HasPublicUlid, SoftDeletes;
+
+    protected static function newFactory(): FixedAssetCategoryFactory
+    {
+        return FixedAssetCategoryFactory::new();
+    }
 
     protected $table = 'fixed_asset_categories';
 

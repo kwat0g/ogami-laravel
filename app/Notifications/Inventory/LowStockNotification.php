@@ -18,10 +18,28 @@ final class LowStockNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        private readonly ItemMaster $item,
+        private readonly int $itemId,
+        private readonly string $itemUlid,
+        private readonly string $itemName,
+        private readonly string $itemCode,
+        private readonly string $unitOfMeasure,
         private readonly float $currentBalance,
+        private readonly float $reorderPoint,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(ItemMaster $item, float $currentBalance): self
+    {
+        return new self(
+            itemId: $item->id,
+            itemUlid: $item->ulid,
+            itemName: $item->name,
+            itemCode: $item->item_code,
+            unitOfMeasure: $item->unit_of_measure,
+            currentBalance: $currentBalance,
+            reorderPoint: (float) $item->reorder_point,
+        );
     }
 
     /** @return list<string> */
@@ -38,17 +56,17 @@ final class LowStockNotification extends Notification implements ShouldQueue
             'title' => 'Low Stock Alert',
             'message' => sprintf(
                 'Item "%s" (%s) is low on stock. Current balance: %s %s (reorder point: %s).',
-                $this->item->name,
-                $this->item->item_code,
+                $this->itemName,
+                $this->itemCode,
                 number_format($this->currentBalance, 2),
-                $this->item->unit_of_measure,
-                number_format((float) $this->item->reorder_point, 2),
+                $this->unitOfMeasure,
+                number_format($this->reorderPoint, 2),
             ),
-            'action_url' => '/inventory/items/'.$this->item->ulid,
-            'item_id' => $this->item->id,
-            'item_code' => $this->item->item_code,
+            'action_url' => '/inventory/items/'.$this->itemUlid,
+            'item_id' => $this->itemId,
+            'item_code' => $this->itemCode,
             'balance' => $this->currentBalance,
-            'reorder_point' => (float) $this->item->reorder_point,
+            'reorder_point' => $this->reorderPoint,
         ];
     }
 }

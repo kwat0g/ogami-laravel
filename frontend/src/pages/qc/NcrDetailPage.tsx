@@ -1,22 +1,25 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AlertOctagon, AlertTriangle, CheckCircle2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNcr, useIssueCapa, useCloseNcr, useCompleteCapaAction } from '@/hooks/useQC'
 import { usePermission } from '@/hooks/usePermission'
 import { useEmployees } from '@/hooks/useEmployees'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { CapaStatus } from '@/types/qc'
 
 const _capaStatusBadge: Record<CapaStatus, string> = {
   open:        'bg-neutral-50 text-neutral-500 border-neutral-200',
-  in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
-  completed:   'bg-emerald-50 text-emerald-700 border-emerald-200',
-  verified:    'bg-purple-50 text-purple-700 border-purple-200',
+  in_progress: 'bg-neutral-100 text-neutral-700 border-neutral-200',
+  completed:   'bg-neutral-200 text-neutral-800 border-neutral-300',
+  verified:    'bg-neutral-800 text-white border-neutral-800',
 }
 
 export default function NcrDetailPage(): React.ReactElement {
@@ -29,6 +32,12 @@ export default function NcrDetailPage(): React.ReactElement {
     due_date:       '',
     assigned_to_id: '',
   })
+  const [capaTouched, setCapaTouched] = useState<Set<string>>(new Set())
+
+  // Confirmation dialog states
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showCapaConfirm, setShowCapaConfirm] = useState(false)
+  const [capaToComplete, setCapaToComplete] = useState<string | null>(null)
 
   const { data: ncr, isLoading, isError } = useNcr(ulid ?? null)
   const canCreate = usePermission('qc.ncr.create')
@@ -43,28 +52,73 @@ export default function NcrDetailPage(): React.ReactElement {
     e => e.is_active && e.user_id != null && e.department?.name === 'Quality Control & Assurance'
   )
 
-  const handleIssueCapa = async () => {
+  // Validation for CAPA form
+  const capaErrors = useMemo(() => {
+    const e: Record<string, string | undefined> = {}
+    if (!capaData.description.trim()) e.description = 'Description is required.'
+    if (capaData.description.trim().length < 10) e.description = 'Description must be at least 10 characters.'
+    return e
+  }, [capaData])
+
+  const touchCapa = (k: string) => setCapaTouched(prev => new Set([...prev, k]))
+  const feCapa = (k: string) => (capaTouched.has(k) ? capaErrors[k] : undefined)
+  const isCapaValid = useMemo(() => {
+    return capaData.description.trim().length >= 10
+  }, [capaData])
+
+  const handleIssueCapaClick = () => {
+    setCapaTouched(new Set(['description']))
+    if (!isCapaValid) {
+      toast.error('Please provide a description of at least 10 characters.')
+      return
+    }
+    setShowCapaConfirm(true)
+  }
+
+  const executeIssueCapa = async () => {
     try {
       await issueCapaMut.mutateAsync({
         type:           capaData.type,
-        description:    capaData.description,
-        due_date:       capaData.due_date,
+        description:    capaData.description.trim(),
+        due_date:       capaData.due_date || undefined,
         assigned_to_id: capaData.assigned_to_id ? parseInt(capaData.assigned_to_id) : undefined,
       })
-      toast.success('CAPA action issued.')
+      toast.success('CAPA action issued successfully.')
       setShowCapaForm(false)
+      setShowCapaConfirm(false)
       setCapaData({ type: 'corrective', description: '', due_date: '', assigned_to_id: '' })
-    } catch {
-      toast.error('Failed to issue CAPA action.')
+      setCapaTouched(new Set())
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
-  const handleClose = async () => {
+  const handleCloseClick = () => {
+    setShowCloseConfirm(true)
+  }
+
+  const executeClose = async () => {
     try {
       await closeNcrMut.mutateAsync()
-      toast.success('NCR closed.')
-    } catch {
-      toast.error('Failed to close NCR.')
+      toast.success('NCR closed successfully.')
+      setShowCloseConfirm(false)
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
+
+  const handleCompleteCapa = (capaId: string) => {
+    setCapaToComplete(capaId)
+  }
+
+  const executeCompleteCapa = async () => {
+    if (!capaToComplete) return
+    try {
+      await completeCapa.mutateAsync(capaToComplete)
+      toast.success('CAPA action marked as completed.')
+      setCapaToComplete(null)
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
     }
   }
 
@@ -104,14 +158,20 @@ export default function NcrDetailPage(): React.ReactElement {
               </button>
             )}
             {canCloseNcr && (
-              <button
-                onClick={handleClose}
-                disabled={closeNcrMut.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 border border-neutral-300 text-sm font-medium rounded-md hover:bg-neutral-50 hover:border-neutral-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              <ConfirmDialog
+                title="Close NCR?"
+                description={`You are about to close this Non-Conformance Report (${ncr.ncr_reference}). This action indicates that all necessary actions have been taken to address the non-conformance.\n\nAre you sure you want to proceed?`}
+                confirmLabel="Close NCR"
+                onConfirm={executeClose}
               >
-                <CheckCircle2 className="w-4 h-4" />
-                Close NCR
-              </button>
+                <button
+                  disabled={closeNcrMut.isPending}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 border border-neutral-300 text-sm font-medium rounded-md hover:bg-neutral-50 hover:border-neutral-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {closeNcrMut.isPending ? 'Closing…' : 'Close NCR'}
+                </button>
+              </ConfirmDialog>
             )}
           </>
         }
@@ -170,13 +230,19 @@ export default function NcrDetailPage(): React.ReactElement {
                     <div className="flex items-center gap-3">
                       <StatusBadge status={capa.status}>{capa.status?.replace('_', ' ') || 'Unknown'}</StatusBadge>
                       {canCreate && capa.status === 'open' && (
-                        <button
-                          onClick={() => completeCapa.mutate(capa.id)}
-                          disabled={completeCapa.isPending}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        <ConfirmDialog
+                          title="Complete CAPA Action?"
+                          description={`Mark this CAPA action as completed?\n\n"${capa.description}"\n\nThis will update the status to 'completed'.`}
+                          confirmLabel="Complete"
+                          onConfirm={() => handleCompleteCapa(capa.id)}
                         >
-                          Complete
-                        </button>
+                          <button
+                            disabled={completeCapa.isPending}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {completeCapa.isPending ? 'Completing…' : 'Complete'}
+                          </button>
+                        </ConfirmDialog>
                       )}
                     </div>
                   </div>
@@ -207,14 +273,21 @@ export default function NcrDetailPage(): React.ReactElement {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Description *</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Description * <span className="text-xs font-normal text-neutral-400">(min 10 characters)</span>
+                </label>
                 <textarea
                   value={capaData.description}
                   onChange={(e) => setCapaData({ ...capaData, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:border-neutral-400 resize-none"
+                  onBlur={() => touchCapa('description')}
+                  className={`w-full px-3 py-2 bg-white border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-neutral-200 focus:border-neutral-400 resize-none ${
+                    feCapa('description') ? 'border-red-400' : 'border-neutral-300'
+                  }`}
                   rows={3}
                   placeholder="Describe the corrective/preventive action..."
                 />
+                {feCapa('description') && <p className="mt-1 text-xs text-red-600">{feCapa('description')}</p>}
+                <p className="mt-1 text-xs text-neutral-400">{capaData.description.trim().length} / 10 characters</p>
               </div>
 
               <div>
@@ -245,15 +318,19 @@ export default function NcrDetailPage(): React.ReactElement {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 type="button"
-                onClick={() => setShowCapaForm(false)}
+                onClick={() => {
+                  setShowCapaForm(false)
+                  setCapaData({ type: 'corrective', description: '', due_date: '', assigned_to_id: '' })
+                  setCapaTouched(new Set())
+                }}
                 className="px-4 py-2 text-sm font-medium text-neutral-700 border border-neutral-300 rounded-md hover:bg-neutral-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={handleIssueCapa}
-                disabled={!capaData.description.trim() || issueCapaMut.isPending}
+                onClick={handleIssueCapaClick}
+                disabled={!isCapaValid || issueCapaMut.isPending}
                 className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 rounded-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {issueCapaMut.isPending ? 'Issuing...' : 'Issue CAPA'}
@@ -261,6 +338,30 @@ export default function NcrDetailPage(): React.ReactElement {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Issue CAPA Confirmation Dialog */}
+      {showCapaConfirm && (
+        <ConfirmDialog
+          title="Issue CAPA Action?"
+          description={`You are about to issue a ${capaData.type} CAPA action for this NCR.\n\nDescription: "${capaData.description.trim()}"\n${capaData.due_date ? `Due Date: ${capaData.due_date}` : ''}\n\nAre you sure you want to proceed?`}
+          confirmLabel="Issue CAPA"
+          onConfirm={executeIssueCapa}
+        >
+          <span />
+        </ConfirmDialog>
+      )}
+
+      {/* Complete CAPA Confirmation Dialog */}
+      {capaToComplete && (
+        <ConfirmDialog
+          title="Complete CAPA Action?"
+          description="This CAPA action will be marked as completed. This indicates that the required corrective or preventive action has been implemented."
+          confirmLabel="Complete CAPA"
+          onConfirm={executeCompleteCapa}
+        >
+          <span />
+        </ConfirmDialog>
       )}
     </div>
   )

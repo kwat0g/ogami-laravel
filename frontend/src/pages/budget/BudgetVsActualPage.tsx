@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { BarChart3, CheckCircle2, XCircle, Send } from 'lucide-react'
 import {
   useBudgetLines,
@@ -50,8 +51,8 @@ export default function BudgetVsActualPage(): React.ReactElement {
     try {
       await submitBudget.mutateAsync(line.ulid)
       toast.success('Budget line submitted for approval.')
-    } catch {
-      toast.error('Submit failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Submit failed.'))
     }
   }
 
@@ -59,8 +60,8 @@ export default function BudgetVsActualPage(): React.ReactElement {
     try {
       await approveBudget.mutateAsync({ ulid: line.ulid })
       toast.success('Budget line approved.')
-    } catch {
-      toast.error('Approval failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Approval failed.'))
     }
   }
 
@@ -69,8 +70,8 @@ export default function BudgetVsActualPage(): React.ReactElement {
     try {
       await rejectBudget.mutateAsync({ ulid: line.ulid, remarks: remarks ?? undefined })
       toast.success('Budget line rejected.')
-    } catch {
-      toast.error('Rejection failed.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Rejection failed.'))
     }
   }
 

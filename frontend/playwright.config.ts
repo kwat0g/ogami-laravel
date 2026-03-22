@@ -17,7 +17,7 @@ export default defineConfig({
     outputDir: './e2e/test-results',
     fullyParallel: false,   // tests share seeded data — run sequentially
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 1 : 0,
+    retries: process.env.CI ? 2 : 1,  // Retry failed tests to handle rate limiting
     workers: 1,
     reporter: [
         ['list'],
@@ -30,8 +30,8 @@ export default defineConfig({
         trace:              'on-first-retry',
         screenshot:         'only-on-failure',
         video:              'off',
-        actionTimeout:      15_000,
-        navigationTimeout:  20_000,
+        actionTimeout:      45_000,  // Increased for rate limit delays
+        navigationTimeout:  45_000,
     },
 
     projects: [

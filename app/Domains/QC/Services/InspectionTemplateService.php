@@ -82,4 +82,9 @@ final class InspectionTemplateService implements ServiceContract
     {
         return InspectionTemplate::where('stage', $stage)->where('is_active', true)->with('items')->orderBy('name')->get();
     }
+
+    public function delete(InspectionTemplate $template): void
+    {
+        $template->delete();
+    }
 }

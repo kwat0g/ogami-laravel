@@ -19,6 +19,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import {
   ArrowLeft,
   CheckCircle,
@@ -236,8 +237,8 @@ export default function PayrollRunDraftValidatePage() {
       setIsNavigating(true)
       clear()
       navigate(`/payroll/runs/${phase.runId}/compute`, { replace: true })
-    } catch {
-      toast.error('Failed to start computation.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to start computation.'))
       setPhase({ kind: 'idle' })
     }
   }

@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:reports'])->group(function () {
     // ── BIR ─────────────────────────────────────────────────────────────────
     Route::get('bir/1601c', [GovernmentReportsController::class, 'form1601c'])
         ->name('bir.1601c');

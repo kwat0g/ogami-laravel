@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus } from 'lucide-react'
 import { useNcrs } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
@@ -22,6 +22,7 @@ const statusBadge: Record<NcrStatus, string> = {
 }
 
 export default function NcrListPage(): React.ReactElement {
+  const navigate = useNavigate()
   const [status, setStatus]     = useState('')
   const [severity, setSeverity] = useState('')
   const [page, setPage]         = useState(1)
@@ -42,15 +43,20 @@ export default function NcrListPage(): React.ReactElement {
       <PageHeader
         title="Non-Conformance Reports"
         actions={
-          canCreate ? (
-            <Link
-              to="/qc/ncrs/new"
-              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New NCR
+          <div className="flex items-center gap-2">
+            <Link to="/qc/capa" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+              CAPA
             </Link>
-          ) : undefined
+            {canCreate && (
+              <Link
+                to="/qc/ncrs/new"
+                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New NCR
+              </Link>
+            )}
+          </div>
         }
       />
 
@@ -94,7 +100,7 @@ export default function NcrListPage(): React.ReactElement {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['NCR Reference', 'Title', 'Item', 'Severity', 'Status', 'Raised', ''].map((h) => (
+                  {['NCR Reference', 'Title', 'Item', 'Severity', 'Status', 'Raised'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500">{h}</th>
                   ))}
                 </tr>
@@ -102,11 +108,11 @@ export default function NcrListPage(): React.ReactElement {
               <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No NCRs found.</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">No NCRs found.</td>
                   </tr>
                 )}
                 {data?.data?.map((ncr) => (
-                  <tr key={ncr.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                  <tr key={ncr.id} className="even:bg-neutral-100 hover:bg-neutral-50 cursor-pointer" onClick={() => navigate(`/qc/ncrs/${ncr.ulid}`)}>
                     <td className="px-4 py-3 font-mono text-neutral-700 font-medium">{ncr.ncr_reference}</td>
                     <td className="px-4 py-3 text-neutral-800 max-w-xs truncate">{ncr.title}</td>
                     <td className="px-4 py-3 text-neutral-500 text-sm">{ncr.inspection?.item_master?.name ?? '—'}</td>
@@ -122,11 +128,6 @@ export default function NcrListPage(): React.ReactElement {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-neutral-400 text-xs">{new Date(ncr.created_at).toLocaleDateString('en-PH')}</td>
-                    <td className="px-4 py-3">
-                      <Link to={`/qc/ncrs/${ncr.ulid}`} className="inline-block px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
-                        View →
-                      </Link>
-                    </td>
                   </tr>
                 ))}
               </tbody>

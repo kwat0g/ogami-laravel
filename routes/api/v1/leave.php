@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:leaves'])->group(function () {
     // Leave request CRUD + workflow actions
     Route::get('requests', [LeaveRequestController::class, 'index'])->name('requests.index');
     Route::get('requests/team', [LeaveRequestController::class, 'team'])

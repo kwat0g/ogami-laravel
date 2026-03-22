@@ -15,10 +15,24 @@ final class WorkOrderOverdueNotification extends Notification implements ShouldQ
     use Queueable;
 
     public function __construct(
-        private readonly MaintenanceWorkOrder $workOrder,
+        private readonly int $workOrderId,
+        private readonly string $workOrderUlid,
+        private readonly string $title,
+        private readonly ?string $scheduledDate,
         private readonly int $daysOverdue,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(MaintenanceWorkOrder $workOrder, int $daysOverdue): self
+    {
+        return new self(
+            workOrderId: $workOrder->id,
+            workOrderUlid: $workOrder->ulid,
+            title: $workOrder->title,
+            scheduledDate: $workOrder->scheduled_date?->format('M d, Y'),
+            daysOverdue: $daysOverdue,
+        );
     }
 
     /** @return list<string> */
@@ -35,12 +49,12 @@ final class WorkOrderOverdueNotification extends Notification implements ShouldQ
             'title' => 'Work Order Overdue',
             'message' => sprintf(
                 'Work order "%s" is %d days overdue. Scheduled for: %s.',
-                $this->workOrder->title,
+                $this->title,
                 $this->daysOverdue,
-                $this->workOrder->scheduled_date?->format('M d, Y') ?? '—',
+                $this->scheduledDate ?? '—',
             ),
-            'action_url' => "/maintenance/work-orders/{$this->workOrder->ulid}",
-            'work_order_id' => $this->workOrder->id,
+            'action_url' => "/maintenance/work-orders/{$this->workOrderUlid}",
+            'work_order_id' => $this->workOrderId,
         ];
     }
 

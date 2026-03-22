@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('ulid', 26)->unique();
             $table->foreignId('purchase_order_id')->constrained('purchase_orders')->cascadeOnDelete();
-            $table->foreignId('vendor_user_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('vendor_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('note_type', 20);
             $table->text('notes')->nullable();
             $table->json('items')->nullable(); // [{po_item_id, qty_delivered}]

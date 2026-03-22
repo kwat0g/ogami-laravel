@@ -22,7 +22,7 @@ final class PurchaseOrderPolicy
 
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
             return true;
         }
 
@@ -60,5 +60,14 @@ final class PurchaseOrderPolicy
     {
         return $user->hasPermissionTo('procurement.purchase-order.manage')
             && $po->status === 'draft';
+    }
+
+    /**
+     * Manage negotiation actions: accept/reject vendor changes, assign vendor.
+     * Requires manage permission — available to purchasing officers and managers.
+     */
+    public function manage(User $user, PurchaseOrder $po): bool
+    {
+        return $user->hasPermissionTo('procurement.purchase-order.manage');
     }
 }

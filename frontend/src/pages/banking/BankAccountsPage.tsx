@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import type { BankAccount, CreateBankAccountPayload } from '@/types/banking'
@@ -187,30 +188,32 @@ export default function BankAccountsPage() {
         <div>
           <p className="text-sm text-neutral-500">Manage bank accounts linked to GL (GL-006)</p>
         </div>
-        {canCreate && (
-          <button
-            type="button"
-            onClick={() => { setEditing(undefined); setShowForm(true) }}
-            className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-          >
-            + New Account
-          </button>
-        )}
+        <DepartmentGuard module="bank_accounts">
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => { setEditing(undefined); setShowForm(true) }}
+              className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+            >
+              + New Account
+            </button>
+          )}
+        </DepartmentGuard>
       </div>
 
       {isLoading && <SkeletonLoader rows={5} />}
 
       <div className="bg-white border border-neutral-200 rounded overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-50 text-xs font-semibold text-neutral-500">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              <th className="px-3 py-2.5 text-left">Name</th>
-              <th className="px-3 py-2.5 text-left">Account #</th>
-              <th className="px-3 py-2.5 text-left">Bank</th>
-              <th className="px-3 py-2.5 text-left">Type</th>
-              <th className="px-3 py-2.5 text-right">Opening Balance</th>
-              <th className="px-3 py-2.5 text-left">Status</th>
-              <th className="px-3 py-2.5 text-left">Actions</th>
+              <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Name</th>
+              <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Account #</th>
+              <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Bank</th>
+              <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Type</th>
+              <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Opening Balance</th>
+              <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Status</th>
+              <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -227,7 +230,7 @@ export default function BankAccountsPage() {
                 <td className="px-3 py-2 font-mono text-xs text-neutral-500">{acct.account_number}</td>
                 <td className="px-3 py-2 text-neutral-700">{acct.bank_name}</td>
                 <td className="px-3 py-2 capitalize text-neutral-600">{acct.account_type}</td>
-                <td className="px-3 py-2 text-right font-mono">₱{acct.opening_balance.toLocaleString()}</td>
+                <td className="px-3 py-2 text-right font-mono">₱{(Number(acct.opening_balance) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     acct.is_active

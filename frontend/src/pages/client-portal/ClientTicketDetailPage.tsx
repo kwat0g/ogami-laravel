@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useTicket, useReplyToTicket, useReopenTicket } from '@/hooks/useCRM'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -22,6 +24,8 @@ export default function ClientTicketDetailPage() {
   const [replyBody, setReplyBody] = useState('')
   const [showReopen, setShowReopen] = useState(false)
   const [reopenReason, setReopenReason] = useState('')
+  const [replyTouched, setReplyTouched] = useState(false)
+  const [reopenTouched, setReopenTouched] = useState(false)
 
   if (isLoading) return <div className="p-8 text-center text-neutral-500">Loading…</div>
   if (!ticket) return <div className="p-8 text-center text-neutral-500">Ticket not found.</div>
@@ -29,16 +33,41 @@ export default function ClientTicketDetailPage() {
   const canReply = ['open', 'in_progress'].includes(ticket.status) && canReplyPermission
   const canReopen = ['resolved', 'closed'].includes(ticket.status) && canReplyPermission
 
+  // Validation
+  const replyError = replyTouched && !replyBody.trim() ? 'Reply message is required.' : undefined
+  const reopenError = reopenTouched && !reopenReason.trim() ? 'Reason is required to reopen.' : undefined
+
   async function submitReply() {
-    if (!replyBody.trim()) return
-    await replyMutation.mutateAsync({ body: replyBody, is_internal: false })
-    setReplyBody('')
+    setReplyTouched(true)
+    if (!replyBody.trim()) {
+      toast.error('Please enter a reply message.')
+      return
+    }
+    try {
+      await replyMutation.mutateAsync({ body: replyBody, is_internal: false })
+      toast.success('Reply sent successfully.')
+      setReplyBody('')
+      setReplyTouched(false)
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to send reply.'))
+    }
   }
 
   async function submitReopen() {
-    await reopenMutation.mutateAsync({ reason: reopenReason })
-    setReopenReason('')
-    setShowReopen(false)
+    setReopenTouched(true)
+    if (!reopenReason.trim()) {
+      toast.error('Please provide a reason for reopening.')
+      return
+    }
+    try {
+      await reopenMutation.mutateAsync({ reason: reopenReason })
+      toast.success('Ticket reopened successfully.')
+      setReopenReason('')
+      setReopenTouched(false)
+      setShowReopen(false)
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to reopen ticket.'))
+    }
   }
 
   // Only show public messages to clients
@@ -90,14 +119,29 @@ export default function ClientTicketDetailPage() {
           ) : (
             <div className="bg-white rounded border border-neutral-200 p-4">
               <h3 className="font-semibold text-sm mb-2">Reopen Ticket</h3>
-              <input type="text" value={reopenReason} onChange={e => setReopenReason(e.target.value)}
-                placeholder="Why are you reopening this ticket?" className="w-full px-3 py-2 border rounded text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
+              <input 
+                type="text" 
+                value={reopenReason} 
+                onChange={e => setReopenReason(e.target.value)}
+                onBlur={() => setReopenTouched(true)}
+                placeholder="Why are you reopening this ticket?" 
+                className={`w-full px-3 py-2 border rounded text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${
+                  reopenError ? 'border-red-400' : 'border-neutral-300'
+                }`} 
+              />
+              {reopenError && <p className="mb-2 text-xs text-red-600">{reopenError}</p>}
               <div className="flex gap-2">
-                <button onClick={submitReopen} disabled={reopenMutation.isPending}
-                  className="px-4 py-2 bg-neutral-700 text-white text-sm rounded hover:bg-neutral-600 disabled:opacity-50">
+                <button 
+                  onClick={submitReopen} 
+                  disabled={reopenMutation.isPending}
+                  className="px-4 py-2 bg-neutral-700 text-white text-sm rounded hover:bg-neutral-600 disabled:opacity-50"
+                >
                   {reopenMutation.isPending ? 'Reopening…' : 'Confirm Reopen'}
                 </button>
-                <button onClick={() => setShowReopen(false)} className="px-4 py-2 bg-neutral-100 text-neutral-700 text-sm rounded hover:bg-neutral-200">
+                <button 
+                  onClick={() => { setShowReopen(false); setReopenReason(''); setReopenTouched(false); }} 
+                  className="px-4 py-2 bg-neutral-100 text-neutral-700 text-sm rounded hover:bg-neutral-200"
+                >
                   Cancel
                 </button>
               </div>
@@ -127,12 +171,23 @@ export default function ClientTicketDetailPage() {
       {canReply && (
         <div className="bg-white rounded border border-neutral-200 p-4">
           <h3 className="font-semibold text-sm mb-2">Add a Reply</h3>
-          <textarea value={replyBody} onChange={e => setReplyBody(e.target.value)}
-            placeholder="Describe your issue or response in detail…" rows={4}
-            className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none" />
+          <textarea 
+            value={replyBody} 
+            onChange={e => setReplyBody(e.target.value)}
+            onBlur={() => setReplyTouched(true)}
+            placeholder="Describe your issue or response in detail…" 
+            rows={4}
+            className={`w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none ${
+              replyError ? 'border-red-400' : 'border-neutral-300'
+            }`} 
+          />
+          {replyError && <p className="mt-1 text-xs text-red-600">{replyError}</p>}
           <div className="flex justify-end mt-2">
-            <button onClick={submitReply} disabled={replyMutation.isPending || !replyBody.trim()}
-              className="px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-50">
+            <button 
+              onClick={submitReply} 
+              disabled={replyMutation.isPending}
+              className="px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800 disabled:opacity-50"
+            >
               {replyMutation.isPending ? 'Sending…' : 'Send Reply'}
             </button>
           </div>

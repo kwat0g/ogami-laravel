@@ -19,10 +19,26 @@ final class InvoiceOverdueNotification extends Notification implements ShouldQue
     use Queueable;
 
     public function __construct(
-        private readonly CustomerInvoice $invoice,
+        private readonly int $invoiceId,
+        private readonly string $invoiceUlid,
+        private readonly ?string $invoiceNumber,
+        private readonly string $customerName,
+        private readonly int $balanceDueCentavos,
         private readonly int $daysOverdue,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(CustomerInvoice $invoice, int $daysOverdue): self
+    {
+        return new self(
+            invoiceId: $invoice->id,
+            invoiceUlid: $invoice->ulid,
+            invoiceNumber: $invoice->invoice_number ?? null,
+            customerName: (string) ($invoice->customer->company_name ?? "Customer #{$invoice->customer_id}"),
+            balanceDueCentavos: (int) round((float) $invoice->balance_due * 100),
+            daysOverdue: $daysOverdue,
+        );
     }
 
     /** @return list<string> */
@@ -34,9 +50,8 @@ final class InvoiceOverdueNotification extends Notification implements ShouldQue
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $customerName = (string) ($this->invoice->customer->company_name ?? "Customer #{$this->invoice->customer_id}");
-        $balance = number_format((float) $this->invoice->balance_due, 2);
-        $invoiceNo = $this->invoice->invoice_number ?? "INV-{$this->invoice->id}";
+        $balance = number_format($this->balanceDueCentavos / 100, 2);
+        $invoiceNo = $this->invoiceNumber ?? "INV-{$this->invoiceId}";
 
         return [
             'type' => 'ar.invoice_overdue',
@@ -44,12 +59,12 @@ final class InvoiceOverdueNotification extends Notification implements ShouldQue
             'message' => sprintf(
                 'Invoice %s from %s is %d days overdue. Outstanding balance: ₱%s.',
                 $invoiceNo,
-                $customerName,
+                $this->customerName,
                 $this->daysOverdue,
                 $balance,
             ),
-            'action_url' => "/ar/invoices/{$this->invoice->ulid}",
-            'customer_invoice_id' => $this->invoice->id,
+            'action_url' => "/ar/invoices/{$this->invoiceUlid}",
+            'customer_invoice_id' => $this->invoiceId,
         ];
     }
 

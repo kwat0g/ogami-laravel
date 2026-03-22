@@ -24,6 +24,9 @@ final class MaterialRequisitionResource extends JsonResource
             'remarks' => $mrq->remarks,
             'status' => $mrq->status,
             'is_cancellable' => $mrq->isCancellable(),
+            'is_convertible_to_pr' => $mrq->isConvertibleToPr(),
+            'converted_to_pr' => $mrq->converted_to_pr,
+            'converted_pr_id' => $mrq->converted_pr_id,
             // SoD actor fields
             'submitted_at' => $mrq->submitted_at?->toIso8601String(),
             'noted_at' => $mrq->noted_at?->toIso8601String(),

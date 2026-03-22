@@ -8,7 +8,7 @@ export interface VendorFulfillmentNote {
   ulid: string
   purchase_order_id: number
   vendor_user_id: number
-  note_type: 'in_transit' | 'delivered' | 'partial'
+  note_type: 'in_transit' | 'delivered' | 'partial' | 'acknowledged' | 'change_requested' | 'change_accepted' | 'change_rejected'
   notes: string | null
   items: Array<{ po_item_id: number; qty_delivered: number }> | null
   created_at: string
@@ -21,13 +21,30 @@ export interface VendorPortalOrder {
   po_reference: string
   vendor_id: number
   status: string
+  po_type: 'original' | 'split'
   po_date: string
   delivery_date: string
   payment_terms: string
   total_po_amount: string
   notes: string | null
+  vendor_remarks: string | null
+  negotiation_round: number
+  change_requested_at: string | null
+  change_reviewed_at: string | null
+  change_review_remarks: string | null
+  vendor_acknowledged_at: string | null
   items: VendorPortalOrderItem[]
   fulfillment_notes?: VendorFulfillmentNote[]
+  parent_po?: {
+    ulid: string
+    po_reference: string
+  } | null
+  child_pos?: Array<{
+    ulid: string
+    po_reference: string
+    status: string
+    total_po_amount: string
+  }>
 }
 
 export interface VendorPortalOrderItem {
@@ -35,6 +52,8 @@ export interface VendorPortalOrderItem {
   item_description: string
   unit_of_measure: string
   quantity_ordered: string
+  negotiated_quantity: string | null
+  vendor_item_notes: string | null
   agreed_unit_cost: string
   total_cost: string
   quantity_received: string
@@ -74,6 +93,36 @@ export function useVendorOrder(ulid: string) {
   })
 }
 
+export function useAcknowledgePO() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ ulid, notes }: { ulid: string; notes?: string }) =>
+      api.post(`/vendor-portal/orders/${ulid}/acknowledge`, { notes }),
+    onSuccess: (_data, { ulid }) => {
+      qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders', ulid] })
+      qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders'] })
+    },
+  })
+}
+
+export interface ProposeChangesItem {
+  po_item_id: number
+  negotiated_quantity: number
+  vendor_item_notes?: string
+}
+
+export function useProposeChanges() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ ulid, remarks, items }: { ulid: string; remarks: string; items: ProposeChangesItem[] }) =>
+      api.post(`/vendor-portal/orders/${ulid}/propose-changes`, { remarks, items }),
+    onSuccess: (_data, { ulid }) => {
+      qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders', ulid] })
+      qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders'] })
+    },
+  })
+}
+
 export function useMarkInTransit() {
   const qc = useQueryClient()
   return useMutation({
@@ -86,18 +135,31 @@ export function useMarkInTransit() {
   })
 }
 
+export interface MarkDeliveredResponse {
+  message: string
+  data: {
+    note: VendorFulfillmentNote
+    split_po: {
+      id: number
+      ulid: string
+      reference: string
+      total_amount: string
+    } | null
+  }
+}
+
 export function useMarkDelivered() {
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({
-      ulid,
-      items,
-      notes,
-    }: {
-      ulid: string
-      items: Array<{ po_item_id: number; qty_delivered: number }>
-      notes?: string
-    }) => api.post(`/vendor-portal/orders/${ulid}/deliver`, { items, notes }),
+  return useMutation<MarkDeliveredResponse, unknown, {
+    ulid: string
+    items: Array<{ po_item_id: number; qty_delivered: number }>
+    notes?: string
+    delivery_date?: string
+  }>({
+    mutationFn: async ({ ulid, items, notes, delivery_date }) => {
+      const res = await api.post(`/vendor-portal/orders/${ulid}/deliver`, { items, notes, delivery_date })
+      return res.data
+    },
     onSuccess: (_data, { ulid }) => {
       qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders', ulid] })
       qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders'] })

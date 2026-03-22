@@ -10,6 +10,8 @@ import {
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { Department } from '@/types/hr'
 
 interface DeptFormState {
@@ -25,7 +27,7 @@ const emptyForm = (): DeptFormState => ({ code: '', name: '', cost_center_code: 
 export default function DepartmentsPage() {
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('employees.manage_structure')
-  const { data, isLoading, isError } = useDepartments()
+  const { data, isLoading, isError, refetch } = useDepartments()
   const create = useCreateDepartment()
   const update = useUpdateDepartment()
   const remove = useDeleteDepartment()
@@ -39,30 +41,38 @@ export default function DepartmentsPage() {
   const openEdit   = (dept: Department) => { setForm({ id: dept.id, code: dept.code, name: dept.name, cost_center_code: dept.cost_center_code ?? '', is_active: dept.is_active }); setFormError(null) }
   const closeForm  = () => setForm(null)
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form) return
     setFormError(null)
     if (!form.code.trim() || !form.name.trim()) { setFormError('Code and Name are required.'); return }
 
-    if (form.id) {
-      update.mutate({ ...form, id: form.id as number }, { onSuccess: () => { toast.success('Department updated.'); closeForm() }, onError: () => { toast.error('Failed to update department.'); setFormError('Update failed.') } })
-    } else {
-      create.mutate(form, { onSuccess: () => { toast.success('Department created.'); closeForm() }, onError: () => { toast.error('Failed to create department.'); setFormError('Create failed.') } })
+    try {
+      if (form.id) {
+        await update.mutateAsync({ ...form, id: form.id as number })
+        toast.success('Department updated successfully')
+      } else {
+        await create.mutateAsync(form)
+        toast.success('Department created successfully')
+      }
+      closeForm()
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to ${form.id ? 'update' : 'create'} department: ${message}`)
+      setFormError(`${form.id ? 'Update' : 'Create'} failed: ${message}`)
     }
   }
 
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-
-  const handleDelete = (id: number) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = () => {
-    if (!deleteId) return
-    remove.mutate(deleteId, { 
-      onSuccess: () => { toast.success('Department deleted.'); setDeleteId(null) }, 
-      onError: () => toast.error('Failed to delete department.') 
-    })
+  const handleDelete = async (id: number) => {
+    try {
+      await remove.mutateAsync(id)
+      toast.success('Department deleted successfully')
+      refetch()
+    } catch (err: unknown) {
+      const message = firstErrorMessage(err)
+      toast.error(`Failed to delete department: ${message}`)
+      throw err
+    }
   }
 
   const set = (field: keyof DeptFormState, value: unknown) =>
@@ -115,7 +125,15 @@ export default function DepartmentsPage() {
                 {canManage && (
                   <td className="px-3 py-2 flex gap-2">
                     <button onClick={() => openEdit(dept)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                    <button onClick={() => handleDelete(dept.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                    <ConfirmDestructiveDialog
+                      title="Delete Department?"
+                      description={`This will permanently delete "${dept.name}". Any employees assigned to this department will need to be reassigned. This action cannot be undone.`}
+                      confirmWord="DELETE"
+                      confirmLabel="Delete Department"
+                      onConfirm={() => handleDelete(dept.id)}
+                    >
+                      <button className="text-xs text-red-500 hover:underline">Delete</button>
+                    </ConfirmDestructiveDialog>
                   </td>
                 )}
               </tr>
@@ -123,18 +141,6 @@ export default function DepartmentsPage() {
           </tbody>
         </table>
       </div>
-
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={confirmDelete}
-        title="Delete Department?"
-        description="This action cannot be undone. Any employees assigned to this department will need to be reassigned."
-        confirmLabel="Delete"
-        variant="danger"
-        loading={remove.isPending}
-      />
 
       {/* Modal */}
       {form !== null && (
@@ -145,20 +151,37 @@ export default function DepartmentsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">Code</label>
-                  <input value={form.code} onChange={(e) => set('code', e.target.value)}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Code <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    value={form.code} 
+                    onChange={(e) => set('code', e.target.value)}
+                    className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
+                      !form.code.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                    }`} 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Cost Center</label>
-                  <input value={form.cost_center_code} onChange={(e) => set('cost_center_code', e.target.value)}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                  <input 
+                    value={form.cost_center_code} 
+                    onChange={(e) => set('cost_center_code', e.target.value)}
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
-                <input value={form.name} onChange={(e) => set('name', e.target.value)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" />
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  value={form.name} 
+                  onChange={(e) => set('name', e.target.value)}
+                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
+                    !form.name.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                  }`} 
+                />
               </div>
               <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                 <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} className="rounded" />
@@ -167,9 +190,11 @@ export default function DepartmentsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
-              <button onClick={handleSave} disabled={create.isPending || update.isPending}
+              <button 
+                onClick={handleSave} 
+                disabled={create.isPending || update.isPending}
                 className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                {form.id ? 'Save Changes' : 'Create'}
+                {create.isPending || update.isPending ? 'Saving…' : form.id ? 'Save Changes' : 'Create'}
               </button>
             </div>
           </div>

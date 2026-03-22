@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Cache;
  * Architecture:
  *   - hr_manager & supervisor in HR      get HR-specific permissions
  *   - accounting_manager & supervisor in ACCTG  get Accounting-specific permissions
- *   - supervisor in PROD/MKT/ADMON/IT/SALES get self-service + team management only
+ *   - supervisor in PROD/PURCH/IT/SALES/QC/MAINT/WH get self-service + team management only
  *
  * Run via:
  *   php artisan db:seed --class=DepartmentPermissionProfileSeeder
@@ -29,7 +29,8 @@ class DepartmentPermissionProfileSeeder extends Seeder
     public function run(): void
     {
         // ─── Resolve department IDs ───────────────────────────────────────
-        $depts = Department::whereIn('code', ['HR', 'ACCTG', 'PROD', 'MKT', 'ADMON', 'IT', 'SALES'])
+        // Using actual department codes from the system
+        $depts = Department::whereIn('code', ['HR', 'ACCTG', 'PROD', 'PURCH', 'IT', 'SALES', 'QC', 'MAINT', 'WH'])
             ->pluck('id', 'code');
 
         // ─── Profile definitions ──────────────────────────────────────────
@@ -477,22 +478,42 @@ class DepartmentPermissionProfileSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // MKT SUPERVISOR
+            // SALES HEAD
             // ═══════════════════════════════════════════════════════════════
             [
-                'dept_code' => 'MKT',
+                'dept_code' => 'SALES',
                 'role' => 'head',
-                'profile_label' => 'Marketing Head',
+                'profile_label' => 'Sales Head',
                 'permissions' => self::commonSupervisorPermissions(),
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // ADMON SUPERVISOR
+            // QC HEAD
             // ═══════════════════════════════════════════════════════════════
             [
-                'dept_code' => 'ADMON',
+                'dept_code' => 'QC',
                 'role' => 'head',
-                'profile_label' => 'Admin Head',
+                'profile_label' => 'QC Head',
+                'permissions' => self::commonSupervisorPermissions(),
+            ],
+
+            // ═══════════════════════════════════════════════════════════════
+            // MAINTENANCE HEAD
+            // ═══════════════════════════════════════════════════════════════
+            [
+                'dept_code' => 'MAINT',
+                'role' => 'head',
+                'profile_label' => 'Maintenance Head',
+                'permissions' => self::commonSupervisorPermissions(),
+            ],
+
+            // ═══════════════════════════════════════════════════════════════
+            // WAREHOUSE HEAD
+            // ═══════════════════════════════════════════════════════════════
+            [
+                'dept_code' => 'WH',
+                'role' => 'head',
+                'profile_label' => 'Warehouse Head',
                 'permissions' => self::commonSupervisorPermissions(),
             ],
 
@@ -652,7 +673,7 @@ class DepartmentPermissionProfileSeeder extends Seeder
 
     /**
      * Common permissions available to ALL managers regardless of department.
-     * Used for ops departments (PROD, MKT, ADMON, IT) that have no module-specific access.
+     * Used for ops departments (PROD, PURCH, IT, SALES, QC, MAINT, WH) that have no module-specific access.
      *
      * @return list<string>
      */

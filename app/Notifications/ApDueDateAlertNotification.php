@@ -23,17 +23,33 @@ final class ApDueDateAlertNotification extends Notification implements ShouldQue
 
     public const TYPE_DUE_SOON = 'due_soon';
 
-    /**
-     * @param  VendorInvoice  $invoice  The invoice triggering the alert
-     * @param  string  $alertType  Either 'overdue' or 'due_soon'
-     * @param  int  $days  Number of days overdue or until due
-     */
     public function __construct(
-        private readonly VendorInvoice $invoice,
+        private readonly int $invoiceId,
+        private readonly string $invoiceUlid,
+        private readonly ?string $invoiceNumber,
+        private readonly int $vendorId,
+        private readonly string $vendorName,
+        private readonly string $dueDate,
+        private readonly int $balanceDueCentavos,
         private readonly string $alertType,
-        private readonly int $days
+        private readonly int $days,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(VendorInvoice $invoice, string $alertType, int $days): self
+    {
+        return new self(
+            invoiceId: $invoice->id,
+            invoiceUlid: $invoice->ulid,
+            invoiceNumber: $invoice->invoice_number ?? null,
+            vendorId: $invoice->vendor_id,
+            vendorName: (string) ($invoice->vendor->name ?? 'Unknown Vendor'),
+            dueDate: $invoice->due_date->toDateString(),
+            balanceDueCentavos: (int) round((float) $invoice->balance_due * 100),
+            alertType: $alertType,
+            days: $days,
+        );
     }
 
     /** @return list<string> */
@@ -45,26 +61,25 @@ final class ApDueDateAlertNotification extends Notification implements ShouldQue
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        /** @var string $vendorName */
-        $vendorName = $this->invoice->vendor->name ?? 'Unknown Vendor';
+        $balancePesos = number_format($this->balanceDueCentavos / 100, 2);
 
         if ($this->alertType === self::TYPE_OVERDUE) {
             $title = 'AP Invoice Overdue';
             $message = sprintf(
                 'Invoice %s from %s is %d day(s) overdue. Balance due: ₱%s',
-                $this->invoice->invoice_number ?? 'N/A',
-                $vendorName,
+                $this->invoiceNumber ?? 'N/A',
+                $this->vendorName,
                 $this->days,
-                number_format((float) $this->invoice->balance_due, 2)
+                $balancePesos
             );
         } else {
             $title = 'AP Invoice Due Soon';
             $message = sprintf(
                 'Invoice %s from %s is due in %d day(s). Balance due: ₱%s',
-                $this->invoice->invoice_number ?? 'N/A',
-                $vendorName,
+                $this->invoiceNumber ?? 'N/A',
+                $this->vendorName,
                 $this->days,
-                number_format((float) $this->invoice->balance_due, 2)
+                $balancePesos
             );
         }
 
@@ -73,13 +88,13 @@ final class ApDueDateAlertNotification extends Notification implements ShouldQue
             'alert_type' => $this->alertType,
             'title' => $title,
             'message' => $message,
-            'action_url' => "/ap/invoices/{$this->invoice->ulid}",
-            'vendor_invoice_id' => $this->invoice->id,
-            'vendor_id' => $this->invoice->vendor_id,
-            'invoice_no' => $this->invoice->invoice_number,
-            'vendor_name' => $vendorName,
-            'due_date' => $this->invoice->due_date->toDateString(),
-            'balance_due' => $this->invoice->balance_due,
+            'action_url' => "/ap/invoices/{$this->invoiceUlid}",
+            'vendor_invoice_id' => $this->invoiceId,
+            'vendor_id' => $this->vendorId,
+            'invoice_no' => $this->invoiceNumber,
+            'vendor_name' => $this->vendorName,
+            'due_date' => $this->dueDate,
+            'balance_due' => $this->balanceDueCentavos / 100,
             'days' => $this->days,
         ];
     }

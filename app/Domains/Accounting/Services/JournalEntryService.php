@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\Accounting\Services;
 
+use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Accounting\Models\JournalEntryLine;
+use App\Domains\Accounting\Models\JournalEntryTemplate;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\SodViolationException;
@@ -251,5 +253,95 @@ final class JournalEntryService implements ServiceContract
         $seq = str_pad((string) ($count + 1), 6, '0', STR_PAD_LEFT);
 
         return "JE-{$yyyy}-{$mm}-{$seq}";
+    }
+
+    // ── Template Methods ─────────────────────────────────────────────────────
+
+    /**
+     * Get all active templates (system + user's custom templates)
+     */
+    public function getTemplates(?int $userId = null): array
+    {
+        $query = JournalEntryTemplate::active()
+            ->where(function ($q) use ($userId) {
+                $q->where('is_system', true);
+                if ($userId) {
+                    $q->orWhere('created_by_id', $userId);
+                }
+            })
+            ->orderBy('is_system', 'desc')
+            ->orderBy('name');
+
+        return $query->get()->map(function ($template) {
+            return [
+                'id' => $template->id,
+                'name' => $template->name,
+                'description' => $template->description,
+                'is_system' => $template->is_system,
+                'line_count' => count($template->template_lines),
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Apply a template to get pre-filled journal entry lines
+     */
+    public function applyTemplate(int $templateId): array
+    {
+        $template = JournalEntryTemplate::findOrFail($templateId);
+        
+        if (!$template->is_active) {
+            throw new DomainException('Template is inactive.', 'TEMPLATE_INACTIVE', 422);
+        }
+
+        $lines = $template->apply();
+
+        return [
+            'template_id' => $template->id,
+            'template_name' => $template->name,
+            'lines' => $lines,
+        ];
+    }
+
+    /**
+     * Create a new template from current user's recent journal entry
+     */
+    public function createTemplate(array $data, int $userId): JournalEntryTemplate
+    {
+        // Validate that all account IDs exist
+        foreach ($data['lines'] as $line) {
+            if (!ChartOfAccount::where('id', $line['account_id'])->where('is_active', true)->exists()) {
+                throw new DomainException(
+                    "Account ID {$line['account_id']} does not exist or is inactive.",
+                    'INVALID_ACCOUNT',
+                    422
+                );
+            }
+        }
+
+        return JournalEntryTemplate::create([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'created_by_id' => $userId,
+            'template_lines' => $data['lines'],
+            'is_system' => false,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
+     * Delete a user-created template
+     */
+    public function deleteTemplate(JournalEntryTemplate $template, int $userId): void
+    {
+        if ($template->is_system) {
+            throw new DomainException('System templates cannot be deleted.', 'CANNOT_DELETE_SYSTEM_TEMPLATE', 403);
+        }
+
+        if ($template->created_by_id !== $userId && !auth()->user()?->hasRole('super_admin')) {
+            throw new DomainException('You can only delete your own templates.', 'UNAUTHORIZED', 403);
+        }
+
+        $template->delete();
     }
 }

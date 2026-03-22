@@ -15,9 +15,22 @@ final class TicketSlaBreachNotification extends Notification implements ShouldQu
     use Queueable;
 
     public function __construct(
-        private readonly Ticket $ticket,
+        private readonly int $ticketId,
+        private readonly string $ticketUlid,
+        private readonly string $ticketNumber,
+        private readonly string $subject,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(Ticket $ticket): self
+    {
+        return new self(
+            ticketId: $ticket->id,
+            ticketUlid: $ticket->ulid,
+            ticketNumber: (string) ($ticket->ticket_number ?? $ticket->id),
+            subject: (string) ($ticket->subject ?? ''),
+        );
     }
 
     /** @return list<string> */
@@ -34,11 +47,11 @@ final class TicketSlaBreachNotification extends Notification implements ShouldQu
             'title' => '⚠️ Ticket SLA Breached',
             'message' => sprintf(
                 'Ticket #%s "%s" has breached its SLA. Immediate action required.',
-                $this->ticket->ticket_number ?? $this->ticket->id,
-                $this->ticket->subject ?? '',
+                $this->ticketNumber,
+                $this->subject,
             ),
-            'action_url' => "/crm/tickets/{$this->ticket->ulid}",
-            'ticket_id' => $this->ticket->id,
+            'action_url' => "/crm/tickets/{$this->ticketUlid}",
+            'ticket_id' => $this->ticketId,
         ];
     }
 

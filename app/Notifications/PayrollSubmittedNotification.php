@@ -18,9 +18,25 @@ final class PayrollSubmittedNotification extends Notification implements ShouldQ
 {
     use Queueable;
 
-    public function __construct(private readonly PayrollRun $run)
-    {
+    public function __construct(
+        private readonly int $payrollRunId,
+        private readonly string $payrollRunUlid,
+        private readonly string $referenceNo,
+        private readonly string $payPeriodLabel,
+        private readonly ?string $payDate,
+    ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(PayrollRun $run): self
+    {
+        return new self(
+            payrollRunId: $run->id,
+            payrollRunUlid: $run->ulid,
+            referenceNo: $run->reference_no,
+            payPeriodLabel: $run->pay_period_label,
+            payDate: $run->pay_date ? (string) $run->pay_date : null,
+        );
     }
 
     /** @return list<string> */
@@ -37,14 +53,14 @@ final class PayrollSubmittedNotification extends Notification implements ShouldQ
             'title' => 'Payroll Awaiting Approval',
             'message' => sprintf(
                 'Payroll run %s (%s) has been submitted for your approval. Pay date: %s.',
-                $this->run->reference_no,
-                $this->run->pay_period_label,
-                $this->run->pay_date
-                    ? Carbon::parse($this->run->pay_date)->toFormattedDateString()
+                $this->referenceNo,
+                $this->payPeriodLabel,
+                $this->payDate
+                    ? Carbon::parse($this->payDate)->toFormattedDateString()
                     : 'TBD',
             ),
-            'action_url' => "/payroll/runs/{$this->run->ulid}",
-            'payroll_run_id' => $this->run->id,
+            'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+            'payroll_run_id' => $this->payrollRunId,
         ];
     }
 

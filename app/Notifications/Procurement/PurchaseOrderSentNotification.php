@@ -20,10 +20,28 @@ final class PurchaseOrderSentNotification extends Notification implements Should
 {
     use Queueable;
 
+    // Store only scalar values — never serialize Eloquent models into queue jobs.
+    // Storing models causes ModelNotFoundException when the record is soft-deleted
+    // by the time the worker processes the job.
     public function __construct(
-        private readonly PurchaseOrder $purchaseOrder,
+        private readonly int $poId,
+        private readonly string $poUlid,
+        private readonly string $poReference,
+        private readonly string $vendorName,
+        private readonly int $totalAmountCentavos,
     ) {
         $this->queue = 'notifications';
+    }
+
+    public static function fromModel(PurchaseOrder $po): self
+    {
+        return new self(
+            poId: $po->id,
+            poUlid: $po->ulid,
+            poReference: $po->po_reference,
+            vendorName: $po->vendor?->name ?? '(unknown vendor)',
+            totalAmountCentavos: (int) $po->total_po_amount,
+        );
     }
 
     /** @return list<string> */
@@ -35,18 +53,16 @@ final class PurchaseOrderSentNotification extends Notification implements Should
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        $vendor = $this->purchaseOrder->vendor?->name ?? '(unknown vendor)';
-
         return [
-            'type' => 'purchase_order_sent',
-            'title' => "Purchase Order Sent — {$this->purchaseOrder->po_reference}",
-            'body' => "PO #{$this->purchaseOrder->po_reference} to {$vendor} has been sent. Prepare to receive incoming goods.",
-            'po_id' => $this->purchaseOrder->id,
-            'po_ulid' => $this->purchaseOrder->ulid,
-            'po_number' => $this->purchaseOrder->po_reference,
-            'vendor' => $vendor,
-            'total_amount' => $this->purchaseOrder->total_po_amount,
-            'url' => "/procurement/purchase-orders/{$this->purchaseOrder->ulid}",
+            'type'         => 'purchase_order_sent',
+            'title'        => "Purchase Order Sent — {$this->poReference}",
+            'body'         => "PO #{$this->poReference} to {$this->vendorName} has been sent. Prepare to receive incoming goods.",
+            'po_id'        => $this->poId,
+            'po_ulid'      => $this->poUlid,
+            'po_number'    => $this->poReference,
+            'vendor'       => $this->vendorName,
+            'total_amount' => $this->totalAmountCentavos,
+            'url'          => "/procurement/purchase-orders/{$this->poUlid}",
         ];
     }
 

@@ -2,7 +2,7 @@ import { BarChart3, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Card, CardBody } from '@/components/ui/Card'
+import { Card, CardBody, CardHeader } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 interface CrmDashboardData {

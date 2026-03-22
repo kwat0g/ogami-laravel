@@ -44,7 +44,7 @@ final class CheckOverdueArInvoicesCommand extends Command
             }
 
             foreach ($arUsers as $user) {
-                $user->notify(new InvoiceOverdueNotification($invoice, $daysOverdue));
+                $user->notify(InvoiceOverdueNotification::fromModel($invoice, $daysOverdue));
             }
             $notified++;
         }

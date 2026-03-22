@@ -12,13 +12,22 @@ uses()->group('feature', 'ap');
 
 beforeEach(function () {
     $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(\Database\Seeders\ModuleSeeder::class);
+    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
+    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
 
+    // Get accounting department for RBAC v2
+    $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('officer', 'purchasing_officer');
+    $this->manager->assignRole('officer');
+    $this->manager->departments()->attach($acctgDept->id, ['is_primary' => true]);
 
     $this->staff = User::factory()->create();
     $this->staff->assignRole('staff');
+    $this->staff->departments()->attach($acctgDept->id, ['is_primary' => true]);
 
     $this->vendor = Vendor::create([
         'name'           => 'Test Vendor Co.',

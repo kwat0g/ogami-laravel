@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
 
     // ── Team Management (department-scoped for managers/supervisors) ────────────
     // Must be defined BEFORE apiResource to avoid being matched as {employee} parameter

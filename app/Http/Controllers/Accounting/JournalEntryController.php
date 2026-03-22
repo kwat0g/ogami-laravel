@@ -112,4 +112,62 @@ final class JournalEntryController extends Controller
 
         return response()->json(['message' => 'Journal entry has been cancelled.']);
     }
+
+    // ── Template Methods ─────────────────────────────────────────────────────
+
+    /**
+     * List available journal entry templates
+     */
+    public function templates(Request $request): JsonResponse
+    {
+        $templates = $this->service->getTemplates($request->user()?->id);
+        return response()->json(['data' => $templates]);
+    }
+
+    /**
+     * Apply a template to get pre-filled lines
+     */
+    public function applyTemplate(Request $request, int $templateId): JsonResponse
+    {
+        $result = $this->service->applyTemplate($templateId);
+        return response()->json($result);
+    }
+
+    /**
+     * Create a new custom template
+     */
+    public function storeTemplate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|integer|exists:chart_of_accounts,id',
+            'lines.*.debit_or_credit' => 'required|in:debit,credit',
+            'lines.*.description' => 'nullable|string',
+        ]);
+
+        $template = $this->service->createTemplate($validated, $request->user()->id);
+
+        return response()->json([
+            'message' => 'Template created successfully',
+            'template' => [
+                'id' => $template->id,
+                'name' => $template->name,
+                'description' => $template->description,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Delete a user-created template
+     */
+    public function deleteTemplate(Request $request, int $templateId): JsonResponse
+    {
+        $template = \App\Domains\Accounting\Models\JournalEntryTemplate::findOrFail($templateId);
+        
+        $this->service->deleteTemplate($template, $request->user()->id);
+
+        return response()->json(['message' => 'Template deleted successfully']);
+    }
 }

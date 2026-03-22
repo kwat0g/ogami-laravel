@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { Plus, Wallet } from 'lucide-react'
 import { useBudgetLines, useSetBudgetLine, useCostCenters, type BudgetLine } from '@/hooks/useBudget'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
@@ -41,8 +42,8 @@ export default function BudgetLinesPage(): React.ReactElement {
       toast.success('Budget line saved.')
       setShowForm(false)
       setForm({ cost_center_id: 0, account_id: 0, amount: 0 })
-    } catch {
-      toast.error('Failed to save budget line.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err, 'Failed to save budget line.'))
     }
   }
 
@@ -122,17 +123,17 @@ export default function BudgetLinesPage(): React.ReactElement {
 
       {/* Total Summary */}
       {!isLoading && lines.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Budget for {fiscalYear}</p>
-              <p className="text-2xl font-bold text-blue-700 font-mono mt-1">
+              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total Budget for {fiscalYear}</p>
+              <p className="text-2xl font-bold text-neutral-900 font-mono mt-1">
                 ₱{(totalBudget / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-blue-600">{lines.length} budget line{lines.length !== 1 ? 's' : ''}</p>
-              <p className="text-xs text-blue-500">{costCenterId ? 'Filtered by cost center' : 'All cost centers'}</p>
+              <p className="text-sm text-neutral-600">{lines.length} budget line{lines.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-neutral-400">{costCenterId ? 'Filtered by cost center' : 'All cost centers'}</p>
             </div>
           </div>
         </div>

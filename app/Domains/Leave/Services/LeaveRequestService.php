@@ -399,7 +399,7 @@ final class LeaveRequestService implements ServiceContract
                 ->get();
 
             foreach ($heads as $head) {
-                $head->notify(new LeaveFiledNotification($request));
+                $head->notify(LeaveFiledNotification::fromModel($request));
             }
 
             if ($heads->isNotEmpty()) {
@@ -422,7 +422,7 @@ final class LeaveRequestService implements ServiceContract
             $managers = User::permission('leaves.manager_check')->get();
 
             foreach ($managers as $manager) {
-                $manager->notify(new LeaveSupervisorEndorsedNotification(
+                $manager->notify(LeaveSupervisorEndorsedNotification::fromModel(
                     $request->loadMissing('employee', 'leaveType'),
                     $headName,
                     $request->head_remarks,
@@ -445,7 +445,7 @@ final class LeaveRequestService implements ServiceContract
             $gaOfficers = User::permission('leaves.ga_process')->get();
 
             foreach ($gaOfficers as $gaOfficer) {
-                $gaOfficer->notify(new LeaveSupervisorEndorsedNotification(
+                $gaOfficer->notify(LeaveSupervisorEndorsedNotification::fromModel(
                     $request->loadMissing('employee', 'leaveType'),
                     $managerName,
                     $request->manager_check_remarks,
@@ -468,7 +468,7 @@ final class LeaveRequestService implements ServiceContract
             $vps = User::permission('leaves.vp_note')->get();
 
             foreach ($vps as $vp) {
-                $vp->notify(new LeaveSupervisorEndorsedNotification(
+                $vp->notify(LeaveSupervisorEndorsedNotification::fromModel(
                     $request->loadMissing('employee', 'leaveType'),
                     $gaName,
                     $request->ga_remarks,
@@ -496,7 +496,7 @@ final class LeaveRequestService implements ServiceContract
             }
 
             $employeeUser->notify(
-                new LeaveDecidedNotification($request->loadMissing('leaveType'), $decision, $remarks)
+                LeaveDecidedNotification::fromModel($request->loadMissing('leaveType'), $decision, $remarks)
             );
             LeaveRequestDecided::dispatch($request, $employeeUserId, $decision, $remarks);
         } catch (\Throwable) {

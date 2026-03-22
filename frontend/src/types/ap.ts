@@ -52,6 +52,7 @@ export interface Vendor {
   bank_account_no: string | null
   bank_account_name: string | null
   payment_terms: string | null
+  lead_time_days: number
   address: string | null
   contact_person: string | null
   email: string | null
@@ -76,6 +77,7 @@ export interface CreateVendorPayload {
   bank_account_no?: string | null
   bank_account_name?: string | null
   payment_terms?: string | null
+  lead_time_days?: number
   address?: string | null
   contact_person?: string | null
   email?: string | null
