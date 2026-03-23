@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ArrowLeft, ArrowRight, ThumbsUp, RotateCcw, Loader2 } from 'lucide-react'
-import { usePayrollRun, useHrApprove, usePayrollApprovals } from '@/hooks/usePayroll'
+import { usePayrollRun, useHrApprove, usePayrollApprovals, usePayrollDetails } from '@/hooks/usePayroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import { useAuth } from '@/hooks/useAuth'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -35,7 +35,9 @@ export default function PayrollRunHrReviewPage() {
   const { data: run } = usePayrollRun(runId)
   const hrApprove = useHrApprove(runId)
   const { data: approvals } = usePayrollApprovals(runId)
-  const { user } = useAuth()
+  const { user, hasRole } = useAuth()
+  const [detailPage, setDetailPage] = useState(1)
+  const { data: detailsData } = usePayrollDetails(runId, detailPage)
 
   const [checked, setChecked] = useState<Record<number, boolean>>({})
   const [comments, setComments] = useState('')
@@ -44,9 +46,10 @@ export default function PayrollRunHrReviewPage() {
 
   const allChecked = CHECKLIST_ITEMS.every((_, i) => !!checked[i])
 
-  // SoD check: user cannot approve a run they initiated
+  // SoD check: user cannot approve a run they initiated (super_admin bypasses SoD)
+  const isSuperAdmin = hasRole('super_admin')
   const isInitiator = user?.id === run?.initiated_by_id
-  const sodViolation = isInitiator
+  const sodViolation = isInitiator && !isSuperAdmin
 
   // ── Validation for approval ───────────────────────────────────────────────
   function validateApproval(): boolean {
@@ -168,6 +171,63 @@ export default function PayrollRunHrReviewPage() {
                 {apr.comments && <p className="mt-0.5 text-amber-600 italic">"{apr.comments}"</p>}
               </div>
             ))}
+        </div>
+      )}
+
+      {/* Payroll Breakdown */}
+      {detailsData && detailsData.data.length > 0 && (
+        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+          <div className="px-5 py-3 border-b border-neutral-100">
+            <h3 className="text-sm font-semibold text-neutral-800">Payroll Breakdown</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500">Employee</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Basic Pay</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Gross Pay</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Deductions</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Net Pay</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {detailsData.data.map((d) => (
+                  <tr key={d.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-2.5">
+                      <p className="font-medium text-neutral-800">
+                        {d.employee ? `${d.employee.first_name} ${d.employee.last_name}` : `Employee #${d.employee_id}`}
+                      </p>
+                      {d.employee?.employee_code && (
+                        <p className="text-xs text-neutral-400">{d.employee.employee_code}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-neutral-700">{formatCentavos(d.basic_pay_centavos)}</td>
+                    <td className="px-4 py-2.5 text-right text-neutral-700">{formatCentavos(d.gross_pay_centavos)}</td>
+                    <td className="px-4 py-2.5 text-right text-red-600">{formatCentavos(d.total_deductions_centavos)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-neutral-900">{formatCentavos(d.net_pay_centavos)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {detailsData.meta.last_page > 1 && (
+            <div className="px-5 py-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
+              <span>Page {detailsData.meta.current_page} of {detailsData.meta.last_page}</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setDetailPage((p) => Math.max(1, p - 1))}
+                  disabled={detailsData.meta.current_page === 1}
+                  className="px-3 py-1 border border-neutral-200 rounded disabled:opacity-40"
+                >Prev</button>
+                <button
+                  onClick={() => setDetailPage((p) => Math.min(detailsData.meta.last_page, p + 1))}
+                  disabled={detailsData.meta.current_page === detailsData.meta.last_page}
+                  className="px-3 py-1 border border-neutral-200 rounded disabled:opacity-40"
+                >Next</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
