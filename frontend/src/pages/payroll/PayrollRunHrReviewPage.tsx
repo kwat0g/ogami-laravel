@@ -179,12 +179,34 @@ export default function PayrollRunHrReviewPage() {
       {/* Payroll Breakdown */}
       {detailsData && detailsData.data.length > 0 && (
         <div className="bg-white border border-neutral-200 rounded overflow-hidden">
-          <div className="px-5 py-3 border-b border-neutral-100">
-            <h3 className="text-sm font-semibold text-neutral-800">Payroll Breakdown</h3>
+          <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-neutral-800">
+              Payroll Breakdown
+              <span className="ml-2 text-xs font-normal text-neutral-400">
+                {detailsData.meta.total} employees
+              </span>
+            </h3>
+            {detailsData.meta.last_page > 1 && (
+              <div className="flex items-center gap-3 text-xs text-neutral-500">
+                <span>Page {detailsData.meta.current_page} of {detailsData.meta.last_page}</span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setDetailPage((p) => Math.max(1, p - 1))}
+                    disabled={detailsData.meta.current_page === 1}
+                    className="px-2.5 py-1 border border-neutral-200 rounded hover:bg-neutral-50 disabled:opacity-40"
+                  >←</button>
+                  <button
+                    onClick={() => setDetailPage((p) => Math.min(detailsData.meta.last_page, p + 1))}
+                    disabled={detailsData.meta.current_page === detailsData.meta.last_page}
+                    className="px-2.5 py-1 border border-neutral-200 rounded hover:bg-neutral-50 disabled:opacity-40"
+                  >→</button>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-72">
             <table className="min-w-full text-sm">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
+              <thead className="bg-neutral-50 border-b border-neutral-200 sticky top-0">
                 <tr>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500">Employee</th>
                   <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Basic Pay</th>
@@ -213,23 +235,6 @@ export default function PayrollRunHrReviewPage() {
               </tbody>
             </table>
           </div>
-          {detailsData.meta.last_page > 1 && (
-            <div className="px-5 py-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
-              <span>Page {detailsData.meta.current_page} of {detailsData.meta.last_page}</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setDetailPage((p) => Math.max(1, p - 1))}
-                  disabled={detailsData.meta.current_page === 1}
-                  className="px-3 py-1 border border-neutral-200 rounded disabled:opacity-40"
-                >Prev</button>
-                <button
-                  onClick={() => setDetailPage((p) => Math.min(detailsData.meta.last_page, p + 1))}
-                  disabled={detailsData.meta.current_page === detailsData.meta.last_page}
-                  className="px-3 py-1 border border-neutral-200 rounded disabled:opacity-40"
-                >Next</button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 

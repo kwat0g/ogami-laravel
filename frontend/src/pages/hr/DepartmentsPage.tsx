@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import {
@@ -26,6 +27,7 @@ const emptyForm = (): DeptFormState => ({ code: '', name: '', cost_center_code: 
 
 export default function DepartmentsPage() {
   const { hasPermission } = useAuthStore()
+  const navigate = useNavigate()
   const canManage = hasPermission('employees.manage_structure')
   const { data, isLoading, isError, refetch } = useDepartments()
   const create = useCreateDepartment()
@@ -85,16 +87,28 @@ export default function DepartmentsPage() {
     <div>
       <PageHeader title="Departments" />
 
-      {canManage && (
-        <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={() => navigate('/hr/positions')}
+          className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50"
+        >
+          Positions
+        </button>
+        <button
+          onClick={() => navigate('/hr/shifts')}
+          className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50"
+        >
+          Shift Schedules
+        </button>
+        {canManage && (
           <button
             onClick={openCreate}
             className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
           >
             + Add Department
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Table */}
       <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
