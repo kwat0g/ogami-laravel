@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import {
@@ -29,6 +30,7 @@ const emptyForm = (): PosFormState => ({ code: '', title: '', department_id: und
 
 export default function PositionsPage() {
   const { hasPermission } = useAuthStore()
+  const navigate = useNavigate()
   const canManage = hasPermission('employees.manage_structure')
   const [deptFilter, setDeptFilter] = useState<number | undefined>()
 
@@ -96,16 +98,22 @@ export default function PositionsPage() {
     <div>
       <PageHeader title="Positions" />
 
-      {canManage && (
-        <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={() => navigate('/hr/shifts')}
+          className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50"
+        >
+          Shift Schedules
+        </button>
+        {canManage && (
           <button
             onClick={openCreate}
             className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
           >
             + Add Position
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Filter by dept */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4">

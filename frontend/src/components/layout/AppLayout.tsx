@@ -106,7 +106,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Shifts', href: '/hr/shifts', permission: 'hr.full_access' },
       { label: 'Attendance', href: '/hr/attendance', permission: 'hr.full_access' },
       { label: 'Leave', href: '/hr/leave', permission: 'hr.full_access', end: true },
-      { label: 'Leave Balances', href: '/hr/leave/balances', permission: 'hr.full_access' },
       { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
       { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
       { label: 'HR Reports', href: '/hr/reports', permission: 'hr.full_access' },
@@ -364,15 +363,13 @@ function SectionNav({ section, hasPermission, hasRole, userDept }: { section: Na
     )
   const [open, setOpen] = useState(isCurrentSection)
 
-  // Auto-collapse when navigating away from this section (but not on initial mount)
+  // Sync open state with current route — open when entering, close when leaving
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
       return
     }
-    if (!isCurrentSection) {
-      setOpen(false)
-    }
+    setOpen(isCurrentSection)
   }, [isCurrentSection])
 
   // Permission check

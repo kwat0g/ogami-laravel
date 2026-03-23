@@ -13,6 +13,7 @@ import { ArrowLeft, ArrowRight, ThumbsUp, RotateCcw, Loader2 } from 'lucide-reac
 import { usePayrollRun, useHrApprove, usePayrollApprovals, usePayrollDetails } from '@/hooks/usePayroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/authStore'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
@@ -35,7 +36,8 @@ export default function PayrollRunHrReviewPage() {
   const { data: run } = usePayrollRun(runId)
   const hrApprove = useHrApprove(runId)
   const { data: approvals } = usePayrollApprovals(runId)
-  const { user, hasRole } = useAuth()
+  const { user } = useAuth()
+  const { hasRole } = useAuthStore()
   const [detailPage, setDetailPage] = useState(1)
   const { data: detailsData } = usePayrollDetails(runId, detailPage)
 
