@@ -26,35 +26,40 @@ class ClientOrderWorkflowTestSeeder extends Seeder
 {
     public function run(): void
     {
+        if (ClientOrder::where('order_reference', 'CO-2026-00001')->exists()) {
+            $this->command->info('ClientOrderWorkflowTestSeeder: already seeded, skipping.');
+
+            return;
+        }
+
         $this->command->info('Creating Client Order Workflow Test Data...');
 
         // Get or create test users
-        $salesUser = User::where('email', 'sales@ogami.test')->first()
-            ?? User::factory()->create([
-                'name' => 'Sales Manager',
-                'email' => 'sales@ogami.test',
-                'password' => bcrypt('Sales@123'),
-            ]);
+        $salesUser = User::firstOrCreate(
+            ['email' => 'sales@ogami.test'],
+            ['name' => 'Sales Manager', 'password' => bcrypt('Sales@123')]
+        );
         $salesUser->assignRole('officer');
 
-        $clientUser = User::where('email', 'client@ogami.test')->first()
-            ?? User::factory()->create([
-                'name' => 'Test Client User',
-                'email' => 'client@ogami.test',
-                'password' => bcrypt('Client@123'),
-            ]);
+        $clientUser = User::firstOrCreate(
+            ['email' => 'client@ogami.test'],
+            ['name' => 'Test Client User', 'password' => bcrypt('Client@123')]
+        );
         $clientUser->assignRole('client');
 
         // Create test customer — high credit limit to support VP-threshold test scenarios (₱10M)
-        $customer = Customer::factory()->create([
-            'name' => 'ABC Manufacturing Corp',
-            'email' => 'purchasing@abc-mfg.com',
-            'phone' => '+63 2 8123 4567',
-            'address' => '123 Industrial Ave, Makati City, Metro Manila',
-            'contact_person' => 'Juan Dela Cruz',
-            'credit_limit' => 10000000.00,
-            'created_by' => $salesUser->id,
-        ]);
+        $customer = Customer::firstOrCreate(
+            ['email' => 'purchasing@abc-mfg.com'],
+            [
+                'name' => 'ABC Manufacturing Corp',
+                'phone' => '+63 2 8123 4567',
+                'address' => '123 Industrial Ave, Makati City, Metro Manila',
+                'contact_person' => 'Juan Dela Cruz',
+                'credit_limit' => 10000000.00,
+                'is_active' => true,
+                'created_by' => $salesUser->id,
+            ]
+        );
         $clientUser->update(['client_id' => $customer->id]);
 
         $this->command->info("Created customer: {$customer->name}");
@@ -174,12 +179,13 @@ class ClientOrderWorkflowTestSeeder extends Seeder
     private function createBOMs(array $products, int $userId): void
     {
         foreach ($products as $product) {
-            BillOfMaterials::create([
-                'product_item_id' => $product->id,
-                'version' => '1.0',
-                'is_active' => true,
-                'notes' => 'Standard BOM for '.$product->name,
-            ]);
+            BillOfMaterials::firstOrCreate(
+                ['product_item_id' => $product->id, 'version' => '1.0'],
+                [
+                    'is_active' => true,
+                    'notes' => 'Standard BOM for '.$product->name,
+                ]
+            );
         }
     }
 
