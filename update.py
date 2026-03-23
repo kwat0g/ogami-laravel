@@ -242,9 +242,10 @@ def update() -> None:
     vps.run(f"cd {APP_DIR} && php artisan horizon:terminate 2>&1 || true")
     time.sleep(3)
     vps.run(
-        "supervisorctl restart ogami-horizon ogami-reverb ogami-scheduler ogami-pulse 2>&1"
+        "supervisorctl -c /etc/supervisor/supervisord.conf restart "
+        "ogami-horizon ogami-reverb ogami-scheduler ogami-pulse 2>&1"
     )
-    vps.run("supervisorctl status 2>&1")
+    vps.run("supervisorctl -c /etc/supervisor/supervisord.conf status 2>&1")
 
     # ── Verification ──────────────────────────────────────────────────────────
     banner("Verification")
