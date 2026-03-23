@@ -445,10 +445,15 @@ class RolePermissionSeeder extends Seeder
             'fixed_assets.view',
             // Loans VP approval
             'loans.view_department', 'loans.vp_approve',
+            // Inventory view (executive-level read access)
+            'inventory.items.view', 'inventory.stock.view',
+            // Procurement full view (includes goods receipts)
+            'procurement.goods-receipt.view',
             // Production view
             'production.orders.view', 'production.delivery-schedule.view',
-            // QC view
+            // QC + Maintenance view
             'qc.inspections.view', 'qc.ncr.view',
+            'maintenance.view',
             // Sales/Client Orders
             'sales.order_review', 'sales.order_approve', 'sales.order_reject', 'sales.order_negotiate',
             'sales.order_vp_approve',
@@ -702,9 +707,9 @@ class RolePermissionSeeder extends Seeder
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
             'attendance.view_own',
             'overtime.view', 'overtime.submit',
-            // Inventory (Staff creates MRQ + view for sidebar navigation)
+            // Inventory (Staff: view only — MRQ creation is Head/Manager responsibility)
             'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
-            'inventory.mrq.view', 'inventory.mrq.create',
+            'inventory.mrq.view',
             // Production (Staff: log output)
             'production.bom.view', 'production.orders.view', 'production.orders.log_output',
             'production.delivery-schedule.view',

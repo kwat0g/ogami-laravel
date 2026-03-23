@@ -303,17 +303,17 @@ class ModulePermissionSeeder extends Seeder
                 'employees.view', 'employees.view_team', 'employees.view_full_record', 'employees.view_masked_gov_ids',
                 'attendance.view_team', 'overtime.view', 'overtime.submit', 'overtime.supervise',
                 'leaves.view_team', 'leaves.file_on_behalf',
-                // Production view
+                // Production: heads create + release WOs and manage MRQs
                 'production.bom.view',
                 'production.delivery-schedule.view',
-                'production.orders.view',
+                'production.orders.view', 'production.orders.create', 'production.orders.release',
                 'production.orders.log_output',
                 // QC and Maintenance (for QC/MAINT departments using production module)
                 'qc.inspections.view',
                 'maintenance.view',
-                // Inventory view access for heads
+                // Inventory: heads create + note MRQs (but NOT fulfill — that's manager/WH)
                 'inventory.items.view',
-                'inventory.mrq.view', 'inventory.mrq.create',
+                'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note',
                 // Procurement: all dept heads can raise PRs for their own department
                 'procurement.purchase-request.view', 'procurement.purchase-request.create-dept',
             ],
@@ -331,7 +331,8 @@ class ModulePermissionSeeder extends Seeder
                 'production.orders.log_output',
                 'production.bom.view',
                 'maintenance.view',
-                'inventory.mrq.create',
+                // Staff: view MRQs only — creation is Head/Manager responsibility
+                'inventory.mrq.view',
             ],
         ],
 
@@ -476,7 +477,7 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.items.view', 'inventory.items.create', 'inventory.items.edit',
                 'inventory.locations.view', 'inventory.locations.manage',
                 'inventory.stock.view', 'inventory.adjustments.create',
-                'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.fulfill',
+                'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note', 'inventory.mrq.fulfill',
                 'delivery.view',
                 // Production view (for warehouse heads to see work orders)
                 'production.orders.view',
@@ -552,8 +553,9 @@ class ModulePermissionSeeder extends Seeder
                 'vendor_portal.view_orders',
                 // AR/Receivable - Purchasing Officers manage customers for their vendors
                 'customers.view', 'customers.manage', 'customers.archive',
-                // Inventory view for purchasing
+                // Inventory: purchasing officers view items and can create/view MRQs for their dept
                 'inventory.items.view',
+                'inventory.mrq.view', 'inventory.mrq.create',
             ],
             'head' => [
                 // Self service

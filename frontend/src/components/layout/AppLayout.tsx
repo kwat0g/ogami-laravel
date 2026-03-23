@@ -219,7 +219,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
-      { label: 'Vendor RFQs', href: '/procurement/rfqs', permission: 'procurement.purchase-request.view' },
+      { label: 'Vendor RFQs', href: '/procurement/rfqs', permission: 'procurement.purchase-order.view' },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },
       { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
@@ -839,6 +839,16 @@ export default function AppLayout() {
                         {label}
                       </NavLink>
                     ))}
+
+                      {/* Executive Section - shown for VP/Executive on mobile */}
+                    {(hasRole('vice_president') || hasRole('executive')) && (
+                      <SectionNav
+                        section={EXECUTIVE_SECTION}
+                        hasPermission={hasPermission}
+                        hasRole={hasRole}
+                        userDept={userDept}
+                      />
+                    )}
 
                     <div className="pt-4 pb-2">
                       <p className="px-3 text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Modules</p>

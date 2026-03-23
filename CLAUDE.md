@@ -208,6 +208,9 @@ Each step: `public function __invoke(PayrollComputationContext $ctx, Closure $ne
 
 ## Domain-Specific Gotchas
 
+- **Queued notifications:** Always use `::fromModel()` static factory — never `new NotificationClass($model)`. Queuing with an Eloquent model causes `ModelNotFoundException` if the model is soft-deleted before the job runs. All notification classes in this project implement `fromModel()`.
+- **`pulse:check` schedule:** Must have `->withoutOverlapping()`. It's long-running; without it `everyMinute()` piles up orphaned processes. On VPS, `pulse:work` runs as a supervisor daemon instead.
+- **pnpm workspace root:** `pnpm-lock.yaml` lives at the repo root, not inside `frontend/`. Run `pnpm install` from repo root, then `pnpm build` from `frontend/`. Use `--no-frozen-lockfile` on the VPS.
 - **Fixed Assets:** `asset_code` is set by a PostgreSQL trigger — never set it in PHP or factories
 - **Fixed Assets:** Frontend TS type uses `under_maintenance`; DB CHECK uses `impaired` — DB is authoritative
 - **Fixed Assets CSV export:** inline route closure queries wrong table name (`asset_depreciation_entries` instead of `fixed_asset_depreciation_entries`) — do not copy this bug

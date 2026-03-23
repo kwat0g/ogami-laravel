@@ -1,266 +1,265 @@
 # Department Roles Guide — Ogami ERP
 
-## Overview
+> **Last updated:** 2026-03-23
+> Authoritative source: `database/seeders/RolePermissionSeeder.php` and `app/Infrastructure/Middleware/ModuleAccessMiddleware.php`
 
-Every department in Ogami has four role levels. Each level is a **strict superset** of the one below it — meaning if a higher role is absent, the role below can cover most of the work.
+---
+
+## How Roles Work
+
+Ogami ERP uses a **dual-layer RBAC** system:
+
+1. **Role** — defines *what actions* a user can perform (create, approve, view, etc.)
+2. **Department** — controls *which modules* the user can access
+
+The same role (e.g. `manager`) assigned to different departments produces completely different effective access. A `manager` in HR manages employees and payroll. A `manager` in Accounting manages journals and invoices. Same role, different domain.
 
 ```
-Manager  →  Officer  →  Head  →  Staff
- (full)    (operational)  (team lead)  (self-service)
+Role  +  Department  =  Effective Access
 ```
 
 ---
 
-## Role Definitions (Applies to ALL Departments)
+## System-Level Roles (no department required)
 
-### Manager
-**Owns the department. Accountable for all results.**
-
-- Final authority within the department
-- Creates, processes, approves, and publishes anything in their domain
-- Manages department budget, headcount, and structure
-- Signs off on all department outputs
-- Can cover everything an Officer, Head, or Staff can do
-
-### Officer
-**Executes the work. Processes transactions day-to-day.**
-
-- Handles operational tasks and record processing
-- Can create and process records and handle team-level approvals
-- Reports directly to the Manager
-- Cannot do final department-level approvals (publish payroll, finalize budgets, etc.)
-- Can cover everything a Head or Staff can do
-
-### Head (Section/Team Head)
-**Leads a small team within the department. First-level supervisor.**
-
-- Supervises a specific section or team
-- First to approve their team's leave, overtime, and loan requests
-- Cannot do department-wide operations or approvals
-- Bridges between Staff and the Officer/Manager above
-- Can cover everything Staff can do
-
-### Staff (Rank and File)
-**Performs assigned work. Self-service only.**
-
-- Files own leave, loan, overtime requests
-- Views own payslip and attendance records
-- No approval authority over others
+### `super_admin`
+**Who:** IT system owner / developer
+**Access:** Every permission in the system. Bypasses all middleware, policies, and SoD checks.
+**Use:** Testing, emergency fixes, initial setup. Should never be used in day-to-day operations.
 
 ---
 
-## Who Covers When Someone Is Absent
+### `admin`
+**Who:** IT Administrator or System Manager
+**Access:** `system.*` permissions only — user management, role assignment, system settings, audit logs, reference tables, backups. Zero access to business data (no HR, no payroll, no accounting, no procurement).
+**Use:** Onboarding users, resetting passwords, configuring system settings, assigning departments to new accounts. Can access the Vendors and Customers pages specifically to provision vendor/client portal accounts.
 
-| Absent | Who Covers | Cannot Cover |
-|--------|-----------|-------------|
-| **Manager** | Officer | Final publish/close actions, structural changes |
-| **Officer** | Head | Department-wide approvals, generating reports |
-| **Head** | Staff | Cannot approve anything for others |
-
----
-
-## Department-by-Department Breakdown
+**Sidebar:** Administration section only (Users, System Settings, Reference Tables, Audit Logs, Backup).
 
 ---
 
-### HR Department
+## Executive-Level Roles (EXEC department)
 
-| Role | What They Do |
-|------|-------------|
-| **HR Manager** | Full employee lifecycle: hire, update salary, terminate. Runs and publishes payroll. Manages leave types and balances. Approves loans, leave, overtime across all teams. Full access to government reports (SSS, PhilHealth, BIR). |
-| **HR Officer** | Processes attendance records, imports CSV, resolves anomalies. Approves leave and overtime for teams. Prepares payroll computation. Views all employee records. Cannot publish payroll or create employees. |
-| **HR Head** | Approves leave and overtime for own team only (first-level). Files leave on behalf of team members. Views team attendance and records. Cannot run payroll or manage other teams. |
-| **HR Staff** | Views own payslip, attendance, leave balance. Files own leave, loan, overtime requests. No authority over others. |
+### `executive`
+**Who:** Chairman, President, Board Director
+**Access:** Read-only across virtually all modules — employees, payroll runs, GL, AP/AR, budget, fixed assets, inventory, production orders, QC, maintenance. Can approve leave and overtime at the executive level (`overtime.executive_approve`, `leaves.executive_approve`). Cannot create, edit, or approve financial transactions.
 
----
-
-### Accounting Department
-
-| Role | What They Do |
-|------|-------------|
-| **Accounting Manager** | Full GL access: create and post journal entries, manage chart of accounts, open/close fiscal periods. Manages AP (vendors, invoices, payments) and AR (customers, invoices, receipts). Manages bank accounts and reconciliations. Files VAT, generates financial statements. Approves budgets. |
-| **Accounting Officer** | Approves journal entries, vendor invoices, customer invoices. Approves budget items. Views all GL, AP, AR, banking records. Processes tax filings. Cannot create GL accounts or fiscal periods. |
-| **Accounting Head** | Views all accounting records. Assists with verification. Approves own team's leave/overtime. Cannot post journals, approve invoices, or manage banking. |
-| **Accounting Staff** | Views own payslip and self-service. Limited read-only access to GL and AP/AR records for reference. No transactional authority. |
+**Sidebar:** Executive section (Pending Approvals, financial reports).
+**Landing page:** `/approvals/pending`
+**Cannot:** Create anything, approve PRs/payroll/loans, post journal entries.
 
 ---
 
-### Production Department
+### `vice_president`
+**Who:** Vice President of Operations / Finance
+**Access:** Final approver for the entire organization. Has read access equivalent to executive plus full approval rights:
 
-| Role | What They Do |
-|------|-------------|
-| **Production Manager** | Creates and manages BOMs, work orders, delivery schedules. Releases and closes production orders. Manages maintenance and mold records. Creates MRQs and GRs. Full team management. |
-| **Production Officer** | Approves production orders. Views BOM, delivery schedules, QC records. Monitors stock and procurement. Generates production reports. Cannot create/release/complete orders or manage BOMs. |
-| **Production Head** | Logs output on production orders. Creates MRQs for materials. Approves own team's leave/overtime. Views production schedules. Cannot release or approve orders. |
-| **Production Staff** | Logs output on assigned orders. Views own production tasks, BOM, and stock levels. Files own HR requests. |
+| Module | VP Action |
+|---|---|
+| Purchase Requests | Final VP approval (`budget_verified → approved`) |
+| Payroll | VP approval step (`ACCTG_APPROVED → VP_APPROVED`) |
+| Loans | VP final approval (SoD-014 — exclusive to VP) |
+| Material Requisitions | VP approval step |
+| Vendor & Customer Invoices | Approval rights |
+| Budget | Can approve budget requests |
+| Sales / Client Orders | VP-level order approval |
 
----
-
-### QC Department
-
-| Role | What They Do |
-|------|-------------|
-| **QC Manager** | Full QC access: manages inspection templates, conducts inspections, creates and closes NCRs. Manages CAPAs. Full team management. |
-| **QC Officer** | Views and approves QC records. Monitors NCRs. Generates QC reports. Cannot create/close NCRs or manage templates. |
-| **QC Head** | Views inspections and NCRs. Approves own team's requests. Cannot create NCRs or manage QC templates. |
-| **QC Staff** | Views inspection records. Files own HR requests. No QC operational authority. |
-
----
-
-### Maintenance Department
-
-| Role | What They Do |
-|------|-------------|
-| **Maintenance Manager** | Full equipment and work order management. Creates and closes maintenance work orders. Manages maintenance schedules. Full team management. |
-| **Maintenance Officer** | Views maintenance records and monitors work orders. Approves team requests. Generates maintenance reports. Cannot create or close work orders. |
-| **Maintenance Head** | Views equipment and work orders. Approves own team's leave/overtime. Cannot manage work orders. |
-| **Maintenance Staff** | Views assigned equipment and tasks. Files own HR requests. |
+**Sidebar:** Executive section (Pending Approvals + Reports: Trial Balance, AP/AR Aging, Budget vs Actual).
+**Landing page:** `/approvals/pending`
+**Cannot:** Create PRs, initiate payroll, create employees, post journal entries, manage inventory.
+**SoD note:** VP is the *only* role with `loans.vp_approve` and `payroll.vp_approve`. No other role can perform the final approval step.
 
 ---
 
-### Mold Department
+## Operational Roles
 
-| Role | What They Do |
-|------|-------------|
-| **Mold Manager** | Full mold management: creates mold masters, logs shot counts, manages mold schedules. Full team management. |
-| **Mold Officer** | Views mold records and monitors shot counts. Approves team requests. Generates mold reports. |
-| **Mold Head** | Views mold records. Approves own team's requests. No mold operational authority. |
-| **Mold Staff** | Views mold records. Files own HR requests. |
+The roles below (`manager`, `officer`, `head`, `staff`) work together with a department assignment. The **department** controls which module APIs are reachable. The role controls what the user can do inside those modules.
 
 ---
 
-### Warehouse Department
+### `manager`
 
-| Role | What They Do |
-|------|-------------|
-| **Warehouse Manager** | Full inventory control: creates/edits items, manages categories and locations, processes stock adjustments and GRs. Manages deliveries. Full team management. |
-| **Warehouse Officer** | Views all inventory, stock levels, and GRs. Approves team requests. Generates inventory reports. Cannot create items, adjust stock, or post GRs. |
-| **Warehouse Head** | Views inventory and stock. Fulfills MRQs. Approves own team's requests. Cannot adjust stock or manage item records. |
-| **Warehouse Staff** | Views inventory and stock levels. Files own HR requests. No stock transaction authority. |
+Managers have **full access** within their assigned department's modules. They are the highest operational authority — they can approve what officers process and manage what heads supervise.
 
----
+| Department | Title | Key Responsibilities |
+|---|---|---|
+| **HR** (`HR`) | HR Manager | Full employee lifecycle (create → activate → terminate), payroll HR-approval step, leave/loan configuration, salary grade management, government reports (BIR, SSS, PhilHealth, PagIBIG) |
+| **Accounting** (`ACCTG`) | Accounting Manager | Full GL/AP/AR, payroll accounting-approval step, post journal entries, bank reconciliation certification, budget management, fixed assets management |
+| **Production** (`PROD`) | Plant Manager | Work order creation/release/complete, BOM management, full MRQ workflow, QC management, maintenance management |
+| **Warehouse** (`WH`) | Warehouse Manager | Full inventory (items, stock, adjustments, locations), MRQ fulfillment, goods receipt confirmation, delivery management |
+| **Purchasing** (`PURCH`) | Purchasing Manager | Full procurement (PR → PO → GR), vendor management, MRQ creation, Vendor RFQs |
+| **Sales** (`SALES`) | Sales Manager | Client order management/approval/negotiation, CRM, customer invoices, AR |
+| **QC** (`QC`) | QC Manager | Inspections, NCRs, CAPA, QC templates, close NCRs |
+| **Maintenance** (`MAINT`) | Maintenance Manager | Equipment registry, maintenance work orders |
 
-### Purchasing (Procurement) Department
-
-| Role | What They Do |
-|------|-------------|
-| **Purchasing Manager** | Full procurement cycle: creates PRs, reviews and budget-checks PRs, creates and approves POs, receives goods. Manages vendors, vendor items. Sends RFQs. Full team management. |
-| **Purchasing Officer** | Approves purchase orders. Views vendors and procurement records. Generates procurement reports. Cannot create PRs/POs or manage vendors directly. |
-| **Purchasing Head** | Views procurement records. Views vendor list. Approves own team's requests. No transactional procurement authority. |
-| **Purchasing Staff** | Views vendor list and PRs. Files own HR requests. |
+**Key trait:** Managers hold the critical approval permissions (`hr_approve`, `acctg_approve` for payroll; `post` for journal entries; `fulfill` for MRQs; `confirm` for GRs) that officers do not.
 
 ---
 
-### PPC Department (Production Planning & Control)
+### `officer`
 
-| Role | What They Do |
-|------|-------------|
-| **PPC Manager** | Manages delivery schedules, production BOMs, and work orders. Creates MRQs and PRs. Full team management. |
-| **PPC Officer** | Approves production orders. Views schedules, BOMs, and stock. Monitors procurement and GRs. |
-| **PPC Head** | Views production schedules and BOMs. Creates MRQs for own section. Approves own team's requests. |
-| **PPC Staff** | Views production schedules and stock levels. Logs output. Files own HR requests. |
+Officers perform day-to-day operations — they create and process records but cannot give final approval. They hand off to a manager or VP for the approval step.
 
----
+| Department | Title | Key Responsibilities |
+|---|---|---|
+| **Accounting** (`ACCTG`) | Accounting Officer | Creates journal entries (submit, not post), creates/submits AP invoices, processes AR invoices, bank entries, performs budget verification on PRs (`procurement.purchase-request.budget-check`) |
+| **Purchasing** (`PURCH`) | Purchasing Officer | Technically reviews PRs (`procurement.purchase-request.review`), creates POs, creates GRs, manages vendors, creates Vendor RFQs |
+| **HR** (`HR`) | HR Officer | Employee records view, processes leave and attendance, loan review step, generates payroll reports |
+| **Sales** (`SALES`) | Sales Officer | Processes client orders, manages CRM tickets, creates customer invoices |
+| **Any dept** | Dept Officer | Team management for own department: approves leave/OT for their team, views team attendance, supervises loans |
 
-### Plant Department
-
-| Role | What They Do |
-|------|-------------|
-| **Plant Manager** | Oversees plant-wide production, maintenance, and mold operations. Full access to production orders, BOMs, QC, maintenance, mold, and inventory. Full team management. |
-| **Plant Officer** | Monitors all plant operations. Approves production orders. Views all related records. Generates production reports. |
-| **Plant Head** | Views all plant records. Approves own team's requests. No operational authority over orders or maintenance. |
-| **Plant Staff** | Views production tasks and schedules. Logs output. Files own HR requests. |
+**Key trait:** Officers can create and process but not finalize. They also hold team management permissions for their department (approve leave/OT of subordinates — SoD prevents approving their own).
 
 ---
 
-### ISO Department
+### `head`
 
-| Role | What They Do |
-|------|-------------|
-| **ISO Manager** | Full ISO/IATF management: creates and manages documents, conducts audits, manages system settings for ISO compliance. Full team management. |
-| **ISO Officer** | Manages ISO documents and monitors audit records. Approves team requests. Cannot conduct formal audits or manage system settings. |
-| **ISO Head** | Views ISO documents and audit records. Approves own team's requests. |
-| **ISO Staff** | Views ISO documents. Files own HR requests. |
+Heads are team supervisors. They do first-level approvals within their team and handle limited operational tasks.
 
----
+| Department | Title | Key Responsibilities |
+|---|---|---|
+| **Production** (`PROD`) | Production Head | Creates/releases work orders, creates MRQs, creates PRs (dept-scoped only via `create-dept`), views QC/maintenance. **Cannot** start WOs (manager) or note MRQs from other depts (SoD) |
+| **Warehouse** (`WH`) | Warehouse Head | Notes MRQs (first step of fulfillment workflow), views inventory, creates delivery receipts. **Cannot** fulfill MRQs (warehouse manager only) |
+| **Purchasing** (`PURCH`) | Purchasing Head | PR creation, team supervision, similar to purchasing officer with head-level team approval |
+| **QC** (`QC`) | QC Head | Creates inspections and NCRs, manages ISO documents and audit records |
+| **Maintenance** (`MAINT`) | Maintenance Head | Manages equipment registry and maintenance work orders |
+| **Sales** (`SALES`) | Sales Head | Reviews client orders (cannot approve/negotiate — manager/VP scope), manages CRM tickets |
+| **HR** (`HR`) | HR Head | Team supervision, leave/loan first-level notes, works under HR Manager |
+| **Any dept** | Dept Head | Approves own team's leave and overtime (SoD — cannot approve own requests); provides first-level loan notes |
 
-### Sales Department
-
-| Role | What They Do |
-|------|-------------|
-| **Sales Manager** | Manages customers, creates customer invoices. Handles CRM tickets (assign, close). Views delivery schedules. Full team management. |
-| **Sales Officer** | Approves customer invoices. Manages CRM tickets (reply, manage). Views customers and delivery schedules. Generates sales reports. |
-| **Sales Head** | Views customers and invoices. Creates CRM tickets. Approves own team's requests. Cannot approve invoices or manage tickets. |
-| **Sales Staff** | Views customer list and support tickets. Files own HR requests. |
+**Key trait:** The `procurement.purchase-request.create-dept` permission means heads can only create PRs for their own department. Officers with the full `procurement.purchase-request.create` can create PRs for any department.
 
 ---
 
-### IT Department
+### `staff`
 
-| Role | What They Do |
-|------|-------------|
-| **IT Manager** | Manages system settings. Oversees ISO documents and maintenance records relevant to IT infrastructure. Full team management. |
-| **IT Officer** | Manages ISO documents. Monitors maintenance records. Approves team requests. Views system settings (read-only). |
-| **IT Head** | Views ISO and maintenance records. Approves own team's requests. |
-| **IT Staff** | Views ISO documents. Files own HR requests. |
+Staff is the most restricted operational role. No approval rights. No create permissions for primary business records. Self-service and production logging only.
 
----
+| Department | Title | Key Responsibilities |
+|---|---|---|
+| **Production** (`PROD`) | Production Staff | View work orders, log production output (`production.orders.log_output`), create/view QC inspections and NCRs, view inventory and mold data |
+| **Warehouse** (`WH`) | Warehouse Staff | View inventory and stock, view/create QC inspections, view deliveries |
+| **Any dept** | Staff | File own leave, apply for loan, view own payslip, submit own overtime, view own attendance |
 
-### Executive Department
-
-| Role | What They Do |
-|------|-------------|
-| **Executive (VP/President)** | Read-only board-level oversight across all modules. Final approver for payroll, procurement, budgets, and loans via VP approval queue. Cannot create or edit transactional records. |
-| **Executive Officer** | Assists executive with oversight. Views key financial and operational reports. Team management support. |
-| **Executive Head** | Views executive-level reports. Assists with administrative tasks. |
-| **Executive Staff** | Self-service only. Files own HR requests. |
+**Cannot:** Create PRs, MRQs, or work orders. Cannot approve anything. Cannot view other employees' records.
 
 ---
 
-## Common Permissions Across ALL Departments
+## Portal Roles (external users)
 
-Regardless of department, every employee at every level can:
-
-| Permission | Staff | Head | Officer | Manager |
-|-----------|-------|------|---------|---------|
-| View own profile | ✓ | ✓ | ✓ | ✓ |
-| View own payslip | ✓ | ✓ | ✓ | ✓ |
-| File own leave | ✓ | ✓ | ✓ | ✓ |
-| Cancel own leave | ✓ | ✓ | ✓ | ✓ |
-| Apply for loan | ✓ | ✓ | ✓ | ✓ |
-| View own attendance | ✓ | ✓ | ✓ | ✓ |
-| View team attendance | ✗ | ✓ | ✓ | ✓ |
-| Approve team leave | ✗ | First-level | ✓ | ✓ |
-| Approve team overtime | ✗ | Submit only | ✓ | ✓ |
-| View department loans | ✗ | ✓ | ✓ | ✓ |
-| Resolve attendance anomalies | ✗ | ✗ | ✓ | ✓ |
-| Import attendance CSV | ✗ | ✗ | ✓ | ✓ |
-| View full employee records | ✗ | ✓ | ✓ | ✓ |
-| Create/edit employees | ✗ | ✗ | ✗ | ✓ |
+### `vendor`
+**Who:** External supplier company
+**Access:** Vendor Portal only (`/vendor-portal/*`) — view POs assigned to them, update fulfillment status, manage their product catalog, view goods receipts, submit invoices.
+**Cannot:** Access any internal ERP pages.
 
 ---
 
-## Login Credentials (Test Accounts)
+### `client`
+**Who:** External customer/buyer
+**Access:** Client Portal only (`/client-portal/*`) — browse catalog, place orders, view order status, create and view support tickets.
+**Cannot:** Access any internal ERP pages.
 
-Pattern: `{dept}.{role}@ogamierp.local`
+---
 
-| Role | Password |
-|------|---------|
-| Manager | `Manager@Test1234!` |
-| Officer | `Officer@Test1234!` |
-| Head | `Head@Test1234!` |
-| Staff | `Staff@Test1234!` |
+## Department-Module Access Matrix
 
-**Examples:**
-- `hr.manager@ogamierp.local` / `Manager@Test1234!`
-- `hr.officer@ogamierp.local` / `Officer@Test1234!`
-- `acctg.manager@ogamierp.local` / `Manager@Test1234!`
-- `prod.officer@ogamierp.local` / `Officer@Test1234!`
-- `wh.head@ogamierp.local` / `Head@Test1234!`
-- `purch.staff@ogamierp.local` / `Staff@Test1234!`
+Which departments can reach which modules (enforced by `ModuleAccessMiddleware`).
+VP, Executive, Admin, and Super Admin bypass this check entirely.
 
-**System accounts:**
-- `admin@ogamierp.local` / `Admin@1234567890!`
-- `superadmin@ogamierp.local` / `SuperAdmin@12345!`
+| Module | Allowed Departments |
+|---|---|
+| HR / Employees | HR, PURCH, PROD, PLANT, WH, QC, MAINT, SALES, ACCTG, IT |
+| Attendance / Leave / Overtime | HR, PURCH, PROD, PLANT, WH, QC, MAINT, SALES, ACCTG, IT |
+| Payroll | HR, ACCTG |
+| Loans | HR, ACCTG |
+| Accounting / GL / Tax / Banking | ACCTG |
+| Budget | ACCTG, EXEC |
+| Fixed Assets | ACCTG |
+| AP — Vendors & Invoices | ACCTG, PURCH |
+| AR — Customers & Invoices | SALES, ACCTG, PURCH |
+| Procurement (all) | PURCH, PROD, PLANT, ACCTG, WH |
+| Purchase Orders / Vendor RFQs | PURCH only |
+| Goods Receipts | PURCH, WH |
+| Inventory (items / stock) | WH, PURCH, PROD, PLANT, SALES |
+| MRQ / Requisitions | WH, PURCH, PROD |
+| Stock Adjustments / Locations | WH only |
+| Production / Work Orders / BOMs | PROD, PLANT, PPC |
+| QC / Inspections | QC, PROD, WH |
+| NCR / CAPA | QC only |
+| Maintenance / Equipment | MAINT, PROD, PLANT |
+| Mold | MOLD, PROD |
+| Delivery / Shipments | WH, SALES, PROD, PLANT |
+| ISO / IATF | ISO, QC |
+| CRM / Tickets | SALES |
+| Administration | IT, EXEC |
+| Approvals Dashboard | EXEC, VP |
+| Reports (gov / financial) | HR, ACCTG, EXEC |
 
-**Available department codes:** `hr`, `acctg`, `prod`, `qc`, `mold`, `plant`, `wh`, `ppc`, `maint`, `iso`, `purch`, `sales`, `it`
+---
+
+## Segregation of Duties (SoD) Reference
+
+| Rule | What it prevents |
+|---|---|
+| SOD-001 | Employee creator ≠ activator |
+| SOD-002 | Leave requester ≠ approver |
+| SOD-003 | OT requester ≠ approver |
+| SOD-004 | Loan applicant ≠ HR approver |
+| SOD-005/006 | HR prepares payroll, Accounting approves — never the same person |
+| SOD-007 | Payroll accounting approver ≠ HR who prepared it |
+| SOD-008 | Journal entry creator ≠ poster |
+| SOD-009 | AP invoice creator ≠ approver |
+| SOD-010 | AR invoice creator ≠ approver |
+| SOD-011 | Loan applicant ≠ head who notes it |
+| SOD-012 | Loan head noter ≠ manager checker |
+| SOD-013 | Loan manager checker ≠ officer reviewer |
+| SOD-014 | `loans.vp_approve` and `payroll.vp_approve` are VP-exclusive — no other role holds them |
+| PR SoD | PR submitter ≠ VP approver (enforced in `PurchaseRequestPolicy`) |
+| MRQ SoD | MRQ creator ≠ MRQ noter (enforced in `MaterialRequisitionPolicy`) |
+
+---
+
+## Test Accounts Reference
+
+Created by `TestAccountsSeeder`. Run after `RolePermissionSeeder` and `DepartmentPositionSeeder`.
+
+| Email | Password | Role | Department | Name |
+|---|---|---|---|---|
+| `admin@ogamierp.local` | `Admin@1234567890!` | admin | — | System Administrator *(created by RolePermissionSeeder)* |
+| `executive@ogamierp.local` | `Executive@Test1234!` | executive | EXEC | Roberto Reyes |
+| `vp@ogamierp.local` | `Vice_president@Test1234!` | vice_president | EXEC | Elena Cruz |
+| `hr.manager@ogamierp.local` | `Manager@Test1234!` | manager | HR | Maria Santos |
+| `plant.manager@ogamierp.local` | `Manager@Test1234!` | manager | PLANT | Carlos Rivera |
+| `prod.manager@ogamierp.local` | `Manager@Test1234!` | manager | PROD | Jose Garcia |
+| `qc.manager@ogamierp.local` | `Manager@Test1234!` | manager | QC | Linda Tan |
+| `mold.manager@ogamierp.local` | `Manager@Test1234!` | manager | MOLD | Ramon Aquino |
+| `sales.manager@ogamierp.local` | `Manager@Test1234!` | manager | SALES | Diana Cruz |
+| `acctg.officer@ogamierp.local` | `Officer@Test1234!` | officer | ACCTG | Anna Marie Lim |
+| `ga.officer@ogamierp.local` | `Officer@Test1234!` | officer | HR | Grace Mendoza |
+| `purchasing.officer@ogamierp.local` | `Officer@Test1234!` | officer | PURCH | Mark Villanueva |
+| `impex.officer@ogamierp.local` | `Officer@Test1234!` | officer | SALES | Diana Ramos |
+| `dept.head@ogamierp.local` | `Head@Test1234!` | head | PROD | Ricardo Bautista |
+| `warehouse.head@ogamierp.local` | `Head@Test1234!` | head | WH | Ernesto Bautista |
+| `ppc.head@ogamierp.local` | `Head@Test1234!` | head | PPC | Jerome Florido |
+| `staff@ogamierp.local` | `Staff@Test1234!` | staff | PROD | Juan dela Cruz |
+| `hr.staff@ogamierp.local` | `Staff@Test1234!` | staff | HR | Juan Dela Cruz |
+| `vendor@ogamierp.local` | `Vendor@Test1234!` | vendor | — | Vendor User (ABC Supplier) |
+| `client@ogamierp.local` | `Client@Test1234!` | client | — | Client User (XYZ Corp) |
+
+> Password pattern: `{Ucfirst(role_name)}@Test1234!`
+> Example: role `head` → `Head@Test1234!` · role `vice_president` → `Vice_president@Test1234!`
+>
+> Vendor and client accounts have `must_change_password = true` on first login.
+
+---
+
+## Related Documents
+
+| File | Purpose |
+|---|---|
+| `docs/RBAC_V2_GUIDE.md` | Technical RBAC implementation details |
+| `docs/SOD_AUDIT_REPORT.md` | Full SoD audit findings |
+| `docs/MANUAL_TESTING_GUIDE.md` | Manual testing steps per role |
+| `database/seeders/RolePermissionSeeder.php` | Authoritative permission assignments |
+| `app/Infrastructure/Middleware/ModuleAccessMiddleware.php` | Dept-to-module access map |
+| `app/Services/DepartmentModuleService.php` | Runtime permission resolution for dept users |

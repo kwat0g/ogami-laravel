@@ -570,8 +570,8 @@ const router = createBrowserRouter([
       { path: '/ar/credit-notes',            element: withSuspense(guard('customer_invoices.view', <CustomerCreditNotesPage />)) },
 
       // ── Vendor RFQs ───────────────────────────────────────────────────────
-      { path: '/procurement/rfqs',        element: withSuspense(guard('procurement.purchase-request.view', <VendorRfqListPage />)) },
-      { path: '/procurement/rfqs/:ulid',  element: withSuspense(guard('procurement.purchase-request.view', <VendorRfqDetailPage />)) },
+      { path: '/procurement/rfqs',        element: withSuspense(guard('procurement.purchase-order.view', <VendorRfqListPage />)) },
+      { path: '/procurement/rfqs/:ulid',  element: withSuspense(guard('procurement.purchase-order.view', <VendorRfqDetailPage />)) },
 
     // ── Sales / Client Orders Review ───────────────────────────────────────
     { path: '/sales/client-orders', element: withSuspense(guard('sales.order_review', <ClientOrdersReviewPage />)) },

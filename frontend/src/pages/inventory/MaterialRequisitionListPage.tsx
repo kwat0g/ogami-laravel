@@ -92,7 +92,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
               <table className="min-w-full text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
-                    {['MR Reference', 'Department', 'Purpose', 'Status', 'Requested By', 'Date'].map((h) => (
+                    {['MR Reference', 'Type', 'Department', 'Purpose', 'Status', 'Requested By', 'Date'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                     ))}
                   </tr>
@@ -100,12 +100,18 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
                 <tbody className="divide-y divide-neutral-100">
                   {data?.data?.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">No requisitions found.</td>
+                      <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No requisitions found.</td>
                     </tr>
                   )}
                   {data?.data?.map((mrq) => (
                     <tr key={mrq.id} className="hover:bg-neutral-50/50 transition-colors cursor-pointer" onClick={() => navigate(`/inventory/requisitions/${mrq.ulid}`)}>
                       <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{mrq.mr_reference}</td>
+                      <td className="px-4 py-3">
+                        {mrq.production_order
+                          ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-600">Auto — WO</span>
+                          : <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white border border-neutral-300 text-neutral-500">Manual</span>
+                        }
+                      </td>
                       <td className="px-4 py-3 text-neutral-600">{mrq.department?.name ?? '—'}</td>
                       <td className="px-4 py-3 text-neutral-500 max-w-xs truncate">
                         {mrq.production_order

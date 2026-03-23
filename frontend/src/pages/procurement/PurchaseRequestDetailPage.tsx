@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, XCircle, ShoppingCart, FileText, Download, Pencil } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, XCircle, FileText, Download, Pencil } from 'lucide-react'
 import {
   usePurchaseRequest,
   useSubmitPurchaseRequest,
@@ -228,8 +228,6 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                           pr.status === 'reviewed'
   const canVpApprove   = (isSuperAdmin || hasPermission('approvals.vp.approve')) &&
                           pr.status === 'budget_verified'
-  const canCreatePo    = (isSuperAdmin || hasPermission('procurement.purchase-order.create')) &&
-                          ['approved', 'converted_to_po'].includes(pr.status)
   const canCancel      = pr.status === 'draft' && (isSuperAdmin || isOwner)
   // Return: Purchasing can return at pending_review, Accounting at reviewed (mirrors policy)
   const canReturn      = isSuperAdmin ||
@@ -349,16 +347,6 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
               >
                 {submitMutation.isPending ? 'Submitting…' : 'Submit for Review'}
               </button>
-            )}
-
-            {canCreatePo && (
-              <Link
-                to={`/procurement/purchase-orders/new?pr_id=${pr.id}`}
-                className="inline-flex items-center gap-1.5 text-sm px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                Create PO
-              </Link>
             )}
 
             {canReview && (
@@ -612,7 +600,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                     ? 'You verified the budget. Due to Segregation of Duties, the VP must give final approval.'
                     : 'Budget has been verified. The VP must now give final approval.'
                 )}
-                {pr.status === 'approved' && 'This PR has been approved. You can now create a Purchase Order.'}
+                {pr.status === 'approved' && 'This PR has been approved.'}
                 {pr.status === 'converted_to_po' && 'This PR has been converted to a Purchase Order.'}
                 {pr.status === 'returned' && 'This PR has been returned for revision. Update and resubmit.'}
                 {pr.status === 'rejected' && 'This PR has been rejected and cannot be processed further.'}

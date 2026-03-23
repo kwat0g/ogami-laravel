@@ -77,7 +77,9 @@ use App\Domains\Procurement\Policies\PurchaseOrderPolicy;
 use App\Domains\Procurement\Policies\PurchaseRequestPolicy;
 use App\Domains\Procurement\Policies\VendorRfqPolicy;
 use App\Domains\Production\Models\BillOfMaterials;
+use App\Domains\Production\Models\DeliverySchedule;
 use App\Domains\Production\Models\ProductionOrder;
+use App\Domains\Production\Policies\DeliverySchedulePolicy;
 use App\Domains\Production\Policies\ProductionOrderPolicy;
 use App\Domains\QC\Models\Inspection;
 use App\Domains\QC\Models\InspectionTemplate;
@@ -177,6 +179,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MaterialRequisition::class, MaterialRequisitionPolicy::class);
         Gate::policy(BillOfMaterials::class, ProductionOrderPolicy::class);
         Gate::policy(ProductionOrder::class, ProductionOrderPolicy::class);
+        Gate::policy(DeliverySchedule::class, DeliverySchedulePolicy::class);
         Gate::policy(Inspection::class, InspectionPolicy::class);
         Gate::policy(InspectionTemplate::class, InspectionTemplatePolicy::class);
         Gate::policy(NonConformanceReport::class, NcrPolicy::class);
@@ -211,6 +214,14 @@ class AppServiceProvider extends ServiceProvider
             // Super admin bypass (already handled by Spatie, but double-check)
             if ($user->hasRole('super_admin')) {
                 return true;
+            }
+
+            // System roles (admin, executive, vice_president) use their full Spatie permissions
+            // directly — DepartmentModuleService is for core operational roles only.
+            // This mirrors the Step 2 bypass in User::hasPermissionTo() so that policies
+            // using $user->can() behave the same as those using $user->hasPermissionTo().
+            if ($user->hasAnyRole(['admin', 'executive', 'vice_president'])) {
+                return $result;
             }
 
             // For users WITH department assignments, ONLY use module permissions.

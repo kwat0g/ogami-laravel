@@ -8,7 +8,6 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { DepartmentGuard } from '@/components/ui/guards'
 import type {
   PurchaseRequest,
   PurchaseRequestFilters,
@@ -219,17 +218,15 @@ export default function PurchaseRequestListPage(): React.ReactElement {
       <PageHeader
         title="Purchase Requests"
         actions={
-          <DepartmentGuard module="purchase_requests">
-            {canCreate && (
-              <Link
-                to="/procurement/purchase-requests/new"
-                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                New Request
-              </Link>
-            )}
-          </DepartmentGuard>
+          canCreate && (
+            <Link
+              to="/procurement/purchase-requests/new"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Request
+            </Link>
+          )
         }
       />
 
