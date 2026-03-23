@@ -230,14 +230,14 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                           pr.status === 'budget_verified'
   const canCancel      = pr.status === 'draft' && (isSuperAdmin || isOwner)
   // Return: Purchasing can return at pending_review, Accounting at reviewed (mirrors policy)
-  const canReturn      = isSuperAdmin ||
-                          (hasPermission('procurement.purchase-request.review') && !isVp && pr.status === 'pending_review') ||
-                          (hasPermission('procurement.purchase-request.budget-check') && pr.status === 'reviewed')
-  // Reject: scoped to the stage the user is responsible for (mirrors policy)
-  const canReject      = isSuperAdmin ||
-                          (hasPermission('procurement.purchase-request.review') && !isVp && pr.status === 'pending_review') ||
+  const canReturn      = (hasPermission('procurement.purchase-request.review') && !isVp && pr.status === 'pending_review') ||
                           (hasPermission('procurement.purchase-request.budget-check') && pr.status === 'reviewed') ||
-                          (hasPermission('approvals.vp.approve') && pr.status === 'budget_verified')
+                          (isSuperAdmin && ['pending_review', 'reviewed'].includes(pr.status))
+  // Reject: scoped to the stage the user is responsible for (mirrors policy)
+  const canReject      = (hasPermission('procurement.purchase-request.review') && !isVp && pr.status === 'pending_review') ||
+                          (hasPermission('procurement.purchase-request.budget-check') && pr.status === 'reviewed') ||
+                          (hasPermission('approvals.vp.approve') && pr.status === 'budget_verified') ||
+                          (isSuperAdmin && ['pending_review', 'reviewed', 'budget_verified'].includes(pr.status))
 
   const handleAction = async (
     action: 'review' | 'budget-check' | 'vp-approve',
