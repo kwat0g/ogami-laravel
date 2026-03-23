@@ -149,6 +149,7 @@ def update() -> None:
 
     # ── R1. Pull latest code ─────────────────────────────────────────────────
     banner("R1 — Pull latest code (VPS)")
+    vps.run(f"git config --global --add safe.directory {APP_DIR} 2>&1 || true")
     vps.run(
         f"cd {APP_DIR} && "
         "git fetch --all 2>&1 && "
@@ -204,8 +205,8 @@ def update() -> None:
     # ── R2b. Rebuild frontend on VPS ─────────────────────────────────────────
     banner("R2b — Frontend build (VPS)")
     vps.run(
-        f"cd {APP_DIR}/frontend && "
-        "pnpm install --frozen-lockfile 2>&1 | tail -5",
+        f"cd {APP_DIR} && "
+        "pnpm install --no-frozen-lockfile 2>&1 | tail -5",
         timeout=300,
     )
     vps.run(

@@ -375,8 +375,8 @@ def deploy() -> None:
     # ── 8b. Build React frontend on VPS ──────────────────────────────────────
     banner("8b/12 — Frontend build (pnpm install + build)")
     vps.run(
-        f"cd {APP_DIR}/frontend && "
-        "pnpm install --frozen-lockfile 2>&1 | tail -5",
+        f"cd {APP_DIR} && "
+        "pnpm install --no-frozen-lockfile 2>&1 | tail -5",
         timeout=300,
     )
     vps.run(
