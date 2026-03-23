@@ -200,7 +200,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
   }
 
   const canDuplicate = (status: PurchaseRequestStatus): boolean =>
-    ['approved', 'rejected', 'converted_to_po'].includes(status)
+    status === 'converted_to_po'
 
   if (isLoading) return <SkeletonLoader rows={10} />
 

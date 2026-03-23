@@ -692,10 +692,10 @@ final class PurchaseRequestService implements ServiceContract
             );
         }
 
-        // Only allow duplication of PRs that are approved, rejected, or converted_to_po
-        if (! in_array($originalPr->status, ['approved', 'rejected', 'converted_to_po'], true)) {
+        // Only allow duplication of PRs that have been converted to a PO
+        if ($originalPr->status !== 'converted_to_po') {
             throw new DomainException(
-                message: "Cannot duplicate a PR with status '{$originalPr->status}'. Only approved, rejected, or converted PRs can be duplicated.",
+                message: "Cannot duplicate a PR with status '{$originalPr->status}'. Only PRs that have been converted to a PO can be duplicated.",
                 errorCode: 'PR_CANNOT_DUPLICATE',
                 httpStatus: 422,
             );
