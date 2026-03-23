@@ -28,9 +28,9 @@ import time
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # ── Configuration (must match deploy.py) ─────────────────────────────────────
-HOST    = "45.151.155.64"
+HOST    = "103.6.168.151"
 USER    = "root"
-PASS    = "Gustokonamamatay@09"
+PASS    = "Ehdrian@Bungubung09"
 APP_DIR = "/var/www/ogami"
 DOMAIN  = "ogamiph.dev"
 # ─────────────────────────────────────────────────────────────────────────────
@@ -83,15 +83,15 @@ class VPS:
             encoding="utf-8",
         )
         self.c.logfile_read = sys.stdout
-        idx = self.c.expect(["password:", r"[$#]\s*$", pexpect.TIMEOUT], timeout=20)
+        idx = self.c.expect(["password:", r"[#$]\s*$", pexpect.TIMEOUT], timeout=30)
         if idx == 0:
             self.c.sendline(PASS)
-            self.c.expect(r"[$#]\s*$", timeout=20)
+            self.c.expect(r"[#$]", timeout=60)
         self.c.sendline(
             "export PS1='READY# ' && "
             "export COMPOSER_ALLOW_SUPERUSER=1"
         )
-        self.c.expect("READY#", timeout=10)
+        self.c.expect("READY#", timeout=30)
         print("  \033[32mConnected!\033[0m", flush=True)
 
     def run(self, cmd: str, timeout: int = 120) -> str:
@@ -201,6 +201,19 @@ def update() -> None:
         timeout=180,
     )
 
+    # ── R2b. Rebuild frontend on VPS ─────────────────────────────────────────
+    banner("R2b — Frontend build (VPS)")
+    vps.run(
+        f"cd {APP_DIR}/frontend && "
+        "pnpm install --frozen-lockfile 2>&1 | tail -5",
+        timeout=300,
+    )
+    vps.run(
+        f"cd {APP_DIR}/frontend && "
+        "pnpm build 2>&1 | tail -10",
+        timeout=300,
+    )
+
     # ── R3. Database migrations ──────────────────────────────────────────────
     banner("R3 — Migrations")
     vps.run(f"cd {APP_DIR} && php artisan migrate --force 2>&1", timeout=120)
@@ -209,8 +222,7 @@ def update() -> None:
     banner("R4 — Rebuild caches")
     vps.run(
         f"cd {APP_DIR} && "
-        "php artisan cache:clear && "        # flush Redis runtime cache
-        "php artisan config:clear && "
+        "php artisan optimize:clear && "     # clears config, route, view, event, cache in one shot
         "php artisan config:cache && "
         "php artisan route:cache && "
         "php artisan view:cache && "
@@ -222,11 +234,14 @@ def update() -> None:
 
     # ── R5. Restart queue workers ────────────────────────────────────────────
     banner("R5 — Restart workers")
+    # Flush any stale jobs from the notification queue before restarting
+    vps.run(f"cd {APP_DIR} && php artisan queue:clear --queue=notifications --force 2>&1 || true")
+    vps.run(f"cd {APP_DIR} && php artisan queue:clear --queue=default --force 2>&1 || true")
     # horizon:terminate does a graceful restart (finishes current jobs first)
     vps.run(f"cd {APP_DIR} && php artisan horizon:terminate 2>&1 || true")
     time.sleep(3)
     vps.run(
-        "supervisorctl restart ogami-horizon ogami-reverb ogami-scheduler 2>&1"
+        "supervisorctl restart ogami-horizon ogami-reverb ogami-scheduler ogami-pulse 2>&1"
     )
     vps.run("supervisorctl status 2>&1")
 

@@ -95,7 +95,7 @@ Schedule::command('horizon:snapshot')->everyFiveMinutes();
 // ── Pulse: ingest aggregated metrics ─────────────────────────────────────────
 // Pulse records data in a streaming buffer; this schedule flushes it to the
 // pulse_aggregates table for dashboard display.
-Schedule::command('pulse:check')->everyMinute();
+Schedule::command('pulse:check')->everyMinute()->withoutOverlapping();
 
 // ── AR: Overdue invoice notifications ────────────────────────────────────────
 // Runs daily at 08:30 AM. Checks for overdue invoices and notifies relevant users.
