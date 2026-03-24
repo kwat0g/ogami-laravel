@@ -46,12 +46,7 @@ class ComprehensiveTestDataSeeder extends Seeder
         $this->seedItemMasters($admin);
         $this->seedVendors($admin);
         $this->seedCustomers($admin);
-        $this->seedProcurementData($admin);
-        $this->seedProductionData($admin);
-        $this->seedQCData($admin);
-        $this->seedMaintenanceData($admin);
         $this->seedDeliveryData($admin);
-        $this->seedFixedAssetsData($admin);
         $this->seedBankAccounts($admin);
 
         $this->command->info('✓ Comprehensive Test Data Seeding Complete!');
