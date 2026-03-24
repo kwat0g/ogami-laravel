@@ -290,6 +290,31 @@ export default function VendorOrderDetailPage(): React.ReactElement {
   const [proposeRemarks, setProposeRemarks] = useState('')
   const [proposeQtys, setProposeQtys] = useState<Record<number, number>>({})
 
+  // These effects must be before any early returns (Rules of Hooks)
+  useEffect(() => {
+    if (markDelivered.isSuccess && markDelivered.data) {
+      const splitPo = markDelivered.data.data?.split_po
+
+      if (splitPo) {
+        toast.success(
+          `Partial delivery confirmed. Split PO ${splitPo.reference} created for remaining quantities.`,
+          { duration: 5000 }
+        )
+      } else {
+        toast.success('Full delivery confirmed. A goods receipt draft has been created.')
+      }
+      setShowDeliveryModal(false)
+      markDelivered.reset()
+    }
+  }, [markDelivered.isSuccess, markDelivered.data])
+
+  useEffect(() => {
+    if (markDelivered.isError && markDelivered.error) {
+      toast.error(firstErrorMessage(markDelivered.error))
+      markDelivered.reset()
+    }
+  }, [markDelivered.isError, markDelivered.error])
+
   if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading order…</p>
   if (isError || !order) return <p className="text-sm text-red-500 mt-4">Order not found.</p>
 
@@ -369,31 +394,6 @@ export default function VendorOrderDetailPage(): React.ReactElement {
 
     markDelivered.mutate({ ulid, items, notes, delivery_date: deliveryDate })
   }
-
-  // Handle mutation success/error effects
-  useEffect(() => {
-    if (markDelivered.isSuccess && markDelivered.data) {
-      const splitPo = markDelivered.data.data?.split_po
-
-      if (splitPo) {
-        toast.success(
-          `Partial delivery confirmed. Split PO ${splitPo.reference} created for remaining quantities.`,
-          { duration: 5000 }
-        )
-      } else {
-        toast.success('Full delivery confirmed. A goods receipt draft has been created.')
-      }
-      setShowDeliveryModal(false)
-      markDelivered.reset()
-    }
-  }, [markDelivered.isSuccess, markDelivered.data])
-
-  useEffect(() => {
-    if (markDelivered.isError && markDelivered.error) {
-      toast.error(firstErrorMessage(markDelivered.error))
-      markDelivered.reset()
-    }
-  }, [markDelivered.isError, markDelivered.error])
 
   return (
     <div className="max-w-4xl">
@@ -542,7 +542,12 @@ export default function VendorOrderDetailPage(): React.ReactElement {
         {/* Current Action Hint */}
         {order.status === 'sent' && (
           <p className="mt-3 text-xs text-blue-700 bg-blue-50 rounded px-3 py-2">
-            <strong>Next:</strong> Click "Mark as In-Transit" to notify the buyer that goods are being shipped.
+            <strong>Next:</strong> Acknowledge this PO to confirm you can fulfil it, or propose changes if needed.
+          </p>
+        )}
+        {order.status === 'acknowledged' && (
+          <p className="mt-3 text-xs text-blue-700 bg-blue-50 rounded px-3 py-2">
+            <strong>Next:</strong> Click "Mark as In-Transit" when goods have been dispatched.
           </p>
         )}
         {order.status === 'in_transit' && (
