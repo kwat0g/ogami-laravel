@@ -116,7 +116,6 @@ const BankReconciliationDetailPage = lazy(() => import('@/pages/banking/BankReco
 const AttendanceListPage = lazy(() => import('@/pages/hr/attendance/AttendanceListPage'))
 const AttendanceImportPage = lazy(() => import('@/pages/hr/attendance/AttendanceImportPage'))
 const AttendanceDashboardPage = lazy(() => import('@/pages/hr/attendance/AttendanceDashboardPage'))
-const AttendanceSummaryPage   = lazy(() => import('@/pages/hr/attendance/AttendanceSummaryPage'))
 const OvertimeListPage = lazy(() => import('@/pages/hr/attendance/OvertimeListPage'))
 
 // HR — Leave
@@ -340,7 +339,6 @@ const router = createBrowserRouter([
       { path: '/hr/attendance', element: withSuspense(guard('hr.full_access', <AttendanceListPage />)) },
       { path: '/hr/attendance/import', element: withSuspense(guard('hr.full_access', <AttendanceImportPage />)) },
       { path: '/hr/attendance/dashboard', element: withSuspense(guard('hr.full_access', <AttendanceDashboardPage />)) },
-      { path: '/hr/attendance/summary',   element: withSuspense(guard('attendance.view_team', <AttendanceSummaryPage />)) },
       { path: '/hr/overtime', element: withSuspense(guard('hr.full_access', <OvertimeListPage />)) },
 
       // HR — Leave

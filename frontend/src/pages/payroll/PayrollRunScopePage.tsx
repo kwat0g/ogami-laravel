@@ -167,6 +167,9 @@ export default function PayrollRunScopePage() {
   const [includeProbationEnd, setIncludeProbationEnd] = useState(false)
   const [excludeNoAttendance, setExcludeNoAttendance] = useState(false)
 
+  // Guard so filter restoration from run data only fires once per mount
+  const filtersRestoredRef = useRef(false)
+
   // ── New manual exclusion form ─────────────────────────────────────────────
   const [selectedEmployee, setSelectedEmployee] = useState<{
     id: number
@@ -175,9 +178,10 @@ export default function PayrollRunScopePage() {
   } | null>(null)
   const [exclReason, setExclReason] = useState('')
 
-  // Pre-populate from existing run scope if re-entering
+  // Pre-populate from existing run scope if re-entering — fires only once per mount
   useEffect(() => {
-    if (!run) return
+    if (!run || filtersRestoredRef.current) return
+    filtersRestoredRef.current = true
     if (run.scope_employment_types?.length) setEmploymentTypes(run.scope_employment_types)
     if (run.scope_departments?.length) setDepartments(run.scope_departments)
     setIncludeUnpaidLeave(run.scope_include_unpaid_leave ?? false)

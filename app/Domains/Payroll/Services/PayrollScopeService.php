@@ -245,7 +245,12 @@ final class PayrollScopeService implements ServiceContract
                 ->count();
         }
 
-        $manuallyExcluded = PayrollRunExclusion::where('payroll_run_id', $run->id)->count();
+        // Count only exclusions that are within the filtered scope (department/position-aware).
+        // Using a sub-select avoids over-counting when a dept filter is active.
+        $inScopeEmployeeIds = (clone $query)->pluck('id');
+        $manuallyExcluded = PayrollRunExclusion::where('payroll_run_id', $run->id)
+            ->whereIn('employee_id', $inScopeEmployeeIds)
+            ->count();
 
         $excludedInactive = Employee::where('employment_status', '!=', 'active')
             ->when(! empty($departmentIds), fn ($q) => $q->whereIn('department_id', $departmentIds))

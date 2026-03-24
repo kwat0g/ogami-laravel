@@ -23,9 +23,7 @@ function formatCentavos(c: number | null | undefined): string {
 }
 
 const CHECKLIST_ITEMS = [
-  'I have reviewed the payslip breakdown and exception report.',
-  'I confirm that employee inclusion/exclusion aligns with active headcount.',
-  'I certify that the computed amounts are correct to the best of my knowledge.',
+  'I have reviewed the payroll breakdown and certify that the computed amounts are correct.',
 ]
 
 export default function PayrollRunHrReviewPage() {
@@ -137,10 +135,22 @@ export default function PayrollRunHrReviewPage() {
       {/* Summary card */}
       <div className="bg-white border border-neutral-200 rounded p-5">
         <h3 className="text-sm font-semibold text-neutral-800 mb-4">Run Summary</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 text-sm">
           <div>
             <p className="text-neutral-400 text-xs">Reference</p>
             <p className="font-medium">{run.reference_no}</p>
+          </div>
+          <div>
+            <p className="text-neutral-400 text-xs">Pay Period</p>
+            <p className="font-medium">{run.pay_period_label}</p>
+          </div>
+          <div>
+            <p className="text-neutral-400 text-xs">Period Start</p>
+            <p className="font-medium">{new Date(run.cutoff_start).toLocaleDateString('en-PH')}</p>
+          </div>
+          <div>
+            <p className="text-neutral-400 text-xs">Period End</p>
+            <p className="font-medium">{new Date(run.cutoff_end).toLocaleDateString('en-PH')}</p>
           </div>
           <div>
             <p className="text-neutral-400 text-xs">Pay Date</p>
@@ -151,8 +161,12 @@ export default function PayrollRunHrReviewPage() {
             <p className="font-medium">{run.total_employees}</p>
           </div>
           <div>
+            <p className="text-neutral-400 text-xs">Gross Pay</p>
+            <p className="font-medium">{formatCentavos(run.gross_pay_total_centavos)}</p>
+          </div>
+          <div>
             <p className="text-neutral-400 text-xs">Net Pay Total</p>
-            <p className="font-medium">{formatCentavos(run.net_pay_total_centavos)}</p>
+            <p className="font-medium text-neutral-900">{formatCentavos(run.net_pay_total_centavos)}</p>
           </div>
         </div>
       </div>
@@ -208,17 +222,22 @@ export default function PayrollRunHrReviewPage() {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200 sticky top-0">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500">Employee</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Basic Pay</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Gross Pay</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Deductions</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500">Net Pay</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 whitespace-nowrap">Employee</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">Days</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">Basic Pay</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">OT Pay</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">Gross Pay</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">SSS</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">PhilHealth</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">Pag-IBIG</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">Tax</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 whitespace-nowrap">Net Pay</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {detailsData.data.map((d) => (
                   <tr key={d.id} className="hover:bg-neutral-50">
-                    <td className="px-4 py-2.5">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
                       <p className="font-medium text-neutral-800">
                         {d.employee ? `${d.employee.first_name} ${d.employee.last_name}` : `Employee #${d.employee_id}`}
                       </p>
@@ -226,10 +245,20 @@ export default function PayrollRunHrReviewPage() {
                         <p className="text-xs text-neutral-400">{d.employee.employee_code}</p>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-neutral-700">{formatCentavos(d.basic_pay_centavos)}</td>
-                    <td className="px-4 py-2.5 text-right text-neutral-700">{formatCentavos(d.gross_pay_centavos)}</td>
-                    <td className="px-4 py-2.5 text-right text-red-600">{formatCentavos(d.total_deductions_centavos)}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-neutral-900">{formatCentavos(d.net_pay_centavos)}</td>
+                    <td className="px-3 py-2.5 text-right text-neutral-600 text-xs">
+                      <span>{d.days_worked}d</span>
+                      {d.days_absent > 0 && <span className="text-red-400 ml-1">-{d.days_absent}ab</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-neutral-700">{formatCentavos(d.basic_pay_centavos)}</td>
+                    <td className="px-3 py-2.5 text-right text-neutral-600">
+                      {d.overtime_pay_centavos > 0 ? formatCentavos(d.overtime_pay_centavos) : <span className="text-neutral-300">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-neutral-700">{formatCentavos(d.gross_pay_centavos)}</td>
+                    <td className="px-3 py-2.5 text-right text-neutral-500 text-xs">{formatCentavos(d.sss_ee_centavos)}</td>
+                    <td className="px-3 py-2.5 text-right text-neutral-500 text-xs">{formatCentavos(d.philhealth_ee_centavos)}</td>
+                    <td className="px-3 py-2.5 text-right text-neutral-500 text-xs">{formatCentavos(d.pagibig_ee_centavos)}</td>
+                    <td className="px-3 py-2.5 text-right text-neutral-500 text-xs">{formatCentavos(d.withholding_tax_centavos)}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold text-neutral-900 whitespace-nowrap">{formatCentavos(d.net_pay_centavos)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -49,6 +49,7 @@ final class PayrollRunResource extends JsonResource
             'scope_employment_types' => $this->scope_employment_types,
             'scope_include_unpaid_leave' => (bool) $this->scope_include_unpaid_leave,
             'scope_include_probation_end' => (bool) $this->scope_include_probation_end,
+            'scope_exclude_no_attendance' => (bool) $this->scope_exclude_no_attendance,
             'scope_confirmed_at' => $this->scope_confirmed_at?->toIso8601String(),
 
             // v1.0 workflow: pre-run checks

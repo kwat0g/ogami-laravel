@@ -184,7 +184,6 @@ export default function UsersPage() {
 
   // Reset Password State
   const [resetResult, setResetResult] = useState<{ name: string; password: string } | null>(null)
-  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null)
 
   // Role modal
   const [roleModal, setRoleModal]   = useState<RoleModal | null>(null)
@@ -350,16 +349,10 @@ export default function UsersPage() {
   }
 
   // ── Reset Password helpers ──────────────────────────────────────────────
-  const handleResetPassword = (u: AdminUser) => {
-    setResetTarget(u)
-  }
-
-  const executeResetPassword = () => {
-    if (!resetTarget) return
-    reset.mutate(resetTarget.id, {
+  const executeResetPassword = (u: AdminUser) => {
+    reset.mutate(u.id, {
       onSuccess: (data) => {
-        setResetResult({ name: resetTarget.name, password: data.password })
-        setResetTarget(null)
+        setResetResult({ name: u.name, password: data.password })
         toast.success('Password reset successfully.')
       },
       onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to reset password.'),
@@ -519,7 +512,7 @@ export default function UsersPage() {
                         description={`This will generate a new temporary password for ${u.name}. The current password will no longer work.`}
                         confirmLabel="Reset Password"
                         variant="danger"
-                        onConfirm={() => handleResetPassword(u)}
+                        onConfirm={() => executeResetPassword(u)}
                       >
                         <button className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">
                           Reset Password
@@ -666,19 +659,6 @@ export default function UsersPage() {
             </div>
           </div>
         </Modal>
-      )}
-
-      {/* ── Reset Password Confirmation Dialog ───────────────────────────── */}
-      {resetTarget && (
-        <ConfirmDialog
-          title="Reset Password?"
-          description={`This will generate a new temporary password for ${resetTarget.name} (${resetTarget.email}). The current password will no longer work.`}
-          confirmLabel="Reset Password"
-          variant="danger"
-          onConfirm={executeResetPassword}
-        >
-          <span />
-        </ConfirmDialog>
       )}
 
       {/* ── Disable Account Confirmation Dialog ──────────────────────────── */}

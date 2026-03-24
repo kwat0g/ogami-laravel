@@ -6,6 +6,7 @@ namespace App\Domains\Payroll\Services;
 
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Domains\Payroll\Models\PayrollRunApproval;
+use App\Domains\Payroll\Models\PayrollRunExclusion;
 use App\Domains\Payroll\StateMachines\PayrollRunStateMachine;
 use App\Models\User;
 use App\Notifications\PayrollApprovedNotification;
@@ -164,6 +165,11 @@ final class PayrollWorkflowService implements ServiceContract
 
             $this->stateMachine->transition($run, 'RETURNED');
             $this->stateMachine->transition($run, 'DRAFT');
+
+            // Reset scope so the initiator starts fresh on the Set Scope page.
+            // Exclusions, dept filters, and timestamps from the previous attempt
+            // are cleared; the auto-exclude logic will re-run on next scope visit.
+            $this->resetScope($run);
         });
 
         // Notify initiator
@@ -323,6 +329,9 @@ final class PayrollWorkflowService implements ServiceContract
 
             $this->stateMachine->transition($run, 'RETURNED');
             $this->stateMachine->transition($run, 'DRAFT');
+
+            // Reset scope so the initiator starts fresh on the Set Scope page.
+            $this->resetScope($run);
         });
 
         // Notify initiator + HR approver
@@ -549,5 +558,25 @@ final class PayrollWorkflowService implements ServiceContract
         }
 
         return $run->fresh();
+    }
+
+    /**
+     * Reset scope fields and exclusions so the initiator starts fresh
+     * on the Set Scope page after a return-for-rework transition.
+     *
+     * Must be called inside a DB::transaction.
+     */
+    private function resetScope(PayrollRun $run): void
+    {
+        PayrollRunExclusion::where('payroll_run_id', $run->id)->delete();
+
+        $run->scope_departments = null;
+        $run->scope_positions = null;
+        $run->scope_employment_types = null;
+        $run->scope_include_unpaid_leave = false;
+        $run->scope_include_probation_end = false;
+        $run->scope_exclude_no_attendance = false;
+        $run->scope_confirmed_at = null;
+        $run->save();
     }
 }
