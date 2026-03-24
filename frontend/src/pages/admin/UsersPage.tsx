@@ -632,8 +632,14 @@ export default function UsersPage() {
               The password for <strong>{resetResult.name}</strong> has been reset.
               Please share these credentials securely.
             </p>
-            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 text-center">
-               <span className="font-mono text-lg font-bold select-all text-neutral-900">{resetResult.password}</span>
+            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 flex items-center justify-between gap-3">
+              <span className="font-mono text-lg font-bold select-all text-neutral-900">{resetResult.password}</span>
+              <button
+                onClick={() => { navigator.clipboard.writeText(resetResult.password); toast.success('Copied!') }}
+                className="shrink-0 px-3 py-1.5 text-xs border border-neutral-300 rounded bg-white hover:bg-neutral-100 text-neutral-600 font-medium"
+              >
+                Copy
+              </button>
             </div>
             <div className="flex justify-end pt-2">
               <button onClick={() => setResetResult(null)} className={btnPrimary}>Done</button>
