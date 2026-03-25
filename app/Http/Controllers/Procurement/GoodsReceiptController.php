@@ -79,6 +79,19 @@ final class GoodsReceiptController extends Controller
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'confirmedBy', 'items']));
     }
 
+    public function reject(Request $request, GoodsReceipt $goodsReceipt): GoodsReceiptResource
+    {
+        $this->authorize('confirm', $goodsReceipt);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $gr = $this->service->reject($goodsReceipt, auth()->user(), $validated['reason']);
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'items']));
+    }
+
     public function destroy(GoodsReceipt $goodsReceipt): JsonResponse
     {
         $this->authorize('delete', $goodsReceipt);

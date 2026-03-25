@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Services;
 
+use App\Domains\Inventory\Models\ItemCategory;
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\GoodsReceiptItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
@@ -11,6 +13,7 @@ use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class GoodsReceiptService implements ServiceContract
 {
@@ -113,6 +116,8 @@ final class GoodsReceiptService implements ServiceContract
         }
 
         return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
+            $this->resolveItemMasters($gr);
+
             $gr->update([
                 'status' => 'confirmed',
                 'confirmed_by_id' => $actor->id,
@@ -125,14 +130,79 @@ final class GoodsReceiptService implements ServiceContract
         });
     }
 
+    // ── Reject ───────────────────────────────────────────────────────────────
+
+    /**
+     * Reject a draft GR (wrong / damaged goods before confirmation).
+     */
+    public function reject(GoodsReceipt $gr, User $actor, string $reason): GoodsReceipt
+    {
+        if ($gr->status !== 'draft') {
+            throw new DomainException(
+                message: "Only draft GRs can be rejected. Current status: '{$gr->status}'.",
+                errorCode: 'GR_NOT_DRAFT',
+                httpStatus: 422,
+            );
+        }
+
+        $gr->update([
+            'status' => 'rejected',
+            'rejection_reason' => $reason,
+            'rejected_by_id' => $actor->id,
+            'rejected_at' => now(),
+        ]);
+
+        return $gr->refresh();
+    }
+
     // ── Private ──────────────────────────────────────────────────────────────
 
     /**
-     * Try to resolve an ItemMaster ID from a free-text description.
-     * Handles two formats:
-     *   - "PP Resin Natural (RAW-001)"  → extracts code from parentheses
-     *   - "RAW-001"                     → direct code match
+     * For each GR item with null item_master_id, attempt to match an existing
+     * ItemMaster by name (case-insensitive), or auto-create one from the PO item.
      */
+    private function resolveItemMasters(GoodsReceipt $gr): void
+    {
+        $fallbackCategoryId = ItemCategory::query()->value('id');
+
+        foreach ($gr->items as $grItem) {
+            if ($grItem->item_master_id !== null) {
+                continue;
+            }
+
+            $poItem = $grItem->poItem;
+            if (! $poItem) {
+                continue;
+            }
+
+            $name = trim($poItem->item_description);
+
+            $existing = ItemMaster::whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first();
+
+            if ($existing) {
+                $grItem->update(['item_master_id' => $existing->id]);
+                $poItem->update(['item_master_id' => $existing->id]);
+
+                continue;
+            }
+
+            $slug = strtoupper(substr(Str::slug($name), 0, 20));
+            $code = 'AUTO-'.$slug.'-'.strtoupper(Str::random(4));
+
+            $master = ItemMaster::create([
+                'item_code' => $code,
+                'name' => $name,
+                'unit_of_measure' => $poItem->unit_of_measure,
+                'type' => 'raw_material',
+                'is_active' => true,
+                'category_id' => $fallbackCategoryId,
+            ]);
+
+            $grItem->update(['item_master_id' => $master->id]);
+            $poItem->update(['item_master_id' => $master->id]);
+        }
+    }
+
     private function generateReference(): string
     {
         $seq = DB::selectOne('SELECT NEXTVAL(\'goods_receipt_seq\') AS val');

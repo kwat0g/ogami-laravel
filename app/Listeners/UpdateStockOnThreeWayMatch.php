@@ -7,18 +7,26 @@ namespace App\Listeners;
 use App\Domains\AP\Models\VendorItem;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
-use App\Domains\Inventory\Models\StockBalance;
+use App\Domains\Inventory\Services\StockService;
 use App\Events\Procurement\ThreeWayMatchPassed;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class UpdateStockOnThreeWayMatch
 {
+    public function __construct(private readonly StockService $stockService) {}
+
     public function handle(ThreeWayMatchPassed $event): void
     {
         $gr = $event->goodsReceipt;
         $gr->load(['items.poItem', 'purchaseOrder.vendor']);
         $vendor = $gr->purchaseOrder?->vendor;
+
+        // Load the confirming user for audit trail in stock ledger
+        $actor = $gr->confirmed_by_id
+            ? User::find($gr->confirmed_by_id)
+            : null;
 
         // Resolve stock location once — prefer a "receiving" area, else first active location
         $locationId = DB::table('warehouse_locations')
@@ -34,7 +42,7 @@ class UpdateStockOnThreeWayMatch
                 continue;
             }
 
-            DB::transaction(function () use ($poItem, $grItem, $vendor, $locationId, $gr): void {
+            DB::transaction(function () use ($poItem, $grItem, $vendor, $locationId, $gr, $actor): void {
                 // Resolve item_master_id if missing
                 if (! $poItem->item_master_id) {
                     $resolved = $this->resolveOrCreateItemMaster($poItem, $vendor);
@@ -45,15 +53,26 @@ class UpdateStockOnThreeWayMatch
                 }
 
                 // Update stock only if we have both an item master and a location
-                if ($poItem->item_master_id && $locationId) {
-                    $this->updateStock($poItem->item_master_id, $locationId, (float) $grItem->quantity_received);
+                if ($poItem->item_master_id && $locationId && $actor) {
+                    $this->stockService->receive(
+                        itemId: $poItem->item_master_id,
+                        locationId: $locationId,
+                        quantity: (float) $grItem->quantity_received,
+                        referenceType: 'goods_receipts',
+                        referenceId: $gr->id,
+                        actor: $actor,
+                        receivedFrom: $gr->purchaseOrder->vendor->name ?? 'vendor',
+                        receivedDate: (string) $gr->received_date,
+                        remarks: "GR #{$gr->gr_reference} three-way match confirmed.",
+                    );
                 } else {
-                    Log::warning('Stock not updated for GR item — missing item_master or warehouse location', [
+                    Log::warning('Stock not updated for GR item — missing item_master, warehouse location, or confirming user', [
                         'gr_id'            => $gr->id,
                         'po_item_id'       => $poItem->id,
                         'item_description' => $poItem->item_description,
                         'has_item_master'  => (bool) $poItem->item_master_id,
                         'has_location'     => (bool) $locationId,
+                        'has_actor'        => (bool) $actor,
                     ]);
                 }
             });
@@ -176,10 +195,10 @@ class UpdateStockOnThreeWayMatch
         // Last resort: create an "Uncategorized" category
         try {
             $newCat = ItemCategory::create([
-                'code'      => 'UNCATEGORIZED',
-                'name'      => 'Uncategorized',
+                'code'        => 'UNCATEGORIZED',
+                'name'        => 'Uncategorized',
                 'description' => 'Catch-all category for auto-created items. Please re-categorize.',
-                'is_active' => true,
+                'is_active'   => true,
             ]);
             return $newCat->id;
         } catch (\Throwable $e) {
@@ -193,11 +212,8 @@ class UpdateStockOnThreeWayMatch
      */
     private function generateItemCode(string $prefix): string
     {
-        // Trim prefix and uppercase so codes are consistent
         $prefix = strtoupper(substr(trim($prefix), 0, 10));
 
-        // Use pg_try_advisory_xact_lock for a transaction-scoped lock keyed to the prefix
-        // This prevents concurrent GR confirmations from generating the same code
         $lockKey = crc32('item_code_gen_' . $prefix);
         DB::statement("SELECT pg_advisory_xact_lock({$lockKey})");
 
@@ -206,25 +222,5 @@ class UpdateStockOnThreeWayMatch
             ->count();
 
         return sprintf('%s-%05d', $prefix, $count + 1);
-    }
-
-    /**
-     * Upsert the stock balance for a given item + location.
-     */
-    private function updateStock(int $itemMasterId, int $locationId, float $quantity): void
-    {
-        $stock = StockBalance::firstOrCreate(
-            ['item_id' => $itemMasterId, 'location_id' => $locationId],
-            ['quantity_on_hand' => 0, 'quantity_reserved' => 0],
-        );
-
-        $stock->increment('quantity_on_hand', $quantity);
-
-        Log::info('Stock updated via GR three-way match', [
-            'item_master_id' => $itemMasterId,
-            'location_id'    => $locationId,
-            'quantity_added' => $quantity,
-            'new_balance'    => $stock->quantity_on_hand,
-        ]);
     }
 }

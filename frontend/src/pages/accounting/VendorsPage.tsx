@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff } from 'lucide-react'
+import React, { useState } from 'react'
+import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, BarChart2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -10,6 +10,7 @@ import {
   useArchiveVendor,
   useAccreditVendor,
   useSuspendVendor,
+  useVendorScorecard,
 } from '@/hooks/useAP'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
@@ -436,10 +437,44 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
 // Main Page
 // ---------------------------------------------------------------------------
 
+function ScorecardMetric({ label, value, unit = '%' }: { label: string; value: number; unit?: string }) {
+  const color = value >= 90 ? 'text-emerald-600' : value >= 70 ? 'text-amber-600' : 'text-red-600'
+  return (
+    <div className="text-center">
+      <p className={`text-lg font-bold ${color}`}>{value.toFixed(1)}{unit}</p>
+      <p className="text-xs text-neutral-500">{label}</p>
+    </div>
+  )
+}
+
+function VendorScorecardPanel({ vendorId }: { vendorId: number }) {
+  const { data, isLoading } = useVendorScorecard(vendorId)
+  if (isLoading) return <p className="text-xs text-neutral-400 py-2">Loading scorecard…</p>
+  if (!data) return <p className="text-xs text-neutral-400 py-2">No data available.</p>
+  return (
+    <div className="grid grid-cols-5 gap-4 py-2">
+      <ScorecardMetric label="On-Time Delivery" value={data.on_time_pct} />
+      <ScorecardMetric label="Fill Rate" value={data.fill_rate_pct} />
+      <ScorecardMetric label="Quality Rate" value={data.quality_rate_pct} />
+      <div className="text-center">
+        <p className="text-lg font-bold text-neutral-700">{data.total_orders}</p>
+        <p className="text-xs text-neutral-500">Total Orders</p>
+      </div>
+      <div className="text-center">
+        <p className="text-lg font-bold text-neutral-700">
+          {data.avg_lead_time_days !== null ? `${data.avg_lead_time_days}d` : '—'}
+        </p>
+        <p className="text-xs text-neutral-500">Avg Lead Time</p>
+      </div>
+    </div>
+  )
+}
+
 export default function VendorsPage() {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Vendor | null>(null)
+  const [scorecardVendorId, setScorecardVendorId] = useState<number | null>(null)
 
   const { data, isLoading, refetch } = useVendors({
     search: search || undefined,
@@ -538,7 +573,8 @@ export default function VendorsPage() {
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {vendors.map(vendor => (
-                <tr key={vendor.id} className={`even:bg-neutral-100 hover:bg-neutral-50 transition-colors ${
+                <React.Fragment key={vendor.id}>
+                <tr className={`even:bg-neutral-100 hover:bg-neutral-50 transition-colors ${
                   !vendor.is_active ? 'opacity-60' : ''
                 }`}>
                   <td className="px-3 py-2">
@@ -585,6 +621,14 @@ export default function VendorsPage() {
                   <td className="px-3 py-2">
                     <DepartmentGuard module="vendors">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setScorecardVendorId(scorecardVendorId === vendor.id ? null : vendor.id)}
+                          className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800"
+                          title="View Performance Scorecard"
+                        >
+                          <BarChart2 className="w-3.5 h-3.5" />
+                          Perf
+                        </button>
                         {canManage && (
                           <button
                             onClick={() => { setEditing(vendor); setShowForm(true) }}
@@ -600,6 +644,15 @@ export default function VendorsPage() {
                     </DepartmentGuard>
                   </td>
                 </tr>
+                {scorecardVendorId === vendor.id && (
+                  <tr className="bg-neutral-50">
+                    <td colSpan={7} className="px-6 pb-3">
+                      <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2 pt-2">Performance Scorecard</p>
+                      <VendorScorecardPanel vendorId={vendor.id} />
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

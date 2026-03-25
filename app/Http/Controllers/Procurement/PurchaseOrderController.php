@@ -100,7 +100,7 @@ final class PurchaseOrderController extends Controller
         return response()->json(['success' => true, 'message' => 'Purchase Order cancelled.']);
     }
 
-    public function acceptChanges(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
+    public function acceptChanges(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
     {
         $this->authorize('manage', $purchaseOrder);
 
@@ -108,13 +108,31 @@ final class PurchaseOrderController extends Controller
             'remarks' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $po = $this->service->officerAcceptChanges(
+        $result = $this->service->officerAcceptChanges(
             $purchaseOrder,
             auth()->user(),
             $validated['remarks'] ?? '',
         );
 
-        return new PurchaseOrderResource($po->load(['vendor', 'purchaseRequest', 'items', 'fulfillmentNotes']));
+        /** @var PurchaseOrder $po */
+        $po = $result['po'];
+        $unmetItems = $result['unmet_items'];
+
+        $response = ['data' => new PurchaseOrderResource($po->load(['vendor', 'purchaseRequest', 'items', 'fulfillmentNotes']))];
+
+        if ($po->requires_budget_recheck) {
+            $response['requires_budget_recheck'] = true;
+        }
+
+        if (! empty($unmetItems)) {
+            $response['warnings'] = [[
+                'type' => 'UNMET_QUANTITY',
+                'message' => 'Vendor reduced quantity for '.count($unmetItems).' item(s). Consider submitting a new Purchase Request for the remaining quantities.',
+                'items' => $unmetItems,
+            ]];
+        }
+
+        return response()->json($response);
     }
 
     public function rejectChanges(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
@@ -144,7 +162,7 @@ final class PurchaseOrderController extends Controller
         ]);
 
         $settings = [
-            'company_name'    => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_name' => config('app.company_name', 'Ogami Manufacturing Corp.'),
             'company_address' => config('app.company_address', ''),
         ];
 

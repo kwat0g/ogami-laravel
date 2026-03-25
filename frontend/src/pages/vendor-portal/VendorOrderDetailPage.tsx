@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Truck, CheckCircle, AlertCircle, X, ThumbsUp, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
+import { Truck, CheckCircle, AlertCircle, X, ThumbsUp, MessageSquare, ChevronDown, ChevronUp, MapPin, Calendar, FileText, CreditCard } from 'lucide-react'
 import { useVendorOrder, useMarkInTransit, useMarkDelivered, useAcknowledgePO, useProposeChanges } from '@/hooks/useVendorPortal'
-import type { ProposeChangesItem } from '@/hooks/useVendorPortal'
+import type { ProposeChangesItem, ProposeChangesPayload } from '@/hooks/useVendorPortal'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -289,6 +289,8 @@ export default function VendorOrderDetailPage(): React.ReactElement {
   const [showProposeForm, setShowProposeForm] = useState(false)
   const [proposeRemarks, setProposeRemarks] = useState('')
   const [proposeQtys, setProposeQtys] = useState<Record<number, number>>({})
+  const [proposePrices, setProposePrices] = useState<Record<number, number>>({})
+  const [proposeDeliveryDate, setProposeDeliveryDate] = useState('')
 
   // These effects must be before any early returns (Rules of Hooks)
   useEffect(() => {
@@ -322,6 +324,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
   const canAcknowledgeOrPropose = order.status === 'sent'
   const canMarkInTransit = order.status === 'acknowledged'
   const canMarkDelivered = order.status === 'in_transit'
+  const isDeliveredAwaitingGR = order.status === 'delivered'
 
   function handleAcknowledge() {
     if (!ulid) return
@@ -340,28 +343,44 @@ export default function VendorOrderDetailPage(): React.ReactElement {
       toast.error('Please explain the reason for the proposed changes.')
       return
     }
+    // Validate proposed quantities are strictly less than ordered
+    for (const item of order.items) {
+      const proposedQty = proposeQtys[item.id]
+      if (proposedQty !== undefined && proposedQty >= Number(item.quantity_ordered)) {
+        toast.error(`Proposed quantity for "${item.item_description}" must be less than the ordered quantity (${item.quantity_ordered}).`)
+        return
+      }
+    }
+
     const items: ProposeChangesItem[] = order.items
-      .filter((item) => proposeQtys[item.id] !== undefined)
+      .filter((item) => proposeQtys[item.id] !== undefined || proposePrices[item.id] !== undefined)
       .map((item) => ({
         po_item_id: item.id,
-        negotiated_quantity: proposeQtys[item.id],
+        ...(proposeQtys[item.id] !== undefined ? { negotiated_quantity: proposeQtys[item.id] } : {}),
+        ...(proposePrices[item.id] !== undefined ? { negotiated_unit_price: Math.round(proposePrices[item.id] * 100) } : {}),
       }))
-    if (items.length === 0) {
-      toast.error('Please enter at least one proposed quantity change.')
+    const hasPoLevelChanges = proposeDeliveryDate.trim() !== ''
+    if (items.length === 0 && !hasPoLevelChanges) {
+      toast.error('Please enter at least one proposed change.')
       return
     }
-    proposeChanges.mutate(
-      { ulid, remarks: proposeRemarks, items },
-      {
-        onSuccess: () => {
-          toast.success('Proposed changes submitted. The buyer will review and respond.')
-          setShowProposeForm(false)
-          setProposeRemarks('')
-          setProposeQtys({})
-        },
-        onError: (err) => toast.error(firstErrorMessage(err) ?? 'Failed to submit proposal.'),
-      }
-    )
+    const payload: ProposeChangesPayload = {
+      ulid,
+      remarks: proposeRemarks,
+      items,
+      ...(proposeDeliveryDate ? { proposed_delivery_date: proposeDeliveryDate } : {}),
+    }
+    proposeChanges.mutate(payload, {
+      onSuccess: () => {
+        toast.success('Proposed changes submitted. The buyer will review and respond.')
+        setShowProposeForm(false)
+        setProposeRemarks('')
+        setProposeQtys({})
+        setProposePrices({})
+        setProposeDeliveryDate('')
+      },
+      onError: (err) => toast.error(firstErrorMessage(err) ?? 'Failed to submit proposal.'),
+    })
   }
 
   function handleMarkInTransit() {
@@ -405,22 +424,87 @@ export default function VendorOrderDetailPage(): React.ReactElement {
           ← Purchase Orders
         </button>
       </div>
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">{order.po_reference}</h1>
-      <p className="text-sm text-neutral-500 mb-2">
-        Delivery by <strong>{order.delivery_date ? new Date(order.delivery_date).toLocaleDateString() : 'Not set'}</strong> · {order.payment_terms}
-      </p>
-      <div className="flex items-center gap-4 text-sm mb-6">
-        <span className="px-2 py-1 bg-neutral-100 rounded text-neutral-700 font-medium">
-          Status: <span className="capitalize">{order.status.replace(/_/g, ' ')}</span>
-        </span>
-        {order.po_type === 'split' && (
-          <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">
-            Split PO
-          </span>
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">{order.po_reference}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="px-2 py-0.5 bg-neutral-100 rounded text-neutral-700 text-sm font-medium capitalize">
+              {order.status.replace(/_/g, ' ')}
+            </span>
+            {order.po_type === 'split' && (
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">
+                Split PO
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-neutral-500">Total Amount</p>
+          <p className="text-xl font-bold text-neutral-900">
+            ₱{Number(order.total_po_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+      </div>
+
+      {/* PO Details Card */}
+      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-6 grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div className="flex items-start gap-2">
+          <Calendar className="w-4 h-4 text-neutral-400 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-xs text-neutral-500">PO Date</p>
+            <p className="font-medium text-neutral-800">
+              {order.po_date ? new Date(order.po_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <Calendar className="w-4 h-4 text-neutral-400 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-xs text-neutral-500">Required Delivery Date</p>
+            <p className={`font-medium ${order.delivery_date && new Date(order.delivery_date) < new Date() && !['delivered','fully_received','closed'].includes(order.status) ? 'text-red-600' : 'text-neutral-800'}`}>
+              {order.delivery_date
+                ? new Date(order.delivery_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+                : 'Not specified'}
+              {order.delivery_date && new Date(order.delivery_date) < new Date() && !['delivered','fully_received','closed'].includes(order.status) && (
+                <span className="ml-1 text-xs font-normal">(overdue)</span>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <CreditCard className="w-4 h-4 text-neutral-400 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-xs text-neutral-500">Payment Terms</p>
+            <p className="font-medium text-neutral-800">{order.payment_terms || '—'}</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <MapPin className="w-4 h-4 text-neutral-400 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-xs text-neutral-500">Delivery Address</p>
+            <p className="font-medium text-neutral-800">{order.delivery_address || '—'}</p>
+          </div>
+        </div>
+        {order.notes && (
+          <div className="col-span-2 flex items-start gap-2">
+            <FileText className="w-4 h-4 text-neutral-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs text-neutral-500">Notes / Instructions</p>
+              <p className="text-neutral-700">{order.notes}</p>
+            </div>
+          </div>
         )}
-        <span className="text-neutral-600">
-          Total: <strong className="text-neutral-900">₱{Number(order.total_po_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-        </span>
+        {order.proposed_delivery_date && (
+          <div className="col-span-2 flex items-start gap-2 pt-2 border-t border-neutral-100">
+            <Calendar className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs text-amber-600 font-medium">Your Proposed Delivery Date (pending buyer review)</p>
+              <p className="font-medium text-amber-700">
+                {new Date(order.proposed_delivery_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Workflow Progress */}
@@ -478,67 +562,71 @@ export default function VendorOrderDetailPage(): React.ReactElement {
           
           {/* Connector */}
           <div className={`flex-1 h-0.5 mx-2 ${
-            ['partially_received', 'fully_received', 'closed'].includes(order.status) 
-              ? 'bg-green-500' 
+            ['delivered', 'partially_received', 'fully_received', 'closed'].includes(order.status)
+              ? 'bg-green-500'
               : 'bg-neutral-200'
           }`} />
-          
+
           {/* Step 3: Delivered */}
           <div className="flex items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              ['partially_received', 'fully_received', 'closed'].includes(order.status) 
-                ? 'bg-green-100 text-green-700' 
-                : order.status === 'in_transit' 
-                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-500' 
+              ['delivered', 'partially_received', 'fully_received', 'closed'].includes(order.status)
+                ? 'bg-green-100 text-green-700'
+                : order.status === 'in_transit'
+                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-500'
                   : 'bg-neutral-100 text-neutral-400'
             }`}>
               3
             </div>
             <div className="ml-2 mr-4">
               <p className={`text-xs font-medium ${
-                ['partially_received', 'fully_received', 'closed'].includes(order.status) 
-                  ? 'text-green-700' 
-                  : order.status === 'in_transit' 
-                    ? 'text-blue-700' 
+                ['delivered', 'partially_received', 'fully_received', 'closed'].includes(order.status)
+                  ? 'text-green-700'
+                  : order.status === 'in_transit'
+                    ? 'text-blue-700'
                     : 'text-neutral-400'
               }`}>Delivered</p>
             </div>
           </div>
-          
+
           {/* Connector */}
           <div className={`flex-1 h-0.5 mx-2 ${
-            ['fully_received', 'closed'].includes(order.status) 
-              ? 'bg-green-500' 
-              : order.status === 'partially_received' 
-                ? 'bg-amber-500' 
+            ['fully_received', 'closed'].includes(order.status)
+              ? 'bg-green-500'
+              : order.status === 'partially_received'
+                ? 'bg-amber-500'
                 : 'bg-neutral-200'
           }`} />
-          
-          {/* Step 4: Received */}
+
+          {/* Step 4: GR Confirmation */}
           <div className="flex items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              ['fully_received', 'closed'].includes(order.status) 
-                ? 'bg-green-100 text-green-700' 
-                : order.status === 'partially_received' 
-                  ? 'bg-amber-100 text-amber-700 border-2 border-amber-500' 
-                  : 'bg-neutral-100 text-neutral-400'
+              ['fully_received', 'closed'].includes(order.status)
+                ? 'bg-green-100 text-green-700'
+                : order.status === 'partially_received'
+                  ? 'bg-amber-100 text-amber-700 border-2 border-amber-500'
+                  : order.status === 'delivered'
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-500'
+                    : 'bg-neutral-100 text-neutral-400'
             }`}>
               4
             </div>
             <div className="ml-2">
               <p className={`text-xs font-medium ${
-                ['fully_received', 'closed'].includes(order.status) 
-                  ? 'text-green-700' 
-                  : order.status === 'partially_received' 
-                    ? 'text-amber-700' 
-                    : 'text-neutral-400'
+                ['fully_received', 'closed'].includes(order.status)
+                  ? 'text-green-700'
+                  : order.status === 'partially_received'
+                    ? 'text-amber-700'
+                    : order.status === 'delivered'
+                      ? 'text-blue-700'
+                      : 'text-neutral-400'
               }`}>
-                {order.status === 'partially_received' ? 'Partially Received' : 'Received'}
+                {order.status === 'partially_received' ? 'Partially Received' : 'GR Confirmed'}
               </p>
             </div>
           </div>
         </div>
-        
+
         {/* Current Action Hint */}
         {order.status === 'sent' && (
           <p className="mt-3 text-xs text-blue-700 bg-blue-50 rounded px-3 py-2">
@@ -553,6 +641,11 @@ export default function VendorOrderDetailPage(): React.ReactElement {
         {order.status === 'in_transit' && (
           <p className="mt-3 text-xs text-blue-700 bg-blue-50 rounded px-3 py-2">
             <strong>Next:</strong> Click "Confirm Delivery" to report delivered quantities and create a goods receipt.
+          </p>
+        )}
+        {isDeliveredAwaitingGR && (
+          <p className="mt-3 text-xs text-green-700 bg-green-50 rounded px-3 py-2">
+            <strong>Delivered.</strong> A goods receipt draft has been created. Awaiting warehouse confirmation.
           </p>
         )}
         {order.status === 'partially_received' && (
@@ -707,23 +800,48 @@ export default function VendorOrderDetailPage(): React.ReactElement {
               </div>
 
               <div>
-                <p className="text-xs font-medium text-neutral-600 mb-2">Proposed Quantities (leave blank if no change)</p>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">
+                  Proposed Delivery Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  value={proposeDeliveryDate}
+                  onChange={(e) => setProposeDeliveryDate(e.target.value)}
+                />
+                <p className="text-xs text-neutral-400 mt-1">Only if you cannot meet the original delivery date.</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-neutral-600 mb-2">Item Changes (leave blank if no change)</p>
                 <div className="space-y-2">
                   {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <span className="flex-1 text-sm text-neutral-700 truncate">{item.item_description}</span>
-                      <span className="text-xs text-neutral-400 shrink-0">Ordered: {item.quantity_ordered} {item.unit_of_measure}</span>
+                    <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2">
+                      <span className="text-sm text-neutral-700 truncate">{item.item_description}</span>
+                      <span className="text-xs text-neutral-400 shrink-0 whitespace-nowrap">Ordered: {item.quantity_ordered} {item.unit_of_measure}</span>
                       <input
                         type="number"
-                        min="0.01"
-                        step="0.01"
-                        max={Number(item.quantity_ordered)}
+                        min="0.001"
+                        step="0.001"
+                        max={Number(item.quantity_ordered) - 0.001}
                         className="w-24 text-sm border border-neutral-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                        placeholder="—"
+                        placeholder="Reduced qty"
                         value={proposeQtys[item.id] ?? ''}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value)
                           setProposeQtys((prev) => ({ ...prev, [item.id]: isNaN(val) ? undefined as unknown as number : val }))
+                        }}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="w-28 text-sm border border-neutral-300 rounded px-2 py-1 text-right focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                        placeholder="New price ₱"
+                        value={proposePrices[item.id] ?? ''}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value)
+                          setProposePrices((prev) => ({ ...prev, [item.id]: isNaN(val) ? undefined as unknown as number : val }))
                         }}
                       />
                     </div>

@@ -28,7 +28,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $delivery_date
  * @property string $payment_terms
  * @property string|null $delivery_address
- * @property string $status draft|sent|negotiating|acknowledged|in_transit|partially_received|fully_received|closed|cancelled
+ * @property string $status draft|sent|negotiating|acknowledged|in_transit|delivered|partially_received|fully_received|closed|cancelled
  * @property numeric-string $total_po_amount updated by trigger
  * @property int $created_by_id
  * @property Carbon|null $sent_at
@@ -68,11 +68,16 @@ final class PurchaseOrder extends Model implements Auditable
         'vendor_acknowledged_at',
         'in_transit_at',
         'tracking_number',
+        'proposed_delivery_date',
+        'proposed_payment_terms',
+        'original_total_po_amount',
+        'requires_budget_recheck',
     ];
 
     protected $casts = [
         'po_date' => 'date',
         'delivery_date' => 'date',
+        'proposed_delivery_date' => 'date',
         'sent_at' => 'datetime',
         'closed_at' => 'datetime',
         'po_type' => 'string',
@@ -81,6 +86,7 @@ final class PurchaseOrder extends Model implements Auditable
         'vendor_acknowledged_at' => 'datetime',
         'in_transit_at' => 'datetime',
         'negotiation_round' => 'integer',
+        'requires_budget_recheck' => 'boolean',
     ];
 
     // ── Relations ────────────────────────────────────────────────────────────
@@ -137,6 +143,6 @@ final class PurchaseOrder extends Model implements Auditable
 
     public function canReceiveGoods(): bool
     {
-        return in_array($this->status, ['acknowledged', 'in_transit', 'partially_received'], true);
+        return in_array($this->status, ['acknowledged', 'in_transit', 'delivered', 'partially_received'], true);
     }
 }

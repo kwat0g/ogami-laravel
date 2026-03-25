@@ -14,10 +14,11 @@ use App\Domains\AP\Services\VendorItemService;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Services\PurchaseOrderService;
-use App\Http\Resources\Procurement\PurchaseOrderResource;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AP\VendorItemResource;
+use App\Http\Resources\Procurement\PurchaseOrderResource;
 use App\Imports\VendorItemImport;
+use App\Shared\Exceptions\DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -50,7 +51,7 @@ final class VendorPortalController extends Controller
 
         $query = PurchaseOrder::with(['items', 'purchaseRequest'])
             ->where('vendor_id', $vendorId)
-            ->whereIn('status', ['sent', 'negotiating', 'acknowledged', 'in_transit', 'partially_received', 'fully_received', 'closed']);
+            ->whereIn('status', ['sent', 'negotiating', 'acknowledged', 'in_transit', 'delivered', 'partially_received', 'fully_received', 'closed']);
 
         if ($request->query('status')) {
             $query->where('status', $request->query('status'));
@@ -116,17 +117,32 @@ final class VendorPortalController extends Controller
 
         $validated = $request->validate([
             'remarks' => ['required', 'string', 'max:2000'],
-            'items' => ['required', 'array', 'min:1'],
+            'proposed_delivery_date' => ['nullable', 'date_format:Y-m-d', 'after:today'],
+            'items' => ['present', 'array'],
             'items.*.po_item_id' => ['required', 'integer'],
-            'items.*.negotiated_quantity' => ['required', 'numeric', 'gt:0'],
+            'items.*.negotiated_quantity' => ['nullable', 'numeric', 'gt:0'],
+            'items.*.negotiated_unit_price' => ['nullable', 'integer', 'min:0'],
             'items.*.vendor_item_notes' => ['nullable', 'string', 'max:500'],
         ]);
+
+        // At least one change must be present
+        $hasItemChanges = ! empty($validated['items']);
+        $hasPoLevelChanges = ! empty($validated['proposed_delivery_date']);
+
+        if (! $hasItemChanges && ! $hasPoLevelChanges) {
+            throw new DomainException(
+                message: 'At least one proposed change is required (item quantity/price, delivery date, or payment terms).',
+                errorCode: 'PO_NO_CHANGES_PROPOSED',
+                httpStatus: 422,
+            );
+        }
 
         $po = $this->poService->vendorProposeChanges(
             $purchaseOrder,
             $request->user(),
             $validated['remarks'],
             $validated['items'],
+            $validated['proposed_delivery_date'] ?? null,
         );
 
         $po->load(['vendor', 'items', 'fulfillmentNotes']);
@@ -204,7 +220,7 @@ final class VendorPortalController extends Controller
         );
 
         return response()->json([
-            'message' => $result['split_po'] 
+            'message' => $result['split_po']
                 ? 'Partial delivery confirmed. A split PO has been created for remaining quantities.'
                 : 'Delivery confirmed. A Goods Receipt draft has been created for review.',
             'data' => [

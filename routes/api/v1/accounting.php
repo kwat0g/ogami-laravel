@@ -140,6 +140,8 @@ Route::middleware(['auth:sanctum', 'module_access:vendors'])->group(function () 
     Route::post('vendors/{vendor}/reset-account', [VendorController::class, 'resetPortalAccountPassword'])
         ->middleware(['permission:system.manage_users', 'throttle:api-action'])
         ->name('vendors.reset-account');
+    Route::get('vendors/{vendor}/scorecard', [VendorController::class, 'scorecard'])
+        ->name('vendors.scorecard');
 
     // ── Vendor Items ─────────────────────────────────────────────────────────
     Route::get('vendors/{vendor}/items', [VendorItemController::class, 'index'])->name('vendors.items.index');

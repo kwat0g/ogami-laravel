@@ -38,8 +38,8 @@ final class ThreeWayMatchService implements ServiceContract
             );
         }
 
-        // Validate PO is in a receivable status (acknowledged, in_transit, or partially_received)
-        if (! in_array($po->status, ['acknowledged', 'in_transit', 'partially_received'], true)) {
+        // Validate PO is in a receivable status
+        if (! in_array($po->status, ['acknowledged', 'in_transit', 'delivered', 'partially_received'], true)) {
             throw new DomainException(
                 message: "Three-way match failed: Purchase Order #{$po->po_reference} is not in a receivable status (current: {$po->status}).",
                 errorCode: 'TWM_PO_NOT_RECEIVABLE',

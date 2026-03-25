@@ -435,3 +435,30 @@ export function useCheckVoucher(paymentId: number | null) {
     enabled: paymentId !== null,
   })
 }
+
+// ===========================================================================
+// Vendor Scorecard
+// ===========================================================================
+
+export interface VendorScorecard {
+  on_time_pct: number
+  fill_rate_pct: number
+  quality_rate_pct: number
+  total_orders: number
+  total_confirmed_grs: number
+  avg_lead_time_days: number | null
+}
+
+export function useVendorScorecard(vendorId: number | null) {
+  return useQuery({
+    queryKey: ['vendor-scorecard', vendorId],
+    queryFn: async () => {
+      const res = await api.get<{ data: VendorScorecard }>(
+        `/accounting/vendors/${vendorId}/scorecard`,
+      )
+      return res.data.data
+    },
+    enabled: vendorId !== null,
+    staleTime: 60_000,
+  })
+}

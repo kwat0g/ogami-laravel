@@ -13,6 +13,8 @@ use App\Domains\AP\Models\VendorInvoice;
 use App\Domains\AP\Models\VendorPayment;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\GoodsReceiptItem;
+use App\Domains\Procurement\Models\PurchaseOrder;
+use App\Domains\Procurement\Models\PurchaseOrderItem;
 use App\Domains\Tax\Services\VatLedgerService;
 use App\Models\User;
 use App\Notifications\VendorInvoiceDecidedNotification;
@@ -92,6 +94,21 @@ final class VendorInvoiceService implements ServiceContract
                 errorCode: 'AP_OR_NUMBER_REQUIRED_FOR_VAT',
                 httpStatus: 422,
             );
+        }
+
+        // AP-005: duplicate OR number check
+        if (! empty($data['or_number'])) {
+            $duplicate = VendorInvoice::where('vendor_id', $vendor->id)
+                ->where('or_number', $data['or_number'])
+                ->whereNotIn('status', ['rejected'])
+                ->first();
+            if ($duplicate) {
+                throw new DomainException(
+                    message: "Invoice with OR number '{$data['or_number']}' already exists for this vendor.",
+                    errorCode: 'DUPLICATE_INVOICE',
+                    httpStatus: 422,
+                );
+            }
         }
 
         // AP-004: compute EWT snapshot
@@ -580,20 +597,21 @@ final class VendorInvoiceService implements ServiceContract
      * This differs from the GR-based auto-creation above — it pre-populates
      * the invoice form with PO data for the user to review and adjust.
      *
-     * @param int $poId The Purchase Order ID
-     * @param int $userId The user creating the invoice
+     * @param  int  $poId  The Purchase Order ID
+     * @param  int  $userId  The user creating the invoice
      * @return array{invoice: VendorInvoice, po_items: array} Pre-populated invoice data
+     *
      * @throws DomainException When PO not found, invalid status, or invoice already exists
      */
     public function createInvoiceFromPo(int $poId, int $userId): array
     {
         // Find the PO with vendor and items
-        $po = \App\Domains\Procurement\Models\PurchaseOrder::with(['vendor', 'vendor.ewtRate', 'items'])
+        $po = PurchaseOrder::with(['vendor', 'vendor.ewtRate', 'items'])
             ->find($poId);
 
         if ($po === null) {
             throw new DomainException(
-                message: "Purchase order not found.",
+                message: 'Purchase order not found.',
                 errorCode: 'AP_PO_NOT_FOUND',
                 httpStatus: 404,
             );
@@ -625,7 +643,7 @@ final class VendorInvoiceService implements ServiceContract
         $vendor = $po->vendor;
         if ($vendor === null) {
             throw new DomainException(
-                message: "Purchase order has no associated vendor.",
+                message: 'Purchase order has no associated vendor.',
                 errorCode: 'AP_PO_NO_VENDOR',
                 httpStatus: 422,
             );
@@ -639,7 +657,7 @@ final class VendorInvoiceService implements ServiceContract
 
         if ($fiscalPeriod === null) {
             throw new DomainException(
-                message: "No open fiscal period found. Please open a fiscal period first.",
+                message: 'No open fiscal period found. Please open a fiscal period first.',
                 errorCode: 'AP_NO_OPEN_FISCAL_PERIOD',
                 httpStatus: 422,
             );
@@ -660,14 +678,14 @@ final class VendorInvoiceService implements ServiceContract
         // Calculate net amount from PO items (quantity_received or quantity_ordered × unit_cost)
         // For partial receipts, we use what's actually been received
         $netAmount = $po->items->reduce(
-            fn (float $carry, \App\Domains\Procurement\Models\PurchaseOrderItem $item): float => $carry + ((float) $item->quantity_received * (float) $item->agreed_unit_cost),
+            fn (float $carry, PurchaseOrderItem $item): float => $carry + ((float) $item->quantity_received * (float) $item->agreed_unit_cost),
             0.0,
         );
 
         // If nothing received yet, use ordered quantity (pre-payment scenario)
         if ($netAmount <= 0) {
             $netAmount = $po->items->reduce(
-                fn (float $carry, \App\Domains\Procurement\Models\PurchaseOrderItem $item): float => $carry + ((float) $item->quantity_ordered * (float) $item->agreed_unit_cost),
+                fn (float $carry, PurchaseOrderItem $item): float => $carry + ((float) $item->quantity_ordered * (float) $item->agreed_unit_cost),
                 0.0,
             );
         }

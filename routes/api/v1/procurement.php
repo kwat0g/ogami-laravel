@@ -201,6 +201,10 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             ->middleware('throttle:api-action')
             ->name('confirm');
 
+        Route::post('/{goodsReceipt}/reject', [GoodsReceiptController::class, 'reject'])
+            ->middleware('throttle:api-action')
+            ->name('reject');
+
         Route::delete('/{goodsReceipt}', [GoodsReceiptController::class, 'destroy'])
             ->middleware('throttle:api-action')
             ->name('destroy');
@@ -235,6 +239,10 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
         Route::post('/{vendorRfq}/cancel', [VendorRfqController::class, 'cancel'])
             ->middleware('throttle:api-action')
             ->name('cancel');
+
+        Route::post('/{vendorRfq}/award/{vendor}', [VendorRfqController::class, 'award'])
+            ->middleware('throttle:api-action')
+            ->name('award');
     });
 
     // ── Vendor Suggestion ────────────────────────────────────────────────────

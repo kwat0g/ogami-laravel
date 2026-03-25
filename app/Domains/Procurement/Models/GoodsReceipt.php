@@ -26,9 +26,12 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $received_date
  * @property string|null $delivery_note_number
  * @property string|null $condition_notes
- * @property string $status draft|confirmed
+ * @property string $status draft|confirmed|rejected
  * @property int|null $confirmed_by_id
  * @property Carbon|null $confirmed_at
+ * @property string|null $rejection_reason
+ * @property int|null $rejected_by_id
+ * @property Carbon|null $rejected_at
  * @property bool $three_way_match_passed
  * @property bool $ap_invoice_created
  * @property int|null $ap_invoice_id
@@ -52,11 +55,15 @@ final class GoodsReceipt extends Model implements Auditable
         'three_way_match_passed',
         'ap_invoice_created',
         'ap_invoice_id',
+        'rejection_reason',
+        'rejected_by_id',
+        'rejected_at',
     ];
 
     protected $casts = [
         'received_date' => 'date',
         'confirmed_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'three_way_match_passed' => 'boolean',
         'ap_invoice_created' => 'boolean',
     ];

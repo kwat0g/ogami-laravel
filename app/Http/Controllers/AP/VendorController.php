@@ -167,4 +167,13 @@ final class VendorController extends Controller
             ]),
         ]);
     }
+
+    public function scorecard(Vendor $vendor): JsonResponse
+    {
+        $this->authorize('view', $vendor);
+
+        return response()->json([
+            'data' => $this->service->scorecard($vendor),
+        ]);
+    }
 }

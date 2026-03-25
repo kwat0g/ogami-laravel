@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft } from 'lucide-react'
-import { useVendorRfq, useCloseVendorRfq, useCancelVendorRfq, useRecordQuote, useRecordDecline } from '@/hooks/useVendorRfqs'
+import { ArrowLeft, Trophy } from 'lucide-react'
+import { useVendorRfq, useCloseVendorRfq, useCancelVendorRfq, useRecordQuote, useRecordDecline, useAwardRfq } from '@/hooks/useVendorRfqs'
 import { useAuthStore } from '@/stores/authStore'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -15,6 +15,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
   const cancelRfq = useCancelVendorRfq()
   const recordQuote = useRecordQuote()
   const recordDecline = useRecordDecline()
+  const awardRfq = useAwardRfq()
   const [quoteVendor, setQuoteVendor] = useState<number | null>(null)
   const [quoteAmount, setQuoteAmount] = useState('')
   const [quoteNotes, setQuoteNotes] = useState('')
@@ -75,6 +76,16 @@ export default function VendorRfqDetailPage(): React.ReactElement {
     } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Failed to record decline.')
+    }
+  }
+
+  async function handleAward(vendorId: number) {
+    try {
+      const po = await awardRfq.mutateAsync({ rfqUlid: rfq!.ulid, vendorId })
+      toast.success(`RFQ awarded. Draft PO ${po.po_reference} created.`)
+      navigate(`/procurement/purchase-orders/${po.ulid}`)
+    } catch (err) {
+      toast.error(firstErrorMessage(err) ?? 'Failed to award RFQ.')
     }
   }
 
@@ -154,6 +165,22 @@ export default function VendorRfqDetailPage(): React.ReactElement {
                         className="text-xs text-red-500 hover:text-red-700 underline disabled:opacity-50">Decline</button>
                     </ConfirmDialog>
                   </div>
+                )}
+                {rfq.status === 'quote_received' && v.status === 'quoted' && canManage && (
+                  <ConfirmDialog
+                    title="Award RFQ & Create PO?"
+                    description={`Award this RFQ to ${v.vendor?.name ?? `Vendor #${v.vendor_id}`} and auto-create a draft Purchase Order?`}
+                    confirmLabel="Award & Create PO"
+                    onConfirm={() => handleAward(v.vendor_id)}
+                  >
+                    <button
+                      disabled={awardRfq.isPending}
+                      className="flex items-center gap-1 text-xs bg-emerald-600 text-white rounded px-3 py-1.5 hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      <Trophy className="w-3.5 h-3.5" />
+                      Award & Create PO
+                    </button>
+                  </ConfirmDialog>
                 )}
               </div>
             ))}

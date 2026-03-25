@@ -415,10 +415,15 @@ final class PurchaseOrderService implements ServiceContract
      * Vendor proposes changes (e.g. reduced qty, new delivery date due to stock shortage).
      * Status: sent → negotiating
      *
-     * @param  list<array{po_item_id: int, negotiated_quantity: float, vendor_item_notes?: string}>  $itemChanges
+     * @param  list<array{po_item_id: int, negotiated_quantity?: float, negotiated_unit_price?: int, vendor_item_notes?: string}>  $itemChanges
      */
-    public function vendorProposeChanges(PurchaseOrder $po, User $vendorUser, string $remarks, array $itemChanges): PurchaseOrder
-    {
+    public function vendorProposeChanges(
+        PurchaseOrder $po,
+        User $vendorUser,
+        string $remarks,
+        array $itemChanges,
+        ?string $proposedDeliveryDate = null,
+    ): PurchaseOrder {
         if ($po->status !== 'sent') {
             throw new DomainException(
                 message: "Cannot propose changes — PO is in status '{$po->status}'. Only 'sent' POs can be negotiated.",
@@ -435,7 +440,7 @@ final class PurchaseOrderService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($po, $vendorUser, $remarks, $itemChanges): PurchaseOrder {
+        return DB::transaction(function () use ($po, $vendorUser, $remarks, $itemChanges, $proposedDeliveryDate): PurchaseOrder {
             $round = ($po->negotiation_round ?? 0) + 1;
 
             $po->update([
@@ -446,23 +451,29 @@ final class PurchaseOrderService implements ServiceContract
                 'change_reviewed_at' => null,
                 'change_reviewed_by_id' => null,
                 'change_review_remarks' => null,
+                'proposed_delivery_date' => $proposedDeliveryDate,
+                'proposed_payment_terms' => null,
             ]);
 
-            // Update proposed quantities on line items
+            // Update proposed quantities / prices on line items
             foreach ($itemChanges as $change) {
                 $poItem = PurchaseOrderItem::where('purchase_order_id', $po->id)
                     ->findOrFail($change['po_item_id']);
 
-                if ($change['negotiated_quantity'] > (float) $poItem->quantity_ordered) {
+                if (
+                    isset($change['negotiated_quantity'])
+                    && (float) $change['negotiated_quantity'] >= (float) $poItem->quantity_ordered
+                ) {
                     throw new DomainException(
-                        message: "Proposed quantity ({$change['negotiated_quantity']}) cannot exceed ordered quantity ({$poItem->quantity_ordered}) for '{$poItem->item_description}'.",
-                        errorCode: 'PO_NEGOTIATED_QTY_EXCEEDS_ORDERED',
+                        message: "Proposed quantity ({$change['negotiated_quantity']}) must be less than ordered quantity ({$poItem->quantity_ordered}) for '{$poItem->item_description}'. Vendors can only propose reduced quantities.",
+                        errorCode: 'PO_NEGOTIATED_QTY_NOT_LESS_THAN_ORDERED',
                         httpStatus: 422,
                     );
                 }
 
                 $poItem->update([
-                    'negotiated_quantity' => $change['negotiated_quantity'],
+                    'negotiated_quantity' => $change['negotiated_quantity'] ?? $poItem->negotiated_quantity,
+                    'negotiated_unit_price' => $change['negotiated_unit_price'] ?? $poItem->negotiated_unit_price,
                     'vendor_item_notes' => $change['vendor_item_notes'] ?? $poItem->vendor_item_notes,
                 ]);
             }
@@ -474,6 +485,7 @@ final class PurchaseOrderService implements ServiceContract
                 'item_description' => $i->item_description,
                 'quantity_ordered' => $i->quantity_ordered,
                 'negotiated_quantity' => $i->negotiated_quantity,
+                'negotiated_unit_price' => $i->negotiated_unit_price,
                 'vendor_item_notes' => $i->vendor_item_notes,
             ])->values()->all();
 
@@ -493,7 +505,10 @@ final class PurchaseOrderService implements ServiceContract
      * Purchasing Officer accepts the vendor's proposed changes.
      * Status: negotiating → acknowledged
      */
-    public function officerAcceptChanges(PurchaseOrder $po, User $officer, string $remarks = ''): PurchaseOrder
+    /**
+     * @return array{po: PurchaseOrder, unmet_items: list<array{description: string, original_qty: float, accepted_qty: float, shortfall: float}>}
+     */
+    public function officerAcceptChanges(PurchaseOrder $po, User $officer, string $remarks = ''): array
     {
         if ($po->status !== 'negotiating') {
             throw new DomainException(
@@ -503,24 +518,105 @@ final class PurchaseOrderService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($po, $officer, $remarks): PurchaseOrder {
-            $po->update([
+        return DB::transaction(function () use ($po, $officer, $remarks): array {
+            // 1. Snapshot original values BEFORE applying changes
+            $po->load('items');
+            $originalTotal = (float) $po->total_po_amount;
+            $originalSnapshot = [
+                'delivery_date' => $po->delivery_date,
+                'payment_terms' => $po->payment_terms,
+                'items' => $po->items->map(fn ($i) => [
+                    'id' => $i->id,
+                    'item_description' => $i->item_description,
+                    'quantity_ordered' => $i->quantity_ordered,
+                    'agreed_unit_cost' => $i->agreed_unit_cost,
+                ])->values()->all(),
+            ];
+
+            // 2. Apply changes to PO items
+            $unmetItems = [];
+            foreach ($po->items as $item) {
+                $originalQty = (float) $item->quantity_ordered;
+                $updates = ['vendor_item_notes' => null];
+
+                if ($item->negotiated_quantity !== null) {
+                    $updates['quantity_ordered'] = (float) $item->negotiated_quantity;
+                    $updates['negotiated_quantity'] = null;
+
+                    if ((float) $item->negotiated_quantity < $originalQty) {
+                        $unmetItems[] = [
+                            'description' => $item->item_description,
+                            'original_qty' => $originalQty,
+                            'accepted_qty' => (float) $item->negotiated_quantity,
+                            'shortfall' => $originalQty - (float) $item->negotiated_quantity,
+                        ];
+                    }
+                }
+
+                if ($item->negotiated_unit_price !== null) {
+                    $updates['agreed_unit_cost'] = $item->negotiated_unit_price;
+                    $updates['negotiated_unit_price'] = null;
+                }
+
+                $item->update($updates);
+            }
+
+            // 3. Apply PO-level changes
+            $poUpdates = [
                 'status' => 'acknowledged',
                 'vendor_acknowledged_at' => now(),
                 'change_reviewed_at' => now(),
                 'change_reviewed_by_id' => $officer->id,
                 'change_review_remarks' => $remarks ?: 'Changes accepted.',
-            ]);
+                'proposed_delivery_date' => null,
+                'proposed_payment_terms' => null,
+            ];
+
+            if ($po->proposed_delivery_date) {
+                $poUpdates['delivery_date'] = $po->proposed_delivery_date;
+            }
+            if ($po->proposed_payment_terms) {
+                $poUpdates['payment_terms'] = $po->proposed_payment_terms;
+            }
+
+            $po->update($poUpdates);
+
+            // 4. Budget recheck — reload after trigger updates total_po_amount
+            $po->refresh();
+            $newTotal = (float) $po->total_po_amount;
+            if ($newTotal > $originalTotal) {
+                $po->update([
+                    'requires_budget_recheck' => true,
+                    'original_total_po_amount' => $originalTotal,
+                ]);
+                $po->refresh();
+            }
+
+            // 5. Audit trail
+            $acceptedSnapshot = [
+                'delivery_date' => $po->delivery_date,
+                'payment_terms' => $po->payment_terms,
+                'items' => $po->items->map(fn ($i) => [
+                    'id' => $i->id,
+                    'item_description' => $i->item_description,
+                    'quantity_ordered' => $i->quantity_ordered,
+                    'agreed_unit_cost' => $i->agreed_unit_cost,
+                ])->values()->all(),
+            ];
 
             VendorFulfillmentNote::create([
                 'purchase_order_id' => $po->id,
                 'vendor_user_id' => null,
                 'note_type' => 'change_accepted',
                 'notes' => $remarks ?: 'Purchasing Officer accepted proposed changes.',
-                'items' => null,
+                'items' => [
+                    'original' => $originalSnapshot,
+                    'accepted' => $acceptedSnapshot,
+                    'budget_impact' => $newTotal - $originalTotal,
+                ],
             ]);
 
-            return $po->refresh();
+            return ['po' => $po, 'unmet_items' => $unmetItems];
         });
     }
 
@@ -553,6 +649,7 @@ final class PurchaseOrderService implements ServiceContract
             foreach ($po->items as $item) {
                 $item->update([
                     'negotiated_quantity' => null,
+                    'negotiated_unit_price' => null,
                     'vendor_item_notes' => null,
                 ]);
             }
@@ -564,6 +661,8 @@ final class PurchaseOrderService implements ServiceContract
                 'change_reviewed_at' => now(),
                 'change_reviewed_by_id' => $officer->id,
                 'change_review_remarks' => $remarks,
+                'proposed_delivery_date' => null,
+                'proposed_payment_terms' => null,
             ]);
 
             VendorFulfillmentNote::create([

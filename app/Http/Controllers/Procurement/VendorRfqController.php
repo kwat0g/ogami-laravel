@@ -8,6 +8,7 @@ use App\Domains\AP\Models\Vendor;
 use App\Domains\Procurement\Models\VendorRfq;
 use App\Domains\Procurement\Services\VendorRfqService;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Procurement\PurchaseOrderResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -126,5 +127,14 @@ final class VendorRfqController extends Controller
         $rfq = $this->service->cancel($vendorRfq);
 
         return response()->json(['data' => $rfq]);
+    }
+
+    public function award(VendorRfq $vendorRfq, Vendor $vendor): PurchaseOrderResource
+    {
+        $this->authorize('update', $vendorRfq);
+
+        $po = $this->service->award($vendorRfq, $vendor, auth()->user());
+
+        return new PurchaseOrderResource($po->load(['vendor', 'items']));
     }
 }

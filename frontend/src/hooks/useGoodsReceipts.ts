@@ -91,3 +91,23 @@ export function useConfirmGoodsReceipt() {
     },
   })
 }
+
+// ── Reject (draft only) ─────────────────────────────────────────────────────
+
+export function useRejectGoodsReceipt() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ulid, reason }: { ulid: string; reason: string }) => {
+      const res = await api.post<{ data: GoodsReceipt }>(
+        `/procurement/goods-receipts/${ulid}/reject`,
+        { reason },
+      )
+      return res.data.data
+    },
+    onSuccess: (gr) => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      void qc.invalidateQueries({ queryKey: ['purchase-orders'] })
+      qc.setQueryData(['goods-receipts', gr.ulid], gr)
+    },
+  })
+}

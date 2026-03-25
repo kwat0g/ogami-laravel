@@ -194,9 +194,9 @@ final class VendorFulfillmentService implements ServiceContract
 
             // Update original PO total and status.
             // For partial split: mark as partially_received so WH can still confirm GR.
-            // For full delivery: keep in_transit — ThreeWayMatchService will set fully_received
+            // For full delivery: mark as delivered — ThreeWayMatchService will set fully_received
             // once the Warehouse Head confirms the GR and quantities are verified.
-            $originalStatus = $isPartial ? 'partially_received' : 'in_transit';
+            $originalStatus = $isPartial ? 'partially_received' : 'delivered';
             $po->update([
                 'total_po_amount' => $originalTotal,
                 'status' => $originalStatus,

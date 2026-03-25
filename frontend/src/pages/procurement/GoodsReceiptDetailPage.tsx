@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, ClipboardCheck, Trash2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Trash2, XCircle } from 'lucide-react'
 import { usePermission } from '@/hooks/usePermission'
 import {
   useGoodsReceipt,
   useConfirmGoodsReceipt,
   useDeleteGoodsReceipt,
+  useRejectGoodsReceipt,
 } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -38,6 +40,10 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const { data: gr, isLoading, isError } = useGoodsReceipt(ulid ?? null)
   const confirmMutation = useConfirmGoodsReceipt()
   const deleteMutation  = useDeleteGoodsReceipt()
+  const rejectMutation  = useRejectGoodsReceipt()
+
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
 
   function handleDelete(): void {
     if (!gr) return
@@ -69,6 +75,21 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
     })
   }
 
+  function handleReject(): void {
+    if (!gr || !rejectReason.trim()) return
+    rejectMutation.mutate(
+      { ulid: gr.ulid, reason: rejectReason },
+      {
+        onSuccess: () => {
+          toast.success('Goods Receipt rejected.')
+          setShowRejectModal(false)
+          setRejectReason('')
+        },
+        onError: (err) => toast.error(firstErrorMessage(err) ?? 'Failed to reject GR.'),
+      }
+    )
+  }
+
   // ── render states ────────────────────────────────────────────────────────────
 
   if (isLoading) {
@@ -95,20 +116,31 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const headerActions = canConfirm ? (
     <>
       {canConfirmPermission && (
-        <ConfirmDialog
-          title="Post Goods Receipt?"
-          description="This will confirm the receipt and update inventory levels."
-          onConfirm={handleConfirm}
-        >
+        <>
+          <ConfirmDialog
+            title="Post Goods Receipt?"
+            description="This will confirm the receipt and update inventory levels."
+            onConfirm={handleConfirm}
+          >
+            <button
+              type="button"
+              disabled={confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ClipboardCheck className="w-4 h-4" />
+              {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
+            </button>
+          </ConfirmDialog>
           <button
             type="button"
-            disabled={confirmMutation.isPending || deleteMutation.isPending}
-            className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending}
+            onClick={() => setShowRejectModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-orange-300 text-orange-600 text-sm font-medium hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ClipboardCheck className="w-4 h-4" />
-            {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
+            <XCircle className="w-4 h-4" />
+            Reject GR
           </button>
-        </ConfirmDialog>
+        </>
       )}
       <ConfirmDialog
         title="Cancel Goods Receipt?"
@@ -117,7 +149,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
       >
         <button
           type="button"
-          disabled={confirmMutation.isPending || deleteMutation.isPending}
+          disabled={confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending}
           className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Trash2 className="w-4 h-4" />
@@ -267,6 +299,57 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
           </div>
         </CardBody>
       </Card>
+
+      {/* ── Rejection Banner ─────────────────────────────────────────────────── */}
+      {gr.status === 'rejected' && (
+        <div className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <XCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-orange-800">Goods Receipt Rejected</p>
+            {(gr as unknown as { rejection_reason?: string }).rejection_reason && (
+              <p className="text-sm text-orange-700 mt-1">
+                {(gr as unknown as { rejection_reason: string }).rejection_reason}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Reject Modal ─────────────────────────────────────────────────────── */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 space-y-4">
+            <h2 className="text-base font-semibold text-neutral-900">Reject Goods Receipt</h2>
+            <p className="text-sm text-neutral-600">
+              Provide a reason for rejecting this GR (wrong items, damaged goods, etc.).
+            </p>
+            <textarea
+              rows={4}
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-400"
+              placeholder="Explain why this GR is being rejected…"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => { setShowRejectModal(false); setRejectReason('') }}
+                className="px-4 py-2 text-sm border border-neutral-300 rounded hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!rejectReason.trim() || rejectMutation.isPending}
+                onClick={handleReject}
+                className="px-4 py-2 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+              >
+                {rejectMutation.isPending ? 'Rejecting…' : 'Reject GR'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

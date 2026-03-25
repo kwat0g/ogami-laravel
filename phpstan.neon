@@ -30,3 +30,8 @@ parameters:
         - identifier: return.type
           path: app/Domains/Procurement/Models/*.php
           reportUnmatched: false
+
+        # PHPStan int<1,max> vs 0 comparison after early-return guard — false positive
+        - identifier: greater.alwaysTrue
+          path: app/Domains/AP/Services/VendorService.php
+          reportUnmatched: false

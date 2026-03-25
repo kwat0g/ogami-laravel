@@ -27,12 +27,16 @@ export interface VendorPortalOrder {
   payment_terms: string
   total_po_amount: string
   notes: string | null
+  delivery_address: string | null
   vendor_remarks: string | null
   negotiation_round: number
   change_requested_at: string | null
   change_reviewed_at: string | null
   change_review_remarks: string | null
   vendor_acknowledged_at: string | null
+  proposed_delivery_date: string | null
+  proposed_payment_terms: string | null
+  requires_budget_recheck: boolean
   items: VendorPortalOrderItem[]
   fulfillment_notes?: VendorFulfillmentNote[]
   parent_po?: {
@@ -53,6 +57,7 @@ export interface VendorPortalOrderItem {
   unit_of_measure: string
   quantity_ordered: string
   negotiated_quantity: string | null
+  negotiated_unit_price: string | null
   vendor_item_notes: string | null
   agreed_unit_cost: string
   total_cost: string
@@ -107,15 +112,27 @@ export function useAcknowledgePO() {
 
 export interface ProposeChangesItem {
   po_item_id: number
-  negotiated_quantity: number
+  negotiated_quantity?: number
+  negotiated_unit_price?: number  // centavos (multiply pesos × 100 before sending)
   vendor_item_notes?: string
+}
+
+export interface ProposeChangesPayload {
+  ulid: string
+  remarks: string
+  items: ProposeChangesItem[]
+  proposed_delivery_date?: string
 }
 
 export function useProposeChanges() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ ulid, remarks, items }: { ulid: string; remarks: string; items: ProposeChangesItem[] }) =>
-      api.post(`/vendor-portal/orders/${ulid}/propose-changes`, { remarks, items }),
+    mutationFn: ({ ulid, remarks, items, proposed_delivery_date }: ProposeChangesPayload) =>
+      api.post(`/vendor-portal/orders/${ulid}/propose-changes`, {
+        remarks,
+        items,
+        proposed_delivery_date,
+      }),
     onSuccess: (_data, { ulid }) => {
       qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders', ulid] })
       qc.invalidateQueries({ queryKey: ['vendor-portal', 'orders'] })

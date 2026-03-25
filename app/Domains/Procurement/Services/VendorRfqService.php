@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Services;
 
 use App\Domains\AP\Models\Vendor;
+use App\Domains\Procurement\Models\PurchaseOrder;
+use App\Domains\Procurement\Models\PurchaseOrderItem;
 use App\Domains\Procurement\Models\VendorRfq;
 use App\Domains\Procurement\Models\VendorRfqVendor;
 use App\Models\User;
@@ -154,6 +156,99 @@ final class VendorRfqService implements ServiceContract
             $rfq->update(['status' => 'closed', 'closed_at' => now()]);
 
             return $rfq->refresh();
+        });
+    }
+
+    // ── Award ────────────────────────────────────────────────────────────────
+
+    /**
+     * Award the RFQ to a vendor and auto-create a draft Purchase Order.
+     * Requires: rfq.status === 'quote_received', vendor has a 'quoted' invitation.
+     */
+    public function award(VendorRfq $rfq, Vendor $vendor, User $actor): PurchaseOrder
+    {
+        if ($rfq->status !== 'quote_received') {
+            throw new DomainException(
+                message: "RFQ must be in 'quote_received' status to award. Current: '{$rfq->status}'.",
+                errorCode: 'RFQ_CANNOT_AWARD',
+                httpStatus: 422,
+            );
+        }
+
+        $invitation = VendorRfqVendor::where('vendor_rfq_id', $rfq->id)
+            ->where('vendor_id', $vendor->id)
+            ->where('status', 'quoted')
+            ->first();
+
+        if (! $invitation) {
+            throw new DomainException(
+                message: 'Selected vendor has not submitted a quote for this RFQ.',
+                errorCode: 'RFQ_VENDOR_NOT_QUOTED',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($rfq, $vendor, $actor, $invitation): PurchaseOrder {
+            // Mark vendor as selected
+            $invitation->update(['is_selected' => true]);
+
+            // Close RFQ
+            $rfq->update(['status' => 'closed', 'closed_at' => now()]);
+
+            // Generate PO reference
+            $seq = DB::selectOne("SELECT NEXTVAL('purchase_order_seq') AS val");
+            $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
+            $reference = 'PO-'.now()->format('Y-m').'-'.$num;
+
+            $po = PurchaseOrder::create([
+                'po_reference' => $reference,
+                'purchase_request_id' => $rfq->purchase_request_id,
+                'vendor_id' => $vendor->id,
+                'po_date' => now()->toDateString(),
+                'payment_terms' => $vendor->payment_terms ?? 'Net 30',
+                'delivery_address' => '',
+                'status' => 'draft',
+                'po_type' => 'standard',
+                'created_by_id' => $actor->id,
+                'notes' => "Created from RFQ {$rfq->rfq_reference}.",
+            ]);
+
+            // Create PO items from PR items (if linked) or single line from scope
+            if ($rfq->purchase_request_id && $rfq->purchaseRequest) {
+                $prItems = $rfq->purchaseRequest->items;
+                $totalEstimated = $prItems->sum(fn ($i) => (float) $i->estimated_total);
+                $quotedCentavos = (int) $invitation->quoted_amount_centavos;
+
+                foreach ($prItems as $lineOrder => $prItem) {
+                    // Distribute quoted amount proportionally by estimated_total
+                    $proportion = $totalEstimated > 0
+                        ? ((float) $prItem->estimated_total / $totalEstimated)
+                        : (1 / max(1, $prItems->count()));
+                    $agreedCost = (int) round($quotedCentavos * $proportion);
+
+                    PurchaseOrderItem::create([
+                        'purchase_order_id' => $po->id,
+                        'pr_item_id' => $prItem->id,
+                        'item_master_id' => $prItem->item_master_id ?? null,
+                        'item_description' => $prItem->item_description,
+                        'unit_of_measure' => $prItem->unit_of_measure,
+                        'quantity_ordered' => $prItem->quantity,
+                        'agreed_unit_cost' => $agreedCost,
+                        'line_order' => $lineOrder + 1,
+                    ]);
+                }
+            } else {
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $po->id,
+                    'item_description' => $rfq->scope_description,
+                    'unit_of_measure' => 'lot',
+                    'quantity_ordered' => 1,
+                    'agreed_unit_cost' => (int) $invitation->quoted_amount_centavos,
+                    'line_order' => 1,
+                ]);
+            }
+
+            return $po->load('items');
         });
     }
 

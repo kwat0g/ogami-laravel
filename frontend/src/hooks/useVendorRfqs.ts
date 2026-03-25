@@ -122,3 +122,19 @@ export function useCancelVendorRfq() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['vendor-rfqs'] }) },
   })
 }
+
+export function useAwardRfq() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ rfqUlid, vendorId }: { rfqUlid: string; vendorId: number }) => {
+      const res = await api.post<{ data: { id: number; ulid: string; po_reference: string } }>(
+        `/procurement/rfqs/${rfqUlid}/award/${vendorId}`,
+      )
+      return res.data.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['vendor-rfqs'] })
+      void qc.invalidateQueries({ queryKey: ['purchase-orders'] })
+    },
+  })
+}

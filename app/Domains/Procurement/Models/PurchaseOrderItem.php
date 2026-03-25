@@ -41,6 +41,7 @@ final class PurchaseOrderItem extends Model
         'unit_of_measure',
         'quantity_ordered',
         'negotiated_quantity',
+        'negotiated_unit_price',
         'vendor_item_notes',
         'agreed_unit_cost',
         'quantity_received',
