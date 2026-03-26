@@ -6,7 +6,10 @@ use App\Domains\HR\Models\Department;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Services\PurchaseRequestService;
 use App\Models\User;
+use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\SodViolationException;
+use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -16,16 +19,18 @@ class PurchaseRequestSoDTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Department $department;
+
     private PurchaseRequestService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
-        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-        $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
-        
+
+        $this->seed(RolePermissionSeeder::class);
+        $this->seed(ChartOfAccountsSeeder::class);
+
         $this->user = User::factory()->create();
         $this->department = Department::create([
             'name' => 'Test Department',
@@ -34,7 +39,7 @@ class PurchaseRequestSoDTest extends TestCase
             'fiscal_year_start_month' => 1,
             'is_active' => true,
         ]);
-        
+
         $this->service = app(PurchaseRequestService::class);
     }
 
@@ -62,7 +67,7 @@ class PurchaseRequestSoDTest extends TestCase
     public function accounting_officer_cannot_verify_budget_for_own_pr()
     {
         $otherUser = User::factory()->create();
-        
+
         // Create PR in reviewed status (approved by Purchasing, now at Accounting)
         $pr = PurchaseRequest::create([
             'pr_reference' => 'PR-2026-SOD02',
@@ -85,7 +90,7 @@ class PurchaseRequestSoDTest extends TestCase
     public function vp_cannot_approve_own_pr()
     {
         $otherUser = User::factory()->create();
-        
+
         // Create PR in budget_verified status (approved by Accounting, now at VP)
         $pr = PurchaseRequest::create([
             'pr_reference' => 'PR-2026-SOD03',
@@ -110,7 +115,7 @@ class PurchaseRequestSoDTest extends TestCase
     {
         $creator = User::factory()->create();
         $reviewer = User::factory()->create();
-        
+
         // Create PR where reviewer is set (SoD: budget verifier cannot be same as reviewer)
         $pr = PurchaseRequest::create([
             'pr_reference' => 'PR-2026-SOD04',
@@ -124,7 +129,7 @@ class PurchaseRequestSoDTest extends TestCase
         ]);
 
         // The reviewer tries to also verify budget - should fail
-        $this->expectException(\App\Shared\Exceptions\DomainException::class);
+        $this->expectException(DomainException::class);
         $this->expectExceptionMessage('Budget verifier cannot be the same person who reviewed the PR.');
 
         $this->service->budgetCheck($pr, $reviewer);
@@ -135,7 +140,7 @@ class PurchaseRequestSoDTest extends TestCase
     {
         $creator = User::factory()->create();
         $budgetVerifier = User::factory()->create();
-        
+
         // Create PR in budget_verified status
         $pr = PurchaseRequest::create([
             'pr_reference' => 'PR-2026-SOD05',
@@ -150,7 +155,7 @@ class PurchaseRequestSoDTest extends TestCase
         ]);
 
         // The budget verifier tries to also approve as VP - should fail
-        $this->expectException(\App\Shared\Exceptions\DomainException::class);
+        $this->expectException(DomainException::class);
         $this->expectExceptionMessage('VP cannot be the same person who verified the budget.');
 
         $this->service->vpApprove($pr, $budgetVerifier);

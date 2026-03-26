@@ -7,6 +7,7 @@ use App\Domains\Payroll\Models\PayrollRun;
 use App\Domains\Payroll\Validators\PayrollRunValidator;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -135,7 +136,7 @@ describe('PR-004 — assertActiveEmployeesExist', function () {
     it('passes when at least one active employee exists', function () {
         DB::table('employees')->insert([
             'employee_code' => 'EMP-PR-001',
-            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'ulid' => (string) Str::ulid(),
             'first_name' => 'Active',
             'last_name' => 'Employee',
             'date_of_birth' => '1990-01-01',
@@ -163,7 +164,7 @@ describe('PR-004 — assertActiveEmployeesExist', function () {
     it('throws PR_NO_ACTIVE_EMPLOYEES when only terminated employees exist', function () {
         DB::table('employees')->insert([
             'employee_code' => 'EMP-PR-002',
-            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'ulid' => (string) Str::ulid(),
             'first_name' => 'Terminated',
             'last_name' => 'Person',
             'date_of_birth' => '1985-06-15',

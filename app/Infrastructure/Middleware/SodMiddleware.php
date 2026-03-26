@@ -7,6 +7,7 @@ namespace App\Infrastructure\Middleware;
 use App\Shared\Exceptions\SodViolationException;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
@@ -83,7 +84,7 @@ class SodMiddleware
     private function loadMatrix(): array
     {
         /** @var array<string, array<string, list<string>>> */
-        return \Illuminate\Support\Facades\Cache::remember(
+        return Cache::remember(
             'sod_conflict_matrix',
             300, // 5 minutes
             function (): array {

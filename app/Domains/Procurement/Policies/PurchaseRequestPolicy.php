@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Policies;
 
+use App\Domains\HR\Models\Department;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Models\User;
@@ -155,7 +156,7 @@ final class PurchaseRequestPolicy
     private function isInPurchasingDepartment(User $user): bool
     {
         // Check primary department (load if not already loaded)
-        /** @var \App\Domains\HR\Models\Department|null $primaryDept */
+        /** @var Department|null $primaryDept */
         $primaryDept = $user->relationLoaded('primaryDepartment')
             ? $user->getRelation('primaryDepartment')
             : $user->primaryDepartment;

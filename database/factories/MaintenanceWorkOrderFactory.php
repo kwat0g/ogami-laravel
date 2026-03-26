@@ -26,7 +26,7 @@ final class MaintenanceWorkOrderFactory extends Factory
             'type' => 'corrective',
             'priority' => 'normal',
             'status' => 'open',
-            'title' => 'Work Order ' . $seq,
+            'title' => 'Work Order '.$seq,
             'description' => 'Test work order description',
             'reported_by_id' => null,
             'assigned_to_id' => null,
@@ -34,7 +34,7 @@ final class MaintenanceWorkOrderFactory extends Factory
             'completed_at' => null,
             'completion_notes' => null,
             'labor_hours' => null,
-            'mwo_reference' => 'MWO-' . $seq,
+            'mwo_reference' => 'MWO-'.$seq,
         ];
     }
 }

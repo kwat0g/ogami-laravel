@@ -14,6 +14,7 @@ use App\Http\Controllers\Accounting\Reports\GeneralLedgerController;
 use App\Http\Controllers\Accounting\Reports\IncomeStatementController;
 use App\Http\Controllers\Accounting\Reports\TrialBalanceController;
 use App\Http\Controllers\AP\VendorController;
+use App\Http\Controllers\AP\VendorCreditNoteController;
 use App\Http\Controllers\AP\VendorInvoiceController;
 use App\Http\Controllers\AP\VendorItemController;
 use Illuminate\Support\Facades\Route;
@@ -210,16 +211,16 @@ Route::middleware(['auth:sanctum', 'module_access:accounting'])->group(function 
         ->name('ap-invoices.record-payment');
 
     // ── Vendor Credit Notes ──────────────────────────────────────────────────
-    Route::get('ap/credit-notes', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'index'])
+    Route::get('ap/credit-notes', [VendorCreditNoteController::class, 'index'])
         ->name('vendor-credit-notes.index');
 
-    Route::post('ap/credit-notes', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'store'])
+    Route::post('ap/credit-notes', [VendorCreditNoteController::class, 'store'])
         ->name('vendor-credit-notes.store');
 
-    Route::get('ap/credit-notes/{creditNote}', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'show'])
+    Route::get('ap/credit-notes/{creditNote}', [VendorCreditNoteController::class, 'show'])
         ->name('vendor-credit-notes.show');
 
-    Route::patch('ap/credit-notes/{creditNote}/post', [\App\Http\Controllers\AP\VendorCreditNoteController::class, 'post'])
+    Route::patch('ap/credit-notes/{creditNote}/post', [VendorCreditNoteController::class, 'post'])
         ->name('vendor-credit-notes.post');
 
     // ── Financial Reports (GL-001 to GL-005) ─────────────────────────────────

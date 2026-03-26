@@ -329,6 +329,22 @@ tests/
 └── Arch/                     # Architecture constraint tests
 ```
 
+## Codebase Search (SocratiCode)
+This project is indexed with SocratiCode. Always use its MCP tools 
+to explore the codebase before reading any files directly.
+
+### Workflow
+1. **Start most explorations with `codebase_search`.** 
+   - Use broad queries for orientation: "how is authentication handled", 
+     "database connection setup", "error handling patterns"
+   - Use precise queries for symbol lookups: exact function/class names
+   - Prefer search results to infer which files to read — do NOT 
+     speculatively open files directly
+
+2. **Only read files after searching** — use search results to identify 
+   the exact file and line range needed, then read only that section.
+
+
 ## Common Pitfalls
 
 1. `Money` throws on negative - guard before subtracting

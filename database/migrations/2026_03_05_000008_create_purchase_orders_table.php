@@ -71,17 +71,17 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement("
+        DB::statement('
             ALTER TABLE purchase_order_items
             ADD CONSTRAINT chk_poi_qty_positive     CHECK (quantity_ordered > 0),
             ADD CONSTRAINT chk_poi_cost_positive    CHECK (agreed_unit_cost > 0),
             ADD CONSTRAINT chk_poi_received_valid   CHECK (quantity_received >= 0 AND quantity_received <= quantity_ordered)
-        ");
+        ');
 
         // Trigger: update PO total when items change
-        DB::statement("
+        DB::statement('
             CREATE OR REPLACE FUNCTION update_po_total()
-            RETURNS TRIGGER LANGUAGE plpgsql AS \$\$
+            RETURNS TRIGGER LANGUAGE plpgsql AS $$
             BEGIN
                 UPDATE purchase_orders
                 SET total_po_amount = (
@@ -93,14 +93,14 @@ return new class extends Migration
                 WHERE id = COALESCE(NEW.purchase_order_id, OLD.purchase_order_id);
                 RETURN NEW;
             END;
-            \$\$
-        ");
+            $$
+        ');
 
-        DB::statement("
+        DB::statement('
             CREATE TRIGGER trg_po_total
             AFTER INSERT OR UPDATE OR DELETE ON purchase_order_items
             FOR EACH ROW EXECUTE FUNCTION update_po_total()
-        ");
+        ');
 
         DB::statement('CREATE INDEX idx_po_status ON purchase_orders(status)');
         DB::statement('CREATE INDEX idx_po_vendor ON purchase_orders(vendor_id)');

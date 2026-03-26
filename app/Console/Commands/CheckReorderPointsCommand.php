@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Procurement\Services\PurchaseRequestService;
 use App\Models\User;
 use App\Notifications\Inventory\LowStockNotification;
@@ -34,7 +33,7 @@ final class CheckReorderPointsCommand extends Command
     public function handle(): int
     {
         $autoCreatePr = $this->option('auto-create-pr');
-        
+
         // Get items with reorder_point set and current stock below threshold
         $lowStockItems = DB::table('item_masters')
             ->leftJoin(
@@ -64,7 +63,7 @@ final class CheckReorderPointsCommand extends Command
         // Auto-create PRs if enabled
         if ($autoCreatePr && $lowStockItems->isNotEmpty()) {
             $systemUser = User::where('email', 'admin@ogamierp.local')->first();
-            
+
             if ($systemUser === null) {
                 $this->warn('System user (admin@ogamierp.local) not found. Cannot auto-create PRs.');
                 Log::warning('CheckReorderPoints: System user not found, skipping auto-PR creation');
@@ -73,10 +72,11 @@ final class CheckReorderPointsCommand extends Command
                     try {
                         // Check if PR already exists for this item in draft/submitted/noted/checked status
                         $existingPr = $this->prExistsForItem($item->id);
-                        
+
                         if ($existingPr) {
                             $this->line("  → Skipped {$item->item_code}: PR already exists");
                             $prSkippedCount++;
+
                             continue;
                         }
 
@@ -138,11 +138,11 @@ final class CheckReorderPointsCommand extends Command
     {
         // Get item code for searching
         $itemCode = DB::table('item_masters')->where('id', $itemId)->value('item_code');
-        
+
         if ($itemCode === null) {
             return false;
         }
-        
+
         // Check by item description containing the item code
         // This covers auto-created PRs (description contains item code)
         return DB::table('purchase_requests')

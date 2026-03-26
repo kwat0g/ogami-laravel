@@ -10,9 +10,11 @@ use App\Shared\Traits\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException as LaravelValidationException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
@@ -26,7 +28,7 @@ class Handler extends ExceptionHandler
 {
     use ApiResponse;
 
-    /** @var list<class-string<\Throwable>> */
+    /** @var list<class-string<Throwable>> */
     protected $dontReport = [];
 
     /** @var list<string> */
@@ -55,7 +57,7 @@ class Handler extends ExceptionHandler
         return parent::render($request, $e);
     }
 
-    private function renderApiException(Request $request, Throwable $e): JsonResponse|\Symfony\Component\HttpFoundation\Response
+    private function renderApiException(Request $request, Throwable $e): JsonResponse|Response
     {
         // ── Domain-specific exceptions ────────────────────────────────────────
         if ($e instanceof SodViolationException) {
@@ -92,7 +94,7 @@ class Handler extends ExceptionHandler
         }
 
         // ── HttpResponseException (e.g. rate limit 429, abort with Response) ───────
-        if ($e instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+        if ($e instanceof HttpResponseException) {
             return $e->getResponse();
         }
 

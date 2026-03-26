@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
  * Sample Payroll Data Seeder for January-February 2026.
- * 
+ *
  * Creates payroll runs and computed payroll data for the first two months
  * of 2026, using the attendance data from SampleAttendanceJanFeb2026Seeder.
- * 
+ *
  * This seeder depends on:
  * - Employees being seeded
  * - Attendance data being seeded
@@ -33,8 +32,9 @@ class SamplePayrollJanFeb2026Seeder extends Seeder
             ?? User::role('hr_manager')->first()
             ?? User::first();
 
-        if (!$hrUser) {
+        if (! $hrUser) {
             $this->command->warn('  No HR user found, skipping payroll seeding.');
+
             return;
         }
 
@@ -58,7 +58,7 @@ class SamplePayrollJanFeb2026Seeder extends Seeder
             ->where('date_to', '<=', '2026-12-31')
             ->exists();
 
-        if (!$exists) {
+        if (! $exists) {
             // Create fiscal periods for Jan-Jun 2026
             $periods = [
                 ['name' => 'January 2026', 'date_from' => '2026-01-01', 'date_to' => '2026-01-31'],
@@ -102,7 +102,7 @@ class SamplePayrollJanFeb2026Seeder extends Seeder
                 ->where('cutoff_end', $period['cutoff_end'])
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 DB::table('pay_periods')->insert([
                     'label' => $period['label'],
                     'cutoff_start' => $period['cutoff_start'],
@@ -130,6 +130,7 @@ class SamplePayrollJanFeb2026Seeder extends Seeder
 
         if ($employees->isEmpty()) {
             $this->command->warn('  No active employees found, skipping payroll runs.');
+
             return;
         }
 
@@ -152,7 +153,7 @@ class SamplePayrollJanFeb2026Seeder extends Seeder
             // Create payroll run
             $payrollRunId = DB::table('payroll_runs')->insertGetId([
                 'ulid' => (string) Str::ulid(),
-                'reference_no' => 'PR-2026-' . str_pad((string) ($created + 1), 6, '0', STR_PAD_LEFT),
+                'reference_no' => 'PR-2026-'.str_pad((string) ($created + 1), 6, '0', STR_PAD_LEFT),
                 'pay_period_label' => $payPeriod->label,
                 'cutoff_start' => $payPeriod->cutoff_start,
                 'cutoff_end' => $payPeriod->cutoff_end,
@@ -260,10 +261,10 @@ class SamplePayrollJanFeb2026Seeder extends Seeder
         // Simplified SSS contribution table lookup
         // Based on 2024 SSS contribution table
         $monthlySalaryCredit = min($basicMonthlyRate / 100, 3000000); // Max 30,000 MSC
-        
+
         // Employee share is approximately 4.5% of MSC
         $employeeShare = (int) round($monthlySalaryCredit * 0.045);
-        
+
         // Semi-monthly contribution (divide by 2)
         return (int) round($employeeShare / 2);
     }

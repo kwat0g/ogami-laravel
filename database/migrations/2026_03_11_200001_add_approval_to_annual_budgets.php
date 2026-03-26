@@ -39,10 +39,10 @@ return new class extends Migration
         ");
 
         // SOD: submitter cannot also be the approver
-        DB::statement("
+        DB::statement('
             ALTER TABLE annual_budgets ADD CONSTRAINT chk_sod_budget_approval
             CHECK (approved_by_id IS NULL OR approved_by_id <> submitted_by_id)
-        ");
+        ');
     }
 
     public function down(): void

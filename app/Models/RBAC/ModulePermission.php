@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace App\Models\RBAC;
 
 use App\Models\User;
+use Carbon\Carbon;
+use Database\Factories\RBAC\ModulePermissionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * ModulePermission - Defines permissions for a role within a module.
- * 
+ *
  * @property int $id
  * @property string $module_key
  * @property string $role
@@ -20,12 +22,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $is_active
  * @property int|null $created_by
  * @property int|null $updated_by
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class ModulePermission extends Model
 {
-    /** @use HasFactory<\Database\Factories\RBAC\ModulePermissionFactory> */
+    /** @use HasFactory<ModulePermissionFactory> */
     use HasFactory;
 
     protected $table = 'module_permissions';
@@ -111,7 +113,7 @@ final class ModulePermission extends Model
 
     /**
      * Get permissions for a specific role+module combination.
-     * 
+     *
      * @return list<string>
      */
     public static function getPermissions(string $moduleKey, string $role): array
@@ -137,7 +139,7 @@ final class ModulePermission extends Model
 
     /**
      * Get all roles that have permissions defined for a module.
-     * 
+     *
      * @return list<string>
      */
     public static function rolesForModule(string $moduleKey): array

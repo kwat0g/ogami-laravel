@@ -5,55 +5,58 @@ declare(strict_types=1);
 use App\Domains\HR\Models\Department;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Models\User;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 uses()->group('feature', 'procurement');
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
-    
+    $this->seed(RolePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+
     // Use existing departments from DepartmentPositionSeeder
     $this->purchDept = Department::where('code', 'PURCH')->first();
     $this->purchDept->update(['annual_budget_centavos' => 5_000_000_00]); // ₱5M
-    
+
     $this->prodDept = Department::where('code', 'PROD')->first();
     $this->prodDept->update(['annual_budget_centavos' => 1_000_000_00]); // ₱1M
-    
+
     $this->whDept = Department::where('code', 'WH')->first();
     $this->whDept->update(['annual_budget_centavos' => 500_000_00]); // ₱500K
-    
+
     // Purchasing Officer (can create PRs for any department)
     $this->purchasingOfficer = User::factory()->create([
         'department_id' => $this->purchDept->id,
     ]);
     $this->purchasingOfficer->assignRole('officer');
     $this->purchasingOfficer->givePermissionTo('procurement.purchase-request.create');
-    
+
     // Production Department Head (can create PRs for own department only)
     $this->prodHead = User::factory()->create([
         'department_id' => $this->prodDept->id,
     ]);
     $this->prodHead->assignRole('head');
     $this->prodHead->givePermissionTo('procurement.purchase-request.create-dept');
-    
+
     // Warehouse Department Head
     $this->whHead = User::factory()->create([
         'department_id' => $this->whDept->id,
     ]);
     $this->whHead->assignRole('head');
     $this->whHead->givePermissionTo('procurement.purchase-request.create-dept');
-    
+
     // VP (can create PRs for any department)
     $this->vp = User::factory()->create();
     $this->vp->assignRole('vice_president');
-    
+
     // Get a valid user ID for created_by references
     $firstUserId = $this->purchasingOfficer->id;
-    
+
     // Create a vendor for testing
-    $vendorId = \DB::table('vendors')->insertGetId([
+    $vendorId = DB::table('vendors')->insertGetId([
         'name' => 'Test Vendor',
         'tin' => '123-456-789-000',
         'is_active' => true,
@@ -63,16 +66,16 @@ beforeEach(function () {
         'updated_at' => now(),
     ]);
     $this->vendor = (object) ['id' => $vendorId];
-    
+
     // Create a vendor item for testing
-    $vendorItemId = \DB::table('vendor_items')->insertGetId([
+    $vendorItemId = DB::table('vendor_items')->insertGetId([
         'vendor_id' => $vendorId,
         'item_name' => 'Test Vendor Item',
         'item_code' => 'TVI-001',
         'unit_price' => 50000, // ₱500 in centavos
         'unit_of_measure' => 'pcs',
         'is_active' => true,
-        'ulid' => (string) \Illuminate\Support\Str::ulid(),
+        'ulid' => (string) Str::ulid(),
         'created_by_id' => $firstUserId,
         'created_at' => now(),
         'updated_at' => now(),
@@ -102,7 +105,7 @@ it('allows department head to create PR for their own department', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertCreated()
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonPath('data.department_id', $this->prodDept->id);
@@ -126,7 +129,7 @@ it('prevents department head from creating PR for other departments', function (
                 ],
             ],
         ]);
-    
+
     $response->assertForbidden();
 });
 
@@ -148,7 +151,7 @@ it('allows purchasing officer to create PR for any department', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertCreated()
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonPath('data.department_id', $this->prodDept->id);
@@ -172,7 +175,7 @@ it('allows VP to create PR for any department', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertCreated()
         ->assertJsonPath('data.status', 'draft');
 });
@@ -200,7 +203,7 @@ it('blocks PR creation when department budget would be exceeded', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertUnprocessable()
         ->assertJsonPath('error_code', 'PR_BUDGET_EXCEEDED');
 });
@@ -224,7 +227,7 @@ it('allows PR creation when within department budget', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertCreated()
         ->assertJsonPath('data.status', 'draft');
 });
@@ -249,14 +252,14 @@ it('accumulates PR amounts against department budget', function () {
             ],
         ])
         ->assertCreated();
-    
+
     // Approve the first PR so it counts against budget
     $pr = PurchaseRequest::first();
     $pr->update([
         'status' => 'approved',
         'total_estimated_cost' => 500_000_00, // ₱500K in centavos
     ]);
-    
+
     // Second PR: ₱600K (should fail - would exceed ₱1M budget)
     $response = $this->actingAs($this->prodHead)
         ->postJson('/api/v1/procurement/purchase-requests', [
@@ -275,7 +278,7 @@ it('accumulates PR amounts against department budget', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertUnprocessable()
         ->assertJsonPath('error_code', 'PR_BUDGET_EXCEEDED');
 });
@@ -295,7 +298,7 @@ it('returns budget status via budget-check endpoint', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertOk()
         ->assertJsonStructure([
             'available',
@@ -320,7 +323,7 @@ it('returns budget exceeded via budget-check endpoint', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertOk()
         ->assertJsonPath('available', false)
         ->assertJsonPath('this_pr', 150_000_000); // ₱1.5M in centavos
@@ -341,7 +344,7 @@ it('allows department head to update their own PR', function () {
         'status' => 'draft',
         'total_estimated_cost' => 0,
     ]);
-    
+
     $response = $this->actingAs($this->prodHead)
         ->patchJson("/api/v1/procurement/purchase-requests/{$pr->ulid}", [
             'vendor_id' => $this->vendor->id,
@@ -359,7 +362,7 @@ it('allows department head to update their own PR', function () {
                 ],
             ],
         ]);
-    
+
     $response->assertOk()
         ->assertJsonPath('data.urgency', 'urgent');
 });
@@ -375,7 +378,7 @@ it('prevents department head from updating PR for other departments', function (
         'status' => 'draft',
         'total_estimated_cost' => 0,
     ]);
-    
+
     // Production head tries to update warehouse PR
     $response = $this->actingAs($this->prodHead)
         ->patchJson("/api/v1/procurement/purchase-requests/{$pr->ulid}", [
@@ -393,6 +396,6 @@ it('prevents department head from updating PR for other departments', function (
                 ],
             ],
         ]);
-    
+
     $response->assertForbidden();
 });

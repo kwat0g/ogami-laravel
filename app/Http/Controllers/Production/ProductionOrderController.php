@@ -14,7 +14,6 @@ use App\Http\Resources\Production\ProductionOutputLogResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Validation\ValidationException;
 
 final class ProductionOrderController extends Controller
 {
@@ -45,7 +44,7 @@ final class ProductionOrderController extends Controller
         $productionOrder->loadCount(['materialRequisitions as pending_mrq_count' => fn ($q) => $q->whereNotIn('status', ['fulfilled', 'cancelled', 'rejected'])]);
 
         return new ProductionOrderResource(
-            $productionOrder->load('productItem', 'bom.components.componentItem', 'createdBy', 'outputLogs.operator')
+            $productionOrder->load('productItem', 'bom.components.componentItem', 'createdBy', 'outputLogs.operator', 'inspections')
         );
     }
 

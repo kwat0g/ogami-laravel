@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Loan;
 
-use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\HR\Models\Employee;
 use App\Domains\Loan\Models\Loan;
@@ -10,6 +9,8 @@ use App\Domains\Loan\Models\LoanType;
 use App\Domains\Loan\Services\LoanRequestService;
 use App\Models\User;
 use App\Shared\Exceptions\SodViolationException;
+use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -19,17 +20,20 @@ class LoanSoDAdditionalTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Employee $employee;
+
     private LoanType $loanType;
+
     private LoanRequestService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-        $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
-        
+        $this->seed(RolePermissionSeeder::class);
+        $this->seed(ChartOfAccountsSeeder::class);
+
         // Setup Fiscal Period
         FiscalPeriod::create([
             'name' => 'Current Period',
@@ -40,7 +44,7 @@ class LoanSoDAdditionalTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->user->assignRole('manager');
-        
+
         $this->employee = Employee::factory()->create([
             'user_id' => $this->user->id,
         ]);
@@ -93,7 +97,7 @@ class LoanSoDAdditionalTest extends TestCase
     {
         // 1. Create a loan ready for disbursement
         $accountingApprover = User::factory()->create();
-        
+
         $loan = Loan::create([
             'workflow_version' => 2,
             'reference_no' => 'LN-2026-SOD02',

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Models;
 
 use App\Domains\HR\Models\Department;
-use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -18,7 +17,7 @@ use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * PurchaseRequest — Simplified 3-stage approval (Review → Budget → VP).
- * 
+ *
  * Workflow: Draft → Pending Review → Reviewed → Budget Verified → Approved
  * - Budget check happens at creation (hard block)
  * - Purchasing reviews technical validity

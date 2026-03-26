@@ -17,12 +17,19 @@ class ClientOrderActivity extends Model
     use HasFactory;
 
     public const ACTION_SUBMITTED = 'submitted';
+
     public const ACTION_APPROVED = 'approved';
+
     public const ACTION_REJECTED = 'rejected';
+
     public const ACTION_NEGOTIATED = 'negotiated';
+
     public const ACTION_CLIENT_RESPONDED = 'client_responded';
+
     public const ACTION_SALES_RESPONDED = 'sales_responded'; // Sales response to client counter
+
     public const ACTION_CANCELLED = 'cancelled';
+
     public const ACTION_NOTE_ADDED = 'note_added';
 
     protected $fillable = [

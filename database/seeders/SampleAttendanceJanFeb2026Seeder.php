@@ -7,7 +7,6 @@ namespace Database\Seeders;
 use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Sample Attendance Seeder for January and February 2026.
@@ -26,6 +25,7 @@ class SampleAttendanceJanFeb2026Seeder extends Seeder
 
         if ($employees->isEmpty()) {
             $this->command->warn('No active employees found.');
+
             return;
         }
 
@@ -53,8 +53,8 @@ class SampleAttendanceJanFeb2026Seeder extends Seeder
                 }
 
                 // Normal shift: 8:00 AM - 5:00 PM
-                $timeInStr = '08:' . str_pad((string) rand(0, 15), 2, '0', STR_PAD_LEFT);
-                $timeOutStr = '17:' . str_pad((string) rand(0, 30), 2, '0', STR_PAD_LEFT);
+                $timeInStr = '08:'.str_pad((string) rand(0, 15), 2, '0', STR_PAD_LEFT);
+                $timeOutStr = '17:'.str_pad((string) rand(0, 30), 2, '0', STR_PAD_LEFT);
 
                 // Some employees have overtime
                 $hasOvertime = rand(1, 5) === 1;
@@ -63,12 +63,12 @@ class SampleAttendanceJanFeb2026Seeder extends Seeder
                 // Some days have undertime
                 $hasUndertime = rand(1, 10) === 1;
                 if ($hasUndertime) {
-                    $timeOutStr = '16:' . str_pad((string) rand(0, 30), 2, '0', STR_PAD_LEFT);
+                    $timeOutStr = '16:'.str_pad((string) rand(0, 30), 2, '0', STR_PAD_LEFT);
                 }
 
                 // Format as timestamp
-                $timeIn = $date . ' ' . $timeInStr . ':00';
-                $timeOut = $date . ' ' . $timeOutStr . ':00';
+                $timeIn = $date.' '.$timeInStr.':00';
+                $timeOut = $date.' '.$timeOutStr.':00';
 
                 $lateMinutes = $this->calculateLateMinutes($timeInStr);
                 $undertimeMinutes = $hasUndertime ? rand(30, 60) : 0;

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
-    Route::get('/', function (Request $request): \Illuminate\Http\JsonResponse {
+    Route::get('/', function (Request $request): JsonResponse {
         $q = trim((string) $request->input('q'));
         if (strlen($q) < 2) {
             return response()->json(['data' => []]);
@@ -29,8 +30,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $employees = DB::table('employees')
             ->where(function ($qb) use ($pattern) {
                 $qb->where('first_name', 'ilike', $pattern)
-                   ->orWhere('last_name', 'ilike', $pattern)
-                   ->orWhere('employee_code', 'ilike', $pattern);
+                    ->orWhere('last_name', 'ilike', $pattern)
+                    ->orWhere('employee_code', 'ilike', $pattern);
             })
             ->select('ulid', 'employee_code as code', DB::raw("concat(first_name, ' ', last_name) as label"))
             ->limit($limit)
@@ -42,7 +43,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $vendors = DB::table('vendors')
             ->where(function ($qb) use ($pattern) {
                 $qb->where('company_name', 'ilike', $pattern)
-                   ->orWhere('vendor_code', 'ilike', $pattern);
+                    ->orWhere('vendor_code', 'ilike', $pattern);
             })
             ->select('ulid', 'vendor_code as code', 'company_name as name')
             ->limit($limit)
@@ -63,7 +64,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $items = DB::table('item_masters')
             ->where(function ($qb) use ($pattern) {
                 $qb->where('name', 'ilike', $pattern)
-                   ->orWhere('item_code', 'ilike', $pattern);
+                    ->orWhere('item_code', 'ilike', $pattern);
             })
             ->select('ulid', 'item_code as code', 'name')
             ->limit($limit)
@@ -84,12 +85,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $equipment = DB::table('equipment')
             ->where(function ($qb) use ($pattern) {
                 $qb->where('name', 'ilike', $pattern)
-                   ->orWhere('asset_tag', 'ilike', $pattern);
+                    ->orWhere('asset_tag', 'ilike', $pattern);
             })
             ->select('ulid', 'asset_tag as code', 'name')
             ->limit($limit)
             ->get()
-            ->map(fn ($r) => ['module' => 'Maintenance', 'type' => 'Equipment', 'label' => ($r->code ? "{$r->code} — " : '') . $r->name, 'url' => "/maintenance/equipment/{$r->ulid}"]);
+            ->map(fn ($r) => ['module' => 'Maintenance', 'type' => 'Equipment', 'label' => ($r->code ? "{$r->code} — " : '').$r->name, 'url' => "/maintenance/equipment/{$r->ulid}"]);
         $results = array_merge($results, $equipment->all());
 
         return response()->json(['data' => $results]);

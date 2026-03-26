@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\Accounting\Models\BankAccount;
 use App\Domains\Accounting\Models\ChartOfAccount;
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\AR\Models\Customer;
 use App\Domains\AR\Models\CustomerInvoice;
 use App\Domains\AR\Models\CustomerPayment;
@@ -78,8 +79,8 @@ beforeEach(function () {
         'is_active' => true,
     ]);
 
-    $this->fiscalPeriod = \App\Domains\Accounting\Models\FiscalPeriod::first()
-        ?? \App\Domains\Accounting\Models\FiscalPeriod::create([
+    $this->fiscalPeriod = FiscalPeriod::first()
+        ?? FiscalPeriod::create([
             'name' => '2025',
             'start_date' => '2025-01-01',
             'end_date' => '2025-12-31',
@@ -101,7 +102,7 @@ it('INT-AR-BNK-001 — customer payment reduces outstanding AR', function () {
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now()->subDays(15),
         'due_date' => now()->addDays(15),
         'subtotal' => $invoiceAmount,
@@ -145,7 +146,7 @@ it('INT-AR-BNK-002 — customer payment links to bank account', function () {
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now()->subDays(10),
         'due_date' => now()->addDays(20),
         'subtotal' => $paymentAmount,
@@ -183,7 +184,7 @@ it('INT-AR-BNK-003 — full payment marks invoice as paid', function () {
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now()->subDays(5),
         'due_date' => now()->addDays(25),
         'subtotal' => $invoiceAmount,
@@ -224,7 +225,7 @@ it('INT-AR-BNK-004 — outstanding invoices count toward credit limit', function
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now(),
         'due_date' => now()->addDays(30),
         'subtotal' => 40000.00,
@@ -237,7 +238,7 @@ it('INT-AR-BNK-004 — outstanding invoices count toward credit limit', function
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now(),
         'due_date' => now()->addDays(30),
         'subtotal' => 35000.00,
@@ -268,7 +269,7 @@ it('INT-AR-BNK-005 — AR aging correctly categorizes outstanding invoices', fun
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now()->subDays(5),
         'due_date' => now()->addDays(25), // Not yet due
         'subtotal' => 10000.00,
@@ -281,7 +282,7 @@ it('INT-AR-BNK-005 — AR aging correctly categorizes outstanding invoices', fun
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now()->subDays(40),
         'due_date' => now()->subDays(10), // 10 days overdue
         'subtotal' => 20000.00,
@@ -294,7 +295,7 @@ it('INT-AR-BNK-005 — AR aging correctly categorizes outstanding invoices', fun
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now()->subDays(70),
         'due_date' => now()->subDays(40), // 40 days overdue
         'subtotal' => 30000.00,
@@ -307,7 +308,7 @@ it('INT-AR-BNK-005 — AR aging correctly categorizes outstanding invoices', fun
         'fiscal_period_id' => $this->fiscalPeriod->id,
         'ar_account_id' => $this->arAccount->id,
         'revenue_account_id' => $this->salesAccount->id,
-        'invoice_number' => 'INV-TEST-' . uniqid(),
+        'invoice_number' => 'INV-TEST-'.uniqid(),
         'invoice_date' => now()->subDays(100),
         'due_date' => now()->subDays(70), // 70 days overdue
         'subtotal' => 15000.00,
@@ -340,7 +341,7 @@ it('INT-AR-BNK-005 — AR aging correctly categorizes outstanding invoices', fun
         ->where('due_date', '>=', $today->copy()->subDays(90))
         ->whereIn('status', ['approved', 'partially_paid'])
         ->sum('total_amount');
-    
+
     // Note: The 60-day invoice (40 days overdue) falls in 31-60 bucket, not 61-90
     // Due date 40 days ago is between 30-60 days ago from today
 
@@ -352,7 +353,7 @@ it('INT-AR-BNK-005 — AR aging correctly categorizes outstanding invoices', fun
     // Verify aging buckets
     // Current: due 25 days in future = not yet due = 10000
     // 1-30 days: due 10 days ago = 20000
-    // 31-60 days: due 40 days ago = 30000  
+    // 31-60 days: due 40 days ago = 30000
     // 61-90 days: due 70 days ago = 15000 (2026-01-05 is between 60-90 days ago)
     // Over 90: none = 0
     expect((float) $current)->toBe(10000.00);

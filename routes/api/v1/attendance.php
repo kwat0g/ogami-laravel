@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\Attendance\Models\EmployeeShiftAssignment;
 use App\Domains\Attendance\Models\ShiftSchedule;
 use App\Domains\HR\Models\Employee;
 use App\Http\Controllers\Attendance\AttendanceImportController;
 use App\Http\Controllers\Attendance\AttendanceLogController;
 use App\Http\Controllers\Attendance\OvertimeRequestController;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /*
 |--------------------------------------------------------------------------
@@ -167,13 +170,13 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
     })->name('shift-assignments.destroy');
 
     // ── Attendance Summary Report ────────────────────────────────────────────
-    Route::get('summary', function (Request $request): \Illuminate\Http\JsonResponse {
+    Route::get('summary', function (Request $request): JsonResponse {
         abort_unless($request->user()->can('attendance.view_team') || $request->user()->can('hr.full_access'), 403);
 
         $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to   = $request->input('to', now()->toDateString());
+        $to = $request->input('to', now()->toDateString());
 
-        $query = \App\Domains\Attendance\Models\AttendanceLog::query()
+        $query = AttendanceLog::query()
             ->whereBetween('work_date', [$from, $to])
             ->with('employee:id,first_name,last_name,department_id,employee_code');
 
@@ -186,19 +189,20 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
             ->groupBy('employee_id')
             ->map(function ($logs, $employeeId) {
                 $emp = $logs->first()->employee;
+
                 return [
-                    'employee_id'       => $employeeId,
-                    'employee_code'     => $emp->employee_code ?? '',
-                    'employee_name'     => trim(($emp->first_name ?? '') . ' ' . ($emp->last_name ?? '')),
-                    'days_present'      => $logs->where('is_present', true)->count(),
-                    'days_absent'       => $logs->where('is_absent', true)->count(),
-                    'days_rest'         => $logs->where('is_rest_day', true)->count(),
-                    'days_holiday'      => $logs->where('is_holiday', true)->count(),
-                    'total_worked_min'  => $logs->sum('worked_minutes'),
-                    'total_late_min'    => $logs->sum('late_minutes'),
-                    'total_ut_min'      => $logs->sum('undertime_minutes'),
-                    'total_ot_min'      => $logs->sum('overtime_minutes'),
-                    'total_nd_min'      => $logs->sum('night_diff_minutes'),
+                    'employee_id' => $employeeId,
+                    'employee_code' => $emp->employee_code ?? '',
+                    'employee_name' => trim(($emp->first_name ?? '').' '.($emp->last_name ?? '')),
+                    'days_present' => $logs->where('is_present', true)->count(),
+                    'days_absent' => $logs->where('is_absent', true)->count(),
+                    'days_rest' => $logs->where('is_rest_day', true)->count(),
+                    'days_holiday' => $logs->where('is_holiday', true)->count(),
+                    'total_worked_min' => $logs->sum('worked_minutes'),
+                    'total_late_min' => $logs->sum('late_minutes'),
+                    'total_ut_min' => $logs->sum('undertime_minutes'),
+                    'total_ot_min' => $logs->sum('overtime_minutes'),
+                    'total_nd_min' => $logs->sum('night_diff_minutes'),
                 ];
             })
             ->values();
@@ -207,17 +211,17 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
     })->name('summary');
 
     // ── DTR Export (CSV download) ─────────────────────────────────────────────
-    Route::get('dtr-export', function (Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {
+    Route::get('dtr-export', function (Request $request): StreamedResponse {
         abort_unless($request->user()->can('attendance.view_team') || $request->user()->can('hr.full_access'), 403);
 
         $employeeId = $request->integer('employee_id');
         abort_if($employeeId === 0, 422, 'employee_id is required.');
 
         $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to   = $request->input('to', now()->endOfMonth()->toDateString());
+        $to = $request->input('to', now()->endOfMonth()->toDateString());
 
         $employee = Employee::findOrFail($employeeId);
-        $logs = \App\Domains\Attendance\Models\AttendanceLog::where('employee_id', $employeeId)
+        $logs = AttendanceLog::where('employee_id', $employeeId)
             ->whereBetween('work_date', [$from, $to])
             ->orderBy('work_date')
             ->get();
@@ -226,7 +230,7 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
 
         return response()->streamDownload(function () use ($logs, $employee) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Daily Time Record — ' . trim($employee->first_name . ' ' . $employee->last_name) . ' (' . $employee->employee_code . ')']);
+            fputcsv($out, ['Daily Time Record — '.trim($employee->first_name.' '.$employee->last_name).' ('.$employee->employee_code.')']);
             fputcsv($out, []);
             fputcsv($out, ['Date', 'Time In', 'Time Out', 'Worked (hrs)', 'Late (min)', 'Undertime (min)', 'OT (min)', 'Night Diff (min)', 'Present', 'Absent', 'Rest Day', 'Holiday', 'Remarks']);
 

@@ -2,13 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Domains\AP\Models\Vendor;
+use App\Domains\AP\Models\VendorInvoice;
 use App\Jobs\AP\SendApDailyDigestJob;
 use App\Models\User;
 use App\Notifications\ApDailyDigestNotification;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
 
     $this->accountingManager = User::factory()->create();
     $this->accountingManager->givePermissionTo('vendor_invoices.approve');
@@ -20,7 +24,7 @@ beforeEach(function () {
 it('sends daily digest notification to accounting managers', function () {
     Notification::fake();
 
-    $job = new SendApDailyDigestJob();
+    $job = new SendApDailyDigestJob;
     $job->handle();
 
     Notification::assertSentTo(
@@ -32,7 +36,7 @@ it('sends daily digest notification to accounting managers', function () {
 it('does not send notification to users without accounting permissions', function () {
     Notification::fake();
 
-    $job = new SendApDailyDigestJob();
+    $job = new SendApDailyDigestJob;
     $job->handle();
 
     Notification::assertNotSentTo(
@@ -47,7 +51,7 @@ it('sends notification to multiple accounting managers', function () {
     $secondManager = User::factory()->create();
     $secondManager->givePermissionTo('vendor_invoices.approve');
 
-    $job = new SendApDailyDigestJob();
+    $job = new SendApDailyDigestJob;
     $job->handle();
 
     Notification::assertSentTo(
@@ -60,8 +64,8 @@ it('notification contains correct summary data', function () {
     Notification::fake();
 
     // Create some test invoices
-    \App\Domains\AP\Models\Vendor::factory()->create()->each(function ($vendor) {
-        \App\Domains\AP\Models\VendorInvoice::factory()->create([
+    Vendor::factory()->create()->each(function ($vendor) {
+        VendorInvoice::factory()->create([
             'vendor_id' => $vendor->id,
             'status' => 'pending',
             'due_date' => now()->addDays(3),
@@ -70,7 +74,7 @@ it('notification contains correct summary data', function () {
         ]);
     });
 
-    $job = new SendApDailyDigestJob();
+    $job = new SendApDailyDigestJob;
     $job->handle();
 
     Notification::assertSentTo($this->accountingManager, ApDailyDigestNotification::class, function ($notification) {
@@ -84,7 +88,7 @@ it('notification contains correct summary data', function () {
 });
 
 it('job uses notifications queue', function () {
-    $job = new SendApDailyDigestJob();
+    $job = new SendApDailyDigestJob;
 
     expect($job->queue)->toBe('default'); // Job itself uses default queue
 });
@@ -92,18 +96,18 @@ it('job uses notifications queue', function () {
 it('logs digest information', function () {
     Notification::fake();
 
-    \Illuminate\Support\Facades\Log::shouldReceive('info')
+    Log::shouldReceive('info')
         ->once()
-        ->with('[AP Daily Digest]', \Mockery::on(function ($data) {
+        ->with('[AP Daily Digest]', Mockery::on(function ($data) {
             return isset($data['date'])
                 && isset($data['pending_count'])
                 && isset($data['outstanding_balance_pesos']);
         }));
 
-    \Illuminate\Support\Facades\Log::shouldReceive('info')
+    Log::shouldReceive('info')
         ->once()
-        ->with(\Mockery::pattern('/Sent daily digest to \d+ accounting manager/'));
+        ->with(Mockery::pattern('/Sent daily digest to \d+ accounting manager/'));
 
-    $job = new SendApDailyDigestJob();
+    $job = new SendApDailyDigestJob;
     $job->handle();
 });

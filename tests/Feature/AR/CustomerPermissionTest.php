@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\AR\Models\Customer;
+use App\Domains\HR\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -17,8 +18,8 @@ beforeEach(function (): void {
 });
 
 test('purchasing officer can create customer with customers.manage permission', function (): void {
-    $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
-    
+    $acctgDept = Department::where('code', 'ACCTG')->first();
+
     $officer = User::factory()->create();
     $officer->assignRole('officer');
     $officer->departments()->attach($acctgDept->id, ['is_primary' => true]);
@@ -39,8 +40,8 @@ test('purchasing officer can create customer with customers.manage permission', 
 });
 
 test('purchasing officer can update active customer with customers.manage permission', function (): void {
-    $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
-    
+    $acctgDept = Department::where('code', 'ACCTG')->first();
+
     $officer = User::factory()->create();
     $officer->assignRole('officer');
     $officer->departments()->attach($acctgDept->id, ['is_primary' => true]);

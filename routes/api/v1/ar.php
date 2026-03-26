@@ -2,10 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Domains\AR\Models\Customer;
+use App\Domains\AR\Models\CustomerInvoice;
 use App\Http\Controllers\AR\CustomerController;
 use App\Http\Controllers\AR\CustomerCreditNoteController;
 use App\Http\Controllers\AR\CustomerInvoiceController;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /*
 |--------------------------------------------------------------------------
@@ -92,36 +99,38 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
         ->name('customer-credit-notes.post');
 
     // ── AR Aging Report ───────────────────────────────────────────────────────
-    Route::get('aging-report', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
-        $asOfDate = \Carbon\Carbon::parse($request->input('as_of_date', now()->toDateString()));
+    Route::get('aging-report', function (Request $request): JsonResponse {
+        $asOfDate = Carbon::parse($request->input('as_of_date', now()->toDateString()));
 
-        $invoices = \App\Domains\AR\Models\CustomerInvoice::with('customer:id,name')
+        $invoices = CustomerInvoice::with('customer:id,name')
             ->whereNotIn('status', ['cancelled', 'written_off'])
-            ->whereColumn('total_amount', '>', \Illuminate\Support\Facades\DB::raw("COALESCE((SELECT SUM(amount) FROM customer_payments WHERE customer_payments.customer_invoice_id = customer_invoices.id), 0)"))
+            ->whereColumn('total_amount', '>', DB::raw('COALESCE((SELECT SUM(amount) FROM customer_payments WHERE customer_payments.customer_invoice_id = customer_invoices.id), 0)'))
             ->get(['id', 'customer_id', 'invoice_number', 'due_date', 'total_amount', 'status']);
 
         $buckets = [];
         foreach ($invoices as $inv) {
             $paid = (float) $inv->payments()->sum('amount');
             $balance = max(0.0, round((float) $inv->total_amount - $paid, 2));
-            if ($balance <= 0) continue;
+            if ($balance <= 0) {
+                continue;
+            }
 
             $daysOverdue = max(0, (int) $inv->due_date->diffInDays($asOfDate, false));
             $bucket = match (true) {
-                $inv->due_date->isAfter($asOfDate)  => 'current',
-                $daysOverdue <= 30                    => '1_30',
-                $daysOverdue <= 60                    => '31_60',
-                $daysOverdue <= 90                    => '61_90',
-                default                               => 'over_90',
+                $inv->due_date->isAfter($asOfDate) => 'current',
+                $daysOverdue <= 30 => '1_30',
+                $daysOverdue <= 60 => '31_60',
+                $daysOverdue <= 90 => '61_90',
+                default => 'over_90',
             };
 
             $custId = $inv->customer_id;
-            if (!isset($buckets[$custId])) {
+            if (! isset($buckets[$custId])) {
                 $buckets[$custId] = [
-                    'customer_id'   => $custId,
+                    'customer_id' => $custId,
                     'customer_name' => $inv->customer->name ?? "Customer #{$custId}",
-                    'current'       => 0.0, '1_30' => 0.0, '31_60' => 0.0, '61_90' => 0.0, 'over_90' => 0.0,
-                    'total'         => 0.0,
+                    'current' => 0.0, '1_30' => 0.0, '31_60' => 0.0, '61_90' => 0.0, 'over_90' => 0.0,
+                    'total' => 0.0,
                 ];
             }
             $buckets[$custId][$bucket] = round($buckets[$custId][$bucket] + $balance, 2);
@@ -135,8 +144,8 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
     })->middleware('permission:reports.ar_aging')->name('ar.aging-report');
 
     // ── Customer Statement Export (CSV) ─────────────────────────────────────
-    Route::get('customers/{customer:ulid}/statement', function (\App\Domains\AR\Models\Customer $customer): \Symfony\Component\HttpFoundation\StreamedResponse {
-        $invoices = \Illuminate\Support\Facades\DB::table('customer_invoices')
+    Route::get('customers/{customer:ulid}/statement', function (Customer $customer): StreamedResponse {
+        $invoices = DB::table('customer_invoices')
             ->where('customer_id', $customer->id)
             ->select('invoice_number', 'invoice_date', 'due_date', 'total_amount', 'amount_paid', 'balance_due', 'status')
             ->orderBy('invoice_date')
@@ -144,7 +153,9 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
 
         return response()->streamDownload(function () use ($customer, $invoices) {
             $out = fopen('php://output', 'w');
-            if ($out === false) return;
+            if ($out === false) {
+                return;
+            }
             fputcsv($out, ['CUSTOMER STATEMENT OF ACCOUNT']);
             fputcsv($out, ['Customer', $customer->company_name ?? "#{$customer->id}"]);
             fputcsv($out, ['Generated', now()->format('Y-m-d H:i')]);
@@ -165,6 +176,6 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
             fputcsv($out, []);
             fputcsv($out, ['', '', '', '', 'TOTAL BALANCE:', number_format($totalBalance, 2)]);
             fclose($out);
-        }, "customer_statement_{$customer->id}_" . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+        }, "customer_statement_{$customer->id}_".now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('ar.customer-statement');
 });

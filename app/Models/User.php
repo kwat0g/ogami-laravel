@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domains\AP\Models\Vendor;
 use App\Domains\HR\Models\Department;
-use App\Services\DepartmentPermissionService;
+use App\Domains\HR\Models\Employee;
+use App\Services\DepartmentModuleService;
+use Carbon\Carbon;
+use Database\Factories\UserFactory;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Contracts\Permission;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -29,27 +35,28 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $vendor_id
  * @property int|null $client_id
  * @property string|null $timezone
- * @property \Carbon\Carbon|null $email_verified_at
- * @property \Carbon\Carbon|null $last_login_at
+ * @property Carbon|null $email_verified_at
+ * @property Carbon|null $last_login_at
  * @property int $failed_login_attempts
- * @property \Carbon\Carbon|null $locked_until
- * @property \Carbon\Carbon|null $password_changed_at
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $locked_until
+ * @property Carbon|null $password_changed_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Department> $departments
  * @property-read Department|null $primaryDepartment
  */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens;
-    use HasFactory;
-    use Notifiable;
 
+    use HasFactory;
     // Alias Spatie's hasPermissionTo so we can override it with department scoping.
     use HasRoles {
         hasPermissionTo as protected spatieHasPermissionTo;
     }
+
+    use Notifiable;
 
     /** @var list<string> */
     protected $fillable = [
@@ -117,7 +124,7 @@ class User extends Authenticatable
      */
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\HR\Models\Employee::class, 'employee_id');
+        return $this->belongsTo(Employee::class, 'employee_id');
     }
 
     /**
@@ -125,7 +132,7 @@ class User extends Authenticatable
      */
     public function vendor(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\AP\Models\Vendor::class, 'vendor_id');
+        return $this->belongsTo(Vendor::class, 'vendor_id');
     }
 
     // =========================================================================
@@ -194,7 +201,7 @@ class User extends Authenticatable
      *  2. Users WITH department assignments — use DepartmentModuleService (RBAC v2).
      *  3. Users WITHOUT department assignments — fall back to Spatie.
      *
-     * @param  string|\Spatie\Permission\Contracts\Permission  $permission
+     * @param  string|Permission  $permission
      */
     public function hasPermissionTo($permission, $guardName = null): bool
     {
@@ -214,7 +221,7 @@ class User extends Authenticatable
 
         // Step 3: For users WITH department assignments, use RBAC v2 module permissions.
         if ($this->departments()->exists()) {
-            return \App\Services\DepartmentModuleService::userHasPermission($this, $permName);
+            return DepartmentModuleService::userHasPermission($this, $permName);
         }
 
         // Step 4: For users without departments, fall back to Spatie's check.
@@ -227,9 +234,9 @@ class User extends Authenticatable
      * Used by UserPermissionsResource to send the correct permission list
      * to the frontend, ensuring sidebar and UI reflect actual access.
      *
-     * @return \Illuminate\Support\Collection<int, string>
+     * @return Collection<int, string>
      */
-    public function getEffectivePermissions(): \Illuminate\Support\Collection
+    public function getEffectivePermissions(): Collection
     {
         // System roles (super_admin, admin, executive, vice_president) always use
         // their full Spatie role permissions — DepartmentModuleService only handles
@@ -243,8 +250,8 @@ class User extends Authenticatable
 
         // RBAC v2: Use DepartmentModuleService for department-assigned users
         if ($this->departments()->exists()) {
-            $deptPerms = \App\Services\DepartmentModuleService::getUserPermissions($this);
-            
+            $deptPerms = DepartmentModuleService::getUserPermissions($this);
+
             // If department-scoped permissions are empty, fall back to Spatie role permissions
             if (empty($deptPerms)) {
                 return $this->permissions->pluck('name')
@@ -252,7 +259,7 @@ class User extends Authenticatable
                     ->unique()
                     ->values();
             }
-            
+
             return collect($deptPerms);
         }
 
@@ -269,7 +276,7 @@ class User extends Authenticatable
     public function clearDepartmentCache(): void
     {
         Cache::forget("user:{$this->id}:dept_codes");
-        
+
         // Clear module permission caches for all user's departments
         $role = $this->roles->first()?->name;
         if ($role) {
@@ -288,7 +295,7 @@ class User extends Authenticatable
      */
     public function rateLimitKey(): string
     {
-        return 'login:' . $this->email;
+        return 'login:'.$this->email;
     }
 
     /**

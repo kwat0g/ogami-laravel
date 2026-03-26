@@ -39,7 +39,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('roles')->where('name', 'head')   ->where('guard_name', 'web')->update(['name' => 'supervisor']);
+        DB::table('roles')->where('name', 'head')->where('guard_name', 'web')->update(['name' => 'supervisor']);
         DB::table('roles')->where('name', 'manager')->where('guard_name', 'web')->update(['name' => 'hr_manager']);
         DB::table('roles')->where('name', 'officer')->where('guard_name', 'web')->update(['name' => 'accounting_manager']);
     }

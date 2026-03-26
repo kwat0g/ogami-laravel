@@ -54,13 +54,13 @@ final class RecordLeaveAttendanceCorrection implements ShouldQueue
             AttendanceLog::updateOrCreate(
                 ['employee_id' => $employeeId, 'work_date' => $date->toDateString()],
                 [
-                    'source'          => 'leave_correction',
-                    'is_present'      => true,
-                    'is_absent'       => false,
-                    'worked_minutes'  => 480,
-                    'late_minutes'    => 0,
+                    'source' => 'leave_correction',
+                    'is_present' => true,
+                    'is_absent' => false,
+                    'worked_minutes' => 480,
+                    'late_minutes' => 0,
                     'undertime_minutes' => 0,
-                    'remarks'         => "On approved leave: {$leaveTypeName}",
+                    'remarks' => "On approved leave: {$leaveTypeName}",
                 ],
             );
         }

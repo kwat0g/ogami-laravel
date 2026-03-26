@@ -3,13 +3,16 @@
 declare(strict_types=1);
 
 use App\Domains\HR\Models\Employee;
+use App\Domains\Payroll\Models\PayrollAdjustment;
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Domains\Payroll\Pipeline\Step15LoanDeductionsStep;
 use App\Domains\Payroll\Pipeline\Step16OtherDeductionsStep;
+use App\Domains\Payroll\Pipeline\Step17NetPayStep;
 use App\Domains\Payroll\Services\PayrollComputationContext;
 use App\Shared\Exceptions\NegativeNetPayException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -101,7 +104,7 @@ describe('DED-001 — per-slot minimum-wage floor (Step 15)', function () {
         ]);
         $loanId = DB::table('loans')->insertGetId([
             'reference_no' => 'LN-TEST-00001',
-            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'ulid' => (string) Str::ulid(),
             'employee_id' => $ctx->employee->id,
             'loan_type_id' => $loanTypeId,
             'term_months' => 24,
@@ -153,7 +156,7 @@ describe('DED-001 — per-slot minimum-wage floor (Step 15)', function () {
         ]);
         $loanId = DB::table('loans')->insertGetId([
             'reference_no' => 'LN-TEST-00002',
-            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'ulid' => (string) Str::ulid(),
             'employee_id' => $ctx->employee->id,
             'loan_type_id' => $loanTypeId,
             'term_months' => 24,
@@ -205,7 +208,7 @@ describe('DED-001 — per-slot minimum-wage floor (Step 15)', function () {
         ]);
         $loanId = DB::table('loans')->insertGetId([
             'reference_no' => 'LN-TEST-00003',
-            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'ulid' => (string) Str::ulid(),
             'employee_id' => $ctx->employee->id,
             'loan_type_id' => $loanTypeId,
             'term_months' => 12,
@@ -266,7 +269,7 @@ describe('DED-001 — other deductions also respect the floor (Step 16)', functi
         ]);
 
         // Reload adjustments into context (Step09 normally does this)
-        $ctx->adjustments = \App\Domains\Payroll\Models\PayrollAdjustment::where('payroll_run_id', $run->id)
+        $ctx->adjustments = PayrollAdjustment::where('payroll_run_id', $run->id)
             ->where('employee_id', $employee->id)
             ->get();
 
@@ -305,7 +308,7 @@ describe('DED-002 — NegativeNetPayException (Step 17)', function () {
         $ctx->otherDeductionsCentavos = 0;
         $ctx->daysWorked = 13;
 
-        $step = new \App\Domains\Payroll\Pipeline\Step17NetPayStep;
+        $step = new Step17NetPayStep;
 
         expect(fn () => $step($ctx, fn ($c) => $c))
             ->toThrow(NegativeNetPayException::class);

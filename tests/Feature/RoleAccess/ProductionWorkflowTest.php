@@ -30,6 +30,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 uses()->group('feature', 'role-access', 'production');
@@ -44,61 +45,61 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 
     // Clear both Spatie permission cache and DepartmentModuleService's module-permission cache
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
     Cache::flush();
 
-    $this->prodDept  = Department::where('code', 'PROD')->firstOrFail();
+    $this->prodDept = Department::where('code', 'PROD')->firstOrFail();
     $this->acctgDept = Department::where('code', 'ACCTG')->firstOrFail();
 
     // Items: raw material + finished good
     $rawCat = ItemCategory::create(['code' => 'RAW', 'name' => 'Raw Materials', 'is_active' => true]);
-    $fgCat  = ItemCategory::create(['code' => 'FG',  'name' => 'Finished Goods', 'is_active' => true]);
+    $fgCat = ItemCategory::create(['code' => 'FG',  'name' => 'Finished Goods', 'is_active' => true]);
 
     $this->rawMaterial = ItemMaster::create([
-        'item_code'       => 'RM-WF-001',
-        'name'            => 'Steel Sheet',
+        'item_code' => 'RM-WF-001',
+        'name' => 'Steel Sheet',
         'unit_of_measure' => 'kg',
-        'category_id'     => $rawCat->id,
-        'item_type'       => 'raw_material',
-        'is_active'       => true,
+        'category_id' => $rawCat->id,
+        'item_type' => 'raw_material',
+        'is_active' => true,
     ]);
     $this->finishedGood = ItemMaster::create([
-        'item_code'       => 'FG-WF-001',
-        'name'            => 'Widget A',
+        'item_code' => 'FG-WF-001',
+        'name' => 'Widget A',
         'unit_of_measure' => 'pcs',
-        'category_id'     => $fgCat->id,
-        'item_type'       => 'finished_good',
-        'is_active'       => true,
+        'category_id' => $fgCat->id,
+        'item_type' => 'finished_good',
+        'is_active' => true,
     ]);
 
     // BOM: 2 kg raw per 1 unit finished good
     $this->bom = BillOfMaterials::create([
         'product_item_id' => $this->finishedGood->id,
-        'version'         => '1.0',
-        'is_active'       => true,
+        'version' => '1.0',
+        'is_active' => true,
     ]);
     BomComponent::create([
-        'bom_id'            => $this->bom->id,
+        'bom_id' => $this->bom->id,
         'component_item_id' => $this->rawMaterial->id,
-        'qty_per_unit'      => 2.0,
-        'unit_of_measure'   => 'kg',
-        'scrap_factor_pct'  => 0.0,
+        'qty_per_unit' => 2.0,
+        'unit_of_measure' => 'kg',
+        'scrap_factor_pct' => 0.0,
     ]);
 
     // Active warehouse location — required by deductBomComponents() on WO release
     $this->warehouse = WarehouseLocation::create([
-        'name'      => 'Test Warehouse',
-        'code'      => 'WH-PROD-TEST',
+        'name' => 'Test Warehouse',
+        'code' => 'WH-PROD-TEST',
         'is_active' => true,
     ]);
 
     // Minimal valid WO payload
     $this->woPayload = [
-        'product_item_id'   => $this->finishedGood->id,
-        'bom_id'            => $this->bom->id,
-        'qty_required'      => 5,
+        'product_item_id' => $this->finishedGood->id,
+        'bom_id' => $this->bom->id,
+        'qty_required' => 5,
         'target_start_date' => now()->addDays(1)->toDateString(),
-        'target_end_date'   => now()->addDays(7)->toDateString(),
+        'target_end_date' => now()->addDays(7)->toDateString(),
     ];
 });
 
@@ -108,7 +109,7 @@ function prodUser(string $role, Department $dept): User
     $user = User::factory()->create();
     $user->assignRole($role);
     $user->departments()->attach($dept->id, ['is_primary' => true]);
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     return $user;
 }
@@ -211,7 +212,7 @@ describe('WO release workflow', function () {
         $created = $this->actingAs($head, 'sanctum')
             ->postJson('/api/v1/production/orders', $this->woPayload)
             ->assertStatus(201);
-        $ulid    = $created->json('data.ulid');
+        $ulid = $created->json('data.ulid');
         $orderId = $created->json('data.id');
 
         $this->actingAs($head, 'sanctum')
@@ -237,22 +238,22 @@ describe('WO start — MRQ fulfillment gate', function () {
 
         // Create WO directly in 'released' state
         $order = ProductionOrder::create([
-            'product_item_id'   => $this->finishedGood->id,
-            'bom_id'            => $this->bom->id,
-            'qty_required'      => 5,
+            'product_item_id' => $this->finishedGood->id,
+            'bom_id' => $this->bom->id,
+            'qty_required' => 5,
             'target_start_date' => now()->addDays(1),
-            'target_end_date'   => now()->addDays(7),
-            'status'            => 'released',
-            'created_by_id'     => $manager->id,
+            'target_end_date' => now()->addDays(7),
+            'status' => 'released',
+            'created_by_id' => $manager->id,
         ]);
 
         // Link an unfulfilled MRQ to this WO (status = 'submitted' ≠ fulfilled/cancelled/rejected)
         MaterialRequisition::create([
             'production_order_id' => $order->id,
-            'department_id'       => $this->prodDept->id,
-            'status'              => 'submitted',
-            'purpose'             => 'Unfulfilled MRQ blocking WO start',
-            'requested_by_id'     => $manager->id,
+            'department_id' => $this->prodDept->id,
+            'status' => 'submitted',
+            'purpose' => 'Unfulfilled MRQ blocking WO start',
+            'requested_by_id' => $manager->id,
         ]);
 
         $this->actingAs($manager, 'sanctum')
@@ -265,22 +266,22 @@ describe('WO start — MRQ fulfillment gate', function () {
         $manager = prodUser('manager', $this->prodDept);
 
         $order = ProductionOrder::create([
-            'product_item_id'   => $this->finishedGood->id,
-            'bom_id'            => $this->bom->id,
-            'qty_required'      => 5,
+            'product_item_id' => $this->finishedGood->id,
+            'bom_id' => $this->bom->id,
+            'qty_required' => 5,
             'target_start_date' => now()->addDays(1),
-            'target_end_date'   => now()->addDays(7),
-            'status'            => 'released',
-            'created_by_id'     => $manager->id,
+            'target_end_date' => now()->addDays(7),
+            'status' => 'released',
+            'created_by_id' => $manager->id,
         ]);
 
         // All MRQs for this WO are fulfilled
         MaterialRequisition::create([
             'production_order_id' => $order->id,
-            'department_id'       => $this->prodDept->id,
-            'status'              => 'fulfilled',
-            'purpose'             => 'Fulfilled MRQ — should not block start',
-            'requested_by_id'     => $manager->id,
+            'department_id' => $this->prodDept->id,
+            'status' => 'fulfilled',
+            'purpose' => 'Fulfilled MRQ — should not block start',
+            'requested_by_id' => $manager->id,
         ]);
 
         $this->actingAs($manager, 'sanctum')
@@ -293,21 +294,21 @@ describe('WO start — MRQ fulfillment gate', function () {
         $manager = prodUser('manager', $this->prodDept);
 
         $order = ProductionOrder::create([
-            'product_item_id'   => $this->finishedGood->id,
-            'bom_id'            => $this->bom->id,
-            'qty_required'      => 5,
+            'product_item_id' => $this->finishedGood->id,
+            'bom_id' => $this->bom->id,
+            'qty_required' => 5,
             'target_start_date' => now()->addDays(1),
-            'target_end_date'   => now()->addDays(7),
-            'status'            => 'released',
-            'created_by_id'     => $manager->id,
+            'target_end_date' => now()->addDays(7),
+            'status' => 'released',
+            'created_by_id' => $manager->id,
         ]);
 
         MaterialRequisition::create([
             'production_order_id' => $order->id,
-            'department_id'       => $this->prodDept->id,
-            'status'              => 'cancelled',
-            'purpose'             => 'Cancelled MRQ — should not block start',
-            'requested_by_id'     => $manager->id,
+            'department_id' => $this->prodDept->id,
+            'status' => 'cancelled',
+            'purpose' => 'Cancelled MRQ — should not block start',
+            'requested_by_id' => $manager->id,
         ]);
 
         $this->actingAs($manager, 'sanctum')

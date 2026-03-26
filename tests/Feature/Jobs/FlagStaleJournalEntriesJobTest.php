@@ -7,12 +7,17 @@ use App\Domains\Accounting\Models\JournalEntry;
 use App\Jobs\Accounting\FlagStaleJournalEntriesJob;
 use App\Models\User;
 use App\Notifications\JournalEntryStaleNotification;
+use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\FiscalPeriodSeeder;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-    $this->seed(\Database\Seeders\FiscalPeriodSeeder::class);
-    $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
+    $this->seed(FiscalPeriodSeeder::class);
+    $this->seed(ChartOfAccountsSeeder::class);
 
     $this->drafter = User::factory()->create();
 
@@ -29,7 +34,7 @@ it('flags stale draft journal entries', function () {
         'updated_at' => now()->subDays(40),
     ]);
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 
     $staleEntry->refresh();
@@ -46,7 +51,7 @@ it('does not flag recent draft entries', function () {
         'updated_at' => now()->subDays(5),
     ]);
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 
     $recentEntry->refresh();
@@ -64,7 +69,7 @@ it('notifies drafter when their entry is flagged stale', function () {
         'updated_at' => now()->subDays(40),
     ]);
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 
     Notification::assertSentTo(
@@ -85,7 +90,7 @@ it('does not notify when no entries are flagged', function () {
         'updated_at' => now()->subDays(5),
     ]);
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 
     Notification::assertNothingSent();
@@ -114,7 +119,7 @@ it('groups notifications by drafter', function () {
         'updated_at' => now()->subDays(40),
     ]);
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 
     Notification::assertSentToTimes($this->drafter, JournalEntryStaleNotification::class, 3);
@@ -123,7 +128,7 @@ it('groups notifications by drafter', function () {
 
 it('loads thresholds from system settings', function () {
     // Set custom stale days
-    \Illuminate\Support\Facades\DB::table('system_settings')->updateOrInsert(
+    DB::table('system_settings')->updateOrInsert(
         ['key' => 'accounting.stale_draft_days'],
         ['value' => json_encode(15), 'created_at' => now(), 'updated_at' => now()]
     );
@@ -136,7 +141,7 @@ it('loads thresholds from system settings', function () {
         'updated_at' => now()->subDays(20),
     ]);
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 
     $entry->refresh();
@@ -145,7 +150,7 @@ it('loads thresholds from system settings', function () {
 
 it('auto-cancels entries after extended inactivity', function () {
     // Set cancel days
-    \Illuminate\Support\Facades\DB::table('system_settings')->updateOrInsert(
+    DB::table('system_settings')->updateOrInsert(
         ['key' => 'accounting.je_cancel_days'],
         ['value' => json_encode(60), 'created_at' => now(), 'updated_at' => now()]
     );
@@ -158,7 +163,7 @@ it('auto-cancels entries after extended inactivity', function () {
         'updated_at' => now()->subDays(70),
     ]);
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 
     $staleEntry->refresh();
@@ -176,14 +181,14 @@ it('logs flagging activity', function () {
         'updated_at' => now()->subDays(40),
     ]);
 
-    \Illuminate\Support\Facades\Log::shouldReceive('info')
+    Log::shouldReceive('info')
         ->once()
-        ->with(\Mockery::pattern('/Flagged \d+ draft JE\(s\) as stale/'));
+        ->with(Mockery::pattern('/Flagged \d+ draft JE\(s\) as stale/'));
 
-    \Illuminate\Support\Facades\Log::shouldReceive('info')
+    Log::shouldReceive('info')
         ->once()
-        ->with(\Mockery::pattern('/Sent stale notifications to \d+ drafter/'));
+        ->with(Mockery::pattern('/Sent stale notifications to \d+ drafter/'));
 
-    $job = new FlagStaleJournalEntriesJob();
+    $job = new FlagStaleJournalEntriesJob;
     $job->handle();
 });

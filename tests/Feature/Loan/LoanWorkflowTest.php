@@ -3,10 +3,18 @@
 declare(strict_types=1);
 
 use App\Domains\Accounting\Models\FiscalPeriod;
+use App\Domains\Accounting\Models\JournalEntry;
+use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Employee;
 use App\Domains\Loan\Models\Loan;
 use App\Domains\Loan\Models\LoanType;
 use App\Models\User;
+use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 
@@ -15,11 +23,11 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Seed required data
-    $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
-    $this->seed(\Database\Seeders\ModuleSeeder::class);
-    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
-    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
-    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
+    $this->seed(ChartOfAccountsSeeder::class);
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
 
     // Create fiscal period for current date
     FiscalPeriod::create([
@@ -30,7 +38,7 @@ beforeEach(function () {
     ]);
 
     // Create roles and permissions
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
 
     // Create loan type
     $this->loanType = LoanType::create([
@@ -45,7 +53,7 @@ beforeEach(function () {
     ]);
 
     // Get HR department for user assignments (RBAC v2)
-    $hrDept = \App\Domains\HR\Models\Department::where('code', 'HR')->first();
+    $hrDept = Department::where('code', 'HR')->first();
 
     // Create users with different roles
     $this->employeeUser = User::factory()->create();
@@ -67,7 +75,7 @@ beforeEach(function () {
     $this->vp = User::factory()->create();
     $this->vp->syncRoles(['vice_president']);
     $this->vp->departments()->attach($hrDept->id, ['is_primary' => true]);
-    
+
     $this->disburser = User::factory()->create();
     // Use an officer role but a different user for SoD
     $this->disburser->syncRoles(['officer']);
@@ -89,13 +97,13 @@ it('completes full loan v2 workflow with different approvers', function () {
             'deduction_cutoff' => '1st',
             'purpose' => 'Test V2 Workflow',
         ]);
-        
+
     $response->assertStatus(201);
     $loanUlid = $response->json('data.ulid') ?? $response->json('data.id');
     $loan = Loan::where('ulid', $loanUlid)->first();
-    
+
     expect($loan)->not->toBeNull();
-    
+
     expect($loan->workflow_version)->toBe(2);
     expect($loan->status)->toBe('pending');
 
@@ -180,7 +188,7 @@ it('creates GL entry on vp approval in v2 workflow', function () {
     // Verify GL entry was created
     expect($loan->journal_entry_id)->not->toBeNull();
 
-    $je = \App\Domains\Accounting\Models\JournalEntry::find($loan->journal_entry_id);
+    $je = JournalEntry::find($loan->journal_entry_id);
     expect($je)->not->toBeNull();
     expect($je->source_type)->toBe('loan');
     expect($je->source_id)->toBe($loan->id);
@@ -192,4 +200,3 @@ it('creates GL entry on vp approval in v2 workflow', function () {
     expect($totalDebit)->toBe(5000.0); // 5000 PHP
     expect($totalCredit)->toBe(5000.0);
 });
-

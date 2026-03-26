@@ -38,7 +38,7 @@ final class DeliveryScheduleController extends Controller
     {
         $this->authorize('view', $deliverySchedule);
 
-        return new DeliveryScheduleResource($deliverySchedule->load('customer', 'productItem', 'productionOrders'));
+        return new DeliveryScheduleResource($deliverySchedule->load('customer', 'productItem', 'productionOrders', 'deliveryReceipts'));
     }
 
     public function update(StoreDeliveryScheduleRequest $request, DeliverySchedule $deliverySchedule): DeliveryScheduleResource

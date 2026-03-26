@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 
 /*
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\Hash;
 --------------------------------------------------------------------------
 */
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);

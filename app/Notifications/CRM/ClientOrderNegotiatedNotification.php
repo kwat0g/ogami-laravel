@@ -54,12 +54,12 @@ final class ClientOrderNegotiatedNotification extends Notification implements Sh
             ->line('');
 
         // Show proposed changes
-        if (!empty($this->proposedChanges['delivery_date'])) {
+        if (! empty($this->proposedChanges['delivery_date'])) {
             $date = $this->proposedChanges['delivery_date'];
             $mail->line("📅 Proposed Delivery Date: {$date}");
         }
 
-        if (!empty($this->proposedChanges['items'])) {
+        if (! empty($this->proposedChanges['items'])) {
             $mail->line('📦 Item Changes:');
             foreach ($this->proposedChanges['items'] as $item) {
                 $line = "- Item {$item['item_id']}: ";
@@ -101,6 +101,7 @@ final class ClientOrderNegotiatedNotification extends Notification implements Sh
     private function getReasonText(): string
     {
         $reasons = ClientOrder::getNegotiationReasons();
+
         return $reasons[$this->reason] ?? $this->reason;
     }
 }

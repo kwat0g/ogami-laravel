@@ -42,12 +42,12 @@ final class VendorItemImport implements ToArray, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'item_code'      => ['required', 'string', 'max:50'],
-            'item_name'      => ['required', 'string', 'max:200'],
-            'description'    => ['nullable', 'string', 'max:1000'],
+            'item_code' => ['required', 'string', 'max:50'],
+            'item_name' => ['required', 'string', 'max:200'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'unit_of_measure' => ['nullable', 'string', 'max:20'],
-            'unit_price'     => ['required', 'numeric', 'min:0'],
-            'is_active'      => ['nullable'],
+            'unit_price' => ['required', 'numeric', 'min:0'],
+            'is_active' => ['nullable'],
         ];
     }
 }

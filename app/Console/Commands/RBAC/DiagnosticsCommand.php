@@ -7,12 +7,11 @@ namespace App\Console\Commands\RBAC;
 use App\Domains\HR\Models\Department;
 use App\Models\RBAC\Module;
 use App\Models\RBAC\ModulePermission;
-use App\Services\DepartmentModuleService;
 use Illuminate\Console\Command;
 
 /**
  * RBAC Diagnostics Command
- * 
+ *
  * Checks for misconfigurations in the module-based RBAC system:
  * - Departments without module assignments
  * - Invalid module keys
@@ -51,7 +50,7 @@ class DiagnosticsCommand extends Command
         $this->displaySummary($issues, $fixable);
 
         // Fix if requested
-        if ($this->option('fix') && !empty($fixable)) {
+        if ($this->option('fix') && ! empty($fixable)) {
             $this->applyFixes($fixable);
         }
 
@@ -71,6 +70,7 @@ class DiagnosticsCommand extends Command
 
         if ($orphans->isEmpty()) {
             $this->line('  ✓ All departments have module assignments');
+
             return;
         }
 
@@ -96,7 +96,7 @@ class DiagnosticsCommand extends Command
         $invalidFound = false;
 
         foreach ($departments as $dept) {
-            if (!in_array($dept->module_key, $validModules, true)) {
+            if (! in_array($dept->module_key, $validModules, true)) {
                 $issues[] = [
                     'type' => 'invalid_module',
                     'severity' => 'error',
@@ -108,7 +108,7 @@ class DiagnosticsCommand extends Command
             }
         }
 
-        if (!$invalidFound) {
+        if (! $invalidFound) {
             $this->line('  ✓ All module keys are valid');
         } else {
             $this->error('  ❌ Found departments with invalid module keys');
@@ -124,7 +124,7 @@ class DiagnosticsCommand extends Command
 
         foreach (Module::active()->get() as $module) {
             foreach ($coreRoles as $role) {
-                if (!ModulePermission::exists($module->module_key, $role)) {
+                if (! ModulePermission::exists($module->module_key, $role)) {
                     $issues[] = [
                         'type' => 'missing_permissions',
                         'severity' => 'warning',
@@ -138,7 +138,7 @@ class DiagnosticsCommand extends Command
             }
         }
 
-        if (!$missingFound) {
+        if (! $missingFound) {
             $this->line('  ✓ All module+role combinations have permissions');
         } else {
             $this->warn('  ⚠️  Found missing permission definitions');
@@ -167,7 +167,7 @@ class DiagnosticsCommand extends Command
         if (empty($emptyModules)) {
             $this->line('  ✓ All modules have permissions');
         } else {
-            $this->error('  ❌ Found ' . count($emptyModules) . ' modules without permissions');
+            $this->error('  ❌ Found '.count($emptyModules).' modules without permissions');
         }
     }
 
@@ -180,9 +180,9 @@ class DiagnosticsCommand extends Command
             $this->groupIssuesByType($issues)
         );
 
-        if (!empty($fixable)) {
+        if (! empty($fixable)) {
             $this->newLine();
-            $this->info('🔧 ' . count($fixable) . ' issues can be auto-fixed with --fix');
+            $this->info('🔧 '.count($fixable).' issues can be auto-fixed with --fix');
         }
     }
 
@@ -191,11 +191,12 @@ class DiagnosticsCommand extends Command
         $grouped = [];
         foreach ($issues as $issue) {
             $key = $issue['type'];
-            if (!isset($grouped[$key])) {
+            if (! isset($grouped[$key])) {
                 $grouped[$key] = ['type' => $key, 'severity' => $issue['severity'], 'count' => 0];
             }
             $grouped[$key]['count']++;
         }
+
         return array_values($grouped);
     }
 
@@ -221,7 +222,7 @@ class DiagnosticsCommand extends Command
     private function fixAssignModule(Department $dept): void
     {
         $this->warn("  Cannot auto-fix: Please assign module to {$dept->code} manually");
-        $this->line("    Suggested modules: " . implode(', ', Module::pluck('module_key')->toArray()));
+        $this->line('    Suggested modules: '.implode(', ', Module::pluck('module_key')->toArray()));
     }
 
     private function fixSeedPermissions($module, string $role): void

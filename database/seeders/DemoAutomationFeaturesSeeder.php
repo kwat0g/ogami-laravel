@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domains\AR\Models\Customer;
+use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -38,7 +39,7 @@ class DemoAutomationFeaturesSeeder extends Seeder
     private function createClientUser(): void
     {
         $systemUser = User::first();
-        
+
         $customer = Customer::firstOrCreate(
             ['email' => 'client@demo.com'],
             [
@@ -59,7 +60,7 @@ class DemoAutomationFeaturesSeeder extends Seeder
             ]
         );
 
-        if (!$user->hasRole('client')) {
+        if (! $user->hasRole('client')) {
             $user->assignRole('client');
         }
 
@@ -91,9 +92,9 @@ class DemoAutomationFeaturesSeeder extends Seeder
             ],
         ];
 
-        $category = \App\Domains\Inventory\Models\ItemCategory::first();
+        $category = ItemCategory::first();
         $categoryId = $category?->id ?? 1;
-        
+
         foreach ($items as $itemData) {
             ItemMaster::firstOrCreate(
                 ['item_code' => $itemData['item_code']],
@@ -108,7 +109,7 @@ class DemoAutomationFeaturesSeeder extends Seeder
             );
         }
 
-        $this->command->info('  ✓ ' . count($items) . ' finished goods items created');
+        $this->command->info('  ✓ '.count($items).' finished goods items created');
     }
 
     private function createSalesUser(): void
@@ -121,7 +122,7 @@ class DemoAutomationFeaturesSeeder extends Seeder
             ]
         );
 
-        if (!$user->hasRole('officer')) {
+        if (! $user->hasRole('officer')) {
             $user->assignRole('officer');
         }
 

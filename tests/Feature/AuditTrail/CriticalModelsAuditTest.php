@@ -13,12 +13,14 @@ use App\Domains\QC\Models\Inspection;
 use App\Domains\QC\Models\InspectionResult;
 use App\Domains\QC\Models\InspectionTemplate;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use OwenIt\Auditing\Models\Audit;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
     $this->user = User::factory()->create();
 });
 

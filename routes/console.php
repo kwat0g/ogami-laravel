@@ -7,6 +7,7 @@ use App\Jobs\Leave\RunLeaveAccrualJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -52,7 +53,7 @@ Schedule::command('backup:run --only-db')
     ->withoutOverlapping()
     ->onFailure(function () {
         // Admin will see a mail notification from Spatie Backup.
-        \Illuminate\Support\Facades\Log::error('[Backup] Daily DB backup FAILED');
+        Log::error('[Backup] Daily DB backup FAILED');
     });
 
 // Weekly cleanup — remove backups that no longer satisfy the retention policy.
@@ -84,7 +85,7 @@ Schedule::command('backup:verify --skip-backup')
     ->name('backup.verify-restore')
     ->withoutOverlapping()
     ->onFailure(function () {
-        \Illuminate\Support\Facades\Log::error('[Backup] Weekly restore verification FAILED');
+        Log::error('[Backup] Weekly restore verification FAILED');
     });
 
 // ── Horizon metrics snapshot ─────────────────────────────────────────────────

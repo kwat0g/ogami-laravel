@@ -30,8 +30,8 @@ final class SystemRestoreStarting implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
-            'filename'      => $this->filename,
-            'initiated_by'  => $this->initiatedBy,
+            'filename' => $this->filename,
+            'initiated_by' => $this->initiatedBy,
         ];
     }
 
@@ -40,7 +40,7 @@ final class SystemRestoreStarting implements ShouldBroadcastNow
         return 'system.restore.starting';
     }
 
-    /** @return \Illuminate\Broadcasting\Channel[] */
+    /** @return Channel[] */
     public function broadcastOn(): array
     {
         // Public channel — no auth required. Every connected client receives it.

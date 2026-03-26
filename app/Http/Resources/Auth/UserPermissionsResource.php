@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Auth;
 
+use App\Domains\HR\Models\Department;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -44,30 +45,30 @@ class UserPermissionsResource extends JsonResource
         // Resolve department IDs: pivot table first, fall back to legacy column, then employee department
         $deptRows = $user->departments()->get(['departments.id', 'departments.code', 'user_department_access.is_primary']);
         $deptIds = $deptRows->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
-        
+
         // Fallback 1: legacy department_id column
         if (empty($deptIds) && $user->department_id) {
             $deptIds = [(int) $user->department_id];
         }
-        
+
         // Fallback 2: employee's department
         if (empty($deptIds) && $user->employee?->department_id) {
             $deptIds = [(int) $user->employee->department_id];
         }
-        
+
         // Get primary department from pivot table
         $primaryDeptRow = $deptRows->firstWhere('pivot.is_primary', true) ?? ($deptRows->first() ?? null);
         $primaryDeptId = $primaryDeptRow?->id;
         $primaryDeptCode = $primaryDeptRow?->code;
-        
+
         // Fallback: get department code from employee's department if pivot table is empty
-        if (!$primaryDeptCode && $user->employee?->department) {
+        if (! $primaryDeptCode && $user->employee?->department) {
             $primaryDeptCode = $user->employee->department->code;
         }
-        
+
         // Fallback: get department code from legacy column
-        if (!$primaryDeptCode && $user->department_id) {
-            $dept = \App\Domains\HR\Models\Department::find($user->department_id);
+        if (! $primaryDeptCode && $user->department_id) {
+            $dept = Department::find($user->department_id);
             $primaryDeptCode = $dept?->code;
         }
 

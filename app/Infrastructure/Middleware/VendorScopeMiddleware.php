@@ -28,17 +28,17 @@ class VendorScopeMiddleware
 
         if (! $user || ! $user->hasRole('vendor')) {
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'VENDOR_PORTAL_ACCESS_DENIED',
-                'message'    => 'This endpoint is restricted to vendor portal users.',
+                'message' => 'This endpoint is restricted to vendor portal users.',
             ], 403);
         }
 
         if (empty($user->vendor_id)) {
             return response()->json([
-                'success'    => false,
+                'success' => false,
                 'error_code' => 'VENDOR_NOT_LINKED',
-                'message'    => 'Your account is not linked to a vendor. Please contact your system administrator.',
+                'message' => 'Your account is not linked to a vendor. Please contact your system administrator.',
             ], 403);
         }
 

@@ -19,7 +19,7 @@ return new class extends Migration
         });
 
         // Add CHECK constraint for non-negative prices
-        DB::statement("ALTER TABLE item_masters ADD CONSTRAINT chk_item_standard_price CHECK (standard_price_centavos IS NULL OR standard_price_centavos >= 0)");
+        DB::statement('ALTER TABLE item_masters ADD CONSTRAINT chk_item_standard_price CHECK (standard_price_centavos IS NULL OR standard_price_centavos >= 0)');
     }
 
     public function down(): void

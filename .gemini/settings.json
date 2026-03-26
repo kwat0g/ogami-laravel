@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "/usr/local/bin/npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "env": {
+        "CONTEXT7_API_KEY": "ctx7sk-6f18e9b3-6369-4f5a-9150-ac63ccc34384",
+        "NO_COLOR": "1",
+        "NODE_NO_WARNINGS": "1"
+      }
+    },
+    "socraticode": {
+      "command": "/home/kwat0g/.npm-global/bin/socraticode",
+      "args": ["mcp"],
+      "env": {
+        "PATH": "/home/kwat0g/.npm-global/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}

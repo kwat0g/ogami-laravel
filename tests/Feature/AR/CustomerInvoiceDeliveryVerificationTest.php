@@ -2,34 +2,40 @@
 
 declare(strict_types=1);
 
+use App\Domains\Accounting\Models\ChartOfAccount;
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\AR\Models\Customer;
-use App\Domains\AR\Models\CustomerInvoice;
 use App\Domains\AR\Services\CustomerInvoiceService;
 use App\Domains\Delivery\Models\DeliveryReceipt;
+use App\Models\User;
 use App\Shared\Exceptions\DomainException;
+use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\FiscalPeriodSeeder;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-    $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
-    $this->seed(\Database\Seeders\FiscalPeriodSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
+    $this->seed(ChartOfAccountsSeeder::class);
+    $this->seed(FiscalPeriodSeeder::class);
 
-    $this->user = \App\Models\User::factory()->create();
+    $this->user = User::factory()->create();
     $this->actingAs($this->user);
 
     $this->customer = Customer::factory()->create(['is_active' => true, 'created_by' => $this->user->id]);
-    $this->fiscalPeriod = \App\Domains\Accounting\Models\FiscalPeriod::first();
+    $this->fiscalPeriod = FiscalPeriod::first();
 
     // Get real account IDs from database
-    $this->arAccount = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'ASSET')->first();
-    $this->revAccount = \App\Domains\Accounting\Models\ChartOfAccount::where('account_type', 'REVENUE')->first();
+    $this->arAccount = ChartOfAccount::where('account_type', 'ASSET')->first();
+    $this->revAccount = ChartOfAccount::where('account_type', 'REVENUE')->first();
 
     $this->service = app(CustomerInvoiceService::class);
 });
 
 it('allows creating invoice with valid delivered receipt', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $this->customer->id,
         'status' => 'delivered',
@@ -64,7 +70,7 @@ it('throws exception when delivery receipt not found', function () {
 });
 
 it('throws exception when delivery receipt belongs to different customer', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $otherCustomer = Customer::factory()->create(['is_active' => true, 'created_by' => $user->id]);
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $otherCustomer->id,
@@ -85,7 +91,7 @@ it('throws exception when delivery receipt belongs to different customer', funct
 });
 
 it('throws exception when delivery is not completed', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $this->customer->id,
         'status' => 'draft',
@@ -105,7 +111,7 @@ it('throws exception when delivery is not completed', function () {
 });
 
 it('throws exception when delivery receipt is already invoiced', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $deliveryReceipt = DeliveryReceipt::factory()->create([
         'customer_id' => $this->customer->id,
         'status' => 'delivered',

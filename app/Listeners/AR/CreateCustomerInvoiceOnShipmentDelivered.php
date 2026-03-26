@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Listeners\AR;
 
-use App\Domains\AR\Services\CustomerInvoiceService;
 use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
+use App\Domains\AR\Services\CustomerInvoiceService;
 use App\Events\Delivery\ShipmentDelivered;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
@@ -57,7 +57,7 @@ final class CreateCustomerInvoiceOnShipmentDelivered implements ShouldQueue
             if ($customer === null) {
                 Log::warning('Auto AR invoice skipped — delivery receipt has no customer (inbound or unlinked)', [
                     'shipment_id' => $shipment->id,
-                    'dr_id'       => $dr->id,
+                    'dr_id' => $dr->id,
                 ]);
 
                 return;
@@ -73,7 +73,7 @@ final class CreateCustomerInvoiceOnShipmentDelivered implements ShouldQueue
             }
 
             // Resolve GL accounts by standard code (seeded)
-            $arAccount      = ChartOfAccount::where('code', '3001')->first();
+            $arAccount = ChartOfAccount::where('code', '3001')->first();
             $revenueAccount = ChartOfAccount::where('code', '4001')->first();
 
             // Compute subtotal from delivery schedule if available
@@ -84,24 +84,24 @@ final class CreateCustomerInvoiceOnShipmentDelivered implements ShouldQueue
                 $subtotal = round((float) $schedule->unit_price * (float) $schedule->qty_ordered, 2);
             }
 
-            $vatRate   = 0.12; // Philippine standard VAT
+            $vatRate = 0.12; // Philippine standard VAT
             $vatAmount = $subtotal > 0 ? round($subtotal * $vatRate, 2) : 0.0;
 
             $description = $subtotal > 0
-                ? "Auto-created from Shipment {$shipment->ulid}" . ($schedule !== null ? " / DS {$schedule->ds_reference}" : '')
+                ? "Auto-created from Shipment {$shipment->ulid}".($schedule !== null ? " / DS {$schedule->ds_reference}" : '')
                 : "Auto-created from Shipment {$shipment->ulid} — unit price not set on delivery schedule. Update subtotal before approving.";
 
             $this->invoiceService->create(
                 customer: $customer,
                 data: [
-                    'fiscal_period_id'  => $fiscalPeriod->id,
-                    'ar_account_id'     => $arAccount?->id,
+                    'fiscal_period_id' => $fiscalPeriod->id,
+                    'ar_account_id' => $arAccount?->id,
                     'revenue_account_id' => $revenueAccount?->id,
-                    'invoice_date'      => now()->toDateString(),
-                    'due_date'          => now()->addDays(30)->toDateString(),
-                    'subtotal'          => $subtotal,
-                    'vat_amount'        => $vatAmount,
-                    'description'       => $description,
+                    'invoice_date' => now()->toDateString(),
+                    'due_date' => now()->addDays(30)->toDateString(),
+                    'subtotal' => $subtotal,
+                    'vat_amount' => $vatAmount,
+                    'description' => $description,
                     'bypass_credit_check' => true,
                 ],
                 userId: 1, // system actor
@@ -113,7 +113,7 @@ final class CreateCustomerInvoiceOnShipmentDelivered implements ShouldQueue
             // Log but do not re-throw — shipment delivery must not roll back due to AR failure.
             Log::error('Auto AR invoice creation failed after shipment delivered', [
                 'shipment_id' => $shipment->id,
-                'error'       => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

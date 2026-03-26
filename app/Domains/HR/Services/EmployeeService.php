@@ -214,13 +214,13 @@ final class EmployeeService implements ServiceContract
 
         return DB::transaction(function () use ($employee, $toState, $requestedByUserId): Employee {
             $originalState = $employee->employment_status;
-            
+
             $this->stateMachine->transition($employee, $toState);
             $employee->save();
 
             // Generate clearance checklist when transitioning to resigned/terminated
-            if (in_array($toState, ['resigned', 'terminated'], true) && 
-                !in_array($originalState, ['resigned', 'terminated'], true)) {
+            if (in_array($toState, ['resigned', 'terminated'], true) &&
+                ! in_array($originalState, ['resigned', 'terminated'], true)) {
                 $user = User::find($requestedByUserId);
                 $this->clearanceService->generateClearanceChecklist($employee, $user);
             }

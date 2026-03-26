@@ -23,7 +23,7 @@ final class PurchaseRequestResource extends JsonResource
             'vendor_id' => $pr->vendor_id,
             'department_id' => $pr->department_id,
             'department' => $this->whenLoaded('department', fn () => $pr->department ? [
-                'id'   => $pr->department->id,
+                'id' => $pr->department->id,
                 'name' => $pr->department->name,
             ] : null),
             'urgency' => $pr->urgency,

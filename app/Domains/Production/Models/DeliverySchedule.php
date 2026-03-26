@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Production\Models;
 
 use App\Domains\AR\Models\Customer;
+use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -69,5 +70,10 @@ final class DeliverySchedule extends Model implements Auditable
     public function productionOrders(): HasMany
     {
         return $this->hasMany(ProductionOrder::class, 'delivery_schedule_id');
+    }
+
+    public function deliveryReceipts(): HasMany
+    {
+        return $this->hasMany(DeliveryReceipt::class, 'delivery_schedule_id');
     }
 }

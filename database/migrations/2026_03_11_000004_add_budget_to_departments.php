@@ -18,11 +18,11 @@ return new class extends Migration
     {
         Schema::table('departments', function (Blueprint $table): void {
             $table->unsignedBigInteger('annual_budget_centavos')->default(0)
-                  ->after('cost_center_code')
-                  ->comment('Procurement budget cap. 0 = no ceiling enforced. ₱1 = 100.');
+                ->after('cost_center_code')
+                ->comment('Procurement budget cap. 0 = no ceiling enforced. ₱1 = 100.');
             $table->unsignedTinyInteger('fiscal_year_start_month')->default(1)
-                  ->after('annual_budget_centavos')
-                  ->comment('Month the fiscal year starts (1 = January, 7 = July, etc.)');
+                ->after('annual_budget_centavos')
+                ->comment('Month the fiscal year starts (1 = January, 7 = July, etc.)');
         });
     }
 

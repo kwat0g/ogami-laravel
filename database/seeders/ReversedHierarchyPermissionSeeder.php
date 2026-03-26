@@ -82,12 +82,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'payroll.initiate_run', 'payroll.compute', 'payroll.publish', 'payroll.download_reports',
         ];
 
-        $head    = array_merge($staffBase, $headAdds);
+        $head = array_merge($staffBase, $headAdds);
         $officer = array_merge($head, $officerAdds);
         $manager = array_merge($officer, $managerAdds);
 
-        $this->updateModulePermission('hr', 'staff',   $staffBase);
-        $this->updateModulePermission('hr', 'head',    $head);
+        $this->updateModulePermission('hr', 'staff', $staffBase);
+        $this->updateModulePermission('hr', 'head', $head);
         $this->updateModulePermission('hr', 'officer', $officer);
         $this->updateModulePermission('hr', 'manager', $manager);
 
@@ -167,12 +167,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'accounting.full_access',
         ];
 
-        $head    = array_merge($staffBase, $headAdds);
+        $head = array_merge($staffBase, $headAdds);
         $officer = array_merge($head, $officerAdds);
         $manager = array_merge($officer, $managerAdds);
 
-        $this->updateModulePermission('accounting', 'staff',   $staffBase);
-        $this->updateModulePermission('accounting', 'head',    $head);
+        $this->updateModulePermission('accounting', 'staff', $staffBase);
+        $this->updateModulePermission('accounting', 'head', $head);
         $this->updateModulePermission('accounting', 'officer', $officer);
         $this->updateModulePermission('accounting', 'manager', $manager);
 
@@ -246,12 +246,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'delivery.manage',
         ];
 
-        $head    = array_merge($staffBase, $headAdds);
+        $head = array_merge($staffBase, $headAdds);
         $officer = array_merge($head, $officerAdds);
         $manager = array_merge($officer, $managerAdds);
 
-        $this->updateModulePermission('production', 'staff',   $staffBase);
-        $this->updateModulePermission('production', 'head',    $head);
+        $this->updateModulePermission('production', 'staff', $staffBase);
+        $this->updateModulePermission('production', 'head', $head);
         $this->updateModulePermission('production', 'officer', $officer);
         $this->updateModulePermission('production', 'manager', $manager);
 
@@ -318,12 +318,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'procurement.rfq.send',
         ];
 
-        $head    = array_merge($staffBase, $headAdds);
+        $head = array_merge($staffBase, $headAdds);
         $officer = array_merge($head, $officerAdds);
         $manager = array_merge($officer, $managerAdds);
 
-        $this->updateModulePermission('purchasing', 'staff',   $staffBase);
-        $this->updateModulePermission('purchasing', 'head',    $head);
+        $this->updateModulePermission('purchasing', 'staff', $staffBase);
+        $this->updateModulePermission('purchasing', 'head', $head);
         $this->updateModulePermission('purchasing', 'officer', $officer);
         $this->updateModulePermission('purchasing', 'manager', $manager);
 
@@ -382,12 +382,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'delivery.manage',
         ];
 
-        $head    = array_merge($staffBase, $headAdds);
+        $head = array_merge($staffBase, $headAdds);
         $officer = array_merge($head, $officerAdds);
         $manager = array_merge($officer, $managerAdds);
 
-        $this->updateModulePermission('warehouse', 'staff',   $staffBase);
-        $this->updateModulePermission('warehouse', 'head',    $head);
+        $this->updateModulePermission('warehouse', 'staff', $staffBase);
+        $this->updateModulePermission('warehouse', 'head', $head);
         $this->updateModulePermission('warehouse', 'officer', $officer);
         $this->updateModulePermission('warehouse', 'manager', $manager);
 
@@ -443,12 +443,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'crm.tickets.assign', 'crm.tickets.close',
         ];
 
-        $head    = array_merge($staffBase, $headAdds);
+        $head = array_merge($staffBase, $headAdds);
         $officer = array_merge($head, $officerAdds);
         $manager = array_merge($officer, $managerAdds);
 
-        $this->updateModulePermission('sales', 'staff',   $staffBase);
-        $this->updateModulePermission('sales', 'head',    $head);
+        $this->updateModulePermission('sales', 'staff', $staffBase);
+        $this->updateModulePermission('sales', 'head', $head);
         $this->updateModulePermission('sales', 'officer', $officer);
         $this->updateModulePermission('sales', 'manager', $manager);
 
@@ -499,12 +499,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'system.settings.manage',
         ];
 
-        $head    = array_merge($staffBase, $headAdds);
+        $head = array_merge($staffBase, $headAdds);
         $officer = array_merge($head, $officerAdds);
         $manager = array_merge($officer, $managerAdds);
 
-        $this->updateModulePermission('operations', 'staff',   $staffBase);
-        $this->updateModulePermission('operations', 'head',    $head);
+        $this->updateModulePermission('operations', 'staff', $staffBase);
+        $this->updateModulePermission('operations', 'head', $head);
         $this->updateModulePermission('operations', 'officer', $officer);
         $this->updateModulePermission('operations', 'manager', $manager);
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Listeners\Inventory;
 
 use App\Domains\Inventory\Models\ItemMaster;
+use App\Domains\Inventory\Models\WarehouseLocation;
 use App\Domains\Inventory\Services\StockService;
-use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Events\Procurement\ThreeWayMatchPassed;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Log;
  * (e.g. due to after_commit/immediate double-dispatch), only one stock write
  * occurs per GR.
  */
-final class LinkGoodsReceiptToInventory implements ShouldQueue, ShouldBeUnique
+final class LinkGoodsReceiptToInventory implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
 
@@ -36,7 +36,7 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue, ShouldBeUnique
     /** Unique per GR id — prevents duplicate stock writes for the same GR. */
     public function uniqueId(ThreeWayMatchPassed $event): string
     {
-        return 'gr-stock-' . $event->goodsReceipt->id;
+        return 'gr-stock-'.$event->goodsReceipt->id;
     }
 
     public function handle(ThreeWayMatchPassed $event): void
@@ -50,16 +50,18 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue, ShouldBeUnique
         $systemUser = User::where('email', 'admin@ogamierp.local')->first();
         if ($systemUser === null) {
             Log::warning('LinkGoodsReceiptToInventory: no system user found, skipping.');
+
             return;
         }
 
         // Use first active location as default receiving location
-        $defaultLocation = \App\Domains\Inventory\Models\WarehouseLocation::where('is_active', true)
+        $defaultLocation = WarehouseLocation::where('is_active', true)
             ->orderBy('id')
             ->first();
 
         if ($defaultLocation === null) {
             Log::warning('LinkGoodsReceiptToInventory: no warehouse locations configured, skipping.');
+
             return;
         }
 
@@ -70,7 +72,7 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue, ShouldBeUnique
 
             if ($itemMasterId === null && $grItem->po_item_id !== null) {
                 $poItem = $grItem->poItem;
-                $desc   = $poItem?->item_description ?? '';
+                $desc = $poItem?->item_description ?? '';
 
                 if (preg_match('/\(([A-Z0-9\-]+)\)/', $desc, $m)) {
                     $itemMasterId = ItemMaster::where('item_code', $m[1])->value('id');
@@ -87,6 +89,7 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue, ShouldBeUnique
 
             if ($itemMasterId === null) {
                 Log::info("LinkGoodsReceiptToInventory: skipping GR item #{$grItem->id} — no item_master_id resolved.");
+
                 continue;
             }
 
@@ -98,10 +101,10 @@ final class LinkGoodsReceiptToInventory implements ShouldQueue, ShouldBeUnique
                     referenceType: 'goods_receipts',
                     referenceId: $gr->id,
                     actor: $systemUser,
-                    lotNumber: 'GR-' . $gr->id . '-L' . $grItem->id,
+                    lotNumber: 'GR-'.$gr->id.'-L'.$grItem->id,
                     receivedFrom: 'vendor',
                     receivedDate: now()->toDateString(),
-                    remarks: 'Auto-received from GR #' . $gr->id,
+                    remarks: 'Auto-received from GR #'.$gr->id,
                 );
             } catch (\Throwable $e) {
                 Log::error("LinkGoodsReceiptToInventory: failed for item {$itemMasterId}", [

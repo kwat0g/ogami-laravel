@@ -113,16 +113,16 @@ return new class extends Migration
             $table->timestamp('created_at')->useCurrent();
         });
 
-        DB::statement("
+        DB::statement('
             ALTER TABLE purchase_request_items
             ADD CONSTRAINT chk_pri_qty_positive  CHECK (quantity > 0),
             ADD CONSTRAINT chk_pri_cost_positive CHECK (estimated_unit_cost > 0)
-        ");
+        ');
 
         // ── Trigger: update total_estimated_cost on item changes ─────────────
-        DB::statement("
+        DB::statement('
             CREATE OR REPLACE FUNCTION update_pr_total()
-            RETURNS TRIGGER LANGUAGE plpgsql AS \$\$
+            RETURNS TRIGGER LANGUAGE plpgsql AS $$
             BEGIN
                 UPDATE purchase_requests
                 SET total_estimated_cost = (
@@ -134,14 +134,14 @@ return new class extends Migration
                 WHERE id = COALESCE(NEW.purchase_request_id, OLD.purchase_request_id);
                 RETURN NEW;
             END;
-            \$\$
-        ");
+            $$
+        ');
 
-        DB::statement("
+        DB::statement('
             CREATE TRIGGER trg_pr_total
             AFTER INSERT OR UPDATE OR DELETE ON purchase_request_items
             FOR EACH ROW EXECUTE FUNCTION update_pr_total()
-        ");
+        ');
 
         // ── Indexes ──────────────────────────────────────────────────────────
         DB::statement('CREATE INDEX idx_pr_status     ON purchase_requests(status)');

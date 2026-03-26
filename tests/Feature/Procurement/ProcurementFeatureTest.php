@@ -2,20 +2,26 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Department;
 use App\Models\User;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 uses()->group('feature', 'procurement');
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-    $this->seed(\Database\Seeders\ModuleSeeder::class);
-    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
-    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
-    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
 
-    $purchDept = \App\Domains\HR\Models\Department::where('code', 'PURCH')->first();
+    $purchDept = Department::where('code', 'PURCH')->first();
     $this->manager = User::factory()->create();
     $this->manager->assignRole('manager');
     $this->manager->departments()->attach($purchDept->id, ['is_primary' => true]);

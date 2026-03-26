@@ -9,6 +9,8 @@ use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Employee;
 use App\Domains\HR\Models\Position;
 use App\Domains\Payroll\Models\PayrollRun;
+use App\Models\User;
+use Illuminate\Foundation\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -25,31 +27,31 @@ final class PayrollTestHelper
      */
     public static function seedRateTables(): void
     {
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'SssContributionTableSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'PagibigContributionTableSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'PhilhealthPremiumTableSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'TrainTaxBracketSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'MinimumWageRateSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'OvertimeMultiplierSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'SystemSettingsSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'HolidayCalendarSeeder',
         ]);
-        app(\Illuminate\Foundation\Console\Kernel::class)->call('db:seed', [
+        app(Kernel::class)->call('db:seed', [
             '--class' => 'LeaveTypeSeeder',
         ]);
     }
@@ -125,9 +127,9 @@ final class PayrollTestHelper
     /**
      * Return (or create) a minimal system user for foreign-key requirements.
      */
-    public static function makeSystemUser(): \App\Models\User
+    public static function makeSystemUser(): User
     {
-        return \App\Models\User::firstOrCreate(
+        return User::firstOrCreate(
             ['email' => 'system-test@ogami.test'],
             [
                 'name' => 'System Test',

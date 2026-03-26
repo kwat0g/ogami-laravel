@@ -8,6 +8,7 @@ use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Payroll\Models\PayrollAdjustment;
 use App\Domains\Payroll\Services\PayrollComputationService;
 use App\Domains\Payroll\Services\PayrollPostingService;
+use App\Models\User;
 use Tests\Support\PayrollTestHelper;
 
 beforeEach(function () {
@@ -29,12 +30,12 @@ beforeEach(function () {
 it('INT-PAY-GL-005 — custom deduction maps to specific GL account', function () {
     $employee = PayrollTestHelper::makeEmployee(30_000.00);
     $run = PayrollTestHelper::makeRun('2025-10-16', '2025-10-31');
-    $user = \App\Models\User::first();
+    $user = User::first();
     PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-31');
 
     // Fetch a specific GL account to target (e.g., 6001 - Utilities Expense, though unusual for deduction, it proves mapping)
     $targetAccount = ChartOfAccount::where('code', '6001')->firstOrFail();
-    
+
     // Create a deduction with this GL account
     PayrollAdjustment::create([
         'payroll_run_id' => $run->id,
@@ -49,7 +50,7 @@ it('INT-PAY-GL-005 — custom deduction maps to specific GL account', function (
 
     // Compute
     $this->computeSvc->computeForEmployee($employee, $run);
-    
+
     // Verify status is applied (Step16 logic)
     $adjustment = PayrollAdjustment::where('payroll_run_id', $run->id)->first();
     expect($adjustment->status)->toBe('applied');
@@ -67,7 +68,7 @@ it('INT-PAY-GL-005 — custom deduction maps to specific GL account', function (
 
     // Check if we have a credit line for account 6001
     $creditLine = $je->lines()->where('account_id', $targetAccount->id)->first();
-    
+
     expect($creditLine)->not->toBeNull();
     expect((float) $creditLine->credit)->toBe(500.00);
     expect($creditLine->description)->toBe('Payroll deduction: Utility Bill Deduction');
@@ -81,12 +82,12 @@ it('INT-PAY-GL-005 — custom deduction maps to specific GL account', function (
 it('INT-PAY-GL-006 — mixed deductions (custom GL and default)', function () {
     $employee = PayrollTestHelper::makeEmployee(30_000.00);
     $run = PayrollTestHelper::makeRun('2025-10-16', '2025-10-31');
-    $user = \App\Models\User::first();
+    $user = User::first();
     PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-31');
 
     $customAccount = ChartOfAccount::where('code', '6001')->firstOrFail();
     $defaultAccount = ChartOfAccount::where('code', '2001')->firstOrFail(); // Default AP
-    
+
     // 1. Custom GL Deduction
     PayrollAdjustment::create([
         'payroll_run_id' => $run->id,
@@ -112,7 +113,7 @@ it('INT-PAY-GL-006 — mixed deductions (custom GL and default)', function () {
     ]);
 
     $this->computeSvc->computeForEmployee($employee, $run);
-    
+
     $run->status = 'locked';
     $run->save();
     $this->postSvc->postPayrollRun($run);

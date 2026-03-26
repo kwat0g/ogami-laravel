@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 /**
  * Show User Permissions Command
- * 
+ *
  * Displays a user's effective permissions based on role + department modules.
  * Usage: php artisan rbac:show-user user@example.com
  */
@@ -32,8 +32,9 @@ class ShowUserPermissionsCommand extends Command
             ? User::find($userIdentifier)
             : User::where('email', $userIdentifier)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->error("❌ User '{$userIdentifier}' not found");
+
             return self::FAILURE;
         }
 
@@ -45,7 +46,7 @@ class ShowUserPermissionsCommand extends Command
         $this->info("Roles: {$roles}");
 
         // Show departments
-        $departments = $user->departments->map(fn($d) => "{$d->code}" . ($d->module_key ? " ({$d->module_key})" : ''))->implode(', ');
+        $departments = $user->departments->map(fn ($d) => "{$d->code}".($d->module_key ? " ({$d->module_key})" : ''))->implode(', ');
         $this->info("Departments: {$departments}");
 
         // Get effective permissions
@@ -61,12 +62,14 @@ class ShowUserPermissionsCommand extends Command
 
         if ($count === 0) {
             $this->warn('  No permissions assigned');
+
             return self::SUCCESS;
         }
 
         // Check for universal access
         if (in_array('*', $permissions, true)) {
             $this->warn('  🌟 Universal access (superadmin)');
+
             return self::SUCCESS;
         }
 
@@ -91,7 +94,7 @@ class ShowUserPermissionsCommand extends Command
     private function displayGroupedPermissions(array $permissions): void
     {
         $groups = [];
-        
+
         foreach ($permissions as $perm) {
             $parts = explode('.', $perm);
             $group = $parts[0] ?? 'other';
@@ -102,13 +105,13 @@ class ShowUserPermissionsCommand extends Command
 
         foreach ($groups as $group => $perms) {
             $this->newLine();
-            $this->info("  📁 {$group} (" . count($perms) . ")");
+            $this->info("  📁 {$group} (".count($perms).')');
             sort($perms);
             foreach (array_slice($perms, 0, 10) as $perm) {
                 $this->line("    - {$perm}");
             }
             if (count($perms) > 10) {
-                $this->line("    ... and " . (count($perms) - 10) . " more");
+                $this->line('    ... and '.(count($perms) - 10).' more');
             }
         }
     }

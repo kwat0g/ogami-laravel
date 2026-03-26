@@ -8,13 +8,15 @@ use App\Domains\CRM\Services\ClientOrderService;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Models\User;
 use App\Shared\Exceptions\DomainException;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 uses()->group('feature', 'crm', 'client-orders');
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
 
     // Sales agent (approver)
     $this->salesUser = User::factory()->create();
@@ -48,8 +50,8 @@ it('blocks order submission when customer credit limit would be exceeded', funct
     expect(fn () => $this->service->submitOrder(
         customerId: $this->customer->id,
         items: [[
-            'item_master_id'    => $this->item->id,
-            'quantity'          => 600,
+            'item_master_id' => $this->item->id,
+            'quantity' => 600,
             'unit_price_centavos' => 100_00,
         ]],
         submittedByUserId: $this->clientUser->id
@@ -60,8 +62,8 @@ it('allows order submission within credit limit', function () {
     $order = $this->service->submitOrder(
         customerId: $this->customer->id,
         items: [[
-            'item_master_id'    => $this->item->id,
-            'quantity'          => 10, // ₱1,000 total — well within ₱50,000 limit
+            'item_master_id' => $this->item->id,
+            'quantity' => 10, // ₱1,000 total — well within ₱50,000 limit
             'unit_price_centavos' => 100_00,
         ]],
         submittedByUserId: $this->clientUser->id
@@ -88,8 +90,8 @@ it('blocks order when item price is below standard price', function () {
     expect(fn () => $this->service->submitOrder(
         customerId: $this->customer->id,
         items: [[
-            'item_master_id'    => $this->item->id,
-            'quantity'          => 1,
+            'item_master_id' => $this->item->id,
+            'quantity' => 1,
             'unit_price_centavos' => 50_00, // ₱50 — below ₱100 standard
         ]],
         submittedByUserId: $this->clientUser->id
@@ -100,8 +102,8 @@ it('allows order when item price equals standard price', function () {
     $order = $this->service->submitOrder(
         customerId: $this->customer->id,
         items: [[
-            'item_master_id'    => $this->item->id,
-            'quantity'          => 1,
+            'item_master_id' => $this->item->id,
+            'quantity' => 1,
             'unit_price_centavos' => 100_00, // exactly ₱100
         ]],
         submittedByUserId: $this->clientUser->id
@@ -191,12 +193,12 @@ it('allows rejection when order is in client_responded status', function () {
 
 it('escalates high-value orders to vp_pending instead of approving directly', function () {
     // Set threshold to ₱1,000 (100,000 centavos) — easy to exceed in test
-    \Illuminate\Support\Facades\DB::table('system_settings')
+    DB::table('system_settings')
         ->updateOrInsert(
             ['key' => 'client_order_vp_threshold_centavos'],
             ['value' => '100000', 'data_type' => 'integer', 'group' => 'sales',
-             'label' => 'Test', 'editable_by_role' => 'admin', 'is_sensitive' => false,
-             'created_at' => now(), 'updated_at' => now()]
+                'label' => 'Test', 'editable_by_role' => 'admin', 'is_sensitive' => false,
+                'created_at' => now(), 'updated_at' => now()]
         );
 
     $unlimitedCustomer = Customer::factory()->unlimitedCredit()->create();

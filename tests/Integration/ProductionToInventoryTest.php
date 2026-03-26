@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Domains\HR\Models\Department;
-use App\Domains\HR\Models\Employee;
-use App\Domains\HR\Models\Position;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\StockBalance;
@@ -60,7 +58,7 @@ beforeEach(function () {
     // Create raw material items with unique codes for each test
     $this->rawMaterial1 = ItemMaster::create([
         'category_id' => $category->id,
-        'item_code' => 'RM-TEST-' . uniqid(),
+        'item_code' => 'RM-TEST-'.uniqid(),
         'name' => 'Raw Material 1',
         'type' => 'raw_material',
         'unit_of_measure' => 'pcs',
@@ -69,7 +67,7 @@ beforeEach(function () {
 
     $this->rawMaterial2 = ItemMaster::create([
         'category_id' => $category->id,
-        'item_code' => 'RM-TEST-' . uniqid(),
+        'item_code' => 'RM-TEST-'.uniqid(),
         'name' => 'Raw Material 2',
         'type' => 'raw_material',
         'unit_of_measure' => 'kg',
@@ -79,7 +77,7 @@ beforeEach(function () {
     // Create finished good item with unique code
     $this->finishedGood = ItemMaster::create([
         'category_id' => $fgCategory->id,
-        'item_code' => 'FG-TEST-' . uniqid(),
+        'item_code' => 'FG-TEST-'.uniqid(),
         'name' => 'Finished Product',
         'type' => 'finished_good',
         'unit_of_measure' => 'pcs',
@@ -146,7 +144,7 @@ it('INT-PROD-INV-001 — production order release deducts BOM components from st
     // Create production order
     $prodOrder = ProductionOrder::create([
         'ulid' => (string) Str::ulid(),
-        'po_reference' => 'WO-TEST-' . uniqid(),
+        'po_reference' => 'WO-TEST-'.uniqid(),
         'product_item_id' => $this->finishedGood->id,
         'bom_id' => $bom->id,
         'qty_required' => $qtyToProduce,
@@ -223,7 +221,7 @@ it('INT-PROD-INV-002 — production completion adds finished goods to stock', fu
 
     $prodOrder = ProductionOrder::create([
         'ulid' => (string) Str::ulid(),
-        'po_reference' => 'WO-TEST-' . uniqid(),
+        'po_reference' => 'WO-TEST-'.uniqid(),
         'product_item_id' => $this->finishedGood->id,
         'bom_id' => $bom->id,
         'qty_required' => $qtyToProduce,
@@ -282,7 +280,7 @@ it('INT-PROD-INV-003 — all production stock movements link to production order
 
     $prodOrder = ProductionOrder::create([
         'ulid' => (string) Str::ulid(),
-        'po_reference' => 'WO-TEST-' . uniqid(),
+        'po_reference' => 'WO-TEST-'.uniqid(),
         'product_item_id' => $this->finishedGood->id,
         'bom_id' => $bom->id,
         'qty_required' => 5,
@@ -375,7 +373,7 @@ it('INT-PROD-INV-004 — insufficient raw material stock prevents production ord
 
     $prodOrder = ProductionOrder::create([
         'ulid' => (string) Str::ulid(),
-        'po_reference' => 'WO-TEST-' . uniqid(),
+        'po_reference' => 'WO-TEST-'.uniqid(),
         'product_item_id' => $this->finishedGood->id,
         'bom_id' => $bom->id,
         'qty_required' => $qtyToProduce, // Would need 20 units of RM

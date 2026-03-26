@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Exports;
 
+use App\Domains\Payroll\Models\PayrollDetail;
 use App\Domains\Payroll\Models\PayrollRun;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -30,7 +32,7 @@ final class PayrollRegisterExport implements FromCollection, ShouldAutoSize, Wit
         return 'Payroll Register';
     }
 
-    public function collection(): \Illuminate\Support\Collection
+    public function collection(): Collection
     {
         return $this->run
             ->details()
@@ -72,7 +74,7 @@ final class PayrollRegisterExport implements FromCollection, ShouldAutoSize, Wit
         ];
     }
 
-    /** @param \App\Domains\Payroll\Models\PayrollDetail $detail */
+    /** @param PayrollDetail $detail */
     public function map($detail): array
     {
         $emp = $detail->employee;

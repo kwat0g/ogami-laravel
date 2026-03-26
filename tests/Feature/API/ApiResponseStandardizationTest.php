@@ -1,17 +1,32 @@
 <?php
 
 declare(strict_types=1);
+use App\Domains\FixedAssets\Models\FixedAsset;
+use App\Domains\FixedAssets\Models\FixedAssetCategory;
+use App\Domains\HR\Models\Department;
+use App\Domains\Inventory\Models\ItemCategory;
+use App\Domains\Inventory\Models\ItemMaster;
+use App\Domains\Inventory\Models\WarehouseLocation;
+use App\Domains\Maintenance\Models\Equipment;
+use App\Domains\Maintenance\Models\MaintenanceWorkOrder;
+use App\Models\User;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-    $this->seed(\Database\Seeders\ModuleSeeder::class);
-    $this->seed(\Database\Seeders\ModulePermissionSeeder::class);
-    $this->seed(\Database\Seeders\DepartmentPositionSeeder::class);
-    $this->seed(\Database\Seeders\DepartmentModuleAssignmentSeeder::class);
-    
-    $this->user = \App\Models\User::factory()->create();
+    $this->seed(RolePermissionSeeder::class);
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
+
+    $this->user = User::factory()->create();
     $this->actingAs($this->user);
 });
 
@@ -19,13 +34,13 @@ beforeEach(function () {
 
 describe('Fixed Assets API Response Format', function () {
     beforeEach(function () {
-        $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+        $acctgDept = Department::where('code', 'ACCTG')->first();
         $this->user->assignRole('manager');
         $this->user->departments()->attach($acctgDept->id, ['is_primary' => true]);
     });
 
     it('returns standardized category list response', function () {
-        \App\Domains\FixedAssets\Models\FixedAssetCategory::factory()->count(3)->create([
+        FixedAssetCategory::factory()->count(3)->create([
             'created_by_id' => $this->user->id,
         ]);
 
@@ -49,10 +64,10 @@ describe('Fixed Assets API Response Format', function () {
     });
 
     it('returns standardized asset list response with pagination', function () {
-        $category = \App\Domains\FixedAssets\Models\FixedAssetCategory::factory()->create([
+        $category = FixedAssetCategory::factory()->create([
             'created_by_id' => $this->user->id,
         ]);
-        \App\Domains\FixedAssets\Models\FixedAsset::factory()->count(5)->create([
+        FixedAsset::factory()->count(5)->create([
             'category_id' => $category->id,
             'created_by_id' => $this->user->id,
         ]);
@@ -90,10 +105,10 @@ describe('Fixed Assets API Response Format', function () {
     });
 
     it('returns standardized single asset response', function () {
-        $category = \App\Domains\FixedAssets\Models\FixedAssetCategory::factory()->create([
+        $category = FixedAssetCategory::factory()->create([
             'created_by_id' => $this->user->id,
         ]);
-        $asset = \App\Domains\FixedAssets\Models\FixedAsset::factory()->create([
+        $asset = FixedAsset::factory()->create([
             'category_id' => $category->id,
             'created_by_id' => $this->user->id,
         ]);
@@ -120,13 +135,13 @@ describe('Fixed Assets API Response Format', function () {
 
 describe('Inventory API Response Format', function () {
     beforeEach(function () {
-        $whDept = \App\Domains\HR\Models\Department::where('code', 'WH')->first();
+        $whDept = Department::where('code', 'WH')->first();
         $this->user->assignRole('manager');
         $this->user->departments()->attach($whDept->id, ['is_primary' => true]);
     });
 
     it('returns standardized category list response', function () {
-        \App\Domains\Inventory\Models\ItemCategory::factory()->count(3)->create();
+        ItemCategory::factory()->count(3)->create();
 
         $response = $this->getJson('/api/v1/inventory/items/categories');
 
@@ -146,7 +161,7 @@ describe('Inventory API Response Format', function () {
     });
 
     it('returns standardized item list response with pagination', function () {
-        \App\Domains\Inventory\Models\ItemMaster::factory()->count(5)->create();
+        ItemMaster::factory()->count(5)->create();
 
         $response = $this->getJson('/api/v1/inventory/items');
 
@@ -177,13 +192,13 @@ describe('Inventory API Response Format', function () {
 
 describe('Maintenance API Response Format', function () {
     beforeEach(function () {
-        $maintDept = \App\Domains\HR\Models\Department::where('code', 'MAINT')->first();
+        $maintDept = Department::where('code', 'MAINT')->first();
         $this->user->assignRole('manager');
         $this->user->departments()->attach($maintDept->id, ['is_primary' => true]);
     });
 
     it('returns standardized equipment list response', function () {
-        \App\Domains\Maintenance\Models\Equipment::factory()->count(3)->create();
+        Equipment::factory()->count(3)->create();
 
         $response = $this->getJson('/api/v1/maintenance/equipment');
 
@@ -210,14 +225,14 @@ describe('Maintenance API Response Format', function () {
     });
 
     it('returns standardized work order parts response', function () {
-        $category = \App\Domains\Inventory\Models\ItemCategory::factory()->create();
-        $item = \App\Domains\Inventory\Models\ItemMaster::factory()->create(['category_id' => $category->id]);
-        $location = \App\Domains\Inventory\Models\WarehouseLocation::create([
+        $category = ItemCategory::factory()->create();
+        $item = ItemMaster::factory()->create(['category_id' => $category->id]);
+        $location = WarehouseLocation::create([
             'code' => 'WH-001',
             'name' => 'Main Warehouse',
             'is_active' => true,
         ]);
-        $wo = \App\Domains\Maintenance\Models\MaintenanceWorkOrder::factory()->create();
+        $wo = MaintenanceWorkOrder::factory()->create();
         $wo->spareParts()->create([
             'item_id' => $item->id,
             'location_id' => $location->id,
@@ -254,16 +269,16 @@ describe('Maintenance API Response Format', function () {
 
 describe('General API Standards', function () {
     beforeEach(function () {
-        $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+        $acctgDept = Department::where('code', 'ACCTG')->first();
         $this->user->assignRole('manager');
         $this->user->departments()->attach($acctgDept->id, ['is_primary' => true]);
     });
 
     it('always includes data wrapper for list endpoints', function () {
-        $category = \App\Domains\FixedAssets\Models\FixedAssetCategory::factory()->create([
+        $category = FixedAssetCategory::factory()->create([
             'created_by_id' => $this->user->id,
         ]);
-        \App\Domains\FixedAssets\Models\FixedAsset::factory()->count(3)->create([
+        FixedAsset::factory()->count(3)->create([
             'category_id' => $category->id,
             'created_by_id' => $this->user->id,
         ]);
@@ -282,10 +297,10 @@ describe('General API Standards', function () {
     });
 
     it('always includes data wrapper for single resource endpoints', function () {
-        $category = \App\Domains\FixedAssets\Models\FixedAssetCategory::factory()->create([
+        $category = FixedAssetCategory::factory()->create([
             'created_by_id' => $this->user->id,
         ]);
-        $asset = \App\Domains\FixedAssets\Models\FixedAsset::factory()->create([
+        $asset = FixedAsset::factory()->create([
             'category_id' => $category->id,
             'created_by_id' => $this->user->id,
         ]);
@@ -303,10 +318,10 @@ describe('General API Standards', function () {
     });
 
     it('includes ULID in all resource responses', function () {
-        $category = \App\Domains\FixedAssets\Models\FixedAssetCategory::factory()->create([
+        $category = FixedAssetCategory::factory()->create([
             'created_by_id' => $this->user->id,
         ]);
-        $asset = \App\Domains\FixedAssets\Models\FixedAsset::factory()->create([
+        $asset = FixedAsset::factory()->create([
             'category_id' => $category->id,
             'created_by_id' => $this->user->id,
         ]);
@@ -321,10 +336,10 @@ describe('General API Standards', function () {
     });
 
     it('returns centavos and decimal amounts for monetary values', function () {
-        $category = \App\Domains\FixedAssets\Models\FixedAssetCategory::factory()->create([
+        $category = FixedAssetCategory::factory()->create([
             'created_by_id' => $this->user->id,
         ]);
-        $asset = \App\Domains\FixedAssets\Models\FixedAsset::factory()->create([
+        $asset = FixedAsset::factory()->create([
             'category_id' => $category->id,
             'created_by_id' => $this->user->id,
             'acquisition_cost_centavos' => 500000, // ₱5,000.00

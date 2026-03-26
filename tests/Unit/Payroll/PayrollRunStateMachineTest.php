@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Domains\Payroll\StateMachines\PayrollRunStateMachine;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,7 +81,7 @@ describe('allowedNext', function () {
 
 // ── transition (requires DB for save) ────────────────────────────────────────
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 describe('transition', function () {
     beforeEach(fn () => $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0));

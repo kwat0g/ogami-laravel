@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Loan;
 
-use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\HR\Models\Employee;
 use App\Domains\Loan\Models\Loan;
@@ -10,6 +9,8 @@ use App\Domains\Loan\Models\LoanType;
 use App\Domains\Loan\Services\LoanRequestService;
 use App\Models\User;
 use App\Shared\Exceptions\SodViolationException;
+use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -19,18 +20,22 @@ class LoanSoDTest extends TestCase
     use RefreshDatabase;
 
     private User $accountingManager;
+
     private User $vp;
+
     private Employee $employee;
+
     private LoanType $loanType;
+
     private LoanRequestService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
-        $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
-        
+        $this->seed(RolePermissionSeeder::class);
+        $this->seed(ChartOfAccountsSeeder::class);
+
         // Setup Fiscal Period for accounting ops
         FiscalPeriod::create([
             'name' => 'Current Period',
@@ -41,7 +46,7 @@ class LoanSoDTest extends TestCase
 
         $this->accountingManager = User::factory()->create();
         $this->accountingManager->assignRole('officer');
-        
+
         $this->vp = User::factory()->create();
         $this->vp->assignRole('vice_president');
 
@@ -86,11 +91,11 @@ class LoanSoDTest extends TestCase
         // 2. HR Approves (by another user)
         $hrManager = User::factory()->create();
         $hrManager->givePermissionTo('loans.approve');
-        
+
         $loan = $this->service->approve(
-            $loan, 
-            $hrManager->id, 
-            'Approved by HR', 
+            $loan,
+            $hrManager->id,
+            'Approved by HR',
             now()->addMonth()->toDateString()
         );
 
@@ -126,7 +131,7 @@ class LoanSoDTest extends TestCase
         // 2. Head Note & Manager Check
         $head = User::factory()->create();
         $this->service->headNote($loan, $head->id);
-        
+
         $manager = User::factory()->create();
         $this->service->managerCheck($loan, $manager->id);
 
@@ -146,7 +151,7 @@ class LoanSoDTest extends TestCase
         $vpEmployee = Employee::factory()->create([
             'user_id' => $this->vp->id,
         ]);
-        
+
         // 1. VP submits loan (v2)
         $loan = $this->service->submit(
             $vpEmployee,

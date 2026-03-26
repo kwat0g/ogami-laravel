@@ -10,11 +10,12 @@ use App\Domains\CRM\Models\ClientOrderActivity;
 use App\Domains\CRM\Models\ClientOrderDeliverySchedule;
 use App\Domains\CRM\Models\ClientOrderItem;
 use App\Domains\Inventory\Models\ItemMaster;
-use App\Domains\Inventory\Models\StockBalance;
+use App\Domains\Inventory\Services\StockReservationService;
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\CombinedDeliverySchedule;
 use App\Domains\Production\Models\DeliverySchedule;
 use App\Domains\Production\Models\ProductionOrder;
+use App\Events\Production\ProductionOrderAutoCreated;
 use App\Models\User;
 use App\Notifications\CRM\ClientOrderApprovedNotification;
 use App\Notifications\CRM\ClientOrderNegotiatedNotification;
@@ -22,14 +23,20 @@ use App\Notifications\CRM\ClientOrderRejectedNotification;
 use App\Notifications\CRM\ClientOrderSubmittedNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Client Order Service - Manages client portal ordering workflow
  */
 final class ClientOrderService implements ServiceContract
 {
+    public function __construct(
+        private readonly StockReservationService $stockReservationService,
+    ) {}
+
     /**
      * Submit a new order from the client portal
      *
@@ -884,40 +891,121 @@ final class ClientOrderService implements ServiceContract
     }
 
     /**
-     * For each delivery schedule, create a draft ProductionOrder if current stock
-     * is insufficient and an active BOM exists for the product item.
+     * For each delivery schedule, handle stock fulfillment:
+     *  - If stock is sufficient: reserve stock and mark schedule as ready (auto-fulfill).
+     *  - If stock is partial: reserve available stock, create draft PO for deficit.
+     *  - If no stock: create draft PO for full quantity.
+     *  - If BOM is missing: log an activity warning on the Client Order.
+     *
+     * Enhancements over original:
+     *  - Gap #1: Auto-fulfill for in-stock items
+     *  - Gap #2: Activity log when BOM is missing
+     *  - Gap #3 & #4: Target dates calculated from BOM's standard_production_days
+     *  - Gap #5: Production team notified via ProductionOrderAutoCreated event
+     *  - Gap #6: Stock reservation using StockReservationService (respects existing reservations)
+     *  - Gap #7: client_order_id set on auto-created Production Orders
      *
      * @param  array<DeliverySchedule>  $schedules
      */
     private function checkAndCreateDraftProductionOrders(array $schedules, ClientOrder $order, int $userId): void
     {
         foreach ($schedules as $schedule) {
-            $currentStock = (float) StockBalance::where('item_id', $schedule->product_item_id)
-                ->sum('quantity_on_hand');
-
+            $availableStock = $this->stockReservationService->getTotalAvailableStock($schedule->product_item_id);
             $qtyRequired = (float) $schedule->qty_ordered;
 
-            if ($currentStock >= $qtyRequired) {
-                continue; // Sufficient stock — no production needed
+            // ── Gap #1: Auto-fulfill from stock when fully available ─────────
+            if ($availableStock >= $qtyRequired) {
+                try {
+                    $this->stockReservationService->createReservation(
+                        itemId: $schedule->product_item_id,
+                        quantity: $qtyRequired,
+                        reservationType: 'delivery_schedule',
+                        referenceId: $schedule->id,
+                        referenceType: 'delivery_schedules',
+                        notes: "Auto-reserved for Client Order {$order->order_reference}",
+                    );
+
+                    $schedule->update(['status' => 'ready']);
+
+                    // Update parent CombinedDeliverySchedule counters
+                    if ($schedule->combined_delivery_schedule_id) {
+                        $schedule->combinedDeliverySchedule?->updateItemStatusSummary();
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning("Auto-fulfill reservation failed for DS #{$schedule->id}: {$e->getMessage()}");
+                }
+
+                continue;
             }
 
+            // ── Gap #6: Partial stock — reserve what's available ──────────────
+            $deficit = $qtyRequired;
+            if ($availableStock > 0) {
+                try {
+                    $this->stockReservationService->createReservation(
+                        itemId: $schedule->product_item_id,
+                        quantity: $availableStock,
+                        reservationType: 'delivery_schedule',
+                        referenceId: $schedule->id,
+                        referenceType: 'delivery_schedules',
+                        notes: "Partial reservation for Client Order {$order->order_reference} ({$availableStock} of {$qtyRequired})",
+                    );
+                    $deficit = $qtyRequired - $availableStock;
+                } catch (\Throwable $e) {
+                    Log::warning("Partial stock reservation failed for DS #{$schedule->id}: {$e->getMessage()}");
+                }
+            }
+
+            // ── Gap #2: BOM missing alert ────────────────────────────────────
             $bom = BillOfMaterials::where('product_item_id', $schedule->product_item_id)
                 ->where('is_active', true)
                 ->first();
 
             if (! $bom) {
-                continue; // No active BOM — cannot auto-plan
+                $itemName = $schedule->productItem?->name ?? "Item #{$schedule->product_item_id}";
+                $this->logActivity($order, 'bom_missing', $userId, 'system', [
+                    'item_id' => $schedule->product_item_id,
+                    'item_name' => $itemName,
+                    'delivery_schedule_id' => $schedule->id,
+                    'message' => "No active BOM found for {$itemName} — manual production planning required.",
+                ]);
+
+                continue;
             }
 
-            ProductionOrder::create([
+            // ── Gap #4: Calculate target dates from BOM + delivery date ──────
+            $deliveryDate = $schedule->target_delivery_date
+                ? Carbon::parse($schedule->target_delivery_date)
+                : now()->addDays(14);
+            $productionDays = max(1, $bom->standard_production_days ?? 7);
+
+            // Work backwards: end 1 day before delivery, start = end - production days
+            $targetEndDate = $deliveryDate->copy()->subDay();
+            $targetStartDate = $targetEndDate->copy()->subDays($productionDays - 1);
+
+            // Ensure start date isn't in the past
+            if ($targetStartDate->lt(now())) {
+                $targetStartDate = now()->addDay();
+                $targetEndDate = $targetStartDate->copy()->addDays($productionDays - 1);
+            }
+
+            // ── Create Production Order with all enhancements ────────────────
+            $productionOrder = ProductionOrder::create([
                 'delivery_schedule_id' => $schedule->id,
                 'product_item_id' => $schedule->product_item_id,
                 'bom_id' => $bom->id,
-                'qty_required' => $qtyRequired - $currentStock,
+                'qty_required' => $deficit,
+                'target_start_date' => $targetStartDate->toDateString(),
+                'target_end_date' => $targetEndDate->toDateString(),
                 'status' => 'draft',
-                'notes' => "Auto-created from Client Order {$order->order_reference}",
+                'notes' => "Auto-created from Client Order {$order->order_reference}"
+                    .($availableStock > 0 ? " (partial stock: {$availableStock} reserved, producing deficit: {$deficit})" : ''),
                 'created_by_id' => $userId,
+                'client_order_id' => $order->id,
             ]);
+
+            // ── Gap #5: Notify production team ───────────────────────────────
+            DB::afterCommit(fn () => ProductionOrderAutoCreated::dispatch($productionOrder->fresh(), $order->fresh()));
         }
     }
 }

@@ -9,17 +9,16 @@ use App\Domains\Leave\Models\LeaveBalance;
 use App\Domains\Leave\Models\LeaveType;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Leave Balance Auto-Accrual Command.
- * 
+ *
  * Runs monthly to automatically accrue leave entitlements based on:
  * - Employee tenure
  * - Leave type policies
  * - Monthly accrual rates
- * 
+ *
  * Schedule: monthlyOn(1, '02:00')
  */
 final class AccrueLeaveBalances extends Command
@@ -123,25 +122,26 @@ final class AccrueLeaveBalances extends Command
         bool $dryRun,
     ): array {
         $result = ['created' => 0, 'updated' => 0];
-        
+
         $tenureYears = $this->calculateTenureYears($employee->date_hired, $asOfDate);
-        
+
         // Process each leave type
         foreach (self::ACCRUAL_CONFIG as $leaveTypeCode => $config) {
             $leaveType = LeaveType::where('code', $leaveTypeCode)->first();
-            
+
             if ($leaveType === null) {
                 continue; // Leave type not configured in system
             }
 
             $accrualAmount = $this->calculateAccrualAmount($config, $tenureYears, $employee, $asOfDate);
-            
+
             if ($accrualAmount <= 0) {
                 continue; // No accrual for this period
             }
 
             if ($dryRun) {
                 $this->line("  [DRY-RUN] {$employee->employee_code}: {$leaveTypeCode} +{$accrualAmount} days");
+
                 continue;
             }
 
@@ -152,8 +152,8 @@ final class AccrueLeaveBalances extends Command
                 'year' => $year,
             ]);
 
-            $isNew = !$balance->exists;
-            
+            $isNew = ! $balance->exists;
+
             if ($isNew) {
                 $balance->entitled_days = $accrualAmount;
                 $balance->used_days = 0;
@@ -177,7 +177,7 @@ final class AccrueLeaveBalances extends Command
      */
     private function calculateTenureYears(Carbon $dateHired, Carbon $asOfDate): float
     {
-        return $dateHired->diffInYears($asOfDate) + 
+        return $dateHired->diffInYears($asOfDate) +
                ($dateHired->diffInDays($asOfDate) % 365) / 365;
     }
 
@@ -241,14 +241,14 @@ final class AccrueLeaveBalances extends Command
         Carbon $asOfDate,
     ): float {
         $minYears = $config['min_years'] ?? 1;
-        
+
         // Check if this is the anniversary month
         $isAnniversaryMonth = $asOfDate->month === $employee->date_hired->month;
-        
+
         // Check if tenure threshold was just reached this year
         $yearsJustCompleted = floor($tenureYears);
         $isThresholdYear = $yearsJustCompleted >= $minYears;
-        
+
         if ($isAnniversaryMonth && $isThresholdYear) {
             return $config['annual_days'] ?? 0;
         }

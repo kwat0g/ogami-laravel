@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,8 +17,8 @@ use Illuminate\Support\Facades\Route;
 
 // ── Health Check (throttled, no auth) ──────────────────────────────────────────
 Route::get('health', function () {
-    $dbOk = rescue(fn () => (bool) \Illuminate\Support\Facades\DB::connection()->getPdo(), false);
-    $redisOk = rescue(fn () => \Illuminate\Support\Facades\Cache::put('__hc', 'alive', 2) && \Illuminate\Support\Facades\Cache::get('__hc') === 'alive', false);
+    $dbOk = rescue(fn () => (bool) DB::connection()->getPdo(), false);
+    $redisOk = rescue(fn () => Cache::put('__hc', 'alive', 2) && Cache::get('__hc') === 'alive', false);
     $healthy = $dbOk && $redisOk;
 
     // In production, expose only the aggregate status to avoid infrastructure recon.
@@ -41,10 +43,11 @@ Route::get('health', function () {
 //   { "in_progress": true,  "completed": true  }  — done, 15 s visibility window
 //   { "in_progress": false, "completed": false }  — nothing in progress
 Route::get('v1/system/restore-status', function () {
-    $status = \Illuminate\Support\Facades\Cache::get('system.restore_in_progress', false);
+    $status = Cache::get('system.restore_in_progress', false);
+
     return response()->json([
         'in_progress' => $status !== false,
-        'completed'   => $status === 'done',
+        'completed' => $status === 'done',
     ]);
 })->middleware('throttle:60,1')->name('system.restore-status');
 
@@ -71,7 +74,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::prefix('notifications')->name('notifications.')->group(base_path('routes/api/v1/notifications.php'));
         Route::prefix('dashboard')->name('dashboard.')->group(base_path('routes/api/v1/dashboard.php'));
         Route::prefix('procurement')->name('procurement.')->group(base_path('routes/api/v1/procurement.php'));
-            Route::prefix('vendor-portal')->name('vendor-portal.')->group(base_path('routes/api/v1/vendor-portal.php'));
+        Route::prefix('vendor-portal')->name('vendor-portal.')->group(base_path('routes/api/v1/vendor-portal.php'));
         Route::prefix('inventory')->name('inventory.')->group(base_path('routes/api/v1/inventory.php'));
         Route::prefix('production')->name('production.')->group(base_path('routes/api/v1/production.php'));
         Route::prefix('qc')->name('qc.')->group(base_path('routes/api/v1/qc.php'));

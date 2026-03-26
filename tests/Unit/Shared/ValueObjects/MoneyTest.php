@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Shared\Exceptions\ValidationException;
 use App\Shared\ValueObjects\Money;
 
 /*
@@ -29,7 +30,7 @@ describe('Money construction', function () {
 
     it('rejects negative centavos', function () {
         expect(fn () => Money::fromCentavos(-1))
-            ->toThrow(\App\Shared\Exceptions\ValidationException::class);
+            ->toThrow(ValidationException::class);
     });
 });
 
@@ -50,7 +51,7 @@ describe('Money arithmetic', function () {
         $a = Money::fromFloat(100.00);
         $b = Money::fromFloat(200.00);
         expect(fn () => $a->subtract($b))
-            ->toThrow(\App\Shared\Exceptions\ValidationException::class);
+            ->toThrow(ValidationException::class);
     });
 
     it('multiplies using PHP_ROUND_HALF_UP', function () {

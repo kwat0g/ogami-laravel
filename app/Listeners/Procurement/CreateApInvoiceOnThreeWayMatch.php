@@ -6,7 +6,6 @@ namespace App\Listeners\Procurement;
 
 use App\Domains\AP\Services\VendorInvoiceService;
 use App\Events\Procurement\ThreeWayMatchPassed;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -25,20 +24,20 @@ class CreateApInvoiceOnThreeWayMatch
     public function handle(ThreeWayMatchPassed $event): void
     {
         $gr = $event->goodsReceipt;
-        Log::info('CreateApInvoiceOnThreeWayMatch handling GR: ' . $gr->id);
+        Log::info('CreateApInvoiceOnThreeWayMatch handling GR: '.$gr->id);
 
         try {
             $invoice = $this->invoiceService->createFromPo(
                 $gr,
                 $gr->confirmed_by_id ?? $gr->received_by_id,
             );
-            Log::info('Created Invoice: ' . $invoice->id);
+            Log::info('Created Invoice: '.$invoice->id);
         } catch (\Throwable $e) {
             // Log but do not re-throw — GR confirmation must not roll back due to AP failure.
             Log::error('Auto AP invoice creation failed after three-way match', [
-                'gr_id'        => $gr->id,
+                'gr_id' => $gr->id,
                 'gr_reference' => $gr->gr_reference,
-                'error'        => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

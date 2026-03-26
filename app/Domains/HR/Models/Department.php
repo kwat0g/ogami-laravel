@@ -70,27 +70,27 @@ final class Department extends Model implements Auditable
     {
         parent::boot();
 
-        static::saving(function ($department) {
+        self::saving(function ($department) {
             // Validate module_key if provided
             if ($department->module_key !== null) {
                 $exists = Module::where('module_key', $department->module_key)
                     ->where('is_active', true)
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     $validModules = Module::active()->pluck('module_key')->implode(', ');
                     throw new \InvalidArgumentException(
-                        "Invalid module_key: {$department->module_key}. " .
+                        "Invalid module_key: {$department->module_key}. ".
                         "Valid modules: {$validModules}"
                     );
                 }
             }
         });
 
-        static::saved(function ($department) {
+        self::saved(function ($department) {
             // Log warning if department has no module assigned
             if ($department->module_key === null) {
-                Log::warning("Department saved without module_key", [
+                Log::warning('Department saved without module_key', [
                     'department_id' => $department->id,
                     'department_code' => $department->code,
                     'department_name' => $department->name,

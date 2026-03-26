@@ -142,7 +142,7 @@ final class VendorFulfillmentService implements ServiceContract
                 if ($deliveredQty > 0) {
                     // This item has a delivery
                     $originalTotal += $lineTotal * $deliveredQty;
-                    
+
                     // IMPORTANT: We do NOT update quantity_received here.
                     // That only happens when warehouse confirms the GR via three-way match.
                     // We only reduce the ordered quantity to what was delivered.
@@ -171,7 +171,7 @@ final class VendorFulfillmentService implements ServiceContract
 
             // Handle partial delivery: create split PO for remaining items
             $splitPo = null;
-            if ($isPartial && !empty($itemsForSplitPo)) {
+            if ($isPartial && ! empty($itemsForSplitPo)) {
                 $splitPo = $this->createSplitPo($po, $itemsForSplitPo, $vendorUser);
             }
 
@@ -185,9 +185,9 @@ final class VendorFulfillmentService implements ServiceContract
             }
 
             // Delete items from original PO that weren't delivered at all (moved to split PO)
-            $itemIdsToKeep = array_map(fn($i) => $i['item']->id, $itemsToKeepOnOriginal);
+            $itemIdsToKeep = array_map(fn ($i) => $i['item']->id, $itemsToKeepOnOriginal);
             foreach ($po->items as $poItem) {
-                if (!in_array($poItem->id, $itemIdsToKeep, true)) {
+                if (! in_array($poItem->id, $itemIdsToKeep, true)) {
                     $poItem->delete();
                 }
             }

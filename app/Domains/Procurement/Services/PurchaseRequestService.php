@@ -18,19 +18,19 @@ use Illuminate\Support\Facades\Notification;
 
 /**
  * Purchase Request Service - Simplified 4-Stage Workflow
- * 
+ *
  * New Workflow:
  *   draft → pending_review → reviewed → budget_verified → approved → converted_to_po
- * 
+ *
  * Stages:
  *   1. pending_review: Purchasing Dept reviews technical validity
  *   2. reviewed:       Purchasing confirms PR is valid
  *   3. budget_verified: Accounting commits budget
  *   4. approved:       VP gives final authority → Auto-creates PO
- * 
+ *
  * SoD Constraints:
  *   - Reviewer ≠ Creator
- *   - Budget Verifier ≠ Reviewer  
+ *   - Budget Verifier ≠ Reviewer
  *   - VP ≠ Budget Verifier
  */
 final class PurchaseRequestService implements ServiceContract
@@ -149,30 +149,30 @@ final class PurchaseRequestService implements ServiceContract
         if ($actor->can('approvals.vp.approve')) {
             $targetStatus = 'budget_verified';
             $updateData = [
-                'status'           => $targetStatus,
-                'submitted_by_id'  => $actor->id,
-                'submitted_at'     => now(),
-                'reviewed_by_id'   => $actor->id,
-                'reviewed_at'      => now(),
+                'status' => $targetStatus,
+                'submitted_by_id' => $actor->id,
+                'submitted_at' => now(),
+                'reviewed_by_id' => $actor->id,
+                'reviewed_at' => now(),
                 'reviewed_comments' => 'Auto-reviewed (VP Authority)',
             ];
         } elseif ($this->isPurchasingManager($actor)) {
             // Purchasing Manager self-reviews — jumps directly to Budget Verification
             $targetStatus = 'reviewed';
             $updateData = [
-                'status'            => $targetStatus,
-                'submitted_by_id'   => $actor->id,
-                'submitted_at'      => now(),
-                'reviewed_by_id'    => $actor->id,
-                'reviewed_at'       => now(),
+                'status' => $targetStatus,
+                'submitted_by_id' => $actor->id,
+                'submitted_at' => now(),
+                'reviewed_by_id' => $actor->id,
+                'reviewed_at' => now(),
                 'reviewed_comments' => 'Auto-reviewed (Purchasing Manager)',
             ];
         } else {
             $targetStatus = 'pending_review';
             $updateData = [
-                'status'           => $targetStatus,
-                'submitted_by_id'  => $actor->id,
-                'submitted_at'     => now(),
+                'status' => $targetStatus,
+                'submitted_by_id' => $actor->id,
+                'submitted_at' => now(),
             ];
         }
 
@@ -227,10 +227,9 @@ final class PurchaseRequestService implements ServiceContract
     /**
      * Purchasing Department reviews PR for technical validity.
      * Transitions: pending_review → reviewed
-     * 
+     *
      * SoD: Reviewer cannot be the Creator
      */
-
     public function review(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'pending_review', 'PR_NOT_PENDING_REVIEW');
@@ -272,10 +271,9 @@ final class PurchaseRequestService implements ServiceContract
     /**
      * Accounting verifies that funds are committed for this PR.
      * Transitions: reviewed → budget_verified
-     * 
+     *
      * SoD: Budget verifier cannot be the Creator or the Reviewer
      */
-
     public function budgetCheck(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
@@ -321,7 +319,6 @@ final class PurchaseRequestService implements ServiceContract
      * Purchasing or Accounting can return PR for revision.
      * Can return from pending_review or reviewed stages.
      */
-
     public function returnForRevision(PurchaseRequest $pr, User $actor, string $reason): PurchaseRequest
     {
         if (! in_array($pr->status, ['pending_review', 'reviewed'], true)) {
@@ -362,7 +359,6 @@ final class PurchaseRequestService implements ServiceContract
      * VP gives final approval. PR must be budget_verified first.
      * SoD: VP cannot be the Budget Verifier
      */
-
     public function vpApprove(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'budget_verified', 'PR_NOT_BUDGET_VERIFIED');
@@ -412,7 +408,6 @@ final class PurchaseRequestService implements ServiceContract
     /**
      * Reject PR at any stage before approval.
      */
-
     public function reject(PurchaseRequest $pr, User $actor, string $reason, string $stage): PurchaseRequest
     {
         if (in_array($pr->status, ['approved', 'rejected', 'cancelled', 'converted_to_po'], true)) {
@@ -487,14 +482,14 @@ final class PurchaseRequestService implements ServiceContract
 
     private function generateReference(): string
     {
-        $prefix = 'PR-' . date('Y') . '-';
+        $prefix = 'PR-'.date('Y').'-';
         $last = PurchaseRequest::whereYear('created_at', date('Y'))
             ->orderByDesc('id')
             ->first();
-        
+
         $number = $last ? (int) substr($last->pr_reference, -5) + 1 : 1;
-        
-        return $prefix . str_pad((string) $number, 5, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
     }
 
     private function assertStatus(PurchaseRequest $pr, string $expected, string $errorCode): void
@@ -550,7 +545,7 @@ final class PurchaseRequestService implements ServiceContract
         );
 
         if (($ytdSpend + $prAmount) > $dept->annual_budget_centavos) {
-            $fmt = fn (int $c): string => '₱' . number_format($c / 100, 2);
+            $fmt = fn (int $c): string => '₱'.number_format($c / 100, 2);
             throw new DomainException(
                 message: "Insufficient budget: Dept {$dept->name} has {$fmt($dept->annual_budget_centavos - $ytdSpend)} remaining, but this PR requires {$fmt($prAmount)}.",
                 errorCode: 'PR_BUDGET_EXCEEDED',
@@ -637,7 +632,7 @@ final class PurchaseRequestService implements ServiceContract
         float $reorderQty,
         User $actor,
     ): PurchaseRequest {
-        return DB::transaction(function () use ($itemId, $itemCode, $itemName, $unitOfMeasure, $reorderPoint, $currentStock, $reorderQty, $actor): PurchaseRequest {
+        return DB::transaction(function () use ($itemCode, $itemName, $unitOfMeasure, $reorderPoint, $currentStock, $reorderQty, $actor): PurchaseRequest {
             // Use Purchasing department; fallback to first active department
             $dept = Department::where('code', 'PURCH')->where('is_active', true)->first()
                 ?? Department::where('is_active', true)->first();

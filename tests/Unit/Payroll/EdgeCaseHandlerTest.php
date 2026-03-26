@@ -2,9 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Employee;
+use App\Domains\Payroll\Models\PayrollRun;
+use App\Domains\Payroll\Pipeline\Step17NetPayStep;
+use App\Domains\Payroll\Services\PayrollComputationContext;
 use App\Shared\Exceptions\ContributionTableNotFoundException;
+use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\NegativeNetPayException;
 use App\Shared\Exceptions\TaxTableNotFoundException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +50,7 @@ describe('EDGE-011 — ContributionTableNotFoundException', function () {
 
     it('is a subclass of DomainException', function () {
         $ex = new ContributionTableNotFoundException('PhilHealth', '2026-01-01', 1);
-        expect($ex)->toBeInstanceOf(\App\Shared\Exceptions\DomainException::class);
+        expect($ex)->toBeInstanceOf(DomainException::class);
     });
 });
 
@@ -76,7 +82,7 @@ describe('EDGE-012 — TaxTableNotFoundException', function () {
 
     it('is a subclass of DomainException', function () {
         $ex = new TaxTableNotFoundException(1, 100_000, '2026');
-        expect($ex)->toBeInstanceOf(\App\Shared\Exceptions\DomainException::class);
+        expect($ex)->toBeInstanceOf(DomainException::class);
     });
 });
 
@@ -107,24 +113,24 @@ describe('DED-002 — NegativeNetPayException', function () {
 // ── EDGE-003/010 — zero_pay flag ──────────────────────────────────────────────
 
 describe('EDGE-003/010 — zero_pay flag (Step17)', function () {
-    uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+    uses(RefreshDatabase::class);
 
     beforeEach(fn () => $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0));
 
     it('sets isZeroPay=true when gross_pay = 0 (full LWOP / zero attendance)', function () {
-        $employee = \App\Domains\HR\Models\Employee::factory()->create([
+        $employee = Employee::factory()->create([
             'employment_status' => 'active',
             'is_active' => true,
             'basic_monthly_rate' => 100_000,
         ]);
-        $run = \App\Domains\Payroll\Models\PayrollRun::factory()->create([
+        $run = PayrollRun::factory()->create([
             'status' => 'processing',
             'cutoff_start' => '2026-07-01',
             'cutoff_end' => '2026-07-15',
             'pay_date' => '2026-07-20',
         ]);
 
-        $ctx = new \App\Domains\Payroll\Services\PayrollComputationContext($employee, $run);
+        $ctx = new PayrollComputationContext($employee, $run);
         $ctx->grossPayCentavos = 0;
         $ctx->sssEeCentavos = 0;
         $ctx->philhealthEeCentavos = 0;
@@ -134,26 +140,26 @@ describe('EDGE-003/010 — zero_pay flag (Step17)', function () {
         $ctx->otherDeductionsCentavos = 0;
         $ctx->daysWorked = 0;
 
-        (new \App\Domains\Payroll\Pipeline\Step17NetPayStep)($ctx, fn ($c) => $c);
+        (new Step17NetPayStep)($ctx, fn ($c) => $c);
 
         expect($ctx->isZeroPay)->toBeTrue()
             ->and($ctx->netPayCentavos)->toBe(0);
     });
 
     it('does not set isZeroPay when employee has some pay', function () {
-        $employee = \App\Domains\HR\Models\Employee::factory()->create([
+        $employee = Employee::factory()->create([
             'employment_status' => 'active',
             'is_active' => true,
             'basic_monthly_rate' => 500_000,
         ]);
-        $run = \App\Domains\Payroll\Models\PayrollRun::factory()->create([
+        $run = PayrollRun::factory()->create([
             'status' => 'processing',
             'cutoff_start' => '2026-08-01',
             'cutoff_end' => '2026-08-15',
             'pay_date' => '2026-08-20',
         ]);
 
-        $ctx = new \App\Domains\Payroll\Services\PayrollComputationContext($employee, $run);
+        $ctx = new PayrollComputationContext($employee, $run);
         $ctx->grossPayCentavos = 100_000;
         $ctx->sssEeCentavos = 0;
         $ctx->philhealthEeCentavos = 0;
@@ -163,7 +169,7 @@ describe('EDGE-003/010 — zero_pay flag (Step17)', function () {
         $ctx->otherDeductionsCentavos = 0;
         $ctx->daysWorked = 5;
 
-        (new \App\Domains\Payroll\Pipeline\Step17NetPayStep)($ctx, fn ($c) => $c);
+        (new Step17NetPayStep)($ctx, fn ($c) => $c);
 
         expect($ctx->isZeroPay)->toBeFalse();
     });

@@ -22,20 +22,20 @@ return new class extends Migration
 
         // Add OTH (Others — employee specifies reason) if not already present
         DB::table('leave_types')->insertOrIgnore([[
-            'code'                   => 'OTH',
-            'name'                   => 'Others',
-            'category'               => 'other',
-            'is_paid'                => false,   // GA Officer decides pay status at processing step
-            'max_days_per_year'      => 0,        // discretionary — no fixed entitlement
-            'requires_approval'      => true,
+            'code' => 'OTH',
+            'name' => 'Others',
+            'category' => 'other',
+            'is_paid' => false,   // GA Officer decides pay status at processing step
+            'max_days_per_year' => 0,        // discretionary — no fixed entitlement
+            'requires_approval' => true,
             'requires_documentation' => false,
-            'monthly_accrual_days'   => null,
-            'max_carry_over_days'    => 0,
-            'can_be_monetized'       => false,
+            'monthly_accrual_days' => null,
+            'max_carry_over_days' => 0,
+            'can_be_monetized' => false,
             'deducts_absent_on_lwop' => false,
-            'is_active'              => true,
-            'created_at'             => now(),
-            'updated_at'             => now(),
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]]);
     }
 

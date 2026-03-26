@@ -69,46 +69,47 @@ class ManufacturingEmployeeSeeder extends Seeder
 
         foreach ($employees as $emp) {
             $deptId = DB::table('departments')->where('code', $emp['dept'])->value('id');
-            $posId  = DB::table('positions')->where('code', $emp['pos'])->value('id');
-            $sgId   = DB::table('salary_grades')->where('code', $emp['sg'])->value('id');
+            $posId = DB::table('positions')->where('code', $emp['pos'])->value('id');
+            $sgId = DB::table('salary_grades')->where('code', $emp['sg'])->value('id');
 
             if (! $deptId || ! $posId) {
                 $this->command->warn("  Skipping {$emp['code']} — dept '{$emp['dept']}' or pos '{$emp['pos']}' not found.");
+
                 continue;
             }
 
             DB::table('employees')->insertOrIgnore([
-                'employee_code'       => $emp['code'],
-                'ulid'                => (string) Str::ulid(),
-                'first_name'          => $emp['first_name'],
-                'middle_name'         => $emp['middle_name'] ?? null,
-                'last_name'           => $emp['last_name'],
-                'date_of_birth'       => $emp['dob'],
-                'gender'              => $emp['gender'],
-                'civil_status'        => $emp['civil_status'],
-                'citizenship'         => 'Filipino',
-                'present_address'     => $emp['address'],
-                'permanent_address'   => $emp['address'],
-                'qualified_dependents'=> $emp['dependents'],
-                'bir_status'          => $emp['bir_status'],
-                'personal_email'      => $emp['personal_email'],
-                'personal_phone'      => $emp['phone'],
-                'bank_name'           => $emp['bank_name'],
-                'bank_account_no'     => $emp['bank_account_no'],
-                'bank_account_name'   => $emp['first_name'].' '.$emp['last_name'],
-                'department_id'       => $deptId,
-                'position_id'         => $posId,
-                'salary_grade_id'     => $sgId,
-                'employment_type'     => 'regular',
-                'employment_status'   => 'active',
-                'date_hired'          => $emp['hired'],
+                'employee_code' => $emp['code'],
+                'ulid' => (string) Str::ulid(),
+                'first_name' => $emp['first_name'],
+                'middle_name' => $emp['middle_name'] ?? null,
+                'last_name' => $emp['last_name'],
+                'date_of_birth' => $emp['dob'],
+                'gender' => $emp['gender'],
+                'civil_status' => $emp['civil_status'],
+                'citizenship' => 'Filipino',
+                'present_address' => $emp['address'],
+                'permanent_address' => $emp['address'],
+                'qualified_dependents' => $emp['dependents'],
+                'bir_status' => $emp['bir_status'],
+                'personal_email' => $emp['personal_email'],
+                'personal_phone' => $emp['phone'],
+                'bank_name' => $emp['bank_name'],
+                'bank_account_no' => $emp['bank_account_no'],
+                'bank_account_name' => $emp['first_name'].' '.$emp['last_name'],
+                'department_id' => $deptId,
+                'position_id' => $posId,
+                'salary_grade_id' => $sgId,
+                'employment_type' => 'regular',
+                'employment_status' => 'active',
+                'date_hired' => $emp['hired'],
                 'regularization_date' => $emp['reg_date'] ?? null,
-                'basic_monthly_rate'  => $emp['salary'],
-                'onboarding_status'   => 'documents_pending',
-                'is_active'           => false,
-                'pay_basis'           => 'monthly',
-                'created_at'          => now(),
-                'updated_at'          => now(),
+                'basic_monthly_rate' => $emp['salary'],
+                'onboarding_status' => 'documents_pending',
+                'is_active' => false,
+                'pay_basis' => 'monthly',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }
@@ -120,25 +121,25 @@ class ManufacturingEmployeeSeeder extends Seeder
         foreach ($this->getUserAccountData() as $account) {
             // Check if user exists
             $user = User::where('email', $account['email'])->first();
-            
+
             if (! $user) {
                 // Create new user with password
                 $user = User::create([
-                    'name'               => $account['name'],
-                    'email'              => $account['email'],
-                    'password'           => $account['password'],
-                    'email_verified_at'  => now(),
-                    'password_changed_at'=> now(),
+                    'name' => $account['name'],
+                    'email' => $account['email'],
+                    'password' => $account['password'],
+                    'email_verified_at' => now(),
+                    'password_changed_at' => now(),
                 ]);
             } else {
                 // Update existing user's password to ensure it's properly hashed
                 $user->password = $account['password'];
                 $user->save();
             }
-            
+
             // Reset failed login attempts and unlock account
             $user->update(['failed_login_attempts' => 0, 'locked_until' => null]);
-            
+
             $user->syncRoles([$account['role']]);
         }
     }
@@ -148,11 +149,12 @@ class ManufacturingEmployeeSeeder extends Seeder
     private function seedUserEmployeeLinks(): void
     {
         foreach ($this->getLinkData() as $link) {
-            $user     = DB::table('users')->where('email', $link['email'])->first();
+            $user = DB::table('users')->where('email', $link['email'])->first();
             $employee = DB::table('employees')->where('employee_code', $link['code'])->first();
 
             if (! $user || ! $employee) {
                 $this->command->warn("  Link skip: {$link['email']} or {$link['code']} not found.");
+
                 continue;
             }
 
@@ -167,11 +169,11 @@ class ManufacturingEmployeeSeeder extends Seeder
                 ->update(['department_id' => $employee->department_id]);
 
             DB::table('user_department_access')->insertOrIgnore([
-                'user_id'       => $user->id,
+                'user_id' => $user->id,
                 'department_id' => $employee->department_id,
-                'is_primary'    => true,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                'is_primary' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }
@@ -187,6 +189,7 @@ class ManufacturingEmployeeSeeder extends Seeder
 
         if (! $shift) {
             $this->command->warn('  Shift assignments skipped — regular shift not found.');
+
             return;
         }
 
@@ -207,14 +210,14 @@ class ManufacturingEmployeeSeeder extends Seeder
             }
 
             DB::table('employee_shift_assignments')->insert([
-                'employee_id'       => $employee->id,
+                'employee_id' => $employee->id,
                 'shift_schedule_id' => $shift->id,
-                'effective_from'    => $employee->date_hired,
-                'effective_to'      => null,
-                'notes'             => 'Initial shift (manufacturing seeder)',
-                'assigned_by'       => $assignedBy,
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'effective_from' => $employee->date_hired,
+                'effective_to' => null,
+                'notes' => 'Initial shift (manufacturing seeder)',
+                'assigned_by' => $assignedBy,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }
@@ -246,7 +249,7 @@ class ManufacturingEmployeeSeeder extends Seeder
             ->pluck('id', 'code');
 
         $grants = [
-            'vp@ogamierp.local'           => $allDeptCodes,
+            'vp@ogamierp.local' => $allDeptCodes,
             'plant.manager@ogamierp.local' => $plantDeptCodes,
         ];
 
@@ -255,6 +258,7 @@ class ManufacturingEmployeeSeeder extends Seeder
             $userId = DB::table('users')->where('email', $email)->value('id');
             if (! $userId) {
                 $this->command->warn("  Multi-dept skip: {$email} not found.");
+
                 continue;
             }
 
@@ -265,11 +269,11 @@ class ManufacturingEmployeeSeeder extends Seeder
                 }
 
                 $inserted = DB::table('user_department_access')->insertOrIgnore([
-                    'user_id'       => $userId,
+                    'user_id' => $userId,
                     'department_id' => $deptId,
-                    'is_primary'    => false,
-                    'created_at'    => now(),
-                    'updated_at'    => now(),
+                    'is_primary' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
                 $grantCount += $inserted;
             }
@@ -472,7 +476,7 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['email' => 'impex.officer@ogamierp.local',   'name' => 'Cristina Aquino',      'password' => 'Officer@12345!',   'role' => 'officer'],
             ['email' => 'warehouse.head@ogamierp.local',  'name' => 'Ernesto Bautista',     'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'ppc.head@ogamierp.local',        'name' => 'Jerome Florido',       'password' => 'Head@123456789!',  'role' => 'head'],
-            ['email' => 'maintenance.head@ogamierp.local','name' => 'Armando Dela Torre',   'password' => 'Head@123456789!',  'role' => 'head'],
+            ['email' => 'maintenance.head@ogamierp.local', 'name' => 'Armando Dela Torre',   'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'production.head@ogamierp.local', 'name' => 'Danilo Espiritu',      'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'processing.head@ogamierp.local', 'name' => 'Eliza Navarro',        'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'qcqa.head@ogamierp.local',       'name' => 'Rhodora Salazar',      'password' => 'Head@123456789!',  'role' => 'head'],

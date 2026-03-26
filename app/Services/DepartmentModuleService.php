@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Domains\HR\Models\Department;
+use App\Models\DepartmentPermissionProfile;
 use App\Models\RBAC\DepartmentModuleException;
 use App\Models\RBAC\Module;
 use App\Models\RBAC\ModulePermission;
@@ -14,9 +15,9 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Department Module Service - Scalable RBAC Permission Resolution
- * 
+ *
  * This service replaces hardcoded 18 roles with 7 generic roles + department modules.
- * 
+ *
  * Permission Resolution: Role + Department Module = Effective Permissions
  * Example: manager + HR module = Full HR access
  *          manager + Accounting module = Full Accounting access
@@ -34,9 +35,9 @@ final class DepartmentModuleService
 
     /**
      * Get effective permissions for a user.
-     * 
+     *
      * Merges permissions from all departments the user belongs to.
-     * 
+     *
      * @return list<string>
      */
     public static function getUserPermissions(User $user): array
@@ -48,15 +49,17 @@ final class DepartmentModuleService
 
         // Get user's primary role (should be one of core roles)
         $role = self::getUserPrimaryRole($user);
-        if (!$role) {
-            Log::warning("User has no recognized role", ['user_id' => $user->id]);
+        if (! $role) {
+            Log::warning('User has no recognized role', ['user_id' => $user->id]);
+
             return self::getSafeDefaultPermissions('staff');
         }
 
         // Get all departments the user has access to
         $departments = $user->departments()->active()->get();
         if ($departments->isEmpty()) {
-            Log::warning("User has no department assignments", ['user_id' => $user->id]);
+            Log::warning('User has no department assignments', ['user_id' => $user->id]);
+
             return self::getSafeDefaultPermissions($role);
         }
 
@@ -72,7 +75,7 @@ final class DepartmentModuleService
 
     /**
      * Get permissions for a specific role + department combination.
-     * 
+     *
      * @return list<string>
      */
     public static function getPermissionsForDepartment(string $role, Department $department): array
@@ -84,13 +87,13 @@ final class DepartmentModuleService
             now()->addMinutes(self::CACHE_TTL_MINUTES),
             function () use ($role, $department) {
                 // CASE 1: Department has no module assigned - check for DepartmentPermissionProfile
-                if (!$department->hasModule()) {
+                if (! $department->hasModule()) {
                     // Try to get permissions from DepartmentPermissionProfile (v3 system)
                     $profilePerms = self::getDepartmentProfilePermissions($role, $department);
-                    if (!empty($profilePerms)) {
+                    if (! empty($profilePerms)) {
                         return $profilePerms;
                     }
-                    
+
                     // No active profile found - use safe defaults
                     // User model will fall back to Spatie if needed via hasPermissionTo
                     return self::getSafeDefaultPermissions($role);
@@ -113,17 +116,18 @@ final class DepartmentModuleService
 
     /**
      * Get permissions from module_permissions table.
-     * 
+     *
      * @return list<string>
      */
     public static function getModulePermissions(string $role, string $moduleKey): array
     {
         // Validate module exists
-        if (!Module::exists($moduleKey)) {
-            Log::error("Invalid module_key referenced", [
+        if (! Module::exists($moduleKey)) {
+            Log::error('Invalid module_key referenced', [
                 'module_key' => $moduleKey,
                 'role' => $role,
             ]);
+
             return self::getSafeDefaultPermissions($role);
         }
 
@@ -132,10 +136,11 @@ final class DepartmentModuleService
 
         // If no permissions defined, use safe defaults
         if (empty($permissions)) {
-            Log::warning("No permissions defined for role+module", [
+            Log::warning('No permissions defined for role+module', [
                 'role' => $role,
                 'module_key' => $moduleKey,
             ]);
+
             return self::getSafeDefaultPermissions($role);
         }
 
@@ -166,7 +171,7 @@ final class DepartmentModuleService
 
     /**
      * Check if a permission matches (supports wildcards).
-     * 
+     *
      * Examples:
      *   - 'employees.*' matches 'employees.view', 'employees.create'
      *   - 'hr.*' matches 'hr.employees.view', 'hr.attendance.import'
@@ -187,6 +192,7 @@ final class DepartmentModuleService
         // Wildcard match (e.g., 'employees.*' matches 'employees.view')
         if (str_ends_with($pattern, '.*')) {
             $prefix = substr($pattern, 0, -1);
+
             return str_starts_with($permission, $prefix);
         }
 
@@ -211,7 +217,7 @@ final class DepartmentModuleService
 
     /**
      * Get permissions for system roles.
-     * 
+     *
      * @return list<string>
      */
     private static function getSystemRolePermissions(User $user): array
@@ -259,10 +265,10 @@ final class DepartmentModuleService
 
     /**
      * Get safe default permissions when configuration is missing.
-     * 
+     *
      * These are minimal permissions that won't break the user experience
      * but also won't grant excessive access.
-     * 
+     *
      * @return list<string>
      */
     public static function getSafeDefaultPermissions(string $role): array
@@ -283,8 +289,8 @@ final class DepartmentModuleService
 
     /**
      * Apply permission exception to base permissions.
-     * 
-     * @param list<string> $basePermissions
+     *
+     * @param  list<string>  $basePermissions
      * @return list<string>
      */
     private static function applyException(array $basePermissions, DepartmentModuleException $exception): array
@@ -334,7 +340,7 @@ final class DepartmentModuleService
 
     /**
      * Get all available modules for dropdown.
-     * 
+     *
      * @return array<string, string> [module_key => label]
      */
     public static function getAvailableModules(): array
@@ -346,7 +352,7 @@ final class DepartmentModuleService
 
     /**
      * Get modules that need attention (missing permissions, etc.)
-     * 
+     *
      * @return list<array>
      */
     public static function getModulesNeedingAttention(): array
@@ -355,7 +361,7 @@ final class DepartmentModuleService
 
         foreach (Module::active()->get() as $module) {
             foreach (self::CORE_ROLES as $role) {
-                if (!ModulePermission::exists($module->module_key, $role)) {
+                if (! ModulePermission::exists($module->module_key, $role)) {
                     $issues[] = [
                         'module_key' => $module->module_key,
                         'module_label' => $module->label,
@@ -373,7 +379,7 @@ final class DepartmentModuleService
     /**
      * Get permissions from DepartmentPermissionProfile when no module is assigned.
      * This provides backward compatibility with the v3 permission profile system.
-     * 
+     *
      * @return list<string>
      */
     private static function getDepartmentProfilePermissions(string $role, Department $department): array
@@ -385,16 +391,16 @@ final class DepartmentModuleService
             now()->addMinutes(self::CACHE_TTL_MINUTES),
             function () use ($role, $department): array {
                 try {
-                    $profile = \App\Models\DepartmentPermissionProfile::where('department_id', $department->id)
+                    $profile = DepartmentPermissionProfile::where('department_id', $department->id)
                         ->where('role', $role)
                         ->where('is_active', true)
                         ->first();
 
-                    if ($profile && !empty($profile->permissions)) {
+                    if ($profile && ! empty($profile->permissions)) {
                         return $profile->permissions;
                     }
                 } catch (\Exception $e) {
-                    Log::debug("Could not load DepartmentPermissionProfile", [
+                    Log::debug('Could not load DepartmentPermissionProfile', [
                         'department_id' => $department->id,
                         'role' => $role,
                         'error' => $e->getMessage(),

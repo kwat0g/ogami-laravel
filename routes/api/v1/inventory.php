@@ -6,6 +6,8 @@ use App\Http\Controllers\Inventory\ItemMasterController;
 use App\Http\Controllers\Inventory\MaterialRequisitionController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\WarehouseLocationController;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,18 +55,18 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
     Route::patch('requisitions/{materialRequisition}/fulfill', [MaterialRequisitionController::class, 'fulfill'])->middleware('throttle:api-action');
 
     // ── Inventory Valuation Report ───────────────────────────────────────────
-    Route::get('reports/valuation', function (): \Illuminate\Http\JsonResponse {
-        $poCosts = \Illuminate\Support\Facades\DB::table('purchase_order_items')
+    Route::get('reports/valuation', function (): JsonResponse {
+        $poCosts = DB::table('purchase_order_items')
             ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
             ->whereNotNull('purchase_order_items.item_master_id')
             ->whereIn('purchase_orders.status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->select(
                 'purchase_order_items.item_master_id',
-                \Illuminate\Support\Facades\DB::raw('avg(purchase_order_items.agreed_unit_cost) as unit_cost'),
+                DB::raw('avg(purchase_order_items.agreed_unit_cost) as unit_cost'),
             )
             ->groupBy('purchase_order_items.item_master_id');
 
-        $rows = \Illuminate\Support\Facades\DB::table('stock_balances')
+        $rows = DB::table('stock_balances')
             ->join('item_masters', 'stock_balances.item_id', '=', 'item_masters.id')
             ->leftJoin('item_categories', 'item_masters.category_id', '=', 'item_categories.id')
             ->leftJoin('warehouse_locations', 'stock_balances.location_id', '=', 'warehouse_locations.id')
@@ -76,12 +78,12 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
                 'item_masters.id as item_id',
                 'item_masters.item_code',
                 'item_masters.name as item_name',
-                \Illuminate\Support\Facades\DB::raw("coalesce(item_categories.name, 'Uncategorized') as category"),
+                DB::raw("coalesce(item_categories.name, 'Uncategorized') as category"),
                 'warehouse_locations.name as location',
                 'item_masters.unit_of_measure as uom',
                 'stock_balances.quantity_on_hand as quantity',
                 'po_costs.unit_cost',
-                \Illuminate\Support\Facades\DB::raw('round(stock_balances.quantity_on_hand * coalesce(po_costs.unit_cost, 0), 2) as total_value'),
+                DB::raw('round(stock_balances.quantity_on_hand * coalesce(po_costs.unit_cost, 0), 2) as total_value'),
             )
             ->orderBy('item_categories.name')
             ->orderBy('item_masters.name')
@@ -89,16 +91,16 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
 
         // Group by category for summary
         $byCategory = $rows->groupBy('category')->map(fn ($items, $cat) => [
-            'category'    => $cat,
-            'item_count'  => $items->count(),
-            'total_qty'   => $items->sum('quantity'),
+            'category' => $cat,
+            'item_count' => $items->count(),
+            'total_qty' => $items->sum('quantity'),
             'total_value' => round($items->sum('total_value'), 2),
         ])->values();
 
         $grandTotal = round($rows->sum('total_value'), 2);
 
         return response()->json([
-            'data'        => $rows,
+            'data' => $rows,
             'by_category' => $byCategory,
             'grand_total' => $grandTotal,
         ]);

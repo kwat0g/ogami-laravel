@@ -39,11 +39,11 @@ return new class extends Migration
             CHECK (frequency IN ('daily','weekly','monthly','semi_monthly','annual'))
         ");
 
-        DB::statement("
+        DB::statement('
             ALTER TABLE recurring_journal_templates
             ADD CONSTRAINT chk_rjt_day_of_month
             CHECK (day_of_month IS NULL OR (day_of_month BETWEEN 1 AND 28))
-        ");
+        ');
     }
 
     public function down(): void

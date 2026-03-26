@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 /*
 |--------------------------------------------------------------------------
@@ -8,21 +10,21 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature', 'Integration');
 
 // Unit/Shared — pure value-object tests, no database required
-pest()->extend(Tests\TestCase::class)
+pest()->extend(TestCase::class)
     ->in('Unit/Shared');
 
 // E2E — full sequential walkthrough tests; each file brings its own DB trait
-pest()->extend(Tests\TestCase::class)
+pest()->extend(TestCase::class)
     ->in('E2E');
 
 // Unit/Payroll — service tests that hit contribution & tax rate tables
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Unit/Payroll');
 
 /*

@@ -6,10 +6,12 @@ namespace Database\Seeders;
 
 use App\Models\RBAC\ModulePermission;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 /**
  * Module Permission Seeder - Defines permissions for each role within each module.
- * 
+ *
  * This is where the actual permission matrix is defined.
  * 7 modules × 4 core roles = 28 permission sets.
  */
@@ -681,7 +683,7 @@ class ModulePermissionSeeder extends Seeder
         }
 
         $this->command->info("✓ Module permissions seeded: {$count} role+module combinations");
-        
+
         // Summary by module
         foreach (self::PERMISSIONS as $moduleKey => $roles) {
             $roleCount = count($roles);
@@ -700,12 +702,12 @@ class ModulePermissionSeeder extends Seeder
     private function syncPermissionsToRoles(): void
     {
         $this->command->info("\nSyncing permissions to Spatie roles...");
-        
+
         // First, collect all permissions per role across all modules
         $rolePermissions = [];
         foreach (self::PERMISSIONS as $moduleKey => $roles) {
             foreach ($roles as $roleName => $permissions) {
-                if (!isset($rolePermissions[$roleName])) {
+                if (! isset($rolePermissions[$roleName])) {
                     $rolePermissions[$roleName] = [];
                 }
                 // Merge permissions, avoiding duplicates
@@ -716,15 +718,16 @@ class ModulePermissionSeeder extends Seeder
         // Now sync the merged permissions to each role
         $totalSynced = 0;
         foreach ($rolePermissions as $roleName => $permissions) {
-            $role = \Spatie\Permission\Models\Role::findByName($roleName, 'web');
-            if (!$role) {
+            $role = Role::findByName($roleName, 'web');
+            if (! $role) {
                 $this->command->warn("  Role '{$roleName}' not found, skipping.");
+
                 continue;
             }
 
             // Create permissions if they don't exist
             foreach ($permissions as $permissionName) {
-                \Spatie\Permission\Models\Permission::firstOrCreate([
+                Permission::firstOrCreate([
                     'name' => $permissionName,
                     'guard_name' => 'web',
                 ]);
@@ -733,7 +736,7 @@ class ModulePermissionSeeder extends Seeder
             // Sync permissions to role
             $role->syncPermissions($permissions);
             $totalSynced += count($permissions);
-            $this->command->info("  ✓ {$roleName}: " . count($permissions) . " permissions synced");
+            $this->command->info("  ✓ {$roleName}: ".count($permissions).' permissions synced');
         }
 
         $this->command->info("✓ Total permissions synced: {$totalSynced}");

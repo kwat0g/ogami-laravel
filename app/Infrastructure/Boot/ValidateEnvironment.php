@@ -26,17 +26,17 @@ final class ValidateEnvironment
      * @var array<string, string>
      */
     private const REQUIRED = [
-        'APP_KEY'          => 'app.key',
-        'APP_URL'          => 'app.url',
-        'DB_CONNECTION'    => 'database.default',
-        'DB_HOST'          => 'database.connections.pgsql.host',
-        'DB_PORT'          => 'database.connections.pgsql.port',
-        'DB_DATABASE'      => 'database.connections.pgsql.database',
-        'DB_USERNAME'      => 'database.connections.pgsql.username',
-        'REDIS_HOST'       => 'database.redis.default.host',
-        'SESSION_DRIVER'   => 'session.driver',
+        'APP_KEY' => 'app.key',
+        'APP_URL' => 'app.url',
+        'DB_CONNECTION' => 'database.default',
+        'DB_HOST' => 'database.connections.pgsql.host',
+        'DB_PORT' => 'database.connections.pgsql.port',
+        'DB_DATABASE' => 'database.connections.pgsql.database',
+        'DB_USERNAME' => 'database.connections.pgsql.username',
+        'REDIS_HOST' => 'database.redis.default.host',
+        'SESSION_DRIVER' => 'session.driver',
         'QUEUE_CONNECTION' => 'queue.default',
-        'CACHE_STORE'      => 'cache.default',
+        'CACHE_STORE' => 'cache.default',
     ];
 
     /**
@@ -45,7 +45,7 @@ final class ValidateEnvironment
      * @var array<string, string>
      */
     private const REQUIRED_IN_PRODUCTION = [
-        'DB_PASSWORD'    => 'database.connections.pgsql.password',
+        'DB_PASSWORD' => 'database.connections.pgsql.password',
         'REDIS_PASSWORD' => 'database.redis.default.password',
     ];
 

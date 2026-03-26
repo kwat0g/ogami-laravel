@@ -37,7 +37,7 @@ return new class extends Migration
         });
 
         // ── 3. Delivery Schedules ─────────────────────────────────────────────
-        DB::statement("CREATE SEQUENCE IF NOT EXISTS ds_ref_seq START 1");
+        DB::statement('CREATE SEQUENCE IF NOT EXISTS ds_ref_seq START 1');
 
         Schema::create('delivery_schedules', function (Blueprint $table): void {
             $table->id();
@@ -77,14 +77,14 @@ return new class extends Migration
             END;
             \$\$
         ");
-        DB::statement("
+        DB::statement('
             CREATE TRIGGER trg_ds_reference
             BEFORE INSERT ON delivery_schedules
             FOR EACH ROW EXECUTE FUNCTION trg_fn_ds_reference()
-        ");
+        ');
 
         // ── 4. Production Orders ──────────────────────────────────────────────
-        DB::statement("CREATE SEQUENCE IF NOT EXISTS prod_order_seq START 1");
+        DB::statement('CREATE SEQUENCE IF NOT EXISTS prod_order_seq START 1');
 
         Schema::create('production_orders', function (Blueprint $table): void {
             $table->id();
@@ -123,11 +123,11 @@ return new class extends Migration
             END;
             \$\$
         ");
-        DB::statement("
+        DB::statement('
             CREATE TRIGGER trg_prod_order_reference
             BEFORE INSERT ON production_orders
             FOR EACH ROW EXECUTE FUNCTION trg_fn_prod_order_reference()
-        ");
+        ');
 
         // ── 5. Production Output Logs ─────────────────────────────────────────
         Schema::create('production_output_logs', function (Blueprint $table): void {
@@ -151,32 +151,32 @@ return new class extends Migration
         ");
 
         // Trigger: update qty_produced on production_orders when output log inserted
-        DB::statement("
+        DB::statement('
             CREATE OR REPLACE FUNCTION trg_fn_update_production_qty()
-            RETURNS TRIGGER LANGUAGE plpgsql AS \$\$
+            RETURNS TRIGGER LANGUAGE plpgsql AS $$
             BEGIN
                 UPDATE production_orders
                 SET qty_produced = qty_produced + NEW.qty_produced
                 WHERE id = NEW.production_order_id;
                 RETURN NEW;
             END;
-            \$\$
-        ");
-        DB::statement("
+            $$
+        ');
+        DB::statement('
             CREATE TRIGGER trg_update_production_qty
             AFTER INSERT ON production_output_logs
             FOR EACH ROW EXECUTE FUNCTION trg_fn_update_production_qty()
-        ");
+        ');
     }
 
     public function down(): void
     {
-        DB::statement("DROP TRIGGER IF EXISTS trg_update_production_qty ON production_output_logs");
-        DB::statement("DROP FUNCTION IF EXISTS trg_fn_update_production_qty");
-        DB::statement("DROP TRIGGER IF EXISTS trg_prod_order_reference ON production_orders");
-        DB::statement("DROP FUNCTION IF EXISTS trg_fn_prod_order_reference");
-        DB::statement("DROP TRIGGER IF EXISTS trg_ds_reference ON delivery_schedules");
-        DB::statement("DROP FUNCTION IF EXISTS trg_fn_ds_reference");
+        DB::statement('DROP TRIGGER IF EXISTS trg_update_production_qty ON production_output_logs');
+        DB::statement('DROP FUNCTION IF EXISTS trg_fn_update_production_qty');
+        DB::statement('DROP TRIGGER IF EXISTS trg_prod_order_reference ON production_orders');
+        DB::statement('DROP FUNCTION IF EXISTS trg_fn_prod_order_reference');
+        DB::statement('DROP TRIGGER IF EXISTS trg_ds_reference ON delivery_schedules');
+        DB::statement('DROP FUNCTION IF EXISTS trg_fn_ds_reference');
 
         Schema::dropIfExists('production_output_logs');
         Schema::dropIfExists('production_orders');
@@ -184,7 +184,7 @@ return new class extends Migration
         Schema::dropIfExists('bom_components');
         Schema::dropIfExists('bill_of_materials');
 
-        DB::statement("DROP SEQUENCE IF EXISTS prod_order_seq");
-        DB::statement("DROP SEQUENCE IF EXISTS ds_ref_seq");
+        DB::statement('DROP SEQUENCE IF EXISTS prod_order_seq');
+        DB::statement('DROP SEQUENCE IF EXISTS ds_ref_seq');
     }
 };

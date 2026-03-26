@@ -32,8 +32,8 @@ return new class extends Migration
         DB::statement("ALTER TABLE vendor_rfq_vendors ADD CONSTRAINT chk_vendor_rfq_vendors_status
             CHECK (status IN ('invited','quoted','declined'))");
 
-        DB::statement("ALTER TABLE vendor_rfq_vendors ADD CONSTRAINT chk_vendor_rfq_vendors_amount
-            CHECK (quoted_amount_centavos IS NULL OR quoted_amount_centavos >= 0)");
+        DB::statement('ALTER TABLE vendor_rfq_vendors ADD CONSTRAINT chk_vendor_rfq_vendors_amount
+            CHECK (quoted_amount_centavos IS NULL OR quoted_amount_centavos >= 0)');
     }
 
     public function down(): void

@@ -18,16 +18,17 @@ use Illuminate\Queue\InteractsWithQueue;
  * PROD-DEL-001: Completing a WO with a delivery schedule initiates the
  *               outbound delivery receipt workflow for warehouse staff.
  */
-final class CreateDeliveryReceiptOnProductionComplete implements ShouldQueue, ShouldBeUnique
+final class CreateDeliveryReceiptOnProductionComplete implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
 
     public string $queue = 'default';
+
     public int $uniqueFor = 60;
 
     public function uniqueId(ProductionOrderCompleted $event): string
     {
-        return 'prod-dr-' . $event->order->id;
+        return 'prod-dr-'.$event->order->id;
     }
 
     public function __construct(private readonly DeliveryService $deliveryService) {}
@@ -38,6 +39,15 @@ final class CreateDeliveryReceiptOnProductionComplete implements ShouldQueue, Sh
 
         // Only auto-create DR if this WO is linked to a delivery schedule
         if ($order->delivery_schedule_id === null) {
+            return;
+        }
+
+        // ── QC Gate: If this WO has a delivery schedule, defer DR creation
+        //    to CreateDeliveryReceiptOnOqcPass (runs after QC inspection passes).
+        //    This ensures finished goods are QC-approved before shipping.
+        //    Only create DR immediately for WOs WITHOUT a delivery schedule
+        //    (i.e. manual / internal production not linked to client orders).
+        if ($order->delivery_schedule_id !== null) {
             return;
         }
 

@@ -11,11 +11,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\AttendanceImportRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -27,9 +29,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 final class AttendanceTemplateExport implements FromCollection, WithHeadings, WithStyles, WithTitle
 {
     /**
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @return Collection<int, array<string, mixed>>
      */
-    public function collection(): \Illuminate\Support\Collection
+    public function collection(): Collection
     {
         // Get all active employees (employment_status = active or on_leave)
         $employees = Employee::query()
@@ -74,7 +76,7 @@ final class AttendanceTemplateExport implements FromCollection, WithHeadings, Wi
         // Style the header row
         $sheet->getStyle('A1:F1')->getFont()->setBold(true);
         $sheet->getStyle('A1:F1')->getFill()
-            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setRGB('E2E8F0');
 
         // Auto-size columns
@@ -139,6 +141,6 @@ final class AttendanceImportController extends Controller
 
         $filename = 'attendance_template_'.now()->format('Y-m-d').'.xlsx';
 
-        return Excel::download(new AttendanceTemplateExport(), $filename);
+        return Excel::download(new AttendanceTemplateExport, $filename);
     }
 }

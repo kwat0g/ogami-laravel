@@ -71,13 +71,13 @@ return new class extends Migration
             $table->index(['cost_center_id', 'fiscal_year']);
         });
 
-        DB::statement("ALTER TABLE annual_budgets
+        DB::statement('ALTER TABLE annual_budgets
             ADD CONSTRAINT chk_annual_budget_year
-            CHECK (fiscal_year >= 2000 AND fiscal_year <= 2100)");
+            CHECK (fiscal_year >= 2000 AND fiscal_year <= 2100)');
 
-        DB::statement("ALTER TABLE annual_budgets
+        DB::statement('ALTER TABLE annual_budgets
             ADD CONSTRAINT chk_annual_budget_amount
-            CHECK (budgeted_amount_centavos >= 0)");
+            CHECK (budgeted_amount_centavos >= 0)');
 
         // ── Widen journal_entry_lines.cost_center_id to bigint + add FK ────────
         // The original migration used unsignedInteger (int4); cost_centers.id is

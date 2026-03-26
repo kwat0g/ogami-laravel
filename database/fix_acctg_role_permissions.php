@@ -8,9 +8,10 @@
 require __DIR__.'/../vendor/autoload.php';
 
 $app = require_once __DIR__.'/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -59,7 +60,7 @@ foreach ($roleIds as $roleId) {
                 echo "  - Removed permission: {$permName}\n";
                 $totalRemoved++;
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Permission doesn't exist, skip
         }
     }

@@ -37,6 +37,7 @@ Route::middleware(['auth:sanctum', 'module_access:approvals'])->group(function (
             if ($isGlobal) {
                 return null;
             }
+
             return DB::table('employees')
                 ->whereIn('department_id', $deptIds)
                 ->pluck('id');

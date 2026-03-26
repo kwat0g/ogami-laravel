@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\AP\Models\Vendor;
+use App\Domains\HR\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -19,11 +20,11 @@ beforeEach(function () {
 function createVendor(array $overrides = []): Vendor
 {
     return Vendor::create(array_merge([
-        'name'                 => 'Test Vendor ' . uniqid(),
-        'is_active'            => true,
-        'is_ewt_subject'       => false,
+        'name' => 'Test Vendor '.uniqid(),
+        'is_active' => true,
+        'is_ewt_subject' => false,
         'accreditation_status' => 'pending',
-        'created_by'           => 1,
+        'created_by' => 1,
     ], $overrides));
 }
 
@@ -52,7 +53,7 @@ test('staff cannot accredit a vendor', function () {
 });
 
 test('purchasing officer can accredit a vendor', function () {
-    $purchDept = \App\Domains\HR\Models\Department::where('code', 'PURCH')->first();
+    $purchDept = Department::where('code', 'PURCH')->first();
     $purchOfficer = User::factory()->create();
     $purchOfficer->assignRole('officer');
     $purchOfficer->departments()->attach($purchDept->id, ['is_primary' => true]);
@@ -81,7 +82,7 @@ test('accounting officer cannot suspend a vendor', function () {
 });
 
 test('suspending a vendor locks any linked portal user account', function () {
-    $purchDept = \App\Domains\HR\Models\Department::where('code', 'PURCH')->first();
+    $purchDept = Department::where('code', 'PURCH')->first();
     $purchOfficer = User::factory()->create();
     $purchOfficer->assignRole('officer');
     $purchOfficer->departments()->attach($purchDept->id, ['is_primary' => true]);
@@ -105,7 +106,7 @@ test('suspending a vendor locks any linked portal user account', function () {
 });
 
 test('suspending a vendor with no portal account does not error', function () {
-    $purchDept = \App\Domains\HR\Models\Department::where('code', 'PURCH')->first();
+    $purchDept = Department::where('code', 'PURCH')->first();
     $purchOfficer = User::factory()->create();
     $purchOfficer->assignRole('officer');
     $purchOfficer->departments()->attach($purchDept->id, ['is_primary' => true]);

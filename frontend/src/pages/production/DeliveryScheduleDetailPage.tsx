@@ -432,6 +432,45 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
               )}
             </CardBody>
           </Card>
+
+          {/* Delivery Receipts */}
+          {(schedule.delivery_receipts ?? []).length > 0 && (
+            <Card>
+              <CardHeader>
+                <span className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-neutral-500" />
+                  Delivery Receipts
+                </span>
+              </CardHeader>
+              <CardBody>
+                <div className="divide-y divide-neutral-100">
+                  {schedule.delivery_receipts?.map((dr: any) => (
+                    <div
+                      key={dr.ulid}
+                      className="flex items-center justify-between p-3"
+                    >
+                      <div>
+                        <p className="font-mono text-sm text-neutral-900">{dr.dr_reference}</p>
+                        <p className="text-xs text-neutral-500 mt-1">
+                          Date: {dr.receipt_date ?? '—'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${
+                          dr.status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
+                          dr.status === 'in_transit' ? 'bg-blue-100 text-blue-800' :
+                          dr.status === 'cancelled' ? 'bg-neutral-100 text-neutral-500' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {dr.status?.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          )}
         </div>
 
         {/* Right Column - Metadata */}

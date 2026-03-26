@@ -1,13 +1,17 @@
 #!/usr/bin/env php
 <?php
 
+use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\PermissionRegistrar;
+
 /**
  * Simple RBAC Test Script
  * Run: php test-rbac-simple.php
  */
 
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make('Illuminate\Contracts\Console\Kernel');
 $kernel->bootstrap();
 
@@ -17,8 +21,8 @@ echo "════════════════════════�
 
 // Seed the database
 echo "Seeding database...\n";
-Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+Artisan::call('db:seed', ['--force' => true]);
+app()[PermissionRegistrar::class]->forgetCachedPermissions();
 echo "Done.\n\n";
 
 // Test cases
@@ -27,31 +31,31 @@ $tests = [
         'email' => 'prod.manager@ogamierp.local',
         'perm' => 'inventory.items.view',
         'expected' => false,
-        'desc' => 'Production Manager CANNOT view Inventory'
+        'desc' => 'Production Manager CANNOT view Inventory',
     ],
     [
         'email' => 'warehouse.head@ogamierp.local',
         'perm' => 'inventory.items.view',
         'expected' => true,
-        'desc' => 'Warehouse Head CAN view Inventory'
+        'desc' => 'Warehouse Head CAN view Inventory',
     ],
     [
         'email' => 'prod.manager@ogamierp.local',
         'perm' => 'production.orders.view',
         'expected' => true,
-        'desc' => 'Production Manager CAN view Production'
+        'desc' => 'Production Manager CAN view Production',
     ],
     [
         'email' => 'warehouse.head@ogamierp.local',
         'perm' => 'inventory.items.create',
         'expected' => true,
-        'desc' => 'Warehouse Head CAN create Inventory items'
+        'desc' => 'Warehouse Head CAN create Inventory items',
     ],
     [
         'email' => 'acctg.manager@ogamierp.local',
         'perm' => 'inventory.items.view',
         'expected' => false,
-        'desc' => 'Accounting Manager CANNOT view Inventory'
+        'desc' => 'Accounting Manager CANNOT view Inventory',
     ],
 ];
 
@@ -66,25 +70,26 @@ foreach ($tests as $test) {
     $perm = $test['perm'];
     $expected = $test['expected'];
     $desc = $test['desc'];
-    
-    $user = App\Models\User::where('email', $email)->first();
-    if (!$user) {
+
+    $user = User::where('email', $email)->first();
+    if (! $user) {
         echo "❌ FAIL: $desc\n";
         echo "   User not found: $email\n";
         $failed++;
+
         continue;
     }
-    
+
     $actual = $user->can($perm);
-    
+
     if ($actual === $expected) {
         echo "✅ PASS: $desc\n";
-        echo "   Result: " . ($actual ? 'ALLOWED' : 'BLOCKED') . "\n";
+        echo '   Result: '.($actual ? 'ALLOWED' : 'BLOCKED')."\n";
         $passed++;
     } else {
         echo "❌ FAIL: $desc\n";
-        echo "   Expected: " . ($expected ? 'ALLOWED' : 'BLOCKED') . "\n";
-        echo "   Actual: " . ($actual ? 'ALLOWED' : 'BLOCKED') . "\n";
+        echo '   Expected: '.($expected ? 'ALLOWED' : 'BLOCKED')."\n";
+        echo '   Actual: '.($actual ? 'ALLOWED' : 'BLOCKED')."\n";
         $failed++;
     }
 }

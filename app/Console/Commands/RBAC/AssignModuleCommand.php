@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 /**
  * Assign Module to Department Command
- * 
+ *
  * Links a department to a permission module.
  * Usage: php artisan rbac:assign-module HR hr
  */
@@ -32,34 +32,38 @@ class AssignModuleCommand extends Command
 
         // Validate department
         $department = Department::where('code', $deptCode)->first();
-        if (!$department) {
+        if (! $department) {
             $this->error("❌ Department '{$deptCode}' not found");
             $this->listAvailableDepartments();
+
             return self::FAILURE;
         }
 
         // Validate module
         $module = Module::findByKey($moduleKey);
-        if (!$module) {
+        if (! $module) {
             $this->error("❌ Module '{$moduleKey}' not found");
             $this->listAvailableModules();
+
             return self::FAILURE;
         }
 
         // Display current and new state
         $this->info("Department: {$department->name} ({$department->code})");
-        $this->info("Current module: " . ($department->module_key ?? 'NONE'));
+        $this->info('Current module: '.($department->module_key ?? 'NONE'));
         $this->info("New module: {$module->label} ({$module->module_key})");
 
         if ($dryRun) {
             $this->warn('🧪 Dry run - no changes made');
+
             return self::SUCCESS;
         }
 
         // Confirm if overwriting
         if ($department->module_key !== null) {
-            if (!$this->confirm("Department already has module '{$department->module_key}'. Overwrite?")) {
+            if (! $this->confirm("Department already has module '{$department->module_key}'. Overwrite?")) {
                 $this->info('Cancelled');
+
                 return self::SUCCESS;
             }
         }
@@ -67,18 +71,19 @@ class AssignModuleCommand extends Command
         // Apply change
         try {
             $department->update(['module_key' => $moduleKey]);
-            
+
             // Clear permission caches
             DepartmentModuleService::clearAllCaches();
-            
+
             $this->info("✅ Module '{$moduleKey}' assigned to department '{$deptCode}'");
-            
+
             // Show what permissions this grants
             $this->showPermissionSummary($moduleKey);
-            
+
             return self::SUCCESS;
         } catch (\Exception $e) {
             $this->error("❌ Failed to assign module: {$e->getMessage()}");
+
             return self::FAILURE;
         }
     }
@@ -107,7 +112,7 @@ class AssignModuleCommand extends Command
     {
         $this->newLine();
         $this->info('Permission Summary:');
-        
+
         foreach (['manager', 'officer', 'head', 'staff'] as $role) {
             $perms = DepartmentModuleService::getModulePermissions($role, $moduleKey);
             $count = count($perms);

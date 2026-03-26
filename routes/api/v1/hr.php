@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Position;
+use App\Domains\HR\Models\SalaryGrade;
+use App\Domains\Leave\Models\LeaveType;
+use App\Domains\Loan\Models\LoanType;
 use App\Http\Controllers\HR\EmployeeController;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,7 +38,7 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     });
 
     // ── Salary grades (read-only for most; HR manager can manage via separate admin routes) ──
-    Route::get('salary-grades', fn () => \App\Domains\HR\Models\SalaryGrade::where('is_active', true)
+    Route::get('salary-grades', fn () => SalaryGrade::where('is_active', true)
         ->orderBy('level')
         ->get()
         ->map(fn ($g) => [
@@ -47,7 +53,7 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     )->name('salary-grades.index');
 
     // ── Leave types (reference) ───────────────────────────────────────────────
-    Route::get('leave-types', fn () => \App\Domains\Leave\Models\LeaveType::where('is_active', true)
+    Route::get('leave-types', fn () => LeaveType::where('is_active', true)
         ->orderBy('code')
         ->get([
             'id', 'code', 'name', 'category', 'is_paid', 'max_days_per_year',
@@ -57,7 +63,7 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     )->name('leave-types.index');
 
     // ── Loan types (reference) ────────────────────────────────────────────────
-    Route::get('loan-types', fn () => \App\Domains\Loan\Models\LoanType::where('is_active', true)
+    Route::get('loan-types', fn () => LoanType::where('is_active', true)
         ->orderBy('name')
         ->get()
     )->name('loan-types.index');
@@ -162,17 +168,17 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     Route::prefix('reports')->middleware('permission:hr.full_access')->group(function () {
 
         // Headcount by department
-        Route::get('headcount', function (): \Illuminate\Http\JsonResponse {
-            $rows = \Illuminate\Support\Facades\DB::table('employees')
+        Route::get('headcount', function (): JsonResponse {
+            $rows = DB::table('employees')
                 ->join('departments', 'employees.department_id', '=', 'departments.id')
                 ->select(
                     'departments.id as department_id',
                     'departments.code as department_code',
                     'departments.name as department_name',
-                    \Illuminate\Support\Facades\DB::raw("count(*) as total"),
-                    \Illuminate\Support\Facades\DB::raw("sum(case when employees.employment_status = 'active' and employees.is_active then 1 else 0 end) as active"),
-                    \Illuminate\Support\Facades\DB::raw("sum(case when employees.employment_status = 'on_leave' then 1 else 0 end) as on_leave"),
-                    \Illuminate\Support\Facades\DB::raw("sum(case when employees.employment_status in ('resigned','terminated') then 1 else 0 end) as separated"),
+                    DB::raw('count(*) as total'),
+                    DB::raw("sum(case when employees.employment_status = 'active' and employees.is_active then 1 else 0 end) as active"),
+                    DB::raw("sum(case when employees.employment_status = 'on_leave' then 1 else 0 end) as on_leave"),
+                    DB::raw("sum(case when employees.employment_status in ('resigned','terminated') then 1 else 0 end) as separated"),
                 )
                 ->groupBy('departments.id', 'departments.code', 'departments.name')
                 ->orderByDesc('total')
@@ -182,16 +188,16 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         })->name('reports.headcount');
 
         // Turnover (last 12 months)
-        Route::get('turnover', function (): \Illuminate\Http\JsonResponse {
+        Route::get('turnover', function (): JsonResponse {
             $months = [];
             for ($i = 11; $i >= 0; $i--) {
                 $start = now()->subMonths($i)->startOfMonth();
-                $end   = now()->subMonths($i)->endOfMonth();
+                $end = now()->subMonths($i)->endOfMonth();
                 $label = now()->subMonths($i)->format('M Y');
 
-                $hires = \Illuminate\Support\Facades\DB::table('employees')
+                $hires = DB::table('employees')
                     ->whereBetween('date_hired', [$start, $end])->count();
-                $terms = \Illuminate\Support\Facades\DB::table('employees')
+                $terms = DB::table('employees')
                     ->whereNotNull('separation_date')
                     ->whereBetween('separation_date', [$start, $end])->count();
 
@@ -200,11 +206,11 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
 
             // Overall turnover rate
             $startOfYear = now()->startOfYear();
-            $headcountAtStart = \Illuminate\Support\Facades\DB::table('employees')
+            $headcountAtStart = DB::table('employees')
                 ->where('date_hired', '<', $startOfYear)
                 ->where(fn ($q) => $q->whereNull('separation_date')->orWhere('separation_date', '>=', $startOfYear))
                 ->count();
-            $totalSeps = \Illuminate\Support\Facades\DB::table('employees')
+            $totalSeps = DB::table('employees')
                 ->whereNotNull('separation_date')
                 ->whereYear('separation_date', now()->year)->count();
             $turnoverRate = $headcountAtStart > 0 ? round(($totalSeps / $headcountAtStart) * 100, 1) : 0;
@@ -213,26 +219,29 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         })->name('reports.turnover');
 
         // Upcoming birthdays
-        Route::get('birthdays', function (Request $request): \Illuminate\Http\JsonResponse {
+        Route::get('birthdays', function (Request $request): JsonResponse {
             $days = $request->integer('days', 30);
             $today = now();
 
-            $employees = \Illuminate\Support\Facades\DB::table('employees')
+            $employees = DB::table('employees')
                 ->join('departments', 'employees.department_id', '=', 'departments.id')
                 ->where('employees.is_active', true)
                 ->whereNotNull('employees.birth_date')
                 ->select(
                     'employees.id', 'employees.employee_code',
-                    \Illuminate\Support\Facades\DB::raw("concat(employees.first_name, ' ', employees.last_name) as full_name"),
+                    DB::raw("concat(employees.first_name, ' ', employees.last_name) as full_name"),
                     'employees.birth_date', 'departments.name as department',
                 )
                 ->get()
                 ->map(function ($e) use ($today) {
-                    $bd = \Carbon\Carbon::parse($e->birth_date);
+                    $bd = Carbon::parse($e->birth_date);
                     $next = $bd->copy()->year($today->year);
-                    if ($next->lt($today)) $next->addYear();
+                    if ($next->lt($today)) {
+                        $next->addYear();
+                    }
                     $e->days_until = (int) $today->diffInDays($next, false);
                     $e->age = $today->year - $bd->year - ($next->year > $today->year ? 0 : ($today->lt($bd->copy()->year($today->year)) ? 1 : 0));
+
                     return $e;
                 })
                 ->filter(fn ($e) => $e->days_until >= 0 && $e->days_until <= $days)
@@ -243,4 +252,3 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         })->name('reports.birthdays');
     });
 });
-

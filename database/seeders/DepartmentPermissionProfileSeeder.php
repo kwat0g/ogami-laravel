@@ -637,7 +637,7 @@ class DepartmentPermissionProfileSeeder extends Seeder
             if (! $deptId) {
                 // Try resolving by name if code fails (fallback logic for robustness)
                 // However, top list defines scope. We should expand scope.
-                
+
                 // Let's just log and skip IF truly missing
                 $this->command->warn("Department '{$deptCode}' not found — skipping profile '{$data['profile_label']}'.");
 

@@ -16,16 +16,17 @@ use Illuminate\Queue\InteractsWithQueue;
  *
  * ISO-QC-001: Observations and informational notes do NOT trigger a CAPA.
  */
-final class CreateCapaOnAuditFinding implements ShouldQueue, ShouldBeUnique
+final class CreateCapaOnAuditFinding implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
 
     public string $queue = 'default';
+
     public int $uniqueFor = 60;
 
     public function uniqueId(AuditFindingCreated $event): string
     {
-        return 'finding-capa-' . $event->finding->id;
+        return 'finding-capa-'.$event->finding->id;
     }
 
     public function handle(AuditFindingCreated $event): void
@@ -38,13 +39,13 @@ final class CreateCapaOnAuditFinding implements ShouldQueue, ShouldBeUnique
         }
 
         CapaAction::create([
-            'ncr_id'           => null,
+            'ncr_id' => null,
             'audit_finding_id' => $finding->id,
-            'type'             => $finding->severity === 'major' ? 'corrective' : 'preventive',
-            'description'      => "CAPA initiated from ISO Audit Finding #{$finding->id}: {$finding->description}",
-            'due_date'         => now()->addDays(30)->toDateString(),
-            'status'           => 'open',
-            'created_by_id'    => $finding->raised_by_id,
+            'type' => $finding->severity === 'major' ? 'corrective' : 'preventive',
+            'description' => "CAPA initiated from ISO Audit Finding #{$finding->id}: {$finding->description}",
+            'due_date' => now()->addDays(30)->toDateString(),
+            'status' => 'open',
+            'created_by_id' => $finding->raised_by_id,
         ]);
     }
 }

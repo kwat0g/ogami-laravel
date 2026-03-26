@@ -20,8 +20,8 @@ final class ItemCategoryFactory extends Factory
         $seq++;
 
         return [
-            'code' => 'CAT-' . $seq,
-            'name' => 'Item Category ' . $seq,
+            'code' => 'CAT-'.$seq,
+            'name' => 'Item Category '.$seq,
             'description' => 'Test category description',
             'is_active' => true,
         ];

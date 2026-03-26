@@ -8,6 +8,7 @@ use App\Domains\AP\Models\Vendor;
 use App\Domains\AP\Models\VendorInvoice;
 use App\Domains\AP\Models\VendorPayment;
 use App\Domains\AP\Services\ApPaymentPostingService;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +27,7 @@ beforeEach(function () {
 
     $this->svc = app(ApPaymentPostingService::class);
 
-    $this->user = \App\Models\User::firstOrCreate(
+    $this->user = User::firstOrCreate(
         ['email' => 'system-test@ogami.test'],
         ['name' => 'System Test', 'password' => bcrypt('test'), 'email_verified_at' => now()]
     );

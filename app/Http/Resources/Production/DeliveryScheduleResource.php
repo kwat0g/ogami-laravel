@@ -27,6 +27,12 @@ final class DeliveryScheduleResource extends JsonResource
             'status' => $this->status,
             'notes' => $this->notes,
             'production_orders' => ProductionOrderResource::collection($this->whenLoaded('productionOrders')),
+            'delivery_receipts' => $this->whenLoaded('deliveryReceipts', fn () => $this->deliveryReceipts->map(fn ($dr) => [
+                'ulid' => $dr->ulid,
+                'dr_reference' => $dr->dr_reference,
+                'status' => $dr->status,
+                'receipt_date' => $dr->receipt_date?->toDateString(),
+            ])->toArray()),
             'deleted_at' => $this->deleted_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

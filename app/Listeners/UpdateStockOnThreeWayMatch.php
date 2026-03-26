@@ -67,12 +67,12 @@ class UpdateStockOnThreeWayMatch
                     );
                 } else {
                     Log::warning('Stock not updated for GR item — missing item_master, warehouse location, or confirming user', [
-                        'gr_id'            => $gr->id,
-                        'po_item_id'       => $poItem->id,
+                        'gr_id' => $gr->id,
+                        'po_item_id' => $poItem->id,
                         'item_description' => $poItem->item_description,
-                        'has_item_master'  => (bool) $poItem->item_master_id,
-                        'has_location'     => (bool) $locationId,
-                        'has_actor'        => (bool) $actor,
+                        'has_item_master' => (bool) $poItem->item_master_id,
+                        'has_location' => (bool) $locationId,
+                        'has_actor' => (bool) $actor,
                     ]);
                 }
             });
@@ -97,9 +97,10 @@ class UpdateStockOnThreeWayMatch
         $existingByName = ItemMaster::where('name', $poItem->item_description)->first();
         if ($existingByName) {
             Log::info('Resolved existing ItemMaster by name', [
-                'po_item_id'     => $poItem->id,
+                'po_item_id' => $poItem->id,
                 'item_master_id' => $existingByName->id,
             ]);
+
             return $existingByName->id;
         }
 
@@ -108,9 +109,10 @@ class UpdateStockOnThreeWayMatch
             $existingByCode = ItemMaster::where('item_code', $vendorItem->item_code)->first();
             if ($existingByCode) {
                 Log::info('Resolved existing ItemMaster by vendor item code', [
-                    'po_item_id'     => $poItem->id,
+                    'po_item_id' => $poItem->id,
                     'item_master_id' => $existingByCode->id,
                 ]);
+
                 return $existingByCode->id;
             }
         }
@@ -119,29 +121,30 @@ class UpdateStockOnThreeWayMatch
         $categoryId = $this->getOrCreateMiscCategory();
         if ($categoryId === null) {
             Log::error('Cannot auto-create ItemMaster: no item category exists in the system', [
-                'po_item_id'       => $poItem->id,
+                'po_item_id' => $poItem->id,
                 'item_description' => $poItem->item_description,
             ]);
+
             return null;
         }
 
         // 4a. Auto-create from vendor catalog
         if ($vendorItem) {
             $itemMaster = ItemMaster::create([
-                'item_code'       => $this->generateItemCode($vendorItem->item_code),
-                'name'            => $vendorItem->item_name,
-                'description'     => $vendorItem->description ?? 'Auto-created from vendor catalog via GR. Please review.',
+                'item_code' => $this->generateItemCode($vendorItem->item_code),
+                'name' => $vendorItem->item_name,
+                'description' => $vendorItem->description ?? 'Auto-created from vendor catalog via GR. Please review.',
                 'unit_of_measure' => $vendorItem->unit_of_measure ?? $poItem->unit_of_measure,
-                'category_id'     => $categoryId,
-                'type'            => 'raw_material',
-                'reorder_point'   => 0,
-                'reorder_qty'     => 0,
-                'requires_iqc'    => false,
-                'is_active'       => true,
+                'category_id' => $categoryId,
+                'type' => 'raw_material',
+                'reorder_point' => 0,
+                'reorder_qty' => 0,
+                'requires_iqc' => false,
+                'is_active' => true,
             ]);
 
             Log::info('Auto-created ItemMaster from vendor catalog', [
-                'po_item_id'     => $poItem->id,
+                'po_item_id' => $poItem->id,
                 'item_master_id' => $itemMaster->id,
                 'vendor_item_id' => $vendorItem->id,
             ]);
@@ -151,20 +154,20 @@ class UpdateStockOnThreeWayMatch
 
         // 4b. Auto-create from PO item description (no vendor catalog match)
         $itemMaster = ItemMaster::create([
-            'item_code'       => $this->generateItemCode('AUTO'),
-            'name'            => $poItem->item_description,
-            'description'     => 'Auto-created from GR — no catalog match. Please review and categorize.',
+            'item_code' => $this->generateItemCode('AUTO'),
+            'name' => $poItem->item_description,
+            'description' => 'Auto-created from GR — no catalog match. Please review and categorize.',
             'unit_of_measure' => $poItem->unit_of_measure,
-            'category_id'     => $categoryId,
-            'type'            => 'raw_material',
-            'reorder_point'   => 0,
-            'reorder_qty'     => 0,
-            'requires_iqc'    => false,
-            'is_active'       => true,
+            'category_id' => $categoryId,
+            'type' => 'raw_material',
+            'reorder_point' => 0,
+            'reorder_qty' => 0,
+            'requires_iqc' => false,
+            'is_active' => true,
         ]);
 
         Log::info('Auto-created basic ItemMaster from PO item (no catalog match)', [
-            'po_item_id'     => $poItem->id,
+            'po_item_id' => $poItem->id,
             'item_master_id' => $itemMaster->id,
         ]);
 
@@ -195,14 +198,16 @@ class UpdateStockOnThreeWayMatch
         // Last resort: create an "Uncategorized" category
         try {
             $newCat = ItemCategory::create([
-                'code'        => 'UNCATEGORIZED',
-                'name'        => 'Uncategorized',
+                'code' => 'UNCATEGORIZED',
+                'name' => 'Uncategorized',
                 'description' => 'Catch-all category for auto-created items. Please re-categorize.',
-                'is_active'   => true,
+                'is_active' => true,
             ]);
+
             return $newCat->id;
         } catch (\Throwable $e) {
             Log::error('Failed to create fallback item category', ['error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -214,11 +219,11 @@ class UpdateStockOnThreeWayMatch
     {
         $prefix = strtoupper(substr(trim($prefix), 0, 10));
 
-        $lockKey = crc32('item_code_gen_' . $prefix);
+        $lockKey = crc32('item_code_gen_'.$prefix);
         DB::statement("SELECT pg_advisory_xact_lock({$lockKey})");
 
         $count = ItemMaster::withTrashed()
-            ->where('item_code', 'like', $prefix . '-%')
+            ->where('item_code', 'like', $prefix.'-%')
             ->count();
 
         return sprintf('%s-%05d', $prefix, $count + 1);

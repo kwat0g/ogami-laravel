@@ -16,7 +16,7 @@ return new class extends Migration
     public function up(): void
     {
         DB::table('roles')->insertOrIgnore([
-            'name'       => 'vice_president',
+            'name' => 'vice_president',
             'guard_name' => 'web',
             'created_at' => now(),
             'updated_at' => now(),

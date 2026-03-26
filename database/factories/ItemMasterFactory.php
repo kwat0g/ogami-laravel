@@ -21,9 +21,9 @@ final class ItemMasterFactory extends Factory
         $seq++;
 
         return [
-            'item_code' => 'ITEM-' . $seq,
+            'item_code' => 'ITEM-'.$seq,
             'category_id' => ItemCategory::factory(),
-            'name' => 'Item ' . $this->faker->word() . ' ' . $seq,
+            'name' => 'Item '.$this->faker->word().' '.$seq,
             'unit_of_measure' => 'pcs',
             'description' => 'Test item description',
             'reorder_point' => 10,

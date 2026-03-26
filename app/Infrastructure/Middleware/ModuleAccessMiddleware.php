@@ -6,6 +6,7 @@ namespace App\Infrastructure\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -44,7 +45,7 @@ class ModuleAccessMiddleware
         'journal_entries' => ['ACCTG'],
         'chart_of_accounts' => ['ACCTG'],
         'fiscal_periods' => ['ACCTG'],
-        
+
         // HR module: HR dept manages all employee data; other depts access team-view endpoints
         // via fine-grained permission checks (employees.view_team, attendance.view_team, etc.)
         'hr' => ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
@@ -52,72 +53,72 @@ class ModuleAccessMiddleware
         'attendance' => ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
         'leaves' => ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
         'overtime' => ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
-        
+
         'payroll' => ['HR', 'ACCTG'],
         'loans' => ['HR', 'ACCTG'],
-        
+
         'ap' => ['ACCTG', 'PURCH'],
         'vendors' => ['ACCTG', 'PURCH'],
         'vendor_invoices' => ['ACCTG'],
         'vendor_payments' => ['ACCTG'],
-        
+
         'ar' => ['SALES', 'ACCTG', 'PURCH'],
         'customers' => ['SALES', 'ACCTG', 'PURCH'],
         'customer_invoices' => ['SALES', 'ACCTG'],
-        
+
         'tax' => ['ACCTG'],
         'vat_ledger' => ['ACCTG'],
         'bir_filing' => ['ACCTG'],
-        
+
         'banking' => ['ACCTG'],
         'bank_accounts' => ['ACCTG'],
         'bank_reconciliations' => ['ACCTG'],
-        
+
         'fixed_assets' => ['ACCTG'],
         'budget' => ['ACCTG', 'EXEC'],
-        
+
         'procurement' => ['PURCH', 'PROD', 'PLANT', 'ACCTG', 'WH'],
         'purchase_requests' => ['PURCH', 'PROD', 'PLANT', 'ACCTG'],
         'purchase_orders' => ['PURCH'],
         'goods_receipts' => ['PURCH', 'WH'],
-        
+
         'inventory' => ['WH', 'PURCH', 'PROD', 'PLANT', 'SALES'],
         'items' => ['WH', 'PURCH', 'PROD', 'SALES'],
         'stock' => ['WH', 'PURCH', 'PROD', 'SALES'],
         'requisitions' => ['WH', 'PURCH', 'PROD'],
         'adjustments' => ['WH'],
         'locations' => ['WH'],
-        
+
         'production' => ['PROD', 'PLANT', 'PPC'],
         'work_orders' => ['PROD', 'PLANT'],
         'boms' => ['PROD', 'PLANT'],
         'delivery_schedules' => ['PROD', 'PLANT', 'PPC'],
-        
+
         'qc' => ['QC', 'PROD', 'WH'],
         'inspections' => ['QC', 'PROD', 'WH'],
         'ncr' => ['QC'],
         'capa' => ['QC'],
-        
+
         'maintenance' => ['MAINT', 'PROD', 'PLANT'],
         'equipment' => ['MAINT', 'PROD', 'PLANT'],
-        
+
         'mold' => ['MOLD', 'PROD'],
         'mold_masters' => ['MOLD', 'PROD'],
-        
+
         'delivery' => ['WH', 'SALES', 'PROD', 'PLANT'],
         'shipments' => ['WH', 'SALES', 'PROD', 'PLANT'],
-        
+
         'iso' => ['ISO', 'QC'],
         'crm' => ['SALES'],
         'tickets' => ['SALES'],
-        
+
         'admin' => ['IT', 'EXEC'],
         'users' => ['IT', 'EXEC'],
         'settings' => ['IT', 'EXEC'],
-        
+
         // Approvals (VP/Executive level)
         'approvals' => ['EXEC', 'VP'],
-        
+
         // Reports (HR and Accounting)
         'reports' => ['HR', 'ACCTG', 'EXEC'],
     ];
@@ -127,11 +128,8 @@ class ModuleAccessMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @param  string  $module  The module key (e.g., 'accounting', 'hr')
      * @param  string|null  $permission  Optional specific permission to check
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function handle(Request $request, Closure $next, string $module, ?string $permission = null): Response
     {
@@ -171,10 +169,10 @@ class ModuleAccessMiddleware
 
         // Check department access
         $allowedDepts = self::MODULE_DEPARTMENTS[$module] ?? null;
-        
+
         if ($allowedDepts === null) {
             // Unknown module - log warning and deny
-            \Illuminate\Support\Facades\Log::warning('ModuleAccessMiddleware: Unknown module', [
+            Log::warning('ModuleAccessMiddleware: Unknown module', [
                 'module' => $module,
                 'user_id' => $user->id,
                 'url' => $request->fullUrl(),
@@ -184,7 +182,7 @@ class ModuleAccessMiddleware
 
         // Get user's department code
         $userDeptCode = $this->getUserDepartmentCode($user);
-        
+
         if ($userDeptCode === null) {
             abort(403, 'Department not assigned');
         }
@@ -192,14 +190,14 @@ class ModuleAccessMiddleware
         // Check if user's department is in allowed list
         if (! in_array($userDeptCode, $allowedDepts, true)) {
             // Log violation for audit
-            \Illuminate\Support\Facades\Log::warning('Module access denied - wrong department', [
+            Log::warning('Module access denied - wrong department', [
                 'user_id' => $user->id,
                 'user_dept' => $userDeptCode,
                 'required_depts' => $allowedDepts,
                 'module' => $module,
                 'url' => $request->fullUrl(),
             ]);
-            
+
             abort(403, 'Access restricted to specific departments');
         }
 
@@ -214,7 +212,7 @@ class ModuleAccessMiddleware
         // Try to get from loaded relationship
         $primaryDept = $user->departments
             ->firstWhere('pivot.is_primary', true) ?? $user->departments->first();
-        
+
         if ($primaryDept) {
             return $primaryDept->code;
         }

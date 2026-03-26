@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\AP\Models\Vendor;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('item_masters', function (Blueprint $table) {
-            $table->dropForeignIdFor(\App\Domains\AP\Models\Vendor::class, 'preferred_vendor_id');
+            $table->dropForeignIdFor(Vendor::class, 'preferred_vendor_id');
             $table->dropColumn('preferred_vendor_id');
         });
     }

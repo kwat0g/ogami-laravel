@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\Handler;
 use App\Infrastructure\Middleware\DepartmentScopeMiddleware;
 use App\Infrastructure\Middleware\EnsureJsonApiMiddleware;
 use App\Infrastructure\Middleware\ModuleAccessMiddleware;
@@ -9,6 +10,8 @@ use App\Infrastructure\Middleware\VendorScopeMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -39,8 +42,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'dept_scope' => DepartmentScopeMiddleware::class,
             'module_access' => ModuleAccessMiddleware::class,
             'vendor_scope' => VendorScopeMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role' => RoleMiddleware::class,
         ]);
 
         // ── Authentication redirect ───────────────────────────────────────────
@@ -55,9 +58,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // All rendering is handled in App\Exceptions\Handler via render()
-        $exceptions->renderable(function (\Throwable $e, $request) {
-            /** @var \App\Exceptions\Handler $handler */
-            $handler = app(\App\Exceptions\Handler::class);
+        $exceptions->renderable(function (Throwable $e, $request) {
+            /** @var Handler $handler */
+            $handler = app(Handler::class);
 
             if ($request->expectsJson() || $request->is('api/*')) {
                 return $handler->render($request, $e);

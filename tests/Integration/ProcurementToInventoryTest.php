@@ -2,18 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Domains\AP\Models\Vendor;
 use App\Domains\HR\Models\Department;
-use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\StockLedger;
 use App\Domains\Inventory\Models\WarehouseLocation;
+use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseOrderItem;
 use App\Domains\Procurement\Models\PurchaseRequest;
-use App\Domains\Procurement\Models\PurchaseRequestItem;
-use App\Domains\AP\Models\Vendor;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -68,7 +67,7 @@ beforeEach(function () {
     // Use unique item code for each test to ensure isolation
     $this->item = ItemMaster::create([
         'category_id' => $category->id,
-        'item_code' => 'RM-TEST-' . uniqid(),
+        'item_code' => 'RM-TEST-'.uniqid(),
         'name' => 'Test Raw Material',
         'type' => 'raw_material',
         'unit_of_measure' => 'pcs',

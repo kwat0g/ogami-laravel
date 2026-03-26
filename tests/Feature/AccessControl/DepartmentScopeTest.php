@@ -5,9 +5,13 @@ declare(strict_types=1);
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Employee;
 use App\Domains\HR\Models\Position;
+use App\Infrastructure\Middleware\DepartmentScopeMiddleware;
 use App\Infrastructure\Scopes\DepartmentScope;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,7 +77,7 @@ function makeEmployeeInDept(Department $dept, string $suffix): Employee
  */
 function makeUserInDept(Department $dept, string $role = 'staff'): User
 {
-    \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
 
     $user = User::factory()->create([
         'password' => Hash::make('ScopePass!123'),
@@ -208,17 +212,17 @@ describe('DepartmentScopeMiddleware — HTTP integration', function () {
         $user = makeUserInDept($dept, 'manager');
 
         // Grant employees.view permission
-        $perm = \Spatie\Permission\Models\Permission::firstOrCreate(
+        $perm = Permission::firstOrCreate(
             ['name' => 'employees.view', 'guard_name' => 'web']
         );
         $user->givePermissionTo($perm);
 
         // Make a request that passes through DepartmentScopeMiddleware (via dept_scope alias)
         // The middleware should bind dept_scope.active = true and dept_scope.department_id = dept->id
-        $request = \Illuminate\Http\Request::create('/api/v1/hr/employees', 'GET');
+        $request = Request::create('/api/v1/hr/employees', 'GET');
         $request->setUserResolver(fn () => $user);
 
-        $middleware = new \App\Infrastructure\Middleware\DepartmentScopeMiddleware;
+        $middleware = new DepartmentScopeMiddleware;
         $called = false;
         $middleware->handle($request, function ($req) use (&$called, $dept) {
             $called = true;
@@ -235,10 +239,10 @@ describe('DepartmentScopeMiddleware — HTTP integration', function () {
         $dept = makeTestDept('MW2');
         $user = makeUserInDept($dept, 'admin');
 
-        $request = \Illuminate\Http\Request::create('/api/v1/hr/employees', 'GET');
+        $request = Request::create('/api/v1/hr/employees', 'GET');
         $request->setUserResolver(fn () => $user);
 
-        $middleware = new \App\Infrastructure\Middleware\DepartmentScopeMiddleware;
+        $middleware = new DepartmentScopeMiddleware;
         $middleware->handle($request, function ($req) {
             // Admin should bypass scope — dept_scope.active must be false
             expect(app()->bound('dept_scope.active'))->toBeTrue();
@@ -254,10 +258,10 @@ describe('DepartmentScopeMiddleware — HTTP integration', function () {
         $dept = makeTestDept('MW3');
         $user = makeUserInDept($dept, 'executive');
 
-        $request = \Illuminate\Http\Request::create('/api/v1/hr/employees', 'GET');
+        $request = Request::create('/api/v1/hr/employees', 'GET');
         $request->setUserResolver(fn () => $user);
 
-        $middleware = new \App\Infrastructure\Middleware\DepartmentScopeMiddleware;
+        $middleware = new DepartmentScopeMiddleware;
         $middleware->handle($request, function ($req) {
             expect(app()->bound('dept_scope.active'))->toBeTrue();
             expect(app('dept_scope.active'))->toBeFalse();
@@ -275,7 +279,7 @@ describe('DepartmentScopeMiddleware — HTTP integration', function () {
         $empY = makeEmployeeInDept($deptY, 'Yolanda');
 
         $user = makeUserInDept($deptX, 'manager');
-        $perm = \Spatie\Permission\Models\Permission::firstOrCreate(
+        $perm = Permission::firstOrCreate(
             ['name' => 'employees.view', 'guard_name' => 'web']
         );
         $user->givePermissionTo($perm);

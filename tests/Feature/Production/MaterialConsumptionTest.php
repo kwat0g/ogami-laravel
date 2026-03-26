@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Department;
+use App\Domains\HR\Models\Employee;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\StockLedger;
 use App\Domains\Inventory\Models\WarehouseLocation;
@@ -24,7 +27,7 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
 
     // Create a production manager user
-    $prodDept = \App\Domains\HR\Models\Department::where('code', 'PROD')->first();
+    $prodDept = Department::where('code', 'PROD')->first();
     $this->manager = User::factory()->create(['email' => 'prod_mgr@test.com']);
     $this->manager->assignRole('manager');
     $this->manager->departments()->attach($prodDept->id, ['is_primary' => true]);
@@ -37,88 +40,88 @@ beforeEach(function () {
 
     // Create a warehouse location
     $this->warehouse = WarehouseLocation::create([
-        'name'      => 'Main Warehouse',
-        'code'      => 'WH-01',
+        'name' => 'Main Warehouse',
+        'code' => 'WH-01',
         'is_active' => true,
     ]);
 
     // Create item category (required FK on item_masters)
     $category = ItemCategory::create([
-        'code'      => 'RAW',
-        'name'      => 'Raw Materials',
+        'code' => 'RAW',
+        'name' => 'Raw Materials',
         'is_active' => true,
     ]);
 
     $fgCategory = ItemCategory::create([
-        'code'      => 'FG',
-        'name'      => 'Finished Goods',
+        'code' => 'FG',
+        'name' => 'Finished Goods',
         'is_active' => true,
     ]);
 
     // Create finished goods item and raw material items
     $this->finishedGoods = ItemMaster::create([
-        'item_code'       => 'FG-001',
-        'category_id'     => $fgCategory->id,
-        'name'            => 'Widget A',
-        'type'            => 'finished_good',
+        'item_code' => 'FG-001',
+        'category_id' => $fgCategory->id,
+        'name' => 'Widget A',
+        'type' => 'finished_good',
         'unit_of_measure' => 'pcs',
-        'is_active'       => true,
+        'is_active' => true,
     ]);
 
     $this->rawMaterial1 = ItemMaster::create([
-        'item_code'       => 'RM-001',
-        'category_id'     => $category->id,
-        'name'            => 'Steel Sheet',
-        'type'            => 'raw_material',
+        'item_code' => 'RM-001',
+        'category_id' => $category->id,
+        'name' => 'Steel Sheet',
+        'type' => 'raw_material',
         'unit_of_measure' => 'kg',
-        'is_active'       => true,
-        'reorder_point'   => 10.0,
+        'is_active' => true,
+        'reorder_point' => 10.0,
     ]);
 
     $this->rawMaterial2 = ItemMaster::create([
-        'item_code'       => 'RM-002',
-        'category_id'     => $category->id,
-        'name'            => 'Plastic Resin',
-        'type'            => 'raw_material',
+        'item_code' => 'RM-002',
+        'category_id' => $category->id,
+        'name' => 'Plastic Resin',
+        'type' => 'raw_material',
         'unit_of_measure' => 'kg',
-        'is_active'       => true,
-        'reorder_point'   => 5.0,
+        'is_active' => true,
+        'reorder_point' => 5.0,
     ]);
 
     // Create BOM with 2 components
     $this->bom = BillOfMaterials::create([
         'product_item_id' => $this->finishedGoods->id,
-        'version'         => '1.0',
-        'is_active'       => true,
+        'version' => '1.0',
+        'is_active' => true,
     ]);
 
     // Component 1: 2kg steel per unit, 5% scrap factor
     $this->component1 = BomComponent::create([
-        'bom_id'            => $this->bom->id,
+        'bom_id' => $this->bom->id,
         'component_item_id' => $this->rawMaterial1->id,
-        'qty_per_unit'      => 2.0,
-        'unit_of_measure'   => 'kg',
-        'scrap_factor_pct'  => 5.0,
+        'qty_per_unit' => 2.0,
+        'unit_of_measure' => 'kg',
+        'scrap_factor_pct' => 5.0,
     ]);
 
     // Component 2: 0.5kg resin per unit, 0% scrap
     $this->component2 = BomComponent::create([
-        'bom_id'            => $this->bom->id,
+        'bom_id' => $this->bom->id,
         'component_item_id' => $this->rawMaterial2->id,
-        'qty_per_unit'      => 0.5,
-        'unit_of_measure'   => 'kg',
-        'scrap_factor_pct'  => 0.0,
+        'qty_per_unit' => 0.5,
+        'unit_of_measure' => 'kg',
+        'scrap_factor_pct' => 0.0,
     ]);
 
     // Create production order for 10 units
     $this->order = ProductionOrder::create([
-        'product_item_id'  => $this->finishedGoods->id,
-        'bom_id'           => $this->bom->id,
-        'qty_required'     => 10,
+        'product_item_id' => $this->finishedGoods->id,
+        'bom_id' => $this->bom->id,
+        'qty_required' => 10,
         'target_start_date' => now()->addDays(1),
-        'target_end_date'   => now()->addDays(7),
-        'status'            => 'draft',
-        'created_by_id'     => $this->manager->id,
+        'target_end_date' => now()->addDays(7),
+        'status' => 'draft',
+        'created_by_id' => $this->manager->id,
     ]);
 });
 
@@ -179,7 +182,7 @@ it('adds finished goods to stock on production completion', function () {
         ->assertOk();
 
     // Fulfil auto-created MRQs (release() auto-creates draft MRQ from BOM)
-    \App\Domains\Inventory\Models\MaterialRequisition::where('production_order_id', $this->order->id)
+    MaterialRequisition::where('production_order_id', $this->order->id)
         ->update(['status' => 'fulfilled']);
 
     // Start the order
@@ -188,18 +191,18 @@ it('adds finished goods to stock on production completion', function () {
         ->assertOk();
 
     // Create an employee for operator reference
-    $employee = \App\Domains\HR\Models\Employee::factory()->create([
+    $employee = Employee::factory()->create([
         'user_id' => $this->manager->id,
     ]);
 
     // Log output
     $this->actingAs($this->manager)
         ->postJson("/api/v1/production/orders/{$this->order->ulid}/output", [
-            'shift'        => 'A',
-            'log_date'     => now()->toDateString(),
+            'shift' => 'A',
+            'log_date' => now()->toDateString(),
             'qty_produced' => 10,
             'qty_rejected' => 1,
-            'operator_id'  => $employee->id,
+            'operator_id' => $employee->id,
         ])
         ->assertSuccessful();
 
@@ -244,14 +247,14 @@ it('blocks release when QC inspection has failed status', function () {
 
     // Create a failed QC inspection linked to this order
     Inspection::create([
-        'stage'               => 'ipqc',
-        'status'              => 'failed',
+        'stage' => 'ipqc',
+        'status' => 'failed',
         'production_order_id' => $this->order->id,
-        'qty_inspected'       => 10,
-        'qty_passed'          => 3,
-        'qty_failed'          => 7,
-        'inspection_date'     => now(),
-        'created_by_id'       => $this->manager->id,
+        'qty_inspected' => 10,
+        'qty_passed' => 3,
+        'qty_failed' => 7,
+        'inspection_date' => now(),
+        'created_by_id' => $this->manager->id,
     ]);
 
     $response = $this->actingAs($this->manager)
@@ -271,14 +274,14 @@ it('allows head to override QC block with permission', function () {
 
     // Create a failed QC inspection
     Inspection::create([
-        'stage'               => 'ipqc',
-        'status'              => 'failed',
+        'stage' => 'ipqc',
+        'status' => 'failed',
         'production_order_id' => $this->order->id,
-        'qty_inspected'       => 10,
-        'qty_passed'          => 3,
-        'qty_failed'          => 7,
-        'inspection_date'     => now(),
-        'created_by_id'       => $this->manager->id,
+        'qty_inspected' => 10,
+        'qty_passed' => 3,
+        'qty_failed' => 7,
+        'inspection_date' => now(),
+        'created_by_id' => $this->manager->id,
     ]);
 
     // manager (production module) has production.qc-override permission
@@ -291,7 +294,7 @@ it('allows head to override QC block with permission', function () {
     // If permission exists, expect 200; otherwise expect 403
     $status = $response->getStatusCode();
     expect(in_array($status, [200, 403]))->toBeTrue();
-    
+
     if ($status === 200) {
         $this->order->refresh();
         expect($this->order->status)->toBe('released');
@@ -304,12 +307,12 @@ function seedStock(ItemMaster $item, WarehouseLocation $location, float $qty): v
 {
     // PG trigger trg_update_stock_balance auto-upserts stock_balances on insert
     StockLedger::create([
-        'item_id'          => $item->id,
-        'location_id'      => $location->id,
+        'item_id' => $item->id,
+        'location_id' => $location->id,
         'transaction_type' => 'adjustment', // valid type per chk_sl_txn_type
-        'quantity'         => $qty,
-        'balance_after'    => $qty,
-        'remarks'          => 'Initial stock for testing',
-        'created_by_id'    => User::where('email', 'admin@ogamierp.local')->first()->id,
+        'quantity' => $qty,
+        'balance_after' => $qty,
+        'remarks' => 'Initial stock for testing',
+        'created_by_id' => User::where('email', 'admin@ogamierp.local')->first()->id,
     ]);
 }

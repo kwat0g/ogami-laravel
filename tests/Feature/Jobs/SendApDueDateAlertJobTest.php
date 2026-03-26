@@ -7,10 +7,12 @@ use App\Domains\AP\Models\VendorInvoice;
 use App\Jobs\AP\SendApDueDateAlertJob;
 use App\Models\User;
 use App\Notifications\ApDueDateAlertNotification;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
 
     $this->vendor = Vendor::factory()->create();
 
@@ -32,7 +34,7 @@ it('sends overdue alerts to accounting managers', function () {
         'balance_due' => 50000,
     ]);
 
-    $job = new SendApDueDateAlertJob();
+    $job = new SendApDueDateAlertJob;
     $job->handle();
 
     Notification::assertSentTo(
@@ -55,7 +57,7 @@ it('sends due-soon alerts to accounting staff', function () {
         'balance_due' => 30000,
     ]);
 
-    $job = new SendApDueDateAlertJob();
+    $job = new SendApDueDateAlertJob;
     $job->handle();
 
     Notification::assertSentTo(
@@ -78,7 +80,7 @@ it('does not send alerts when no invoices match criteria', function () {
         'balance_due' => 50000,
     ]);
 
-    $job = new SendApDueDateAlertJob();
+    $job = new SendApDueDateAlertJob;
     $job->handle();
 
     Notification::assertNothingSent();
@@ -95,10 +97,10 @@ it('includes correct invoice details in notification', function () {
         'balance_due' => 75000,
     ]);
 
-    $job = new SendApDueDateAlertJob();
+    $job = new SendApDueDateAlertJob;
     $job->handle();
 
-    Notification::assertSentTo($this->accountingManager, ApDueDateAlertNotification::class, function ($notification) use ($invoice) {
+    Notification::assertSentTo($this->accountingManager, ApDueDateAlertNotification::class, function ($notification) {
         $array = $notification->toArray($this->accountingManager);
 
         return $array['invoice_no'] === 'INV-OVERDUE-001'
@@ -119,7 +121,7 @@ it('sends multiple notifications for multiple invoices', function () {
         'balance_due' => 10000,
     ]);
 
-    $job = new SendApDueDateAlertJob();
+    $job = new SendApDueDateAlertJob;
     $job->handle();
 
     Notification::assertSentToTimes($this->accountingManager, ApDueDateAlertNotification::class, 3);
@@ -127,7 +129,7 @@ it('sends multiple notifications for multiple invoices', function () {
 
 it('loads alert days from system settings', function () {
     // Set custom alert days
-    \Illuminate\Support\Facades\DB::table('system_settings')->updateOrInsert(
+    DB::table('system_settings')->updateOrInsert(
         ['key' => 'ap.due_date_alert_days'],
         ['value' => json_encode(14), 'created_at' => now(), 'updated_at' => now()]
     );
@@ -142,7 +144,7 @@ it('loads alert days from system settings', function () {
         'balance_due' => 50000,
     ]);
 
-    $job = new SendApDueDateAlertJob();
+    $job = new SendApDueDateAlertJob;
     $job->handle();
 
     Notification::assertSentTo($this->accountingStaff, ApDueDateAlertNotification::class);

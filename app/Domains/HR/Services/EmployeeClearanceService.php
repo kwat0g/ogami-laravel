@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Employee Clearance Service - Manages exit clearance workflow.
- * 
+ *
  * When an employee resigns, this service creates a checklist of clearance
  * items from each department (IT, HR, Finance, Department, Warehouse).
  * Final pay is blocked until all items are cleared.
@@ -68,6 +68,7 @@ final class EmployeeClearanceService implements ServiceContract
         $existingCount = EmployeeClearance::where('employee_id', $employee->id)->count();
         if ($existingCount > 0) {
             Log::info("Clearance already exists for employee {$employee->employee_code}");
+
             return EmployeeClearance::where('employee_id', $employee->id)->get();
         }
 
@@ -144,7 +145,7 @@ final class EmployeeClearanceService implements ServiceContract
 
     /**
      * Get clearance summary for an employee.
-     * 
+     *
      * @return array<string, array{total: int, cleared: int, pending: int, blocked: int}>
      */
     public function getClearanceSummary(int $employeeId): array
@@ -177,7 +178,7 @@ final class EmployeeClearanceService implements ServiceContract
 
     /**
      * Get all clearance items for an employee.
-     * 
+     *
      * @return Collection<int, EmployeeClearance>
      */
     public function getClearanceItems(int $employeeId, ?string $department = null): Collection
@@ -199,7 +200,7 @@ final class EmployeeClearanceService implements ServiceContract
     {
         $summary = $this->getClearanceSummary($employeeId);
 
-        if (!$summary['OVERALL']['is_fully_cleared']) {
+        if (! $summary['OVERALL']['is_fully_cleared']) {
             $blockedDepts = collect($summary)
                 ->except(['OVERALL'])
                 ->filter(fn ($s) => $s['blocked'] > 0 || $s['pending'] > 0)

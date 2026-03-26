@@ -43,7 +43,7 @@ return new class extends Migration
             $table->index(['vendor_id', 'is_active']);
         });
 
-        DB::statement("ALTER TABLE vendor_items ADD CONSTRAINT chk_vendor_items_unit_price CHECK (unit_price >= 0)");
+        DB::statement('ALTER TABLE vendor_items ADD CONSTRAINT chk_vendor_items_unit_price CHECK (unit_price >= 0)');
     }
 
     public function down(): void

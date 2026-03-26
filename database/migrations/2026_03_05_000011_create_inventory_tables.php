@@ -22,7 +22,7 @@ return new class extends Migration
         });
 
         // ── 2. Item Master ────────────────────────────────────────────────────
-        DB::statement("CREATE SEQUENCE IF NOT EXISTS item_code_seq START 1");
+        DB::statement('CREATE SEQUENCE IF NOT EXISTS item_code_seq START 1');
 
         Schema::create('item_masters', function (Blueprint $table): void {
             $table->id();
@@ -55,11 +55,11 @@ return new class extends Migration
             END;
             \$\$
         ");
-        DB::statement("
+        DB::statement('
             CREATE TRIGGER trg_item_code
             BEFORE INSERT ON item_masters
             FOR EACH ROW EXECUTE FUNCTION trg_fn_item_code()
-        ");
+        ');
 
         // ── 3. Warehouse Locations ────────────────────────────────────────────
         Schema::create('warehouse_locations', function (Blueprint $table): void {
@@ -126,9 +126,9 @@ return new class extends Migration
             $table->primary(['item_id', 'location_id']);
         });
 
-        DB::statement("
+        DB::statement('
             CREATE OR REPLACE FUNCTION trg_fn_update_stock_balance()
-            RETURNS TRIGGER LANGUAGE plpgsql AS \$\$
+            RETURNS TRIGGER LANGUAGE plpgsql AS $$
             BEGIN
                 INSERT INTO stock_balances (item_id, location_id, quantity_on_hand)
                 VALUES (NEW.item_id, NEW.location_id, NEW.quantity)
@@ -138,16 +138,16 @@ return new class extends Migration
                     updated_at = NOW();
                 RETURN NEW;
             END;
-            \$\$
-        ");
-        DB::statement("
+            $$
+        ');
+        DB::statement('
             CREATE TRIGGER trg_update_stock_balance
             AFTER INSERT ON stock_ledger
             FOR EACH ROW EXECUTE FUNCTION trg_fn_update_stock_balance()
-        ");
+        ');
 
         // ── 7. Material Requisitions ──────────────────────────────────────────
-        DB::statement("CREATE SEQUENCE IF NOT EXISTS mrq_ref_seq START 1");
+        DB::statement('CREATE SEQUENCE IF NOT EXISTS mrq_ref_seq START 1');
 
         Schema::create('material_requisitions', function (Blueprint $table): void {
             $table->id();
@@ -188,22 +188,22 @@ return new class extends Migration
         ");
 
         // SoD constraints
-        DB::statement("
+        DB::statement('
             ALTER TABLE material_requisitions ADD CONSTRAINT chk_sod_mrq_head
             CHECK (noted_by_id IS NULL OR noted_by_id <> requested_by_id)
-        ");
-        DB::statement("
+        ');
+        DB::statement('
             ALTER TABLE material_requisitions ADD CONSTRAINT chk_sod_mrq_manager
             CHECK (checked_by_id IS NULL OR checked_by_id <> noted_by_id)
-        ");
-        DB::statement("
+        ');
+        DB::statement('
             ALTER TABLE material_requisitions ADD CONSTRAINT chk_sod_mrq_officer
             CHECK (reviewed_by_id IS NULL OR reviewed_by_id <> checked_by_id)
-        ");
-        DB::statement("
+        ');
+        DB::statement('
             ALTER TABLE material_requisitions ADD CONSTRAINT chk_sod_mrq_vp
             CHECK (vp_approved_by_id IS NULL OR vp_approved_by_id <> reviewed_by_id)
-        ");
+        ');
 
         // mr_reference trigger
         DB::statement("
@@ -218,11 +218,11 @@ return new class extends Migration
             END;
             \$\$
         ");
-        DB::statement("
+        DB::statement('
             CREATE TRIGGER trg_mrq_reference
             BEFORE INSERT ON material_requisitions
             FOR EACH ROW EXECUTE FUNCTION trg_fn_mrq_reference()
-        ");
+        ');
 
         // ── Link: add item_master_id to goods_receipt_items ─────────────────
         // Enables automatic stock receive when GR passes three-way match.
@@ -249,12 +249,12 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::statement("DROP TRIGGER IF EXISTS trg_update_stock_balance ON stock_ledger");
-        DB::statement("DROP FUNCTION IF EXISTS trg_fn_update_stock_balance");
-        DB::statement("DROP TRIGGER IF EXISTS trg_item_code ON item_masters");
-        DB::statement("DROP FUNCTION IF EXISTS trg_fn_item_code");
-        DB::statement("DROP TRIGGER IF EXISTS trg_mrq_reference ON material_requisitions");
-        DB::statement("DROP FUNCTION IF EXISTS trg_fn_mrq_reference");
+        DB::statement('DROP TRIGGER IF EXISTS trg_update_stock_balance ON stock_ledger');
+        DB::statement('DROP FUNCTION IF EXISTS trg_fn_update_stock_balance');
+        DB::statement('DROP TRIGGER IF EXISTS trg_item_code ON item_masters');
+        DB::statement('DROP FUNCTION IF EXISTS trg_fn_item_code');
+        DB::statement('DROP TRIGGER IF EXISTS trg_mrq_reference ON material_requisitions');
+        DB::statement('DROP FUNCTION IF EXISTS trg_fn_mrq_reference');
 
         Schema::dropIfExists('material_requisition_items');
         Schema::dropIfExists('material_requisitions');
@@ -272,7 +272,7 @@ return new class extends Migration
             });
         }
 
-        DB::statement("DROP SEQUENCE IF EXISTS item_code_seq");
-        DB::statement("DROP SEQUENCE IF EXISTS mrq_ref_seq");
+        DB::statement('DROP SEQUENCE IF EXISTS item_code_seq');
+        DB::statement('DROP SEQUENCE IF EXISTS mrq_ref_seq');
     }
 };

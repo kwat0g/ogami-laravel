@@ -99,10 +99,10 @@ class JournalEntryTemplate extends Model
     public function apply(): array
     {
         $validation = $this->validateAccounts();
-        
-        if (!$validation['is_valid']) {
+
+        if (! $validation['is_valid']) {
             throw new \RuntimeException(
-                'Template has invalid accounts: ' . 
+                'Template has invalid accounts: '.
                 implode(', ', array_column($validation['invalid'], 'account_id'))
             );
         }

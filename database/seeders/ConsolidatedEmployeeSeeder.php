@@ -14,13 +14,13 @@ use Illuminate\Support\Str;
 
 /**
  * Consolidated Employee and User Account Seeder
- * 
+ *
  * This seeder creates employees and their corresponding user accounts
  * with proper role assignments for all departments.
- * 
+ *
  * Hierarchy per department:
  * - Executive (for applicable depts)
- * - Manager  
+ * - Manager
  * - Officer
  * - Head
  * - Staff
@@ -395,18 +395,18 @@ class ConsolidatedEmployeeSeeder extends Seeder
         $admin->save();
         $admin->syncRoles(['admin']);
 
-        $this->command->info("    ✓ Created admin user: admin@ogamierp.local");
+        $this->command->info('    ✓ Created admin user: admin@ogamierp.local');
     }
 
     private function createExecutiveUser(array $data): void
     {
         // Executives don't have employee records - they are board-level
         $password = self::DEFAULT_PASSWORDS[$data['role']] ?? 'Executive@12345!';
-        
+
         // Check if user exists first
         $user = User::where('email', $data['email'])->first();
-        
-        if (!$user) {
+
+        if (! $user) {
             // Create new user with password
             $user = User::create([
                 'name' => "{$data['first_name']} {$data['last_name']} ({$data['position']})",
@@ -420,7 +420,7 @@ class ConsolidatedEmployeeSeeder extends Seeder
             $user->password = $password;
             $user->save();
         }
-        
+
         // Reset any lockouts
         $user->update(['failed_login_attempts' => 0, 'locked_until' => null]);
 
@@ -434,9 +434,10 @@ class ConsolidatedEmployeeSeeder extends Seeder
     {
         // Get department ID
         $deptId = DB::table('departments')->where('code', $deptCode)->value('id');
-        
-        if (!$deptId) {
+
+        if (! $deptId) {
             $this->command->warn("    ⚠ Department {$deptCode} not found, skipping {$data['email']}");
+
             return;
         }
 
@@ -447,7 +448,7 @@ class ConsolidatedEmployeeSeeder extends Seeder
         }
 
         // Get salary grade (default to SG-01 for staff, higher for managers)
-        $sgCode = match($data['role']) {
+        $sgCode = match ($data['role']) {
             'executive', 'vice_president' => 'SG-15',
             'manager' => 'SG-12',
             'head' => 'SG-09',
@@ -459,10 +460,10 @@ class ConsolidatedEmployeeSeeder extends Seeder
 
         // Generate government IDs
         $govIds = GovernmentIdHelper::generateCompleteGovIds();
-        
+
         // Generate bank details
         $bankDetails = GovernmentIdHelper::generateBankDetails($data['first_name'], $data['last_name']);
-        
+
         // Create or update employee with all required fields
         $employeeData = [
             'ulid' => (string) Str::ulid(),
@@ -504,7 +505,7 @@ class ConsolidatedEmployeeSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ];
-        
+
         // Try to insert, if exists update
         $existing = DB::table('employees')->where('employee_code', $data['code'])->first();
         if ($existing) {
@@ -517,11 +518,11 @@ class ConsolidatedEmployeeSeeder extends Seeder
 
         // Create user account with proper password
         $password = self::DEFAULT_PASSWORDS[$data['role']] ?? 'Password@123!';
-        
+
         // Check if user exists first
         $user = User::where('email', $data['email'])->first();
-        
-        if (!$user) {
+
+        if (! $user) {
             // Create new user with password
             $user = User::create([
                 'name' => "{$data['first_name']} {$data['last_name']} ({$data['position']})",
@@ -535,7 +536,7 @@ class ConsolidatedEmployeeSeeder extends Seeder
             $user->password = $password;
             $user->save();
         }
-        
+
         // Update employee with user_id
         DB::table('employees')
             ->where('id', $employeeId)
@@ -543,7 +544,7 @@ class ConsolidatedEmployeeSeeder extends Seeder
 
         // Update user with department_id
         $user->update(['department_id' => $deptId]);
-        
+
         // Sync department access (pivot table) - required by ModuleAccessMiddleware
         $user->departments()->sync([$deptId => ['is_primary' => true]]);
 
@@ -562,7 +563,7 @@ class ConsolidatedEmployeeSeeder extends Seeder
         $this->command->info('═══════════════════════════════════════════════════════════════════');
         $this->command->info('              TEST ACCOUNTS READY FOR TESTING                     ');
         $this->command->info('═══════════════════════════════════════════════════════════════════');
-        
+
         // Get all users created by this seeder
         $emails = [
             'chairman@ogamierp.local',
@@ -592,17 +593,17 @@ class ConsolidatedEmployeeSeeder extends Seeder
             'it.admin@ogamierp.local',
             'admin@ogamierp.local',
         ];
-        
+
         $users = User::whereIn('email', $emails)
             ->with('roles')
             ->orderBy('email')
             ->get();
-        
+
         // Group by role for better display
         $byRole = [];
         foreach ($users as $user) {
             $roleName = $user->roles->first()->name ?? 'no role';
-            $password = match($roleName) {
+            $password = match ($roleName) {
                 'executive' => self::DEFAULT_PASSWORDS['executive'],
                 'vice_president' => self::DEFAULT_PASSWORDS['vice_president'],
                 'manager' => self::DEFAULT_PASSWORDS['manager'],
@@ -612,31 +613,31 @@ class ConsolidatedEmployeeSeeder extends Seeder
                 'admin' => 'Admin@12345!',
                 default => 'Unknown',
             };
-            
+
             $byRole[$roleName][] = [
                 'email' => $user->email,
                 'name' => $user->name,
                 'password' => $password,
             ];
         }
-        
+
         // Build content for file
         $content = "# Ogami ERP - Test Account Credentials\n\n";
-        $content .= "Generated: " . now()->format('Y-m-d H:i:s') . "\n\n";
+        $content .= 'Generated: '.now()->format('Y-m-d H:i:s')."\n\n";
         $content .= "## Login URL\n";
         $content .= "http://localhost:5173/login\n\n";
         $content .= "## Credentials by Role\n\n";
-        
+
         // Display by role and build file content
         foreach ($byRole as $role => $accounts) {
             $this->command->newLine();
-            $this->command->info(strtoupper($role) . ' (' . count($accounts) . ' accounts)');
+            $this->command->info(strtoupper($role).' ('.count($accounts).' accounts)');
             $this->command->info('───────────────────────────────────────────────────────────────────');
-            
-            $content .= "### " . strtoupper($role) . " (" . count($accounts) . " accounts)\n\n";
+
+            $content .= '### '.strtoupper($role).' ('.count($accounts)." accounts)\n\n";
             $content .= "| Email | Password |\n";
             $content .= "|-------|----------|\n";
-            
+
             foreach ($accounts as $account) {
                 $this->command->info(sprintf(
                     '  %-38s │ %s',
@@ -647,24 +648,24 @@ class ConsolidatedEmployeeSeeder extends Seeder
             }
             $content .= "\n";
         }
-        
+
         // Add quick reference section
         $content .= "## Quick Reference\n\n";
         $content .= "### Passwords by Role\n\n";
         $content .= "| Role | Password |\n";
         $content .= "|------|----------|\n";
-        $content .= "| Executive | " . self::DEFAULT_PASSWORDS['executive'] . " |\n";
-        $content .= "| VP | " . self::DEFAULT_PASSWORDS['vice_president'] . " |\n";
-        $content .= "| Manager | " . self::DEFAULT_PASSWORDS['manager'] . " |\n";
-        $content .= "| Head | " . self::DEFAULT_PASSWORDS['head'] . " |\n";
-        $content .= "| Officer | " . self::DEFAULT_PASSWORDS['officer'] . " |\n";
-        $content .= "| Staff | " . self::DEFAULT_PASSWORDS['staff'] . " |\n";
+        $content .= '| Executive | '.self::DEFAULT_PASSWORDS['executive']." |\n";
+        $content .= '| VP | '.self::DEFAULT_PASSWORDS['vice_president']." |\n";
+        $content .= '| Manager | '.self::DEFAULT_PASSWORDS['manager']." |\n";
+        $content .= '| Head | '.self::DEFAULT_PASSWORDS['head']." |\n";
+        $content .= '| Officer | '.self::DEFAULT_PASSWORDS['officer']." |\n";
+        $content .= '| Staff | '.self::DEFAULT_PASSWORDS['staff']." |\n";
         $content .= "| Admin | Admin@12345! |\n";
-        
+
         // Save to file
         $filePath = storage_path('app/test-credentials.md');
         file_put_contents($filePath, $content);
-        
+
         $this->command->newLine();
         $this->command->info('═══════════════════════════════════════════════════════════════════');
         $this->command->info('  ✅ All accounts are ready for testing!');

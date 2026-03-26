@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Accounting\Models\BankAccount;
+use App\Domains\Accounting\Models\BankReconciliation;
 use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
@@ -293,7 +295,7 @@ describe('AP Invoice lifecycle — AP-001', function () {
 describe('Bank reconciliation SoD — BNK-001', function () {
 
     beforeEach(function () {
-        $this->bankAccount = \App\Domains\Accounting\Models\BankAccount::create([
+        $this->bankAccount = BankAccount::create([
             'name' => 'Test Checking Account',
             'account_number' => 'ACC-100001',
             'bank_name' => 'Test Bank',
@@ -307,7 +309,7 @@ describe('Bank reconciliation SoD — BNK-001', function () {
         $reconciler->assignRole('officer');
 
         // Create a reconciliation where reconciler is the creator
-        $recon = \App\Domains\Accounting\Models\BankReconciliation::create([
+        $recon = BankReconciliation::create([
             'bank_account_id' => $this->bankAccount->id,
             'period_from' => '2025-10-01',
             'period_to' => '2025-10-31',
@@ -328,7 +330,7 @@ describe('Bank reconciliation SoD — BNK-001', function () {
         $preparer->assignRole('officer');
         $certifier->assignRole('officer');
 
-        $recon = \App\Domains\Accounting\Models\BankReconciliation::create([
+        $recon = BankReconciliation::create([
             'bank_account_id' => $this->bankAccount->id,
             'period_from' => '2025-11-01',
             'period_to' => '2025-11-30',

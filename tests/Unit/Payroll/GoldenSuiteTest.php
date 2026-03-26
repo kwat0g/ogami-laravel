@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Domains\Loan\Models\Loan;
 use App\Domains\Loan\Models\LoanAmortizationSchedule;
+use App\Domains\Payroll\Models\PayrollAdjustment;
 use App\Domains\Payroll\Services\PayrollComputationService;
+use Illuminate\Support\Facades\DB;
 use Tests\Support\PayrollTestHelper;
 
 /*
@@ -244,7 +246,7 @@ it('GS-10 — withholding tax is zero when YTD already covers annual liability',
     $priorRun = PayrollTestHelper::makeRun('2025-01-01', '2025-01-15', 'regular', [
         'status' => 'completed',
     ]);
-    \Illuminate\Support\Facades\DB::table('payroll_details')->insert([
+    DB::table('payroll_details')->insert([
         'payroll_run_id' => $priorRun->id,
         'employee_id' => $employee->id,
         'basic_monthly_rate_centavos' => $employee->basic_monthly_rate,
@@ -339,7 +341,7 @@ it('GS-15 — taxable earning adjustment increases gross pay', function () {
     $systemUser = PayrollTestHelper::makeSystemUser();
     PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-31');
 
-    \App\Domains\Payroll\Models\PayrollAdjustment::create([
+    PayrollAdjustment::create([
         'payroll_run_id' => $run->id,
         'employee_id' => $employee->id,
         'type' => 'earning',
@@ -371,7 +373,7 @@ it('GS-16 — non-taxable earning adjustment excluded from taxable income', func
     PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-31');
 
     $adjAmount = 200_000; // ₱2,000 rice allowance (non-taxable)
-    \App\Domains\Payroll\Models\PayrollAdjustment::create([
+    PayrollAdjustment::create([
         'payroll_run_id' => $run->id,
         'employee_id' => $employee->id,
         'type' => 'earning',
@@ -408,7 +410,7 @@ it('GS-17 — deduction adjustment reduces net pay via other_deductions', functi
     PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-31');
 
     $deductionAmount = 15_000; // ₱150 uniform deduction
-    \App\Domains\Payroll\Models\PayrollAdjustment::create([
+    PayrollAdjustment::create([
         'payroll_run_id' => $run->id,
         'employee_id' => $employee->id,
         'type' => 'deduction',
@@ -435,7 +437,7 @@ it('GS-18 — net_pay = gross_pay − total_deductions (exact formula)', functio
     PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-31', true, 60); // 1hr OT
 
     // Add a deduction adjustment to make the formula non-trivial
-    \App\Domains\Payroll\Models\PayrollAdjustment::create([
+    PayrollAdjustment::create([
         'payroll_run_id' => $run->id,
         'employee_id' => $employee->id,
         'type' => 'deduction',
@@ -511,7 +513,7 @@ it('GS-20 — YTD taxable income accumulates correctly across runs', function ()
     $priorYtdTaxable = 3_000_000; // ₱30k YTD from Jan
     $priorYtdTaxWithheld = 200_000;   // ₱2k withheld YTD
 
-    \Illuminate\Support\Facades\DB::table('payroll_details')->insert([
+    DB::table('payroll_details')->insert([
         'payroll_run_id' => $priorRun->id,
         'employee_id' => $employee->id,
         'basic_monthly_rate_centavos' => $employee->basic_monthly_rate,
@@ -588,7 +590,7 @@ it('GS-22 — is_below_min_wage flag set when deductions push net below floor', 
     $systemUser = PayrollTestHelper::makeSystemUser();
     PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-31');
 
-    \App\Domains\Payroll\Models\PayrollAdjustment::create([
+    PayrollAdjustment::create([
         'payroll_run_id' => $run->id,
         'employee_id' => $employee->id,
         'type' => 'deduction',

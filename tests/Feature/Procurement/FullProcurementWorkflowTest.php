@@ -51,7 +51,6 @@ use App\Domains\Procurement\Models\GoodsReceiptItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseOrderItem;
 use App\Domains\Procurement\Models\PurchaseRequest;
-use App\Domains\Procurement\Models\PurchaseRequestItem;
 use App\Domains\Procurement\Services\GoodsReceiptService;
 use App\Domains\Procurement\Services\PurchaseOrderService;
 use App\Domains\Procurement\Services\PurchaseRequestService;
@@ -75,17 +74,18 @@ function makeUser(string $role, array $permissions = []): User
     foreach ($permissions as $perm) {
         $user->givePermissionTo($perm);
     }
+
     return $user;
 }
 
 function prItems(int $qty = 10, float $unitCost = 1000.00): array
 {
     return [[
-        'item_description'    => 'Steel Rod 10mm',
-        'unit_of_measure'     => 'pcs',
-        'quantity'            => $qty,
+        'item_description' => 'Steel Rod 10mm',
+        'unit_of_measure' => 'pcs',
+        'quantity' => $qty,
         'estimated_unit_cost' => $unitCost,
-        'remarks'             => null,
+        'remarks' => null,
     ]];
 }
 
@@ -99,11 +99,11 @@ beforeEach(function () {
 
     // Departments
     $this->dept = Department::factory()->create([
-        'code'                    => 'PROD-TEST-' . Str::random(4),
-        'name'                    => 'Production Test',
-        'annual_budget_centavos'  => 100_000_000,
+        'code' => 'PROD-TEST-'.Str::random(4),
+        'name' => 'Production Test',
+        'annual_budget_centavos' => 100_000_000,
         'fiscal_year_start_month' => 1,
-        'is_active'               => true,
+        'is_active' => true,
     ]);
 
     $this->purchDept = Department::firstOrCreate(
@@ -148,7 +148,7 @@ beforeEach(function () {
 
     // Item with category
     $this->category = ItemCategory::factory()->create();
-    $this->item      = ItemMaster::factory()->create(['category_id' => $this->category->id]);
+    $this->item = ItemMaster::factory()->create(['category_id' => $this->category->id]);
 
     // Services
     $this->prService = app(PurchaseRequestService::class);
@@ -185,7 +185,7 @@ function buildSentPo(
 
     $po = PurchaseOrder::where('purchase_request_id', $pr->id)->firstOrFail();
     $po->update([
-        'vendor_id'     => $vendor->id,
+        'vendor_id' => $vendor->id,
         'delivery_date' => now()->addDays(7)->toDateString(),
         'payment_terms' => 'Net 30',
     ]);
@@ -420,8 +420,8 @@ it('SOD-004 VP cannot be the PR creator', function () {
     );
     // Force to budget_verified as if others approved it
     $pr->update([
-        'status'              => 'budget_verified',
-        'reviewed_by_id'      => $this->reviewer->id,
+        'status' => 'budget_verified',
+        'reviewed_by_id' => $this->reviewer->id,
         'budget_checked_by_id' => $this->accountant->id,
     ]);
 
@@ -491,16 +491,16 @@ it('PO-003 cannot send PO without a delivery date', function () {
         'status' => 'approved', 'urgency' => 'normal', 'justification' => 'Test',
     ]);
     $po = PurchaseOrder::create([
-        'ulid'                => (string) Str::ulid(),
-        'po_reference'        => 'PO-TEST-003',
+        'ulid' => (string) Str::ulid(),
+        'po_reference' => 'PO-TEST-003',
         'purchase_request_id' => $pr->id,
-        'vendor_id'           => $this->vendor->id,
-        'status'              => 'draft',
-        'po_date'             => now()->toDateString(),
-        'delivery_date'       => null,
-        'payment_terms'       => 'Net 30',
-        'total_po_amount'     => 0,
-        'created_by_id'       => $this->purchOfficer->id,
+        'vendor_id' => $this->vendor->id,
+        'status' => 'draft',
+        'po_date' => now()->toDateString(),
+        'delivery_date' => null,
+        'payment_terms' => 'Net 30',
+        'total_po_amount' => 0,
+        'created_by_id' => $this->purchOfficer->id,
     ]);
 
     expect(fn () => $this->poService->send($po))
@@ -514,16 +514,16 @@ it('PO-004 cannot send PO without payment terms', function () {
         'status' => 'approved', 'urgency' => 'normal', 'justification' => 'Test',
     ]);
     $po = PurchaseOrder::create([
-        'ulid'                => (string) Str::ulid(),
-        'po_reference'        => 'PO-TEST-004',
+        'ulid' => (string) Str::ulid(),
+        'po_reference' => 'PO-TEST-004',
         'purchase_request_id' => $pr->id,
-        'vendor_id'           => $this->vendor->id,
-        'status'              => 'draft',
-        'po_date'             => now()->toDateString(),
-        'delivery_date'       => now()->addWeek()->toDateString(),
-        'payment_terms'       => null,
-        'total_po_amount'     => 0,
-        'created_by_id'       => $this->purchOfficer->id,
+        'vendor_id' => $this->vendor->id,
+        'status' => 'draft',
+        'po_date' => now()->toDateString(),
+        'delivery_date' => now()->addWeek()->toDateString(),
+        'payment_terms' => null,
+        'total_po_amount' => 0,
+        'created_by_id' => $this->purchOfficer->id,
     ]);
 
     expect(fn () => $this->poService->send($po))
@@ -537,16 +537,16 @@ it('PO-005 cannot send PO without a vendor', function () {
         'status' => 'approved', 'urgency' => 'normal', 'justification' => 'Test',
     ]);
     $po = PurchaseOrder::create([
-        'ulid'                => (string) Str::ulid(),
-        'po_reference'        => 'PO-TEST-005',
+        'ulid' => (string) Str::ulid(),
+        'po_reference' => 'PO-TEST-005',
         'purchase_request_id' => $pr->id,
-        'vendor_id'           => null,
-        'status'              => 'draft',
-        'po_date'             => now()->toDateString(),
-        'delivery_date'       => now()->addWeek()->toDateString(),
-        'payment_terms'       => 'Net 30',
-        'total_po_amount'     => 0,
-        'created_by_id'       => $this->purchOfficer->id,
+        'vendor_id' => null,
+        'status' => 'draft',
+        'po_date' => now()->toDateString(),
+        'delivery_date' => now()->addWeek()->toDateString(),
+        'payment_terms' => 'Net 30',
+        'total_po_amount' => 0,
+        'created_by_id' => $this->purchOfficer->id,
     ]);
 
     expect(fn () => $this->poService->send($po))
@@ -558,7 +558,7 @@ it('PO-005 cannot send PO without a vendor', function () {
 // ═════════════════════════════════════════════════════════════════════════════
 
 it('GR-001 warehouse staff can create a GR draft for a sent PO', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
 
     $gr = $this->grService->store(
@@ -581,25 +581,25 @@ it('GR-002 cannot create GR when PO is still in draft status', function () {
         'status' => 'approved', 'urgency' => 'normal', 'justification' => 'Test',
     ]);
     $po = PurchaseOrder::create([
-        'ulid'                => (string) Str::ulid(),
-        'po_reference'        => 'PO-GR-002',
+        'ulid' => (string) Str::ulid(),
+        'po_reference' => 'PO-GR-002',
         'purchase_request_id' => $pr->id,
-        'vendor_id'           => $this->vendor->id,
-        'status'              => 'draft',
-        'po_date'             => now()->toDateString(),
-        'delivery_date'       => now()->addWeek()->toDateString(),
-        'payment_terms'       => 'Net 30',
-        'total_po_amount'     => 0,
-        'created_by_id'       => $this->purchOfficer->id,
+        'vendor_id' => $this->vendor->id,
+        'status' => 'draft',
+        'po_date' => now()->toDateString(),
+        'delivery_date' => now()->addWeek()->toDateString(),
+        'payment_terms' => 'Net 30',
+        'total_po_amount' => 0,
+        'created_by_id' => $this->purchOfficer->id,
     ]);
     $poItem = PurchaseOrderItem::create([
         'purchase_order_id' => $po->id,
-        'item_description'  => 'Test Item',
-        'unit_of_measure'   => 'pcs',
-        'quantity_ordered'  => 50,
+        'item_description' => 'Test Item',
+        'unit_of_measure' => 'pcs',
+        'quantity_ordered' => 50,
         'quantity_received' => 0,
-        'agreed_unit_cost'  => 100,
-        'line_order'        => 1,
+        'agreed_unit_cost' => 100,
+        'line_order' => 1,
     ]);
 
     expect(fn () => $this->grService->store(
@@ -611,7 +611,7 @@ it('GR-002 cannot create GR when PO is still in draft status', function () {
 });
 
 it('GR-003 cannot receive more than the pending quantity', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
 
     expect(fn () => $this->grService->store(
@@ -623,7 +623,7 @@ it('GR-003 cannot receive more than the pending quantity', function () {
 });
 
 it('GR-004 confirming GR with rejected items and no remarks throws error', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
 
     $gr = $this->grService->store(
@@ -638,7 +638,7 @@ it('GR-004 confirming GR with rejected items and no remarks throws error', funct
 });
 
 it('GR-005 confirming GR triggers 3-way match and increments stock balance', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
     $poItem->update(['item_master_id' => $this->item->id]);
 
@@ -665,7 +665,7 @@ it('GR-005 confirming GR triggers 3-way match and increments stock balance', fun
 });
 
 it('GR-006 partial GR confirmation sets PO to partially_received', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
     $poItem->update(['item_master_id' => $this->item->id]);
 
@@ -684,7 +684,7 @@ it('GR-006 partial GR confirmation sets PO to partially_received', function () {
 });
 
 it('GR-007 second GR completing remaining qty sets PO to fully_received', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
     $poItem->update(['item_master_id' => $this->item->id]);
 
@@ -722,23 +722,23 @@ it('GR-007 second GR completing remaining qty sets PO to fully_received', functi
 function rawGrWithItem(PurchaseOrder $po, PurchaseOrderItem $poItem, int $qty = 10): GoodsReceipt
 {
     $gr = GoodsReceipt::create([
-        'gr_reference'       => 'GR-RAW-' . Str::random(6),
-        'purchase_order_id'  => $po->id,
-        'received_by_id'     => $po->created_by_id,
-        'received_date'      => now()->toDateString(),
-        'status'             => 'draft',
+        'gr_reference' => 'GR-RAW-'.Str::random(6),
+        'purchase_order_id' => $po->id,
+        'received_by_id' => $po->created_by_id,
+        'received_date' => now()->toDateString(),
+        'status' => 'draft',
         'three_way_match_passed' => false,
-        'ap_invoice_created'     => false,
-        'ulid'               => (string) Str::ulid(),
+        'ap_invoice_created' => false,
+        'ulid' => (string) Str::ulid(),
     ]);
 
     GoodsReceiptItem::create([
-        'goods_receipt_id'  => $gr->id,
-        'po_item_id'        => $poItem->id,
-        'item_master_id'    => $poItem->item_master_id,
+        'goods_receipt_id' => $gr->id,
+        'po_item_id' => $poItem->id,
+        'item_master_id' => $poItem->item_master_id,
         'quantity_received' => $qty,
-        'unit_of_measure'   => 'pcs',
-        'condition'         => 'good',
+        'unit_of_measure' => 'pcs',
+        'condition' => 'good',
     ]);
 
     return $gr;
@@ -746,35 +746,35 @@ function rawGrWithItem(PurchaseOrder $po, PurchaseOrderItem $poItem, int $qty = 
 
 it('TWM-001 three-way match fails when linked PR is not approved', function () {
     $pr = PurchaseRequest::create([
-        'ulid'            => (string) Str::ulid(),
-        'pr_reference'    => 'PR-TWM-001',
-        'department_id'   => $this->dept->id,
+        'ulid' => (string) Str::ulid(),
+        'pr_reference' => 'PR-TWM-001',
+        'department_id' => $this->dept->id,
         'requested_by_id' => $this->requester->id,
-        'status'          => 'draft',
-        'urgency'         => 'normal',
-        'justification'   => 'Test',
+        'status' => 'draft',
+        'urgency' => 'normal',
+        'justification' => 'Test',
     ]);
     $po = PurchaseOrder::create([
-        'ulid'                => (string) Str::ulid(),
-        'po_reference'        => 'PO-TWM-001',
+        'ulid' => (string) Str::ulid(),
+        'po_reference' => 'PO-TWM-001',
         'purchase_request_id' => $pr->id,
-        'vendor_id'           => $this->vendor->id,
-        'status'              => 'sent',
-        'po_date'             => now()->toDateString(),
-        'delivery_date'       => now()->addWeek()->toDateString(),
-        'payment_terms'       => 'Net 30',
-        'total_po_amount'     => 0,
-        'created_by_id'       => $this->purchOfficer->id,
+        'vendor_id' => $this->vendor->id,
+        'status' => 'sent',
+        'po_date' => now()->toDateString(),
+        'delivery_date' => now()->addWeek()->toDateString(),
+        'payment_terms' => 'Net 30',
+        'total_po_amount' => 0,
+        'created_by_id' => $this->purchOfficer->id,
     ]);
     $poItem = PurchaseOrderItem::create([
         'purchase_order_id' => $po->id,
-        'item_master_id'    => $this->item->id,
-        'item_description'  => $this->item->name,
-        'unit_of_measure'   => 'pcs',
-        'quantity_ordered'  => 10,
+        'item_master_id' => $this->item->id,
+        'item_description' => $this->item->name,
+        'unit_of_measure' => 'pcs',
+        'quantity_ordered' => 10,
         'quantity_received' => 0,
-        'agreed_unit_cost'  => 100,
-        'line_order'        => 1,
+        'agreed_unit_cost' => 100,
+        'line_order' => 1,
     ]);
 
     $gr = rawGrWithItem($po, $poItem, 10);
@@ -785,35 +785,35 @@ it('TWM-001 three-way match fails when linked PR is not approved', function () {
 
 it('TWM-002 three-way match fails when PO is not in a receivable status', function () {
     $pr = PurchaseRequest::create([
-        'ulid'            => (string) Str::ulid(),
-        'pr_reference'    => 'PR-TWM-002',
-        'department_id'   => $this->dept->id,
+        'ulid' => (string) Str::ulid(),
+        'pr_reference' => 'PR-TWM-002',
+        'department_id' => $this->dept->id,
         'requested_by_id' => $this->requester->id,
-        'status'          => 'approved',
-        'urgency'         => 'normal',
-        'justification'   => 'Test',
+        'status' => 'approved',
+        'urgency' => 'normal',
+        'justification' => 'Test',
     ]);
     $po = PurchaseOrder::create([
-        'ulid'                => (string) Str::ulid(),
-        'po_reference'        => 'PO-TWM-002',
+        'ulid' => (string) Str::ulid(),
+        'po_reference' => 'PO-TWM-002',
         'purchase_request_id' => $pr->id,
-        'vendor_id'           => $this->vendor->id,
-        'status'              => 'draft',
-        'po_date'             => now()->toDateString(),
-        'delivery_date'       => now()->addWeek()->toDateString(),
-        'payment_terms'       => 'Net 30',
-        'total_po_amount'     => 0,
-        'created_by_id'       => $this->purchOfficer->id,
+        'vendor_id' => $this->vendor->id,
+        'status' => 'draft',
+        'po_date' => now()->toDateString(),
+        'delivery_date' => now()->addWeek()->toDateString(),
+        'payment_terms' => 'Net 30',
+        'total_po_amount' => 0,
+        'created_by_id' => $this->purchOfficer->id,
     ]);
     $poItem = PurchaseOrderItem::create([
         'purchase_order_id' => $po->id,
-        'item_master_id'    => $this->item->id,
-        'item_description'  => $this->item->name,
-        'unit_of_measure'   => 'pcs',
-        'quantity_ordered'  => 10,
+        'item_master_id' => $this->item->id,
+        'item_description' => $this->item->name,
+        'unit_of_measure' => 'pcs',
+        'quantity_ordered' => 10,
         'quantity_received' => 0,
-        'agreed_unit_cost'  => 100,
-        'line_order'        => 1,
+        'agreed_unit_cost' => 100,
+        'line_order' => 1,
     ]);
 
     $gr = rawGrWithItem($po, $poItem, 10);
@@ -823,7 +823,7 @@ it('TWM-002 three-way match fails when PO is not in a receivable status', functi
 });
 
 it('TWM-003 three-way match fails when GR quantity would overflow ordered quantity', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
     $poItem->update(['item_master_id' => $this->item->id]);
 
@@ -839,7 +839,7 @@ it('TWM-003 three-way match fails when GR quantity would overflow ordered quanti
 // ═════════════════════════════════════════════════════════════════════════════
 
 it('STOCK-001 stock balance accumulates correctly across multiple GR confirmations', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
     $poItem->update(['item_master_id' => $this->item->id]);
 
@@ -865,9 +865,9 @@ it('STOCK-001 stock balance accumulates correctly across multiple GR confirmatio
 });
 
 it('STOCK-002 auto-creates ItemMaster and updates stock when PO item has no item_master_id', function () {
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
-    $poItem->update(['item_master_id' => null, 'item_description' => 'Unique Uncatalogued Widget XYZ-' . Str::random(6)]);
+    $poItem->update(['item_master_id' => null, 'item_description' => 'Unique Uncatalogued Widget XYZ-'.Str::random(6)]);
 
     $initialCount = ItemMaster::count();
 
@@ -895,7 +895,7 @@ it('STOCK-002 auto-creates ItemMaster and updates stock when PO item has no item
 it('STOCK-003 stock update is skipped gracefully when no active warehouse location exists', function () {
     WarehouseLocation::where('is_active', true)->update(['is_active' => false]);
 
-    $po     = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
+    $po = buildSentPo($this->vendor, $this->purchOfficer, $this->dept, $this->prService, $this->poService, $this->reviewer, $this->accountant, $this->vp);
     $poItem = $po->items()->first();
     $poItem->update(['item_master_id' => $this->item->id]);
 

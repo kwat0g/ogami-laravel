@@ -61,7 +61,6 @@ final class StockReservation extends Model
         return $this->belongsTo(WarehouseLocation::class, 'location_id');
     }
 
-    /** @return MorphTo */
     public function reference(): MorphTo
     {
         return $this->morphTo('reference', 'reference_type', 'reference_id');
@@ -82,7 +81,7 @@ final class StockReservation extends Model
     {
         return $query->where(function ($q) {
             $q->whereNull('expires_at')
-              ->orWhere('expires_at', '>', now());
+                ->orWhere('expires_at', '>', now());
         });
     }
 
@@ -122,7 +121,7 @@ final class StockReservation extends Model
     private function updateStockBalanceReserved(): void
     {
         // Recalculate total reserved for this item/location
-        $totalReserved = static::where('item_id', $this->item_id)
+        $totalReserved = self::where('item_id', $this->item_id)
             ->where('location_id', $this->location_id)
             ->where('status', 'active')
             ->sum('quantity_reserved');

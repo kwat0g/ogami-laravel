@@ -12,9 +12,9 @@ use Spatie\Permission\Models\Role;
 
 /**
  * Cleanup Old Roles Command
- * 
+ *
  * Migrates from 18+ specific roles to 7 generic roles + department modules.
- * 
+ *
  * Old roles being removed:
  *   - plant_manager → manager (with PLANT/MOLD/QC/MAINT/PROD department)
  *   - production_manager → manager (with PROD department)
@@ -93,6 +93,7 @@ class CleanupOldRolesCommand extends Command
 
         if (empty($existingOldRoles)) {
             $this->info('✅ No old roles found. System is already using new 7-role system.');
+
             return self::SUCCESS;
         }
 
@@ -103,9 +104,10 @@ class CleanupOldRolesCommand extends Command
             $this->line("  - {$role} → {$newRole} ({$count} users)");
         }
 
-        if (!$force && !$dryRun) {
-            if (!$this->confirm('Do you want to proceed with the migration?')) {
+        if (! $force && ! $dryRun) {
+            if (! $this->confirm('Do you want to proceed with the migration?')) {
                 $this->info('Cancelled.');
+
                 return self::SUCCESS;
             }
         }
@@ -123,7 +125,7 @@ class CleanupOldRolesCommand extends Command
             }
 
             // Delete old roles
-            if (!$dryRun) {
+            if (! $dryRun) {
                 $this->newLine();
                 $this->info('Removing old roles...');
                 foreach ($existingOldRoles as $oldRoleName) {
@@ -147,7 +149,8 @@ class CleanupOldRolesCommand extends Command
             return self::SUCCESS;
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error('❌ Migration failed: ' . $e->getMessage());
+            $this->error('❌ Migration failed: '.$e->getMessage());
+
             return self::FAILURE;
         }
     }
@@ -155,21 +158,23 @@ class CleanupOldRolesCommand extends Command
     private function migrateRole(string $oldRole, string $newRole, bool $dryRun): void
     {
         $users = User::role($oldRole)->get();
-        
+
         if ($users->isEmpty()) {
             $this->line("  • No users with role: {$oldRole}");
+
             return;
         }
 
         foreach ($users as $user) {
             if ($dryRun) {
                 $this->line("  Would migrate: {$user->email} ({$oldRole} → {$newRole})");
+
                 continue;
             }
 
             // Remove old role
             $user->removeRole($oldRole);
-            
+
             // Add new role
             $user->assignRole($newRole);
 
@@ -182,7 +187,7 @@ class CleanupOldRolesCommand extends Command
      */
     public static function getRoleDisplayName(string $role): string
     {
-        return match($role) {
+        return match ($role) {
             'super_admin' => 'Super Admin',
             'admin' => 'System Admin',
             'executive' => 'Executive',

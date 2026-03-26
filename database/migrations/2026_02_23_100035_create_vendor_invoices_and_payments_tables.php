@@ -75,7 +75,7 @@ return new class extends Migration
         });
 
         // DB-level AP-001 constraint via CHECK
-        \DB::statement('ALTER TABLE vendor_invoices ADD CONSTRAINT chk_ap001_due_date CHECK (due_date >= invoice_date)');
+        DB::statement('ALTER TABLE vendor_invoices ADD CONSTRAINT chk_ap001_due_date CHECK (due_date >= invoice_date)');
 
         // ── Vendor Payments ──────────────────────────────────────────────────
         // AP-007: partial payments tracked here; AP-008: sum(amount) must not exceed net_payable.
@@ -108,7 +108,7 @@ return new class extends Migration
 
         // AP-008: enforce no overpayment at DB level (sum check done in service layer;
         // this positive amount check prevents zero/negative payments)
-        \DB::statement('ALTER TABLE vendor_payments ADD CONSTRAINT chk_ap_payment_positive CHECK (amount > 0)');
+        DB::statement('ALTER TABLE vendor_payments ADD CONSTRAINT chk_ap_payment_positive CHECK (amount > 0)');
     }
 
     public function down(): void

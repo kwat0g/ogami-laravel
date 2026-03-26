@@ -37,7 +37,7 @@ class TestAccountsSeeder extends Seeder
             // Role               Email                                 Name                              Dept
             ['executive',         'executive@ogamierp.local',          'Roberto Reyes (Executive)',      'EXEC'],
             ['vice_president',    'vp@ogamierp.local',                 'Elena Cruz (Vice President)',    'EXEC'],
-            
+
             // Managers - department determines their module access
             ['manager',           'hr.manager@ogamierp.local',         'Maria Santos (HR Manager)',      'HR'],
             ['manager',           'plant.manager@ogamierp.local',      'Carlos Rivera (Plant Manager)',  'PLANT'],
@@ -45,22 +45,22 @@ class TestAccountsSeeder extends Seeder
             ['manager',           'qc.manager@ogamierp.local',         'Linda Tan (QC Manager)',         'QC'],
             ['manager',           'mold.manager@ogamierp.local',       'Ramon Aquino (Mold Manager)',    'MOLD'],
             ['manager',           'sales.manager@ogamierp.local',      'Diana Cruz (Sales Manager)',     'SALES'],
-            
+
             // Officers - department determines their module access
             ['officer',           'acctg.officer@ogamierp.local',      'Anna Marie Lim (Acctg Officer)', 'ACCTG'],
             ['officer',           'ga.officer@ogamierp.local',         'Grace Mendoza (GA Officer)',     'HR'],
             ['officer',           'purchasing.officer@ogamierp.local', 'Mark Villanueva (Purchasing)',   'PURCH'],
             ['officer',           'impex.officer@ogamierp.local',      'Diana Ramos (ImpEx Officer)',    'SALES'],
-            
+
             // Heads - department determines their module access
             ['head',              'dept.head@ogamierp.local',          'Ricardo Bautista (Dept Head)',   'PROD'],
             ['head',              'warehouse.head@ogamierp.local',     'Ernesto Bautista (WH Head)',     'WH'],
             ['head',              'ppc.head@ogamierp.local',           'Jerome Florido (PPC Head)',      'PPC'],
-            
+
             // Staff
             ['staff',             'staff@ogamierp.local',              'Juan dela Cruz (Staff)',         'PROD'],
             ['staff',             'hr.staff@ogamierp.local',           'Juan Dela Cruz (HR Staff)',      'HR'],
-            
+
             // Portal accounts
             ['vendor',            'vendor@ogamierp.local',             'Vendor User (ABC Supplier)',     null],
             ['client',            'client@ogamierp.local',             'Client User (XYZ Corp)',         null],
@@ -75,9 +75,9 @@ class TestAccountsSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $email],
                 [
-                    'name'                => $name,
-                    'password'            => ucfirst($role) . '@Test1234!',
-                    'email_verified_at'   => now(),
+                    'name' => $name,
+                    'password' => ucfirst($role).'@Test1234!',
+                    'email_verified_at' => now(),
                     'password_changed_at' => $passwordChangedAt,
                 ]
             );
@@ -94,11 +94,11 @@ class TestAccountsSeeder extends Seeder
                 if ($deptId && ! $user->department_id) {
                     $user->update(['department_id' => $deptId]);
                     DB::table('user_department_access')->insertOrIgnore([
-                        'user_id'       => $user->id,
+                        'user_id' => $user->id,
                         'department_id' => $deptId,
-                        'is_primary'    => true,
-                        'created_at'    => now(),
-                        'updated_at'    => now(),
+                        'is_primary' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -112,7 +112,7 @@ class TestAccountsSeeder extends Seeder
         $this->command->newLine();
         $this->command->table(
             ['Role', 'Email', 'Password', 'Dept'],
-            collect($accounts)->map(fn ($a) => [$a[0], $a[1], ucfirst($a[0]) . '@Test1234!', $a[3] ?? '-'])->toArray()
+            collect($accounts)->map(fn ($a) => [$a[0], $a[1], ucfirst($a[0]).'@Test1234!', $a[3] ?? '-'])->toArray()
         );
     }
 }

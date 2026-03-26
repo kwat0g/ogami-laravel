@@ -18,7 +18,7 @@ use Illuminate\Queue\InteractsWithQueue;
  * ShouldBeUnique — prevents duplicate alert bursts when multiple rapid issues
  * (e.g. WO completion with many parts) all fire for the same item within 60 s.
  */
-final class NotifyLowStock implements ShouldQueue, ShouldBeUnique
+final class NotifyLowStock implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
 
@@ -29,7 +29,7 @@ final class NotifyLowStock implements ShouldQueue, ShouldBeUnique
     /** Unique per item — one notification per item within the lock window. */
     public function uniqueId(LowStockDetected $event): string
     {
-        return 'low-stock-' . $event->item->id;
+        return 'low-stock-'.$event->item->id;
     }
 
     public function handle(LowStockDetected $event): void

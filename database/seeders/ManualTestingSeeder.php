@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Domains\AP\Models\Vendor;
 use App\Domains\AR\Models\Customer;
 use App\Domains\Inventory\Models\ItemMaster;
-use App\Domains\AP\Models\Vendor;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * ManualTestingSeeder
@@ -26,7 +27,8 @@ class ManualTestingSeeder extends Seeder
 {
     // Shared password for ALL test portal accounts
     private const PORTAL_PASSWORD = 'Portal@Test1234!';
-    private const STAFF_PASSWORD  = 'Staff@Test1234!';
+
+    private const STAFF_PASSWORD = 'Staff@Test1234!';
 
     public function run(): void
     {
@@ -66,8 +68,8 @@ class ManualTestingSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name'      => $data['name'],
-                    'password'  => Hash::make(self::PORTAL_PASSWORD),
+                    'name' => $data['name'],
+                    'password' => Hash::make(self::PORTAL_PASSWORD),
                     'vendor_id' => $vendorId,
                 ]
             );
@@ -103,8 +105,8 @@ class ManualTestingSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name'      => $data['name'],
-                    'password'  => Hash::make(self::PORTAL_PASSWORD),
+                    'name' => $data['name'],
+                    'password' => Hash::make(self::PORTAL_PASSWORD),
                     'client_id' => $customerId,
                 ]
             );
@@ -131,12 +133,12 @@ class ManualTestingSeeder extends Seeder
     {
         // [item_code => standard_price_centavos]
         $prices = [
-            'FG-CONT-1L'    => 5_000,    // ₱50.00 / pcs
-            'FG-CONT-5L'    => 18_000,   // ₱180.00 / pcs
-            'FG-CAP-001'    => 800,      // ₱8.00  / pcs
-            'FG-PLASTIC-001'=> 15_000,   // ₱150.00 / pcs
-            'FG-METAL-002'  => 28_500,   // ₱285.00 / pcs
-            'FG-ASSY-003'   => 125_000,  // ₱1,250.00 / set
+            'FG-CONT-1L' => 5_000,    // ₱50.00 / pcs
+            'FG-CONT-5L' => 18_000,   // ₱180.00 / pcs
+            'FG-CAP-001' => 800,      // ₱8.00  / pcs
+            'FG-PLASTIC-001' => 15_000,   // ₱150.00 / pcs
+            'FG-METAL-002' => 28_500,   // ₱285.00 / pcs
+            'FG-ASSY-003' => 125_000,  // ₱1,250.00 / set
         ];
 
         foreach ($prices as $code => $priceCentavos) {
@@ -167,17 +169,18 @@ class ManualTestingSeeder extends Seeder
 
         if (! $fgLocationId) {
             $this->command->warn('  WH-FG-01 location not found — skipping FG stock');
+
             return;
         }
 
         // [item_code => quantity to ensure on hand]
         $fgStock = [
-            'FG-CONT-1L'    => 5_000,
-            'FG-CONT-5L'    => 3_000,
-            'FG-CAP-001'    => 10_000,
-            'FG-PLASTIC-001'=> 2_000,
-            'FG-METAL-002'  => 1_500,
-            'FG-ASSY-003'   => 500,
+            'FG-CONT-1L' => 5_000,
+            'FG-CONT-5L' => 3_000,
+            'FG-CAP-001' => 10_000,
+            'FG-PLASTIC-001' => 2_000,
+            'FG-METAL-002' => 1_500,
+            'FG-ASSY-003' => 500,
         ];
 
         foreach ($fgStock as $code => $qty) {
@@ -202,11 +205,11 @@ class ManualTestingSeeder extends Seeder
                 }
             } else {
                 DB::table('stock_balances')->insert([
-                    'item_id'          => $item->id,
-                    'location_id'      => $fgLocationId,
+                    'item_id' => $item->id,
+                    'location_id' => $fgLocationId,
                     'quantity_on_hand' => $qty,
-                    'quantity_reserved'=> 0,
-                    'updated_at'       => now(),
+                    'quantity_reserved' => 0,
+                    'updated_at' => now(),
                 ]);
                 $this->command->info("  [stock] {$code} → qty {$qty} (created)");
             }
@@ -222,17 +225,17 @@ class ManualTestingSeeder extends Seeder
         $adminId = User::where('email', 'superadmin@ogamierp.local')->value('id') ?? 1;
 
         // Vendor 2 (Packaging Solutions) — packaging items
-        $this->upsertVendorItem(2, 'PKG-BOXX-L',  'Carton Box Large',       'pcs',  350,  $adminId);
-        $this->upsertVendorItem(2, 'PKG-WRAP-001', 'Stretch Wrap Film',      'roll', 1_200, $adminId);
+        $this->upsertVendorItem(2, 'PKG-BOXX-L', 'Carton Box Large', 'pcs', 350, $adminId);
+        $this->upsertVendorItem(2, 'PKG-WRAP-001', 'Stretch Wrap Film', 'roll', 1_200, $adminId);
 
         // Vendor 3 (Industrial Parts) — spare parts and MRO
-        $this->upsertVendorItem(3, 'SP-SEAL-01',  'Hydraulic Seal Kit',     'set',  2_500,  $adminId);
-        $this->upsertVendorItem(3, 'SP-BEARING-01','Roller Bearing 6205',   'pcs',  1_850,  $adminId);
-        $this->upsertVendorItem(3, 'SP-FILTER-01', 'Air Filter Element',    'pcs',  750,    $adminId);
+        $this->upsertVendorItem(3, 'SP-SEAL-01', 'Hydraulic Seal Kit', 'set', 2_500, $adminId);
+        $this->upsertVendorItem(3, 'SP-BEARING-01', 'Roller Bearing 6205', 'pcs', 1_850, $adminId);
+        $this->upsertVendorItem(3, 'SP-FILTER-01', 'Air Filter Element', 'pcs', 750, $adminId);
 
         // Vendor 4 (ChemLube) — lubricants and chemicals
-        $this->upsertVendorItem(4, 'OIL-HYD-68', 'Hydraulic Oil 68',       'L',    9_500,  $adminId);
-        $this->upsertVendorItem(4, 'LUB-GREASE-1','Multi-Purpose Grease',  'kg',   3_200,  $adminId);
+        $this->upsertVendorItem(4, 'OIL-HYD-68', 'Hydraulic Oil 68', 'L', 9_500, $adminId);
+        $this->upsertVendorItem(4, 'LUB-GREASE-1', 'Multi-Purpose Grease', 'kg', 3_200, $adminId);
     }
 
     private function upsertVendorItem(
@@ -253,16 +256,16 @@ class ManualTestingSeeder extends Seeder
         }
 
         DB::table('vendor_items')->insert([
-            'ulid'          => \Illuminate\Support\Str::ulid(),
-            'vendor_id'     => $vendorId,
-            'item_code'     => $code,
-            'item_name'     => $name,
+            'ulid' => Str::ulid(),
+            'vendor_id' => $vendorId,
+            'item_code' => $code,
+            'item_name' => $name,
             'unit_of_measure' => $uom,
-            'unit_price'    => $price,
-            'is_active'     => true,
+            'unit_price' => $price,
+            'is_active' => true,
             'created_by_id' => $createdById,
-            'created_at'    => now(),
-            'updated_at'    => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -280,7 +283,7 @@ class ManualTestingSeeder extends Seeder
             '╔══════════════════════════════════════════════════════════════════════╗',
             '║               OGAMI ERP — MANUAL TESTING REFERENCE CARD            ║',
             '╠══════════════════════════════════════════════════════════════════════╣',
-            '║  All portal passwords : ' . str_pad($pw, 47) . '║',
+            '║  All portal passwords : '.str_pad($pw, 47).'║',
             '╠═══════════════════════════╦══════════════════════════════════════════╣',
             '║  ROLE / PERSONA           ║  EMAIL                                  ║',
             '╠═══════════════════════════╬══════════════════════════════════════════╣',
@@ -331,7 +334,7 @@ class ManualTestingSeeder extends Seeder
             '║  Industrial Parts Trading ║  vendor.industrial@ogamierp.local       ║',
             '║  ChemLube Philippines     ║  vendor.chemlube@ogamierp.local         ║',
             '╠══════════════════════════════════════════════════════════════════════╣',
-            '║  All staff/portal passwords: ' . str_pad($pw, 42) . '║',
+            '║  All staff/portal passwords: '.str_pad($pw, 42).'║',
             '╠══════════════════════════════════════════════════════════════════════╣',
             '║  KEY REFERENCE DATA                                                 ║',
             '╠══════════════════════════════════════════════════════════════════════╣',

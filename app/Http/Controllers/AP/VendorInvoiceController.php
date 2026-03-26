@@ -277,14 +277,14 @@ final class VendorInvoiceController extends Controller
         $invoice = $apInvoice->load(['vendor', 'fiscalPeriod', 'payments', 'purchaseOrder']);
 
         $settings = [
-            'company_name'    => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_name' => config('app.company_name', 'Ogami Manufacturing Corp.'),
             'company_address' => config('app.company_address', ''),
         ];
 
         $pdf = Pdf::loadView('ap.vendor-invoice-pdf', compact('invoice', 'settings'))
             ->setPaper('a4', 'portrait');
 
-        $filename = 'AP-Invoice-' . ($invoice->or_number ?? $invoice->id) . '.pdf';
+        $filename = 'AP-Invoice-'.($invoice->or_number ?? $invoice->id).'.pdf';
 
         return $pdf->stream($filename);
     }

@@ -46,31 +46,31 @@ return new class extends Migration
 
             // v2 approval chain — Head (Step 1)
             $table->foreignId('head_noted_by')
-                  ->nullable()->constrained('users')->nullOnDelete()->after('workflow_version');
+                ->nullable()->constrained('users')->nullOnDelete()->after('workflow_version');
             $table->timestamp('head_noted_at')->nullable()->after('head_noted_by');
             $table->text('head_remarks')->nullable()->after('head_noted_at');
 
             // v2 approval chain — Manager (Step 2)
             $table->foreignId('manager_checked_by')
-                  ->nullable()->constrained('users')->nullOnDelete()->after('head_remarks');
+                ->nullable()->constrained('users')->nullOnDelete()->after('head_remarks');
             $table->timestamp('manager_checked_at')->nullable()->after('manager_checked_by');
             $table->text('manager_remarks')->nullable()->after('manager_checked_at');
 
             // v2 approval chain — Officer (Step 3)
             $table->foreignId('officer_reviewed_by')
-                  ->nullable()->constrained('users')->nullOnDelete()->after('manager_remarks');
+                ->nullable()->constrained('users')->nullOnDelete()->after('manager_remarks');
             $table->timestamp('officer_reviewed_at')->nullable()->after('officer_reviewed_by');
             $table->text('officer_remarks')->nullable()->after('officer_reviewed_at');
 
             // v2 approval chain — Vice President (Step 4)
             $table->foreignId('vp_approved_by')
-                  ->nullable()->constrained('users')->nullOnDelete()->after('officer_remarks');
+                ->nullable()->constrained('users')->nullOnDelete()->after('officer_remarks');
             $table->timestamp('vp_approved_at')->nullable()->after('vp_approved_by');
             $table->text('vp_remarks')->nullable()->after('vp_approved_at');
         });
 
         // ── 3. SoD DB-level constraints for the v2 chain ────────────────────
-        DB::statement("
+        DB::statement('
             ALTER TABLE loans
             ADD CONSTRAINT chk_sod_loan_head
                 CHECK (head_noted_by IS NULL OR head_noted_by <> requested_by),
@@ -80,7 +80,7 @@ return new class extends Migration
                 CHECK (officer_reviewed_by IS NULL OR officer_reviewed_by <> manager_checked_by),
             ADD CONSTRAINT chk_sod_loan_vp
                 CHECK (vp_approved_by IS NULL OR vp_approved_by <> officer_reviewed_by)
-        ");
+        ');
     }
 
     public function down(): void

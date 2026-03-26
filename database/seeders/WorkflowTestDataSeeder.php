@@ -4,29 +4,28 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Domains\HR\Models\Employee;
+use App\Domains\Accounting\Models\ChartOfAccount;
+use App\Domains\Accounting\Models\FiscalPeriod;
+use App\Domains\Accounting\Models\JournalEntry;
+use App\Domains\AP\Models\Vendor;
+use App\Domains\AP\Models\VendorInvoice;
 use App\Domains\HR\Models\Department;
+use App\Domains\HR\Models\Employee;
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Leave\Models\LeaveType;
 use App\Domains\Loan\Models\Loan;
 use App\Domains\Loan\Models\LoanType;
 use App\Domains\Payroll\Models\PayrollRun;
-use App\Domains\AP\Models\Vendor;
-use App\Domains\AP\Models\VendorInvoice;
-use App\Domains\Accounting\Models\JournalEntry;
-use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Models\PurchaseRequestItem;
-use App\Domains\Inventory\Models\ItemMaster;
-use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * Workflow Test Data Seeder
- * 
+ *
  * Creates test data specifically for workflow, approval hierarchy,
  * cross-module integration, and automation testing.
  */
@@ -94,14 +93,16 @@ class WorkflowTestDataSeeder extends Seeder
         $gaOfficer = $users->get('ga.officer@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
-        if (!$staff || !$head || !$manager || !$gaOfficer || !$vp) {
+        if (! $staff || ! $head || ! $manager || ! $gaOfficer || ! $vp) {
             $this->command->warn('    Some users not found, skipping leave requests');
+
             return;
         }
 
         $employee = Employee::where('user_id', $staff->id)->first();
-        if (!$employee) {
+        if (! $employee) {
             $this->command->warn('    Staff employee not found');
+
             return;
         }
 
@@ -230,14 +231,16 @@ class WorkflowTestDataSeeder extends Seeder
         $officer = $users->get('acctg.officer@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
-        if (!$staff) {
+        if (! $staff) {
             $this->command->warn('    Staff user not found');
+
             return;
         }
 
         $employee = Employee::where('user_id', $staff->id)->first();
-        if (!$employee) {
+        if (! $employee) {
             $this->command->warn('    Staff employee not found');
+
             return;
         }
 
@@ -358,8 +361,9 @@ class WorkflowTestDataSeeder extends Seeder
         $plantMgr = $users->get('plant.manager@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
-        if (!$prodHead) {
+        if (! $prodHead) {
             $this->command->warn('    Production head not found');
+
             return;
         }
 
@@ -541,8 +545,9 @@ class WorkflowTestDataSeeder extends Seeder
         $acctgOfficer = $users->get('acctg.officer@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
-        if (!$hrManager) {
+        if (! $hrManager) {
             $this->command->warn('    HR Manager not found');
+
             return;
         }
 
@@ -672,8 +677,9 @@ class WorkflowTestDataSeeder extends Seeder
         $acctgOfficer = $users->get('acctg.officer@ogamierp.local');
         $acctgManager = $users->get('vp@ogamierp.local'); // VP acts as accounting approver
 
-        if (!$acctgOfficer) {
+        if (! $acctgOfficer) {
             $this->command->warn('    Accounting officer not found');
+
             return;
         }
 
@@ -681,15 +687,17 @@ class WorkflowTestDataSeeder extends Seeder
         $cashAccount = ChartOfAccount::where('code', '1100')->first();
         $expenseAccount = ChartOfAccount::where('code', '5100')->first();
 
-        if (!$cashAccount || !$expenseAccount) {
+        if (! $cashAccount || ! $expenseAccount) {
             $this->command->warn('    Chart of accounts not properly seeded');
+
             return;
         }
 
         // Get fiscal period
-        $fiscalPeriod = \App\Domains\Accounting\Models\FiscalPeriod::where('is_active', true)->first();
-        if (!$fiscalPeriod) {
+        $fiscalPeriod = FiscalPeriod::where('is_active', true)->first();
+        if (! $fiscalPeriod) {
             $this->command->warn('    No active fiscal period found');
+
             return;
         }
 
@@ -797,22 +805,25 @@ class WorkflowTestDataSeeder extends Seeder
         $acctgOfficer = $users->get('acctg.officer@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
-        if (!$acctgOfficer) {
+        if (! $acctgOfficer) {
             $this->command->warn('    Accounting officer not found');
+
             return;
         }
 
         // Get a vendor
         $vendor = Vendor::first();
-        if (!$vendor) {
+        if (! $vendor) {
             $this->command->warn('    No vendors found');
+
             return;
         }
 
         // Get fiscal period
-        $fiscalPeriod = \App\Domains\Accounting\Models\FiscalPeriod::where('is_active', true)->first();
-        if (!$fiscalPeriod) {
+        $fiscalPeriod = FiscalPeriod::where('is_active', true)->first();
+        if (! $fiscalPeriod) {
             $this->command->warn('    No active fiscal period found');
+
             return;
         }
 
@@ -915,8 +926,9 @@ class WorkflowTestDataSeeder extends Seeder
         $plantMgr = $users->get('plant.manager@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
-        if (!$prodHead) {
+        if (! $prodHead) {
             $this->command->warn('    Production head not found');
+
             return;
         }
 
@@ -1013,7 +1025,7 @@ class WorkflowTestDataSeeder extends Seeder
 
         // Create a journal entry that should auto-reverse
         $acctgOfficer = User::where('email', 'acctg.officer@ogamierp.local')->first();
-        
+
         if ($acctgOfficer) {
             $expenseAccount = ChartOfAccount::where('code', '5100')->first();
             $liabilityAccount = ChartOfAccount::where('code', '2200')->first();

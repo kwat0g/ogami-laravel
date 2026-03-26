@@ -41,6 +41,7 @@ export interface DeliverySchedule {
   status: DeliveryScheduleStatus
   notes: string | null
   production_orders?: ProductionOrder[]
+  delivery_receipts?: Record<string, any>[]
   created_at: string | null
   deleted_at?: string | null
 }
@@ -64,6 +65,7 @@ export interface ProductionOrder {
   notes: string | null
   created_by?: { id: number; name: string } | null
   output_logs?: ProductionOutputLog[]
+  inspections?: Record<string, any>[]
   created_at: string | null
   updated_at: string | null
   deleted_at?: string | null

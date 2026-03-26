@@ -6,13 +6,15 @@ namespace App\Models\RBAC;
 
 use App\Domains\HR\Models\Department;
 use App\Models\User;
+use Carbon\Carbon;
+use Database\Factories\RBAC\DepartmentModuleExceptionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * DepartmentModuleException - Custom permissions for specific departments.
- * 
+ *
  * @property int $id
  * @property int $department_id
  * @property string $role
@@ -22,12 +24,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $is_active
  * @property int|null $created_by
  * @property int|null $updated_by
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class DepartmentModuleException extends Model
 {
-    /** @use HasFactory<\Database\Factories\RBAC\DepartmentModuleExceptionFactory> */
+    /** @use HasFactory<DepartmentModuleExceptionFactory> */
     use HasFactory;
 
     protected $table = 'department_module_exceptions';

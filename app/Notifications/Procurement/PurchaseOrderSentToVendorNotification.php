@@ -47,14 +47,14 @@ final class PurchaseOrderSentToVendorNotification extends Notification implement
     public function toArray(object $notifiable): array
     {
         return [
-            'type'         => 'purchase_order_received',
-            'title'        => "New Purchase Order — {$this->poReference}",
-            'body'         => "You have received a new Purchase Order #{$this->poReference} from Ogami Mfg. Please review and fulfill.",
-            'po_id'        => $this->poId,
-            'po_ulid'      => $this->poUlid,
-            'po_number'    => $this->poReference,
+            'type' => 'purchase_order_received',
+            'title' => "New Purchase Order — {$this->poReference}",
+            'body' => "You have received a new Purchase Order #{$this->poReference} from Ogami Mfg. Please review and fulfill.",
+            'po_id' => $this->poId,
+            'po_ulid' => $this->poUlid,
+            'po_number' => $this->poReference,
             'total_amount' => $this->totalAmountCentavos,
-            'url'          => "/vendor-portal/orders/{$this->poUlid}",
+            'url' => "/vendor-portal/orders/{$this->poUlid}",
         ];
     }
 

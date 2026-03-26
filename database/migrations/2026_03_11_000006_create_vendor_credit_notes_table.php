@@ -40,8 +40,8 @@ return new class extends Migration
             CHECK (note_type IN ('credit','debit'))");
         DB::statement("ALTER TABLE vendor_credit_notes ADD CONSTRAINT chk_vendor_credit_notes_status
             CHECK (status IN ('draft','posted'))");
-        DB::statement("ALTER TABLE vendor_credit_notes ADD CONSTRAINT chk_vendor_credit_notes_amount
-            CHECK (amount_centavos > 0)");
+        DB::statement('ALTER TABLE vendor_credit_notes ADD CONSTRAINT chk_vendor_credit_notes_amount
+            CHECK (amount_centavos > 0)');
 
         DB::statement('CREATE SEQUENCE IF NOT EXISTS vendor_credit_note_seq START 1');
     }

@@ -11,8 +11,8 @@ declare(strict_types=1);
  * Run with: ./vendor/bin/pest tests/Integration/RbacFrontendSyncTest.php
  */
 
-use App\Models\User;
 use App\Models\Employee;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses()->group('integration', 'rbac', 'frontend-sync');
@@ -37,7 +37,7 @@ describe('RBAC Frontend Sync — Permission Matrix', function () {
             'department_id' => 4, // Production
         ]);
         $user->assignRole('manager');
-        
+
         // Create employee record
         Employee::factory()->create([
             'user_id' => $user->id,
@@ -87,11 +87,11 @@ describe('RBAC Frontend Sync — Permission Matrix', function () {
 
         // Store for frontend test consumption
         $statePath = storage_path('testing/rbac_states');
-        if (!is_dir($statePath)) {
+        if (! is_dir($statePath)) {
             mkdir($statePath, 0755, true);
         }
         file_put_contents(
-            $statePath . '/production_manager.json',
+            $statePath.'/production_manager.json',
             json_encode($permissionState, JSON_PRETTY_PRINT)
         );
 
@@ -148,11 +148,11 @@ describe('RBAC Frontend Sync — Permission Matrix', function () {
         ];
 
         $statePath = storage_path('testing/rbac_states');
-        if (!is_dir($statePath)) {
+        if (! is_dir($statePath)) {
             mkdir($statePath, 0755, true);
         }
         file_put_contents(
-            $statePath . '/accounting_officer.json',
+            $statePath.'/accounting_officer.json',
             json_encode($permissionState, JSON_PRETTY_PRINT)
         );
 
@@ -207,11 +207,11 @@ describe('RBAC Frontend Sync — Permission Matrix', function () {
         ];
 
         $statePath = storage_path('testing/rbac_states');
-        if (!is_dir($statePath)) {
+        if (! is_dir($statePath)) {
             mkdir($statePath, 0755, true);
         }
         file_put_contents(
-            $statePath . '/warehouse_head.json',
+            $statePath.'/warehouse_head.json',
             json_encode($permissionState, JSON_PRETTY_PRINT)
         );
 
@@ -264,11 +264,11 @@ describe('RBAC Frontend Sync — Permission Matrix', function () {
         ];
 
         $statePath = storage_path('testing/rbac_states');
-        if (!is_dir($statePath)) {
+        if (! is_dir($statePath)) {
             mkdir($statePath, 0755, true);
         }
         file_put_contents(
-            $statePath . '/hr_manager.json',
+            $statePath.'/hr_manager.json',
             json_encode($permissionState, JSON_PRETTY_PRINT)
         );
 
@@ -495,7 +495,7 @@ afterAll(function () {
     // Clean up test state files
     $statePath = storage_path('testing/rbac_states');
     if (is_dir($statePath)) {
-        $files = glob($statePath . '/*.json');
+        $files = glob($statePath.'/*.json');
         foreach ($files as $file) {
             unlink($file);
         }

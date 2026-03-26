@@ -6,6 +6,7 @@ namespace App\Domains\AP\Models;
 
 use App\Models\User;
 use App\Shared\Exceptions\DomainException;
+use Database\Factories\VendorFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,7 +32,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $bank_account_no
  * @property string|null $bank_account_name
  * @property string|null $payment_terms
- * @property int $lead_time_days  Default days from PO send to expected delivery
+ * @property int $lead_time_days Default days from PO send to expected delivery
  * @property string|null $address
  * @property string|null $contact_person
  * @property string|null $email
@@ -46,9 +47,9 @@ final class Vendor extends Model implements Auditable
 
     protected $table = 'vendors';
 
-    protected static function newFactory(): \Database\Factories\VendorFactory
+    protected static function newFactory(): VendorFactory
     {
-        return \Database\Factories\VendorFactory::new();
+        return VendorFactory::new();
     }
 
     protected $fillable = [

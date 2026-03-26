@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Events\Leave;
 
 use App\Domains\Leave\Models\LeaveRequest;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -45,7 +46,7 @@ final class LeaveRequestFiled implements ShouldBroadcast
         return 'leave.filed';
     }
 
-    /** @return \Illuminate\Broadcasting\Channel[] */
+    /** @return Channel[] */
     public function broadcastOn(): array
     {
         return [new PrivateChannel("user.{$this->managerUserId}")];

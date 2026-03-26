@@ -6,11 +6,11 @@ use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Employee;
 use App\Domains\HR\Models\Position;
-use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Leave\Models\LeaveBalance;
+use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Leave\Models\LeaveType;
-use App\Domains\Payroll\Models\PayrollRun;
 use App\Domains\Payroll\Models\PayrollDetail;
+use App\Domains\Payroll\Models\PayrollRun;
 use App\Models\User;
 use Tests\Support\PayrollTestHelper;
 
@@ -235,7 +235,7 @@ it('INT-LEAVE-PAY-001 — paid leave days do not reduce gross pay', function () 
     // Verify payroll detail
     expect($payrollDetail->leave_days_paid)->toBe($leaveDays);
     expect($payrollDetail->leave_days_unpaid)->toBe(0);
-    
+
     // Gross pay should be full monthly rate (no deduction for paid leave)
     expect($payrollDetail->gross_pay_centavos)->toBe($monthlyRate);
 });

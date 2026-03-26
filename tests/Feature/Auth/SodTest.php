@@ -2,9 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Department;
+use App\Domains\Loan\Models\Loan;
+use App\Infrastructure\Middleware\SodMiddleware;
 use App\Models\User;
+use App\Shared\Exceptions\SodViolationException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,19 +149,19 @@ describe('SodMiddleware — direct invocation', function () {
 describe('SodMiddleware — HTTP 403 response', function () {
     it('returns SOD_VIOLATION when sod middleware throws', function () {
         // Test the SodMiddleware logic by instantiating it directly
-        $middleware = new \App\Infrastructure\Middleware\SodMiddleware;
+        $middleware = new SodMiddleware;
 
         $user = User::factory()->create();
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
+        $user->givePermissionTo(Permission::firstOrCreate(
             ['name' => 'payroll.prepare', 'guard_name' => 'web']
         ));
 
-        $request = \Illuminate\Http\Request::create('/test', 'GET');
+        $request = Request::create('/test', 'GET');
         $request->setUserResolver(fn () => $user);
 
         // Mock the DB call by ensuring the system_settings row is already there (from beforeEach)
         expect(fn () => $middleware->handle($request, fn ($r) => response('ok'), 'payroll', 'approve'))
-            ->toThrow(\App\Shared\Exceptions\SodViolationException::class);
+            ->toThrow(SodViolationException::class);
     });
 });
 
@@ -168,24 +175,24 @@ describe('SodMiddleware — SOD-002 leave request self-approval', function () {
     });
 
     it('middleware blocks user with leave_requests.apply from approving — SOD-002', function () {
-        $middleware = new \App\Infrastructure\Middleware\SodMiddleware;
+        $middleware = new SodMiddleware;
 
         $user = User::factory()->create();
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
+        $user->givePermissionTo(Permission::firstOrCreate(
             ['name' => 'leave_requests.apply', 'guard_name' => 'web']
         ));
 
-        $request = \Illuminate\Http\Request::create('/api/v1/leave/requests/1/approve', 'PATCH');
+        $request = Request::create('/api/v1/leave/requests/1/approve', 'PATCH');
         $request->setUserResolver(fn () => $user);
 
         expect(fn () => $middleware->handle($request, fn ($r) => response('ok'), 'leave_requests', 'approve'))
-            ->toThrow(\App\Shared\Exceptions\SodViolationException::class);
+            ->toThrow(SodViolationException::class);
     });
 
     it('HTTP 403 SOD_VIOLATION returned on loan vp-approve when requester tries to approve — SOD-004', function () {
         // Use HR department
-        $dept = \App\Domains\HR\Models\Department::where('code', 'HR')->first();
-        
+        $dept = Department::where('code', 'HR')->first();
+
         // Create manager user with department (hr.manager has loans.vp_approve)
         $user = User::factory()->create();
         $user->assignRole('manager');
@@ -194,7 +201,7 @@ describe('SodMiddleware — SOD-002 leave request self-approval', function () {
         // Create employee linked to the user
         $employeeId = DB::table('employees')->insertGetId([
             'employee_code' => 'EMP-TEST-001',
-            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'ulid' => (string) Str::ulid(),
             'first_name' => 'Test',
             'last_name' => 'Employee',
             'date_of_birth' => '1990-01-01',
@@ -209,7 +216,7 @@ describe('SodMiddleware — SOD-002 leave request self-approval', function () {
         ]);
 
         // Create the loan
-        $loan = \App\Domains\Loan\Models\Loan::factory()->create([
+        $loan = Loan::factory()->create([
             'employee_id' => $employeeId,
             'requested_by' => $user->id,
             'status' => 'pending',
@@ -234,34 +241,34 @@ describe('SodMiddleware — SOD-003 overtime request self-approval', function ()
     });
 
     it('middleware blocks user with overtime.submit from approving their own OT — SOD-003', function () {
-        $middleware = new \App\Infrastructure\Middleware\SodMiddleware;
+        $middleware = new SodMiddleware;
 
         $user = User::factory()->create();
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
+        $user->givePermissionTo(Permission::firstOrCreate(
             ['name' => 'overtime.submit', 'guard_name' => 'web']
         ));
 
-        $request = \Illuminate\Http\Request::create('/api/v1/attendance/overtime-requests/1/approve', 'PATCH');
+        $request = Request::create('/api/v1/attendance/overtime-requests/1/approve', 'PATCH');
         $request->setUserResolver(fn () => $user);
 
         // OT approve route has sod:overtime,approve middleware applied
         expect(fn () => $middleware->handle($request, fn ($r) => response('ok'), 'overtime', 'approve'))
-            ->toThrow(\App\Shared\Exceptions\SodViolationException::class);
+            ->toThrow(SodViolationException::class);
     });
 });
 
 describe('SodMiddleware — SOD-003 overtime HTTP enforcement', function () {
     it('HTTP 403 SOD_VIOLATION returned when OT submitter tries to approve — SOD-003', function () {
         // Use existing HR department with module_key for RBAC v2
-        $dept = \App\Domains\HR\Models\Department::where('code', 'HR')->first();
-        if (!$dept) {
-            $dept = \App\Domains\HR\Models\Department::factory()->create([
+        $dept = Department::where('code', 'HR')->first();
+        if (! $dept) {
+            $dept = Department::factory()->create([
                 'code' => 'HR',
                 'name' => 'Human Resources',
                 'module_key' => 'hr',
             ]);
         }
-        
+
         // Create user with manager role (hr.manager has overtime.approve permission)
         $user = User::factory()->create();
         $user->assignRole('manager');
@@ -271,7 +278,7 @@ describe('SodMiddleware — SOD-003 overtime HTTP enforcement', function () {
         // Create employee linked to the user (so SOD policy blocks self-approval)
         $employeeId = DB::table('employees')->insertGetId([
             'employee_code' => 'EMP-OT-SOD-001',
-            'ulid' => (string) \Illuminate\Support\Str::ulid(),
+            'ulid' => (string) Str::ulid(),
             'first_name' => 'OT',
             'last_name' => 'Submitter',
             'date_of_birth' => '1992-04-01',
@@ -318,7 +325,7 @@ describe('SodMiddleware — SOD-010 journal entry self-posting', function () {
 
     it('HTTP 403 SOD_VIOLATION returned when JE creator tries to post — SOD-010', function () {
         // Assign user to the Accounting dept so module_access:accounting passes
-        $acctgDept = \App\Domains\HR\Models\Department::where('code', 'ACCTG')->first();
+        $acctgDept = Department::where('code', 'ACCTG')->first();
 
         $user = User::factory()->create();
         $user->assignRole('officer');
@@ -327,11 +334,11 @@ describe('SodMiddleware — SOD-010 journal entry self-posting', function () {
         }
 
         // User created the JE (has journal_entries.create permission)
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
+        $user->givePermissionTo(Permission::firstOrCreate(
             ['name' => 'journal_entries.create', 'guard_name' => 'web']
         ));
         // Also grant post permission so the route doesn't 403 for missing perm
-        $user->givePermissionTo(\Spatie\Permission\Models\Permission::firstOrCreate(
+        $user->givePermissionTo(Permission::firstOrCreate(
             ['name' => 'journal_entries.post', 'guard_name' => 'web']
         ));
 
@@ -342,7 +349,7 @@ describe('SodMiddleware — SOD-010 journal entry self-posting', function () {
             'date_to' => '2026-02-28',
         ]);
 
-        $jeUlid = (string) \Illuminate\Support\Str::ulid();
+        $jeUlid = (string) Str::ulid();
         DB::table('journal_entries')->insert([
             'ulid' => $jeUlid,
             'date' => '2026-02-15',

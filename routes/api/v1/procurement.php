@@ -2,10 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Department;
+use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Http\Controllers\Procurement\GoodsReceiptController;
 use App\Http\Controllers\Procurement\PurchaseOrderController;
 use App\Http\Controllers\Procurement\PurchaseRequestController;
 use App\Http\Controllers\Procurement\VendorRfqController;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -86,7 +91,7 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
 
     // ── Budget Pre-Check ─────────────────────────────────────────────────────
     // Check if department has sufficient budget before creating PR
-    Route::post('/budget-check', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+    Route::post('/budget-check', function (Request $request): JsonResponse {
         $validated = $request->validate([
             'department_id' => ['required', 'integer', 'exists:departments,id'],
             'items' => ['required', 'array', 'min:1'],
@@ -94,8 +99,8 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             'items.*.estimated_unit_cost' => ['required', 'numeric', 'gt:0'],
         ]);
 
-        /** @var \App\Domains\HR\Models\Department|null $dept */
-        $dept = \App\Domains\HR\Models\Department::find($validated['department_id']);
+        /** @var Department|null $dept */
+        $dept = Department::find($validated['department_id']);
 
         if ($dept === null || $dept->annual_budget_centavos === 0) {
             return response()->json([
@@ -117,7 +122,7 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
         }
 
         // Calculate YTD spend from budget-verified/approved PRs
-        $ytdSpend = (int) \App\Domains\Procurement\Models\PurchaseRequest::where('department_id', $dept->id)
+        $ytdSpend = (int) PurchaseRequest::where('department_id', $dept->id)
             ->whereIn('status', ['budget_verified', 'approved', 'converted_to_po'])
             ->where('created_at', '>=', $fyStart)
             ->sum('total_estimated_cost');
@@ -247,13 +252,13 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
 
     // ── Vendor Suggestion ────────────────────────────────────────────────────
     // Returns top-5 accredited vendors who supply items matching the search term.
-    Route::get('items/suggest-vendors', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+    Route::get('items/suggest-vendors', function (Request $request): JsonResponse {
         $q = trim((string) $request->query('q', ''));
         if (mb_strlen($q) < 2) {
             return response()->json(['data' => []]);
         }
 
-        $results = \Illuminate\Support\Facades\DB::table('vendor_items')
+        $results = DB::table('vendor_items')
             ->join('vendors', 'vendor_items.vendor_id', '=', 'vendors.id')
             ->where('vendors.is_active', true)
             ->where('vendors.accreditation_status', 'accredited')
@@ -261,8 +266,8 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             ->whereNull('vendor_items.deleted_at')
             ->whereNull('vendors.deleted_at')
             ->where(function ($sub) use ($q) {
-                $sub->whereRaw('LOWER(vendor_items.item_name) LIKE ?', ['%' . mb_strtolower($q) . '%'])
-                    ->orWhereRaw('LOWER(vendor_items.item_code) LIKE ?', ['%' . mb_strtolower($q) . '%']);
+                $sub->whereRaw('LOWER(vendor_items.item_name) LIKE ?', ['%'.mb_strtolower($q).'%'])
+                    ->orWhereRaw('LOWER(vendor_items.item_code) LIKE ?', ['%'.mb_strtolower($q).'%']);
             })
             ->select(
                 'vendors.id as vendor_id',
@@ -277,67 +282,67 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
-                'vendor_id'      => $row->vendor_id,
-                'vendor_name'    => $row->vendor_name,
+                'vendor_id' => $row->vendor_id,
+                'vendor_name' => $row->vendor_name,
                 'vendor_item_id' => $row->vendor_item_id,
-                'item_code'      => $row->item_code,
-                'item_name'      => $row->item_name,
+                'item_code' => $row->item_code,
+                'item_name' => $row->item_name,
                 'unit_of_measure' => $row->unit_of_measure,
-                'unit_price'     => round($row->unit_price / 100, 2),
+                'unit_price' => round($row->unit_price / 100, 2),
             ]);
 
         return response()->json(['data' => $results]);
     })->name('items.suggest-vendors');
 
     // ── Procurement Analytics ────────────────────────────────────────────────
-    Route::get('reports/analytics', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+    Route::get('reports/analytics', function (Request $request): JsonResponse {
         $year = $request->integer('year', now()->year);
 
         // Spend by vendor (top 15)
-        $byVendor = \Illuminate\Support\Facades\DB::table('purchase_orders')
+        $byVendor = DB::table('purchase_orders')
             ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
             ->whereIn('purchase_orders.status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('purchase_orders.created_at', $year)
-            ->select('vendors.name as vendor', \Illuminate\Support\Facades\DB::raw('sum(purchase_orders.total_po_amount) as total_spend'))
+            ->select('vendors.name as vendor', DB::raw('sum(purchase_orders.total_po_amount) as total_spend'))
             ->groupBy('vendors.name')
             ->orderByDesc('total_spend')
             ->limit(15)
             ->get();
 
         // Spend by item category
-        $byCategory = \Illuminate\Support\Facades\DB::table('purchase_order_items')
+        $byCategory = DB::table('purchase_order_items')
             ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
             ->join('item_masters', 'purchase_order_items.item_master_id', '=', 'item_masters.id')
             ->leftJoin('item_categories', 'item_masters.category_id', '=', 'item_categories.id')
             ->whereIn('purchase_orders.status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('purchase_orders.created_at', $year)
             ->select(
-                \Illuminate\Support\Facades\DB::raw("coalesce(item_categories.name, 'Uncategorized') as category"),
-                \Illuminate\Support\Facades\DB::raw('sum(purchase_order_items.total_cost) as total_spend'),
+                DB::raw("coalesce(item_categories.name, 'Uncategorized') as category"),
+                DB::raw('sum(purchase_order_items.total_cost) as total_spend'),
             )
             ->groupBy('category')
             ->orderByDesc('total_spend')
             ->get();
 
         // Summary stats
-        $totalPOs = \Illuminate\Support\Facades\DB::table('purchase_orders')
+        $totalPOs = DB::table('purchase_orders')
             ->whereIn('status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('created_at', $year)->count();
-        $totalSpend = \Illuminate\Support\Facades\DB::table('purchase_orders')
+        $totalSpend = DB::table('purchase_orders')
             ->whereIn('status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('created_at', $year)->sum('total_po_amount');
         $avgPoValue = $totalPOs > 0 ? round((float) $totalSpend / $totalPOs, 2) : 0;
-        $activeVendors = \Illuminate\Support\Facades\DB::table('purchase_orders')
+        $activeVendors = DB::table('purchase_orders')
             ->whereIn('status', ['sent', 'partially_received', 'fully_received', 'closed'])
             ->whereYear('created_at', $year)->distinct('vendor_id')->count('vendor_id');
 
         return response()->json([
-            'by_vendor'   => $byVendor,
+            'by_vendor' => $byVendor,
             'by_category' => $byCategory,
-            'summary'     => [
-                'total_pos'      => $totalPOs,
-                'total_spend'    => round((float) $totalSpend, 2),
-                'avg_po_value'   => $avgPoValue,
+            'summary' => [
+                'total_pos' => $totalPOs,
+                'total_spend' => round((float) $totalSpend, 2),
+                'avg_po_value' => $avgPoValue,
                 'active_vendors' => $activeVendors,
             ],
             'year' => $year,

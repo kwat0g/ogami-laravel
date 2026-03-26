@@ -3,18 +3,21 @@
 declare(strict_types=1);
 
 use App\Domains\HR\Models\Department;
-use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\ItemCategory;
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\MaterialRequisitionItem;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 uses()->group('feature', 'procurement', 'mrq-conversion');
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+    $this->seed(RolePermissionSeeder::class);
 
     // Create Purchasing department
     $this->purchasingDept = Department::create([
@@ -34,13 +37,13 @@ beforeEach(function () {
     ]);
     $this->purchasingOfficer->assignRole('officer');
     $this->purchasingOfficer->departments()->attach($this->purchasingDept->id, ['is_primary' => true]);
-    
+
     // Clear permission cache and reload user with roles and permissions
-    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
     $this->purchasingOfficer->load(['roles', 'roles.permissions']);
-    
+
     // Debug: Check officer role permissions
-    $officerRole = \Spatie\Permission\Models\Role::findByName('officer');
+    $officerRole = Role::findByName('officer');
     dump('Officer role permissions:', $officerRole->permissions->pluck('name')->toArray());
 
     // Create Production Head who can create/approve MRQs
@@ -98,7 +101,7 @@ it('converts approved material requisition to purchase request', function () {
 
     // Debug response
     if ($response->getStatusCode() !== 201) {
-        dump('Response: ' . $response->getContent());
+        dump('Response: '.$response->getContent());
     }
 
     $response->assertCreated()

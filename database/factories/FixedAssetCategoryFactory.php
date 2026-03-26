@@ -20,8 +20,8 @@ final class FixedAssetCategoryFactory extends Factory
         $seq++;
 
         return [
-            'name' => 'Category ' . $this->faker->word() . ' ' . $seq,
-            'code_prefix' => 'CAT' . $seq,
+            'name' => 'Category '.$this->faker->word().' '.$seq,
+            'code_prefix' => 'CAT'.$seq,
             'default_useful_life_years' => 5,
             'default_depreciation_method' => 'straight_line',
         ];

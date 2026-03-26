@@ -30,13 +30,13 @@ return new class extends Migration
         });
 
         // Drop old CHECK constraints (both names used across different migration runs)
-        DB::statement("ALTER TABLE purchase_orders DROP CONSTRAINT IF EXISTS chk_po_status");
-        DB::statement("ALTER TABLE purchase_orders DROP CONSTRAINT IF EXISTS purchase_orders_status_check");
+        DB::statement('ALTER TABLE purchase_orders DROP CONSTRAINT IF EXISTS chk_po_status');
+        DB::statement('ALTER TABLE purchase_orders DROP CONSTRAINT IF EXISTS purchase_orders_status_check');
         DB::statement("ALTER TABLE purchase_orders ADD CONSTRAINT purchase_orders_status_check CHECK (status IN ('draft','sent','negotiating','acknowledged','in_transit','partially_received','fully_received','closed','cancelled'))");
 
         // Update VendorFulfillmentNotes note_type to include negotiation types
-        DB::statement("ALTER TABLE vendor_fulfillment_notes DROP CONSTRAINT IF EXISTS chk_vfn_note_type");
-        DB::statement("ALTER TABLE vendor_fulfillment_notes DROP CONSTRAINT IF EXISTS vendor_fulfillment_notes_note_type_check");
+        DB::statement('ALTER TABLE vendor_fulfillment_notes DROP CONSTRAINT IF EXISTS chk_vfn_note_type');
+        DB::statement('ALTER TABLE vendor_fulfillment_notes DROP CONSTRAINT IF EXISTS vendor_fulfillment_notes_note_type_check');
         DB::statement("ALTER TABLE vendor_fulfillment_notes ADD CONSTRAINT vendor_fulfillment_notes_note_type_check CHECK (note_type IN ('in_transit','delivered','partial','acknowledged','change_requested','change_accepted','change_rejected'))");
     }
 
@@ -55,10 +55,10 @@ return new class extends Migration
             $table->dropColumn(['negotiated_quantity', 'vendor_item_notes']);
         });
 
-        DB::statement("ALTER TABLE purchase_orders DROP CONSTRAINT IF EXISTS purchase_orders_status_check");
+        DB::statement('ALTER TABLE purchase_orders DROP CONSTRAINT IF EXISTS purchase_orders_status_check');
         DB::statement("ALTER TABLE purchase_orders ADD CONSTRAINT purchase_orders_status_check CHECK (status IN ('draft','sent','in_transit','partially_received','fully_received','closed','cancelled'))");
 
-        DB::statement("ALTER TABLE vendor_fulfillment_notes DROP CONSTRAINT IF EXISTS vendor_fulfillment_notes_note_type_check");
+        DB::statement('ALTER TABLE vendor_fulfillment_notes DROP CONSTRAINT IF EXISTS vendor_fulfillment_notes_note_type_check');
         DB::statement("ALTER TABLE vendor_fulfillment_notes ADD CONSTRAINT vendor_fulfillment_notes_note_type_check CHECK (note_type IN ('in_transit','delivered','partial'))");
     }
 };

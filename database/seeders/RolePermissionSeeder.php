@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Role & Permission seeder — RBAC v2.0
- * 
+ *
  * ## Simplified Role Hierarchy (7 core roles + 2 portal roles)
- * 
+ *
  * Permissions are determined by: Role + Department Module
- * 
+ *
  * ### Core Roles:
  *   super_admin         — System god mode: ALL permissions, bypasses all checks
  *   admin               — System custodian: users, settings, no business data
@@ -24,11 +26,11 @@ use Spatie\Permission\Models\Role;
  *   officer             — Department operations (create, process, but not final approve)
  *   head                — Team supervisor: first-level approvals
  *   staff               — Rank-and-file: self-service, create requests
- * 
+ *
  * ### Portal Roles:
  *   vendor              — Vendor portal: view POs, update fulfillment
  *   client              — Client portal: view tickets, create support requests
- * 
+ *
  * ### Department Modules (determine effective permissions):
  *   hr          → employees.*, attendance.*, payroll.*, leaves.*, loans.*
  *   accounting  → journal_entries.*, ap.*, ar.*, banking.*, reports.*
@@ -37,7 +39,7 @@ use Spatie\Permission\Models\Role;
  *   warehouse   → inventory.*, mrq.*, delivery.view
  *   purchasing  → procurement.*, vendors.view
  *   operations  → limited access (IT, Executive, ISO)
- * 
+ *
  * ## SoD rules encoded in permissions (enforced in Policies):
  *   SOD-001 → employees.activate (creator ≠ activator)
  *   SOD-002 → leaves.approve (supervisor ≠ requester)
@@ -353,24 +355,24 @@ class RolePermissionSeeder extends Seeder
 
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         foreach (self::PERMISSIONS as $name) {
             Permission::findOrCreate($name, self::GUARD);
         }
 
         // ── RBAC v2: 7 Core Roles + 2 Portal Roles ──────────────────────────
-        $admin         = Role::findOrCreate('admin',          self::GUARD);
-        $superAdmin    = Role::findOrCreate('super_admin',    self::GUARD);
-        $executive     = Role::findOrCreate('executive',      self::GUARD);
+        $admin = Role::findOrCreate('admin', self::GUARD);
+        $superAdmin = Role::findOrCreate('super_admin', self::GUARD);
+        $executive = Role::findOrCreate('executive', self::GUARD);
         $vicePresident = Role::findOrCreate('vice_president', self::GUARD);
-        $manager       = Role::findOrCreate('manager',        self::GUARD);
-        $officer       = Role::findOrCreate('officer',        self::GUARD);
-        $head          = Role::findOrCreate('head',           self::GUARD);
-        $staff         = Role::findOrCreate('staff',          self::GUARD);
-        $vendor        = Role::findOrCreate('vendor',         self::GUARD);
-        $client        = Role::findOrCreate('client',         self::GUARD);
-        
+        $manager = Role::findOrCreate('manager', self::GUARD);
+        $officer = Role::findOrCreate('officer', self::GUARD);
+        $head = Role::findOrCreate('head', self::GUARD);
+        $staff = Role::findOrCreate('staff', self::GUARD);
+        $vendor = Role::findOrCreate('vendor', self::GUARD);
+        $client = Role::findOrCreate('client', self::GUARD);
+
         // Note: Old specific roles (plant_manager, ga_officer, etc.) have been
         // removed in RBAC v2. Use generic roles + department modules instead.
         // Run: php artisan rbac:cleanup-old-roles to migrate existing users.
@@ -745,9 +747,8 @@ class RolePermissionSeeder extends Seeder
             'crm.tickets.reply',
         ]);
 
-
         // ── Bootstrap admin user (only system account; no employee record needed) ──
-        $adminUser = \App\Models\User::firstOrCreate(
+        $adminUser = User::firstOrCreate(
             ['email' => 'admin@ogamierp.local'],
             [
                 'name' => 'System Administrator',
@@ -759,7 +760,7 @@ class RolePermissionSeeder extends Seeder
         $adminUser->syncRoles(['admin']);
 
         // ── Bootstrap superadmin user (testing account — all modules) ─────────
-        $superAdminUser = \App\Models\User::firstOrCreate(
+        $superAdminUser = User::firstOrCreate(
             ['email' => 'superadmin@ogamierp.local'],
             [
                 'name' => 'Super Admin',

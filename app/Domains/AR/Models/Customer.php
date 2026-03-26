@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\AR\Models;
 
-use App\Shared\Exceptions\DomainException;
 use App\Models\User;
+use App\Shared\Exceptions\DomainException;
 use App\Shared\Traits\HasPublicUlid;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

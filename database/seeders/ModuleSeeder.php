@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
 
 /**
  * Module Seeder - Creates the permission modules.
- * 
+ *
  * Modules decouple permissions from hardcoded department codes.
  * A department is assigned a module (e.g., HR dept → 'hr' module).
  * Permissions are then determined by: Role + Module
@@ -83,7 +83,7 @@ class ModuleSeeder extends Seeder
             );
         }
 
-        $this->command->info('✓ Modules seeded: ' . count($modules));
+        $this->command->info('✓ Modules seeded: '.count($modules));
         foreach ($modules as $m) {
             $this->command->info("  - {$m['module_key']}: {$m['label']}");
         }

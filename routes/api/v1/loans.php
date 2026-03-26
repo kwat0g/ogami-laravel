@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Domains\Loan\Models\Loan;
 use App\Http\Controllers\Loan\LoanController;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,14 +56,17 @@ Route::middleware(['auth:sanctum', 'module_access:loans'])->group(function () {
     Route::post('{loan}/payments', [LoanController::class, 'recordPayment'])->name('payments.store');
 
     // ── Loan SOA Export (CSV) ────────────────────────────────────────────────
-    Route::get('{loan}/soa-export', function (\App\Domains\Loan\Models\Loan $loan): \Symfony\Component\HttpFoundation\StreamedResponse {        abort_unless(auth()->user()?->hasPermissionTo('loans.view_own'), 403, 'Unauthorized');
+    Route::get('{loan}/soa-export', function (Loan $loan): StreamedResponse {
+        abort_unless(auth()->user()?->hasPermissionTo('loans.view_own'), 403, 'Unauthorized');
         $loan->load(['employee', 'loanType', 'amortizationSchedule']);
         $schedule = $loan->amortizationSchedule->sortBy('installment_no');
-        $employeeName = ($loan->employee->first_name ?? '') . ' ' . ($loan->employee->last_name ?? '');
+        $employeeName = ($loan->employee->first_name ?? '').' '.($loan->employee->last_name ?? '');
 
         return response()->streamDownload(function () use ($loan, $schedule, $employeeName) {
             $out = fopen('php://output', 'w');
-            if ($out === false) return;
+            if ($out === false) {
+                return;
+            }
             // Header info
             fputcsv($out, ['LOAN STATEMENT OF ACCOUNT']);
             fputcsv($out, ['Employee', $employeeName]);
@@ -82,6 +87,6 @@ Route::middleware(['auth:sanctum', 'module_access:loans'])->group(function () {
                 ]);
             }
             fclose($out);
-        }, "loan_soa_{$loan->id}_" . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+        }, "loan_soa_{$loan->id}_".now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('soa-export');
 });

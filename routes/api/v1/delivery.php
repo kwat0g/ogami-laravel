@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Delivery\DeliveryController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function (): void {
     // Delivery Receipts
@@ -20,8 +23,9 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     Route::patch('/shipments/{shipment}/status', [DeliveryController::class, 'updateShipmentStatus']);
 
     // ── Delivery Export (CSV) ────────────────────────────────────────────────
-    Route::get('/export', function (\Illuminate\Http\Request $request): \Symfony\Component\HttpFoundation\StreamedResponse {        abort_unless(auth()->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
-        $query = \Illuminate\Support\Facades\DB::table('shipments')
+    Route::get('/export', function (Request $request): StreamedResponse {
+        abort_unless(auth()->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
+        $query = DB::table('shipments')
             ->leftJoin('delivery_receipts', 'shipments.id', '=', 'delivery_receipts.shipment_id')
             ->select(
                 'shipments.tracking_number',
@@ -33,20 +37,28 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
                 'shipments.created_at',
             );
 
-        if ($request->filled('status')) $query->where('shipments.status', $request->input('status'));
-        if ($request->filled('date_from')) $query->where('shipments.scheduled_date', '>=', $request->input('date_from'));
-        if ($request->filled('date_to')) $query->where('shipments.scheduled_date', '<=', $request->input('date_to'));
+        if ($request->filled('status')) {
+            $query->where('shipments.status', $request->input('status'));
+        }
+        if ($request->filled('date_from')) {
+            $query->where('shipments.scheduled_date', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->where('shipments.scheduled_date', '<=', $request->input('date_to'));
+        }
 
         $rows = $query->orderBy('shipments.scheduled_date', 'desc')->get();
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
-            if ($out === false) return;
+            if ($out === false) {
+                return;
+            }
             fputcsv($out, ['Tracking #', 'Destination', 'Status', 'Scheduled Date', 'Actual Delivery', 'DR Number', 'Created']);
             foreach ($rows as $r) {
                 fputcsv($out, [$r->tracking_number, $r->destination, $r->status, $r->scheduled_date, $r->actual_delivery_date, $r->dr_number, $r->created_at]);
             }
             fclose($out);
-        }, 'delivery_export_' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+        }, 'delivery_export_'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('export');
 });

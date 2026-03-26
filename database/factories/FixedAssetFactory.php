@@ -20,7 +20,7 @@ final class FixedAssetFactory extends Factory
         return [
             'category_id' => FixedAssetCategory::factory(),
             'department_id' => null,
-            'name' => 'Asset ' . $this->faker->word(),
+            'name' => 'Asset '.$this->faker->word(),
             'description' => $this->faker->sentence(),
             'serial_number' => $this->faker->uuid(),
             'location' => $this->faker->word(),

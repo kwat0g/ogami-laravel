@@ -20,13 +20,13 @@ final class EquipmentFactory extends Factory
         $seq++;
 
         return [
-            'equipment_code' => 'EQ-' . $seq,
-            'name' => 'Equipment ' . $this->faker->word() . ' ' . $seq,
+            'equipment_code' => 'EQ-'.$seq,
+            'name' => 'Equipment '.$this->faker->word().' '.$seq,
             'category' => 'production',
             'manufacturer' => $this->faker->company(),
-            'model_number' => 'MODEL-' . $seq,
+            'model_number' => 'MODEL-'.$seq,
             'serial_number' => $this->faker->uuid(),
-            'location' => 'Line ' . $this->faker->numberBetween(1, 5),
+            'location' => 'Line '.$this->faker->numberBetween(1, 5),
             'commissioned_on' => now()->subYears(2),
             'status' => 'operational',
             'is_active' => true,

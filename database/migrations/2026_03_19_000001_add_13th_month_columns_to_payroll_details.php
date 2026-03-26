@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('thirteenth_month_centavos')->default(0)
                 ->after('net_pay_centavos')
                 ->comment('13th month pay amount (Step 18)');
-            
+
             $table->unsignedBigInteger('thirteenth_month_taxable_centavos')->default(0)
                 ->after('thirteenth_month_centavos')
                 ->comment('Taxable portion of 13th month (excess over ₱90,000 exemption)');

@@ -208,6 +208,12 @@ Each step: `public function __invoke(PayrollComputationContext $ctx, Closure $ne
 
 ## Domain-Specific Gotchas
 
+- **PO status sequence:** `draft → sent → negotiating → acknowledged → in_transit → delivered → partially_received/fully_received → closed`. `delivered` = vendor confirmed, GR draft created, awaiting warehouse confirmation. All status-aware code (`canReceiveGoods()`, `ThreeWayMatchService`, vendor portal query) must include it.
+- **`VendorFulfillmentService`** lives in `app/Domains/AP/Services/` (not Procurement) — vendor portal fulfillment is treated as an AP concern.
+- **Stock updates:** Always use `StockService::receive()` — never `StockBalance::firstOrCreate + increment` directly. Direct model calls bypass `stock_ledger_entries` and leave no audit trail.
+- **PHPStan + Carbon dates:** Columns with `'date'` cast are typed `string` in PHPDocs. `instanceof Carbon` always evaluates to false — use `(string) $model->date_col` instead of `->toDateString()` or `instanceof` checks.
+- **Vendor portal `orderDetail`** returns raw model JSON (no Resource transformer), so all `$fillable` attributes are exposed directly to the vendor user.
+- **Vendor propose-changes `items` field:** Use `['present','array']` (not `['required','array','min:1']`) — empty array is valid when only PO-level changes (e.g. delivery date) are proposed.
 - **Queued notifications:** Always use `::fromModel()` static factory — never `new NotificationClass($model)`. Queuing with an Eloquent model causes `ModelNotFoundException` if the model is soft-deleted before the job runs. All notification classes in this project implement `fromModel()`.
 - **`pulse:check` schedule:** Must have `->withoutOverlapping()`. It's long-running; without it `everyMinute()` piles up orphaned processes. On VPS, `pulse:work` runs as a supervisor daemon instead.
 - **pnpm workspace root:** `pnpm-lock.yaml` lives at the repo root, not inside `frontend/`. Run `pnpm install` from repo root, then `pnpm build` from `frontend/`. Use `--no-frozen-lockfile` on the VPS.
@@ -219,6 +225,22 @@ Each step: `public function __invoke(PayrollComputationContext $ctx, Closure $ne
 - **Payroll golden suite** (`tests/Unit/Payroll/GoldenSuiteTest.php`): 24 canonical scenarios — do not change expected values without documented justification
 
 ---
+
+## Codebase Search (SocratiCode)
+This project is indexed with SocratiCode. Always use its MCP tools 
+to explore the codebase before reading any files directly.
+
+### Workflow
+1. **Start most explorations with `codebase_search`.** 
+   - Use broad queries for orientation: "how is authentication handled", 
+     "database connection setup", "error handling patterns"
+   - Use precise queries for symbol lookups: exact function/class names
+   - Prefer search results to infer which files to read — do NOT 
+     speculatively open files directly
+
+2. **Only read files after searching** — use search results to identify 
+   the exact file and line range needed, then read only that section.
+
 
 ## Additional Reference Files
 

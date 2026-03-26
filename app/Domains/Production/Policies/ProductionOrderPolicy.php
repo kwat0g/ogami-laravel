@@ -18,6 +18,7 @@ final class ProductionOrderPolicy
         if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
             return true;
         }
+
         return null;
     }
 

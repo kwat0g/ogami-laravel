@@ -13,10 +13,12 @@ use App\Http\Controllers\Admin\SalaryGradeController;
 use App\Http\Controllers\Admin\SssContributionController;
 use App\Http\Controllers\Admin\SystemSettingController;
 use App\Http\Controllers\Admin\TaxBracketController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
@@ -206,7 +208,7 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
     Route::get('users', function (Request $request) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
-        $query = \App\Models\User::with(['roles', 'employee' => function ($q) {
+        $query = User::with(['roles', 'employee' => function ($q) {
             $q->select('id', 'user_id', 'employee_code', 'first_name', 'last_name', 'department_id')
                 ->with(['department:id,name,code']);
         }])
@@ -390,7 +392,7 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
 
         $mustChangePassword = in_array($data['role'], ['vendor', 'client'], true);
 
-        $user = \App\Models\User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
@@ -433,7 +435,7 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
     })->name('users.store');
 
     // PATCH /api/v1/admin/users/{user}
-    Route::patch('users/{user}', function (Request $request, \App\Models\User $user) {
+    Route::patch('users/{user}', function (Request $request, User $user) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
         $data = $request->validate([
@@ -457,10 +459,10 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
 
     // POST /api/v1/admin/users/{user}/reset-password
     // Generates a random password and resets the user.
-    Route::post('users/{user}/reset-password', function (Request $request, \App\Models\User $user) {
+    Route::post('users/{user}/reset-password', function (Request $request, User $user) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
-        $password = \Illuminate\Support\Str::password(12);
+        $password = Str::password(12);
 
         $user->update([
             'password' => Hash::make($password),
@@ -471,13 +473,13 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
         $user->tokens()->delete();
 
         return response()->json([
-             'message' => 'Password reset successfully.',
-             'password' => $password,
+            'message' => 'Password reset successfully.',
+            'password' => $password,
         ]);
     })->name('users.resetPassword');
 
     // POST /api/v1/admin/users/{user}/disable
-    Route::post('users/{user}/disable', function (Request $request, \App\Models\User $user) {
+    Route::post('users/{user}/disable', function (Request $request, User $user) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
         // Prevent self-disable so admins cannot lock themselves out of user management.
@@ -499,7 +501,7 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
 
     // DELETE /api/v1/admin/users/{user}
     // Archive user account (soft-delete).
-    Route::delete('users/{user}', function (Request $request, \App\Models\User $user) {
+    Route::delete('users/{user}', function (Request $request, User $user) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
         // Prevent self-delete
@@ -519,7 +521,7 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
     })->middleware('throttle:api-action')->name('users.destroy');
 
     // POST /api/v1/admin/users/{user}/roles
-    Route::post('users/{user}/roles', function (Request $request, \App\Models\User $user) {
+    Route::post('users/{user}/roles', function (Request $request, User $user) {
         abort_unless($request->user()->can('system.assign_roles'), 403, 'Insufficient permissions.');
 
         $data = $request->validate([
@@ -535,7 +537,7 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
     })->name('users.assignRole');
 
     // POST /api/v1/admin/users/{user}/unlock
-    Route::post('users/{user}/unlock', function (Request $request, \App\Models\User $user) {
+    Route::post('users/{user}/unlock', function (Request $request, User $user) {
         abort_unless($request->user()->can('system.manage_users'), 403, 'Insufficient permissions.');
 
         $user->update([
@@ -714,10 +716,10 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
     // Requires: system.manage_backups (admin only)
     // ─────────────────────────────────────────────────────────────────────────
     Route::prefix('backups')->group(function () {
-        Route::get('/',          [BackupController::class, 'index'])->name('admin.backups.index');
-        Route::get('/status',    [BackupController::class, 'status'])->name('admin.backups.status');
-        Route::get('/download',  [BackupController::class, 'download'])->name('admin.backups.download');
-        Route::post('/run',      [BackupController::class, 'run'])->name('admin.backups.run');
-        Route::post('/restore',  [BackupController::class, 'restore'])->name('admin.backups.restore');
+        Route::get('/', [BackupController::class, 'index'])->name('admin.backups.index');
+        Route::get('/status', [BackupController::class, 'status'])->name('admin.backups.status');
+        Route::get('/download', [BackupController::class, 'download'])->name('admin.backups.download');
+        Route::post('/run', [BackupController::class, 'run'])->name('admin.backups.run');
+        Route::post('/restore', [BackupController::class, 'restore'])->name('admin.backups.restore');
     });
 });

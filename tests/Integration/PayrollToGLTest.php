@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Models\JournalEntry;
 use App\Domains\Payroll\Services\PayrollComputationService;
 use App\Domains\Payroll\Services\PayrollPostingService;
@@ -32,7 +33,7 @@ beforeEach(function () {
     $this->postSvc = app(PayrollPostingService::class);
 
     // Create fiscal periods for 2025
-    \App\Domains\Accounting\Models\FiscalPeriod::create([
+    FiscalPeriod::create([
         'name' => 'FY 2025',
         'date_from' => '2025-01-01',
         'date_to' => '2025-12-31',

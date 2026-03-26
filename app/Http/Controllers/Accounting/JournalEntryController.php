@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Accounting;
 
 use App\Domains\Accounting\Models\JournalEntry;
+use App\Domains\Accounting\Models\JournalEntryTemplate;
 use App\Domains\Accounting\Services\JournalEntryService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounting\CreateJournalEntryRequest;
@@ -121,6 +122,7 @@ final class JournalEntryController extends Controller
     public function templates(Request $request): JsonResponse
     {
         $templates = $this->service->getTemplates($request->user()?->id);
+
         return response()->json(['data' => $templates]);
     }
 
@@ -130,6 +132,7 @@ final class JournalEntryController extends Controller
     public function applyTemplate(Request $request, int $templateId): JsonResponse
     {
         $result = $this->service->applyTemplate($templateId);
+
         return response()->json($result);
     }
 
@@ -164,8 +167,8 @@ final class JournalEntryController extends Controller
      */
     public function deleteTemplate(Request $request, int $templateId): JsonResponse
     {
-        $template = \App\Domains\Accounting\Models\JournalEntryTemplate::findOrFail($templateId);
-        
+        $template = JournalEntryTemplate::findOrFail($templateId);
+
         $this->service->deleteTemplate($template, $request->user()->id);
 
         return response()->json(['message' => 'Template deleted successfully']);

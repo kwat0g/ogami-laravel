@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Stock Reservation Service - Manages inventory reservations.
- * 
+ *
  * Ensures stock is reserved for:
  * - Production Orders (hard reservation when released)
  * - Delivery Schedules (soft reservation when confirmed)
@@ -40,12 +40,12 @@ final class StockReservationService implements ServiceContract
         ?string $notes = null,
     ): StockReservation {
         return DB::transaction(function () use (
-            $itemId, $quantity, $reservationType, $referenceId, 
+            $itemId, $quantity, $reservationType, $referenceId,
             $referenceType, $locationId, $expiresAt, $notes
         ) {
             // Check available stock
             $availableStock = $this->getAvailableStock($itemId, $locationId);
-            
+
             if ($availableStock < $quantity) {
                 throw new DomainException(
                     sprintf(
@@ -87,7 +87,7 @@ final class StockReservationService implements ServiceContract
     public function getAvailableStock(int $itemId, ?int $locationId = null): float
     {
         $query = StockBalance::where('item_id', $itemId);
-        
+
         if ($locationId !== null) {
             $query->where('location_id', $locationId);
         }
@@ -122,7 +122,7 @@ final class StockReservationService implements ServiceContract
         DB::transaction(function () use ($reservation, $reason) {
             $reservation->cancel($reason);
             $this->updateStockBalanceReserved($reservation->item_id, $reservation->location_id);
-            
+
             Log::info("Cancelled stock reservation #{$reservation->id}");
         });
     }
@@ -135,7 +135,7 @@ final class StockReservationService implements ServiceContract
         DB::transaction(function () use ($reservation) {
             $reservation->fulfill();
             $this->updateStockBalanceReserved($reservation->item_id, $reservation->location_id);
-            
+
             Log::info("Fulfilled stock reservation #{$reservation->id}");
         });
     }
@@ -251,7 +251,7 @@ final class StockReservationService implements ServiceContract
             // Update all locations for this item
             $locations = StockBalance::where('item_id', $itemId)
                 ->pluck('location_id');
-            
+
             foreach ($locations as $locId) {
                 $this->updateLocationReserved($itemId, $locId);
             }

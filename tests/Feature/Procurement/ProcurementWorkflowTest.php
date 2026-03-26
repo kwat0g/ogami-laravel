@@ -7,7 +7,6 @@ use App\Domains\HR\Models\Department;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\WarehouseLocation;
-use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Models\User;
@@ -15,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 uses()->group('feature', 'procurement', 'workflow');
@@ -33,7 +33,7 @@ function seedRbac(): void
     Artisan::call('db:seed', ['--class' => 'ModulePermissionSeeder', '--force' => true]);
     Artisan::call('db:seed', ['--class' => 'DepartmentPositionSeeder', '--force' => true]);
     Artisan::call('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder', '--force' => true]);
-    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
 }
 
 /**
@@ -47,22 +47,22 @@ function makeVendorFixture(): array
 
     $vendor = Vendor::factory()->create([
         'accreditation_status' => 'accredited',
-        'is_active'            => true,
-        'payment_terms'        => 'Net 30',
-        'created_by'           => $admin->id,
+        'is_active' => true,
+        'payment_terms' => 'Net 30',
+        'created_by' => $admin->id,
     ]);
 
     $vendorItemId = DB::table('vendor_items')->insertGetId([
-        'ulid'          => Str::ulid()->toBase32(),
-        'vendor_id'     => $vendor->id,
-        'item_code'     => 'VI-' . uniqid(),
-        'item_name'     => 'PP Resin Natural',
+        'ulid' => Str::ulid()->toBase32(),
+        'vendor_id' => $vendor->id,
+        'item_code' => 'VI-'.uniqid(),
+        'item_name' => 'PP Resin Natural',
         'unit_of_measure' => 'KG',
-        'unit_price'    => 15000, // ₱150.00 in centavos
-        'is_active'     => true,
+        'unit_price' => 15000, // ₱150.00 in centavos
+        'is_active' => true,
         'created_by_id' => $admin->id,
-        'created_at'    => now(),
-        'updated_at'    => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     return [$vendor, $vendorItemId];
@@ -80,7 +80,8 @@ function makeUser(string $role, string $deptCode): User
     $user->assignRole($role);
     $user->departments()->attach($dept->id, ['is_primary' => true]);
     $user->update(['department_id' => $dept->id]);
-    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
     return $user;
 }
 
@@ -91,18 +92,18 @@ function prPayload(int $deptId, int $vendorId, int $vendorItemId, float $unitCos
 {
     return [
         'department_id' => $deptId,
-        'vendor_id'     => $vendorId,
-        'urgency'       => 'normal',
+        'vendor_id' => $vendorId,
+        'urgency' => 'normal',
         'justification' => 'We urgently require raw materials for production run Q1-2026. This batch is scheduled per the approved production plan.',
-        'notes'         => 'Please expedite delivery.',
-        'items'         => [
+        'notes' => 'Please expedite delivery.',
+        'items' => [
             [
-                'vendor_item_id'      => $vendorItemId,
-                'item_description'    => 'PP Resin Natural',
-                'unit_of_measure'     => 'KG',
-                'quantity'            => 100,
+                'vendor_item_id' => $vendorItemId,
+                'item_description' => 'PP Resin Natural',
+                'unit_of_measure' => 'KG',
+                'quantity' => 100,
                 'estimated_unit_cost' => $unitCost,
-                'specifications'      => 'Standard grade',
+                'specifications' => 'Standard grade',
             ],
         ],
     ];
@@ -140,7 +141,7 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
         // VP — no department; Spatie role has 'approvals.vp.approve'
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
     it('creates a PR draft as Purchasing Officer', function () {
@@ -216,7 +217,7 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
             ->patchJson("/api/v1/procurement/purchase-orders/{$po->ulid}", [
                 'delivery_date' => now()->addDays(14)->toDateString(),
                 'payment_terms' => 'Net 30',
-                'vendor_id'     => $this->vendor->id,
+                'vendor_id' => $this->vendor->id,
             ])
             ->assertOk();
 
@@ -237,16 +238,16 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
 
         $grResp = $this->actingAs($this->purchasingOfficer)
             ->postJson('/api/v1/procurement/goods-receipts', [
-                'purchase_order_id'    => $po->id,
-                'received_date'        => now()->toDateString(),
+                'purchase_order_id' => $po->id,
+                'received_date' => now()->toDateString(),
                 'delivery_note_number' => 'DN-2026-001',
-                'condition_notes'      => 'All items received in good condition.',
-                'items'                => [
+                'condition_notes' => 'All items received in good condition.',
+                'items' => [
                     [
-                        'po_item_id'        => $poItem->id,
+                        'po_item_id' => $poItem->id,
                         'quantity_received' => 100,
-                        'unit_of_measure'   => 'KG',
-                        'condition'         => 'good',
+                        'unit_of_measure' => 'KG',
+                        'condition' => 'good',
                     ],
                 ],
             ]);
@@ -282,11 +283,11 @@ describe('Scenario 2: Purchasing Manager creates PR (auto-skips review → direc
         [$this->vendor, $this->vendorItemId] = makeVendorFixture();
 
         $this->purchasingManager = makeUser('manager', 'PURCH');
-        $this->budgetManager     = makeUser('manager', 'PURCH'); // different from creator for SoD
+        $this->budgetManager = makeUser('manager', 'PURCH'); // different from creator for SoD
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
     it('auto-advances to reviewed when Purchasing Manager submits their own PR', function () {
@@ -349,12 +350,12 @@ describe('Scenario 3: PR returned by manager → officer re-edits → resubmits 
         [$this->vendor, $this->vendorItemId] = makeVendorFixture();
 
         $this->purchasingOfficer = makeUser('officer', 'PURCH');
-        $this->reviewerManager   = makeUser('manager', 'PURCH');
-        $this->budgetManager     = makeUser('manager', 'PURCH');
+        $this->reviewerManager = makeUser('manager', 'PURCH');
+        $this->budgetManager = makeUser('manager', 'PURCH');
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
     it('handles the return → re-edit → resubmit cycle correctly', function () {
@@ -389,12 +390,12 @@ describe('Scenario 3: PR returned by manager → officer re-edits → resubmits 
             ->patchJson("/api/v1/procurement/purchase-requests/{$prUlid}", [
                 'department_id' => $this->purchDept->id,
                 'justification' => 'We require PP Resin Natural for Q1-2026 Production Run per approved schedule dated 2026-01-15. Production batch number PROD-2026-001. Required by Feb 1.',
-                'items'         => [
+                'items' => [
                     [
-                        'vendor_item_id'      => $this->vendorItemId,
-                        'item_description'    => 'PP Resin Natural — Grade A',
-                        'unit_of_measure'     => 'KG',
-                        'quantity'            => 100,
+                        'vendor_item_id' => $this->vendorItemId,
+                        'item_description' => 'PP Resin Natural — Grade A',
+                        'unit_of_measure' => 'KG',
+                        'quantity' => 100,
                         'estimated_unit_cost' => 1500.00,
                     ],
                 ],
@@ -447,12 +448,12 @@ describe('Scenario 3: PR returned by manager → officer re-edits → resubmits 
             ->patchJson("/api/v1/procurement/purchase-requests/{$prUlid}", [
                 'department_id' => $this->purchDept->id,
                 'justification' => 'Updated justification that is long enough to pass validation requirements.',
-                'items'         => [
+                'items' => [
                     [
-                        'vendor_item_id'      => $this->vendorItemId,
-                        'item_description'    => 'PP Resin Natural',
-                        'unit_of_measure'     => 'KG',
-                        'quantity'            => 50,
+                        'vendor_item_id' => $this->vendorItemId,
+                        'item_description' => 'PP Resin Natural',
+                        'unit_of_measure' => 'KG',
+                        'quantity' => 50,
                         'estimated_unit_cost' => 1500.00,
                     ],
                 ],
@@ -565,12 +566,12 @@ describe('Scenario 5: SoD rules enforced via HTTP API', function () {
         [$this->vendor, $this->vendorItemId] = makeVendorFixture();
 
         $this->purchasingOfficer = makeUser('officer', 'PURCH');
-        $this->reviewerManager   = makeUser('manager', 'PURCH');
-        $this->budgetManager     = makeUser('manager', 'PURCH');
+        $this->reviewerManager = makeUser('manager', 'PURCH');
+        $this->budgetManager = makeUser('manager', 'PURCH');
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
     it('blocks the creator from reviewing their own PR (SoD: reviewer ≠ creator)', function () {
@@ -633,19 +634,19 @@ describe('Scenario 5: SoD rules enforced via HTTP API', function () {
     it('blocks VP from approving a PR that the VP also budget-verified (SoD: VP ≠ budget verifier)', function () {
         // Give VP the budget-check permission directly via Spatie (VP has no dept, uses Spatie)
         $this->vp->givePermissionTo('procurement.purchase-request.budget-check');
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Create a PR manually in reviewed status (with a different reviewer)
         $pr = PurchaseRequest::create([
-            'pr_reference'   => 'PR-' . now()->year . '-SOD-VP01',
-            'department_id'  => $this->purchDept->id,
+            'pr_reference' => 'PR-'.now()->year.'-SOD-VP01',
+            'department_id' => $this->purchDept->id,
             'requested_by_id' => $this->purchasingOfficer->id,
-            'status'         => 'reviewed',
+            'status' => 'reviewed',
             'total_estimated_cost' => 100000,
-            'justification'  => 'SoD VP test',
-            'urgency'        => 'normal',
+            'justification' => 'SoD VP test',
+            'urgency' => 'normal',
             'reviewed_by_id' => $this->reviewerManager->id,
-            'reviewed_at'    => now(),
+            'reviewed_at' => now(),
         ]);
 
         // VP does budget check
@@ -663,15 +664,15 @@ describe('Scenario 5: SoD rules enforced via HTTP API', function () {
     it('blocks a user without VP role from calling the vp-approve endpoint', function () {
         // Create a PR in budget_verified status
         $pr = PurchaseRequest::create([
-            'pr_reference'          => 'PR-' . now()->year . '-SOD-NOVP',
-            'department_id'         => $this->purchDept->id,
-            'requested_by_id'       => $this->purchasingOfficer->id,
-            'status'                => 'budget_verified',
-            'total_estimated_cost'  => 100000,
-            'justification'         => 'No-VP SoD test',
-            'urgency'               => 'normal',
-            'reviewed_by_id'        => $this->reviewerManager->id,
-            'budget_checked_by_id'  => $this->budgetManager->id,
+            'pr_reference' => 'PR-'.now()->year.'-SOD-NOVP',
+            'department_id' => $this->purchDept->id,
+            'requested_by_id' => $this->purchasingOfficer->id,
+            'status' => 'budget_verified',
+            'total_estimated_cost' => 100000,
+            'justification' => 'No-VP SoD test',
+            'urgency' => 'normal',
+            'reviewed_by_id' => $this->reviewerManager->id,
+            'budget_checked_by_id' => $this->budgetManager->id,
         ]);
 
         // Purchasing Officer (not VP) tries to approve
@@ -796,20 +797,20 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
 
         // Warehouse receiving location — required for listener to write stock
         $this->location = WarehouseLocation::create([
-            'code'      => 'WH-RECV-001',
-            'name'      => 'Receiving Area',
-            'zone'      => 'A',
-            'bin'       => 'R1',
+            'code' => 'WH-RECV-001',
+            'name' => 'Receiving Area',
+            'zone' => 'A',
+            'bin' => 'R1',
             'is_active' => true,
         ]);
 
-        $this->officer  = makeUser('officer',  'PURCH');
-        $this->reviewer = makeUser('manager',  'PURCH');
+        $this->officer = makeUser('officer', 'PURCH');
+        $this->reviewer = makeUser('manager', 'PURCH');
         $this->budgetMgr = makeUser('manager', 'PURCH');
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
     it('creates a StockBalance entry after GR is confirmed (full PR → GR → inventory chain)', function () {
@@ -867,15 +868,15 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
         // Step 6 — Create + confirm GR (full quantity received: 100 KG)
         $grResp = $this->actingAs($this->officer)
             ->postJson('/api/v1/procurement/goods-receipts', [
-                'purchase_order_id'    => $po->id,
-                'received_date'        => now()->toDateString(),
+                'purchase_order_id' => $po->id,
+                'received_date' => now()->toDateString(),
                 'delivery_note_number' => 'DN-INVENTORY-001',
-                'condition_notes'      => 'Received in good condition, no damage.',
-                'items'                => [[
-                    'po_item_id'        => $poItem->id,
+                'condition_notes' => 'Received in good condition, no damage.',
+                'items' => [[
+                    'po_item_id' => $poItem->id,
                     'quantity_received' => 100,
-                    'unit_of_measure'   => 'KG',
-                    'condition'         => 'good',
+                    'unit_of_measure' => 'KG',
+                    'condition' => 'good',
                 ]],
             ])
             ->assertStatus(201);
@@ -936,15 +937,15 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
 
             $grResp = $this->actingAs($this->officer)
                 ->postJson('/api/v1/procurement/goods-receipts', [
-                    'purchase_order_id'    => $po->id,
-                    'received_date'        => now()->toDateString(),
-                    'delivery_note_number' => 'DN-' . uniqid(),
-                    'condition_notes'      => 'Good condition.',
-                    'items'                => [[
-                        'po_item_id'        => $poItem->id,
+                    'purchase_order_id' => $po->id,
+                    'received_date' => now()->toDateString(),
+                    'delivery_note_number' => 'DN-'.uniqid(),
+                    'condition_notes' => 'Good condition.',
+                    'items' => [[
+                        'po_item_id' => $poItem->id,
                         'quantity_received' => $qty,
-                        'unit_of_measure'   => 'KG',
-                        'condition'         => 'good',
+                        'unit_of_measure' => 'KG',
+                        'condition' => 'good',
                     ]],
                 ])
                 ->assertStatus(201);
@@ -1003,15 +1004,15 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
 
         $grResp = $this->actingAs($this->officer)
             ->postJson('/api/v1/procurement/goods-receipts', [
-                'purchase_order_id'    => $po->id,
-                'received_date'        => now()->toDateString(),
+                'purchase_order_id' => $po->id,
+                'received_date' => now()->toDateString(),
                 'delivery_note_number' => 'DN-NO-WH-001',
-                'condition_notes'      => 'Good.',
-                'items'                => [[
-                    'po_item_id'        => $poItem->id,
+                'condition_notes' => 'Good.',
+                'items' => [[
+                    'po_item_id' => $poItem->id,
                     'quantity_received' => 100,
-                    'unit_of_measure'   => 'KG',
-                    'condition'         => 'good',
+                    'unit_of_measure' => 'KG',
+                    'condition' => 'good',
                 ]],
             ])->assertStatus(201);
 

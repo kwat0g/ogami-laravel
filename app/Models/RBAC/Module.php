@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models\RBAC;
 
+use Carbon\Carbon;
+use Database\Factories\RBAC\ModuleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Module - Reference table for department permission modules.
- * 
+ *
  * @property int $id
  * @property string $module_key
  * @property string $label
@@ -18,12 +20,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array|null $default_permissions
  * @property array|null $permission_groups
  * @property bool $is_active
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class Module extends Model
 {
-    /** @use HasFactory<\Database\Factories\RBAC\ModuleFactory> */
+    /** @use HasFactory<ModuleFactory> */
     use HasFactory;
 
     protected $table = 'modules';
@@ -92,7 +94,7 @@ final class Module extends Model
 
     /**
      * Get all valid module keys.
-     * 
+     *
      * @return list<string>
      */
     public static function validKeys(): array

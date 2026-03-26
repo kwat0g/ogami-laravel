@@ -9,6 +9,8 @@ use App\Services\DepartmentPermissionServiceV3 as DepartmentPermissionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +67,7 @@ function dppProfile(Department $dept, string $role, array $permissions): Departm
  */
 function dppUser(string $role, Department $dept): User
 {
-    \Spatie\Permission\Models\Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
 
     $user = User::factory()->create(['password' => Hash::make('DppTest!999')]);
     $user->assignRole($role);
@@ -80,7 +82,7 @@ function dppUser(string $role, Department $dept): User
 
     // Bust caches so fresh DB reads are made
     $user->clearDepartmentCache();
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     return $user->fresh();
 }
@@ -158,7 +160,7 @@ function selfServicePerms(): array
 // ──────────────────────────────────────────────────────────────────────────────
 
 beforeEach(function () {
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
     Cache::flush();
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
 });
@@ -206,7 +208,7 @@ describe('HRD Manager — profile permissions', function () {
         $user = dppUser('officer', $dept);
 
         // Verify the officer Spatie ROLE genuinely has the permission
-        $acctgRole = \Spatie\Permission\Models\Role::findByName('officer');
+        $acctgRole = Role::findByName('officer');
         expect($acctgRole->hasPermissionTo('journal_entries.post'))->toBeTrue();
 
         // But User::hasPermissionTo() (our override) returns false — HRD profile lacks it
@@ -485,7 +487,7 @@ describe('Admin and Executive bypass department scoping', function () {
         // Admin has NO depts and NO module permissions in Spatie — bypasses by role check
         $user = User::factory()->create();
         $user->assignRole('admin');
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Admin role has system.* permissions — spot check two
         expect($user->hasPermissionTo('system.assign_roles'))->toBeTrue();
@@ -500,7 +502,7 @@ describe('Admin and Executive bypass department scoping', function () {
         dppProfile($dept, 'manager', selfServicePerms());
         $user = User::factory()->create();
         $user->assignRole('executive');
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         // Executive role has read-only perms — department scoping is bypassed
         expect($user->hasPermissionTo('employees.view'))->toBeTrue();
@@ -664,7 +666,7 @@ describe('getEffectivePermissions — frontend permission list', function () {
     it('bypasses department scoping for admin', function () {
         $user = User::factory()->create();
         $user->assignRole('admin');
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $perms = $user->getEffectivePermissions()->all();
 

@@ -381,6 +381,47 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         </div>
       )}
 
+      {/* QC Inspections */}
+      {(order.inspections ?? []).length > 0 && (
+        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
+          <h2 className="text-sm font-medium text-neutral-700 mb-3">QC Inspections</h2>
+          <table className="min-w-full text-sm">
+            <thead className="bg-neutral-50">
+              <tr>
+                {['Reference', 'Date', 'Stage', 'Inspected', 'Passed', 'Failed', 'Status'].map((h) => (
+                  <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {order.inspections?.map((ins: any) => (
+                <tr key={ins.ulid}>
+                  <td className="px-3 py-2">
+                    <Link to={`/qc/inspections/${ins.ulid}`} className="font-mono text-sm text-amber-700 hover:text-amber-900 font-medium underline underline-offset-2">
+                      {ins.ulid.slice(0, 8)}...
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2 text-neutral-500 text-xs">{ins.inspection_date ?? '—'}</td>
+                  <td className="px-3 py-2 font-semibold uppercase text-neutral-700 text-xs">{ins.stage}</td>
+                  <td className="px-3 py-2 tabular-nums text-neutral-900">{parseFloat(ins.qty_inspected || 0).toLocaleString('en-PH')}</td>
+                  <td className="px-3 py-2 tabular-nums text-emerald-600 font-medium">{parseFloat(ins.qty_passed || 0).toLocaleString('en-PH')}</td>
+                  <td className="px-3 py-2 tabular-nums text-red-600 font-medium">{parseFloat(ins.qty_failed || 0).toLocaleString('en-PH')}</td>
+                  <td className="px-3 py-2">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      ins.status === 'passed' ? 'bg-emerald-100 text-emerald-800' :
+                      ins.status === 'failed' ? 'bg-red-100 text-red-800' :
+                      'bg-amber-100 text-amber-800'
+                    }`}>
+                      {ins.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="bg-white border border-neutral-200 rounded p-6">
         <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>

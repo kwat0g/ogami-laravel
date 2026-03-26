@@ -124,14 +124,14 @@ final class CustomerInvoiceController extends Controller
         $invoice = $customerInvoice->load(['customer', 'payments', 'items']);
 
         $settings = [
-            'company_name'    => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_name' => config('app.company_name', 'Ogami Manufacturing Corp.'),
             'company_address' => config('app.company_address', ''),
         ];
 
         $pdf = Pdf::loadView('ar.customer-invoice-pdf', compact('invoice', 'settings'))
             ->setPaper('a4', 'portrait');
 
-        $filename = 'Invoice-' . ($invoice->invoice_number ?? $invoice->id) . '.pdf';
+        $filename = 'Invoice-'.($invoice->invoice_number ?? $invoice->id).'.pdf';
 
         return $pdf->stream($filename);
     }

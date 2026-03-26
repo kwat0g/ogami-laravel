@@ -54,15 +54,15 @@ final class PurchaseOrderSentNotification extends Notification implements Should
     public function toArray(object $notifiable): array
     {
         return [
-            'type'         => 'purchase_order_sent',
-            'title'        => "Purchase Order Sent — {$this->poReference}",
-            'body'         => "PO #{$this->poReference} to {$this->vendorName} has been sent. Prepare to receive incoming goods.",
-            'po_id'        => $this->poId,
-            'po_ulid'      => $this->poUlid,
-            'po_number'    => $this->poReference,
-            'vendor'       => $this->vendorName,
+            'type' => 'purchase_order_sent',
+            'title' => "Purchase Order Sent — {$this->poReference}",
+            'body' => "PO #{$this->poReference} to {$this->vendorName} has been sent. Prepare to receive incoming goods.",
+            'po_id' => $this->poId,
+            'po_ulid' => $this->poUlid,
+            'po_number' => $this->poReference,
+            'vendor' => $this->vendorName,
             'total_amount' => $this->totalAmountCentavos,
-            'url'          => "/procurement/purchase-orders/{$this->poUlid}",
+            'url' => "/procurement/purchase-orders/{$this->poUlid}",
         ];
     }
 

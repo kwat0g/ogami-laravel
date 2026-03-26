@@ -25,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('purchase_orders', function (Blueprint $table) {
-            // Reverting requires knowing if there are null values. 
+            // Reverting requires knowing if there are null values.
             // We assume for rollback that we might need to update them or let them fail if null exists.
             // But strict rollback:
             // $table->date('delivery_date')->nullable(false)->change();

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Events\Payroll;
 
 use App\Domains\Payroll\Models\PayrollRun;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 
 /**
  * Fired when a payroll run transitions to a significant status.
@@ -43,7 +45,7 @@ final class PayrollStatusChanged implements ShouldBroadcast
             'pay_period_label' => $this->run->pay_period_label,
             'status' => $this->newStatus,
             'pay_date' => $this->run->pay_date
-                ? \Illuminate\Support\Carbon::parse($this->run->pay_date)->toDateString()
+                ? Carbon::parse($this->run->pay_date)->toDateString()
                 : null,
         ];
     }
@@ -53,7 +55,7 @@ final class PayrollStatusChanged implements ShouldBroadcast
         return 'payroll.status_changed';
     }
 
-    /** @return \Illuminate\Broadcasting\Channel[] */
+    /** @return Channel[] */
     public function broadcastOn(): array
     {
         return [new PrivateChannel("user.{$this->targetUserId}")];

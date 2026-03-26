@@ -289,8 +289,8 @@ final class JournalEntryService implements ServiceContract
     public function applyTemplate(int $templateId): array
     {
         $template = JournalEntryTemplate::findOrFail($templateId);
-        
-        if (!$template->is_active) {
+
+        if (! $template->is_active) {
             throw new DomainException('Template is inactive.', 'TEMPLATE_INACTIVE', 422);
         }
 
@@ -310,7 +310,7 @@ final class JournalEntryService implements ServiceContract
     {
         // Validate that all account IDs exist
         foreach ($data['lines'] as $line) {
-            if (!ChartOfAccount::where('id', $line['account_id'])->where('is_active', true)->exists()) {
+            if (! ChartOfAccount::where('id', $line['account_id'])->where('is_active', true)->exists()) {
                 throw new DomainException(
                     "Account ID {$line['account_id']} does not exist or is inactive.",
                     'INVALID_ACCOUNT',
@@ -338,7 +338,7 @@ final class JournalEntryService implements ServiceContract
             throw new DomainException('System templates cannot be deleted.', 'CANNOT_DELETE_SYSTEM_TEMPLATE', 403);
         }
 
-        if ($template->created_by_id !== $userId && !auth()->user()?->hasRole('super_admin')) {
+        if ($template->created_by_id !== $userId && ! auth()->user()?->hasRole('super_admin')) {
             throw new DomainException('You can only delete your own templates.', 'UNAUTHORIZED', 403);
         }
 

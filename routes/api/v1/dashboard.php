@@ -1638,7 +1638,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // ── Financial summary ─────────────────────────────────────────────────
         $monthStart = now()->startOfMonth()->format('Y-m-d');
-        $monthEnd   = now()->endOfMonth()->format('Y-m-d');
+        $monthEnd = now()->endOfMonth()->format('Y-m-d');
 
         $totalPayrollThisMonth = (int) DB::table('payroll_runs')
             ->whereIn('status', ['ACCTG_APPROVED', 'PUBLISHED'])
@@ -1711,16 +1711,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         return tap(response()->json([
             'pending_approvals' => [
-                'loans'             => $pendingLoans,
+                'loans' => $pendingLoans,
                 'purchase_requests' => $pendingPRs,
-                'mrq'               => $pendingMRQs,
-                'total'             => $totalPending,
+                'mrq' => $pendingMRQs,
+                'total' => $totalPending,
             ],
             'financial_summary' => [
-                'total_payroll_this_month'  => $totalPayrollThisMonth,
-                'pending_vendor_invoices'   => $pendingVendorInvoices,
+                'total_payroll_this_month' => $totalPayrollThisMonth,
+                'pending_vendor_invoices' => $pendingVendorInvoices,
                 'pending_customer_invoices' => $pendingCustomerInvoices,
-                'open_production_orders'    => $openProductionOrders,
+                'open_production_orders' => $openProductionOrders,
             ],
             'recent_approvals' => $recentApprovals,
         ]),
@@ -1806,25 +1806,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         return tap(response()->json([
             'accounting' => [
-                'pending_vendor_invoices'   => $pendingVendorInvoices,
+                'pending_vendor_invoices' => $pendingVendorInvoices,
                 'pending_customer_invoices' => $pendingCustomerInvoices,
-                'journal_entries_to_post'   => $journalEntriesToPost,
-                'bank_recon_due'            => $bankReconDue,
+                'journal_entries_to_post' => $journalEntriesToPost,
+                'bank_recon_due' => $bankReconDue,
             ],
             'procurement' => [
-                'pending_pr_review'        => $pendingPRReview,
-                'pending_pr_budget_check'  => $pendingPRBudgetCheck,
-                'open_pos'                 => $openPOs,
-                'pending_gr'               => $pendingGR,
+                'pending_pr_review' => $pendingPRReview,
+                'pending_pr_budget_check' => $pendingPRBudgetCheck,
+                'open_pos' => $openPOs,
+                'pending_gr' => $pendingGR,
             ],
             'delivery' => [
-                'inbound_draft'        => $inboundDraft,
-                'outbound_draft'       => $outboundDraft,
+                'inbound_draft' => $inboundDraft,
+                'outbound_draft' => $outboundDraft,
                 'in_transit_shipments' => $inTransitShipments,
             ],
             'payroll' => [
                 'runs_pending_acctg_approval' => $runsPendingAcctg,
-                'next_pay_date'               => $nextPayDate,
+                'next_pay_date' => $nextPayDate,
             ],
         ]),
             fn ($resp) => ($_ttl > 0 ? Cache::put($_cacheKey, $resp->getData(true), $_ttl) : null));
@@ -1877,17 +1877,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         return tap(response()->json([
             'purchase_requests' => [
-                'draft'               => $draftPRs,
-                'submitted'           => $submittedPRs,
-                'pending_budget_check'=> $pendingBudgetCheck,
+                'draft' => $draftPRs,
+                'submitted' => $submittedPRs,
+                'pending_budget_check' => $pendingBudgetCheck,
             ],
             'purchase_orders' => [
-                'open'       => $openPOs,
+                'open' => $openPOs,
                 'pending_gr' => $pendingGR,
             ],
             'vendors' => [
-                'active'     => $vendorsActive,
-                'top_5'      => $topVendors,
+                'active' => $vendorsActive,
+                'top_5' => $topVendors,
             ],
         ]),
             fn ($resp) => ($_ttl > 0 ? Cache::put($_cacheKey, $resp->getData(true), $_ttl) : null));

@@ -63,7 +63,7 @@ final class Step18ThirteenthMonthStep
 
             // Add to gross pay for the period (13th month is paid in December)
             $ctx->grossPayCentavos += $ctx->thirteenthMonthCentavos;
-            
+
             // Re-compute taxable income with 13th month
             // Only the excess over ₱90,000 is taxable
             $ctx->taxableIncomeCentavos += $ctx->thirteenthMonthTaxableCentavos;

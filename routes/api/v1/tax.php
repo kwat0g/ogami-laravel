@@ -45,4 +45,3 @@ Route::middleware(['auth:sanctum', 'module_access:tax'])->group(function () {
     Route::patch('bir-filings/{birFiling}/amend', [BirFilingController::class, 'markAmended'])
         ->name('bir-filings.amend');
 });
-

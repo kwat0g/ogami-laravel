@@ -22,14 +22,14 @@ final class PurchaseRequestStatusNotification extends Notification implements Sh
 
     /** @var array<string,string> */
     private const STATUS_LABELS = [
-        'submitted'      => 'Submitted for Approval',
-        'noted'          => 'Noted by Department Head',
-        'checked'        => 'Checked by Manager',
-        'reviewed'       => 'Reviewed — Awaiting VP Approval',
-        'approved'       => 'Approved',
-        'rejected'       => 'Rejected',
-        'cancelled'      => 'Cancelled',
-        'converted_to_po'=> 'Converted to Purchase Order',
+        'submitted' => 'Submitted for Approval',
+        'noted' => 'Noted by Department Head',
+        'checked' => 'Checked by Manager',
+        'reviewed' => 'Reviewed — Awaiting VP Approval',
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
+        'cancelled' => 'Cancelled',
+        'converted_to_po' => 'Converted to Purchase Order',
     ];
 
     // Store only scalar values — never serialize Eloquent models into queue jobs.
@@ -92,13 +92,13 @@ final class PurchaseRequestStatusNotification extends Notification implements Sh
         }
 
         return [
-            'type'                => 'procurement.purchase_request.'.$this->status,
-            'title'               => "PR {$this->prReference}: {$this->statusLabel}",
-            'message'             => $message.'.',
-            'action_url'          => "/procurement/purchase-requests/{$this->prUlid}",
+            'type' => 'procurement.purchase_request.'.$this->status,
+            'title' => "PR {$this->prReference}: {$this->statusLabel}",
+            'message' => $message.'.',
+            'action_url' => "/procurement/purchase-requests/{$this->prUlid}",
             'purchase_request_id' => $this->purchaseRequestId,
-            'pr_reference'        => $this->prReference,
-            'status'              => $this->status,
+            'pr_reference' => $this->prReference,
+            'status' => $this->status,
         ];
     }
 

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\Production\Models;
 
+use App\Domains\CRM\Models\ClientOrder;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
+use App\Domains\QC\Models\Inspection;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -21,6 +23,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $ulid
  * @property string $po_reference
  * @property int|null $delivery_schedule_id
+ * @property int|null $client_order_id
  * @property int $product_item_id
  * @property int $bom_id
  * @property string $qty_required
@@ -43,6 +46,7 @@ final class ProductionOrder extends Model implements Auditable
     protected $fillable = [
         'ulid',
         'delivery_schedule_id',
+        'client_order_id',
         'product_item_id',
         'bom_id',
         'qty_required',
@@ -65,6 +69,11 @@ final class ProductionOrder extends Model implements Auditable
     public function deliverySchedule(): BelongsTo
     {
         return $this->belongsTo(DeliverySchedule::class, 'delivery_schedule_id');
+    }
+
+    public function clientOrder(): BelongsTo
+    {
+        return $this->belongsTo(ClientOrder::class, 'client_order_id');
     }
 
     public function productItem(): BelongsTo
@@ -90,6 +99,11 @@ final class ProductionOrder extends Model implements Auditable
     public function materialRequisitions(): HasMany
     {
         return $this->hasMany(MaterialRequisition::class, 'production_order_id');
+    }
+
+    public function inspections(): HasMany
+    {
+        return $this->hasMany(Inspection::class, 'production_order_id');
     }
 
     public function progressPct(): float

@@ -21,16 +21,17 @@ use Illuminate\Support\Facades\Log;
  * The auto-created CAPA has a placeholder description — QC staff must
  * update it with the actual corrective action before marking complete.
  */
-final class CreateCapaOnNcrRaised implements ShouldQueue, ShouldBeUnique
+final class CreateCapaOnNcrRaised implements ShouldBeUnique, ShouldQueue
 {
     use InteractsWithQueue;
 
     public string $queue = 'default';
+
     public int $uniqueFor = 60;
 
     public function uniqueId(NonConformanceReportRaised $event): string
     {
-        return 'ncr-capa-' . $event->ncr->id;
+        return 'ncr-capa-'.$event->ncr->id;
     }
 
     public function handle(NonConformanceReportRaised $event): void
@@ -44,14 +45,14 @@ final class CreateCapaOnNcrRaised implements ShouldQueue, ShouldBeUnique
 
         try {
             CapaAction::create([
-                'ncr_id'           => $ncr->id,
+                'ncr_id' => $ncr->id,
                 'audit_finding_id' => null,
-                'type'             => 'corrective',
-                'description'      => "Auto-generated from NCR {$ncr->ncr_reference}. Update with specific corrective action details before marking complete.",
-                'due_date'         => now()->addDays(14)->toDateString(),
-                'status'           => 'open',
-                'assigned_to_id'   => null,
-                'created_by_id'    => $ncr->raised_by_id,
+                'type' => 'corrective',
+                'description' => "Auto-generated from NCR {$ncr->ncr_reference}. Update with specific corrective action details before marking complete.",
+                'due_date' => now()->addDays(14)->toDateString(),
+                'status' => 'open',
+                'assigned_to_id' => null,
+                'created_by_id' => $ncr->raised_by_id,
             ]);
 
             // Transition NCR to capa_issued (mirrors issueCapa() in NcrService)
@@ -59,8 +60,8 @@ final class CreateCapaOnNcrRaised implements ShouldQueue, ShouldBeUnique
         } catch (\Throwable $e) {
             // Log but do not re-throw — NCR creation must not roll back due to CAPA failure.
             Log::error('Auto CAPA creation failed after NCR raised', [
-                'ncr_id'    => $ncr->id,
-                'error'     => $e->getMessage(),
+                'ncr_id' => $ncr->id,
+                'error' => $e->getMessage(),
             ]);
         }
     }

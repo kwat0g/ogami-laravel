@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules\Accounting;
 
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ final class NotFuturePeriodRule implements ValidationRule
             return;
         }
 
-        $date = \Carbon\Carbon::parse($value)->startOfDay();
+        $date = Carbon::parse($value)->startOfDay();
         $today = now()->startOfDay();
 
         if ($date->lte($today)) {

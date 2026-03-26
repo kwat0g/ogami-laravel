@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
 use App\Domains\AP\Models\Vendor;
 use App\Domains\AR\Models\Customer;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +33,7 @@ use Spatie\Permission\Models\Role;
 
 function adminUser(array $permissions = []): User
 {
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     // Ensure the 'admin' role exists and has all required permissions
     $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
@@ -56,7 +58,7 @@ function adminUser(array $permissions = []): User
 
 function limitedUser(array $permissions = []): User
 {
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     $user = User::factory()->create(['password' => Hash::make('LimitedPass!1')]);
 
@@ -620,7 +622,7 @@ describe('GET /api/v1/admin/settings', function () {
         $user = limitedUser(['system.edit_settings']);
 
         // Inject a sensitive setting into the DB
-        \Illuminate\Support\Facades\DB::table('system_settings')
+        DB::table('system_settings')
             ->updateOrInsert(
                 ['key' => 'security.test_api_key_masked'],
                 [
@@ -667,7 +669,7 @@ describe('PATCH /api/v1/admin/settings/{key}', function () {
         $admin = adminUser();
 
         // Find an editable setting from the seeded data
-        $setting = \Illuminate\Support\Facades\DB::table('system_settings')
+        $setting = DB::table('system_settings')
             ->whereNull('editable_by_role')
             ->orWhere('editable_by_role', 'admin')
             ->first();

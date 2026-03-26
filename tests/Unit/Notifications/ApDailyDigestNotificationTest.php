@@ -17,33 +17,33 @@ beforeEach(function () {
 
 it('returns correct via channels', function () {
     $notification = new ApDailyDigestNotification($this->summary, $this->date);
-    $notifiable = new stdClass();
+    $notifiable = new stdClass;
 
     expect($notification->via($notifiable))->toBe(['database', 'broadcast']);
 });
 
 it('formats notification array correctly', function () {
     $notification = new ApDailyDigestNotification($this->summary, $this->date);
-    $notifiable = new stdClass();
+    $notifiable = new stdClass;
 
     $array = $notification->toArray($notifiable);
 
     expect($array)->toHaveKeys([
-        'type', 'title', 'message', 'action_url', 'summary'
+        'type', 'title', 'message', 'action_url', 'summary',
     ])
-    ->and($array['type'])->toBe('ap.daily_digest')
-    ->and($array['title'])->toBe('AP Daily Digest')
-    ->and($array['action_url'])->toBe('/accounting/ap/invoices')
-    ->and($array['summary']['pending_count'])->toBe(5)
-    ->and($array['summary']['approved_count'])->toBe(10)
-    ->and($array['summary']['overdue_count'])->toBe(3)
-    ->and($array['summary']['due_this_week_count'])->toBe(7)
-    ->and($array['summary']['outstanding_balance'])->toBe(250000.0);
+        ->and($array['type'])->toBe('ap.daily_digest')
+        ->and($array['title'])->toBe('AP Daily Digest')
+        ->and($array['action_url'])->toBe('/accounting/ap/invoices')
+        ->and($array['summary']['pending_count'])->toBe(5)
+        ->and($array['summary']['approved_count'])->toBe(10)
+        ->and($array['summary']['overdue_count'])->toBe(3)
+        ->and($array['summary']['due_this_week_count'])->toBe(7)
+        ->and($array['summary']['outstanding_balance'])->toBe(250000.0);
 });
 
 it('formats message with correct values', function () {
     $notification = new ApDailyDigestNotification($this->summary, $this->date);
-    $notifiable = new stdClass();
+    $notifiable = new stdClass;
 
     $array = $notification->toArray($notifiable);
 
@@ -65,7 +65,7 @@ it('handles zero values correctly', function () {
     ];
 
     $notification = new ApDailyDigestNotification($emptySummary, $this->date);
-    $notifiable = new stdClass();
+    $notifiable = new stdClass;
 
     $array = $notification->toArray($notifiable);
 

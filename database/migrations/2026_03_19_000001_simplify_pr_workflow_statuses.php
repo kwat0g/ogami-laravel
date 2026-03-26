@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Simplify PR workflow to 3-stage: Draft → Pending Review → Reviewed → Budget Verified → Approved
- * 
+ *
  * Removes: submitted, noted, checked, budget_checked
  * Adds: pending_review, budget_verified
  */

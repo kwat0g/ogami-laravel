@@ -77,14 +77,14 @@ return new class extends Migration
             CHECK (depreciation_method IN ('straight_line','double_declining','units_of_production'))
         ");
 
-        DB::statement("
+        DB::statement('
             ALTER TABLE fixed_assets
             ADD CONSTRAINT chk_fa_residual_lte_cost
             CHECK (residual_value_centavos <= acquisition_cost_centavos)
-        ");
+        ');
 
         // Auto-generate asset code: {prefix}-YYYY-NNN
-        DB::statement("CREATE SEQUENCE IF NOT EXISTS fixed_asset_seq START 1");
+        DB::statement('CREATE SEQUENCE IF NOT EXISTS fixed_asset_seq START 1');
 
         DB::statement(<<<'SQL'
             CREATE OR REPLACE FUNCTION fn_fixed_asset_code()

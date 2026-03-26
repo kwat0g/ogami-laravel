@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\FixedAssets\FixedAssetController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,8 +45,9 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
         ->name('dispose');
 
     // ── Depreciation Schedule Export (CSV) ───────────────────────────────────
-    Route::get('depreciation-export', function (): \Symfony\Component\HttpFoundation\StreamedResponse {        abort_unless(auth()->user()?->hasPermissionTo('fixed_assets.view'), 403, 'Unauthorized');
-        $rows = \Illuminate\Support\Facades\DB::table('asset_depreciation_entries')
+    Route::get('depreciation-export', function (): StreamedResponse {
+        abort_unless(auth()->user()?->hasPermissionTo('fixed_assets.view'), 403, 'Unauthorized');
+        $rows = DB::table('asset_depreciation_entries')
             ->join('fixed_assets', 'asset_depreciation_entries.fixed_asset_id', '=', 'fixed_assets.id')
             ->select(
                 'fixed_assets.asset_code',
@@ -61,7 +64,9 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
-            if ($out === false) return;
+            if ($out === false) {
+                return;
+            }
             fputcsv($out, ['Asset Code', 'Asset Name', 'Period', 'Depreciation', 'Accumulated', 'Book Value', 'Processed']);
             foreach ($rows as $r) {
                 fputcsv($out, [
@@ -73,6 +78,6 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
                 ]);
             }
             fclose($out);
-        }, 'depreciation_schedule_' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv']);
+        }, 'depreciation_schedule_'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('depreciation-export');
 });

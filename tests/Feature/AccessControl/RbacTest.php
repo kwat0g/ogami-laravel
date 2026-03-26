@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Domains\Payroll\Models\PayrollRun;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +29,7 @@ use Illuminate\Support\Facades\Hash;
 */
 
 beforeEach(function () {
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
 });
 
@@ -211,7 +213,7 @@ describe('Staff self-service restrictions', function () {
 describe('Payroll SoD enforcement', function () {
     it('manager cannot approve a payroll run they created — SOD-006', function () {
         $creator = rbacUser('manager');
-        $run = \App\Domains\Payroll\Models\PayrollRun::create([
+        $run = PayrollRun::create([
             'reference_no' => 'PR-RBAC-SOD001',
             'pay_period_label' => 'RBAC SoD Test',
             'cutoff_start' => '2025-10-01',
@@ -229,7 +231,7 @@ describe('Payroll SoD enforcement', function () {
     it('a different manager can approve a run created by another — SOD passes', function () {
         $creator = rbacUser('manager');
         $approver = rbacUser('manager');
-        $run = \App\Domains\Payroll\Models\PayrollRun::create([
+        $run = PayrollRun::create([
             'reference_no' => 'PR-RBAC-SOD002',
             'pay_period_label' => 'RBAC SoD Pass Test',
             'cutoff_start' => '2025-10-16',

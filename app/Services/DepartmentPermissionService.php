@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Domains\HR\Models\Department;
 use App\Models\DepartmentPermissionProfile;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -122,7 +123,7 @@ final class DepartmentPermissionService
                     }
 
                     return array_values(array_unique($merged));
-                } catch (\Illuminate\Database\QueryException) {
+                } catch (QueryException) {
                     // Table does not exist yet (e.g. during initial migration/seeding).
                     // Return empty — User model treats this as "not scoped, allow all".
                     return [];
@@ -153,7 +154,7 @@ final class DepartmentPermissionService
                     return DepartmentPermissionProfile::active()
                         ->forRole($roleName)
                         ->exists();
-                } catch (\Illuminate\Database\QueryException) {
+                } catch (QueryException) {
                     // Table does not exist yet (e.g. during initial migration/seeding).
                     // Return false — treats role as not department-scoped.
                     return false;

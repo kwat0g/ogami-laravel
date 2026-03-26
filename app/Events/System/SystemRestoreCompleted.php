@@ -34,7 +34,7 @@ final class SystemRestoreCompleted implements ShouldBroadcastNow
         return 'system.restore.completed';
     }
 
-    /** @return \Illuminate\Broadcasting\Channel[] */
+    /** @return Channel[] */
     public function broadcastOn(): array
     {
         return [new Channel('system')];

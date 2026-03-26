@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Department;
 use App\Http\Controllers\Budget\BudgetController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,8 +55,8 @@ Route::middleware(['auth:sanctum', 'module_access:budget'])->group(function (): 
         ->name('lines.reject');
 
     // ── Department Budgets (Managed by Accounting) ────────────────────────────
-    Route::get('department-budgets', function (\Illuminate\Http\Request $request) {
-        $query = \App\Domains\HR\Models\Department::orderBy('code')
+    Route::get('department-budgets', function (Request $request) {
+        $query = Department::orderBy('code')
             ->select([
                 'id',
                 'code',
@@ -73,7 +75,7 @@ Route::middleware(['auth:sanctum', 'module_access:budget'])->group(function (): 
         ->middleware('permission:budget.view')
         ->name('department-budgets.index');
 
-    Route::patch('department-budgets/{department}', function (\Illuminate\Http\Request $request, \App\Domains\HR\Models\Department $department) {
+    Route::patch('department-budgets/{department}', function (Request $request, Department $department) {
         abort_unless($request->user()->can('budget.manage'), 403, 'Only Accounting Manager can set department budgets.');
 
         $validated = $request->validate([

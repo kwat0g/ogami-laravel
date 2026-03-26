@@ -19,9 +19,9 @@ return new class extends Migration
             $table->ulid('ulid')->unique();
             $table->string('rfq_reference', 30)->unique();     // RFQ-YYYY-MM-NNNNN
             $table->foreignId('purchase_request_id')
-                  ->nullable()
-                  ->constrained('purchase_requests')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('purchase_requests')
+                ->nullOnDelete();
             $table->string('status', 30)->default('draft');
             $table->date('deadline_date')->nullable();
             $table->text('scope_description');                  // what items/services are needed

@@ -17,6 +17,7 @@ final class DeliverySchedulePolicy
         if ($user->hasRole(['admin', 'super_admin'])) {
             return true;
         }
+
         return null;
     }
 
