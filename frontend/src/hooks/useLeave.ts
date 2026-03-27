@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { validateResponse } from '@/lib/validateResponse'
+import { paginatedLeaveRequestsSchema } from '@/schemas/responses'
 import type {
   LeaveRequest,
   LeaveBalance,
@@ -8,6 +10,8 @@ import type {
   Paginated,
 } from '@/types/hr'
 
+const validateLeaveList = validateResponse(paginatedLeaveRequestsSchema, 'LeaveRequests')
+
 // ── Leave requests list ───────────────────────────────────────────────────────
 
 export function useLeaveRequests(filters: LeaveFilters = {}) {
@@ -15,6 +19,7 @@ export function useLeaveRequests(filters: LeaveFilters = {}) {
     queryKey: ['leave-requests', filters],
     queryFn: async () => {
       const res = await api.get<Paginated<LeaveRequest>>('/leave/requests', { params: filters })
+      validateLeaveList(res.data)
       return res.data
     },
     staleTime: 30_000,

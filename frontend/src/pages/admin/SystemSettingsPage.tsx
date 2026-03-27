@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ColorModeToggle } from '@/components/ui/ColorModeToggle'
 
 const SETTING_GROUPS = [
   { 
@@ -361,6 +362,16 @@ export default function SystemSettingsPage() {
                 </button>
               </>
             )}
+          </div>
+        </div>
+
+          {/* Theme Preferences (client-side, not a system setting) */}
+          <div className="rounded p-4 border border-neutral-200 bg-white">
+            <h3 className="text-sm font-semibold text-neutral-900 mb-2">Theme Preference</h3>
+            <p className="text-xs text-neutral-500 mb-3">
+              Choose your preferred color mode. This is saved in your browser only.
+            </p>
+            <ColorModeToggle />
           </div>
         </div>
 
