@@ -61,4 +61,29 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
             fclose($out);
         }, 'delivery_export_'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('export');
+
+    // ── Delivery Routes (Phase 3) ─────────────────────────────────────────
+    Route::get('routes', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        $routes = \App\Domains\Delivery\Models\DeliveryRoute::with('createdBy')
+            ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
+            ->orderByDesc('planned_date')
+            ->paginate((int) ($request->input('per_page', 20)));
+        return response()->json($routes);
+    })->name('routes.index');
+
+    Route::post('routes', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        $data = $request->validate([
+            'planned_date' => ['required', 'date'],
+            'vehicle_id' => ['sometimes', 'integer', 'exists:vehicles,id'],
+            'driver_id' => ['sometimes', 'integer', 'exists:employees,id'],
+            'notes' => ['sometimes', 'string'],
+        ]);
+        $route = \App\Domains\Delivery\Models\DeliveryRoute::create([
+            ...$data,
+            'route_number' => 'DR-' . now()->format('Ymd-His'),
+            'status' => 'planned',
+            'created_by_id' => $request->user()->id,
+        ]);
+        return response()->json(['data' => $route], 201);
+    })->name('routes.store');
 });

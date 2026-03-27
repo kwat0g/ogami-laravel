@@ -251,4 +251,43 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
             return response()->json(['data' => $employees]);
         })->name('reports.birthdays');
     });
+
+    // ── Training & Competency (Phase 3) ───────────────────────────────────
+    Route::prefix('trainings')->name('trainings.')->group(function () {
+        Route::get('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $trainings = \App\Domains\HR\Models\Training::with('createdBy')
+                ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
+                ->orderByDesc('start_date')
+                ->paginate((int) ($request->input('per_page', 20)));
+            return response()->json($trainings);
+        })->name('index');
+
+        Route::post('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $data = $request->validate([
+                'title' => ['required', 'string', 'max:255'],
+                'description' => ['sometimes', 'string'],
+                'type' => ['sometimes', 'string'],
+                'provider' => ['sometimes', 'string'],
+                'start_date' => ['required', 'date'],
+                'end_date' => ['sometimes', 'date'],
+                'cost_centavos' => ['sometimes', 'integer', 'min:0'],
+            ]);
+            $training = \App\Domains\HR\Models\Training::create([
+                ...$data,
+                'status' => 'scheduled',
+                'created_by_id' => $request->user()->id,
+            ]);
+            return response()->json(['data' => $training], 201);
+        })->name('store');
+    });
+
+    Route::prefix('competency')->name('competency.')->group(function () {
+        Route::get('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $matrix = \App\Domains\HR\Models\CompetencyMatrix::query()
+                ->when($request->input('employee_id'), fn ($q, $v) => $q->where('employee_id', $v))
+                ->when($request->input('gaps_only'), fn ($q) => $q->whereColumn('current_level', '<', 'required_level'))
+                ->paginate((int) ($request->input('per_page', 50)));
+            return response()->json($matrix);
+        })->name('index');
+    });
 });
