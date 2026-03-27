@@ -44,6 +44,7 @@ import {
   ShieldCheck,
   Landmark,
   Building,
+  Search,
 } from 'lucide-react'
 
 interface NavChild {
@@ -616,6 +617,7 @@ function UserMenu({
 export default function AppLayout() {
   const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
+  const appNavigate = useNavigate()
   const { clearAuth, hasPermission, hasRole } = useAuthStore()
   
   // Get user's primary department code for SoD filtering
@@ -641,6 +643,18 @@ export default function AppLayout() {
   }, [sidebarCollapsed])
 
   useRealtimeEvents(user?.id)
+
+  // Cmd+K / Ctrl+K keyboard shortcut for global search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        appNavigate('/search')
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [appNavigate])
 
   const handleLogout = async () => {
     try {
@@ -874,6 +888,15 @@ export default function AppLayout() {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3">
+            <NavLink
+              to="/search"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-500 bg-neutral-50 border border-neutral-200 rounded-lg hover:bg-neutral-100 hover:border-neutral-300 transition-colors"
+              title="Search (Ctrl+K)"
+            >
+              <Search className="h-4 w-4" />
+              <span className="text-xs">Search</span>
+              <kbd className="hidden md:inline text-[10px] font-mono bg-neutral-200 text-neutral-500 px-1.5 py-0.5 rounded">⌘K</kbd>
+            </NavLink>
             <NotificationBell />
             <div className="h-5 w-px bg-neutral-200 hidden sm:block" />
             <UserMenu user={user} onLogout={handleLogout} hasPermission={hasPermission} />
