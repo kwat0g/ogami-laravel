@@ -47,4 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Own loan balances + amortisation history
     Route::get('me/loans', [EmployeeSelfServiceController::class, 'myLoans'])
         ->name('me.loans');
+
+    // Own attendance / DTR
+    Route::get('me/attendance', [EmployeeSelfServiceController::class, 'myAttendance'])
+        ->name('me.attendance');
+
+    Route::get('me/attendance/pdf', [EmployeeSelfServiceController::class, 'downloadDtr'])
+        ->name('me.attendance.pdf');
 });

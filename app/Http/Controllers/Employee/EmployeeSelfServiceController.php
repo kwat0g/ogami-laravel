@@ -367,6 +367,113 @@ final class EmployeeSelfServiceController extends Controller
     }
 
     /**
+     * GET /api/v1/employee/me/attendance
+     *
+     * Return the authenticated employee's attendance logs for a given month/year.
+     */
+    public function myAttendance(Request $request): JsonResponse
+    {
+        $employee = $this->resolveEmployee();
+
+        $month = $request->integer('month', (int) now()->format('n'));
+        $year = $request->integer('year', (int) now()->format('Y'));
+
+        $logs = \App\Domains\Attendance\Models\AttendanceLog::query()
+            ->where('employee_id', $employee->id)
+            ->whereMonth('work_date', $month)
+            ->whereYear('work_date', $year)
+            ->orderBy('work_date')
+            ->get();
+
+        $entries = $logs->map(fn ($log) => [
+            'date' => (string) $log->work_date,
+            'day_name' => \Carbon\Carbon::parse($log->work_date)->format('D'),
+            'time_in' => $log->time_in,
+            'time_out' => $log->time_out,
+            'late_minutes' => (int) ($log->late_minutes ?? 0),
+            'undertime_minutes' => (int) ($log->undertime_minutes ?? 0),
+            'overtime_minutes' => (int) ($log->overtime_minutes ?? 0),
+            'is_absent' => (bool) ($log->is_absent ?? false),
+            'remarks' => $log->remarks ?? null,
+        ]);
+
+        return response()->json([
+            'data' => $entries,
+            'summary' => [
+                'days_worked' => $entries->where('is_absent', false)->where('time_in', '!=', null)->count(),
+                'days_absent' => $entries->where('is_absent', true)->count(),
+                'total_late_minutes' => $entries->sum('late_minutes'),
+                'total_undertime_minutes' => $entries->sum('undertime_minutes'),
+                'total_overtime_minutes' => $entries->sum('overtime_minutes'),
+            ],
+            'period' => sprintf('%04d-%02d', $year, $month),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/employee/me/attendance/pdf
+     *
+     * Download a PDF Daily Time Record for a given month/year.
+     */
+    public function downloadDtr(Request $request): Response
+    {
+        $employee = $this->resolveEmployee();
+        $employee->loadMissing(['department', 'position']);
+
+        $month = $request->integer('month', (int) now()->format('n'));
+        $year = $request->integer('year', (int) now()->format('Y'));
+
+        $logs = \App\Domains\Attendance\Models\AttendanceLog::query()
+            ->where('employee_id', $employee->id)
+            ->whereMonth('work_date', $month)
+            ->whereYear('work_date', $year)
+            ->orderBy('work_date')
+            ->get();
+
+        $entries = $logs->map(fn ($log) => [
+            'date' => \Carbon\Carbon::parse($log->work_date)->format('M d'),
+            'day_name' => \Carbon\Carbon::parse($log->work_date)->format('D'),
+            'time_in' => $log->time_in,
+            'time_out' => $log->time_out,
+            'late_minutes' => (int) ($log->late_minutes ?? 0),
+            'undertime_minutes' => (int) ($log->undertime_minutes ?? 0),
+            'overtime_minutes' => (int) ($log->overtime_minutes ?? 0),
+            'is_absent' => (bool) ($log->is_absent ?? false),
+            'is_weekend' => in_array(\Carbon\Carbon::parse($log->work_date)->dayOfWeek, [0, 6]),
+            'remarks' => $log->remarks ?? null,
+        ]);
+
+        $summary = [
+            'days_worked' => $entries->where('is_absent', false)->where('time_in', '!=', null)->count(),
+            'days_absent' => $entries->where('is_absent', true)->count(),
+            'total_late_minutes' => $entries->sum('late_minutes'),
+            'total_undertime_minutes' => $entries->sum('undertime_minutes'),
+            'total_overtime_minutes' => $entries->sum('overtime_minutes'),
+        ];
+
+        $settings = \DB::table('system_settings')
+            ->whereIn('key', ['company_name', 'company_address'])
+            ->pluck('value', 'key')
+            ->toArray();
+
+        $monthNames = [1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+            5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'];
+
+        $pdf = Pdf::loadView('employee.dtr', [
+            'employee' => $employee,
+            'entries' => $entries,
+            'summary' => $summary,
+            'periodLabel' => ($monthNames[$month] ?? '') . ' ' . $year,
+            'settings' => $settings,
+        ])->setPaper('a4', 'portrait');
+
+        $filename = sprintf('dtr-%s-%04d-%02d.pdf', $employee->employee_code, $year, $month);
+
+        return $pdf->stream($filename);
+    }
+
+    /**
      * Resolve the Employee record for the current authenticated user.
      * Aborts 403 if no linked employee record exists.
      */

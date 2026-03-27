@@ -59,7 +59,7 @@ Manufacturing ERP for Philippine businesses. 20 modules covering the full HR-to-
 **Process:**
 1. Payroll Admin creates a run (`DRAFT`) and sets scope (departments, positions, employment types).
 2. Pre-run checks validate attendance data, loan amortizations, leave balances (`PRE_RUN_CHECKED`).
-3. System computes pay via a 17-step pipeline (`PROCESSING → COMPUTED`).
+3. System computes pay via a 18-step pipeline (`PROCESSING → COMPUTED`).
 4. HR reviews computed results (`REVIEW → SUBMITTED → HR_APPROVED`).
 5. Accounting approves (`ACCTG_APPROVED`) → VP signs off (`VP_APPROVED`).
 6. Disbursement processed; GL entries auto-posted (`DISBURSED → PUBLISHED`).
@@ -72,7 +72,7 @@ SUBMITTED → HR_APPROVED → ACCTG_APPROVED → VP_APPROVED → DISBURSED → P
 (RETURNED / REJECTED → DRAFT)
 ```
 
-**17-Step Pipeline:**
+**18-Step Pipeline:**
 
 | Step | What it computes |
 |------|-----------------|
@@ -571,7 +571,7 @@ GL Posting (Accounting)
 ### Payroll Cycle
 ```
 HR (employee master, rates) + Attendance (worked days/OT) + Leave (days absent) +
-Loan (amortizations) → Payroll Pipeline (17 steps) → Disbursement →
+Loan (amortizations) → Payroll Pipeline (18 steps) → Disbursement →
 GL Journal Entry (Accounting) → WHT Filing (Tax)
 ```
 

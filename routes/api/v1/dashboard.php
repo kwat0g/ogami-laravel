@@ -1893,4 +1893,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
             fn ($resp) => ($_ttl > 0 ? Cache::put($_cacheKey, $resp->getData(true), $_ttl) : null));
     })->name('dashboard.purchasing-officer')->can('procurement.purchase-request.view');
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Executive Analytics Dashboard (service-based, replaces inline queries)
+    // GET /api/v1/dashboard/executive-analytics
+    // ─────────────────────────────────────────────────────────────────────────
+    Route::get('executive-analytics', \App\Http\Controllers\Dashboard\ExecutiveDashboardController::class)
+        ->name('dashboard.executive-analytics');
+
 });
