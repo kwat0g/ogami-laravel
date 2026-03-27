@@ -152,6 +152,74 @@ final class OvertimeRequestController extends Controller
     }
 
     /**
+     * PATCH /api/v1/attendance/overtime-requests/batch-approve
+     * Batch approve multiple pending overtime requests.
+     */
+    public function batchApprove(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'              => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*'            => ['integer', 'exists:overtime_requests,id'],
+            'approved_minutes' => ['required', 'integer', 'min:1', 'max:480'],
+            'remarks'          => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $userId          = (int) $request->user()->id;
+        $approvedMinutes = $request->integer('approved_minutes');
+        $remarks         = $request->input('remarks', '');
+        $results         = ['approved' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $ot = OvertimeRequest::findOrFail($id);
+                $this->authorize('review', $ot);
+                $this->service->approve($ot, $userId, $approvedMinutes, $remarks);
+                $results['approved'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = ['id' => $id, 'reason' => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['approved']) . ' OT request(s) approved.',
+            'results' => $results,
+        ]);
+    }
+
+    /**
+     * PATCH /api/v1/attendance/overtime-requests/batch-reject
+     * Batch reject multiple pending overtime requests.
+     */
+    public function batchReject(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'     => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*'   => ['integer', 'exists:overtime_requests,id'],
+            'remarks' => ['required', 'string', 'max:500'],
+        ]);
+
+        $userId  = (int) $request->user()->id;
+        $remarks = $request->input('remarks');
+        $results = ['rejected' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $ot = OvertimeRequest::findOrFail($id);
+                $this->authorize('review', $ot);
+                $this->service->reject($ot, $userId, $remarks);
+                $results['rejected'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = ['id' => $id, 'reason' => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['rejected']) . ' OT request(s) rejected.',
+            'results' => $results,
+        ]);
+    }
+
+    /**
      * DELETE /api/v1/attendance/overtime-requests/{overtimeRequest}
      */
     public function cancel(OvertimeRequest $overtimeRequest): JsonResponse

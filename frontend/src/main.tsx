@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
+import { useUiStore } from '@/stores/uiStore'
 import App from './App'
 import './index.css'
 // Force SkeletonLoader to be included in main chunk
@@ -38,11 +39,17 @@ const queryClient = new QueryClient({
   },
 })
 
+/** Toaster that reacts to the uiStore's resolved theme. */
+function ThemeAwareToaster() {
+  const resolvedTheme = useUiStore((s) => s.resolvedTheme)
+  return <Toaster position="top-right" richColors closeButton theme={resolvedTheme} />
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
-      <Toaster position="top-right" richColors closeButton />
+      <ThemeAwareToaster />
     </QueryClientProvider>
   </StrictMode>,
 )

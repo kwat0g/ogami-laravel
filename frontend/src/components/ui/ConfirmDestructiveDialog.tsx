@@ -96,38 +96,38 @@ export default function ConfirmDestructiveDialog({
           onClick={() => setOpen(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-lg w-full max-w-md border border-neutral-200"
+            className="bg-white dark:bg-neutral-900 rounded-lg shadow-lg w-full max-w-md border border-neutral-200 dark:border-neutral-700"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 space-y-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
-                  <p className="text-sm text-neutral-500 mt-1">{description}</p>
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{description}</p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">
-                  Type <span className="font-mono font-bold text-red-600">{confirmWord}</span> to confirm
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Type <span className="font-mono font-bold text-red-600 dark:text-red-400">{confirmWord}</span> to confirm
                 </label>
                 <input
                   type="text"
                   value={typed}
                   onChange={(e) => setTyped(e.target.value)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm font-mono
+                  className="w-full border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded px-3 py-2 text-sm font-mono
                            focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   autoFocus
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 p-4 border-t border-neutral-200 bg-neutral-50">
+            <div className="flex justify-end gap-2 p-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
               <button
                 type="button"
                 onClick={() => { setOpen(false); setTyped('') }}
-                className="px-4 py-2 text-sm text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
+                className="px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
               >
                 Cancel
               </button>

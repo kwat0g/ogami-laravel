@@ -162,7 +162,23 @@ function SystemRestoreOverlay() {
   )
 }
 
+/** Global keyboard shortcut: Ctrl+Shift+D toggles dark mode. */
+function useDarkModeShortcut() {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault()
+        useUiStore.getState().toggleColorMode()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+}
+
 export default function App() {
+  useDarkModeShortcut()
+
   return (
     <>
       <SystemRestoreOverlay />

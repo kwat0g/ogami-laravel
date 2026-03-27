@@ -56,6 +56,14 @@ Route::middleware(['auth:sanctum', 'module_access:leaves'])->group(function () {
         ->middleware('throttle:api-action')
         ->name('requests.reject');
 
+    // Batch operations (must be above parameterised routes)
+    Route::patch('requests/batch-head-approve', [LeaveRequestController::class, 'batchHeadApprove'])
+        ->middleware(['permission:leaves.head_approve', 'throttle:api-action'])
+        ->name('requests.batch_head_approve');
+    Route::patch('requests/batch-reject', [LeaveRequestController::class, 'batchReject'])
+        ->middleware('throttle:api-action')
+        ->name('requests.batch_reject');
+
     Route::delete('requests/{leaveRequest}', [LeaveRequestController::class, 'cancel'])->name('requests.cancel');
 
     // Leave balances

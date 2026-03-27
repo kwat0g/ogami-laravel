@@ -170,6 +170,78 @@ final class LeaveRequestController extends Controller
     }
 
     /**
+     * PATCH /api/v1/leave/requests/batch-head-approve
+     * Batch head-approve multiple pending leave requests.
+     */
+    public function batchHeadApprove(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'     => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*'   => ['integer', 'exists:leave_requests,id'],
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $userId  = (int) $request->user()->id;
+        $remarks = $request->input('remarks');
+        $results = ['approved' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $leaveRequest = LeaveRequest::findOrFail($id);
+                $this->authorize('headApprove', $leaveRequest);
+                $this->service->headApprove($leaveRequest, $userId, $remarks);
+                $results['approved'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = [
+                    'id'      => $id,
+                    'reason'  => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['approved']) . ' request(s) approved.',
+            'results' => $results,
+        ]);
+    }
+
+    /**
+     * PATCH /api/v1/leave/requests/batch-reject
+     * Batch reject multiple pending leave requests.
+     */
+    public function batchReject(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'     => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*'   => ['integer', 'exists:leave_requests,id'],
+            'remarks' => ['required', 'string', 'max:500'],
+        ]);
+
+        $userId  = (int) $request->user()->id;
+        $remarks = $request->input('remarks');
+        $results = ['rejected' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $leaveRequest = LeaveRequest::findOrFail($id);
+                $this->authorize('review', $leaveRequest);
+                $this->service->reject($leaveRequest, $userId, $remarks);
+                $results['rejected'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = [
+                    'id'      => $id,
+                    'reason'  => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['rejected']) . ' request(s) rejected.',
+            'results' => $results,
+        ]);
+    }
+
+    /**
      * DELETE /api/v1/leave/requests/{leaveRequest}
      */
     public function cancel(LeaveRequest $leaveRequest): JsonResponse

@@ -18,13 +18,13 @@ export default function AuthLayout() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-xl font-semibold text-neutral-900">Ogami ERP</h1>
-          <p className="text-sm text-neutral-500 mt-1">Ogami Manufacturing Philippines Corp.</p>
+          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Ogami ERP</h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Ogami Manufacturing Philippines Corp.</p>
         </div>
-        <div className="bg-white border border-neutral-200 rounded p-8">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded p-8">
           <Outlet />
         </div>
       </div>

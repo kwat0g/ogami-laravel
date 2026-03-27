@@ -136,6 +136,70 @@ final class VendorInvoiceController extends Controller
         return new VendorInvoiceResource($updated->load('vendor', 'fiscalPeriod'));
     }
 
+    /**
+     * POST /api/v1/ap/invoices/batch-approve
+     * Batch approve multiple pending_approval invoices.
+     */
+    public function batchApprove(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'   => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*' => ['integer', 'exists:vendor_invoices,id'],
+        ]);
+
+        $user    = auth()->user();
+        $results = ['approved' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $invoice = VendorInvoice::findOrFail($id);
+                $this->authorize('approve', $invoice);
+                $this->service->approve($invoice, $user);
+                $results['approved'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = ['id' => $id, 'reason' => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['approved']) . ' invoice(s) approved.',
+            'results' => $results,
+        ]);
+    }
+
+    /**
+     * POST /api/v1/ap/invoices/batch-reject
+     * Batch reject multiple pending invoices.
+     */
+    public function batchReject(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'            => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*'          => ['integer', 'exists:vendor_invoices,id'],
+            'rejection_note' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+
+        $user           = auth()->user();
+        $rejectionNote  = $request->input('rejection_note');
+        $results        = ['rejected' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $invoice = VendorInvoice::findOrFail($id);
+                $this->authorize('reject', $invoice);
+                $this->service->reject($invoice, $user, $rejectionNote);
+                $results['rejected'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = ['id' => $id, 'reason' => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['rejected']) . ' invoice(s) rejected.',
+            'results' => $results,
+        ]);
+    }
+
     /** Reject a pending invoice back to draft. */
     public function reject(Request $request, VendorInvoice $apInvoice): VendorInvoiceResource
     {

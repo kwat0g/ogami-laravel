@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { validateResponse } from '@/lib/validateResponse'
+import { paginatedPurchaseRequestsSchema } from '@/schemas/responses'
 import type {
   PurchaseRequest,
   PurchaseRequestFilters,
@@ -12,6 +14,8 @@ import type {
 
 // ── List ─────────────────────────────────────────────────────────────────────
 
+const validatePrList = validateResponse(paginatedPurchaseRequestsSchema, 'PurchaseRequests')
+
 export function usePurchaseRequests(filters: PurchaseRequestFilters = {}) {
   return useQuery({
     queryKey: ['purchase-requests', filters],
@@ -20,6 +24,7 @@ export function usePurchaseRequests(filters: PurchaseRequestFilters = {}) {
         '/procurement/purchase-requests',
         { params: filters },
       )
+      validatePrList(res.data)
       return res.data
     },
     staleTime: 30_000,
@@ -139,6 +144,47 @@ export function useVpApprovePurchaseRequest() {
 }
 
 // ── Reject ───────────────────────────────────────────────────────────────────
+
+// ── Batch Review ─────────────────────────────────────────────────────────────
+
+export interface BatchPrResult {
+  message: string
+  results: {
+    reviewed?: number[]
+    rejected?: number[]
+    failed: { id: number; reason: string }[]
+  }
+}
+
+export function useBatchReviewPurchaseRequests() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, comments }: { ids: number[]; comments?: string }) => {
+      const res = await api.post<BatchPrResult>('/procurement/purchase-requests/batch-review', { ids, comments })
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+    },
+  })
+}
+
+// ── Batch Reject ─────────────────────────────────────────────────────────────
+
+export function useBatchRejectPurchaseRequests() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, reason, stage }: { ids: number[]; reason: string; stage: string }) => {
+      const res = await api.post<BatchPrResult>('/procurement/purchase-requests/batch-reject', { ids, reason, stage })
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+    },
+  })
+}
+
+// ── Reject (single) ─────────────────────────────────────────────────────────
 
 export function useRejectPurchaseRequest() {
   const qc = useQueryClient()

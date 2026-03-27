@@ -5,6 +5,25 @@
 @layer base {
   :root {
     --color-primary: 37 99 235; /* #2563EB */
+    --color-surface: 255 255 255;
+    --color-surface-raised: 250 250 250;
+    --color-surface-sunken: 245 245 245;
+    --color-border: 229 229 229;
+    --color-border-subtle: 245 245 245;
+    --color-text: 23 23 23;
+    --color-text-secondary: 115 115 115;
+    --color-text-muted: 163 163 163;
+  }
+
+  .dark {
+    --color-surface: 23 23 23;
+    --color-surface-raised: 38 38 38;
+    --color-surface-sunken: 10 10 10;
+    --color-border: 64 64 64;
+    --color-border-subtle: 38 38 38;
+    --color-text: 245 245 245;
+    --color-text-secondary: 163 163 163;
+    --color-text-muted: 115 115 115;
   }
 
   html {
@@ -27,12 +46,12 @@
 
   /* Better focus styles */
   *:focus-visible {
-    @apply outline-none ring-2 ring-neutral-400 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-neutral-400 ring-offset-2 ring-offset-white dark:ring-neutral-500 dark:ring-offset-neutral-900;
   }
 
   /* Selection color */
   ::selection {
-    @apply bg-neutral-200 text-neutral-900;
+    @apply bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100;
   }
 }
 
@@ -79,19 +98,19 @@
 
   /* Form input enhancements */
   .input {
-    @apply w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900;
-    @apply outline outline-1 outline-neutral-200;
+    @apply w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100;
+    @apply outline outline-1 outline-neutral-200 dark:outline-neutral-700;
     @apply transition-all duration-150;
-    @apply focus:border-neutral-400 focus:outline-neutral-300 focus:ring-2 focus:ring-neutral-100;
-    @apply disabled:bg-neutral-100 disabled:text-neutral-500;
+    @apply focus:border-neutral-400 dark:focus:border-neutral-500 focus:outline-neutral-300 focus:ring-2 focus:ring-neutral-100 dark:focus:ring-neutral-700;
+    @apply disabled:bg-neutral-100 dark:disabled:bg-neutral-700 disabled:text-neutral-500;
   }
   .input-enhanced {
     @apply transition-all duration-150;
-    @apply border-neutral-300 bg-white;
-    @apply focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100;
+    @apply border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800;
+    @apply focus:border-neutral-400 dark:focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100 dark:focus:ring-neutral-700;
   }
   .input-enhanced:hover:not(:focus) {
-    @apply border-neutral-400;
+    @apply border-neutral-400 dark:border-neutral-500;
   }
 
   /* Section divider with gradient */
@@ -101,53 +120,53 @@
 
   /* Icon button with hover background */
   .icon-btn {
-    @apply p-2 rounded-lg border border-neutral-200 bg-white text-neutral-500;
+    @apply p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400;
     @apply transition-all duration-150;
-    @apply hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-700;
-    @apply active:bg-neutral-100;
+    @apply hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200;
+    @apply active:bg-neutral-100 dark:active:bg-neutral-600;
   }
 
   /* Primary action button */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2;
-    @apply px-4 py-2 bg-neutral-900 text-white;
+    @apply px-4 py-2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900;
     @apply rounded-lg text-sm font-medium;
     @apply transition-all duration-150;
-    @apply hover:bg-neutral-800 hover:shadow-md;
-    @apply active:bg-neutral-950 active:translate-y-px;
+    @apply hover:bg-neutral-800 dark:hover:bg-neutral-200 hover:shadow-md;
+    @apply active:bg-neutral-950 dark:active:bg-neutral-300 active:translate-y-px;
     @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none;
   }
 
   /* Secondary action button */
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2;
-    @apply px-4 py-2 bg-white text-neutral-700;
-    @apply border border-neutral-300 rounded-lg text-sm font-medium;
+    @apply px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200;
+    @apply border border-neutral-300 dark:border-neutral-600 rounded-lg text-sm font-medium;
     @apply transition-all duration-150;
-    @apply hover:bg-neutral-50 hover:border-neutral-400;
-    @apply active:bg-neutral-100 active:translate-y-px;
+    @apply hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-400;
+    @apply active:bg-neutral-100 dark:active:bg-neutral-600 active:translate-y-px;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   /* Danger action button */
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2;
-    @apply px-4 py-2 bg-white text-red-600;
-    @apply border border-red-300 rounded-lg text-sm font-medium;
+    @apply px-4 py-2 bg-white dark:bg-neutral-800 text-red-600 dark:text-red-400;
+    @apply border border-red-300 dark:border-red-700 rounded-lg text-sm font-medium;
     @apply transition-all duration-150;
-    @apply hover:bg-red-50 hover:border-red-400;
-    @apply active:bg-red-100 active:translate-y-px;
+    @apply hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400;
+    @apply active:bg-red-100 dark:active:bg-red-900/50 active:translate-y-px;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   /* Ghost/Tertiary button */
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2;
-    @apply px-3 py-1.5 text-neutral-600;
+    @apply px-3 py-1.5 text-neutral-600 dark:text-neutral-400;
     @apply rounded-lg text-sm font-medium;
     @apply transition-all duration-150;
-    @apply hover:bg-neutral-100 hover:text-neutral-900;
-    @apply active:bg-neutral-200;
+    @apply hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100;
+    @apply active:bg-neutral-200 dark:active:bg-neutral-700;
   }
 
   /* Page container */
@@ -157,7 +176,7 @@
 
   /* Card with enhanced shadow */
   .card-elevated {
-    @apply bg-white border border-neutral-200 rounded-xl;
+    @apply bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl;
     @apply shadow-sm;
     @apply transition-shadow duration-200;
   }
@@ -233,13 +252,13 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-neutral-100;
+  @apply bg-neutral-100 dark:bg-neutral-800;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-neutral-300 rounded-full;
+  @apply bg-neutral-300 dark:bg-neutral-600 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-neutral-400;
+  @apply bg-neutral-400 dark:bg-neutral-500;
 }

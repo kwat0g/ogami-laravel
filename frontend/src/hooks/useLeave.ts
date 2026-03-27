@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { validateResponse } from '@/lib/validateResponse'
+import { paginatedLeaveRequestsSchema } from '@/schemas/responses'
 import type {
   LeaveRequest,
   LeaveBalance,
@@ -8,6 +10,8 @@ import type {
   Paginated,
 } from '@/types/hr'
 
+const validateLeaveList = validateResponse(paginatedLeaveRequestsSchema, 'LeaveRequests')
+
 // ── Leave requests list ───────────────────────────────────────────────────────
 
 export function useLeaveRequests(filters: LeaveFilters = {}) {
@@ -15,6 +19,7 @@ export function useLeaveRequests(filters: LeaveFilters = {}) {
     queryKey: ['leave-requests', filters],
     queryFn: async () => {
       const res = await api.get<Paginated<LeaveRequest>>('/leave/requests', { params: filters })
+      validateLeaveList(res.data)
       return res.data
     },
     staleTime: 30_000,
@@ -286,6 +291,49 @@ export function useCancelLeaveRequest() {
       void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['leave-balances'] })
+      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+    },
+  })
+}
+
+// ── Batch head-approve ────────────────────────────────────────────────────────
+
+export interface BatchLeaveResult {
+  message: string
+  results: {
+    approved?: number[]
+    rejected?: number[]
+    failed: { id: number; reason: string }[]
+  }
+}
+
+export function useBatchHeadApproveLeave() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, remarks }: { ids: number[]; remarks?: string }) => {
+      const res = await api.patch<BatchLeaveResult>('/leave/requests/batch-head-approve', { ids, remarks })
+      return res.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+    },
+  })
+}
+
+// ── Batch reject ──────────────────────────────────────────────────────────────
+
+export function useBatchRejectLeave() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, remarks }: { ids: number[]; remarks: string }) => {
+      const res = await api.patch<BatchLeaveResult>('/leave/requests/batch-reject', { ids, remarks })
+      return res.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
     },
   })

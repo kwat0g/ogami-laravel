@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
-import { useLeaveRequests } from '@/hooks/useLeave'
+import { useLeaveRequests, useBatchHeadApproveLeave, useBatchRejectLeave } from '@/hooks/useLeave'
 import { useDepartments } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -10,15 +10,23 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { LeaveFilters } from '@/types/hr'
-import { Scale, X, ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { toast } from 'sonner'
+import { ApprovalTimeline, type ApprovalStep } from '@/components/ui/ApprovalTimeline'
+import { Scale, X, ChevronDown, ChevronUp, Search, CheckSquare, XSquare } from 'lucide-react'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
 export default function LeaveListPage() {
   const { hasPermission } = useAuthStore()
   const canFileOnBehalf = hasPermission('leaves.file_on_behalf')
+  const canHeadApprove = hasPermission('leaves.head_approve')
   const [filters, setFilters] = useState<LeaveFilters>({ per_page: 15, page: 1 })
   const [expandedRow, setExpandedRow] = useState<number | null>(null)
+  
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [batchRejectRemarksOpen, setBatchRejectRemarksOpen] = useState(false)
+  const [batchRejectRemarks, setBatchRejectRemarks] = useState('')
   
   // Search with debounce
   const [searchValue, setSearchValue] = useState('')
@@ -33,6 +41,10 @@ export default function LeaveListPage() {
 
   const { data, isLoading, isFetching, isError } = useLeaveRequests(filters)
   const { data: departmentsData, isLoading: deptLoading } = useDepartments()
+  
+  // Batch mutations
+  const batchApprove = useBatchHeadApproveLeave()
+  const batchReject = useBatchRejectLeave()
 
   // Refocus search input after data loads
   useEffect(() => {
@@ -45,11 +57,84 @@ export default function LeaveListPage() {
     }
   }, [isFetching, isSearchFocused])
 
-  if (isLoading || deptLoading) return <SkeletonLoader rows={10} />
-  if (isError) return <div className="text-red-600 text-sm mt-4">Failed to load leave requests.</div>
+  // Clear selection when filters/page change
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [filters])
 
   const rows = data?.data ?? []
   const meta = data?.meta
+  
+  // Only pending rows are selectable for batch operations
+  const pendingRows = rows.filter((r) => r.status === 'pending')
+  const allPendingSelected = pendingRows.length > 0 && pendingRows.every((r) => selectedIds.has(r.id))
+  
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }, [])
+  
+  const toggleSelectAll = useCallback(() => {
+    if (allPendingSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(pendingRows.map((r) => r.id)))
+    }
+  }, [allPendingSelected, pendingRows])
+  
+  const handleBatchApprove = useCallback(() => {
+    if (selectedIds.size === 0) return
+    batchApprove.mutate(
+      { ids: Array.from(selectedIds) },
+      {
+        onSuccess: (result) => {
+          setSelectedIds(new Set())
+          const approvedCount = result.results.approved?.length ?? 0
+          const failedCount = result.results.failed.length
+          if (failedCount > 0) {
+            toast.warning(`${approvedCount} approved, ${failedCount} failed.`, {
+              description: result.results.failed.map((f) => `#${f.id}: ${f.reason}`).join('; '),
+            })
+          } else {
+            toast.success(`${approvedCount} leave request${approvedCount !== 1 ? 's' : ''} approved.`)
+          }
+        },
+      },
+    )
+  }, [selectedIds, batchApprove])
+  
+  const handleBatchReject = useCallback(() => {
+    if (selectedIds.size === 0 || !batchRejectRemarks.trim()) return
+    batchReject.mutate(
+      { ids: Array.from(selectedIds), remarks: batchRejectRemarks.trim() },
+      {
+        onSuccess: (result) => {
+          setSelectedIds(new Set())
+          setBatchRejectRemarksOpen(false)
+          setBatchRejectRemarks('')
+          const rejectedCount = result.results.rejected?.length ?? 0
+          const failedCount = result.results.failed.length
+          if (failedCount > 0) {
+            toast.warning(`${rejectedCount} rejected, ${failedCount} failed.`, {
+              description: result.results.failed.map((f) => `#${f.id}: ${f.reason}`).join('; '),
+            })
+          } else {
+            toast.success(`${rejectedCount} leave request${rejectedCount !== 1 ? 's' : ''} rejected.`)
+          }
+        },
+      },
+    )
+  }, [selectedIds, batchRejectRemarks, batchReject])
+
+  if (isLoading || deptLoading) return <SkeletonLoader rows={10} />
+  if (isError) return <div className="text-red-600 text-sm mt-4">Failed to load leave requests.</div>
 
   // Format date for display
   const formatDate = (dateStr: string | null) => {
@@ -232,6 +317,89 @@ export default function LeaveListPage() {
         </div>
       )}
 
+      {/* Batch Actions Bar */}
+      {canHeadApprove && selectedIds.size > 0 && (
+        <div className="mb-4 bg-accent-soft border border-accent/20 rounded-lg p-3 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-neutral-800">
+            {selectedIds.size} request{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBatchApprove}
+              disabled={batchApprove.isPending}
+              className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors"
+            >
+              <CheckSquare className="h-4 w-4" />
+              {batchApprove.isPending ? 'Approving...' : 'Approve All'}
+            </button>
+            <button
+              onClick={() => setBatchRejectRemarksOpen(true)}
+              disabled={batchReject.isPending}
+              className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors"
+            >
+              <XSquare className="h-4 w-4" />
+              Reject All
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-sm text-neutral-500 hover:text-neutral-700 underline ml-2"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Reject Remarks Modal */}
+      {batchRejectRemarksOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div
+            className="bg-white rounded-lg shadow-floating p-6 w-full max-w-md"
+            role="dialog"
+            aria-label="Batch reject remarks"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setBatchRejectRemarksOpen(false)
+                setBatchRejectRemarks('')
+              }
+            }}
+          >
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+              Reject {selectedIds.size} Leave Request{selectedIds.size !== 1 ? 's' : ''}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-4">
+              Provide a reason for rejecting these requests. This will be visible to the employees.
+            </p>
+            <textarea
+              autoFocus
+              value={batchRejectRemarks}
+              onChange={(e) => setBatchRejectRemarks(e.target.value)}
+              placeholder="Reason for rejection..."
+              rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400 outline-none resize-none mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setBatchRejectRemarksOpen(false)
+                  setBatchRejectRemarks('')
+                }}
+                className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-800 border border-neutral-300 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBatchReject}
+                disabled={!batchRejectRemarks.trim() || batchReject.isPending}
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded font-medium transition-colors"
+              >
+                {batchReject.isPending ? 'Rejecting...' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden relative">
         {/* Loading overlay for search/filter */}
@@ -247,6 +415,18 @@ export default function LeaveListPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
+              {canHeadApprove && (
+                <th className="px-3 py-2.5 text-left w-10">
+                  <input
+                    type="checkbox"
+                    checked={allPendingSelected}
+                    onChange={toggleSelectAll}
+                    disabled={pendingRows.length === 0}
+                    className="rounded border-neutral-300 text-accent focus:ring-accent/50"
+                    title={pendingRows.length === 0 ? 'No pending requests to select' : 'Select all pending'}
+                  />
+                </th>
+              )}
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider w-10"></th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Employee</th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Leave Type</th>
@@ -259,15 +439,31 @@ export default function LeaveListPage() {
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {rows.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-8 text-center text-neutral-400">No leave requests found.</td></tr>
+              <tr><td colSpan={canHeadApprove ? 9 : 8} className="px-3 py-8 text-center text-neutral-400">No leave requests found.</td></tr>
             )}
             {rows.map((row) => (
               <>
                 <tr 
                   key={row.id} 
-                  className="hover:bg-neutral-50 even:bg-neutral-100 transition-colors cursor-pointer"
+                  className={`hover:bg-neutral-50 transition-colors cursor-pointer ${
+                    selectedIds.has(row.id) ? 'bg-accent-soft/50' : 'even:bg-neutral-100'
+                  }`}
                   onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
                 >
+                  {canHeadApprove && (
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {row.status === 'pending' ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(row.id)}
+                          onChange={() => toggleSelect(row.id)}
+                          className="rounded border-neutral-300 text-accent focus:ring-accent/50"
+                        />
+                      ) : (
+                        <span className="block w-4" />
+                      )}
+                    </td>
+                  )}
                   <td className="px-3 py-2">
                     <button className="text-neutral-400 hover:text-neutral-600">
                       {expandedRow === row.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -293,7 +489,7 @@ export default function LeaveListPage() {
                 {/* Expanded Details */}
                 {expandedRow === row.id && (
                   <tr className="bg-neutral-50">
-                    <td colSpan={8} className="px-4 py-4">
+                    <td colSpan={canHeadApprove ? 9 : 8} className="px-4 py-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Request Details */}
                         <div className="bg-white rounded p-4 border border-neutral-200">
@@ -315,47 +511,28 @@ export default function LeaveListPage() {
                         </div>
 
                         {/* Approval Timeline */}
-                        <div className="bg-white rounded p-4 border border-neutral-200">
-                          <h4 className="font-medium text-neutral-900 mb-3">Approval Timeline</h4>
-                          <div className="space-y-3">
-                            {/* Submitted */}
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 rounded-full bg-neutral-500 mt-1.5"></div>
-                              <div className="text-sm">
-                                <p className="font-medium text-neutral-900">Submitted</p>
-                                <p className="text-neutral-500">{formatDate(row.created_at)}</p>
-                              </div>
-                            </div>
-                            
-                            {/* Reviewed */}
-                            {row.reviewed_at && (
-                              <div className="flex items-start gap-3">
-                                <div className={`w-2 h-2 rounded-full ${getStatusColor(row.status)} mt-1.5`}></div>
-                                <div className="text-sm">
-                                  <p className="font-medium text-neutral-900">
-                                    {row.status === 'approved' ? 'Approved' : row.status === 'rejected' ? 'Rejected' : 'Reviewed'}
-                                  </p>
-                                  <p className="text-neutral-500">{formatDate(row.reviewed_at)}</p>
-                                  {row.reviewer_remarks && (
-                                    <p className="text-neutral-600 mt-1 bg-neutral-50 p-2 rounded text-xs">
-                                      "{row.reviewer_remarks}"
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Pending */}
-                            {!row.reviewed_at && (
-                              <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 rounded-full bg-amber-300 mt-1.5 animate-pulse"></div>
-                                <div className="text-sm">
-                                  <p className="font-medium text-amber-700">Pending Approval</p>
-                                  <p className="text-neutral-500">Waiting for supervisor/manager review</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                        <div className="bg-white dark:bg-neutral-900 rounded p-4 border border-neutral-200 dark:border-neutral-700">
+                          <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-3">Approval Timeline</h4>
+                          <ApprovalTimeline
+                            steps={[
+                              {
+                                label: 'Submitted',
+                                state: 'completed' as const,
+                                actor: row.submitted_by ? `User #${row.submitted_by}` : undefined,
+                                timestamp: row.created_at,
+                              },
+                              ...(row.reviewed_at ? [{
+                                label: row.status === 'approved' ? 'Approved' : row.status === 'rejected' ? 'Rejected' : 'Reviewed',
+                                state: (row.status === 'rejected' ? 'rejected' : 'completed') as ApprovalStep['state'],
+                                actor: row.reviewed_by ? `User #${row.reviewed_by}` : undefined,
+                                timestamp: row.reviewed_at,
+                                remarks: row.reviewer_remarks,
+                              }] : [{
+                                label: 'Pending Approval',
+                                state: 'current' as const,
+                              }]),
+                            ]}
+                          />
                         </div>
                       </div>
 

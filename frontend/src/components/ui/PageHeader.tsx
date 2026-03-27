@@ -30,7 +30,7 @@ export function PageHeader({
           <button
             type="button"
             onClick={() => navigate(backTo)}
-            className="p-2 rounded-md border border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-700 transition-colors"
+            className="p-2 rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -38,14 +38,14 @@ export function PageHeader({
         )}
         
         {icon && (
-          <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
             {icon}
           </div>
         )}
         
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-neutral-900">{title}</h1>
+            <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{title}</h1>
             {status}
           </div>
           {subtitle && (
