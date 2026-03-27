@@ -348,4 +348,11 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             'year' => $year,
         ]);
     })->name('reports.analytics');
+
+    // ── Vendor Scorecard ────────────────────────────────────────────────────
+    Route::get('vendor-scores', function (\Illuminate\Http\Request $request) {
+        $service = app(\App\Domains\Procurement\Services\VendorScoringService::class);
+        $year = $request->filled('year') ? $request->integer('year') : null;
+        return response()->json(['data' => $service->allVendorScores($year)]);
+    })->name('vendor-scores');
 });
