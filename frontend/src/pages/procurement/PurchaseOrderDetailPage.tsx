@@ -16,6 +16,8 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
+import StatusTimeline from '@/components/ui/StatusTimeline'
+import { getPurchaseOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '@/types/procurement'
 
 const statusLabel: Record<PurchaseOrderStatus, string> = {
@@ -362,6 +364,16 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
           status={<StatusBadge status={po.status}>{statusLabel[po.status]}</StatusBadge>}
           actions={actions}
         />
+
+        {/* ── Workflow Timeline ─────────────────────────────────────────────── */}
+        <div className="bg-white border border-neutral-200 rounded p-4">
+          <StatusTimeline
+            steps={getPurchaseOrderSteps(po)}
+            currentStatus={po.status}
+            direction="horizontal"
+            isRejected={isRejectedStatus(po.status)}
+          />
+        </div>
 
         {/* ── Negotiation alert ─────────────────────────────────────────────── */}
         {po.status === 'negotiating' && (

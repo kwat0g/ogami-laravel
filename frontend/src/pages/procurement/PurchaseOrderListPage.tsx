@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { PurchaseOrderStatus } from '@/types/procurement'
 
 const statusBadge: Record<PurchaseOrderStatus, string> = {
@@ -50,7 +51,18 @@ export default function PurchaseOrderListPage(): React.ReactElement {
             </Link>
           )
           */
-          null
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'po_number', label: 'PO Number' },
+              { key: 'vendor.name', label: 'Vendor' },
+              { key: 'status', label: 'Status' },
+              { key: 'total_amount', label: 'Total Amount' },
+              { key: 'order_date', label: 'Order Date' },
+              { key: 'expected_delivery_date', label: 'Expected Delivery' },
+            ]}
+            filename="purchase-orders"
+          />
         }
       />
 

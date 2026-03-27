@@ -11,6 +11,7 @@ import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import api from '@/lib/api'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { toast } from 'sonner'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { ItemMaster, ItemCategory } from '@/types/inventory'
 
 // ---------------------------------------------------------------------------
@@ -189,6 +190,18 @@ export default function ItemMasterListPage(): React.ReactElement {
         title="Item Master"
         actions={
           <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'item_code', label: 'Code' },
+                { key: 'name', label: 'Name' },
+                { key: 'category.name', label: 'Category' },
+                { key: 'uom', label: 'UOM' },
+                { key: 'reorder_point', label: 'Reorder Point' },
+                { key: 'is_active', label: 'Active', format: (v: unknown) => v ? 'Yes' : 'No' },
+              ]}
+              filename="inventory-items"
+            />
             <button
               onClick={() => setShowCategories(true)}
               className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50"

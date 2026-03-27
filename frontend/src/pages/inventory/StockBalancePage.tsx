@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { StockBalance } from '@/types/inventory'
 
 interface AdjustState {
@@ -85,6 +86,18 @@ export default function StockBalancePage(): React.ReactElement {
         title="Stock Balances"
         actions={
           <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'item.item_code', label: 'Item Code' },
+                { key: 'item.name', label: 'Item Name' },
+                { key: 'quantity_on_hand', label: 'On Hand' },
+                { key: 'quantity_reserved', label: 'Reserved' },
+                { key: 'reorder_point', label: 'Reorder Point' },
+                { key: 'warehouse_location.name', label: 'Location' },
+              ]}
+              filename="stock-balances"
+            />
             <Link to="/inventory/valuation" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
               Valuation
             </Link>
