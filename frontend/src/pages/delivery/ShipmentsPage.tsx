@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { firstErrorMessage } from '@/lib/errorHandler';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { ExportButton } from '@/components/ui/ExportButton';
 import type { ShipmentStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<ShipmentStatus, string> = {
@@ -126,7 +127,23 @@ export default function ShipmentsPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Shipments" />
+      <PageHeader
+        title="Shipments"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'tracking_number', label: 'Tracking #' },
+              { key: 'delivery_receipt.dr_reference', label: 'DR Reference' },
+              { key: 'status', label: 'Status' },
+              { key: 'carrier', label: 'Carrier' },
+              { key: 'shipped_date', label: 'Shipped Date' },
+              { key: 'delivered_date', label: 'Delivered Date' },
+            ]}
+            filename="shipments"
+          />
+        }
+      />
       <div className="flex items-center justify-between">
         <div />
         {canManage && (

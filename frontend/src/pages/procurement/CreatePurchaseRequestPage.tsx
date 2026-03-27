@@ -13,6 +13,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { useAutoSave, getDraftTimestamp } from '@/hooks/useAutoSave'
+import DraftRestorationBanner from '@/components/ui/DraftRestorationBanner'
 import type { PurchaseRequestUrgency } from '@/types/procurement'
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
@@ -105,6 +107,23 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
   }, [isEditMode, existingPR, reset])
 
   const { fields, append, remove, replace } = useFieldArray({ control, name: 'items' })
+
+  // ── Auto-save draft (only for new PRs, not edit mode) ─────────────────────
+  const formValues = watch()
+  const { hasDraft, restore, clear: clearDraft } = useAutoSave(
+    'pr-create',
+    formValues,
+    undefined,
+    { enabled: !isEditMode },
+  )
+
+  const handleRestoreDraft = () => {
+    const saved = restore()
+    if (saved) {
+      reset(saved)
+      toast.success('Draft restored')
+    }
+  }
 
   // Watch form values
   const watchedVendorId = watch('vendor_id')
@@ -225,6 +244,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
         navigate(`/procurement/purchase-requests/${ulid}`)
       } else {
         const pr = await createPR.mutateAsync(payload)
+        clearDraft() // Clear auto-saved draft on successful creation
         toast.success(`Purchase Request ${pr.pr_reference} created as draft.`)
         navigate(`/procurement/purchase-requests/${pr.ulid}`)
       }
@@ -242,6 +262,15 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
         title={isEditMode ? `Edit ${existingPR?.pr_reference ?? 'Purchase Request'}` : 'New Purchase Request'}
         backTo={isEditMode ? `/procurement/purchase-requests/${ulid}` : '/procurement/purchase-requests'}
       />
+
+      {/* Draft restoration banner */}
+      {!isEditMode && hasDraft && (
+        <DraftRestorationBanner
+          onRestore={handleRestoreDraft}
+          onDiscard={clearDraft}
+          timestamp={getDraftTimestamp('pr-create')}
+        />
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Header Section */}

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { DepartmentGuard } from '@/components/ui/guards'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { InspectionStage, InspectionStatus } from '@/types/qc'
 
 const stageBadge: Record<InspectionStage, string> = {
@@ -45,6 +46,19 @@ export default function InspectionListPage(): React.ReactElement {
         title="Inspections"
         actions={
           <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'reference', label: 'Reference' },
+                { key: 'stage', label: 'Stage' },
+                { key: 'status', label: 'Status' },
+                { key: 'inspected_qty', label: 'Inspected' },
+                { key: 'passed_qty', label: 'Passed' },
+                { key: 'failed_qty', label: 'Failed' },
+                { key: 'inspection_date', label: 'Date' },
+              ]}
+              filename="inspections"
+            />
             <Link to="/qc/templates" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
               Templates
             </Link>
