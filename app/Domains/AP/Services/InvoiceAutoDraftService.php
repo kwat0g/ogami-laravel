@@ -13,6 +13,7 @@ use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Contracts\ServiceContract;
 
 /**
  * InvoiceAutoDraftService
@@ -26,7 +27,7 @@ use Illuminate\Support\Facades\Log;
  * The invoice is created as 'draft' status -- it still requires the full
  * approval workflow (submit -> head_note -> manager_check -> officer_review -> approve).
  */
-final class InvoiceAutoDraftService
+final class InvoiceAutoDraftService implements ServiceContract
 {
     public function __construct(
         private readonly EwtService $ewtService,

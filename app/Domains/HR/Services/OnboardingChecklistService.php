@@ -7,6 +7,7 @@ namespace App\Domains\HR\Services;
 use App\Domains\HR\Models\Employee;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Contracts\ServiceContract;
 
 /**
  * OnboardingChecklistService
@@ -24,7 +25,7 @@ use Illuminate\Support\Facades\Log;
  *   $service->getProgress($employee)           // Get completion percentage
  *   $service->canActivate($employee)           // Check if all required items are done
  */
-final class OnboardingChecklistService
+final class OnboardingChecklistService implements ServiceContract
 {
     /**
      * Default checklist template.

@@ -14,6 +14,7 @@ use App\Domains\Procurement\Models\PurchaseRequestItem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Contracts\ServiceContract;
 
 /**
  * LowStockReorderService
@@ -29,7 +30,7 @@ use Illuminate\Support\Facades\Log;
  * The PRs are created as 'draft' status and flagged as 'system_generated'
  * so purchasing officers can quickly review and submit them.
  */
-final class LowStockReorderService
+final class LowStockReorderService implements ServiceContract
 {
     /**
      * Scan all items with reorder points and detect those below threshold.

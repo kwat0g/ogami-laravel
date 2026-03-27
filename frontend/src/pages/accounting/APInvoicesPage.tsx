@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Plus, RefreshCw, FilePlus, X } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { Plus, RefreshCw, FilePlus, X, CheckSquare, XSquare } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { useAPInvoices, useCreateInvoiceFromPO } from '@/hooks/useAP'
+import { useAPInvoices, useCreateInvoiceFromPO, useBatchApproveAPInvoices, useBatchRejectAPInvoices } from '@/hooks/useAP'
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -44,6 +44,9 @@ const STATUS_LABEL: Record<VendorInvoiceStatus, string> = {
 const ALL_STATUSES: VendorInvoiceStatus[] = [
   'draft', 'pending_approval', 'head_noted', 'manager_checked', 'officer_reviewed', 'approved', 'rejected', 'partially_paid', 'paid',
 ]
+
+// Statuses that are eligible for batch approve/reject
+const BATCH_ELIGIBLE_STATUSES: VendorInvoiceStatus[] = ['pending_approval']
 
 function StatusBadge({ status }: { status: VendorInvoiceStatus }) {
   return (
@@ -175,9 +178,15 @@ function CreateFromPOModal({ isOpen, onClose, onSelect, isLoading }: CreateFromP
 export default function APInvoicesPage() {
   const navigate = useNavigate()
   const canCreate = useAuthStore(s => s.hasPermission('vendor_invoices.create'))
+  const canApprove = useAuthStore(s => s.hasPermission('vendor_invoices.approve'))
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Batch selection state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [batchRejectOpen, setBatchRejectOpen] = useState(false)
+  const [batchRejectNote, setBatchRejectNote] = useState('')
 
   const { data, isLoading, refetch } = useAPInvoices({
     status: activeStatus ?? undefined,
@@ -185,9 +194,77 @@ export default function APInvoicesPage() {
   })
 
   const createFromPOMutation = useCreateInvoiceFromPO()
+  const batchApprove = useBatchApproveAPInvoices()
+  const batchReject = useBatchRejectAPInvoices()
 
   const invoices = data?.data ?? []
   const meta = data?.meta
+
+  // Only pending_approval invoices are eligible for batch operations
+  const pendingRows = invoices.filter((inv) => BATCH_ELIGIBLE_STATUSES.includes(inv.status))
+  const allPendingSelected = pendingRows.length > 0 && pendingRows.every((inv) => selectedIds.has(inv.id))
+
+  // Clear selection on filter change
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [activeStatus, dueSoonOnly])
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAll = useCallback(() => {
+    if (allPendingSelected) setSelectedIds(new Set())
+    else setSelectedIds(new Set(pendingRows.map((inv) => inv.id)))
+  }, [allPendingSelected, pendingRows])
+
+  const handleBatchApprove = useCallback(() => {
+    if (selectedIds.size === 0) return
+    batchApprove.mutate(
+      { ids: Array.from(selectedIds) },
+      {
+        onSuccess: (result) => {
+          setSelectedIds(new Set())
+          const okCount = result.results.approved?.length ?? 0
+          const failCount = result.results.failed.length
+          if (failCount > 0) {
+            toast.warning(`${okCount} approved, ${failCount} failed.`, {
+              description: result.results.failed.map((f) => `#${f.id}: ${f.reason}`).join('; '),
+            })
+          } else {
+            toast.success(`${okCount} invoice${okCount !== 1 ? 's' : ''} approved.`)
+          }
+        },
+      },
+    )
+  }, [selectedIds, batchApprove])
+
+  const handleBatchReject = useCallback(() => {
+    if (selectedIds.size === 0 || !batchRejectNote.trim()) return
+    batchReject.mutate(
+      { ids: Array.from(selectedIds), rejection_note: batchRejectNote.trim() },
+      {
+        onSuccess: (result) => {
+          setSelectedIds(new Set())
+          setBatchRejectOpen(false)
+          setBatchRejectNote('')
+          const okCount = result.results.rejected?.length ?? 0
+          const failCount = result.results.failed.length
+          if (failCount > 0) {
+            toast.warning(`${okCount} rejected, ${failCount} failed.`, {
+              description: result.results.failed.map((f) => `#${f.id}: ${f.reason}`).join('; '),
+            })
+          } else {
+            toast.success(`${okCount} invoice${okCount !== 1 ? 's' : ''} rejected.`)
+          }
+        },
+      },
+    )
+  }, [selectedIds, batchRejectNote, batchReject])
 
   const handleCreateFromPO = async (poId: number) => {
     try {
@@ -280,6 +357,89 @@ export default function APInvoicesPage() {
         </button>
       </div>
 
+      {/* Batch Actions Bar */}
+      {canApprove && selectedIds.size > 0 && (
+        <div className="bg-accent-soft border border-accent/20 rounded-lg p-3 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-neutral-800">
+            {selectedIds.size} invoice{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBatchApprove}
+              disabled={batchApprove.isPending}
+              className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors"
+            >
+              <CheckSquare className="h-4 w-4" />
+              {batchApprove.isPending ? 'Approving...' : 'Approve All'}
+            </button>
+            <button
+              onClick={() => setBatchRejectOpen(true)}
+              disabled={batchReject.isPending}
+              className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors"
+            >
+              <XSquare className="h-4 w-4" />
+              Reject All
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-sm text-neutral-500 hover:text-neutral-700 underline ml-2"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Reject Modal */}
+      {batchRejectOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div
+            className="bg-white rounded-lg shadow-floating p-6 w-full max-w-md"
+            role="dialog"
+            aria-label="Batch reject invoices"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setBatchRejectOpen(false)
+                setBatchRejectNote('')
+              }
+            }}
+          >
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+              Reject {selectedIds.size} Invoice{selectedIds.size !== 1 ? 's' : ''}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-4">
+              Provide a rejection note for these invoices. This will be recorded in the invoice history.
+            </p>
+            <textarea
+              autoFocus
+              value={batchRejectNote}
+              onChange={(e) => setBatchRejectNote(e.target.value)}
+              placeholder="Rejection note..."
+              rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400 outline-none resize-none mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setBatchRejectOpen(false)
+                  setBatchRejectNote('')
+                }}
+                className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-800 border border-neutral-300 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBatchReject}
+                disabled={!batchRejectNote.trim() || batchReject.isPending}
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded font-medium transition-colors"
+              >
+                {batchReject.isPending ? 'Rejecting...' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       {isLoading ? (
         <SkeletonLoader rows={8} />
@@ -290,6 +450,18 @@ export default function APInvoicesPage() {
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
+                {canApprove && (
+                  <th className="px-3 py-2.5 text-left w-10">
+                    <input
+                      type="checkbox"
+                      checked={allPendingSelected}
+                      onChange={toggleSelectAll}
+                      disabled={pendingRows.length === 0}
+                      className="rounded border-neutral-300 text-accent focus:ring-accent/50"
+                      title={pendingRows.length === 0 ? 'No pending invoices to select' : 'Select all pending approval'}
+                    />
+                  </th>
+                )}
                 <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Vendor</th>
                 <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Invoice Date</th>
                 <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Due Date</th>
@@ -300,7 +472,27 @@ export default function APInvoicesPage() {
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {invoices.map(inv => (
-                <tr key={inv.id} onClick={() => navigate(`/accounting/ap/invoices/${inv.ulid}`)} className={`hover:bg-neutral-50 transition-colors cursor-pointer ${inv.is_overdue ? 'bg-neutral-50' : ''}`}>
+                <tr
+                  key={inv.id}
+                  onClick={() => navigate(`/accounting/ap/invoices/${inv.ulid}`)}
+                  className={`hover:bg-neutral-50 transition-colors cursor-pointer ${
+                    selectedIds.has(inv.id) ? 'bg-accent-soft/50' : inv.is_overdue ? 'bg-neutral-50' : ''
+                  }`}
+                >
+                  {canApprove && (
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      {BATCH_ELIGIBLE_STATUSES.includes(inv.status) ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(inv.id)}
+                          onChange={() => toggleSelect(inv.id)}
+                          className="rounded border-neutral-300 text-accent focus:ring-accent/50"
+                        />
+                      ) : (
+                        <span className="block w-4" />
+                      )}
+                    </td>
+                  )}
                   <td className="px-3 py-2 font-medium text-neutral-900">
                     {inv.vendor?.name ?? `Vendor #${inv.vendor_id}`}
                     {inv.description && (

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Contracts\ServiceContract;
 
 /**
  * OrderAutomationService
@@ -24,7 +25,7 @@ use Illuminate\Support\Facades\Log;
  * The production orders are created in 'draft' status. The production manager
  * still needs to release them (which triggers material availability checks).
  */
-final class OrderAutomationService
+final class OrderAutomationService implements ServiceContract
 {
     public function __construct(
         private readonly ProductionOrderService $productionOrderService,
