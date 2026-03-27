@@ -124,4 +124,26 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
         $days = $request->integer('days', 90);
         return response()->json(['data' => $service->deadStock($days)]);
     })->name('analytics.dead-stock');
+
+    // ── Low Stock Reorder ───────────────────────────────────────────────────
+    Route::get('low-stock', function () {
+        $service = app(\App\Domains\Inventory\Services\LowStockReorderService::class);
+        return response()->json(['data' => $service->detectLowStock()->toArray()]);
+    })->name('low-stock');
+
+    Route::post('low-stock/create-reorder', function () {
+        $service = app(\App\Domains\Inventory\Services\LowStockReorderService::class);
+        $prs = $service->createReorderRequests(auth()->id());
+        return response()->json([
+            'message' => count($prs) > 0
+                ? count($prs) . ' auto-reorder Purchase Request(s) created as draft.'
+                : 'No items below reorder point. No PRs created.',
+            'data' => collect($prs)->map(fn ($pr) => [
+                'id' => $pr->id,
+                'ulid' => $pr->ulid,
+                'pr_reference' => $pr->pr_reference,
+                'total_estimated_cost' => $pr->total_estimated_cost,
+            ]),
+        ]);
+    })->name('low-stock.create-reorder');
 });

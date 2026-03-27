@@ -19,6 +19,7 @@ final class GoodsReceiptService implements ServiceContract
 {
     public function __construct(
         private readonly ThreeWayMatchService $threeWayMatchService,
+        private readonly \App\Domains\AP\Services\InvoiceAutoDraftService $invoiceAutoDraftService,
     ) {}
 
     // ── Store (draft) ────────────────────────────────────────────────────────
@@ -125,6 +126,17 @@ final class GoodsReceiptService implements ServiceContract
             ]);
 
             $this->threeWayMatchService->runMatch($gr->refresh());
+
+            // Auto-draft AP invoice from GR + PO data (creates as 'draft' status)
+            try {
+                $this->invoiceAutoDraftService->createFromGoodsReceipt($gr->refresh());
+            } catch (\Throwable $e) {
+                // Don't fail the GR confirmation if auto-draft fails — log and continue
+                \Illuminate\Support\Facades\Log::warning('[GR Confirm] AP invoice auto-draft failed', [
+                    'gr_id' => $gr->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return $gr->refresh();
         });
