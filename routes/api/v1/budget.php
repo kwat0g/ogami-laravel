@@ -146,4 +146,11 @@ Route::middleware(['auth:sanctum', 'module_access:budget'])->group(function (): 
     })
         ->middleware('permission:budget.view')
         ->name('variance.forecast');
+
+    // ── Budget Forecasting (Phase 4) ──────────────────────────────────────
+    Route::get('forecast/year-end', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        $data = $request->validate(['fiscal_year' => ['required', 'integer', 'min:2020']]);
+        $service = app(\App\Domains\Budget\Services\BudgetForecastService::class);
+        return response()->json(['data' => $service->forecastByBudgetLine($data['fiscal_year'])]);
+    })->middleware('permission:budget.view')->name('forecast.year-end');
 });

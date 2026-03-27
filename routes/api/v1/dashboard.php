@@ -1900,4 +1900,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('executive-analytics', \App\Http\Controllers\Dashboard\ExecutiveDashboardController::class)
         ->name('dashboard.executive-analytics');
 
+    // ── Supplementary KPIs (Phase 4) ──────────────────────────────────────
+    Route::get('kpis/supplementary', function (): \Illuminate\Http\JsonResponse {
+        $service = app(\App\Domains\Dashboard\Services\DashboardKpiService::class);
+        return response()->json(['data' => $service->supplementaryKpis()]);
+    })->name('dashboard.kpis.supplementary');
+
 });
