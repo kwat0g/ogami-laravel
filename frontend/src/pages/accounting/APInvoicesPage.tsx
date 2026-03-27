@@ -17,24 +17,32 @@ import type { PurchaseOrder } from '@/types/procurement'
 
 const STATUS_COLORS: Record<VendorInvoiceStatus, string> = {
   draft:            'bg-neutral-100 text-neutral-600',
-  pending_approval: 'bg-neutral-100 text-neutral-700',
-  approved:         'bg-neutral-100 text-neutral-700',
-  partially_paid:   'bg-neutral-100 text-neutral-700',
-  paid:             'bg-neutral-100 text-neutral-700',
+  pending_approval: 'bg-amber-50 text-amber-700',
+  head_noted:       'bg-blue-50 text-blue-700',
+  manager_checked:  'bg-blue-50 text-blue-700',
+  officer_reviewed: 'bg-indigo-50 text-indigo-700',
+  approved:         'bg-green-50 text-green-700',
+  rejected:         'bg-red-50 text-red-700',
+  partially_paid:   'bg-amber-50 text-amber-700',
+  paid:             'bg-green-100 text-green-800',
   deleted:          'bg-neutral-100 text-neutral-500',
 }
 
 const STATUS_LABEL: Record<VendorInvoiceStatus, string> = {
   draft:            'Draft',
   pending_approval: 'Pending Approval',
+  head_noted:       'Head Noted',
+  manager_checked:  'Manager Checked',
+  officer_reviewed: 'Officer Reviewed',
   approved:         'Approved',
+  rejected:         'Rejected',
   partially_paid:   'Partially Paid',
   paid:             'Paid',
   deleted:          'Deleted',
 }
 
 const ALL_STATUSES: VendorInvoiceStatus[] = [
-  'draft', 'pending_approval', 'approved', 'partially_paid', 'paid',
+  'draft', 'pending_approval', 'head_noted', 'manager_checked', 'officer_reviewed', 'approved', 'rejected', 'partially_paid', 'paid',
 ]
 
 function StatusBadge({ status }: { status: VendorInvoiceStatus }) {

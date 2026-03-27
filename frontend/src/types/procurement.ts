@@ -116,6 +116,11 @@ export interface PurchaseRequest {
   rejection_stage: string | null
   rejected_by: { id: number; name: string } | null
 
+  returned_by_id: number | null
+  returned_at: string | null
+  return_reason: string | null
+  returned_by: { id: number; name: string } | null
+
   converted_to_po_id: number | null
   converted_at: string | null
 

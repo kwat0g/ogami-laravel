@@ -241,6 +241,13 @@ export interface LeaveRequest {
   vp_id:               number | null
   vp_remarks:          string | null
   vp_noted_at:         string | null
+  // Reviewer / generic approval fields (returned by some API responses)
+  reviewed_by:         number | null
+  reviewed_at:         string | null
+  reviewer_remarks:    string | null
+  rejected_by:         number | null
+  rejected_at:         string | null
+  rejection_reason:    string | null
   created_at:          string
   updated_at:          string
 }

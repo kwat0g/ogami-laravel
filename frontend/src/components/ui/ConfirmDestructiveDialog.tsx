@@ -26,8 +26,13 @@ interface ConfirmDestructiveDialogProps {
   /** Word the user must type to enable the confirm button. */
   confirmWord?: string
   confirmLabel?: string
+  variant?: 'danger' | 'warning'
   onConfirm: () => void | Promise<void>
-  children: React.ReactElement
+  /** When provided, dialog is controlled externally */
+  open?: boolean
+  onClose?: () => void
+  loading?: boolean
+  children?: React.ReactElement
 }
 
 export default function ConfirmDestructiveDialog({
@@ -35,12 +40,22 @@ export default function ConfirmDestructiveDialog({
   description,
   confirmWord = 'CONFIRM',
   confirmLabel = 'Confirm',
+  variant: _variant = 'danger',
   onConfirm,
+  open: controlledOpen,
+  onClose,
+  loading: controlledLoading,
   children,
 }: ConfirmDestructiveDialogProps) {
-  const [open, setOpen]  = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [typed, setTyped] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [internalLoading, setInternalLoading] = useState(false)
+
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? (v: boolean) => { if (!v && onClose) onClose(); setTyped('') } : (v: boolean) => { setInternalOpen(v); if (!v) setTyped('') }
+  const loading = controlledLoading ?? internalLoading
+  const setLoading = isControlled ? (_v: boolean) => {} : setInternalLoading
 
   const canConfirm = typed === confirmWord
 
