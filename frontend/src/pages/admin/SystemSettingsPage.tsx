@@ -363,7 +363,6 @@ export default function SystemSettingsPage() {
               </>
             )}
           </div>
-        </div>
 
           {/* Theme Preferences (client-side, not a system setting) */}
           <div className="rounded p-4 border border-neutral-200 bg-white">
