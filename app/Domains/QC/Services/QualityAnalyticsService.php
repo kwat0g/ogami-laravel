@@ -122,7 +122,7 @@ final class QualityAnalyticsService implements ServiceContract
     {
         return NonConformanceReport::query()
             ->whereIn('status', ['raised', 'under_investigation', 'corrective_action_assigned'])
-            ->with('itemMaster')
+            ->with('inspection.itemMaster')
             ->orderBy('created_at')
             ->get()
             ->map(fn ($ncr) => [
@@ -131,7 +131,7 @@ final class QualityAnalyticsService implements ServiceContract
                 'severity' => $ncr->severity ?? '—',
                 'status' => $ncr->status,
                 'days_open' => (int) $ncr->created_at->diffInDays(now()),
-                'product' => $ncr->itemMaster?->name ?? '—',
+                'product' => $ncr->inspection?->itemMaster?->name ?? '—',
             ]);
     }
 

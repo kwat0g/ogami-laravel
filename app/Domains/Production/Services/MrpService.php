@@ -92,16 +92,16 @@ final class MrpService implements ServiceContract
         $itemIds = $requirements->keys()->toArray();
 
         $stocks = StockBalance::query()
-            ->whereIn('item_master_id', $itemIds)
-            ->select('item_master_id', DB::raw('SUM(quantity) as total_qty'))
-            ->groupBy('item_master_id')
-            ->pluck('total_qty', 'item_master_id');
+            ->whereIn('item_id', $itemIds)
+            ->select('item_id', DB::raw('SUM(CAST(quantity_on_hand AS numeric)) as total_qty'))
+            ->groupBy('item_id')
+            ->pluck('total_qty', 'item_id');
 
         $reservations = DB::table('stock_reservations')
-            ->whereIn('item_master_id', $itemIds)
+            ->whereIn('item_id', $itemIds)
             ->where('status', 'active')
-            ->select('item_master_id', DB::raw('SUM(quantity) as total_reserved'))
-            ->groupBy('item_master_id')
+            ->select('item_id', DB::raw('SUM(CAST(quantity_on_hand AS numeric)) as total_reserved'))
+            ->groupBy('item_id')
             ->pluck('total_reserved', 'item_master_id');
 
         // 4. Calculate shortages

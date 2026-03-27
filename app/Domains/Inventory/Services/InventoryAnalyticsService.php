@@ -41,16 +41,16 @@ final class InventoryAnalyticsService implements ServiceContract
         $year ??= (int) now()->format('Y');
 
         // Compute annual consumption from stock ledger (issues only)
-        $consumption = DB::table('stock_ledger_entries')
+        $consumption = DB::table('stock_ledger')
             ->whereYear('created_at', $year)
             ->where('quantity', '<', 0) // issues are negative
             ->select(
-                'item_master_id',
-                DB::raw('ABS(SUM(quantity)) as total_qty'),
+                'item_id',
+                DB::raw('ABS(SUM(CAST(quantity AS numeric))) as total_qty'),
             )
-            ->groupBy('item_master_id')
+            ->groupBy('item_id')
             ->get()
-            ->keyBy('item_master_id');
+            ->keyBy('item_id');
 
         $items = ItemMaster::where('is_active', true)->get();
 
@@ -116,14 +116,14 @@ final class InventoryAnalyticsService implements ServiceContract
     public function valuationReport(): Collection
     {
         $balances = StockBalance::query()
-            ->where('quantity', '>', 0)
-            ->with('itemMaster')
+            ->where('quantity_on_hand', '>', 0)
+            ->with('item')
             ->get();
 
-        return $balances->groupBy('item_master_id')
+        return $balances->groupBy('item_id')
             ->map(function (Collection $locationBalances) {
-                $item = $locationBalances->first()->itemMaster;
-                $totalQty = $locationBalances->sum('quantity');
+                $item = $locationBalances->first()->item;
+                $totalQty = $locationBalances->sum('quantity_on_hand');
                 $unitCost = (float) ($item->standard_price ?? 0);
                 $totalValue = $totalQty * $unitCost;
 
@@ -159,19 +159,19 @@ final class InventoryAnalyticsService implements ServiceContract
     {
         $year ??= (int) now()->format('Y');
 
-        $issues = DB::table('stock_ledger_entries')
+        $issues = DB::table('stock_ledger')
             ->whereYear('created_at', $year)
             ->where('quantity', '<', 0)
-            ->select('item_master_id', DB::raw('ABS(SUM(quantity)) as total_issued'))
-            ->groupBy('item_master_id')
+            ->select('item_id', DB::raw('ABS(SUM(CAST(quantity AS numeric))) as total_issued'))
+            ->groupBy('item_id')
             ->get()
-            ->keyBy('item_master_id');
+            ->keyBy('item_id');
 
         $currentStock = StockBalance::query()
-            ->select('item_master_id', DB::raw('SUM(quantity) as total_qty'))
-            ->groupBy('item_master_id')
+            ->select('item_id', DB::raw('SUM(CAST(quantity AS numeric)) as total_qty'))
+            ->groupBy('item_id')
             ->get()
-            ->keyBy('item_master_id');
+            ->keyBy('item_id');
 
         $items = ItemMaster::where('is_active', true)->get();
 
@@ -207,21 +207,21 @@ final class InventoryAnalyticsService implements ServiceContract
      */
     public function deadStock(int $thresholdDays = 90): Collection
     {
-        $lastMovement = DB::table('stock_ledger_entries')
-            ->select('item_master_id', DB::raw('MAX(created_at) as last_movement'))
-            ->groupBy('item_master_id')
+        $lastMovement = DB::table('stock_ledger')
+            ->select('item_id', DB::raw('MAX(created_at) as last_movement'))
+            ->groupBy('item_id')
             ->get()
-            ->keyBy('item_master_id');
+            ->keyBy('item_id');
 
         $balances = StockBalance::query()
-            ->where('quantity', '>', 0)
-            ->select('item_master_id', DB::raw('SUM(quantity) as total_qty'))
-            ->groupBy('item_master_id')
-            ->with('itemMaster')
+            ->where('quantity_on_hand', '>', 0)
+            ->select('item_id', DB::raw('SUM(CAST(quantity AS numeric)) as total_qty'))
+            ->groupBy('item_id')
+            ->with('item')
             ->get();
 
         return $balances->map(function ($balance) use ($lastMovement, $thresholdDays) {
-            $lm = $lastMovement->get($balance->item_master_id);
+            $lm = $lastMovement->get($balance->item_id);
             $daysSince = $lm ? (int) now()->diffInDays($lm->last_movement) : 999;
 
             if ($daysSince < $thresholdDays) {
@@ -229,9 +229,9 @@ final class InventoryAnalyticsService implements ServiceContract
             }
 
             return [
-                'item_id' => $balance->item_master_id,
-                'item_code' => $balance->itemMaster?->item_code ?? '—',
-                'item_name' => $balance->itemMaster?->name ?? '—',
+                'item_id' => $balance->item_id,
+                'item_code' => $balance->item?->item_code ?? '—',
+                'item_name' => $balance->item?->name ?? '—',
                 'current_stock' => (float) $balance->total_qty,
                 'days_since_last_movement' => $daysSince,
             ];
