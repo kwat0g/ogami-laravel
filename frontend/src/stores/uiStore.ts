@@ -126,7 +126,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
 
   toggleColorMode: () => {
     const current = get().colorMode
-    const next: ColorMode = current === 'light' ? 'dark' : current === 'dark' ? 'system' : 'light'
+    const next: ColorMode = current === 'light' ? 'dark' : 'light'
     get().setColorMode(next)
   },
 

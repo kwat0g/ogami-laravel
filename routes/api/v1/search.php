@@ -26,8 +26,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $pattern = "%{$q}%";
         $results = [];
 
+        // Helper: run a search query safely — if the table/column doesn't exist, skip it
+        $safeSearch = function (\Closure $fn) use (&$results): void {
+            try {
+                $results = array_merge($results, $fn()->all());
+            } catch (\Throwable) {
+                // Skip this module if table/column missing
+            }
+        };
+
         // Employees
-        $employees = DB::table('employees')
+        $safeSearch(fn () => DB::table('employees')
             ->where(function ($qb) use ($pattern) {
                 $qb->where('first_name', 'ilike', $pattern)
                     ->orWhere('last_name', 'ilike', $pattern)
@@ -36,32 +45,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->select('ulid', 'employee_code as code', DB::raw("concat(first_name, ' ', last_name) as label"))
             ->limit($limit)
             ->get()
-            ->map(fn ($r) => ['module' => 'HR', 'type' => 'Employee', 'label' => "{$r->code} — {$r->label}", 'url' => "/hr/employees/{$r->ulid}"]);
-        $results = array_merge($results, $employees->all());
+            ->map(fn ($r) => ['module' => 'HR', 'type' => 'Employee', 'label' => "{$r->code} — {$r->label}", 'url' => "/hr/employees/{$r->ulid}"]));
 
         // Vendors
-        $vendors = DB::table('vendors')
+        $safeSearch(fn () => DB::table('vendors')
             ->where(function ($qb) use ($pattern) {
-                $qb->where('company_name', 'ilike', $pattern)
-                    ->orWhere('vendor_code', 'ilike', $pattern);
+                $qb->where('name', 'ilike', $pattern)
+                    ->orWhere('tin', 'ilike', $pattern);
             })
-            ->select('ulid', 'vendor_code as code', 'company_name as name')
+            ->select('id', 'name', 'tin')
             ->limit($limit)
             ->get()
-            ->map(fn ($r) => ['module' => 'AP', 'type' => 'Vendor', 'label' => "{$r->code} — {$r->name}", 'url' => "/accounting/vendors/{$r->ulid}"]);
-        $results = array_merge($results, $vendors->all());
+            ->map(fn ($r) => ['module' => 'AP', 'type' => 'Vendor', 'label' => $r->name . ($r->tin ? " ({$r->tin})" : ''), 'url' => "/accounting/vendors/{$r->id}"]));
 
         // Customers
-        $customers = DB::table('customers')
-            ->where('company_name', 'ilike', $pattern)
-            ->select('ulid', 'company_name as name')
+        $safeSearch(fn () => DB::table('customers')
+            ->where('name', 'ilike', $pattern)
+            ->select('id', 'name')
             ->limit($limit)
             ->get()
-            ->map(fn ($r) => ['module' => 'AR', 'type' => 'Customer', 'label' => $r->name, 'url' => "/ar/customers/{$r->ulid}"]);
-        $results = array_merge($results, $customers->all());
+            ->map(fn ($r) => ['module' => 'AR', 'type' => 'Customer', 'label' => $r->name, 'url' => "/ar/customers/{$r->id}"]));
 
         // Items
-        $items = DB::table('item_masters')
+        $safeSearch(fn () => DB::table('item_masters')
             ->where(function ($qb) use ($pattern) {
                 $qb->where('name', 'ilike', $pattern)
                     ->orWhere('item_code', 'ilike', $pattern);
@@ -69,20 +75,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->select('ulid', 'item_code as code', 'name')
             ->limit($limit)
             ->get()
-            ->map(fn ($r) => ['module' => 'Inventory', 'type' => 'Item', 'label' => "{$r->code} — {$r->name}", 'url' => "/inventory/items/{$r->ulid}"]);
-        $results = array_merge($results, $items->all());
+            ->map(fn ($r) => ['module' => 'Inventory', 'type' => 'Item', 'label' => "{$r->code} — {$r->name}", 'url' => "/inventory/items/{$r->ulid}"]));
 
         // Purchase Orders
-        $pos = DB::table('purchase_orders')
+        $safeSearch(fn () => DB::table('purchase_orders')
             ->where('po_number', 'ilike', $pattern)
             ->select('ulid', 'po_number as code', 'status')
             ->limit($limit)
             ->get()
-            ->map(fn ($r) => ['module' => 'Procurement', 'type' => 'PO', 'label' => "{$r->code} ({$r->status})", 'url' => "/procurement/purchase-orders/{$r->ulid}"]);
-        $results = array_merge($results, $pos->all());
+            ->map(fn ($r) => ['module' => 'Procurement', 'type' => 'PO', 'label' => "{$r->code} ({$r->status})", 'url' => "/procurement/purchase-orders/{$r->ulid}"]));
 
         // Equipment
-        $equipment = DB::table('equipment')
+        $safeSearch(fn () => DB::table('equipment')
             ->where(function ($qb) use ($pattern) {
                 $qb->where('name', 'ilike', $pattern)
                     ->orWhere('asset_tag', 'ilike', $pattern);
@@ -90,8 +94,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->select('ulid', 'asset_tag as code', 'name')
             ->limit($limit)
             ->get()
-            ->map(fn ($r) => ['module' => 'Maintenance', 'type' => 'Equipment', 'label' => ($r->code ? "{$r->code} — " : '').$r->name, 'url' => "/maintenance/equipment/{$r->ulid}"]);
-        $results = array_merge($results, $equipment->all());
+            ->map(fn ($r) => ['module' => 'Maintenance', 'type' => 'Equipment', 'label' => ($r->code ? "{$r->code} — " : '').$r->name, 'url' => "/maintenance/equipment/{$r->ulid}"]));
 
         return response()->json(['data' => $results]);
     })->name('global-search');

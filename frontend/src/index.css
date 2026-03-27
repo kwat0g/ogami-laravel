@@ -93,7 +93,12 @@
     @apply transition-colors duration-150;
   }
   .table-row-hover:hover {
-    @apply bg-neutral-50;
+    @apply bg-neutral-50 dark:bg-neutral-800;
+  }
+
+  /* Header gradient */
+  .header-gradient {
+    @apply dark:bg-gradient-to-r dark:from-neutral-900 dark:to-neutral-800;
   }
 
   /* Form input enhancements */
@@ -113,9 +118,34 @@
     @apply border-neutral-400 dark:border-neutral-500;
   }
 
+  /* Native select elements */
+  select {
+    @apply dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600;
+  }
+
+  /* Table elements */
+  table {
+    @apply dark:text-neutral-200;
+  }
+  thead {
+    @apply dark:bg-neutral-800/50;
+  }
+  th {
+    @apply dark:text-neutral-400;
+  }
+  tbody tr {
+    @apply dark:border-neutral-800;
+  }
+  tbody tr:hover {
+    @apply dark:bg-neutral-800/50;
+  }
+  td {
+    @apply dark:text-neutral-300;
+  }
+
   /* Section divider with gradient */
   .section-divider {
-    @apply h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent;
+    @apply h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-700 to-transparent;
   }
 
   /* Icon button with hover background */

@@ -1,10 +1,9 @@
 import { useUiStore, type ColorMode } from '@/stores/uiStore'
-import { Sun, Moon, Monitor } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 
 const MODES: { value: ColorMode; icon: typeof Sun; label: string }[] = [
   { value: 'light',  icon: Sun,     label: 'Light' },
   { value: 'dark',   icon: Moon,    label: 'Dark' },
-  { value: 'system', icon: Monitor, label: 'System' },
 ]
 
 /**
@@ -49,8 +48,8 @@ export function ColorModeButton({ className = '' }: { className?: string }) {
   const colorMode = useUiStore((s) => s.colorMode)
   const toggleColorMode = useUiStore((s) => s.toggleColorMode)
 
-  const Icon = colorMode === 'light' ? Sun : colorMode === 'dark' ? Moon : Monitor
-  const label = colorMode === 'light' ? 'Light mode' : colorMode === 'dark' ? 'Dark mode' : 'System theme'
+  const Icon = colorMode === 'dark' ? Moon : Sun
+  const label = colorMode === 'dark' ? 'Dark mode' : 'Light mode'
 
   return (
     <button
