@@ -8,6 +8,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type {
   PurchaseRequest,
   PurchaseRequestFilters,
@@ -218,15 +219,30 @@ export default function PurchaseRequestListPage(): React.ReactElement {
       <PageHeader
         title="Purchase Requests"
         actions={
-          canCreate && (
-            <Link
-              to="/procurement/purchase-requests/new"
-              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Request
-            </Link>
-          )
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'pr_number', label: 'PR Number' },
+                { key: 'department.name', label: 'Department' },
+                { key: 'status', label: 'Status' },
+                { key: 'urgency', label: 'Urgency' },
+                { key: 'total_amount', label: 'Total Amount' },
+                { key: 'requested_by_name', label: 'Requested By' },
+                { key: 'created_at', label: 'Created' },
+              ]}
+              filename="purchase-requests"
+            />
+            {canCreate && (
+              <Link
+                to="/procurement/purchase-requests/new"
+                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Request
+              </Link>
+            )}
+          </div>
         }
       />
 

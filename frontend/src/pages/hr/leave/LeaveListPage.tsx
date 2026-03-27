@@ -8,6 +8,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { LeaveFilters } from '@/types/hr'
 import { Scale, X, ChevronDown, ChevronUp, Search } from 'lucide-react'
 
@@ -82,6 +83,18 @@ export default function LeaveListPage() {
         title="Leave Requests"
         actions={
           <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'employee.full_name', label: 'Employee' },
+                { key: 'leave_type.name', label: 'Leave Type' },
+                { key: 'date_from', label: 'From' },
+                { key: 'date_to', label: 'To' },
+                { key: 'total_days', label: 'Days' },
+                { key: 'status', label: 'Status' },
+              ]}
+              filename="leave-requests"
+            />
             <Link
               to="/hr/leave/calendar"
               className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors"

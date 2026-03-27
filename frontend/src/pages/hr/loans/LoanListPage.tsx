@@ -7,6 +7,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { LoanFilters, LoanStatus } from '@/types/hr'
 
 export default function LoanListPage() {
@@ -37,14 +38,28 @@ export default function LoanListPage() {
       <PageHeader
         title="Employee Loans"
         actions={
-          loanBasePath === '/hr/loans' && canCreate ? (
-            <Link
-              to="/hr/loans/new"
-              className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              + New Loan
-            </Link>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'reference_no', label: 'Reference' },
+                { key: 'employee.full_name', label: 'Employee' },
+                { key: 'loan_type.name', label: 'Loan Type' },
+                { key: 'principal_centavos', label: 'Principal', format: (v: unknown) => `${((v as number) / 100).toFixed(2)}` },
+                { key: 'status', label: 'Status' },
+                { key: 'created_at', label: 'Filed Date' },
+              ]}
+              filename="loans"
+            />
+            {loanBasePath === '/hr/loans' && canCreate && (
+              <Link
+                to="/hr/loans/new"
+                className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                + New Loan
+              </Link>
+            )}
+          </div>
         }
       />
 
