@@ -208,7 +208,7 @@ const SECTIONS: NavSection[] = [
   {
     label: 'Supply Chain',
     icon: Package,
-    permission: 'procurement.purchase-request.view',
+    permission: 'procurement.purchase-request.view|inventory.items.view|production.orders.view',
     roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
     departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH', 'SALES'],
     children: [
@@ -302,7 +302,7 @@ const EXECUTIVE_SECTION: NavSection = {
     { label: 'AR Aging', href: '/ar/aging-report', permission: 'reports.ar_aging' },
     { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
     { divider: true, label: 'Analytics' },
-    { label: 'Executive Analytics', href: '/dashboard/executive-analytics', permission: 'system.view_audit_log' },
+    { label: 'Executive Analytics', href: '/dashboard/executive-analytics', permission: 'reports.financial_statements' },
     { label: 'Variance Analysis', href: '/budget/variance', permission: 'budget.view' },
     { label: 'Vendor Scorecard', href: '/procurement/vendor-scorecard', permission: 'procurement.purchase-order.view' },
   ],

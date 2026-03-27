@@ -331,7 +331,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <RoleLandingRedirect /> },
       { path: '/dashboard', element: withSuspense(<Dashboard />) },
-      { path: '/dashboard/executive-analytics', element: withSuspense(guard('system.view_audit_log', <ExecutiveAnalyticsDashboard />)) },
+      { path: '/dashboard/executive-analytics', element: withSuspense(guard('reports.financial_statements', <ExecutiveAnalyticsDashboard />)) },
 
       // ── HR domain (all routes require hr.full_access - HR department only) ───
       // Note: Non-HR managers should use Team Management (/team/*) routes instead
