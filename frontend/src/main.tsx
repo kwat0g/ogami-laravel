@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { useUiStore } from '@/stores/uiStore'
 import App from './App'
 import './index.css'
+import './dark-overrides.css'
 // Force SkeletonLoader to be included in main chunk
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 // @ts-expect-error - used to force include in bundle
