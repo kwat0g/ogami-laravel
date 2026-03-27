@@ -8,6 +8,7 @@ use App\Domains\CRM\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin Ticket */
 final class TicketResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -20,38 +21,34 @@ final class TicketResource extends JsonResource
             'id' => $ticket->id,
             'ulid' => $ticket->ulid,
             'ticket_number' => $ticket->ticket_number,
-            'customer_id' => $ticket->customer_id,
-            'customer' => $this->whenLoaded('customer', fn () => $ticket->customer ? [
-                'id' => $ticket->customer->id,
-                'ulid' => $ticket->customer->ulid ?? null,
-                'name' => $ticket->customer->name,
-            ] : null),
-            'client_user_id' => $ticket->client_user_id,
-            'client_user' => $this->whenLoaded('clientUser', fn () => $ticket->clientUser ? [
-                'id' => $ticket->clientUser->id,
-                'name' => $ticket->clientUser->name,
-            ] : null),
             'subject' => $ticket->subject,
             'description' => $ticket->description,
             'type' => $ticket->type,
             'priority' => $ticket->priority,
             'status' => $ticket->status,
+
+            'customer_id' => $ticket->customer_id,
+            'customer' => $this->whenLoaded('customer', fn () => $ticket->customer ? [
+                'id' => $ticket->customer->id,
+                'ulid' => $ticket->customer->ulid,
+                'name' => $ticket->customer->name,
+            ] : null),
+
             'assigned_to_id' => $ticket->assigned_to_id,
             'assigned_to' => $this->whenLoaded('assignedTo', fn () => $ticket->assignedTo ? [
                 'id' => $ticket->assignedTo->id,
                 'name' => $ticket->assignedTo->name,
             ] : null),
-            'resolved_at' => $ticket->resolved_at,
-            'sla_due_at' => $ticket->sla_due_at,
-            'first_response_at' => $ticket->first_response_at,
-            'sla_breached_at' => $ticket->sla_breached_at,
-            'is_sla_breached' => $ticket->isSlaBreached(),
 
-            'messages' => $this->whenLoaded('messages'),
-            'messages_count' => $this->whenCounted('messages'),
+            'resolved_at' => $ticket->resolved_at?->toIso8601String(),
+            'sla_due_at' => $ticket->sla_due_at?->toIso8601String(),
+            'first_response_at' => $ticket->first_response_at?->toIso8601String(),
+            'sla_breached_at' => $ticket->sla_breached_at?->toIso8601String(),
 
-            'created_at' => $ticket->created_at,
-            'updated_at' => $ticket->updated_at,
+            'messages' => TicketMessageResource::collection($this->whenLoaded('messages')),
+
+            'created_at' => $ticket->created_at?->toIso8601String(),
+            'updated_at' => $ticket->updated_at?->toIso8601String(),
         ];
     }
 }

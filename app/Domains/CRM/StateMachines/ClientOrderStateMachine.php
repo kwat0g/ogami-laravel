@@ -5,67 +5,55 @@ declare(strict_types=1);
 namespace App\Domains\CRM\StateMachines;
 
 use App\Domains\CRM\Models\ClientOrder;
-use App\Shared\Exceptions\DomainException;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 /**
- * ClientOrder state machine.
+ * Client Order state machine.
  *
- * Valid transitions:
- *   pending           -> negotiating        (sales makes proposal)
- *   pending           -> approved           (direct approval, low value)
- *   pending           -> vp_pending         (high-value, needs VP)
- *   pending           -> rejected           (sales rejects order)
- *   pending           -> cancelled          (client cancels)
- *   negotiating       -> client_responded   (client counter-proposes)
- *   negotiating       -> approved           (client accepts proposal)
- *   negotiating       -> rejected           (negotiations fail)
- *   negotiating       -> cancelled          (either party cancels)
- *   client_responded  -> negotiating        (sales reviews counter)
- *   client_responded  -> approved           (sales accepts counter)
- *   client_responded  -> rejected           (sales rejects counter)
- *   vp_pending        -> approved           (VP approves)
- *   vp_pending        -> rejected           (VP rejects)
- *   approved          -> cancelled          (order cancelled after approval)
+ * States:
+ *   pending           → Order submitted by client
+ *   negotiating       → Sales made proposal, waiting for client
+ *   client_responded  → Client made counter-proposal
+ *   vp_pending        → Awaiting VP approval (high-value orders)
+ *   approved          → Order approved — terminal (triggers production)
+ *   rejected          → Order rejected — terminal
+ *   cancelled         → Order cancelled — terminal
  */
 final class ClientOrderStateMachine
 {
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
-        'pending'           => ['negotiating', 'approved', 'vp_pending', 'rejected', 'cancelled'],
-        'negotiating'       => ['client_responded', 'approved', 'rejected', 'cancelled'],
-        'client_responded'  => ['negotiating', 'approved', 'rejected'],
-        'vp_pending'        => ['approved', 'rejected'],
-        'approved'          => ['cancelled'],
-        'rejected'          => [],
-        'cancelled'         => [],
+        'pending' => ['negotiating', 'vp_pending', 'approved', 'rejected', 'cancelled'],
+        'negotiating' => ['client_responded', 'approved', 'rejected', 'cancelled'],
+        'client_responded' => ['negotiating', 'vp_pending', 'approved', 'rejected', 'cancelled'],
+        'vp_pending' => ['approved', 'rejected', 'cancelled'],
+        'approved' => [],   // terminal
+        'rejected' => [],   // terminal
+        'cancelled' => [],  // terminal
     ];
 
-    public function canTransition(ClientOrder $order, string $to): bool
-    {
-        return in_array($to, self::TRANSITIONS[$order->status] ?? [], true);
-    }
-
     /**
-     * @throws DomainException
+     * @throws InvalidStateTransitionException
      */
-    public function transition(ClientOrder $order, string $to): void
+    public function transition(ClientOrder $order, string $toState): void
     {
-        if (! $this->canTransition($order, $to)) {
-            throw new DomainException(
-                "Cannot transition client order from '{$order->status}' to '{$to}'.",
-                'CLIENT_ORDER_INVALID_TRANSITION',
-                422,
-                ['current' => $order->status, 'requested' => $to],
-            );
+        $fromState = $order->status;
+
+        if (! $this->isAllowed($fromState, $toState)) {
+            throw new InvalidStateTransitionException('ClientOrder', $fromState, $toState);
         }
 
-        $order->status = $to;
-        $order->save();
+        $order->status = $toState;
     }
 
-    /** Returns all statuses this order can move to from its current state. */
-    public function allowedNext(ClientOrder $order): array
+    public function isAllowed(string $fromState, string $toState): bool
     {
-        return self::TRANSITIONS[$order->status] ?? [];
+        return in_array($toState, self::TRANSITIONS[$fromState] ?? [], true);
+    }
+
+    /** @return list<string> */
+    public function allowedTransitions(string $currentState): array
+    {
+        return self::TRANSITIONS[$currentState] ?? [];
     }
 }

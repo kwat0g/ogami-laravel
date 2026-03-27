@@ -5,68 +5,59 @@ declare(strict_types=1);
 namespace App\Domains\AP\StateMachines;
 
 use App\Domains\AP\Models\VendorInvoice;
-use App\Shared\Exceptions\DomainException;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 /**
- * VendorInvoice (AP) state machine.
+ * Vendor Invoice (AP) state machine — multi-step approval workflow.
  *
- * Valid transitions:
- *   draft            -> pending_approval  (submitted for approval chain)
- *   pending_approval -> head_noted        (dept head notes)
- *   pending_approval -> rejected          (dept head rejects)
- *   head_noted       -> manager_checked   (manager checks)
- *   head_noted       -> rejected          (manager rejects)
- *   manager_checked  -> officer_reviewed  (officer reviews)
- *   manager_checked  -> rejected          (officer rejects)
- *   officer_reviewed -> approved          (final approval)
- *   officer_reviewed -> rejected          (final rejection)
- *   approved         -> partially_paid    (partial payment posted)
- *   approved         -> paid              (full payment posted)
- *   partially_paid   -> paid              (remaining balance paid)
- *   rejected         -> draft             (returned for revision)
+ * States:
+ *   draft              → Invoice created / auto-drafted from GR
+ *   pending_approval   → Submitted for approval chain
+ *   head_noted         → Department head noted
+ *   manager_checked    → Manager checked
+ *   officer_reviewed   → Officer reviewed
+ *   approved           → Final approval — ready for payment
+ *   partially_paid     → Some payments applied
+ *   paid               → Fully paid — terminal
+ *   deleted            → Soft-deleted / voided — terminal
  */
 final class VendorInvoiceStateMachine
 {
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
-        'draft'            => ['pending_approval', 'deleted'],
-        'pending_approval' => ['head_noted', 'rejected'],
-        'head_noted'       => ['manager_checked', 'rejected'],
-        'manager_checked'  => ['officer_reviewed', 'rejected'],
-        'officer_reviewed' => ['approved', 'rejected'],
-        'approved'         => ['partially_paid', 'paid'],
-        'partially_paid'   => ['paid'],
-        'paid'             => [],
-        'rejected'         => ['draft'],
-        'deleted'          => [],
+        'draft' => ['pending_approval', 'deleted'],
+        'pending_approval' => ['head_noted', 'draft', 'deleted'],
+        'head_noted' => ['manager_checked', 'draft', 'deleted'],
+        'manager_checked' => ['officer_reviewed', 'draft', 'deleted'],
+        'officer_reviewed' => ['approved', 'draft', 'deleted'],
+        'approved' => ['partially_paid', 'paid'],
+        'partially_paid' => ['paid'],
+        'paid' => [],    // terminal
+        'deleted' => [],  // terminal
     ];
 
-    public function canTransition(VendorInvoice $invoice, string $to): bool
-    {
-        return in_array($to, self::TRANSITIONS[$invoice->status] ?? [], true);
-    }
-
     /**
-     * @throws DomainException
+     * @throws InvalidStateTransitionException
      */
-    public function transition(VendorInvoice $invoice, string $to): void
+    public function transition(VendorInvoice $invoice, string $toState): void
     {
-        if (! $this->canTransition($invoice, $to)) {
-            throw new DomainException(
-                "Cannot transition vendor invoice from '{$invoice->status}' to '{$to}'.",
-                'AP_INVOICE_INVALID_TRANSITION',
-                422,
-                ['current' => $invoice->status, 'requested' => $to],
-            );
+        $fromState = $invoice->status;
+
+        if (! $this->isAllowed($fromState, $toState)) {
+            throw new InvalidStateTransitionException('VendorInvoice', $fromState, $toState);
         }
 
-        $invoice->status = $to;
-        $invoice->save();
+        $invoice->status = $toState;
     }
 
-    /** Returns all statuses this invoice can move to from its current state. */
-    public function allowedNext(VendorInvoice $invoice): array
+    public function isAllowed(string $fromState, string $toState): bool
     {
-        return self::TRANSITIONS[$invoice->status] ?? [];
+        return in_array($toState, self::TRANSITIONS[$fromState] ?? [], true);
+    }
+
+    /** @return list<string> */
+    public function allowedTransitions(string $currentState): array
+    {
+        return self::TRANSITIONS[$currentState] ?? [];
     }
 }

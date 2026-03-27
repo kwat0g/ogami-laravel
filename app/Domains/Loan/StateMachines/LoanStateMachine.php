@@ -5,71 +5,63 @@ declare(strict_types=1);
 namespace App\Domains\Loan\StateMachines;
 
 use App\Domains\Loan\Models\Loan;
-use App\Shared\Exceptions\DomainException;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 /**
- * Loan state machine.
+ * Loan state machine — multi-step approval + lifecycle.
  *
- * Valid transitions:
- *   pending             -> head_noted              (dept head notes)
- *   pending             -> cancelled               (employee cancels)
- *   head_noted          -> manager_checked         (manager checks)
- *   head_noted          -> cancelled               (rejected at head level)
- *   manager_checked     -> officer_reviewed        (officer reviews)
- *   manager_checked     -> cancelled               (rejected at manager level)
- *   officer_reviewed    -> supervisor_approved      (supervisor approves)
- *   officer_reviewed    -> cancelled               (rejected at officer level)
- *   supervisor_approved -> approved                 (final approval)
- *   supervisor_approved -> cancelled               (rejected at supervisor level)
- *   approved            -> ready_for_disbursement   (accounting prepares)
- *   ready_for_disbursement -> active               (loan disbursed)
- *   active              -> fully_paid              (all payments complete)
- *   active              -> written_off             (bad debt)
- *   cancelled           -> []                      (terminal)
+ * States:
+ *   pending                → Loan application submitted
+ *   head_noted             → Department head noted
+ *   manager_checked        → Manager checked
+ *   officer_reviewed       → Officer reviewed
+ *   supervisor_approved    → Supervisor approved
+ *   approved               → Final approval
+ *   ready_for_disbursement → Approved and queued for disbursement
+ *   active                 → Loan disbursed and active (repayments ongoing)
+ *   fully_paid             → All installments paid — terminal
+ *   cancelled              → Cancelled before disbursement — terminal
+ *   written_off            → Bad debt write-off — terminal
  */
 final class LoanStateMachine
 {
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
-        'pending'                => ['head_noted', 'cancelled'],
-        'head_noted'             => ['manager_checked', 'cancelled'],
-        'manager_checked'        => ['officer_reviewed', 'cancelled'],
-        'officer_reviewed'       => ['supervisor_approved', 'cancelled'],
-        'supervisor_approved'    => ['approved', 'cancelled'],
-        'approved'               => ['ready_for_disbursement'],
-        'ready_for_disbursement' => ['active'],
-        'active'                 => ['fully_paid', 'written_off'],
-        'fully_paid'             => [],
-        'written_off'            => [],
-        'cancelled'              => [],
+        'pending' => ['head_noted', 'cancelled'],
+        'head_noted' => ['manager_checked', 'pending', 'cancelled'],
+        'manager_checked' => ['officer_reviewed', 'pending', 'cancelled'],
+        'officer_reviewed' => ['supervisor_approved', 'pending', 'cancelled'],
+        'supervisor_approved' => ['approved', 'pending', 'cancelled'],
+        'approved' => ['ready_for_disbursement', 'cancelled'],
+        'ready_for_disbursement' => ['active', 'cancelled'],
+        'active' => ['fully_paid', 'written_off'],
+        'fully_paid' => [],   // terminal
+        'cancelled' => [],    // terminal
+        'written_off' => [],  // terminal
     ];
 
-    public function canTransition(Loan $loan, string $to): bool
-    {
-        return in_array($to, self::TRANSITIONS[$loan->status] ?? [], true);
-    }
-
     /**
-     * @throws DomainException
+     * @throws InvalidStateTransitionException
      */
-    public function transition(Loan $loan, string $to): void
+    public function transition(Loan $loan, string $toState): void
     {
-        if (! $this->canTransition($loan, $to)) {
-            throw new DomainException(
-                "Cannot transition loan from '{$loan->status}' to '{$to}'.",
-                'LOAN_INVALID_TRANSITION',
-                422,
-                ['current' => $loan->status, 'requested' => $to],
-            );
+        $fromState = $loan->status;
+
+        if (! $this->isAllowed($fromState, $toState)) {
+            throw new InvalidStateTransitionException('Loan', $fromState, $toState);
         }
 
-        $loan->status = $to;
-        $loan->save();
+        $loan->status = $toState;
     }
 
-    /** Returns all statuses this loan can move to from its current state. */
-    public function allowedNext(Loan $loan): array
+    public function isAllowed(string $fromState, string $toState): bool
     {
-        return self::TRANSITIONS[$loan->status] ?? [];
+        return in_array($toState, self::TRANSITIONS[$fromState] ?? [], true);
+    }
+
+    /** @return list<string> */
+    public function allowedTransitions(string $currentState): array
+    {
+        return self::TRANSITIONS[$currentState] ?? [];
     }
 }

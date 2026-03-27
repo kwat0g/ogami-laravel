@@ -11,6 +11,7 @@ use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\Procurement\Models\PurchaseRequestItem;
+use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

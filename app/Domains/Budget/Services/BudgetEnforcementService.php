@@ -7,6 +7,7 @@ namespace App\Domains\Budget\Services;
 use App\Domains\Budget\Models\BudgetLine;
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Employee;
+use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

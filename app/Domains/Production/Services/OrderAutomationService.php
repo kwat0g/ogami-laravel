@@ -8,6 +8,7 @@ use App\Domains\CRM\Models\ClientOrder;
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Models\User;
+use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

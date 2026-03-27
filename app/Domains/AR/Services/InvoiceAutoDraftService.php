@@ -10,6 +10,7 @@ use App\Domains\AR\Models\Customer;
 use App\Domains\AR\Models\CustomerInvoice;
 use App\Domains\CRM\Models\ClientOrder;
 use App\Domains\Delivery\Models\DeliveryReceipt;
+use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
