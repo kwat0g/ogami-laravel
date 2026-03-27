@@ -3,6 +3,7 @@ import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, BarChart2
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ExportButton } from '@/components/ui/ExportButton'
 import {
   useVendors,
   useCreateVendor,
@@ -496,7 +497,23 @@ export default function VendorsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Vendors" />
+      <PageHeader
+        title="Vendors"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'name', label: 'Vendor Name' },
+              { key: 'tin', label: 'TIN' },
+              { key: 'contact_person', label: 'Contact Person' },
+              { key: 'email', label: 'Email' },
+              { key: 'phone', label: 'Phone' },
+              { key: 'status', label: 'Status' },
+            ]}
+            filename="vendors"
+          />
+        }
+      />
 
       {/* Summary Stats */}
       {!isLoading && vendors.length > 0 && (

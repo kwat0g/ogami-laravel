@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { useActionConfirmation } from '@/hooks/useActionConfirmation'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { Customer, CreateCustomerPayload } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -377,7 +378,23 @@ export default function CustomersPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader title="Customers" />
+      <PageHeader
+        title="Customers"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'name', label: 'Customer Name' },
+              { key: 'tin', label: 'TIN' },
+              { key: 'contact_person', label: 'Contact Person' },
+              { key: 'email', label: 'Email' },
+              { key: 'phone', label: 'Phone' },
+              { key: 'status', label: 'Status' },
+            ]}
+            filename="customers"
+          />
+        }
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">

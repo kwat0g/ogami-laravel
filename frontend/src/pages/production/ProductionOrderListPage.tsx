@@ -6,6 +6,7 @@ import { useProductionOrders } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { DepartmentGuard } from '@/components/ui/guards'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { ProductionOrderStatus } from '@/types/production'
 
 const statusBadge: Record<ProductionOrderStatus, string> = {
@@ -36,17 +37,32 @@ export default function ProductionOrderListPage(): React.ReactElement {
       <PageHeader
         title="Production Orders"
         actions={
-          <DepartmentGuard module="production">
-            {canCreate && (
-              <Link
-                to="/production/orders/new"
-                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                New Order
-              </Link>
-            )}
-          </DepartmentGuard>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'po_reference', label: 'Reference' },
+                { key: 'product_item.name', label: 'Product' },
+                { key: 'qty_required', label: 'Required' },
+                { key: 'qty_produced', label: 'Produced' },
+                { key: 'status', label: 'Status' },
+                { key: 'target_start_date', label: 'Start Date' },
+                { key: 'target_end_date', label: 'End Date' },
+              ]}
+              filename="production-orders"
+            />
+            <DepartmentGuard module="production">
+              {canCreate && (
+                <Link
+                  to="/production/orders/new"
+                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Order
+                </Link>
+              )}
+            </DepartmentGuard>
+          </div>
         }
       />
 

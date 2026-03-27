@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import api, { isHandledApiError } from '@/lib/api'
+import StatusTimeline from '@/components/ui/StatusTimeline'
+import { getMaterialRequisitionSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import {
   useMaterialRequisition,
   useSubmitMRQ,
@@ -170,6 +172,16 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           </span>
         }
       />
+
+      {/* Workflow Timeline */}
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-5">
+        <StatusTimeline
+          steps={getMaterialRequisitionSteps(mrq)}
+          currentStatus={mrq.status}
+          direction="horizontal"
+          isRejected={isRejectedStatus(mrq.status)}
+        />
+      </div>
 
       {/* Details */}
       <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
