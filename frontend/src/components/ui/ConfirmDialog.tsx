@@ -18,14 +18,18 @@ import { AlertCircle } from 'lucide-react'
  *   </ConfirmDialog>
  */
 
-interface ConfirmDialogProps {
+export interface ConfirmDialogProps {
   title: string
   description: string
   confirmLabel?: string
   cancelLabel?: string
-  variant?: 'default' | 'danger'
+  variant?: 'default' | 'danger' | 'warning' | 'primary'
   onConfirm: () => void | Promise<void>
-  children: React.ReactElement
+  /** When provided, dialog is controlled externally */
+  open?: boolean
+  onClose?: () => void
+  loading?: boolean
+  children?: React.ReactElement
 }
 
 export default function ConfirmDialog({
@@ -35,10 +39,19 @@ export default function ConfirmDialog({
   cancelLabel = 'Cancel',
   variant = 'default',
   onConfirm,
+  open: controlledOpen,
+  onClose,
+  loading: controlledLoading,
   children,
 }: ConfirmDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const [internalLoading, setInternalLoading] = useState(false)
+
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? (v: boolean) => { if (!v && onClose) onClose() } : setInternalOpen
+  const loading = controlledLoading ?? internalLoading
+  const setLoading = isControlled ? () => {} : setInternalLoading
 
   const handleConfirm = async () => {
     setLoading(true)
@@ -53,7 +66,11 @@ export default function ConfirmDialog({
   const confirmButtonClass =
     variant === 'danger'
       ? 'bg-red-600 hover:bg-red-700 text-white'
-      : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+      : variant === 'warning'
+        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+        : variant === 'primary'
+          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+          : 'bg-neutral-900 hover:bg-neutral-800 text-white'
 
   return (
     <>

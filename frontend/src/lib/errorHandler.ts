@@ -82,10 +82,10 @@ export function parseApiError(err: unknown): ParsedApiError {
  * Returns the first field-level error message if available, otherwise the
  * top-level message.  Useful for toast notifications.
  */
-export function firstErrorMessage(err: unknown): string {
+export function firstErrorMessage(err: unknown, fallback?: string): string {
   const parsed = parseApiError(err)
   const firstField = Object.values(parsed.fieldErrors)[0]?.[0]
-  return firstField ?? parsed.message
+  return firstField ?? parsed.message ?? fallback ?? 'An unexpected error occurred'
 }
 
 // ---------------------------------------------------------------------------
