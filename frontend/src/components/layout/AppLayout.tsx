@@ -12,6 +12,7 @@ import { bumpAuthEpoch } from '@/lib/authEpoch'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { getPasswordChangePath } from '@/lib/roleLanding'
 import NotificationBell from '@/components/layout/NotificationBell'
+import { ColorModeButton } from '@/components/ui/ColorModeToggle'
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import {
   LayoutDashboard,
@@ -311,15 +312,15 @@ const ADMIN_SECTION: NavSection = {
 // Minimalist link styles - Uncodixified
 const linkStyle = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2.5 px-2.5 py-1.5 rounded text-sm transition-colors ${isActive
-    ? 'bg-neutral-100 text-neutral-900 font-medium border-l-2 border-neutral-900 -ml-[2px]'
-    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 border-l-2 border-transparent'
+    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium border-l-2 border-neutral-900 dark:border-neutral-300 -ml-[2px]'
+    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 border-l-2 border-transparent'
   }`
 
 // Compact link for collapsed sidebar
 const compactLinkStyle = ({ isActive }: { isActive: boolean }) =>
   `flex items-center justify-center p-1.5 rounded transition-colors ${isActive
-    ? 'bg-neutral-100 text-neutral-900'
-    : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'
+    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800'
   }`
 
 function SectionNav({ section, hasPermission, hasRole, userDept }: { section: NavSection; hasPermission: (p: string) => boolean; hasRole: (r: string) => boolean; userDept: string | null }) {
@@ -688,23 +689,23 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-50">
+    <div className="flex h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950">
 
       {/* Desktop Sidebar */}
       <aside
-        className="hidden lg:flex flex-shrink-0 bg-white border-r border-neutral-200 flex-col relative z-20 transition-all duration-200"
+        className="hidden lg:flex flex-shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex-col relative z-20 transition-all duration-200"
         style={{ width: isSidebarExpanded ? 230 : 64 }}
         onMouseEnter={() => setIsHoveringSidebar(true)}
         onMouseLeave={() => setIsHoveringSidebar(false)}
       >
         {/* Logo */}
-        <div className="h-14 flex items-center px-3 border-b border-neutral-200 flex-shrink-0">
+        <div className="h-14 flex items-center px-3 border-b border-neutral-200 dark:border-neutral-800 flex-shrink-0">
           {!isSidebarExpanded ? (
-            <span className="font-semibold text-neutral-900 text-lg mx-auto">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100 text-lg mx-auto">
               O
             </span>
           ) : (
-            <span className="font-semibold text-neutral-900 text-base whitespace-nowrap">
+            <span className="font-semibold text-neutral-900 dark:text-neutral-100 text-base whitespace-nowrap">
               Ogami ERP
             </span>
           )}
@@ -811,7 +812,7 @@ export default function AppLayout() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-14 flex-shrink-0 bg-white border-b border-neutral-200 flex items-center justify-between px-4 sm:px-6">
+        <header className="h-14 flex-shrink-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger menu */}
             <div className="lg:hidden">
@@ -876,7 +877,7 @@ export default function AppLayout() {
             {/* Sidebar toggle button - desktop only */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex p-2 rounded-lg border border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-700 transition-colors"
+              className="hidden lg:flex p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {sidebarCollapsed ? (
@@ -890,21 +891,22 @@ export default function AppLayout() {
           <div className="flex items-center gap-2 sm:gap-3">
             <NavLink
               to="/search"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-500 bg-neutral-50 border border-neutral-200 rounded-lg hover:bg-neutral-100 hover:border-neutral-300 transition-colors"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:border-neutral-300 transition-colors"
               title="Search (Ctrl+K)"
             >
               <Search className="h-4 w-4" />
               <span className="text-xs">Search</span>
               <kbd className="hidden md:inline text-[10px] font-mono bg-neutral-200 text-neutral-500 px-1.5 py-0.5 rounded">⌘K</kbd>
             </NavLink>
+            <ColorModeButton />
             <NotificationBell />
-            <div className="h-5 w-px bg-neutral-200 hidden sm:block" />
+            <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-700 hidden sm:block" />
             <UserMenu user={user} onLogout={handleLogout} hasPermission={hasPermission} />
           </div>
         </header>
 
         {/* Page content */}
-        <div className="flex-1 w-full p-4 sm:p-6">
+        <div className="flex-1 w-full p-4 sm:p-6 dark:text-neutral-100">
           <Outlet />
         </div>
       </main>

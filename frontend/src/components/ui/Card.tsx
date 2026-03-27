@@ -9,7 +9,7 @@ interface CardProps {
 export function Card({ children, className, hoverable }: CardProps) {
   return (
     <div className={cn(
-      'bg-white border border-neutral-200 rounded-xl shadow-subtle overflow-hidden',
+      'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-subtle overflow-hidden',
       hoverable && 'card-hover cursor-pointer',
       className
     )}>
@@ -27,10 +27,10 @@ interface CardHeaderProps {
 export function CardHeader({ children, className, action }: CardHeaderProps) {
   return (
     <div className={cn(
-      'px-5 py-4 border-b border-neutral-100 flex items-center justify-between',
+      'px-5 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between',
       className
     )}>
-      <div className="text-sm font-medium text-neutral-900">{children}</div>
+      <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{children}</div>
       {action}
     </div>
   )
