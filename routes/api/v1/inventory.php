@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Inventory\ItemMasterController;
 use App\Http\Controllers\Inventory\MaterialRequisitionController;
+use App\Http\Controllers\Inventory\PhysicalCountController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\WarehouseLocationController;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,16 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
     Route::get('stock-balances', [StockController::class, 'balances']);
     Route::get('stock-ledger', [StockController::class, 'ledger']);
     Route::post('adjustments', [StockController::class, 'adjust'])->middleware('throttle:api-action');
+    Route::post('transfers', [StockController::class, 'transfer'])->middleware('throttle:api-action');
+
+    // ── Physical Counts ──────────────────────────────────────────────────
+    Route::get('physical-counts', [PhysicalCountController::class, 'index']);
+    Route::post('physical-counts', [PhysicalCountController::class, 'store']);
+    Route::get('physical-counts/{physicalCount}', [PhysicalCountController::class, 'show']);
+    Route::patch('physical-counts/{physicalCount}/start', [PhysicalCountController::class, 'startCounting'])->middleware('throttle:api-action');
+    Route::post('physical-counts/{physicalCount}/counts', [PhysicalCountController::class, 'recordCounts'])->middleware('throttle:api-action');
+    Route::patch('physical-counts/{physicalCount}/submit', [PhysicalCountController::class, 'submitForApproval'])->middleware('throttle:api-action');
+    Route::patch('physical-counts/{physicalCount}/approve', [PhysicalCountController::class, 'approve'])->middleware('throttle:api-action');
 
     // ── Material Requisitions ─────────────────────────────────────────────
     Route::get('requisitions', [MaterialRequisitionController::class, 'index']);

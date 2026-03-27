@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Domains\CRM\Models\ClientOrder;
 use App\Http\Controllers\CRM\ClientOrderController;
+use App\Http\Controllers\CRM\LeadController;
+use App\Http\Controllers\CRM\OpportunityController;
 use App\Http\Controllers\CRM\TicketController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,33 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
+
+    // ── Leads ────────────────────────────────────────────────────────────
+    Route::prefix('leads')->name('leads.')->group(function () {
+        Route::get('/', [LeadController::class, 'index'])->name('index');
+        Route::post('/', [LeadController::class, 'store'])->name('store');
+        Route::get('/{lead:ulid}', [LeadController::class, 'show'])->name('show');
+        Route::put('/{lead:ulid}', [LeadController::class, 'update'])->name('update');
+        Route::post('/{lead:ulid}/convert', [LeadController::class, 'convert'])->name('convert')
+            ->middleware('throttle:api-action');
+        Route::patch('/{lead:ulid}/disqualify', [LeadController::class, 'disqualify'])->name('disqualify')
+            ->middleware('throttle:api-action');
+    });
+
+    // ── Opportunities ────────────────────────────────────────────────────
+    Route::prefix('opportunities')->name('opportunities.')->group(function () {
+        Route::get('/', [OpportunityController::class, 'index'])->name('index');
+        Route::post('/', [OpportunityController::class, 'store'])->name('store');
+        Route::get('/pipeline', [OpportunityController::class, 'pipeline'])->name('pipeline');
+        Route::get('/{opportunity:ulid}', [OpportunityController::class, 'show'])->name('show');
+        Route::put('/{opportunity:ulid}', [OpportunityController::class, 'update'])->name('update');
+        Route::patch('/{opportunity:ulid}/close-won', [OpportunityController::class, 'closeWon'])->name('close-won')
+            ->middleware('throttle:api-action');
+        Route::patch('/{opportunity:ulid}/close-lost', [OpportunityController::class, 'closeLost'])->name('close-lost')
+            ->middleware('throttle:api-action');
+    });
+
+    // ── Tickets ──────────────────────────────────────────────────────────
     Route::prefix('tickets')->name('tickets.')->group(function () {
         Route::get('/', [TicketController::class, 'index'])->name('index');
         Route::post('/', [TicketController::class, 'store'])->name('store');

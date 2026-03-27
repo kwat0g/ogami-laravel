@@ -23,6 +23,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property bool $is_active
  * @property string|null $notes
  * @property int $standard_production_days
+ * @property int $standard_cost_centavos
+ * @property string|null $last_cost_rollup_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read ItemMaster $productItem
@@ -40,12 +42,16 @@ final class BillOfMaterials extends Model implements Auditable
         'version',
         'is_active',
         'standard_production_days',
+        'standard_cost_centavos',
+        'last_cost_rollup_at',
         'notes',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'standard_production_days' => 'integer',
+        'standard_cost_centavos' => 'integer',
+        'last_cost_rollup_at' => 'datetime',
     ];
 
     public function productItem(): BelongsTo

@@ -74,4 +74,34 @@ final class StockController extends Controller
             'data' => new StockLedgerResource($entry),
         ]);
     }
+
+    public function transfer(Request $request): JsonResponse
+    {
+        $this->authorize('adjust', ItemMaster::class);
+
+        $validated = $request->validate([
+            'item_id' => ['required', 'integer', 'exists:item_masters,id'],
+            'from_location_id' => ['required', 'integer', 'exists:warehouse_locations,id'],
+            'to_location_id' => ['required', 'integer', 'exists:warehouse_locations,id', 'different:from_location_id'],
+            'quantity' => ['required', 'numeric', 'gt:0'],
+            'remarks' => ['sometimes', 'string'],
+        ]);
+
+        $result = $this->service->transfer(
+            itemId: $validated['item_id'],
+            fromLocationId: $validated['from_location_id'],
+            toLocationId: $validated['to_location_id'],
+            quantity: (float) $validated['quantity'],
+            actor: $request->user(),
+            remarks: $validated['remarks'] ?? null,
+        );
+
+        return response()->json([
+            'message' => 'Stock transferred successfully.',
+            'data' => [
+                'issue' => new StockLedgerResource($result['issue_ledger']),
+                'receive' => new StockLedgerResource($result['receive_ledger']),
+            ],
+        ]);
+    }
 }
