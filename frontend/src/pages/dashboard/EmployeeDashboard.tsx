@@ -1,11 +1,25 @@
-import { Link } from 'react-router-dom'
+/**
+ * Employee / Staff Dashboard
+ *
+ * Self-service portal showing personal attendance, leave balances, loan status,
+ * payroll summary, and recent requests. Every employee sees this dashboard.
+ */
 import { useAuth } from '@/hooks/useAuth'
 import { useStaffDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Card } from '@/components/ui/Card'
 import {
-  FileText,
+  KpiCard,
+  SectionHeader,
+  MiniAreaChart,
+  MiniDonutChart,
+  WidgetCard,
+  DashboardGrid,
+  QuickActions,
+  ActivityFeed,
+  formatPeso,
+} from '@/components/dashboard/DashboardWidgets'
+import {
   Calendar,
   Wallet,
   UserCircle,
@@ -14,337 +28,213 @@ import {
   AlertCircle,
   PiggyBank,
   Timer,
-  ChevronRight,
+  FileText,
 } from 'lucide-react'
 
-// Simple stat card using Card component
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  href,
-}: {
-  label: string
-  value: React.ReactNode
-  sub?: string
-  icon: React.ComponentType<{ className?: string }>
-  href?: string
-}) {
-  const content = (
-    <Card className="h-full">
-      <div className="p-5">
-        <div className="flex items-start justify-between">
-          <Icon className="h-5 w-5 text-neutral-500" />
-          {href && (
-            <ChevronRight className="h-4 w-4 text-neutral-400" />
-          )}
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-          <p className="text-sm text-neutral-600 mt-1">{label}</p>
-          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-        </div>
-      </div>
-    </Card>
-  )
-
-  if (href) {
-    return <Link to={href} className="block">{content}</Link>
-  }
-  return content
-}
-
-// Section card using Card component
-function SectionCard({ 
-  title, 
-  children,
-  action
-}: { 
-  title: string
-  children: React.ReactNode
-  action?: { label: string; href: string }
-}) {
-  return (
-    <Card>
-      <CardHeader action={action && (
-        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-          {action.label}
-          <ChevronRight className="h-3 w-3" />
-        </Link>
-      )}>
-        {title}
-      </CardHeader>
-      <CardBody>{children}</CardBody>
-    </Card>
-  )
-}
-
-// Simple table for recent requests using Card component
-function RecentRequestsTable({ 
-  title, 
-  emptyMessage,
-  href,
-  children 
-}: { 
-  title: string
-  emptyMessage: string
-  href: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card>
-      <CardHeader action={(
-        <Link to={href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-          View all
-          <ChevronRight className="h-3 w-3" />
-        </Link>
-      )}>
-        {title}
-      </CardHeader>
-      <div className="divide-y divide-neutral-100">
-        {children || (
-          <p className="px-4 py-6 text-sm text-neutral-400 text-center">{emptyMessage}</p>
-        )}
-      </div>
-    </Card>
-  )
-}
-
-function RequestRow({ 
-  type, 
-  date, 
-  status,
-  detail
-}: { 
-  type: string
-  date: string
-  status: string
-  detail?: string
-}) {
-  const normalizedStatus = status?.toLowerCase() || 'draft'
-  
-  return (
-    <div className="px-4 py-3 flex items-center justify-between hover:bg-neutral-50">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-neutral-900">{type}</p>
-        <p className="text-xs text-neutral-500">{date} {detail && `• ${detail}`}</p>
-      </div>
-      <StatusBadge status={normalizedStatus}>
-        {status?.replace(/_/g, ' ') || 'Unknown'}
-      </StatusBadge>
-    </div>
-  )
-}
+const LEAVE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
 export default function EmployeeDashboard() {
   const { user } = useAuth()
-  const { data: stats, isLoading } = useStaffDashboardStats()
+  const { data: stats, isLoading, error } = useStaffDashboardStats()
 
-  if (isLoading) {
-    return <SkeletonLoader rows={8} />
-  }
+  if (isLoading) return <SkeletonLoader rows={8} />
 
   const currentYear = new Date().getFullYear()
+  const analytics = stats?.analytics
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900">
-        Welcome, {user?.name?.split(' ')[0] ?? 'there'}
-      </h1>
+      <div>
+        <h1 className="text-xl font-bold text-neutral-900">
+          Welcome, {user?.name?.split(' ')[0] ?? 'there'}
+        </h1>
+        <p className="text-sm text-neutral-500 mt-0.5">
+          Your personal dashboard - attendance, leave, payroll, and self-service
+        </p>
+      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
+      {/* Error state */}
+      {error && (
+        <Card className="border-red-200">
+          <div className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span className="text-sm text-red-700">Failed to load dashboard. Please refresh.</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Personal KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard
           label="Leave Balance"
           value={`${stats?.leave.balance_days ?? 0} days`}
           sub={`${stats?.leave.pending_requests ?? 0} pending`}
           icon={Calendar}
+          color={(stats?.leave.balance_days ?? 0) < 5 ? 'warning' : 'success'}
           href="/me/leaves"
         />
-        <StatCard
+        <KpiCard
           label="Active Loans"
           value={stats?.loans.active_loans ?? 0}
           sub={`${stats?.loans.pending_approvals ?? 0} pending`}
           icon={PiggyBank}
+          color={(stats?.loans.active_loans ?? 0) > 0 ? 'info' : 'default'}
           href="/me/loans"
         />
-        <StatCard
+        <KpiCard
           label="OT Hours"
           value={stats?.attendance.this_month.ot_hours ?? 0}
           sub="This month"
           icon={Timer}
           href="/me/overtime"
         />
-        <StatCard
+        <KpiCard
           label="YTD Net Pay"
-          value={`₱${((stats?.payroll.ytd_net ?? 0) / 100).toLocaleString('en-PH', { 
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-          })}`}
+          value={formatPeso(stats?.payroll.ytd_net ?? 0)}
           sub={`${currentYear} to date`}
           icon={Wallet}
+          color="info"
           href="/self-service/payslips"
         />
       </div>
 
-      {/* Attendance Summary */}
-      <SectionCard title="Attendance This Month" action={{ label: 'View details', href: '/me/attendance' }}>
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <CheckCircle2 className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.present ?? 0}</p>
-              <p className="text-xs text-neutral-600">Present</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <AlertCircle className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.absent ?? 0}</p>
-              <p className="text-xs text-neutral-600">Absent</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <Clock className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.late ?? 0}</p>
-              <p className="text-xs text-neutral-600">Late</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <Timer className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance.this_month.ot_hours ?? 0}</p>
-              <p className="text-xs text-neutral-600">OT Hours</p>
-            </div>
-          </Card>
+      {/* Attendance This Month */}
+      <WidgetCard title="Attendance This Month" action={{ label: 'View Details', href: '/me/attendance' }}>
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'Present', value: stats?.attendance.this_month.present ?? 0, icon: CheckCircle2, color: 'bg-green-50 border-green-100 text-green-600' },
+            { label: 'Absent', value: stats?.attendance.this_month.absent ?? 0, icon: AlertCircle, color: 'bg-red-50 border-red-100 text-red-600' },
+            { label: 'Late', value: stats?.attendance.this_month.late ?? 0, icon: Clock, color: 'bg-amber-50 border-amber-100 text-amber-600' },
+            { label: 'OT Hours', value: stats?.attendance.this_month.ot_hours ?? 0, icon: Timer, color: 'bg-blue-50 border-blue-100 text-blue-600' },
+          ].map(({ label, value, icon: Icon, color }) => (
+            <Card key={label} className={color}>
+              <div className="p-3 text-center">
+                <Icon className="h-4 w-4 mx-auto mb-2 opacity-70" />
+                <p className="text-xl font-bold">{value}</p>
+                <p className="text-[10px] uppercase tracking-wide font-medium mt-0.5">{label}</p>
+              </div>
+            </Card>
+          ))}
         </div>
-      </SectionCard>
+      </WidgetCard>
 
-      {/* Recent Requests */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentRequestsTable 
-          title="Recent Leave Requests" 
-          emptyMessage="No recent leave requests"
-          href="/me/leaves"
-        >
-          {stats?.recent_requests.leaves?.slice(0, 5).map((leave) => (
-            <RequestRow
-              key={leave.id}
-              type={leave.leave_type?.name ?? 'Leave'}
-              date={`${leave.date_from} to ${leave.date_to}`}
-              detail={`${leave.total_days} day${leave.total_days > 1 ? 's' : ''}`}
-              status={leave.status}
-            />
-          ))}
-        </RecentRequestsTable>
+      {/* Analytics Charts (if available) */}
+      {analytics && (
+        <DashboardGrid>
+          {/* Attendance Rate Trend */}
+          {analytics.attendance_rate && analytics.attendance_rate.length > 0 && (
+            <WidgetCard title="My Attendance Rate">
+              <MiniAreaChart
+                data={analytics.attendance_rate.map((m: { month: string; rate: number }) => ({
+                  name: m.month,
+                  value: m.rate,
+                }))}
+                color="#10b981"
+                height={180}
+                formatValue={(v: number) => `${v}%`}
+              />
+            </WidgetCard>
+          )}
 
-        <RecentRequestsTable 
-          title="Recent Overtime Requests" 
-          emptyMessage="No recent overtime requests"
-          href="/me/overtime"
-        >
-          {stats?.recent_requests.overtime?.slice(0, 5).map((ot) => (
-            <RequestRow
-              key={ot.id}
-              type="Overtime Request"
-              date={ot.work_date}
-              detail={`${ot.requested_hours} hours`}
-              status={ot.status}
-            />
-          ))}
-        </RecentRequestsTable>
-      </div>
-
-      {/* Loan Summary */}
-      {(stats?.loans.active_loans ?? 0) > 0 && (
-        <SectionCard title="Active Loans" action={{ label: 'View all', href: '/me/loans' }}>
-          <div className="flex items-center gap-4 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
-            <PiggyBank className="h-5 w-5 text-neutral-500" />
-            <div className="flex-1">
-              <p className="text-xs text-neutral-600">Total Outstanding Balance</p>
-              <p className="text-xl font-semibold text-neutral-900">
-                ₱{((stats?.loans.total_outstanding ?? 0) / 100).toLocaleString('en-PH', { 
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-neutral-600">Active Loans</p>
-              <p className="text-xl font-semibold text-neutral-900">{stats?.loans.active_loans}</p>
-            </div>
-          </div>
-        </SectionCard>
+          {/* Leave Utilization */}
+          {analytics.leave_utilization && analytics.leave_utilization.length > 0 && (
+            <WidgetCard title="Leave Utilization">
+              <MiniDonutChart
+                data={analytics.leave_utilization.map((l: { name: string; days_used: number }, i: number) => ({
+                  name: l.name,
+                  value: l.days_used,
+                  color: LEAVE_COLORS[i % LEAVE_COLORS.length],
+                }))}
+                height={180}
+                centerLabel="Days Used"
+                centerValue={analytics.leave_utilization.reduce((sum: number, l: { days_used: number }) => sum + l.days_used, 0)}
+              />
+            </WidgetCard>
+          )}
+        </DashboardGrid>
       )}
 
-      {/* Quick Links */}
-      <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Quick Access</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          <Link 
-            to="/self-service/payslips" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <FileText className="h-4 w-4 text-neutral-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-700">My Payslips</p>
-              <p className="text-xs text-neutral-500 truncate">View and download payslips</p>
-            </div>
-          </Link>
-          <Link 
-            to="/me/leaves" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Calendar className="h-4 w-4 text-neutral-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-700">My Leaves</p>
-              <p className="text-xs text-neutral-500 truncate">Apply for leave or check balance</p>
-            </div>
-          </Link>
-          <Link 
-            to="/me/loans" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Wallet className="h-4 w-4 text-neutral-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-700">My Loans</p>
-              <p className="text-xs text-neutral-500 truncate">Track repayments and apply</p>
-            </div>
-          </Link>
-          <Link 
-            to="/me/overtime" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Timer className="h-4 w-4 text-neutral-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-700">My Overtime</p>
-              <p className="text-xs text-neutral-500 truncate">View OT history and requests</p>
-            </div>
-          </Link>
-          <Link 
-            to="/me/attendance" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Clock className="h-4 w-4 text-neutral-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-700">My Attendance</p>
-              <p className="text-xs text-neutral-500 truncate">View attendance records</p>
-            </div>
-          </Link>
-          <Link 
-            to="/me/profile" 
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <UserCircle className="h-4 w-4 text-neutral-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-700">My Profile</p>
-              <p className="text-xs text-neutral-500 truncate">Update personal information</p>
-            </div>
-          </Link>
+      {/* YTD Comparison (if available) */}
+      {analytics?.ytd_comparison && (
+        <div>
+          <SectionHeader title="Year-over-Year Comparison" />
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="p-4 text-center">
+              <p className="text-xl font-bold text-neutral-900">{formatPeso(analytics.ytd_comparison.current_year_gross)}</p>
+              <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">{currentYear} YTD Gross</p>
+            </Card>
+            <Card className="p-4 text-center">
+              <p className="text-xl font-bold text-neutral-700">{formatPeso(analytics.ytd_comparison.last_year_gross)}</p>
+              <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">{currentYear - 1} YTD Gross</p>
+            </Card>
+            <Card className={`p-4 text-center ${analytics.ytd_comparison.change_percent >= 0 ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+              <p className={`text-xl font-bold ${analytics.ytd_comparison.change_percent >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                {analytics.ytd_comparison.change_percent > 0 ? '+' : ''}{analytics.ytd_comparison.change_percent.toFixed(1)}%
+              </p>
+              <p className={`text-xs mt-1 uppercase tracking-wide ${analytics.ytd_comparison.change_percent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                Change
+              </p>
+            </Card>
+          </div>
         </div>
+      )}
+
+      {/* Active Loans */}
+      {(stats?.loans.active_loans ?? 0) > 0 && (
+        <WidgetCard title="Active Loans" action={{ label: 'View All', href: '/me/loans' }}>
+          <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+            <PiggyBank className="h-6 w-6 text-blue-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs text-blue-700 font-medium uppercase tracking-wide">Total Outstanding Balance</p>
+              <p className="text-2xl font-bold text-blue-900 mt-0.5">{formatPeso(stats?.loans.total_outstanding ?? 0)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-blue-700 font-medium uppercase tracking-wide">Active Loans</p>
+              <p className="text-2xl font-bold text-blue-900 mt-0.5">{stats?.loans.active_loans}</p>
+            </div>
+          </div>
+        </WidgetCard>
+      )}
+
+      {/* Recent Requests */}
+      <DashboardGrid>
+        <WidgetCard title="Recent Leave Requests" action={{ label: 'View All', href: '/me/leaves' }}>
+          <ActivityFeed
+            items={(stats?.recent_requests.leaves ?? []).slice(0, 5).map((leave) => ({
+              id: leave.id,
+              label: leave.leave_type?.name ?? 'Leave',
+              sub: `${leave.date_from} to ${leave.date_to} (${leave.total_days} day${leave.total_days > 1 ? 's' : ''})`,
+              status: leave.status,
+            }))}
+            emptyMessage="No recent leave requests"
+          />
+        </WidgetCard>
+
+        <WidgetCard title="Recent Overtime Requests" action={{ label: 'View All', href: '/me/overtime' }}>
+          <ActivityFeed
+            items={(stats?.recent_requests.overtime ?? []).slice(0, 5).map((ot) => ({
+              id: ot.id,
+              label: 'Overtime Request',
+              sub: `${ot.work_date} - ${ot.requested_hours} hours`,
+              status: ot.status,
+            }))}
+            emptyMessage="No recent overtime requests"
+          />
+        </WidgetCard>
+      </DashboardGrid>
+
+      {/* Quick Access */}
+      <div>
+        <SectionHeader title="Quick Access" />
+        <QuickActions actions={[
+          { label: 'My Payslips', href: '/self-service/payslips', icon: FileText },
+          { label: 'My Leaves', href: '/me/leaves', icon: Calendar },
+          { label: 'My Loans', href: '/me/loans', icon: Wallet },
+          { label: 'My Overtime', href: '/me/overtime', icon: Timer },
+          { label: 'My Attendance', href: '/me/attendance', icon: Clock },
+          { label: 'My Profile', href: '/me/profile', icon: UserCircle },
+        ]} />
       </div>
     </div>
   )

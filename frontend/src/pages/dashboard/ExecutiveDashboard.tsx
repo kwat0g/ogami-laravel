@@ -1,296 +1,288 @@
-import { Link } from 'react-router-dom'
+/**
+ * Executive Dashboard (Chairman / President)
+ *
+ * High-level company overview with financial health, workforce metrics,
+ * and operational KPIs. Uses Recharts for data visualization.
+ */
 import { useExecutiveDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-import { 
-  Users, 
+import { Card } from '@/components/ui/Card'
+import {
+  KpiCard,
+  ApprovalAlert,
+  SectionHeader,
+  MiniBarChart,
+  MiniDonutChart,
+  WidgetCard,
+  DashboardGrid,
+  QuickActions,
+  formatPeso,
+} from '@/components/dashboard/DashboardWidgets'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from 'recharts'
+import {
+  Users,
   Building,
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Briefcase,
   Calendar,
   Activity,
-  ChevronRight,
+  Briefcase,
+  FileText,
+  AlertCircle,
+  BarChart3,
 } from 'lucide-react'
 
-// Simple stat card using Card component
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  href,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-  icon: React.ComponentType<{ className?: string }>
-  href?: string
-}) {
-  const content = (
-    <Card className="h-full">
-      <div className="p-5">
-        <div className="flex items-start justify-between">
-          <Icon className="h-5 w-5 text-neutral-500" />
-          {href && (
-            <ChevronRight className="h-4 w-4 text-neutral-400" />
-          )}
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-          <p className="text-sm text-neutral-600 mt-1">{label}</p>
-          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-        </div>
-      </div>
-    </Card>
-  )
-
-  if (href) {
-    return <Link to={href} className="block">{content}</Link>
-  }
-  return content
-}
-
-// Alert card for pending approvals using Card component
-function PendingAlert({ 
-  count, 
-  label, 
-  href 
-}: { 
-  count: number
-  label: string
-  href: string
-}) {
-  if (count === 0) return null
-  return (
-    <Link to={href}>
-      <Card className="border-amber-200 bg-amber-50 hover:border-amber-300 transition-colors">
-        <div className="p-4 flex items-center gap-4">
-          <span className="text-lg font-semibold text-amber-700">{count}</span>
-          <div className="flex-1">
-            <span className="text-sm font-medium text-neutral-800 block">{label}</span>
-            <span className="text-xs text-neutral-600">Click to review</span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-neutral-400" />
-        </div>
-      </Card>
-    </Link>
-  )
-}
-
-// Section card using Card component
-function SectionCard({ 
-  title, 
-  children,
-  action
-}: { 
-  title: string
-  children: React.ReactNode
-  action?: { label: string; href: string }
-}) {
-  return (
-    <Card>
-      <CardHeader action={action && (
-        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-          {action.label}
-          <ChevronRight className="h-3 w-3" />
-        </Link>
-      )}>
-        {title}
-      </CardHeader>
-      <CardBody>{children}</CardBody>
-    </Card>
-  )
-}
+const DEPT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16']
 
 export default function ExecutiveDashboard() {
-  const { data: stats, isLoading } = useExecutiveDashboardStats()
+  const { data: stats, isLoading, error } = useExecutiveDashboardStats()
 
-  if (isLoading) {
-    return <SkeletonLoader rows={8} />
+  if (isLoading) return <SkeletonLoader rows={8} />
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card className="border-red-200">
+          <div className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span className="text-sm text-red-700">Failed to load executive dashboard. Please refresh.</span>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   const pendingTotal = stats?.pending_executive_approvals.total ?? 0
+  const analytics = stats?.analytics
+  const financialRatios = analytics?.financial_ratios
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900">
-        Executive Overview
-      </h1>
+      <div>
+        <h1 className="text-xl font-bold text-neutral-900">Executive Overview</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">
+          Company-wide performance, financial health, and workforce metrics
+        </p>
+      </div>
 
       {/* Pending Executive Approvals */}
       {pendingTotal > 0 && (
-        <SectionCard title="Items Requiring Executive Approval">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PendingAlert
-              count={stats?.pending_executive_approvals.leaves ?? 0}
-              label="Leave Requests (Manager-filed)"
-              href="/executive/leave-approvals"
-            />
-            <PendingAlert
-              count={stats?.pending_executive_approvals.high_value_loans ?? 0}
-              label="High-Value Loan Applications"
-              href="/hr/loans"
-            />
-          </div>
-        </SectionCard>
+        <div className="space-y-2">
+          <ApprovalAlert
+            count={stats?.pending_executive_approvals.leaves ?? 0}
+            label="Leave Requests (Manager-filed) pending executive approval"
+            href="/executive/leave-approvals"
+            urgency="high"
+          />
+          <ApprovalAlert
+            count={stats?.pending_executive_approvals.high_value_loans ?? 0}
+            label="High-value loan applications pending executive approval"
+            href="/hr/loans"
+            urgency="high"
+          />
+        </div>
       )}
 
-      {/* Company Overview */}
-      <SectionCard title="Company Overview">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard
-            label="Total Employees"
-            value={stats?.company_overview.total_employees ?? 0}
-            sub="Across all departments"
-            icon={Users}
-            href="/hr/employees"
-          />
-          <StatCard
-            label="Departments"
-            value={stats?.company_overview.total_departments ?? 0}
-            sub="Active departments"
-            icon={Building}
-            href="/hr/departments"
-          />
-          <StatCard
-            label="Active Projects"
-            value={stats?.company_overview.active_projects ?? 0}
-            sub="Ongoing initiatives"
-            icon={Briefcase}
-          />
-          <StatCard
-            label="Avg Tenure"
-            value={`${stats?.key_metrics.avg_tenure_years?.toFixed(1) ?? 0} yrs`}
-            sub="Company average"
-            icon={Calendar}
-          />
-        </div>
-      </SectionCard>
+      {/* Top-level KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <KpiCard
+          label="Total Employees"
+          value={stats?.company_overview.total_employees ?? 0}
+          sub="Active headcount"
+          icon={Users}
+          color="info"
+          href="/hr/employees"
+          trend={stats?.key_metrics.headcount_change
+            ? { value: stats.key_metrics.headcount_change, label: 'vs last month' }
+            : undefined
+          }
+        />
+        <KpiCard
+          label="Departments"
+          value={stats?.company_overview.total_departments ?? 0}
+          sub="Active departments"
+          icon={Building}
+          href="/hr/departments"
+        />
+        <KpiCard
+          label="Active Projects"
+          value={stats?.company_overview.active_projects ?? 0}
+          sub="Ongoing initiatives"
+          icon={Briefcase}
+          color="success"
+        />
+        <KpiCard
+          label="Avg Tenure"
+          value={`${(stats?.key_metrics.avg_tenure_years ?? 0).toFixed(1)} yrs`}
+          sub="Company average"
+          icon={Calendar}
+        />
+        <KpiCard
+          label="Attrition Rate"
+          value={`${(stats?.key_metrics.attrition_rate ?? 0).toFixed(1)}%`}
+          sub="Year to date"
+          icon={Activity}
+          color={(stats?.key_metrics.attrition_rate ?? 0) > 15 ? 'danger' : 'success'}
+        />
+        <KpiCard
+          label="Pending Approvals"
+          value={pendingTotal}
+          sub={pendingTotal > 0 ? 'Needs attention' : 'All clear'}
+          icon={AlertCircle}
+          color={pendingTotal > 0 ? 'warning' : 'success'}
+          href="/executive/leave-approvals"
+        />
+      </div>
 
-      {/* Financial Health */}
-      <SectionCard title="Financial Overview">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Card className="bg-neutral-50">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700">Current Payroll</span>
-              </div>
-              <p className="text-xl font-semibold text-neutral-900">
-                ₱{((stats?.financial_health.current_month_payroll ?? 0) / 100).toLocaleString('en-PH', { 
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </p>
-              <p className="text-xs text-neutral-500 mt-1">This month&apos;s payroll total</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700">Outstanding AP</span>
-              </div>
-              <p className="text-xl font-semibold text-neutral-900">
-                {stats?.financial_health.pending_vendor_invoices ?? 0}
-              </p>
-              <p className="text-xs text-neutral-500 mt-1">Pending vendor invoices</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700">Outstanding AR</span>
-              </div>
-              <p className="text-xl font-semibold text-neutral-900">
-                {stats?.financial_health.pending_customer_invoices ?? 0}
-              </p>
-              <p className="text-xs text-neutral-500 mt-1">Pending customer invoices</p>
-            </div>
-          </Card>
-        </div>
-      </SectionCard>
-
-      {/* Key Metrics */}
-      <SectionCard title="Key HR Metrics">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-neutral-50">
-            <div className="p-4 flex items-center gap-4">
-              <Users className="h-5 w-5 text-neutral-500" />
-              <div>
-                <p className="text-sm text-neutral-600">Headcount Change</p>
-                <p className="text-lg font-semibold text-neutral-900">
-                  {(stats?.key_metrics.headcount_change ?? 0) >= 0 ? '+' : ''}
-                  {stats?.key_metrics.headcount_change ?? 0}
-                </p>
-                <p className="text-xs text-neutral-500">vs last month</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="p-4 flex items-center gap-4">
-              <Activity className="h-5 w-5 text-neutral-500" />
-              <div>
-                <p className="text-sm text-neutral-600">Attrition Rate</p>
-                <p className="text-lg font-semibold text-neutral-900">
-                  {(stats?.key_metrics.attrition_rate ?? 0).toFixed(1)}%
-                </p>
-                <p className="text-xs text-neutral-500">Year to date</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="p-4 flex items-center gap-4">
-              <Calendar className="h-5 w-5 text-neutral-500" />
-              <div>
-                <p className="text-sm text-neutral-600">Average Tenure</p>
-                <p className="text-lg font-semibold text-neutral-900">
-                  {(stats?.key_metrics.avg_tenure_years ?? 0).toFixed(1)} years
-                </p>
-                <p className="text-xs text-neutral-500">Company average</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </SectionCard>
-
-      {/* Quick Links */}
+      {/* Financial Overview KPIs */}
       <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Quick Access</h2>
+        <SectionHeader title="Financial Health" action={{ label: 'View Reports', href: '/reports/financial' }} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link 
-            to="/hr/employees"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Users className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">All Employees</span>
-          </Link>
-          <Link 
-            to="/payroll/runs"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <DollarSign className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">Payroll</span>
-          </Link>
-          <Link 
-            to="/accounting/ap/invoices"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <TrendingDown className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">AP Invoices</span>
-          </Link>
-          <Link 
-            to="/ar/invoices"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <TrendingUp className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">AR Invoices</span>
-          </Link>
+          <KpiCard
+            label="Current Payroll"
+            value={formatPeso(stats?.financial_health.current_month_payroll ?? 0)}
+            sub="This month"
+            icon={DollarSign}
+            href="/payroll/runs"
+          />
+          <KpiCard
+            label="Outstanding AP"
+            value={stats?.financial_health.pending_vendor_invoices ?? 0}
+            sub="Vendor invoices"
+            icon={TrendingDown}
+            color={(stats?.financial_health.pending_vendor_invoices ?? 0) > 10 ? 'warning' : 'default'}
+            href="/accounting/ap/invoices"
+          />
+          <KpiCard
+            label="Outstanding AR"
+            value={stats?.financial_health.pending_customer_invoices ?? 0}
+            sub="Customer invoices"
+            icon={TrendingUp}
+            color={(stats?.financial_health.pending_customer_invoices ?? 0) > 10 ? 'warning' : 'default'}
+            href="/ar/invoices"
+          />
+          {financialRatios && (
+            <KpiCard
+              label="YTD Revenue"
+              value={formatPeso(financialRatios.ytd_revenue)}
+              sub={`Expenses: ${formatPeso(financialRatios.ytd_expenses)}`}
+              icon={BarChart3}
+              color="info"
+            />
+          )}
         </div>
+      </div>
+
+      {/* Charts Row */}
+      <DashboardGrid>
+        {/* Revenue vs Expense Trend */}
+        {analytics?.revenue_expense_trend && analytics.revenue_expense_trend.length > 0 && (
+          <WidgetCard title="Revenue vs Expenses (Monthly)">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={analytics.revenue_expense_trend.slice(-6)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" fontSize={10} tick={{ fill: '#999' }} />
+                <YAxis fontSize={10} tick={{ fill: '#999' }} tickFormatter={(v: number) => formatPeso(v)} />
+                <Tooltip formatter={(v: number) => formatPeso(v)} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="expenses" name="Expenses" fill="#ef4444" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </WidgetCard>
+        )}
+
+        {/* Department Cost Allocation */}
+        {analytics?.department_cost_allocation && analytics.department_cost_allocation.length > 0 && (
+          <WidgetCard title="Department Cost Allocation">
+            <MiniDonutChart
+              data={analytics.department_cost_allocation.slice(0, 8).map((d, i) => ({
+                name: d.department,
+                value: Math.round(d.cost / 100),
+                color: DEPT_COLORS[i % DEPT_COLORS.length],
+              }))}
+              height={220}
+              centerLabel="Total Depts"
+              centerValue={analytics.department_cost_allocation.length}
+            />
+          </WidgetCard>
+        )}
+
+        {/* Headcount by Department */}
+        {analytics?.headcount_by_department && analytics.headcount_by_department.length > 0 && (
+          <WidgetCard title="Headcount by Department">
+            <MiniBarChart
+              data={analytics.headcount_by_department.map(d => ({ name: d.name, value: d.count }))}
+              color="#6366f1"
+              height={220}
+            />
+          </WidgetCard>
+        )}
+
+        {/* Payroll by Department */}
+        {analytics?.payroll_by_department && analytics.payroll_by_department.length > 0 && (
+          <WidgetCard title="Payroll Cost by Department">
+            <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+              {analytics.payroll_by_department.map((row) => {
+                const maxVal = analytics.payroll_by_department![0].total_payroll
+                const pct = maxVal > 0 ? (row.total_payroll / maxVal) * 100 : 0
+                return (
+                  <div key={row.department}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-medium text-neutral-700 truncate">{row.department}</span>
+                      <span className="text-neutral-500 whitespace-nowrap ml-2">
+                        {formatPeso(row.total_payroll)} ({row.employee_count} staff)
+                      </span>
+                    </div>
+                    <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </WidgetCard>
+        )}
+      </DashboardGrid>
+
+      {/* Financial Ratios (if available) */}
+      {financialRatios && (
+        <div>
+          <SectionHeader title="Financial Ratios" />
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="p-4 text-center">
+              <p className="text-2xl font-bold text-neutral-900">{financialRatios.gross_profit_margin.toFixed(1)}%</p>
+              <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">Gross Profit Margin</p>
+            </Card>
+            <Card className="p-4 text-center">
+              <p className="text-2xl font-bold text-neutral-900">{financialRatios.current_ratio.toFixed(2)}</p>
+              <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">Current Ratio</p>
+            </Card>
+            <Card className="p-4 text-center">
+              <p className="text-2xl font-bold text-neutral-900">{financialRatios.debt_to_equity.toFixed(2)}</p>
+              <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">Debt to Equity</p>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Navigation */}
+      <div>
+        <SectionHeader title="Quick Navigation" />
+        <QuickActions actions={[
+          { label: 'All Employees', href: '/hr/employees', icon: Users },
+          { label: 'Payroll', href: '/payroll/runs', icon: DollarSign },
+          { label: 'AP Invoices', href: '/accounting/ap/invoices', icon: TrendingDown },
+          { label: 'AR Invoices', href: '/ar/invoices', icon: TrendingUp },
+          { label: 'Budget', href: '/budget/vs-actual', icon: BarChart3 },
+          { label: 'Departments', href: '/hr/departments', icon: Building },
+          { label: 'Production', href: '/production/orders', icon: Briefcase },
+          { label: 'Reports', href: '/reports/financial', icon: FileText },
+        ]} />
       </div>
     </div>
   )

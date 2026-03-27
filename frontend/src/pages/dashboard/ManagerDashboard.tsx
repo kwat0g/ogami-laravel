@@ -1,485 +1,268 @@
-import { Link } from 'react-router-dom'
+/**
+ * Manager Dashboard (Department-aware)
+ *
+ * Shows team KPIs, pending approvals, department analytics with Recharts,
+ * attendance summary, and recent requests. Adapts to the manager's
+ * primary department.
+ */
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { useManagerDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-import { StatusBadge } from '@/components/ui/StatusBadge'
-import { 
-  Users, 
-  Clock, 
-  FileCheck, 
-  AlertCircle, 
+import { Card } from '@/components/ui/Card'
+import {
+  KpiCard,
+  ApprovalAlert,
+  SectionHeader,
+  MiniBarChart,
+  MiniAreaChart,
+  MiniDonutChart,
+  WidgetCard,
+  DashboardGrid,
+  QuickActions,
+  ActivityFeed,
+} from '@/components/dashboard/DashboardWidgets'
+import {
+  Users,
+  Clock,
   Calendar,
-  TrendingUp,
+  AlertCircle,
   UserCheck,
   UserX,
   Timer,
-  BarChart3,
-  PieChart,
-  Activity,
-  ChevronRight,
-  Briefcase
+  TrendingUp,
+  Briefcase,
+  FileCheck,
 } from 'lucide-react'
 
-// Simple stat card using Card component
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  href,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-  icon: React.ComponentType<{ className?: string }>
-  href?: string
-}) {
-  const content = (
-    <Card className="h-full">
-      <div className="p-5">
-        <div className="flex items-start justify-between">
-          <Icon className="h-5 w-5 text-neutral-500" />
-          {href && (
-            <ChevronRight className="h-4 w-4 text-neutral-400" />
-          )}
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-          <p className="text-sm text-neutral-600 mt-1">{label}</p>
-          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-        </div>
-      </div>
-    </Card>
-  )
-
-  if (href) {
-    return <Link to={href} className="block">{content}</Link>
-  }
-  return content
-}
-
-// Simple bar chart component - neutral styling
-function SimpleBarChart({ data, valueKey, labelKey }: { data: Record<string, unknown>[], valueKey: string, labelKey: string }) {
-  const maxValue = Math.max(...data.map(d => d[valueKey] || 0))
-  
-  return (
-    <div className="space-y-2">
-      {data.map((item, idx) => (
-        <div key={idx} className="flex items-center gap-3">
-          <span className="text-sm text-neutral-600 w-20 truncate">{item[labelKey]}</span>
-          <div className="flex-1 h-4 bg-neutral-100 rounded overflow-hidden">
-            <div 
-              className="h-full bg-neutral-400 rounded transition-all duration-500"
-              style={{ width: `${maxValue > 0 ? (item[valueKey] / maxValue) * 100 : 0}%` }}
-            />
-          </div>
-          <span className="text-sm font-medium text-neutral-900 w-10 text-right">{item[valueKey]}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// Alert card for pending approvals using Card component
-function PendingAlert({ 
-  count, 
-  label, 
-  href 
-}: { 
-  count: number
-  label: string
-  href: string
-}) {
-  if (count === 0) return null
-  return (
-    <Link to={href}>
-      <Card className="border-amber-200 bg-amber-50 hover:border-amber-300 transition-colors">
-        <div className="p-4 flex items-center gap-4">
-          <span className="text-lg font-semibold text-amber-700">{count}</span>
-          <div className="flex-1">
-            <span className="text-sm font-medium text-neutral-800 block">{label}</span>
-            <span className="text-xs text-neutral-600">Click to review</span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-neutral-400" />
-        </div>
-      </Card>
-    </Link>
-  )
-}
-
-// Section card using Card component
-function SectionCard({ 
-  title, 
-  children,
-  action
-}: { 
-  title: string
-  children: React.ReactNode
-  action?: { label: string; href: string }
-}) {
-  return (
-    <Card>
-      <CardHeader action={action && (
-        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-          {action.label}
-          <ChevronRight className="h-3 w-3" />
-        </Link>
-      )}>
-        {title}
-      </CardHeader>
-      <CardBody>{children}</CardBody>
-    </Card>
-  )
-}
-
-// Simple table for recent requests using Card component
-function RecentRequestsTable({ 
-  title, 
-  emptyMessage,
-  href,
-  children 
-}: { 
-  title: string
-  emptyMessage: string
-  href?: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card>
-      <CardHeader action={href && (
-        <Link to={href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-          View all
-          <ChevronRight className="h-3 w-3" />
-        </Link>
-      )}>
-        {title}
-      </CardHeader>
-      <div className="divide-y divide-neutral-100">
-        {children || (
-          <p className="px-4 py-6 text-sm text-neutral-400 text-center">{emptyMessage}</p>
-        )}
-      </div>
-    </Card>
-  )
-}
-
-function RequestRow({ 
-  employee, 
-  type, 
-  date, 
-  status 
-}: { 
-  employee: string | null
-  type: string
-  date: string
-  status: string
-}) {
-  const normalizedStatus = status?.toLowerCase() || 'draft'
-  
-  return (
-    <div className="px-4 py-3 flex items-center justify-between hover:bg-neutral-50">
-      <div>
-        <p className="text-sm text-neutral-900">{employee || 'Unknown'}</p>
-        <p className="text-xs text-neutral-500">{type} • {date}</p>
-      </div>
-      <StatusBadge status={normalizedStatus}>
-        {status?.replace(/_/g, ' ') || 'Unknown'}
-      </StatusBadge>
-    </div>
-  )
-}
+const LEAVE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
 export default function ManagerDashboard() {
   const { user: _user } = useAuth()
   const { primaryDepartmentId } = useAuthStore()
   const deptId = primaryDepartmentId()
-  
-  const { data: stats, isLoading } = useManagerDashboardStats(deptId)
 
-  if (isLoading) {
-    return <SkeletonLoader rows={8} />
-  }
+  const { data: stats, isLoading, error } = useManagerDashboardStats(deptId)
+
+  if (isLoading) return <SkeletonLoader rows={8} />
 
   const pendingTotal = stats?.pending_approvals.total ?? 0
   const analytics = stats?.analytics
+  const deptName = stats?.department?.name ?? 'Department'
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900">
-        Department Dashboard
-      </h1>
+      <div>
+        <h1 className="text-xl font-bold text-neutral-900">{deptName} Dashboard</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">
+          Team performance, pending approvals, and department analytics
+        </p>
+      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
+      {/* Error state */}
+      {error && (
+        <Card className="border-red-200">
+          <div className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span className="text-sm text-red-700">Failed to load dashboard. Please refresh.</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Team KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard
           label="Active Staff"
           value={stats?.headcount.active ?? 0}
           sub={`of ${stats?.headcount.total ?? 0} total`}
           icon={Users}
+          color="info"
           href="/team/employees"
         />
-        <StatCard
+        <KpiCard
           label="On Leave"
           value={stats?.headcount.on_leave ?? 0}
           sub="Currently away"
           icon={Calendar}
+          color={(stats?.headcount.on_leave ?? 0) > 3 ? 'warning' : 'default'}
         />
-        <StatCard
+        <KpiCard
           label="Present Today"
           value={stats?.attendance_today.present ?? 0}
           sub={`${stats?.attendance_today.late ?? 0} late`}
           icon={UserCheck}
+          color="success"
         />
-        <StatCard
+        <KpiCard
           label="Pending Approvals"
           value={pendingTotal}
-          sub={pendingTotal > 0 ? 'needs attention' : 'all clear'}
+          sub={pendingTotal > 0 ? 'Needs attention' : 'All clear'}
           icon={AlertCircle}
+          color={pendingTotal > 0 ? 'warning' : 'success'}
         />
       </div>
 
-      {/* Pending Approvals Section */}
+      {/* Pending Approval Alerts */}
       {pendingTotal > 0 && (
-        <SectionCard title="Items Requiring Your Approval">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <PendingAlert
-              count={stats?.pending_approvals.leaves ?? 0}
-              label="Leave Requests"
-              href="/team/leave"
-            />
-            <PendingAlert
-              count={stats?.pending_approvals.overtime ?? 0}
-              label="Overtime Requests"
-              href="/team/overtime"
-            />
-            <PendingAlert
-              count={stats?.pending_approvals.loans ?? 0}
-              label="Loan Applications"
-              href="/team/loans"
-            />
-          </div>
-        </SectionCard>
-      )}
-
-      {/* Analytics Section */}
-      {analytics && (
-        <SectionCard title="Department Analytics">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Attendance Rate Trend */}
-            <div>
-              <h3 className="text-sm font-medium text-neutral-700 mb-3 flex items-center gap-2">
-                <Activity className="h-4 w-4 text-neutral-500" />
-                Attendance Rate Trend
-              </h3>
-              <div className="space-y-2">
-                {analytics.attendance_trend?.map((item: Record<string, unknown>, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between p-2 hover:bg-neutral-50 rounded">
-                    <span className="text-sm text-neutral-600">{item.month}</span>
-                    <div className="flex items-center gap-3">
-                      <div className="w-20 h-2 bg-neutral-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-neutral-400 rounded-full"
-                          style={{ width: `${item.rate}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium w-10 text-right">{item.rate}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Leave by Type */}
-            <div>
-              <h3 className="text-sm font-medium text-neutral-700 mb-3 flex items-center gap-2">
-                <PieChart className="h-4 w-4 text-neutral-500" />
-                Leave by Type (YTD)
-              </h3>
-              {analytics.leave_by_type?.length > 0 ? (
-                <SimpleBarChart 
-                  data={analytics.leave_by_type} 
-                  valueKey="total_days" 
-                  labelKey="name" 
-                />
-              ) : (
-                <p className="text-sm text-neutral-400 py-6 text-center bg-neutral-50 rounded">No leave data</p>
-              )}
-            </div>
-
-            {/* Overtime Trend */}
-            <div>
-              <h3 className="text-sm font-medium text-neutral-700 mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-neutral-500" />
-                Overtime Hours Trend
-              </h3>
-              <div className="space-y-2">
-                {analytics.overtime_trend?.map((item: Record<string, unknown>, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between p-2 hover:bg-neutral-50 rounded">
-                    <span className="text-sm text-neutral-600">{item.month}</span>
-                    <span className="text-sm font-medium text-neutral-900">{item.hours} hrs</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Tenure Distribution */}
-            <div>
-              <h3 className="text-sm font-medium text-neutral-700 mb-3 flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-neutral-500" />
-                Tenure Distribution
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 hover:bg-neutral-50 rounded">
-                  <span className="text-sm text-neutral-600">&lt; 1 year</span>
-                  <span className="text-sm font-medium bg-neutral-100 px-2 py-0.5 rounded">{analytics.tenure_distribution?.less_than_1_year ?? 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-2 hover:bg-neutral-50 rounded">
-                  <span className="text-sm text-neutral-600">1-3 years</span>
-                  <span className="text-sm font-medium bg-neutral-100 px-2 py-0.5 rounded">{analytics.tenure_distribution?.['1_to_3_years'] ?? 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-2 hover:bg-neutral-50 rounded">
-                  <span className="text-sm text-neutral-600">3-5 years</span>
-                  <span className="text-sm font-medium bg-neutral-100 px-2 py-0.5 rounded">{analytics.tenure_distribution?.['3_to_5_years'] ?? 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-2 hover:bg-neutral-50 rounded">
-                  <span className="text-sm text-neutral-600">&gt; 5 years</span>
-                  <span className="text-sm font-medium bg-neutral-100 px-2 py-0.5 rounded">{analytics.tenure_distribution?.more_than_5_years ?? 0}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Department vs Company Comparison */}
-          {analytics.comparison && (
-            <div className="mt-6 pt-4 border-t border-neutral-200">
-              <h3 className="text-sm font-medium text-neutral-700 mb-3 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-neutral-500" />
-                Department vs Company Average
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <Card>
-                  <div className="text-center p-3">
-                    <p className="text-xl font-semibold text-neutral-900">{analytics.comparison.dept_attendance_rate}%</p>
-                    <p className="text-xs text-neutral-600 mt-1">Your Dept</p>
-                  </div>
-                </Card>
-                <Card>
-                  <div className="text-center p-3">
-                    <p className="text-xl font-semibold text-neutral-900">{analytics.comparison.company_avg_attendance}%</p>
-                    <p className="text-xs text-neutral-600 mt-1">Company Avg</p>
-                  </div>
-                </Card>
-                <Card className={analytics.comparison.vs_company_avg >= 0 ? '' : 'border-red-200'}>
-                  <div className={`text-center p-3 ${analytics.comparison.vs_company_avg >= 0 ? '' : 'bg-red-50'}`}>
-                    <p className={`text-xl font-semibold ${analytics.comparison.vs_company_avg >= 0 ? 'text-neutral-900' : 'text-red-600'}`}>
-                      {analytics.comparison.vs_company_avg > 0 ? '+' : ''}{analytics.comparison.vs_company_avg}%
-                    </p>
-                    <p className={`text-xs mt-1 ${analytics.comparison.vs_company_avg >= 0 ? 'text-neutral-600' : 'text-red-700'}`}>Difference</p>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-        </SectionCard>
-      )}
-
-      {/* Today's Attendance Summary */}
-      <SectionCard title="Today's Attendance" action={{ label: 'View all', href: '/team/attendance' }}>
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <UserCheck className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.present ?? 0}</p>
-              <p className="text-xs text-neutral-600">Present</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <UserX className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.absent ?? 0}</p>
-              <p className="text-xs text-neutral-600">Absent</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <Timer className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.late ?? 0}</p>
-              <p className="text-xs text-neutral-600">Late</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="text-center p-3">
-              <Calendar className="h-4 w-4 text-neutral-500 mx-auto mb-2" />
-              <p className="text-xl font-semibold text-neutral-900">{stats?.attendance_today.on_leave ?? 0}</p>
-              <p className="text-xs text-neutral-600">On Leave</p>
-            </div>
-          </Card>
+        <div className="space-y-2">
+          <ApprovalAlert count={stats?.pending_approvals.leaves ?? 0} label="Leave requests pending your approval" href="/team/leave" />
+          <ApprovalAlert count={stats?.pending_approvals.overtime ?? 0} label="Overtime requests pending review" href="/team/overtime" />
+          <ApprovalAlert count={stats?.pending_approvals.loans ?? 0} label="Loan applications awaiting review" href="/team/loans" />
         </div>
-      </SectionCard>
+      )}
+
+      {/* Today's Attendance Visual */}
+      <WidgetCard title="Today's Attendance" action={{ label: 'View All', href: '/team/attendance' }}>
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'Present', value: stats?.attendance_today.present ?? 0, icon: UserCheck, color: 'bg-green-50 border-green-100 text-green-600' },
+            { label: 'Absent', value: stats?.attendance_today.absent ?? 0, icon: UserX, color: 'bg-red-50 border-red-100 text-red-600' },
+            { label: 'Late', value: stats?.attendance_today.late ?? 0, icon: Timer, color: 'bg-amber-50 border-amber-100 text-amber-600' },
+            { label: 'On Leave', value: stats?.attendance_today.on_leave ?? 0, icon: Calendar, color: 'bg-blue-50 border-blue-100 text-blue-600' },
+          ].map(({ label, value, icon: Icon, color }) => (
+            <Card key={label} className={color}>
+              <div className="p-3 text-center">
+                <Icon className="h-4 w-4 mx-auto mb-2 opacity-70" />
+                <p className="text-xl font-bold">{value}</p>
+                <p className="text-[10px] uppercase tracking-wide font-medium mt-0.5">{label}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </WidgetCard>
+
+      {/* Analytics Charts (if available) */}
+      {analytics && (
+        <DashboardGrid>
+          {/* Attendance Rate Trend */}
+          {analytics.attendance_trend && analytics.attendance_trend.length > 0 && (
+            <WidgetCard title="Attendance Rate Trend">
+              <MiniAreaChart
+                data={analytics.attendance_trend.map((item: { month: string; rate: number }) => ({
+                  name: item.month,
+                  value: item.rate,
+                }))}
+                color="#10b981"
+                height={200}
+                formatValue={(v: number) => `${v}%`}
+              />
+            </WidgetCard>
+          )}
+
+          {/* Leave by Type */}
+          {analytics.leave_by_type && analytics.leave_by_type.length > 0 && (
+            <WidgetCard title="Leave by Type (YTD)">
+              <MiniDonutChart
+                data={analytics.leave_by_type.map((item: { name: string; total_days: number }, i: number) => ({
+                  name: item.name,
+                  value: item.total_days,
+                  color: LEAVE_COLORS[i % LEAVE_COLORS.length],
+                }))}
+                height={200}
+                centerLabel="Total Days"
+                centerValue={analytics.leave_by_type.reduce((sum: number, i: { total_days: number }) => sum + i.total_days, 0)}
+              />
+            </WidgetCard>
+          )}
+
+          {/* Overtime Hours Trend */}
+          {analytics.overtime_trend && analytics.overtime_trend.length > 0 && (
+            <WidgetCard title="Overtime Hours Trend">
+              <MiniBarChart
+                data={analytics.overtime_trend.map((item: { month: string; hours: number }) => ({
+                  name: item.month,
+                  value: item.hours,
+                }))}
+                color="#f59e0b"
+                height={200}
+                formatValue={(v: number) => `${v}h`}
+              />
+            </WidgetCard>
+          )}
+
+          {/* Tenure Distribution */}
+          {analytics.tenure_distribution && (
+            <WidgetCard title="Tenure Distribution">
+              <MiniDonutChart
+                data={[
+                  { name: '< 1 year', value: analytics.tenure_distribution.less_than_1_year, color: '#3b82f6' },
+                  { name: '1-3 years', value: analytics.tenure_distribution['1_to_3_years'], color: '#10b981' },
+                  { name: '3-5 years', value: analytics.tenure_distribution['3_to_5_years'], color: '#f59e0b' },
+                  { name: '> 5 years', value: analytics.tenure_distribution.more_than_5_years, color: '#8b5cf6' },
+                ].filter(d => d.value > 0)}
+                height={200}
+                centerLabel="Staff"
+                centerValue={stats?.headcount.total ?? 0}
+              />
+            </WidgetCard>
+          )}
+        </DashboardGrid>
+      )}
+
+      {/* Department vs Company Comparison */}
+      {analytics?.comparison && (
+        <div>
+          <SectionHeader title="Department vs Company Average" />
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="p-4 text-center bg-blue-50 border-blue-100">
+              <p className="text-2xl font-bold text-blue-700">{analytics.comparison.dept_attendance_rate}%</p>
+              <p className="text-xs text-blue-600 mt-1 uppercase tracking-wide font-medium">Your Dept</p>
+            </Card>
+            <Card className="p-4 text-center">
+              <p className="text-2xl font-bold text-neutral-700">{analytics.comparison.company_avg_attendance}%</p>
+              <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide font-medium">Company Avg</p>
+            </Card>
+            <Card className={`p-4 text-center ${analytics.comparison.vs_company_avg >= 0 ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+              <p className={`text-2xl font-bold ${analytics.comparison.vs_company_avg >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                {analytics.comparison.vs_company_avg > 0 ? '+' : ''}{analytics.comparison.vs_company_avg}%
+              </p>
+              <p className={`text-xs mt-1 uppercase tracking-wide font-medium ${analytics.comparison.vs_company_avg >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                Difference
+              </p>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {/* Recent Requests */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentRequestsTable title="Recent Leave Requests" emptyMessage="No recent leave requests" href="/team/leave">
-          {stats?.recent_requests.leaves?.slice(0, 5).map((leave) => (
-            <RequestRow
-              key={leave.id}
-              employee={leave.employee?.full_name ?? null}
-              type={leave.leave_type?.name ?? 'Leave'}
-              date={`${leave.date_from} to ${leave.date_to}`}
-              status={leave.status}
-            />
-          ))}
-        </RecentRequestsTable>
+      <DashboardGrid>
+        <WidgetCard title="Recent Leave Requests" action={{ label: 'View All', href: '/team/leave' }}>
+          <ActivityFeed
+            items={(stats?.recent_requests.leaves ?? []).slice(0, 5).map((leave) => ({
+              id: leave.id,
+              label: leave.employee?.full_name ?? 'Unknown',
+              sub: `${leave.leave_type?.name ?? 'Leave'} - ${leave.date_from} to ${leave.date_to}`,
+              status: leave.status,
+            }))}
+            emptyMessage="No recent leave requests"
+          />
+        </WidgetCard>
 
-        <RecentRequestsTable title="Recent Overtime Requests" emptyMessage="No recent overtime requests" href="/team/overtime">
-          {stats?.recent_requests.overtime?.slice(0, 5).map((ot) => (
-            <RequestRow
-              key={ot.id}
-              employee={ot.employee?.full_name ?? null}
-              type="Overtime"
-              date={ot.work_date}
-              status={ot.status}
-            />
-          ))}
-        </RecentRequestsTable>
-      </div>
+        <WidgetCard title="Recent Overtime Requests" action={{ label: 'View All', href: '/team/overtime' }}>
+          <ActivityFeed
+            items={(stats?.recent_requests.overtime ?? []).slice(0, 5).map((ot) => ({
+              id: ot.id,
+              label: ot.employee?.full_name ?? 'Unknown',
+              sub: `Overtime - ${ot.work_date}`,
+              status: ot.status,
+            }))}
+            emptyMessage="No recent overtime requests"
+          />
+        </WidgetCard>
+      </DashboardGrid>
 
-      {/* Quick Links */}
+      {/* Quick Navigation */}
       <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Quick Access</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link 
-            to="/team/employees"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Users className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">View Team</span>
-          </Link>
-          <Link 
-            to="/team/attendance"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Clock className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">Attendance</span>
-          </Link>
-          <Link 
-            to="/team/leave"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Calendar className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">Leave Requests</span>
-          </Link>
-          <Link 
-            to="/team/loans"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <FileCheck className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">Loan Requests</span>
-          </Link>
-        </div>
+        <SectionHeader title="Quick Access" />
+        <QuickActions actions={[
+          { label: 'View Team', href: '/team/employees', icon: Users },
+          { label: 'Attendance', href: '/team/attendance', icon: Clock },
+          { label: 'Leave Requests', href: '/team/leave', icon: Calendar },
+          { label: 'Overtime', href: '/team/overtime', icon: TrendingUp },
+          { label: 'Loan Requests', href: '/team/loans', icon: FileCheck },
+          { label: 'Team Performance', href: '/team/employees', icon: Briefcase },
+        ]} />
       </div>
     </div>
   )

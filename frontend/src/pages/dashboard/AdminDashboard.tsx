@@ -1,208 +1,176 @@
-import { Link } from 'react-router-dom'
+/**
+ * Admin Dashboard (Super Admin / System Admin)
+ *
+ * System health monitoring, user management KPIs, recent activity,
+ * and infrastructure status. Provides quick access to admin tools.
+ */
 import { useAuth } from '@/hooks/useAuth'
 import { useAdminDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { 
-  Users, 
-  AlertCircle, 
-  Shield,
+import {
+  KpiCard,
+  SectionHeader,
+  WidgetCard,
+  DashboardGrid,
+  QuickActions,
+  MiniDonutChart,
+} from '@/components/dashboard/DashboardWidgets'
+import {
+  Users,
   Lock,
+  AlertCircle,
+  UserCheck,
+  Shield,
   Database,
   Settings,
   FileText,
-  UserCheck,
   History,
-  ChevronRight,
+  Cpu,
   CheckCircle2,
-  Cpu
+  Activity,
 } from 'lucide-react'
-
-// Simple stat card using Card component
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  href,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-  icon: React.ComponentType<{ className?: string }>
-  href?: string
-}) {
-  const content = (
-    <Card className="h-full">
-      <div className="p-5">
-        <div className="flex items-start justify-between">
-          <Icon className="h-5 w-5 text-neutral-500" />
-          {href && (
-            <ChevronRight className="h-4 w-4 text-neutral-400" />
-          )}
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
-          <p className="text-sm text-neutral-600 mt-1">{label}</p>
-          {sub && <p className="text-xs text-neutral-500 mt-1">{sub}</p>}
-        </div>
-      </div>
-    </Card>
-  )
-
-  if (href) {
-    return <Link to={href} className="block">{content}</Link>
-  }
-  return content
-}
-
-// Section card using Card component
-function SectionCard({ 
-  title, 
-  children,
-  action
-}: { 
-  title: string
-  children: React.ReactNode
-  action?: { label: string; href: string }
-}) {
-  return (
-    <Card>
-      <CardHeader action={action && (
-        <Link to={action.href} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 flex items-center gap-1">
-          {action.label}
-          <ChevronRight className="h-3 w-3" />
-        </Link>
-      )}>
-        {title}
-      </CardHeader>
-      <CardBody>{children}</CardBody>
-    </Card>
-  )
-}
 
 export default function AdminDashboard() {
   useAuth()
-  const { data: stats, isLoading } = useAdminDashboardStats()
+  const { data: stats, isLoading, error } = useAdminDashboardStats()
 
-  if (isLoading) {
-    return <SkeletonLoader rows={8} />
-  }
+  if (isLoading) return <SkeletonLoader rows={8} />
 
   const lockedCount = stats?.system_health.locked_accounts ?? 0
+  const totalUsers = stats?.system_health.total_users ?? 0
+  const activeUsers = stats?.system_health.active_users ?? 0
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <h1 className="text-lg font-semibold text-neutral-900">
-        System Administration
-      </h1>
+      <div>
+        <h1 className="text-xl font-bold text-neutral-900">System Administration</h1>
+        <p className="text-sm text-neutral-500 mt-0.5">
+          User management, system health, and infrastructure monitoring
+        </p>
+      </div>
 
-      {/* Alert for locked accounts */}
-      {lockedCount > 0 && (
+      {/* Error state */}
+      {error && (
         <Card className="border-red-200">
-          <div className="p-4">
-            <div className="flex items-center gap-4">
-              <Lock className="h-5 w-5 text-red-600" />
-              <div className="flex-1">
-                <h2 className="text-sm font-semibold text-neutral-900">
-                  {lockedCount} Account{lockedCount > 1 ? 's' : ''} Locked
-                </h2>
-                <p className="text-xs text-neutral-600 mt-1">
-                  User accounts have been locked due to failed login attempts and require administrator attention.
-                </p>
-              </div>
-              <Link 
-                to="/admin/users"
-                className="px-3 py-1.5 bg-neutral-900 text-white text-xs font-medium rounded hover:bg-neutral-800"
-              >
-                Review Users
-              </Link>
+          <div className="p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span className="text-sm text-red-700">Failed to load admin dashboard. Please refresh.</span>
+          </div>
+        </Card>
+      )}
+
+      {/* Critical: Locked accounts alert */}
+      {lockedCount > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <div className="p-4 flex items-center gap-4">
+            <Lock className="h-5 w-5 text-red-600" />
+            <div className="flex-1">
+              <h2 className="text-sm font-semibold text-red-800">
+                {lockedCount} Account{lockedCount > 1 ? 's' : ''} Locked
+              </h2>
+              <p className="text-xs text-red-600 mt-0.5">
+                User accounts locked due to failed login attempts. Requires administrator attention.
+              </p>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
+      {/* System KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard
           label="Total Users"
-          value={stats?.system_health.total_users ?? 0}
+          value={totalUsers}
           sub="Registered accounts"
           icon={Users}
+          color="info"
           href="/admin/users"
         />
-        <StatCard
+        <KpiCard
           label="Currently Online"
-          value={stats?.system_health.active_users ?? 0}
+          value={activeUsers}
           sub="Active sessions"
           icon={UserCheck}
+          color="success"
         />
-        <StatCard
+        <KpiCard
           label="Locked Accounts"
           value={lockedCount}
           sub={lockedCount > 0 ? 'Needs attention' : 'All clear'}
           icon={Lock}
+          color={lockedCount > 0 ? 'danger' : 'success'}
           href="/admin/users"
         />
-        <StatCard
+        <KpiCard
           label="Failed Logins Today"
           value={stats?.system_health.failed_logins_today ?? 0}
-          sub="Authentication failures"
+          sub="Auth failures"
           icon={AlertCircle}
+          color={(stats?.system_health.failed_logins_today ?? 0) > 10 ? 'warning' : 'default'}
         />
       </div>
 
-      {/* Recent Activity */}
-      <SectionCard title="Recent Activity (Today)" action={{ label: 'View audit logs', href: '/admin/audit-logs' }}>
-        <div className="grid grid-cols-3 gap-4">
-          <Card className="bg-neutral-50">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <UserCheck className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700">Logins</span>
+      {/* Charts + Activity Row */}
+      <DashboardGrid>
+        {/* User Activity Donut */}
+        <WidgetCard title="User Status Overview">
+          <MiniDonutChart
+            data={[
+              { name: 'Online', value: activeUsers, color: '#10b981' },
+              { name: 'Offline', value: Math.max(0, totalUsers - activeUsers - lockedCount), color: '#d4d4d8' },
+              { name: 'Locked', value: lockedCount, color: '#ef4444' },
+            ].filter(d => d.value > 0)}
+            height={200}
+            centerLabel="Total"
+            centerValue={totalUsers}
+          />
+        </WidgetCard>
+
+        {/* Today's Activity */}
+        <WidgetCard title="Today's Activity" action={{ label: 'Audit Logs', href: '/admin/audit-logs' }}>
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="bg-green-50 border-green-100">
+              <div className="p-4 text-center">
+                <UserCheck className="h-5 w-5 text-green-600 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-green-700">{stats?.recent_activity.logins_today ?? 0}</p>
+                <p className="text-[10px] text-green-600 uppercase tracking-wide font-medium mt-1">Logins</p>
               </div>
-              <p className="text-xl font-semibold text-neutral-900">{stats?.recent_activity.logins_today ?? 0}</p>
-              <p className="text-xs text-neutral-500 mt-1">Successful logins</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700">Password Changes</span>
+            </Card>
+            <Card className="bg-blue-50 border-blue-100">
+              <div className="p-4 text-center">
+                <Shield className="h-5 w-5 text-blue-600 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-blue-700">{stats?.recent_activity.password_changes ?? 0}</p>
+                <p className="text-[10px] text-blue-600 uppercase tracking-wide font-medium mt-1">Pwd Changes</p>
               </div>
-              <p className="text-xl font-semibold text-neutral-900">{stats?.recent_activity.password_changes ?? 0}</p>
-              <p className="text-xs text-neutral-500 mt-1">Updated passwords</p>
-            </div>
-          </Card>
-          <Card className="bg-neutral-50">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700">New Users</span>
+            </Card>
+            <Card className="bg-purple-50 border-purple-100">
+              <div className="p-4 text-center">
+                <Users className="h-5 w-5 text-purple-600 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-purple-700">{stats?.recent_activity.new_users ?? 0}</p>
+                <p className="text-[10px] text-purple-600 uppercase tracking-wide font-medium mt-1">New Users</p>
               </div>
-              <p className="text-xl font-semibold text-neutral-900">{stats?.recent_activity.new_users ?? 0}</p>
-              <p className="text-xs text-neutral-500 mt-1">Accounts created</p>
-            </div>
-          </Card>
-        </div>
-      </SectionCard>
+            </Card>
+          </div>
+        </WidgetCard>
+      </DashboardGrid>
 
       {/* System Status */}
-      <SectionCard title="System Status">
+      <WidgetCard title="Infrastructure Status">
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
             <div className="flex items-center gap-3">
-              <Database className="h-4 w-4 text-neutral-500" />
+              <div className="p-2 rounded-lg bg-neutral-100">
+                <Database className="h-4 w-4 text-neutral-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-neutral-900">Last Backup</p>
+                <p className="text-sm font-medium text-neutral-900">Database Backup</p>
                 <p className="text-xs text-neutral-500">
-                  {stats?.system_status.last_backup 
-                    ? new Date(stats.system_status.last_backup).toLocaleString()
-                    : 'No backup recorded'
-                  }
+                  {stats?.system_status.last_backup
+                    ? `Last backup: ${new Date(stats.system_status.last_backup).toLocaleString()}`
+                    : 'No backup recorded'}
                 </p>
               </div>
             </div>
@@ -213,9 +181,11 @@ export default function AdminDashboard() {
 
           <div className="flex items-center justify-between p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
             <div className="flex items-center gap-3">
-              <Cpu className="h-4 w-4 text-neutral-500" />
+              <div className="p-2 rounded-lg bg-neutral-100">
+                <Cpu className="h-4 w-4 text-neutral-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-neutral-900">Queue Workers</p>
+                <p className="text-sm font-medium text-neutral-900">Queue Workers (Horizon)</p>
                 <p className="text-xs text-neutral-500">
                   {stats?.system_status.queue_size ?? 0} jobs in queue
                 </p>
@@ -228,50 +198,51 @@ export default function AdminDashboard() {
 
           <div className="flex items-center justify-between p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-4 w-4 text-neutral-500" />
+              <div className="p-2 rounded-lg bg-neutral-100">
+                <Activity className="h-4 w-4 text-neutral-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-neutral-900">System Health</p>
+                <p className="text-sm font-medium text-neutral-900">Application Health</p>
                 <p className="text-xs text-neutral-500">All systems operational</p>
               </div>
             </div>
             <StatusBadge status="healthy">Healthy</StatusBadge>
           </div>
-        </div>
-      </SectionCard>
 
-      {/* Quick Links */}
-      <div>
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Quick Access</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link 
-            to="/admin/users"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Users className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">User Management</span>
-          </Link>
-          <Link 
-            to="/admin/audit-logs"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <History className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">Audit Logs</span>
-          </Link>
-          <Link 
-            to="/admin/settings"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <Settings className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">System Settings</span>
-          </Link>
-          <Link 
-            to="/admin/reference-tables"
-            className="flex items-center gap-3 p-3 border border-neutral-200 bg-white rounded-xl hover:border-neutral-300 shadow-subtle"
-          >
-            <FileText className="h-4 w-4 text-neutral-500" />
-            <span className="text-sm font-medium text-neutral-700">Reference Tables</span>
-          </Link>
+          <div className="flex items-center justify-between p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-neutral-100">
+                <CheckCircle2 className="h-4 w-4 text-neutral-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-neutral-900">Security Status</p>
+                <p className="text-xs text-neutral-500">
+                  {(stats?.system_health.failed_logins_today ?? 0) > 0
+                    ? `${stats!.system_health.failed_logins_today} failed login attempts today`
+                    : 'No security concerns'}
+                </p>
+              </div>
+            </div>
+            <StatusBadge status={(stats?.system_health.failed_logins_today ?? 0) > 20 ? 'warning' : 'healthy'}>
+              {(stats?.system_health.failed_logins_today ?? 0) > 20 ? 'Elevated' : 'Normal'}
+            </StatusBadge>
+          </div>
         </div>
+      </WidgetCard>
+
+      {/* Quick Navigation */}
+      <div>
+        <SectionHeader title="Administration Tools" />
+        <QuickActions actions={[
+          { label: 'User Management', href: '/admin/users', icon: Users },
+          { label: 'Audit Logs', href: '/admin/audit-logs', icon: History },
+          { label: 'System Settings', href: '/admin/settings', icon: Settings },
+          { label: 'Reference Tables', href: '/admin/reference-tables', icon: FileText },
+          { label: 'Roles & Permissions', href: '/admin/roles', icon: Shield },
+          { label: 'Departments', href: '/admin/departments', icon: Database },
+          { label: 'Modules', href: '/admin/modules', icon: Cpu },
+          { label: 'Security', href: '/admin/users', icon: Lock },
+        ]} />
       </div>
     </div>
   )
