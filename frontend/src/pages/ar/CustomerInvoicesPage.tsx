@@ -13,6 +13,7 @@ import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { firstErrorMessage } from '@/lib/errorHandler'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { CustomerInvoice, CustomerInvoiceStatus } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -171,7 +172,23 @@ export default function CustomerInvoicesPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader title="Customer Invoices" />
+      <PageHeader
+        title="Customer Invoices"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'invoice_number', label: 'Invoice #' },
+              { key: 'customer.name', label: 'Customer' },
+              { key: 'status', label: 'Status' },
+              { key: 'total_amount_centavos', label: 'Amount', format: (v: unknown) => `${((v as number) / 100).toFixed(2)}` },
+              { key: 'invoice_date', label: 'Invoice Date' },
+              { key: 'due_date', label: 'Due Date' },
+            ]}
+            filename="ar-invoices"
+          />
+        }
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">

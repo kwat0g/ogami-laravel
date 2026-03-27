@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useEmployeeSearch } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { AttendanceFilters, AttendanceLog } from '@/types/hr'
 import { 
   Clock, 
@@ -255,6 +256,20 @@ export default function AttendanceListPage() {
         title="Attendance"
         actions={
           <div className="flex gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'employee.full_name', label: 'Employee' },
+                { key: 'work_date', label: 'Date' },
+                { key: 'time_in', label: 'Time In' },
+                { key: 'time_out', label: 'Time Out' },
+                { key: 'worked_minutes', label: 'Worked (min)' },
+                { key: 'late_minutes', label: 'Late (min)' },
+                { key: 'ot_minutes', label: 'OT (min)' },
+                { key: 'is_absent', label: 'Absent', format: (v: unknown) => v ? 'Yes' : 'No' },
+              ]}
+              filename="attendance"
+            />
             {canManageShifts && (
               <button
                 onClick={openCreateModal}

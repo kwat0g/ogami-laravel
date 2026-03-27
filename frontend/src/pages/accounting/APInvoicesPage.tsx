@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
 import type { VendorInvoiceStatus } from '@/types/ap'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { PurchaseOrder } from '@/types/procurement'
 
 // ---------------------------------------------------------------------------
@@ -198,9 +199,23 @@ export default function APInvoicesPage() {
       <PageHeader
         title="AP Invoices"
         actions={
-          <Link to="/accounting/ap/monitor" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
-            Due Date Monitor
-          </Link>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'invoice_number', label: 'Invoice #' },
+                { key: 'vendor.name', label: 'Vendor' },
+                { key: 'status', label: 'Status' },
+                { key: 'net_amount_centavos', label: 'Net Amount', format: (v: unknown) => `${((v as number) / 100).toFixed(2)}` },
+                { key: 'invoice_date', label: 'Invoice Date' },
+                { key: 'due_date', label: 'Due Date' },
+              ]}
+              filename="ap-invoices"
+            />
+            <Link to="/accounting/ap/monitor" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
+              Due Date Monitor
+            </Link>
+          </div>
         }
       />
 
