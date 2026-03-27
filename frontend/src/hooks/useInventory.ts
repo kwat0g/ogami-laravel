@@ -320,3 +320,45 @@ export function useFulfillMRQ(ulid: string) {
       }),
   })
 }
+
+// ============================================================================
+// Low Stock Detection & Auto-Reorder
+// ============================================================================
+
+export interface LowStockItem {
+  item: ItemMaster
+  on_hand: number
+  reorder_point: number
+  deficit: number
+  suggested_qty: number
+}
+
+/** Detect all items below their reorder point (uses analytics endpoint). */
+export function useLowStockDetection(enabled = true) {
+  return useQuery({
+    queryKey: ['inventory', 'low-stock-detection'],
+    queryFn: async () => {
+      const res = await api.get<{ data: LowStockItem[] }>('/inventory/low-stock')
+      return res.data.data
+    },
+    enabled,
+    staleTime: 60_000,
+  })
+}
+
+/** Create auto-reorder Purchase Requests for all low-stock items. */
+export function useCreateReorderRequests() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.post<{ message: string; data: Array<{ id: number; ulid: string; pr_reference: string; total_estimated_cost: number }> }>(
+        '/inventory/low-stock/create-reorder',
+      )
+      return res.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['inventory'] })
+      qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+    },
+  })
+}
