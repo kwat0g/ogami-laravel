@@ -56,6 +56,14 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
     Route::get('overtime-requests/pending-executive', [OvertimeRequestController::class, 'pendingExecutive'])
         ->middleware('permission:overtime.executive_approve')
         ->name('overtime.pending-executive');
+    // Batch OT operations (must be above parameterised routes)
+    Route::patch('overtime-requests/batch-approve', [OvertimeRequestController::class, 'batchApprove'])
+        ->middleware(['permission:overtime.approve', 'throttle:api-action'])
+        ->name('overtime.batch-approve');
+    Route::patch('overtime-requests/batch-reject', [OvertimeRequestController::class, 'batchReject'])
+        ->middleware(['permission:overtime.approve', 'throttle:api-action'])
+        ->name('overtime.batch-reject');
+
     Route::post('overtime-requests', [OvertimeRequestController::class, 'store'])->name('overtime.store');
     Route::get('overtime-requests/{overtimeRequest}', [OvertimeRequestController::class, 'show'])->name('overtime.show');
     // Supervisor/Head first-level endorsement (staff OT requests only) with SoD

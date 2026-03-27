@@ -78,6 +78,49 @@ export function useApproveOvertimeRequest() {
 
 // ── Reject ────────────────────────────────────────────────────────────────────
 
+// ── Batch Approve ─────────────────────────────────────────────────────────────
+
+export interface BatchOtResult {
+  message: string
+  results: {
+    approved?: number[]
+    rejected?: number[]
+    failed: { id: number; reason: string }[]
+  }
+}
+
+export function useBatchApproveOvertime() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, approved_minutes, remarks }: { ids: number[]; approved_minutes: number; remarks?: string }) => {
+      const res = await api.patch<BatchOtResult>('/attendance/overtime-requests/batch-approve', { ids, approved_minutes, remarks })
+      return res.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['overtime-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-overtime-requests'] })
+    },
+  })
+}
+
+// ── Batch Reject ──────────────────────────────────────────────────────────────
+
+export function useBatchRejectOvertime() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, remarks }: { ids: number[]; remarks: string }) => {
+      const res = await api.patch<BatchOtResult>('/attendance/overtime-requests/batch-reject', { ids, remarks })
+      return res.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['overtime-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-overtime-requests'] })
+    },
+  })
+}
+
+// ── Reject (single) ──────────────────────────────────────────────────────────
+
 export function useRejectOvertimeRequest() {
   const queryClient = useQueryClient()
   return useMutation({

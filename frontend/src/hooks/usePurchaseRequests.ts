@@ -140,6 +140,47 @@ export function useVpApprovePurchaseRequest() {
 
 // ── Reject ───────────────────────────────────────────────────────────────────
 
+// ── Batch Review ─────────────────────────────────────────────────────────────
+
+export interface BatchPrResult {
+  message: string
+  results: {
+    reviewed?: number[]
+    rejected?: number[]
+    failed: { id: number; reason: string }[]
+  }
+}
+
+export function useBatchReviewPurchaseRequests() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, comments }: { ids: number[]; comments?: string }) => {
+      const res = await api.post<BatchPrResult>('/procurement/purchase-requests/batch-review', { ids, comments })
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+    },
+  })
+}
+
+// ── Batch Reject ─────────────────────────────────────────────────────────────
+
+export function useBatchRejectPurchaseRequests() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, reason, stage }: { ids: number[]; reason: string; stage: string }) => {
+      const res = await api.post<BatchPrResult>('/procurement/purchase-requests/batch-reject', { ids, reason, stage })
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['purchase-requests'] })
+    },
+  })
+}
+
+// ── Reject (single) ─────────────────────────────────────────────────────────
+
 export function useRejectPurchaseRequest() {
   const qc = useQueryClient()
   return useMutation({

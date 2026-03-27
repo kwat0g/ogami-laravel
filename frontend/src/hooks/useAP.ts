@@ -271,6 +271,47 @@ export function useApproveAPInvoice(id: string) {
   })
 }
 
+// ── Batch Approve AP Invoices ─────────────────────────────────────────────────
+
+export interface BatchApInvoiceResult {
+  message: string
+  results: {
+    approved?: number[]
+    rejected?: number[]
+    failed: { id: number; reason: string }[]
+  }
+}
+
+export function useBatchApproveAPInvoices() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids }: { ids: number[] }) => {
+      const res = await api.post<BatchApInvoiceResult>('/accounting/ap/invoices/batch-approve', { ids })
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
+// ── Batch Reject AP Invoices ─────────────────────────────────────────────────
+
+export function useBatchRejectAPInvoices() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, rejection_note }: { ids: number[]; rejection_note: string }) => {
+      const res = await api.post<BatchApInvoiceResult>('/accounting/ap/invoices/batch-reject', { ids, rejection_note })
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['ap-invoices'] })
+    },
+  })
+}
+
+// ── Reject (single) ─────────────────────────────────────────────────────────
+
 export function useRejectAPInvoice(id: string) {
   const qc = useQueryClient()
   return useMutation({

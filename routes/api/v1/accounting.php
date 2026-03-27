@@ -173,6 +173,14 @@ Route::middleware(['auth:sanctum', 'module_access:accounting'])->group(function 
         ->middleware('throttle:api-action')
         ->name('ap-invoices.from-po');
 
+    // Batch AP invoice operations (must be above parameterised routes)
+    Route::post('ap/invoices/batch-approve', [VendorInvoiceController::class, 'batchApprove'])
+        ->middleware('throttle:api-action')
+        ->name('ap.invoices.batch-approve');
+    Route::post('ap/invoices/batch-reject', [VendorInvoiceController::class, 'batchReject'])
+        ->middleware('throttle:api-action')
+        ->name('ap.invoices.batch-reject');
+
     Route::get('ap/invoices/{apInvoice}', [VendorInvoiceController::class, 'show'])
         ->name('ap-invoices.show');
 

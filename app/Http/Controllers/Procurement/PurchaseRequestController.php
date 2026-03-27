@@ -251,6 +251,74 @@ final class PurchaseRequestController extends Controller
         ]));
     }
 
+    /**
+     * POST /api/v1/procurement/purchase-requests/batch-review
+     * Batch review multiple pending_review PRs.
+     */
+    public function batchReview(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'      => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*'    => ['integer', 'exists:purchase_requests,id'],
+            'comments' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $user     = auth()->user();
+        $comments = (string) $request->input('comments', '');
+        $results  = ['reviewed' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $pr = PurchaseRequest::findOrFail($id);
+                $this->authorize('review', $pr);
+                $this->service->review($pr, $user, $comments);
+                $results['reviewed'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = ['id' => $id, 'reason' => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['reviewed']) . ' PR(s) reviewed.',
+            'results' => $results,
+        ]);
+    }
+
+    /**
+     * POST /api/v1/procurement/purchase-requests/batch-reject
+     * Batch reject multiple PRs.
+     */
+    public function batchReject(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids'    => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*'  => ['integer', 'exists:purchase_requests,id'],
+            'reason' => ['required', 'string', 'min:10'],
+            'stage'  => ['required', 'string'],
+        ]);
+
+        $user    = auth()->user();
+        $reason  = $request->string('reason')->value();
+        $stage   = $request->string('stage')->value();
+        $results = ['rejected' => [], 'failed' => []];
+
+        foreach ($request->input('ids') as $id) {
+            try {
+                $pr = PurchaseRequest::findOrFail($id);
+                $this->authorize('reject', $pr);
+                $this->service->reject($pr, $user, $reason, $stage);
+                $results['rejected'][] = $id;
+            } catch (\Throwable $e) {
+                $results['failed'][] = ['id' => $id, 'reason' => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'message' => count($results['rejected']) . ' PR(s) rejected.',
+            'results' => $results,
+        ]);
+    }
+
     public function cancel(PurchaseRequest $purchaseRequest): JsonResponse
     {
         $this->authorize('cancel', $purchaseRequest);

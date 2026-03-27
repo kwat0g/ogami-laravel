@@ -33,6 +33,14 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             ->middleware('throttle:api-action')
             ->name('store');
 
+        // Batch operations (must be above parameterised routes)
+        Route::post('/batch-review', [PurchaseRequestController::class, 'batchReview'])
+            ->middleware('throttle:api-action')
+            ->name('batch-review');
+        Route::post('/batch-reject', [PurchaseRequestController::class, 'batchReject'])
+            ->middleware('throttle:api-action')
+            ->name('batch-reject');
+
         Route::get('/{purchaseRequest}', [PurchaseRequestController::class, 'show'])
             ->name('show');
 
