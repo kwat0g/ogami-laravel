@@ -236,6 +236,111 @@
   }
 }
 
+/* ── Global Dark Mode Overrides ─────────────────────────────────────────────
+ * These rules automatically adapt common light-mode patterns without needing
+ * dark: variants on every element.  They target the most frequent offenders:
+ * bg-white containers, text-neutral-900 headings, border-neutral-200 dividers,
+ * bg-neutral-50 surfaces, and input/select elements.
+ */
+.dark {
+  /* White containers → dark surface */
+  .bg-white:not([class*="dark\:bg-"]) {
+    background-color: rgb(23 23 23) !important; /* neutral-900 */
+  }
+
+  /* Light gray surfaces → darker surface */
+  .bg-neutral-50:not([class*="dark\:bg-"]) {
+    background-color: rgb(10 10 10) !important; /* neutral-950 */
+  }
+  .bg-neutral-100:not([class*="dark\:bg-"]) {
+    background-color: rgb(23 23 23) !important; /* neutral-900 */
+  }
+
+  /* Dark text → light text */
+  .text-neutral-900:not([class*="dark\:text-"]) {
+    color: rgb(245 245 245) !important; /* neutral-100 */
+  }
+  .text-neutral-800:not([class*="dark\:text-"]) {
+    color: rgb(229 229 229) !important; /* neutral-200 */
+  }
+  .text-neutral-700:not([class*="dark\:text-"]) {
+    color: rgb(212 212 212) !important; /* neutral-300 */
+  }
+
+  /* Muted text → slightly lighter in dark */
+  .text-neutral-600:not([class*="dark\:text-"]) {
+    color: rgb(163 163 163) !important; /* neutral-400 */
+  }
+  .text-neutral-500:not([class*="dark\:text-"]) {
+    color: rgb(163 163 163) !important; /* neutral-400 */
+  }
+
+  /* Borders → darker borders */
+  .border-neutral-200:not([class*="dark\:border-"]) {
+    border-color: rgb(64 64 64) !important; /* neutral-700 */
+  }
+  .border-neutral-100:not([class*="dark\:border-"]) {
+    border-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .border-neutral-300:not([class*="dark\:border-"]) {
+    border-color: rgb(82 82 82) !important; /* neutral-600 */
+  }
+
+  /* Divide lines */
+  .divide-neutral-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(64 64 64) !important; /* neutral-700 */
+  }
+
+  /* Even row striping */
+  .even\:bg-neutral-100:nth-child(even) {
+    background-color: rgb(23 23 23) !important; /* neutral-900 */
+  }
+
+  /* Hover states */
+  .hover\:bg-neutral-50:hover {
+    background-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .hover\:bg-neutral-100:hover {
+    background-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+
+  /* Native inputs/textareas without explicit dark classes */
+  input:not([type="checkbox"]):not([type="radio"]):not([class*="dark\:bg-"]),
+  textarea:not([class*="dark\:bg-"]) {
+    background-color: rgb(38 38 38) !important; /* neutral-800 */
+    color: rgb(245 245 245) !important; /* neutral-100 */
+    border-color: rgb(82 82 82) !important; /* neutral-600 */
+  }
+
+  /* Placeholder text */
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(115 115 115) !important; /* neutral-500 */
+  }
+
+  /* Ring offset for focus */
+  *:focus-visible {
+    --tw-ring-offset-color: rgb(23 23 23); /* neutral-900 */
+  }
+
+  /* Buttons with bg-neutral-900 text-white → invert in dark mode */
+  .bg-neutral-900:not([class*="dark\:bg-"]) {
+    background-color: rgb(245 245 245) !important; /* neutral-100 */
+    color: rgb(23 23 23) !important; /* neutral-900 */
+  }
+  .bg-neutral-900:not([class*="dark\:bg-"]):hover {
+    background-color: rgb(229 229 229) !important; /* neutral-200 */
+  }
+
+  /* Status badge shadow */
+  .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.15);
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
