@@ -23,6 +23,8 @@ import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import StatusTimeline from '@/components/ui/StatusTimeline'
+import { getLoanSteps, isRejectedStatus } from '@/lib/workflowSteps'
 
 export default function LoanDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
@@ -203,6 +205,17 @@ export default function LoanDetailPage() {
         subtitle={`${loan.employee?.full_name ?? `Employee #${loan.employee_id}`}${loan.reference_no ? ` · ${loan.reference_no}` : ''}`}
         backTo={loanListPath}
       />
+
+      {/* Workflow Progress */}
+      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-6">
+        <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Approval Progress</h3>
+        <StatusTimeline
+          steps={getLoanSteps(loan)}
+          currentStatus={loan.status}
+          direction="horizontal"
+          isRejected={isRejectedStatus(loan.status)}
+        />
+      </div>
 
       {/* Employee Loan History Alert */}
       {hasLoanHistory && (

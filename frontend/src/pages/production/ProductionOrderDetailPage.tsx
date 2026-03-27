@@ -21,6 +21,8 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import StatusTimeline from '@/components/ui/StatusTimeline'
+import { getProductionOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import type { ProductionOrderStatus } from '@/types/production'
 
 type ConfirmAction = 'release' | 'start' | 'complete' | 'cancel' | null
@@ -285,6 +287,16 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Workflow Timeline */}
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-5">
+        <StatusTimeline
+          steps={getProductionOrderSteps(order)}
+          currentStatus={order.status}
+          direction="horizontal"
+          isRejected={isRejectedStatus(order.status)}
+        />
       </div>
 
       {/* Details */}
