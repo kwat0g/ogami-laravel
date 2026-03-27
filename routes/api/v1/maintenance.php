@@ -74,4 +74,27 @@ Route::middleware(['auth:sanctum', 'module_access:maintenance'])->group(function
             fclose($out);
         }, 'work_orders_'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('work-orders.export');
+
+    // ── Maintenance Analytics (Phase 2) — MTBF/MTTR/OEE ──────────────────
+    Route::get('/analytics/equipment/{equipment}', function (\Illuminate\Http\Request $request, \App\Domains\Maintenance\Models\Equipment $equipment): \Illuminate\Http\JsonResponse {
+        $service = app(\App\Domains\Maintenance\Services\MaintenanceAnalyticsService::class);
+        return response()->json(['data' => $service->equipmentMetrics(
+            $equipment,
+            $request->input('from_date'),
+            $request->input('to_date'),
+        )]);
+    })->name('analytics.equipment');
+
+    Route::get('/analytics/all', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        $service = app(\App\Domains\Maintenance\Services\MaintenanceAnalyticsService::class);
+        return response()->json(['data' => $service->allEquipmentMetrics(
+            $request->input('from_date'),
+            $request->input('to_date'),
+        )]);
+    })->name('analytics.all');
+
+    Route::get('/analytics/cost-per-equipment', function (): \Illuminate\Http\JsonResponse {
+        $service = app(\App\Domains\Maintenance\Services\MaintenanceAnalyticsService::class);
+        return response()->json(['data' => $service->costPerEquipment()]);
+    })->name('analytics.cost');
 });

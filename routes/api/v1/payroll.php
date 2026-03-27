@@ -188,4 +188,19 @@ Route::middleware(['auth:sanctum', 'module_access:payroll'])->group(function () 
     Route::patch('periods/{payPeriod}/close', [PayPeriodController::class, 'close'])
         ->middleware('permission:payroll.initiate')
         ->name('periods.close');
+
+    // ── Payslip Data (Phase 2) ────────────────────────────────────────────
+    Route::get('runs/{payrollRun}/payslips', function (int $payrollRun): \Illuminate\Http\JsonResponse {
+        $service = app(\App\Domains\Payroll\Services\PayslipPdfService::class);
+        return response()->json(['data' => $service->generateBatchPayslips($payrollRun)]);
+    })->name('payslips.batch');
+
+    Route::get('runs/{payrollRun}/payslips/{employee}', function (int $payrollRun, int $employee): \Illuminate\Http\JsonResponse {
+        $service = app(\App\Domains\Payroll\Services\PayslipPdfService::class);
+        $data = $service->generatePayslipData($payrollRun, $employee);
+        if ($data === null) {
+            return response()->json(['error' => 'Payslip not found'], 404);
+        }
+        return response()->json(['data' => $data]);
+    })->name('payslips.individual');
 });

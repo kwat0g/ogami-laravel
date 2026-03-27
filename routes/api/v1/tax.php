@@ -44,4 +44,35 @@ Route::middleware(['auth:sanctum', 'module_access:tax'])->group(function () {
 
     Route::patch('bir-filings/{birFiling}/amend', [BirFilingController::class, 'markAmended'])
         ->name('bir-filings.amend');
+
+    // ── BIR Form Generator (Phase 2) ─────────────────────────────────────
+    Route::prefix('bir-forms')->name('bir-forms.')->group(function () {
+        Route::get('/vat-return', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $data = $request->validate([
+                'month' => ['required', 'integer', 'min:1', 'max:12'],
+                'year' => ['required', 'integer', 'min:2020'],
+            ]);
+            $service = app(\App\Domains\Tax\Services\BirFormGeneratorService::class);
+            return response()->json(['data' => $service->generateVatReturn($data['month'], $data['year'])]);
+        })->name('vat-return');
+
+        Route::get('/withholding-tax', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $data = $request->validate([
+                'month' => ['required', 'integer', 'min:1', 'max:12'],
+                'year' => ['required', 'integer', 'min:2020'],
+            ]);
+            $service = app(\App\Domains\Tax\Services\BirFormGeneratorService::class);
+            return response()->json(['data' => $service->generateWithholdingTax($data['month'], $data['year'])]);
+        })->name('withholding-tax');
+
+        Route::get('/form-2307', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $data = $request->validate([
+                'vendor_id' => ['required', 'integer', 'exists:vendors,id'],
+                'quarter' => ['required', 'integer', 'min:1', 'max:4'],
+                'year' => ['required', 'integer', 'min:2020'],
+            ]);
+            $service = app(\App\Domains\Tax\Services\BirFormGeneratorService::class);
+            return response()->json(['data' => $service->generateForm2307($data['vendor_id'], $data['quarter'], $data['year'])]);
+        })->name('form-2307');
+    });
 });

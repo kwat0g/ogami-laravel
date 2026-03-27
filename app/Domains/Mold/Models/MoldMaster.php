@@ -46,6 +46,8 @@ final class MoldMaster extends Model implements AuditableContract
         'material',
         'location',
         'max_shots',
+        'cost_centavos',
+        'expected_total_shots',
         'status',
         'is_active',
         'created_by_id',

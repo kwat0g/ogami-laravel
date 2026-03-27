@@ -65,6 +65,12 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     // PROD-001: Pre-release stock availability check
     Route::get('orders/{productionOrder}/stock-check', [ProductionOrderController::class, 'stockCheck']);
 
+    // ── Production Cost Auto-Posting to GL (Phase 2) ──────────────────────
+    Route::post('orders/{productionOrder}/post-cost', function (\Illuminate\Http\Request $request, \App\Domains\Production\Models\ProductionOrder $productionOrder): \Illuminate\Http\JsonResponse {
+        $service = app(\App\Domains\Production\Services\ProductionCostPostingService::class);
+        return response()->json(['data' => $service->postCostVariance($productionOrder, $request->user())]);
+    })->middleware('throttle:api-action');
+
     // ── Production Cost Analysis Report ──────────────────────────────────────
     Route::get('reports/cost-analysis', function (Request $request): JsonResponse {
         $query = ProductionOrder::with(['product', 'bom:id,name'])
