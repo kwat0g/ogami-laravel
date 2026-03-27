@@ -76,4 +76,35 @@ Route::middleware(['auth:sanctum', 'module_access:qc'])->group(function () {
 
         return response()->json(['data' => $months, 'top_defects' => $topDefects]);
     })->name('reports.defect-rate');
+
+    // ── SPC - Statistical Process Control (Phase 3) ───────────────────────
+    Route::get('spc/control-chart', function (\Illuminate\Http\Request $request): JsonResponse {
+        $data = $request->validate([
+            'template_id' => ['required', 'integer'],
+            'parameter' => ['required', 'string'],
+            'from_date' => ['sometimes', 'date'],
+            'to_date' => ['sometimes', 'date'],
+            'usl' => ['sometimes', 'numeric'],
+            'lsl' => ['sometimes', 'numeric'],
+        ]);
+        $service = app(\App\Domains\QC\Services\SpcService::class);
+        return response()->json(['data' => $service->controlChart(
+            $data['template_id'],
+            $data['parameter'],
+            $data['from_date'] ?? null,
+            $data['to_date'] ?? null,
+            isset($data['usl']) ? (float) $data['usl'] : null,
+            isset($data['lsl']) ? (float) $data['lsl'] : null,
+        )]);
+    })->name('spc.control-chart');
+
+    // ── Supplier Quality Management (Phase 3) ─────────────────────────────
+    Route::get('supplier-quality', function (\Illuminate\Http\Request $request): JsonResponse {
+        $service = app(\App\Domains\QC\Services\SupplierQualityService::class);
+        return response()->json(['data' => $service->vendorQualitySummary(
+            $request->input('vendor_id') ? (int) $request->input('vendor_id') : null,
+            $request->input('from_date'),
+            $request->input('to_date'),
+        )]);
+    })->name('supplier-quality');
 });
