@@ -9,7 +9,6 @@ use App\Domains\AR\Models\CustomerInvoice;
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * AR Aging Report Service — generates aging analysis for accounts receivable.

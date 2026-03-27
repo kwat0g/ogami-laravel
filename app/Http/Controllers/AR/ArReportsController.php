@@ -13,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -177,7 +178,7 @@ final class ArReportsController extends Controller
      */
     private function companySettings(): array
     {
-        $settings = \DB::table('system_settings')
+        $settings = DB::table('system_settings')
             ->whereIn('key', ['company_name', 'company_address', 'company_tin'])
             ->pluck('value', 'key')
             ->toArray();
