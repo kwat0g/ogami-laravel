@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Production;
 
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Services\BomService;
+use App\Domains\Production\Services\CostingService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Production\StoreBomRequest;
 use App\Http\Resources\Production\BomResource;
@@ -63,5 +64,33 @@ final class BomController extends Controller
         $this->service->archive($bom);
 
         return response()->json(['message' => 'BOM archived.']);
+    }
+
+    /**
+     * Rollup and persist standard cost on the BOM.
+     */
+    public function rollupCost(BillOfMaterials $bom): BomResource
+    {
+        $this->authorize('update', $bom);
+
+        return new BomResource($this->service->rollupCost($bom));
+    }
+
+    /**
+     * Compare cost between two BOM versions.
+     */
+    public function costCompare(Request $request, BillOfMaterials $bom): JsonResponse
+    {
+        $this->authorize('view', $bom);
+
+        $request->validate([
+            'compare_bom_id' => ['required', 'integer', 'exists:bill_of_materials,id'],
+        ]);
+
+        $compareBom = BillOfMaterials::findOrFail($request->integer('compare_bom_id'));
+
+        return response()->json([
+            'data' => $this->service->compareCost($bom, $compareBom),
+        ]);
     }
 }

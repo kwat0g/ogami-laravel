@@ -26,6 +26,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property numeric-string $reorder_point
  * @property numeric-string $reorder_qty
  * @property string $type raw_material|semi_finished|finished_good|consumable|spare_part
+ * @property string $costing_method standard|fifo|weighted_average
  * @property bool $requires_iqc
  * @property bool $is_active
  * @property int|null $preferred_vendor_id
@@ -49,6 +50,7 @@ final class ItemMaster extends Model implements Auditable
         'unit_of_measure',
         'description',
         'standard_price_centavos',
+        'costing_method',
         'reorder_point',
         'reorder_qty',
         'type',

@@ -7,11 +7,13 @@ namespace App\Domains\Production\Models;
 use App\Domains\Inventory\Models\ItemMaster;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
  * @property int $bom_id
+ * @property int|null $parent_bom_component_id
  * @property int $component_item_id
  * @property string $qty_per_unit
  * @property string $unit_of_measure
@@ -29,6 +31,7 @@ final class BomComponent extends Model
 
     protected $fillable = [
         'bom_id',
+        'parent_bom_component_id',
         'component_item_id',
         'qty_per_unit',
         'unit_of_measure',
@@ -48,5 +51,15 @@ final class BomComponent extends Model
     public function componentItem(): BelongsTo
     {
         return $this->belongsTo(ItemMaster::class, 'component_item_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_bom_component_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_bom_component_id');
     }
 }

@@ -200,6 +200,87 @@ final class StockService implements ServiceContract
         });
     }
 
+    /**
+     * Transfer stock between two warehouse locations.
+     *
+     * Creates an issue ledger entry at the source and a receipt at the destination,
+     * both referencing a 'transfer' transaction type.
+     */
+    public function transfer(
+        int $itemId,
+        int $fromLocationId,
+        int $toLocationId,
+        float $quantity,
+        User $actor,
+        ?string $remarks = null
+    ): array {
+        if ($quantity <= 0) {
+            throw new DomainException('Transfer quantity must be positive.', 'INV_INVALID_QTY', 422);
+        }
+
+        if ($fromLocationId === $toLocationId) {
+            throw new DomainException('Source and destination locations must be different.', 'INV_SAME_LOCATION', 422);
+        }
+
+        return DB::transaction(function () use ($itemId, $fromLocationId, $toLocationId, $quantity, $actor, $remarks): array {
+            $fromBalance = $this->currentBalance($itemId, $fromLocationId);
+
+            if ($fromBalance < $quantity) {
+                throw new DomainException(
+                    "Insufficient stock at source. Available: {$fromBalance}, Requested: {$quantity}",
+                    'INV_INSUFFICIENT_STOCK',
+                    422
+                );
+            }
+
+            $newFromBalance = $fromBalance - $quantity;
+            $toBalance = $this->currentBalance($itemId, $toLocationId);
+            $newToBalance = $toBalance + $quantity;
+
+            // Issue from source
+            $issueLedger = StockLedger::create([
+                'item_id' => $itemId,
+                'location_id' => $fromLocationId,
+                'transaction_type' => 'transfer_out',
+                'reference_type' => 'stock_transfer',
+                'reference_id' => 0,
+                'quantity' => -$quantity,
+                'balance_after' => $newFromBalance,
+                'remarks' => $remarks ?? "Transfer to location #{$toLocationId}",
+                'created_by_id' => $actor->id,
+            ]);
+
+            // Receive at destination
+            $receiveLedger = StockLedger::create([
+                'item_id' => $itemId,
+                'location_id' => $toLocationId,
+                'transaction_type' => 'transfer_in',
+                'reference_type' => 'stock_transfer',
+                'reference_id' => $issueLedger->id,
+                'quantity' => $quantity,
+                'balance_after' => $newToBalance,
+                'remarks' => $remarks ?? "Transfer from location #{$fromLocationId}",
+                'created_by_id' => $actor->id,
+            ]);
+
+            $this->upsertBalance($itemId, $fromLocationId, $newFromBalance);
+            $this->upsertBalance($itemId, $toLocationId, $newToBalance);
+
+            // Fire low-stock alert if source location drops below reorder point
+            $item = ItemMaster::find($itemId);
+            if ($item !== null && $newFromBalance <= (float) $item->reorder_point) {
+                DB::afterCommit(
+                    fn () => event(new LowStockDetected($item, $newFromBalance, $fromLocationId))
+                );
+            }
+
+            return [
+                'issue_ledger' => $issueLedger,
+                'receive_ledger' => $receiveLedger,
+            ];
+        });
+    }
+
     public function currentBalance(int $itemId, int $locationId): float
     {
         $sb = StockBalance::where('item_id', $itemId)

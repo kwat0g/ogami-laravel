@@ -1,0 +1,207 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Inventory\Services;
+
+use App\Domains\Inventory\Models\PhysicalCount;
+use App\Domains\Inventory\Models\PhysicalCountItem;
+use App\Domains\Inventory\Models\StockBalance;
+use App\Models\User;
+use App\Shared\Contracts\ServiceContract;
+use App\Shared\Exceptions\DomainException;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Physical Count Service — manages the full count-to-adjustment workflow.
+ *
+ * Workflow: draft -> in_progress -> pending_approval -> approved -> adjustments posted
+ */
+final class PhysicalCountService implements ServiceContract
+{
+    public function __construct(private readonly StockService $stockService) {}
+
+    /** @param array<string,mixed> $filters */
+    public function paginate(array $filters = []): LengthAwarePaginator
+    {
+        $query = PhysicalCount::with(['location', 'createdBy'])
+            ->orderByDesc('id');
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (isset($filters['location_id'])) {
+            $query->where('location_id', $filters['location_id']);
+        }
+
+        return $query->paginate((int) ($filters['per_page'] ?? 20));
+    }
+
+    /**
+     * Create a new physical count with items pre-populated from current stock.
+     *
+     * @param array<string,mixed> $data
+     */
+    public function store(array $data, User $actor): PhysicalCount
+    {
+        return DB::transaction(function () use ($data, $actor): PhysicalCount {
+            $count = PhysicalCount::create([
+                'reference_number' => $data['reference_number'] ?? 'PC-' . now()->format('Ymd-His'),
+                'location_id' => $data['location_id'],
+                'status' => 'draft',
+                'count_date' => $data['count_date'] ?? now()->toDateString(),
+                'notes' => $data['notes'] ?? null,
+                'created_by_id' => $actor->id,
+            ]);
+
+            // Pre-populate with current stock balances at this location
+            $balances = StockBalance::where('location_id', $data['location_id'])
+                ->where('quantity_on_hand', '>', 0)
+                ->get();
+
+            foreach ($balances as $balance) {
+                PhysicalCountItem::create([
+                    'physical_count_id' => $count->id,
+                    'item_id' => $balance->item_id,
+                    'system_qty' => $balance->quantity_on_hand,
+                ]);
+            }
+
+            // Also add items specified in request that may have zero stock
+            foreach ($data['item_ids'] ?? [] as $itemId) {
+                $exists = $count->items()->where('item_id', $itemId)->exists();
+                if (! $exists) {
+                    PhysicalCountItem::create([
+                        'physical_count_id' => $count->id,
+                        'item_id' => $itemId,
+                        'system_qty' => 0,
+                    ]);
+                }
+            }
+
+            return $count->load('items.item', 'location');
+        });
+    }
+
+    /**
+     * Start counting — transitions draft -> in_progress.
+     */
+    public function startCounting(PhysicalCount $count): PhysicalCount
+    {
+        if ($count->status !== 'draft') {
+            throw new DomainException(
+                'Physical count must be in draft status to start counting.',
+                'INV_INVALID_COUNT_STATUS',
+                422
+            );
+        }
+
+        $count->update(['status' => 'in_progress']);
+
+        return $count->fresh(['items.item', 'location']) ?? $count;
+    }
+
+    /**
+     * Record counted quantities for items.
+     *
+     * @param array<int, array{item_id: int, counted_qty: float, remarks?: string}> $counts
+     */
+    public function recordCounts(PhysicalCount $count, array $counts): PhysicalCount
+    {
+        if (! in_array($count->status, ['draft', 'in_progress'], true)) {
+            throw new DomainException(
+                'Physical count must be in draft or in_progress to record counts.',
+                'INV_INVALID_COUNT_STATUS',
+                422
+            );
+        }
+
+        DB::transaction(function () use ($count, $counts): void {
+            foreach ($counts as $entry) {
+                $item = $count->items()->where('item_id', $entry['item_id'])->first();
+                if ($item) {
+                    $variance = $entry['counted_qty'] - (float) $item->system_qty;
+                    $item->update([
+                        'counted_qty' => $entry['counted_qty'],
+                        'variance_qty' => $variance,
+                        'remarks' => $entry['remarks'] ?? $item->remarks,
+                    ]);
+                }
+            }
+
+            if ($count->status === 'draft') {
+                $count->update(['status' => 'in_progress']);
+            }
+        });
+
+        return $count->fresh(['items.item', 'location']) ?? $count;
+    }
+
+    /**
+     * Submit for approval — transitions in_progress -> pending_approval.
+     */
+    public function submitForApproval(PhysicalCount $count): PhysicalCount
+    {
+        if ($count->status !== 'in_progress') {
+            throw new DomainException(
+                'Physical count must be in progress to submit for approval.',
+                'INV_INVALID_COUNT_STATUS',
+                422
+            );
+        }
+
+        // Ensure all items have been counted
+        $uncounted = $count->items()->whereNull('counted_qty')->count();
+        if ($uncounted > 0) {
+            throw new DomainException(
+                "{$uncounted} items have not been counted yet.",
+                'INV_INCOMPLETE_COUNT',
+                422,
+                ['uncounted_items' => $uncounted]
+            );
+        }
+
+        $count->update(['status' => 'pending_approval']);
+
+        return $count->fresh(['items.item', 'location']) ?? $count;
+    }
+
+    /**
+     * Approve count and post stock adjustments for all variance items.
+     */
+    public function approve(PhysicalCount $count, User $approver): PhysicalCount
+    {
+        if ($count->status !== 'pending_approval') {
+            throw new DomainException(
+                'Physical count must be pending approval.',
+                'INV_INVALID_COUNT_STATUS',
+                422
+            );
+        }
+
+        return DB::transaction(function () use ($count, $approver): PhysicalCount {
+            // Post adjustments for items with variance
+            foreach ($count->items as $item) {
+                if ($item->variance_qty !== null && (float) $item->variance_qty !== 0.0) {
+                    $this->stockService->adjust(
+                        itemId: $item->item_id,
+                        locationId: $count->location_id,
+                        adjustedQty: (float) $item->counted_qty,
+                        actor: $approver,
+                        remarks: "Physical count #{$count->reference_number} adjustment"
+                    );
+                }
+            }
+
+            $count->update([
+                'status' => 'approved',
+                'approved_by_id' => $approver->id,
+                'approved_at' => now(),
+            ]);
+
+            return $count->fresh(['items.item', 'location']) ?? $count;
+        });
+    }
+}

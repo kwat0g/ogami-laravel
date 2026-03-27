@@ -111,4 +111,66 @@ final class BomService implements ServiceContract
             ->where('is_active', true)
             ->get();
     }
+
+    /**
+     * Rollup standard cost for a BOM.
+     *
+     * Computes material cost from components (single-level) and persists
+     * the result on the BOM's standard_cost_centavos column.
+     */
+    public function rollupCost(BillOfMaterials $bom): BillOfMaterials
+    {
+        $bom->loadMissing(['components.componentItem']);
+
+        $totalCost = 0;
+
+        foreach ($bom->components as $comp) {
+            $item = $comp->componentItem;
+            $unitCost = (int) (($item->standard_price ?? 0) * 100);
+            $qtyPerUnit = (float) $comp->qty_per_unit;
+            $scrapFactor = 1 + ((float) $comp->scrap_factor_pct / 100);
+            $grossQty = $qtyPerUnit * $scrapFactor;
+            $totalCost += (int) round($grossQty * $unitCost);
+        }
+
+        $bom->update([
+            'standard_cost_centavos' => $totalCost,
+            'last_cost_rollup_at' => now(),
+        ]);
+
+        return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+    }
+
+    /**
+     * Compare cost between two BOM versions for the same product.
+     *
+     * @return array{version_a: array, version_b: array, variance_centavos: int, variance_pct: float}
+     */
+    public function compareCost(BillOfMaterials $bomA, BillOfMaterials $bomB): array
+    {
+        $costingService = app(CostingService::class);
+
+        $costA = $costingService->standardCost($bomA);
+        $costB = $costingService->standardCost($bomB);
+
+        $variance = $costB['material_cost_centavos'] - $costA['material_cost_centavos'];
+        $variancePct = $costA['material_cost_centavos'] > 0
+            ? round(($variance / $costA['material_cost_centavos']) * 100, 2)
+            : 0.0;
+
+        return [
+            'version_a' => [
+                'bom_id' => $bomA->id,
+                'version' => $bomA->version,
+                'material_cost_centavos' => $costA['material_cost_centavos'],
+            ],
+            'version_b' => [
+                'bom_id' => $bomB->id,
+                'version' => $bomB->version,
+                'material_cost_centavos' => $costB['material_cost_centavos'],
+            ],
+            'variance_centavos' => $variance,
+            'variance_pct' => $variancePct,
+        ];
+    }
 }
