@@ -11,6 +11,8 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
+import StatusTimeline from '@/components/ui/StatusTimeline';
+import { getDeliveryReceiptSteps, isRejectedStatus } from '@/lib/workflowSteps';
 import type { DrDirection } from '@/types/delivery';
 
 const DIRECTION_COLORS: Record<DrDirection, string> = {
@@ -81,6 +83,16 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
           )
         }
       />
+
+      {/* Workflow Timeline */}
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-5">
+        <StatusTimeline
+          steps={getDeliveryReceiptSteps(dr)}
+          currentStatus={dr.status}
+          direction="horizontal"
+          isRejected={isRejectedStatus(dr.status)}
+        />
+      </div>
 
       {/* Details */}
       <Card className="mb-5">

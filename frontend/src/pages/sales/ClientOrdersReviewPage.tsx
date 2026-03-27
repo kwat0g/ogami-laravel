@@ -4,6 +4,7 @@ import { RefreshCw, ChevronRight } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useClientOrders } from '@/hooks/useClientOrders'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { ClientOrder } from '@/types/client-order'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -51,7 +52,22 @@ export default function ClientOrdersReviewPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Client Orders" />
+      <PageHeader
+        title="Client Orders"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'order_reference', label: 'Order Ref' },
+              { key: 'customer.name', label: 'Customer' },
+              { key: 'status', label: 'Status' },
+              { key: 'total_amount_centavos', label: 'Total Amount', format: (v: unknown) => `${((v as number) / 100).toFixed(2)}` },
+              { key: 'created_at', label: 'Created' },
+            ]}
+            filename="client-orders"
+          />
+        }
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">
