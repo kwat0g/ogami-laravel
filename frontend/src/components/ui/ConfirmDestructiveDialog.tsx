@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
 
 /**
@@ -56,6 +56,16 @@ export default function ConfirmDestructiveDialog({
   const setOpen = isControlled ? (v: boolean) => { if (!v && onClose) onClose(); setTyped('') } : (v: boolean) => { setInternalOpen(v); if (!v) setTyped('') }
   const loading = controlledLoading ?? internalLoading
   const setLoading = isControlled ? (_v: boolean) => {} : setInternalLoading
+
+  // Escape key to close dialog
+  useEffect(() => {
+    if (!open) return
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const canConfirm = typed === confirmWord
 

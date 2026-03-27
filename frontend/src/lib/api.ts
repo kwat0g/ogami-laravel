@@ -160,6 +160,39 @@ api.interceptors.response.use(
   },
 )
 
+// ── GET request retry on network errors ────────────────────────────────────
+// Automatically retries failed GET requests up to 2 times with exponential
+// backoff when the failure is a network error (no response received).
+// Does NOT retry 4xx/5xx responses (those are real server errors).
+const MAX_RETRIES = 2
+const RETRY_BASE_MS = 1000
+
+api.interceptors.response.use(undefined, async (error) => {
+  const config = error.config
+  if (
+    config &&
+    (config.method ?? 'get').toUpperCase() === 'GET' &&
+    !error.response && // No response = network error
+    !config.__retryCount
+  ) {
+    config.__retryCount = 0
+  }
+
+  if (
+    config &&
+    (config.method ?? 'get').toUpperCase() === 'GET' &&
+    !error.response &&
+    (config.__retryCount ?? 0) < MAX_RETRIES
+  ) {
+    config.__retryCount = (config.__retryCount ?? 0) + 1
+    const delay = RETRY_BASE_MS * Math.pow(2, config.__retryCount - 1)
+    await new Promise(resolve => setTimeout(resolve, delay))
+    return api.request(config)
+  }
+
+  return Promise.reject(error)
+})
+
 /** Returns true for errors already toasted by the api interceptor (429, 5xx, cooldown). */
 export function isHandledApiError(err: unknown): boolean {
   if (err instanceof Error) return false

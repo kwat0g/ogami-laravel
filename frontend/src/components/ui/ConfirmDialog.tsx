@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AlertCircle } from 'lucide-react'
 
 /**
@@ -62,6 +62,16 @@ export default function ConfirmDialog({
       setLoading(false)
     }
   }
+
+  // Escape key to close dialog
+  useEffect(() => {
+    if (!open) return
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const confirmButtonClass =
     variant === 'danger'
