@@ -8,6 +8,7 @@ use App\Domains\CRM\Models\ClientOrder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin ClientOrder */
 final class ClientOrderResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -20,17 +21,10 @@ final class ClientOrderResource extends JsonResource
             'id' => $order->id,
             'ulid' => $order->ulid,
             'order_reference' => $order->order_reference,
-            'customer_id' => $order->customer_id,
-            'customer' => $this->whenLoaded('customer', fn () => $order->customer ? [
-                'id' => $order->customer->id,
-                'ulid' => $order->customer->ulid ?? null,
-                'name' => $order->customer->name,
-            ] : null),
             'status' => $order->status,
-            'requested_delivery_date' => $order->requested_delivery_date,
-            'agreed_delivery_date' => $order->agreed_delivery_date,
+            'requested_delivery_date' => $order->requested_delivery_date?->toDateString(),
+            'agreed_delivery_date' => $order->agreed_delivery_date?->toDateString(),
             'total_amount_centavos' => $order->total_amount_centavos,
-            'total_amount' => $order->total_amount_centavos / 100,
             'client_notes' => $order->client_notes,
             'internal_notes' => $order->internal_notes,
             'rejection_reason' => $order->rejection_reason,
@@ -39,40 +33,33 @@ final class ClientOrderResource extends JsonResource
             'negotiation_turn' => $order->negotiation_turn,
             'negotiation_round' => $order->negotiation_round,
             'last_proposal' => $order->last_proposal,
-            'sla_deadline' => $order->sla_deadline,
+            'sla_deadline' => $order->sla_deadline?->toIso8601String(),
+
+            // Customer
+            'customer_id' => $order->customer_id,
+            'customer' => $this->whenLoaded('customer', fn () => $order->customer ? [
+                'id' => $order->customer->id,
+                'ulid' => $order->customer->ulid,
+                'name' => $order->customer->name,
+            ] : null),
 
             // Actors
-            'submitted_by' => $this->whenLoaded('submittedBy', fn () => $order->submittedBy ? [
-                'id' => $order->submittedBy->id,
-                'name' => $order->submittedBy->name,
-            ] : null),
-            'approved_by' => $this->whenLoaded('approvedBy', fn () => $order->approvedBy ? [
-                'id' => $order->approvedBy->id,
-                'name' => $order->approvedBy->name,
-            ] : null),
-            'rejected_by' => $this->whenLoaded('rejectedBy', fn () => $order->rejectedBy ? [
-                'id' => $order->rejectedBy->id,
-                'name' => $order->rejectedBy->name,
-            ] : null),
-            'vp_approved_by' => $this->whenLoaded('vpApprovedBy', fn () => $order->vpApprovedBy ? [
-                'id' => $order->vpApprovedBy->id,
-                'name' => $order->vpApprovedBy->name,
-            ] : null),
-
-            'approved_at' => $order->approved_at,
-            'rejected_at' => $order->rejected_at,
-            'submitted_at' => $order->submitted_at,
-            'vp_approved_at' => $order->vp_approved_at,
-            'cancelled_at' => $order->cancelled_at,
+            'submitted_by' => $order->submitted_by,
+            'submitted_at' => $order->submitted_at?->toIso8601String(),
+            'approved_by' => $order->approved_by,
+            'approved_at' => $order->approved_at?->toIso8601String(),
+            'rejected_by' => $order->rejected_by,
+            'rejected_at' => $order->rejected_at?->toIso8601String(),
+            'vp_approved_by' => $order->vp_approved_by,
+            'vp_approved_at' => $order->vp_approved_at?->toIso8601String(),
+            'cancelled_by' => $order->cancelled_by,
+            'cancelled_at' => $order->cancelled_at?->toIso8601String(),
 
             // Relations
-            'items' => $this->whenLoaded('items'),
-            'items_count' => $this->whenCounted('items'),
-            'delivery_schedule' => $this->whenLoaded('deliverySchedule'),
+            'items' => ClientOrderItemResource::collection($this->whenLoaded('items')),
 
-            'created_at' => $order->created_at,
-            'updated_at' => $order->updated_at,
-            'deleted_at' => $order->deleted_at,
+            'created_at' => $order->created_at?->toIso8601String(),
+            'updated_at' => $order->updated_at?->toIso8601String(),
         ];
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\HR\Services;
 
 use App\Domains\HR\Models\Employee;
+use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Shared\Contracts\ServiceContract;

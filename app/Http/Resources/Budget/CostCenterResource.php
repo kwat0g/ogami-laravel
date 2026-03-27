@@ -8,6 +8,7 @@ use App\Domains\Budget\Models\CostCenter;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin CostCenter */
 final class CostCenterResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -22,21 +23,33 @@ final class CostCenterResource extends JsonResource
             'name' => $cc->name,
             'code' => $cc->code,
             'description' => $cc->description,
+            'is_active' => $cc->is_active,
+
             'department_id' => $cc->department_id,
             'department' => $this->whenLoaded('department', fn () => $cc->department ? [
                 'id' => $cc->department->id,
                 'name' => $cc->department->name,
             ] : null),
+
             'parent_id' => $cc->parent_id,
             'parent' => $this->whenLoaded('parent', fn () => $cc->parent ? [
                 'id' => $cc->parent->id,
+                'ulid' => $cc->parent->ulid,
                 'name' => $cc->parent->name,
                 'code' => $cc->parent->code,
             ] : null),
-            'is_active' => $cc->is_active,
+
+            'children' => CostCenterResource::collection($this->whenLoaded('children')),
+            'budgets' => BudgetLineResource::collection($this->whenLoaded('budgets')),
+
             'created_by_id' => $cc->created_by_id,
-            'created_at' => $cc->created_at,
-            'updated_at' => $cc->updated_at,
+            'created_by' => $this->whenLoaded('createdBy', fn () => $cc->createdBy ? [
+                'id' => $cc->createdBy->id,
+                'name' => $cc->createdBy->name,
+            ] : null),
+
+            'created_at' => $cc->created_at?->toIso8601String(),
+            'updated_at' => $cc->updated_at?->toIso8601String(),
         ];
     }
 }

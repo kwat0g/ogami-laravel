@@ -10,6 +10,7 @@ use App\Domains\AP\Models\Vendor;
 use App\Domains\AP\Models\VendorInvoice;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\PurchaseOrder;
+use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

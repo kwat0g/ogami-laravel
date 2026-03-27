@@ -5,59 +5,53 @@ declare(strict_types=1);
 namespace App\Domains\AR\StateMachines;
 
 use App\Domains\AR\Models\CustomerInvoice;
-use App\Shared\Exceptions\DomainException;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 /**
- * CustomerInvoice (AR) state machine.
+ * Customer Invoice (AR) state machine.
  *
- * Valid transitions:
- *   draft          -> approved        (invoice approved for sending)
- *   approved       -> partially_paid  (partial payment received)
- *   approved       -> paid            (full payment received)
- *   approved       -> written_off     (bad debt write-off)
- *   approved       -> cancelled       (invoice voided)
- *   partially_paid -> paid            (remaining balance collected)
- *   partially_paid -> written_off     (remaining balance written off)
- *   draft          -> cancelled       (draft discarded)
+ * States:
+ *   draft           → Invoice created / auto-drafted from DR
+ *   approved        → Approved and sent to customer
+ *   partially_paid  → Some payments received
+ *   paid            → Fully paid — terminal
+ *   written_off     → Bad debt write-off — terminal
+ *   cancelled       → Voided — terminal
  */
 final class CustomerInvoiceStateMachine
 {
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
-        'draft'          => ['approved', 'cancelled'],
-        'approved'       => ['partially_paid', 'paid', 'written_off', 'cancelled'],
+        'draft' => ['approved', 'cancelled'],
+        'approved' => ['partially_paid', 'paid', 'written_off', 'cancelled'],
         'partially_paid' => ['paid', 'written_off'],
-        'paid'           => [],
-        'written_off'    => [],
-        'cancelled'      => [],
+        'paid' => [],        // terminal
+        'written_off' => [], // terminal
+        'cancelled' => [],   // terminal
     ];
 
-    public function canTransition(CustomerInvoice $invoice, string $to): bool
-    {
-        return in_array($to, self::TRANSITIONS[$invoice->status] ?? [], true);
-    }
-
     /**
-     * @throws DomainException
+     * @throws InvalidStateTransitionException
      */
-    public function transition(CustomerInvoice $invoice, string $to): void
+    public function transition(CustomerInvoice $invoice, string $toState): void
     {
-        if (! $this->canTransition($invoice, $to)) {
-            throw new DomainException(
-                "Cannot transition customer invoice from '{$invoice->status}' to '{$to}'.",
-                'AR_INVOICE_INVALID_TRANSITION',
-                422,
-                ['current' => $invoice->status, 'requested' => $to],
-            );
+        $fromState = $invoice->status;
+
+        if (! $this->isAllowed($fromState, $toState)) {
+            throw new InvalidStateTransitionException('CustomerInvoice', $fromState, $toState);
         }
 
-        $invoice->status = $to;
-        $invoice->save();
+        $invoice->status = $toState;
     }
 
-    /** Returns all statuses this invoice can move to from its current state. */
-    public function allowedNext(CustomerInvoice $invoice): array
+    public function isAllowed(string $fromState, string $toState): bool
     {
-        return self::TRANSITIONS[$invoice->status] ?? [];
+        return in_array($toState, self::TRANSITIONS[$fromState] ?? [], true);
+    }
+
+    /** @return list<string> */
+    public function allowedTransitions(string $currentState): array
+    {
+        return self::TRANSITIONS[$currentState] ?? [];
     }
 }

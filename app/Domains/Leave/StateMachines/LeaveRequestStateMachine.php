@@ -5,70 +5,57 @@ declare(strict_types=1);
 namespace App\Domains\Leave\StateMachines;
 
 use App\Domains\Leave\Models\LeaveRequest;
-use App\Shared\Exceptions\DomainException;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 /**
- * LeaveRequest state machine.
+ * Leave Request state machine — multi-step approval workflow.
  *
- * Valid transitions:
- *   draft          -> submitted       (employee files leave)
- *   submitted      -> head_approved   (dept head approves -- legacy: pending -> approved)
- *   submitted      -> rejected        (dept head rejects)
- *   head_approved  -> manager_checked (manager checks)
- *   head_approved  -> rejected        (manager rejects)
- *   manager_checked -> ga_processed   (GA processes)
- *   manager_checked -> rejected       (GA rejects)
- *   ga_processed   -> approved        (final approval)
- *   ga_processed   -> rejected        (final rejection)
- *   approved       -> cancelled       (employee cancels approved leave)
- *   draft          -> cancelled       (employee cancels before submission)
- *
- * Legacy compatibility:
- *   pending        -> approved|rejected|cancelled (single-step approval)
+ * States:
+ *   draft            → Created but not yet submitted
+ *   submitted        → Submitted for approval
+ *   head_approved    → Department head approved
+ *   manager_checked  → Manager checked
+ *   ga_processed     → GA/Admin processed
+ *   approved         → Final approval — leave granted
+ *   rejected         → Rejected at any step — terminal
+ *   cancelled        → Cancelled by employee — terminal
  */
 final class LeaveRequestStateMachine
 {
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
-        'draft'           => ['submitted', 'cancelled'],
-        'submitted'       => ['head_approved', 'rejected'],
-        'head_approved'   => ['manager_checked', 'rejected'],
+        'draft' => ['submitted', 'cancelled'],
+        'submitted' => ['head_approved', 'rejected', 'cancelled'],
+        'head_approved' => ['manager_checked', 'rejected'],
         'manager_checked' => ['ga_processed', 'rejected'],
-        'ga_processed'    => ['approved', 'rejected'],
-        'approved'        => ['cancelled'],
-        'rejected'        => [],
-        'cancelled'       => [],
-
-        // Legacy single-step flow
-        'pending'         => ['approved', 'rejected', 'cancelled', 'head_approved'],
+        'ga_processed' => ['approved', 'rejected'],
+        'approved' => ['cancelled'],
+        'rejected' => [],   // terminal
+        'cancelled' => [],  // terminal
     ];
 
-    public function canTransition(LeaveRequest $leave, string $to): bool
-    {
-        return in_array($to, self::TRANSITIONS[$leave->status] ?? [], true);
-    }
-
     /**
-     * @throws DomainException
+     * @throws InvalidStateTransitionException
      */
-    public function transition(LeaveRequest $leave, string $to): void
+    public function transition(LeaveRequest $request, string $toState): void
     {
-        if (! $this->canTransition($leave, $to)) {
-            throw new DomainException(
-                "Cannot transition leave request from '{$leave->status}' to '{$to}'.",
-                'LEAVE_INVALID_TRANSITION',
-                422,
-                ['current' => $leave->status, 'requested' => $to],
-            );
+        $fromState = $request->status;
+
+        if (! $this->isAllowed($fromState, $toState)) {
+            throw new InvalidStateTransitionException('LeaveRequest', $fromState, $toState);
         }
 
-        $leave->status = $to;
-        $leave->save();
+        $request->status = $toState;
     }
 
-    /** Returns all statuses this leave request can move to from its current state. */
-    public function allowedNext(LeaveRequest $leave): array
+    public function isAllowed(string $fromState, string $toState): bool
     {
-        return self::TRANSITIONS[$leave->status] ?? [];
+        return in_array($toState, self::TRANSITIONS[$fromState] ?? [], true);
+    }
+
+    /** @return list<string> */
+    public function allowedTransitions(string $currentState): array
+    {
+        return self::TRANSITIONS[$currentState] ?? [];
     }
 }

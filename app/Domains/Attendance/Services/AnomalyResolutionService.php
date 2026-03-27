@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Attendance\Services;
 
 use App\Domains\Attendance\Models\AttendanceLog;
+use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
