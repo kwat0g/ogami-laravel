@@ -116,7 +116,10 @@ export function getVendorInvoiceSteps(_inv: {
 }): TimelineStep[] {
   return [
     { label: 'Draft', status: 'draft' },
-    { label: 'Pending Approval', status: 'pending_approval' },
+    { label: 'Submitted', status: 'pending_approval' },
+    { label: 'Head Noted', status: 'head_noted' },
+    { label: 'Manager Checked', status: 'manager_checked' },
+    { label: 'Officer Reviewed', status: 'officer_reviewed' },
     { label: 'Approved', status: 'approved' },
     { label: 'Partially Paid', status: 'partially_paid' },
     { label: 'Paid', status: 'paid' },

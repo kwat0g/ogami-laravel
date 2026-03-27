@@ -25,6 +25,8 @@ import PermissionGuard from '@/components/ui/PermissionGuard'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import { PERMISSIONS } from '@/lib/permissions'
+import StatusTimeline from '@/components/ui/StatusTimeline'
+import { getVendorInvoiceSteps, isRejectedStatus } from '@/lib/workflowSteps'
 
 export default function APInvoiceDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
@@ -401,6 +403,16 @@ export default function APInvoiceDetailPage() {
           </div>
         }
       />
+
+      {/* Workflow Timeline */}
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-5">
+        <StatusTimeline
+          steps={getVendorInvoiceSteps(invoice)}
+          currentStatus={invoice.status}
+          direction="horizontal"
+          isRejected={isRejectedStatus(invoice.status)}
+        />
+      </div>
 
       {/* Payment form */}
       {showPaymentForm && (
