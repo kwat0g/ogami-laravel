@@ -290,6 +290,11 @@ const ApAgingReportPage       = lazy(() => import('@/pages/accounting/ApAgingRep
 const CustomerCreditNotesPage = lazy(() => import('@/pages/ar/CustomerCreditNotesPage'))
 const ArAgingReportPage       = lazy(() => import('@/pages/ar/ArAgingReportPage'))
 
+// Analytics pages (new)
+const ExecutiveAnalyticsDashboard = lazy(() => import('@/pages/dashboard/ExecutiveAnalyticsDashboard'))
+const BudgetVarianceReportPage    = lazy(() => import('@/pages/budget/BudgetVarianceReportPage'))
+const VendorScorecardPage         = lazy(() => import('@/pages/procurement/VendorScorecardPage'))
+
 // Vendor RFQs
 const VendorRfqListPage   = lazy(() => import('@/pages/procurement/VendorRfqListPage'))
 const VendorRfqDetailPage = lazy(() => import('@/pages/procurement/VendorRfqDetailPage'))
@@ -326,6 +331,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <RoleLandingRedirect /> },
       { path: '/dashboard', element: withSuspense(<Dashboard />) },
+      { path: '/dashboard/executive-analytics', element: withSuspense(guard('reports.financial_statements', <ExecutiveAnalyticsDashboard />)) },
 
       // ── HR domain (all routes require hr.full_access - HR department only) ───
       // Note: Non-HR managers should use Team Management (/team/*) routes instead
@@ -463,6 +469,7 @@ const router = createBrowserRouter([
       { path: '/procurement/goods-receipts/new', element: withSuspense(guard('procurement.goods-receipt.create', <CreateGoodsReceiptPage />)) },
       { path: '/procurement/goods-receipts/:ulid', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptDetailPage />)) },
       { path: '/procurement/analytics', element: withSuspense(guard('procurement.purchase-order.view', <ProcurementAnalyticsPage />)) },
+      { path: '/procurement/vendor-scorecard', element: withSuspense(guard('procurement.purchase-order.view', <VendorScorecardPage />)) },
 
       // ── Inventory domain ──────────────────────────────────────────────────
       { path: '/inventory/categories', element: withSuspense(guard('inventory.items.view', <ItemCategoriesPage />)) },
@@ -553,6 +560,7 @@ const router = createBrowserRouter([
       { path: '/budget/department-budgets', element: withSuspense(guard('budget.view', <DepartmentBudgetsPage />)) },
       { path: '/budget/lines',              element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
       { path: '/budget/vs-actual',          element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
+      { path: '/budget/variance',            element: withSuspense(guard('budget.view', <BudgetVarianceReportPage />)) },
 
       // ── Fixed Assets ──────────────────────────────────────────────────────
       { path: '/fixed-assets',             element: withSuspense(guard('fixed_assets.view', <FixedAssetsPage />)) },

@@ -105,4 +105,23 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
             'grand_total' => $grandTotal,
         ]);
     })->name('reports.valuation');
+
+    // ── Inventory Analytics ─────────────────────────────────────────────────
+    Route::get('analytics/abc', function (\Illuminate\Http\Request $request) {
+        $service = app(\App\Domains\Inventory\Services\InventoryAnalyticsService::class);
+        $year = $request->filled('year') ? $request->integer('year') : null;
+        return response()->json(['data' => $service->abcAnalysis($year)]);
+    })->name('analytics.abc');
+
+    Route::get('analytics/turnover', function (\Illuminate\Http\Request $request) {
+        $service = app(\App\Domains\Inventory\Services\InventoryAnalyticsService::class);
+        $year = $request->filled('year') ? $request->integer('year') : null;
+        return response()->json(['data' => $service->turnoverAnalysis($year)]);
+    })->name('analytics.turnover');
+
+    Route::get('analytics/dead-stock', function (\Illuminate\Http\Request $request) {
+        $service = app(\App\Domains\Inventory\Services\InventoryAnalyticsService::class);
+        $days = $request->integer('days', 90);
+        return response()->json(['data' => $service->deadStock($days)]);
+    })->name('analytics.dead-stock');
 });

@@ -196,6 +196,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
       { label: 'Budget Lines', href: '/budget/lines', permission: 'budget.view' },
       { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
+      { label: 'Variance Analysis', href: '/budget/variance', permission: 'budget.view' },
       { divider: true, label: 'Fixed Assets' },
       { label: 'Asset Register', href: '/fixed-assets', permission: 'fixed_assets.view' },
       { label: 'Asset Disposals', href: '/fixed-assets/disposals', permission: 'fixed_assets.manage' },
@@ -207,7 +208,7 @@ const SECTIONS: NavSection[] = [
   {
     label: 'Supply Chain',
     icon: Package,
-    permission: 'procurement.purchase-request.view',
+    permission: 'procurement.purchase-request.view|inventory.items.view|production.orders.view',
     roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
     departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH', 'SALES'],
     children: [
@@ -217,6 +218,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
       { label: 'Vendor RFQs', href: '/procurement/rfqs', permission: 'procurement.purchase-order.view' },
+      { label: 'Vendor Scorecard', href: '/procurement/vendor-scorecard', permission: 'procurement.purchase-order.view' },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },
       { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
@@ -299,6 +301,10 @@ const EXECUTIVE_SECTION: NavSection = {
     { label: 'AP Aging', href: '/accounting/ap/aging-report', permission: 'reports.ap_aging' },
     { label: 'AR Aging', href: '/ar/aging-report', permission: 'reports.ar_aging' },
     { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
+    { divider: true, label: 'Analytics' },
+    { label: 'Executive Analytics', href: '/dashboard/executive-analytics', permission: 'reports.financial_statements' },
+    { label: 'Variance Analysis', href: '/budget/variance', permission: 'budget.view' },
+    { label: 'Vendor Scorecard', href: '/procurement/vendor-scorecard', permission: 'procurement.purchase-order.view' },
   ],
 }
 
