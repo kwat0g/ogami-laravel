@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { validateResponse } from '@/lib/validateResponse'
+import { paginatedPurchaseRequestsSchema } from '@/schemas/responses'
 import type {
   PurchaseRequest,
   PurchaseRequestFilters,
@@ -12,6 +14,8 @@ import type {
 
 // ── List ─────────────────────────────────────────────────────────────────────
 
+const validatePrList = validateResponse(paginatedPurchaseRequestsSchema, 'PurchaseRequests')
+
 export function usePurchaseRequests(filters: PurchaseRequestFilters = {}) {
   return useQuery({
     queryKey: ['purchase-requests', filters],
@@ -20,6 +24,7 @@ export function usePurchaseRequests(filters: PurchaseRequestFilters = {}) {
         '/procurement/purchase-requests',
         { params: filters },
       )
+      validatePrList(res.data)
       return res.data
     },
     staleTime: 30_000,

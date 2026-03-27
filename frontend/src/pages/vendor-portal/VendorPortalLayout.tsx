@@ -51,12 +51,12 @@ export default function VendorPortalLayout(): React.ReactElement {
   }
 
   return (
-    <div className="flex h-screen bg-neutral-50">
+    <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Sidebar */}
-      <aside className="w-56 bg-white border-r border-neutral-200 flex flex-col">
-        <div className="px-4 py-5 border-b border-neutral-200">
+      <aside className="w-56 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col">
+        <div className="px-4 py-5 border-b border-neutral-200 dark:border-neutral-800">
           <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Vendor Portal</p>
-          <p className="text-sm font-semibold text-neutral-800 mt-1 truncate">{user?.name ?? '—'}</p>
+          <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 mt-1 truncate">{user?.name ?? '—'}</p>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">
           {NAV_ITEMS.filter((item) => hasPermission(item.permission)).map(({ to, label, icon: Icon }) => {

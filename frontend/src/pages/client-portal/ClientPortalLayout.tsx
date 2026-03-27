@@ -64,18 +64,18 @@ export default function ClientPortalLayout() {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/')
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-neutral-200 flex flex-col sticky top-0 h-screen">
+      <aside className="w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col sticky top-0 h-screen">
         {/* Logo */}
-        <div className="p-4 border-b border-neutral-100">
+        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
           <Link to="/client-portal" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-neutral-900 rounded-xl flex items-center justify-center">
-              <Store className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 bg-neutral-900 dark:bg-neutral-100 rounded-xl flex items-center justify-center">
+              <Store className="h-5 w-5 text-white dark:text-neutral-900" />
             </div>
             <div>
-              <h1 className="font-bold text-neutral-900 leading-tight">Client Portal</h1>
-              <p className="text-xs text-neutral-500">Ogami ERP</p>
+              <h1 className="font-bold text-neutral-900 dark:text-neutral-100 leading-tight">Client Portal</h1>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Ogami ERP</p>
             </div>
           </Link>
         </div>
