@@ -10,6 +10,7 @@ use App\Domains\HR\Models\Employee;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Contracts\ServiceContract;
 
 /**
  * BudgetEnforcementService
@@ -24,7 +25,7 @@ use Illuminate\Support\Facades\Log;
  * Currently only PRs have hard budget blocking. OT and maintenance use
  * soft warnings -- the approver sees a warning but can still approve.
  */
-final class BudgetEnforcementService
+final class BudgetEnforcementService implements ServiceContract
 {
     /**
      * Check if approving an overtime request would exceed the department's

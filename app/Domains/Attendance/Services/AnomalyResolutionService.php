@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Contracts\ServiceContract;
 
 /**
  * AnomalyResolutionService
@@ -29,7 +30,7 @@ use Illuminate\Support\Facades\Log;
  *   $service->autoResolve()               // Auto-fix what can be fixed
  *   $service->resolveById($id, $action)   // Manually resolve one anomaly
  */
-final class AnomalyResolutionService
+final class AnomalyResolutionService implements ServiceContract
 {
     /**
      * Detect all current anomalies.

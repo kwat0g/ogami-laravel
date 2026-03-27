@@ -13,6 +13,7 @@ use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Contracts\ServiceContract;
 
 /**
  * InvoiceAutoDraftService (AR)
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Log;
  * The invoice is created as 'draft' status -- it still requires approval
  * (which assigns the invoice number INV-YYYY-MM-NNNNNN per AR-003).
  */
-final class InvoiceAutoDraftService
+final class InvoiceAutoDraftService implements ServiceContract
 {
     /**
      * Create a draft AR invoice from a delivered Delivery Receipt.
