@@ -10,6 +10,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { LeaveFilters } from '@/types/hr'
+import { toast } from 'sonner'
 import { Scale, X, ChevronDown, ChevronUp, Search, CheckSquare, XSquare } from 'lucide-react'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
@@ -94,8 +95,14 @@ export default function LeaveListPage() {
       {
         onSuccess: (result) => {
           setSelectedIds(new Set())
-          if (result.results.failed.length > 0) {
-            alert(`${result.results.approved?.length ?? 0} approved. ${result.results.failed.length} failed.`)
+          const approvedCount = result.results.approved?.length ?? 0
+          const failedCount = result.results.failed.length
+          if (failedCount > 0) {
+            toast.warning(`${approvedCount} approved, ${failedCount} failed.`, {
+              description: result.results.failed.map((f) => `#${f.id}: ${f.reason}`).join('; '),
+            })
+          } else {
+            toast.success(`${approvedCount} leave request${approvedCount !== 1 ? 's' : ''} approved.`)
           }
         },
       },
@@ -111,8 +118,14 @@ export default function LeaveListPage() {
           setSelectedIds(new Set())
           setBatchRejectRemarksOpen(false)
           setBatchRejectRemarks('')
-          if (result.results.failed.length > 0) {
-            alert(`${result.results.rejected?.length ?? 0} rejected. ${result.results.failed.length} failed.`)
+          const rejectedCount = result.results.rejected?.length ?? 0
+          const failedCount = result.results.failed.length
+          if (failedCount > 0) {
+            toast.warning(`${rejectedCount} rejected, ${failedCount} failed.`, {
+              description: result.results.failed.map((f) => `#${f.id}: ${f.reason}`).join('; '),
+            })
+          } else {
+            toast.success(`${rejectedCount} leave request${rejectedCount !== 1 ? 's' : ''} rejected.`)
           }
         },
       },
