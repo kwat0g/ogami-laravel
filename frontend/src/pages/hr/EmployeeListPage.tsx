@@ -7,6 +7,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { DepartmentGuard, ActionButton } from '@/components/ui/guards'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { EmployeeFilters, EmploymentStatus, EmploymentType } from '@/types/hr'
 
 const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
@@ -72,15 +73,30 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
       <PageHeader
         title="Employees"
         actions={
-          <DepartmentGuard module="employees">
-            <ActionButton
-              label="+ Add Employee"
-              permission="employees.create"
-              module="employees"
-              onClick={() => navigate('/hr/employees/new')}
-              variant="primary"
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={employees}
+              columns={[
+                { key: 'employee_code', label: 'Code' },
+                { key: 'full_name', label: 'Name' },
+                { key: 'department.name', label: 'Department' },
+                { key: 'position.title', label: 'Position' },
+                { key: 'employment_status', label: 'Status' },
+                { key: 'employment_type', label: 'Type' },
+                { key: 'date_hired', label: 'Date Hired' },
+              ]}
+              filename="employees"
             />
-          </DepartmentGuard>
+            <DepartmentGuard module="employees">
+              <ActionButton
+                label="+ Add Employee"
+                permission="employees.create"
+                module="employees"
+                onClick={() => navigate('/hr/employees/new')}
+                variant="primary"
+              />
+            </DepartmentGuard>
+          </div>
         }
       />
 
