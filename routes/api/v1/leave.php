@@ -118,4 +118,31 @@ Route::middleware(['auth:sanctum', 'module_access:leaves'])->group(function () {
             fclose($out);
         }, 'leave_report_'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->middleware('permission:hr.full_access')->name('export');
+
+    // ── Leave Calendar & Overlap Detection (Phase 4) ──────────────────────
+    Route::get('calendar', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        $data = $request->validate([
+            'department_id' => ['required', 'integer', 'exists:departments,id'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ]);
+        $service = app(\App\Domains\Leave\Services\LeaveCalendarService::class);
+        return response()->json(['data' => $service->departmentCalendar(
+            $data['department_id'], $data['start_date'], $data['end_date']
+        )]);
+    })->name('calendar');
+
+    Route::get('calendar/overlaps', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        $data = $request->validate([
+            'department_id' => ['required', 'integer', 'exists:departments,id'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'max_concurrent' => ['sometimes', 'integer', 'min:1'],
+        ]);
+        $service = app(\App\Domains\Leave\Services\LeaveCalendarService::class);
+        return response()->json(['data' => $service->detectOverlaps(
+            $data['department_id'], $data['start_date'], $data['end_date'],
+            $data['max_concurrent'] ?? 2
+        )]);
+    })->name('calendar.overlaps');
 });

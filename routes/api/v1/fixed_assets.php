@@ -80,4 +80,40 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
             fclose($out);
         }, 'depreciation_schedule_'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('depreciation-export');
+
+    // ── Asset Transfers (Phase 4) ─────────────────────────────────────────
+    Route::prefix('transfers')->name('transfers.')->group(function () {
+        Route::get('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $transfers = \App\Domains\FixedAssets\Models\AssetTransfer::with(['requestedBy', 'approvedBy'])
+                ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
+                ->orderByDesc('id')
+                ->paginate((int) ($request->input('per_page', 20)));
+            return response()->json($transfers);
+        })->name('index');
+
+        Route::post('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $data = $request->validate([
+                'fixed_asset_id' => ['required', 'integer', 'exists:fixed_assets,id'],
+                'from_department_id' => ['required', 'integer', 'exists:departments,id'],
+                'to_department_id' => ['required', 'integer', 'exists:departments,id', 'different:from_department_id'],
+                'transfer_date' => ['required', 'date'],
+                'reason' => ['sometimes', 'string'],
+            ]);
+            $transfer = \App\Domains\FixedAssets\Models\AssetTransfer::create([
+                ...$data,
+                'status' => 'pending',
+                'requested_by_id' => $request->user()->id,
+            ]);
+            return response()->json(['data' => $transfer], 201);
+        })->name('store');
+
+        Route::patch('/{assetTransfer:ulid}/approve', function (\Illuminate\Http\Request $request, \App\Domains\FixedAssets\Models\AssetTransfer $assetTransfer): \Illuminate\Http\JsonResponse {
+            $assetTransfer->update([
+                'status' => 'approved',
+                'approved_by_id' => $request->user()->id,
+                'approved_at' => now(),
+            ]);
+            return response()->json(['data' => $assetTransfer->fresh()]);
+        })->name('approve')->middleware('throttle:api-action');
+    });
 });
