@@ -191,4 +191,34 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
 
     Route::get('customers/{customer:ulid}/statement/pdf', [\App\Http\Controllers\AR\ArReportsController::class, 'statementPdf'])
         ->name('ar.customer-statement-pdf');
+
+    // ── Dunning / Collection Management (Phase 2) ─────────────────────────
+    Route::prefix('dunning')->name('dunning.')->group(function () {
+        Route::get('/notices', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AR\Services\DunningService::class);
+            return response()->json($service->paginateNotices($request->only(['customer_id', 'status', 'per_page'])));
+        })->name('notices.index');
+
+        Route::post('/generate', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AR\Services\DunningService::class);
+            $notices = $service->generateNotices($request->user());
+            return response()->json(['data' => $notices, 'generated_count' => $notices->count()]);
+        })->name('generate')->middleware('throttle:api-action');
+
+        Route::patch('/notices/{dunningNotice:ulid}/send', function (\App\Domains\AR\Models\DunningNotice $dunningNotice): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AR\Services\DunningService::class);
+            return response()->json(['data' => $service->markSent($dunningNotice)]);
+        })->name('notices.send')->middleware('throttle:api-action');
+
+        Route::patch('/notices/{dunningNotice:ulid}/escalate', function (\App\Domains\AR\Models\DunningNotice $dunningNotice): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AR\Services\DunningService::class);
+            return response()->json(['data' => $service->escalate($dunningNotice)]);
+        })->name('notices.escalate')->middleware('throttle:api-action');
+
+        Route::patch('/notices/{dunningNotice:ulid}/resolve', function (\Illuminate\Http\Request $request, \App\Domains\AR\Models\DunningNotice $dunningNotice): \Illuminate\Http\JsonResponse {
+            $data = $request->validate(['notes' => ['required', 'string']]);
+            $service = app(\App\Domains\AR\Services\DunningService::class);
+            return response()->json(['data' => $service->resolve($dunningNotice, $data['notes'])]);
+        })->name('notices.resolve')->middleware('throttle:api-action');
+    });
 });

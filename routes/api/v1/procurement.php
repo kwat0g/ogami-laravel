@@ -363,4 +363,39 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
         $year = $request->filled('year') ? $request->integer('year') : null;
         return response()->json(['data' => $service->allVendorScores($year)]);
     })->name('vendor-scores');
+
+    // ── Payment Batches (Phase 2) ─────────────────────────────────────────
+    Route::prefix('payment-batches')->name('payment-batches.')->group(function () {
+        Route::get('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
+            return response()->json($service->paginate($request->only(['status', 'per_page'])));
+        })->name('index');
+
+        Route::post('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            $data = $request->validate([
+                'payment_date' => ['required', 'date'],
+                'payment_method' => ['sometimes', 'string'],
+                'notes' => ['sometimes', 'string'],
+                'invoice_ids' => ['required', 'array', 'min:1'],
+                'invoice_ids.*' => ['integer', 'exists:vendor_invoices,id'],
+            ]);
+            $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
+            return response()->json(['data' => $service->store($data, $request->user())], 201);
+        })->name('store');
+
+        Route::patch('/{paymentBatch:ulid}/submit', function (\App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
+            return response()->json(['data' => $service->submit($paymentBatch)]);
+        })->name('submit')->middleware('throttle:api-action');
+
+        Route::patch('/{paymentBatch:ulid}/approve', function (\Illuminate\Http\Request $request, \App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
+            return response()->json(['data' => $service->approve($paymentBatch, $request->user())]);
+        })->name('approve')->middleware('throttle:api-action');
+
+        Route::post('/{paymentBatch:ulid}/process', function (\App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
+            return response()->json(['data' => $service->process($paymentBatch)]);
+        })->name('process')->middleware('throttle:api-action');
+    });
 });
