@@ -13,6 +13,7 @@ import {
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { ExportButton } from '@/components/ui/ExportButton'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { ActionButton, DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -197,7 +198,23 @@ export default function JournalEntriesPage() {
 
   return (
     <div>
-      <PageHeader title="Journal Entries" />
+      <PageHeader
+        title="Journal Entries"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'je_number', label: 'JE Number' },
+              { key: 'description', label: 'Description' },
+              { key: 'status', label: 'Status' },
+              { key: 'total_debit', label: 'Total Debit', format: (v: unknown) => `${((v as number) / 100).toFixed(2)}` },
+              { key: 'entry_date', label: 'Entry Date' },
+              { key: 'posted_at', label: 'Posted At' },
+            ]}
+            filename="journal-entries"
+          />
+        }
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">

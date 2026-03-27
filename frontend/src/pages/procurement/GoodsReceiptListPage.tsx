@@ -7,6 +7,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { GoodsReceiptStatus } from '@/types/procurement'
 
 const statusBadge: Record<GoodsReceiptStatus, string> = {
@@ -33,6 +34,19 @@ export default function GoodsReceiptListPage(): React.ReactElement {
       <PageHeader
         title="Goods Receipts"
         description="View and confirm goods receipts created by vendors"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'gr_reference', label: 'GR Reference' },
+              { key: 'purchase_order.po_reference', label: 'PO Reference' },
+              { key: 'vendor.name', label: 'Vendor' },
+              { key: 'status', label: 'Status' },
+              { key: 'received_date', label: 'Received Date' },
+            ]}
+            filename="goods-receipts"
+          />
+        }
       />
 
       {/* Filters */}

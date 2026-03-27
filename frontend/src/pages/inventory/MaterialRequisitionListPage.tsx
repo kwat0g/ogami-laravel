@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { DepartmentGuard } from '@/components/ui/guards'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { MaterialRequisitionStatus } from '@/types/inventory'
 
 const statusBadge: Record<MaterialRequisitionStatus, string> = {
@@ -46,16 +47,29 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
       <PageHeader
         title="Material Requisitions"
         actions={
-          <DepartmentGuard module="requisitions">
-            {canCreate && (
-              <Link
-                to="/inventory/requisitions/new"
-                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
-              >
-                <Plus className="w-4 h-4" /> New Requisition
-              </Link>
-            )}
-          </DepartmentGuard>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'mr_reference', label: 'MR Reference' },
+                { key: 'department.name', label: 'Department' },
+                { key: 'status', label: 'Status' },
+                { key: 'purpose', label: 'Purpose' },
+                { key: 'created_at', label: 'Created' },
+              ]}
+              filename="material-requisitions"
+            />
+            <DepartmentGuard module="requisitions">
+              {canCreate && (
+                <Link
+                  to="/inventory/requisitions/new"
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded"
+                >
+                  <Plus className="w-4 h-4" /> New Requisition
+                </Link>
+              )}
+            </DepartmentGuard>
+          </div>
         }
       />
 

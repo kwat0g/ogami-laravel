@@ -4,6 +4,7 @@ import { Plus, Truck } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
+import { ExportButton } from '@/components/ui/ExportButton';
 import type { DrDirection, DrStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<DrStatus, string> = {
@@ -35,14 +36,27 @@ export default function DeliveryReceiptListPage() {
       <PageHeader
         title="Delivery Receipts"
         actions={
-          canManage ? (
-            <Link
-              to="/delivery/receipts/new"
-              className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-            >
-              <Plus size={16} /> New Receipt
-            </Link>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'dr_number', label: 'DR Number' },
+                { key: 'direction', label: 'Direction' },
+                { key: 'status', label: 'Status' },
+                { key: 'customer.name', label: 'Customer' },
+                { key: 'delivery_date', label: 'Delivery Date' },
+              ]}
+              filename="delivery-receipts"
+            />
+            {canManage && (
+              <Link
+                to="/delivery/receipts/new"
+                className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+              >
+                <Plus size={16} /> New Receipt
+              </Link>
+            )}
+          </div>
         }
       />
 
