@@ -291,6 +291,49 @@ export function useCancelLeaveRequest() {
   })
 }
 
+// ── Batch head-approve ────────────────────────────────────────────────────────
+
+export interface BatchLeaveResult {
+  message: string
+  results: {
+    approved?: number[]
+    rejected?: number[]
+    failed: { id: number; reason: string }[]
+  }
+}
+
+export function useBatchHeadApproveLeave() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, remarks }: { ids: number[]; remarks?: string }) => {
+      const res = await api.patch<BatchLeaveResult>('/leave/requests/batch-head-approve', { ids, remarks })
+      return res.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+    },
+  })
+}
+
+// ── Batch reject ──────────────────────────────────────────────────────────────
+
+export function useBatchRejectLeave() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, remarks }: { ids: number[]; remarks: string }) => {
+      const res = await api.patch<BatchLeaveResult>('/leave/requests/batch-reject', { ids, remarks })
+      return res.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
+      void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+    },
+  })
+}
+
 // ── Leave types (reference) ───────────────────────────────────────────────────
 
 export interface LeaveType {
