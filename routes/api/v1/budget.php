@@ -99,4 +99,51 @@ Route::middleware(['auth:sanctum', 'module_access:budget'])->group(function (): 
     })
         ->middleware(['permission:budget.manage', 'throttle:api-action'])
         ->name('department-budgets.update');
+
+    // ── Budget Variance Analysis ────────────────────────────────────────────
+    Route::get('variance', function (Request $request) {
+        $request->validate([
+            'fiscal_year' => ['required', 'integer', 'min:2020', 'max:2099'],
+            'cost_center_id' => ['sometimes', 'integer', 'exists:cost_centers,id'],
+            'department_id' => ['sometimes', 'integer', 'exists:departments,id'],
+            'account_id' => ['sometimes', 'integer', 'exists:chart_of_accounts,id'],
+        ]);
+
+        $service = app(\App\Domains\Budget\Services\BudgetVarianceService::class);
+        $detail = $service->varianceReport($request->only(['fiscal_year', 'cost_center_id', 'department_id', 'account_id']));
+
+        return response()->json(['data' => $detail]);
+    })
+        ->middleware('permission:budget.view')
+        ->name('variance.detail');
+
+    Route::get('variance/by-cost-center', function (Request $request) {
+        $request->validate([
+            'fiscal_year' => ['required', 'integer', 'min:2020', 'max:2099'],
+            'department_id' => ['sometimes', 'integer', 'exists:departments,id'],
+        ]);
+
+        $service = app(\App\Domains\Budget\Services\BudgetVarianceService::class);
+        $summary = $service->varianceByCostCenter(
+            $request->integer('fiscal_year'),
+            $request->filled('department_id') ? $request->integer('department_id') : null,
+        );
+
+        return response()->json(['data' => $summary]);
+    })
+        ->middleware('permission:budget.view')
+        ->name('variance.by-cost-center');
+
+    Route::get('variance/forecast', function (Request $request) {
+        $request->validate([
+            'fiscal_year' => ['required', 'integer', 'min:2020', 'max:2099'],
+        ]);
+
+        $service = app(\App\Domains\Budget\Services\BudgetVarianceService::class);
+        $forecast = $service->yearEndForecast($request->integer('fiscal_year'));
+
+        return response()->json(['data' => $forecast]);
+    })
+        ->middleware('permission:budget.view')
+        ->name('variance.forecast');
 });

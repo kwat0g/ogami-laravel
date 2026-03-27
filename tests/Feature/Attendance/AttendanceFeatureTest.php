@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Department;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,23 +13,32 @@ uses()->group('feature', 'attendance');
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 
-    $this->hrManager = User::factory()->create();
-    $this->hrManager->assignRole('manager');
-
-    $this->staff = User::factory()->create();
-    $this->staff->assignRole('staff');
+    $this->manager = User::factory()->create();
+    $this->manager->assignRole('manager');
 });
 
 it('lists attendance logs', function () {
-    $this->actingAs($this->hrManager)
+    $this->actingAs($this->manager)
         ->getJson('/api/v1/attendance/logs')
         ->assertOk()
         ->assertJsonStructure(['data']);
 });
 
-it('lists overtime requests', function () {
-    $this->actingAs($this->hrManager)
-        ->getJson('/api/v1/attendance/overtime-requests')
+it('lists shift schedules', function () {
+    $this->actingAs($this->manager)
+        ->getJson('/api/v1/attendance/shifts')
         ->assertOk()
         ->assertJsonStructure(['data']);
+});
+
+it('lists overtime requests', function () {
+    $this->actingAs($this->manager)
+        ->getJson('/api/v1/attendance/overtime')
+        ->assertOk()
+        ->assertJsonStructure(['data']);
+});
+
+it('rejects unauthenticated access to attendance logs', function () {
+    $this->getJson('/api/v1/attendance/logs')
+        ->assertUnauthorized();
 });

@@ -178,4 +178,17 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
             fclose($out);
         }, "customer_statement_{$customer->id}_".now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     })->name('ar.customer-statement');
+
+    // ── AR Reports — Aging & Statement of Account ──────────────────────────
+    Route::get('reports/aging', [\App\Http\Controllers\AR\ArReportsController::class, 'agingSummary'])
+        ->name('ar.reports.aging');
+
+    Route::get('reports/aging/{customer}/detail', [\App\Http\Controllers\AR\ArReportsController::class, 'agingDetail'])
+        ->name('ar.reports.aging-detail');
+
+    Route::get('customers/{customer:ulid}/statement', [\App\Http\Controllers\AR\ArReportsController::class, 'statement'])
+        ->name('ar.customer-statement-json');
+
+    Route::get('customers/{customer:ulid}/statement/pdf', [\App\Http\Controllers\AR\ArReportsController::class, 'statementPdf'])
+        ->name('ar.customer-statement-pdf');
 });
