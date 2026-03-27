@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
@@ -6,10 +6,13 @@ import {
   useTeamOvertimeRequests,
   useApproveOvertimeRequest,
   useRejectOvertimeRequest,
+  useBatchApproveOvertime,
+  useBatchRejectOvertime,
 } from '@/hooks/useOvertime'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { SodActionButton } from '@/components/ui/SodActionButton'
+import { CheckSquare, XSquare } from 'lucide-react'
 import type { OvertimeFilters } from '@/types/hr'
 
 export default function TeamOvertimePage() {
@@ -30,9 +33,22 @@ export default function TeamOvertimePage() {
   // Validation state
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
+  // Batch selection
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [batchApproveOpen, setBatchApproveOpen] = useState(false)
+  const [batchApproveMins, setBatchApproveMins] = useState('60')
+  const [batchApproveRemarks, setBatchApproveRemarks] = useState('')
+  const [batchRejectOpen, setBatchRejectOpen] = useState(false)
+  const [batchRejectRemarks, setBatchRejectRemarks] = useState('')
+
   const { data, isLoading, isError } = useTeamOvertimeRequests(filters)
   const approve = useApproveOvertimeRequest()
   const reject = useRejectOvertimeRequest()
+  const batchApproveOt = useBatchApproveOvertime()
+  const batchRejectOt = useBatchRejectOvertime()
+
+  // Clear selection on filter change
+  useEffect(() => { setSelectedIds(new Set()) }, [filters])
 
   function openApprove(id: number, requestedMins: number) {
     setApprovingId(id)
@@ -89,6 +105,53 @@ export default function TeamOvertimePage() {
   if (isError)   return <div className="text-neutral-600 text-sm mt-4">Failed to load overtime requests.</div>
 
   const rows = data?.data ?? []
+  const pendingRows = rows.filter((r: { status: string }) => r.status === 'pending')
+  const allPendingSelected = pendingRows.length > 0 && pendingRows.every((r: { id: number }) => selectedIds.has(r.id))
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAll = useCallback(() => {
+    if (allPendingSelected) setSelectedIds(new Set())
+    else setSelectedIds(new Set(pendingRows.map((r: { id: number }) => r.id)))
+  }, [allPendingSelected, pendingRows])
+
+  const handleBatchApprove = useCallback(() => {
+    if (selectedIds.size === 0 || !batchApproveMins) return
+    batchApproveOt.mutate(
+      { ids: Array.from(selectedIds), approved_minutes: Number(batchApproveMins), remarks: batchApproveRemarks || undefined },
+      {
+        onSuccess: (result) => {
+          setSelectedIds(new Set()); setBatchApproveOpen(false)
+          const ok = result.results.approved?.length ?? 0
+          const fail = result.results.failed.length
+          if (fail > 0) toast.warning(`${ok} approved, ${fail} failed.`)
+          else toast.success(`${ok} OT request${ok !== 1 ? 's' : ''} approved.`)
+        },
+      },
+    )
+  }, [selectedIds, batchApproveMins, batchApproveRemarks, batchApproveOt])
+
+  const handleBatchReject = useCallback(() => {
+    if (selectedIds.size === 0 || !batchRejectRemarks.trim()) return
+    batchRejectOt.mutate(
+      { ids: Array.from(selectedIds), remarks: batchRejectRemarks.trim() },
+      {
+        onSuccess: (result) => {
+          setSelectedIds(new Set()); setBatchRejectOpen(false); setBatchRejectRemarks('')
+          const ok = result.results.rejected?.length ?? 0
+          const fail = result.results.failed.length
+          if (fail > 0) toast.warning(`${ok} rejected, ${fail} failed.`)
+          else toast.success(`${ok} OT request${ok !== 1 ? 's' : ''} rejected.`)
+        },
+      },
+    )
+  }, [selectedIds, batchRejectRemarks, batchRejectOt])
 
   // Format minutes to hours and minutes
   const formatDuration = (mins: number) => {
@@ -148,11 +211,37 @@ export default function TeamOvertimePage() {
         />
       </div>
 
+      {/* Batch Actions Bar */}
+      {canApprove && selectedIds.size > 0 && (
+        <div className="mb-4 bg-accent-soft border border-accent/20 rounded-lg p-3 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-neutral-800">
+            {selectedIds.size} request{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <button onClick={() => setBatchApproveOpen(true)} disabled={batchApproveOt.isPending}
+            className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors">
+            <CheckSquare className="h-4 w-4" /> Approve All
+          </button>
+          <button onClick={() => setBatchRejectOpen(true)} disabled={batchRejectOt.isPending}
+            className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors">
+            <XSquare className="h-4 w-4" /> Reject All
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} className="text-sm text-neutral-500 hover:text-neutral-700 underline ml-2">
+            Clear selection
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white border border-neutral-200 rounded overflow-hidden">
         <table className="min-w-full text-sm">
           <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
+              {canApprove && (
+                <th className="px-3 py-2.5 text-left w-10">
+                  <input type="checkbox" checked={allPendingSelected} onChange={toggleSelectAll}
+                    disabled={pendingRows.length === 0} className="rounded border-neutral-300" />
+                </th>
+              )}
               {['Employee', 'Date', 'Requested', 'Status', 'Actions'].map((h) => (
                 <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-600">
                   {h}
@@ -169,7 +258,14 @@ export default function TeamOvertimePage() {
               </tr>
             )}
             {rows.map((row) => (
-              <tr key={row.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
+              <tr key={row.id} className={`hover:bg-neutral-50 transition-colors ${selectedIds.has(row.id) ? 'bg-accent-soft/50' : 'even:bg-neutral-100'}`}>
+                {canApprove && (
+                  <td className="px-3 py-2">
+                    {row.status === 'pending' ? (
+                      <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelect(row.id)} className="rounded border-neutral-300" />
+                    ) : <span className="block w-4" />}
+                  </td>
+                )}
                 <td className="px-3 py-2 font-medium text-neutral-900">
                   {row.employee?.full_name ?? `#${row.employee_id}`}
                 </td>
@@ -305,6 +401,60 @@ export default function TeamOvertimePage() {
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Batch Approve Modal */}
+      {batchApproveOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+              Batch Approve {selectedIds.size} OT Request{selectedIds.size !== 1 ? 's' : ''}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-4">All selected requests will be approved with the same minutes.</p>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Approved Minutes</label>
+                <input type="number" min={1} max={480} value={batchApproveMins}
+                  onChange={(e) => setBatchApproveMins(e.target.value)}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Remarks (optional)</label>
+                <textarea value={batchApproveRemarks} onChange={(e) => setBatchApproveRemarks(e.target.value)}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none" rows={2} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setBatchApproveOpen(false)} className="px-4 py-2 text-sm text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
+              <button onClick={handleBatchApprove} disabled={!batchApproveMins || batchApproveOt.isPending}
+                className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
+                {batchApproveOt.isPending ? 'Approving...' : 'Approve All'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Reject Modal */}
+      {batchRejectOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+              Reject {selectedIds.size} OT Request{selectedIds.size !== 1 ? 's' : ''}
+            </h3>
+            <p className="text-sm text-neutral-500 mb-4">Provide a reason for rejecting these requests.</p>
+            <textarea autoFocus value={batchRejectRemarks} onChange={(e) => setBatchRejectRemarks(e.target.value)}
+              placeholder="Reason for rejection..." rows={3}
+              className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none mb-4" />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setBatchRejectOpen(false); setBatchRejectRemarks('') }}
+                className="px-4 py-2 text-sm text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
+              <button onClick={handleBatchReject} disabled={!batchRejectRemarks.trim() || batchRejectOt.isPending}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">
+                {batchRejectOt.isPending ? 'Rejecting...' : 'Reject All'}
               </button>
             </div>
           </div>
