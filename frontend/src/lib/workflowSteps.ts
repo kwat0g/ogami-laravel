@@ -190,6 +190,7 @@ export function getClientOrderSteps(_order: {
     { label: 'Pending Review', status: 'pending' },
     { label: 'Negotiating', status: 'negotiating' },
     { label: 'Client Responded', status: 'client_responded' },
+    { label: 'VP Approval', status: 'vp_pending' },
     { label: 'Approved', status: 'approved' },
   ]
 }

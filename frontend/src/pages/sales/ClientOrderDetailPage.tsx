@@ -12,6 +12,8 @@ import {
   useVpApproveClientOrder
 } from '@/hooks/useClientOrders'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import StatusTimeline from '@/components/ui/StatusTimeline'
+import { getClientOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import { toast } from 'sonner'
 import { NEGOTIATION_REASONS, REJECTION_REASONS } from '@/types/client-order'
 import type { ClientOrder } from '@/types/client-order'
@@ -334,6 +336,16 @@ export default function ClientOrderDetailPage(): JSX.Element {
           year: 'numeric'
         })}
       </p>
+
+      {/* Workflow Timeline */}
+      <div className="bg-white border border-neutral-200 rounded-lg p-4">
+        <StatusTimeline
+          steps={getClientOrderSteps(order)}
+          currentStatus={order.status}
+          direction="horizontal"
+          isRejected={isRejectedStatus(order.status)}
+        />
+      </div>
 
       {/* Status Alert */}
       <div className="flex items-start gap-3 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
