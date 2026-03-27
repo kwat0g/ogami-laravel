@@ -107,6 +107,12 @@ Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
             Route::post('/{order:ulid}/sales-respond', [ClientOrderController::class, 'salesRespond'])->name('sales-respond')->middleware('can:salesRespond,order');
             Route::post('/{order:ulid}/vp-approve', [ClientOrderController::class, 'vpApprove'])->name('vp-approve')->middleware('can:vpApprove,order');
             Route::post('/{order:ulid}/cancel', [ClientOrderController::class, 'cancel'])->name('cancel')->middleware('can:cancel,order');
+
+            // Order tracking timeline (client-facing visibility)
+            Route::get('/{order:ulid}/tracking', function (\App\Domains\CRM\Models\ClientOrder $order) {
+                $service = app(\App\Domains\CRM\Services\OrderTrackingService::class);
+                return response()->json(['data' => $service->track($order)]);
+            })->name('tracking');
         });
     });
 });
