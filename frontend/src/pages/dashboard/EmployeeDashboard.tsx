@@ -46,10 +46,10 @@ export default function EmployeeDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">
+        <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
           Welcome, {user?.name?.split(' ')[0] ?? 'there'}
         </h1>
-        <p className="text-sm text-neutral-500 mt-0.5">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
           Your personal dashboard - attendance, leave, payroll, and self-service
         </p>
       </div>

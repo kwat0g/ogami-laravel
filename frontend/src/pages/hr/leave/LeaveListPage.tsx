@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { LeaveFilters } from '@/types/hr'
 import { toast } from 'sonner'
+import { ApprovalTimeline, type ApprovalStep } from '@/components/ui/ApprovalTimeline'
 import { Scale, X, ChevronDown, ChevronUp, Search, CheckSquare, XSquare } from 'lucide-react'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
@@ -510,47 +511,28 @@ export default function LeaveListPage() {
                         </div>
 
                         {/* Approval Timeline */}
-                        <div className="bg-white rounded p-4 border border-neutral-200">
-                          <h4 className="font-medium text-neutral-900 mb-3">Approval Timeline</h4>
-                          <div className="space-y-3">
-                            {/* Submitted */}
-                            <div className="flex items-start gap-3">
-                              <div className="w-2 h-2 rounded-full bg-neutral-500 mt-1.5"></div>
-                              <div className="text-sm">
-                                <p className="font-medium text-neutral-900">Submitted</p>
-                                <p className="text-neutral-500">{formatDate(row.created_at)}</p>
-                              </div>
-                            </div>
-                            
-                            {/* Reviewed */}
-                            {row.reviewed_at && (
-                              <div className="flex items-start gap-3">
-                                <div className={`w-2 h-2 rounded-full ${getStatusColor(row.status)} mt-1.5`}></div>
-                                <div className="text-sm">
-                                  <p className="font-medium text-neutral-900">
-                                    {row.status === 'approved' ? 'Approved' : row.status === 'rejected' ? 'Rejected' : 'Reviewed'}
-                                  </p>
-                                  <p className="text-neutral-500">{formatDate(row.reviewed_at)}</p>
-                                  {row.reviewer_remarks && (
-                                    <p className="text-neutral-600 mt-1 bg-neutral-50 p-2 rounded text-xs">
-                                      "{row.reviewer_remarks}"
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Pending */}
-                            {!row.reviewed_at && (
-                              <div className="flex items-start gap-3">
-                                <div className="w-2 h-2 rounded-full bg-amber-300 mt-1.5 animate-pulse"></div>
-                                <div className="text-sm">
-                                  <p className="font-medium text-amber-700">Pending Approval</p>
-                                  <p className="text-neutral-500">Waiting for supervisor/manager review</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                        <div className="bg-white dark:bg-neutral-900 rounded p-4 border border-neutral-200 dark:border-neutral-700">
+                          <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-3">Approval Timeline</h4>
+                          <ApprovalTimeline
+                            steps={[
+                              {
+                                label: 'Submitted',
+                                state: 'completed' as const,
+                                actor: row.submitted_by ? `User #${row.submitted_by}` : undefined,
+                                timestamp: row.created_at,
+                              },
+                              ...(row.reviewed_at ? [{
+                                label: row.status === 'approved' ? 'Approved' : row.status === 'rejected' ? 'Rejected' : 'Reviewed',
+                                state: (row.status === 'rejected' ? 'rejected' : 'completed') as ApprovalStep['state'],
+                                actor: row.reviewed_by ? `User #${row.reviewed_by}` : undefined,
+                                timestamp: row.reviewed_at,
+                                remarks: row.reviewer_remarks,
+                              }] : [{
+                                label: 'Pending Approval',
+                                state: 'current' as const,
+                              }]),
+                            ]}
+                          />
                         </div>
                       </div>
 
