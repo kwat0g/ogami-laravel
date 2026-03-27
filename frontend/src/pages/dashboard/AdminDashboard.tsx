@@ -241,7 +241,6 @@ export default function AdminDashboard() {
           { label: 'Roles & Permissions', href: '/admin/roles', icon: Shield },
           { label: 'Departments', href: '/admin/departments', icon: Database },
           { label: 'Modules', href: '/admin/modules', icon: Cpu },
-          { label: 'Security', href: '/admin/settings', icon: Lock },
         ]} />
       </div>
     </div>
