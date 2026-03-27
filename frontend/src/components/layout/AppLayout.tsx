@@ -145,7 +145,6 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'General Ledger' },
       { label: 'Chart of Accounts', href: '/accounting/accounts', permission: 'chart_of_accounts.view' },
       { label: 'Journal Entries', href: '/accounting/journal-entries', permission: 'journal_entries.view' },
-      { label: 'Fiscal Periods', href: '/accounting/fiscal-periods', permission: 'fiscal_periods.view' },
       // ── Accounts Payable ────────────────────────────────────────────────────
       { divider: true, label: 'Accounts Payable' },
       { label: 'Vendors', href: '/accounting/vendors', permission: 'vendors.view' },
@@ -158,13 +157,9 @@ const SECTIONS: NavSection[] = [
       // ── Banking ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Banking' },
       { label: 'Bank Accounts', href: '/banking/accounts', permission: 'bank_accounts.view' },
-      { label: 'Reconciliations', href: '/banking/reconciliations', permission: 'bank_reconciliations.view' },
       // ── Reports ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Reports' },
-      { label: 'VAT Ledger', href: '/accounting/vat-ledger', permission: 'reports.vat' },
       { label: 'Trial Balance', href: '/accounting/trial-balance', permission: 'reports.financial_statements' },
-      { label: 'AP Aging', href: '/accounting/ap/aging-report', permission: 'reports.ap_aging' },
-      { label: 'AR Aging', href: '/ar/aging-report', permission: 'reports.ar_aging' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
@@ -196,7 +191,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
       { label: 'Budget Lines', href: '/budget/lines', permission: 'budget.view' },
       { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
-      { label: 'Variance Analysis', href: '/budget/variance', permission: 'budget.view' },
       { divider: true, label: 'Fixed Assets' },
       { label: 'Asset Register', href: '/fixed-assets', permission: 'fixed_assets.view' },
       { label: 'Asset Disposals', href: '/fixed-assets/disposals', permission: 'fixed_assets.manage' },
@@ -217,13 +211,10 @@ const SECTIONS: NavSection[] = [
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
-      { label: 'Vendor RFQs', href: '/procurement/rfqs', permission: 'procurement.purchase-order.view' },
-      { label: 'Vendor Scorecard', href: '/procurement/vendor-scorecard', permission: 'procurement.purchase-order.view' },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },
       { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
       { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
-      { label: 'Stock Ledger', href: '/inventory/ledger', permission: 'inventory.stock.view' },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
       { label: 'Stock Adjustments', href: '/inventory/adjustments', permission: 'inventory.adjustments.create' },
     ],
@@ -246,18 +237,10 @@ const SECTIONS: NavSection[] = [
       // ── Quality Control ─────────────────────────────────────────────────────
       { divider: true, label: 'Quality Control' },
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
-      { label: 'NCRs', href: '/qc/ncrs', permission: 'qc.ncr.view' },
       // ── Maintenance ─────────────────────────────────────────────────────────
       { divider: true, label: 'Maintenance' },
       { label: 'Equipment', href: '/maintenance/equipment', permission: 'maintenance.view' },
       { label: 'Work Orders', href: '/maintenance/work-orders', permission: 'maintenance.view' },
-      // ── Mold ────────────────────────────────────────────────────────────────
-      { divider: true, label: 'Mold' },
-      { label: 'Mold Masters', href: '/mold/masters', permission: 'mold.view' },
-      // ── ISO / IATF ──────────────────────────────────────────────────────────
-      { divider: true, label: 'ISO / IATF' },
-      { label: 'Document Register', href: '/iso/documents', permission: 'iso.view' },
-      { label: 'Audit Records', href: '/iso/audits', permission: 'iso.view' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
@@ -298,13 +281,9 @@ const EXECUTIVE_SECTION: NavSection = {
     // ── Financial Reports (exec read-only view) ───────────────────────────────
     { divider: true, label: 'Reports' },
     { label: 'Trial Balance', href: '/accounting/trial-balance', permission: 'reports.financial_statements' },
-    { label: 'AP Aging', href: '/accounting/ap/aging-report', permission: 'reports.ap_aging' },
-    { label: 'AR Aging', href: '/ar/aging-report', permission: 'reports.ar_aging' },
     { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
     { divider: true, label: 'Analytics' },
     { label: 'Executive Analytics', href: '/dashboard/executive-analytics', permission: 'reports.financial_statements' },
-    { label: 'Variance Analysis', href: '/budget/variance', permission: 'budget.view' },
-    { label: 'Vendor Scorecard', href: '/procurement/vendor-scorecard', permission: 'procurement.purchase-order.view' },
   ],
 }
 
@@ -321,6 +300,8 @@ const ADMIN_SECTION: NavSection = {
     { label: 'Users', href: '/admin/users', permission: 'system.manage_users' },
     { label: 'System Settings', href: '/admin/settings', permission: 'system.edit_settings' },
     { label: 'Reference Tables', href: '/admin/reference-tables', permission: 'system.edit_settings' },
+    { label: 'Fiscal Periods', href: '/accounting/fiscal-periods', permission: 'system.edit_settings' },
+    { label: 'Item Categories', href: '/inventory/categories', permission: 'system.edit_settings' },
     { label: 'Audit Logs', href: '/admin/audit-logs', permission: 'system.view_audit_log' },
     { label: 'Backup', href: '/admin/backup', permission: 'system.manage_backups' },
   ],
