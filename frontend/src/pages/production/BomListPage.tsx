@@ -8,6 +8,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { ExportButton } from '@/components/ui/ExportButton'
 
 export default function BomListPage(): React.ReactElement {
   const [page, setPage] = useState(1)
@@ -32,15 +33,27 @@ export default function BomListPage(): React.ReactElement {
       <PageHeader
         title="Bill of Materials"
         actions={
-          canCreate && (
-            <Link
-              to="/production/boms/new"
-              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New BOM
-            </Link>
-          )
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'name', label: 'BOM Name' },
+                { key: 'product_item.name', label: 'Product' },
+                { key: 'version', label: 'Version' },
+                { key: 'is_active', label: 'Active', format: (v: unknown) => v ? 'Yes' : 'No' },
+              ]}
+              filename="bill-of-materials"
+            />
+            {canCreate && (
+              <Link
+                to="/production/boms/new"
+                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New BOM
+              </Link>
+            )}
+          </div>
         }
       />
 

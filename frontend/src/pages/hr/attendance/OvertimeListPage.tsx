@@ -6,6 +6,7 @@ import { useDepartments } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { ExportButton } from '@/components/ui/ExportButton'
 import type { OvertimeFilters } from '@/types/hr'
 import { ChevronDown, ChevronUp, X, Search } from 'lucide-react'
 
@@ -80,7 +81,23 @@ export default function OvertimeListPage() {
     <div>
       <ExecutiveReadOnlyBanner />
       {/* Note: This page is read-only; no "New" button needed */}
-      <PageHeader title="Overtime Requests" />
+      <PageHeader
+        title="Overtime Requests"
+        actions={
+          <ExportButton
+            data={data?.data ?? []}
+            columns={[
+              { key: 'employee.full_name', label: 'Employee' },
+              { key: 'work_date', label: 'Date' },
+              { key: 'requested_hours', label: 'Requested Hours' },
+              { key: 'approved_hours', label: 'Approved Hours' },
+              { key: 'status', label: 'Status' },
+              { key: 'reason', label: 'Reason' },
+            ]}
+            filename="overtime-requests"
+          />
+        }
+      />
 
       {/* Records count */}
       <p className="text-sm text-neutral-500 mb-4">

@@ -21,6 +21,8 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
+import StatusTimeline from '@/components/ui/StatusTimeline'
+import { getPurchaseRequestSteps, isRejectedStatus } from '@/lib/workflowSteps'
 
 // ── Workflow Stage Component ──────────────────────────────────────────────────
 
@@ -445,6 +447,16 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
           </div>
         </div>
       )}
+
+      {/* Workflow Progress */}
+      <div className="bg-white border border-neutral-200 rounded p-4 mb-5">
+        <StatusTimeline
+          steps={getPurchaseRequestSteps(pr)}
+          currentStatus={pr.status}
+          direction="horizontal"
+          isRejected={isRejectedStatus(pr.status)}
+        />
+      </div>
 
       <div className="grid grid-cols-3 gap-6">
         {/* Main content — 2/3 */}
