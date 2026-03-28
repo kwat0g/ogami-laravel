@@ -200,6 +200,7 @@ const ProductionOrderListPage = lazy(() => import('@/pages/production/Production
 const CreateProductionOrderPage      = lazy(() => import('@/pages/production/CreateProductionOrderPage'))
 const ProductionOrderDetailPage      = lazy(() => import('@/pages/production/ProductionOrderDetailPage'))
 const ProductionCostPage             = lazy(() => import('@/pages/production/ProductionCostPage'))
+const BomCostBreakdownPage           = lazy(() => import('@/pages/production/BomCostBreakdownPage'))
 
 // Delivery
 const DeliveryReceiptListPage         = lazy(() => import('@/pages/delivery/DeliveryReceiptListPage'))
@@ -274,8 +275,9 @@ const LeadDetailPage      = lazy(() => import('@/pages/crm/LeadDetailPage'))
 const OpportunityListPage = lazy(() => import('@/pages/crm/OpportunityListPage'))
 
 // Sales Module (Phase 1)
-const QuotationListPage   = lazy(() => import('@/pages/sales/QuotationListPage'))
-const SalesOrderListPage  = lazy(() => import('@/pages/sales/SalesOrderListPage'))
+const QuotationListPage      = lazy(() => import('@/pages/sales/QuotationListPage'))
+const QuotationMarginPage    = lazy(() => import('@/pages/sales/QuotationMarginPage'))
+const SalesOrderListPage     = lazy(() => import('@/pages/sales/SalesOrderListPage'))
 
 // Inventory Enhancements (Phase 1)
 const StockTransferPage   = lazy(() => import('@/pages/inventory/StockTransferPage'))
@@ -549,6 +551,7 @@ const router = createBrowserRouter([
       { path: '/production/orders/new', element: withSuspense(guard('production.orders.create', <CreateProductionOrderPage />)) },
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
       { path: '/production/cost-analysis', element: withSuspense(guard('production.orders.view', <ProductionCostPage />)) },
+      { path: '/production/boms/:id/cost-breakdown', element: withSuspense(guard('production.bom.view', <BomCostBreakdownPage />)) },
 
       // ── QC / QA ────────────────────────────────────────────────────
       { path: '/qc/inspections', element: withSuspense(guard('qc.inspections.view', <InspectionListPage />)) },
@@ -648,6 +651,7 @@ const router = createBrowserRouter([
     { path: '/sales/client-orders/:ulid', element: withSuspense(guard('sales.order_review', <ClientOrderReviewDetailPage />)) },
     { path: '/sales/quotations', element: withSuspense(guard('sales.quotations.view', <QuotationListPage />)) },
     { path: '/sales/quotations/:ulid', element: withSuspense(guard('sales.quotations.view', <QuotationDetailPage />)) },
+    { path: '/sales/quotations/:ulid/margin', element: withSuspense(guard('sales.quotations.view', <QuotationMarginPage />)) },
     { path: '/sales/orders', element: withSuspense(guard('sales.orders.view', <SalesOrderListPage />)) },
     { path: '/sales/orders/:ulid', element: withSuspense(guard('sales.orders.view', <SalesOrderDetailPage />)) },
     ],

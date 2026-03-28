@@ -722,4 +722,69 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
         Route::post('/run', [BackupController::class, 'run'])->name('admin.backups.run');
         Route::post('/restore', [BackupController::class, 'restore'])->name('admin.backups.restore');
     });
+
+    // ── Audit Trail Viewer ─────────────────────────────────────────────────
+    // Reads from owen-it/auditing's `audits` table. Filterable by event type
+    // and model class. Essential for ISO compliance and thesis defense.
+    Route::get('audit-log', function (Request $request): \Illuminate\Http\JsonResponse {
+        $query = DB::table('audits')
+            ->leftJoin('users', 'audits.user_id', '=', 'users.id')
+            ->select(
+                'audits.id',
+                'audits.user_type',
+                'audits.user_id',
+                'audits.event',
+                'audits.auditable_type',
+                'audits.auditable_id',
+                'audits.old_values',
+                'audits.new_values',
+                'audits.url',
+                'audits.ip_address',
+                'audits.user_agent',
+                'audits.tags',
+                'audits.created_at',
+                'users.name as user_name',
+                'users.email as user_email',
+            )
+            ->orderByDesc('audits.created_at');
+
+        if ($request->filled('event')) {
+            $query->where('audits.event', $request->input('event'));
+        }
+
+        if ($request->filled('auditable_type')) {
+            $query->where('audits.auditable_type', $request->input('auditable_type'));
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('audits.user_id', $request->integer('user_id'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('audits.created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('audits.created_at', '<=', $request->input('date_to') . ' 23:59:59');
+        }
+
+        $perPage = min((int) ($request->input('per_page', 25)), 100);
+        $paginated = $query->paginate($perPage);
+
+        // Transform old_values/new_values from JSON strings to objects
+        $paginated->getCollection()->transform(function ($item) {
+            $item->old_values = json_decode($item->old_values ?? '{}', true) ?? [];
+            $item->new_values = json_decode($item->new_values ?? '{}', true) ?? [];
+            $item->user = $item->user_name ? [
+                'id' => $item->user_id,
+                'name' => $item->user_name,
+                'email' => $item->user_email,
+            ] : null;
+            unset($item->user_name, $item->user_email);
+
+            return $item;
+        });
+
+        return response()->json($paginated);
+    })->name('admin.audit-log');
 });

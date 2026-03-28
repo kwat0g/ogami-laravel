@@ -26,6 +26,11 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $requested_by_id
  * @property int|null $approved_by_id
  * @property Carbon|null $approved_at
+ * @property-read FixedAsset $fixedAsset
+ * @property-read Department $fromDepartment
+ * @property-read Department $toDepartment
+ * @property-read User $requestedBy
+ * @property-read User|null $approvedBy
  */
 final class AssetTransfer extends Model implements Auditable
 {
@@ -43,6 +48,21 @@ final class AssetTransfer extends Model implements Auditable
         'transfer_date' => 'date',
         'approved_at' => 'datetime',
     ];
+
+    public function fixedAsset(): BelongsTo
+    {
+        return $this->belongsTo(FixedAsset::class, 'fixed_asset_id');
+    }
+
+    public function fromDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'from_department_id');
+    }
+
+    public function toDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'to_department_id');
+    }
 
     public function requestedBy(): BelongsTo
     {
