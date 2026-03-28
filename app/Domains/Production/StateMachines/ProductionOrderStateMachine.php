@@ -25,7 +25,7 @@ final class ProductionOrderStateMachine
     private const TRANSITIONS = [
         'draft'       => ['released', 'cancelled'],
         'released'    => ['in_progress', 'on_hold', 'cancelled'],
-        'in_progress' => ['completed', 'on_hold', 'cancelled'],
+        'in_progress' => ['completed', 'on_hold', 'cancelled'],  // cancelled: emergency stop (material defect, etc.)
         'on_hold'     => ['released', 'in_progress', 'cancelled'],
         'completed'   => ['closed'],
         'closed'      => [],       // terminal
