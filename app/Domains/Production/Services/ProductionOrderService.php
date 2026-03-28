@@ -168,6 +168,7 @@ final class ProductionOrderService implements ServiceContract
 
         /** @var ProductionOrder $order */
         $order = ProductionOrder::create([
+            'po_reference' => $this->generateReference(),
             'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,
             'product_item_id' => $data['product_item_id'],
             'bom_id' => $data['bom_id'],
@@ -651,5 +652,24 @@ final class ProductionOrderService implements ServiceContract
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Generate a unique production order reference: PROD-YYYY-MM-NNNNN
+     */
+    private function generateReference(): string
+    {
+        $prefix = 'PROD-' . now()->format('Y-m');
+        $last = ProductionOrder::where('po_reference', 'like', "{$prefix}-%")
+            ->orderByDesc('po_reference')
+            ->value('po_reference');
+
+        if ($last !== null) {
+            $seq = (int) substr($last, -5) + 1;
+        } else {
+            $seq = 1;
+        }
+
+        return sprintf('%s-%05d', $prefix, $seq);
     }
 }

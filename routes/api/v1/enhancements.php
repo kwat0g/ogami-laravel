@@ -16,6 +16,59 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+    // ── Chain Record Timeline ────────────────────────────────────────────
+    Route::get('chain-record/{type}/{id}', function (string $type, int $id): JsonResponse {
+        $service = app(\App\Services\ChainRecordService::class);
+        $chain = $service->trace($type, $id);
+
+        return response()->json(['data' => $chain]);
+    })->where('type', '[a-z_]+')->where('id', '[0-9]+');
+
+    // ── Audit Trail (Status Timeline) ────────────────────────────────────
+    Route::get('audit-trail/{type}/{id}', function (string $type, int $id): JsonResponse {
+        // Map short type names to auditable_type (Eloquent class names)
+        $typeMap = [
+            'purchase_request' => 'App\\Domains\\Procurement\\Models\\PurchaseRequest',
+            'purchase_order' => 'App\\Domains\\Procurement\\Models\\PurchaseOrder',
+            'goods_receipt' => 'App\\Domains\\Procurement\\Models\\GoodsReceipt',
+            'production_order' => 'App\\Domains\\Production\\Models\\ProductionOrder',
+            'delivery_schedule' => 'App\\Domains\\Production\\Models\\DeliverySchedule',
+            'delivery_receipt' => 'App\\Domains\\Delivery\\Models\\DeliveryReceipt',
+            'vendor_invoice' => 'App\\Domains\\AP\\Models\\VendorInvoice',
+            'customer_invoice' => 'App\\Domains\\AR\\Models\\CustomerInvoice',
+            'client_order' => 'App\\Domains\\CRM\\Models\\ClientOrder',
+            'payroll_run' => 'App\\Domains\\Payroll\\Models\\PayrollRun',
+            'employee' => 'App\\Domains\\HR\\Models\\Employee',
+            'loan' => 'App\\Domains\\Loan\\Models\\Loan',
+            'leave_request' => 'App\\Domains\\Leave\\Models\\LeaveRequest',
+            'inspection' => 'App\\Domains\\QC\\Models\\Inspection',
+            'material_requisition' => 'App\\Domains\\Inventory\\Models\\MaterialRequisition',
+        ];
+
+        $auditableType = $typeMap[$type] ?? null;
+        if (! $auditableType) {
+            return response()->json(['data' => []]);
+        }
+
+        $audits = \OwenIt\Auditing\Models\Audit::query()
+            ->where('auditable_type', $auditableType)
+            ->where('auditable_id', $id)
+            ->orderBy('created_at', 'asc')
+            ->limit(50)
+            ->get()
+            ->map(fn ($audit) => [
+                'id' => $audit->id,
+                'event' => $audit->event,
+                'old_values' => $audit->old_values ?? [],
+                'new_values' => $audit->new_values ?? [],
+                'user_id' => $audit->user_id,
+                'user_name' => $audit->user?->name ?? null,
+                'created_at' => $audit->created_at?->toIso8601String(),
+            ]);
+
+        return response()->json(['data' => $audits]);
+    })->where('type', '[a-z_]+')->where('id', '[0-9]+');
+
     // ── AP Early Payment Discounts ──────────────────────────────────────
     Route::prefix('ap')->group(function () {
         Route::get('/discount-summary', function (): JsonResponse {
