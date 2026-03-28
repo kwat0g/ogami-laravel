@@ -31,7 +31,7 @@ function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     create(
-      { code: form.code.trim(), name: form.name.trim(), description: form.description.trim() || undefined },
+      { code: form.name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 10), name: form.name.trim(), description: form.description.trim() || undefined },
       {
         onSuccess: () => {
           toast.success('Category created.')
@@ -114,8 +114,8 @@ function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
                 <p className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">New Category</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-neutral-600 mb-1">Code <span className="text-red-500">*</span></label>
-                    <input className={inputCls} value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="e.g. RAW-MAT" required minLength={2} />
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Code <span className="text-neutral-400 text-[10px]">(auto from name)</span></label>
+                    <input className={`${inputCls} bg-neutral-50 text-neutral-500 font-mono`} value={form.name ? form.name.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 10) : ''} readOnly disabled />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-neutral-600 mb-1">Name <span className="text-red-500">*</span></label>
