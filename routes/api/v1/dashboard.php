@@ -20,7 +20,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Manager Dashboard (department-scoped)
     Route::get('manager', [DashboardController::class, 'manager'])
-        ->name('dashboard.manager')->can('employees.view_team');
+        ->name('dashboard.manager')->can('leaves.view_team');
 
     // Supervisor Dashboard
     Route::get('supervisor', [DashboardController::class, 'supervisor'])
@@ -31,13 +31,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // HR Dashboard
     Route::get('hr', [DashboardController::class, 'hr'])
-        ->name('dashboard.hr')->can('hr.full_access');
+        ->name('dashboard.hr')->can('employees.view_full_record');
 
     // Accounting Dashboard
     Route::get('accounting', [DashboardController::class, 'accounting'])
         ->name('dashboard.accounting')->can('journal_entries.view');
 
-    // Admin Dashboard
+    // Admin Dashboard (abort_unless in service method)
     Route::get('admin', [DashboardController::class, 'admin'])
         ->name('dashboard.admin');
 
@@ -47,19 +47,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Executive Dashboard
     Route::get('executive', [DashboardController::class, 'executive'])
-        ->name('dashboard.executive');
+        ->name('dashboard.executive')->can('system.view_audit_log');
 
     // VP Dashboard
     Route::get('vp', [DashboardController::class, 'vp'])
-        ->name('dashboard.vp');
+        ->name('dashboard.vp')->can('loans.vp_approve');
 
     // Officer Dashboard
     Route::get('officer', [DashboardController::class, 'officer'])
-        ->name('dashboard.officer');
+        ->name('dashboard.officer')->can('journal_entries.view');
 
     // Purchasing Officer Dashboard
     Route::get('purchasing-officer', [DashboardController::class, 'purchasingOfficer'])
-        ->name('dashboard.purchasing-officer');
+        ->name('dashboard.purchasing-officer')->can('procurement.purchase-request.view');
 
     // Executive Analytics (existing invokable controller)
     Route::get('executive-analytics', \App\Http\Controllers\Dashboard\ExecutiveDashboardController::class)
