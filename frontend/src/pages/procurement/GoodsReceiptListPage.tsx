@@ -8,6 +8,9 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { ExportButton } from '@/components/ui/ExportButton'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
 import type { GoodsReceiptStatus } from '@/types/procurement'
 
 const statusBadge: Record<GoodsReceiptStatus, string> = {

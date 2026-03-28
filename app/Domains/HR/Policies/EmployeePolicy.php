@@ -158,15 +158,13 @@ final class EmployeePolicy
 
     public function restore(User $user, Employee $employee): bool
     {
-        return $user->hasPermissionTo('employees.update');
+        return $user->hasPermissionTo('employees.update') || $user->hasRole('super_admin');
     }
 
     public function export(User $user): bool
     {
         return $user->hasPermissionTo('employees.export');
     }
-
-    // ── Helper ────────────────────────────────────────────────────────────────
 
     /** True when the employee record belongs to the acting user. */
     private function isOwnEmployee(User $user, Employee $employee): bool
@@ -175,17 +173,9 @@ final class EmployeePolicy
     }
 
     /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(\App\Models\User $user, $model): bool
-    {
-        return $user->hasRole('super_admin');
-    }
-
-    /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(\App\Models\User $user, $model): bool
+    public function forceDelete(User $user, Employee $employee): bool
     {
         return $user->hasRole('super_admin');
     }
