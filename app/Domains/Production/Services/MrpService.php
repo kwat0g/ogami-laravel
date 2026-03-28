@@ -162,6 +162,127 @@ final class MrpService implements ServiceContract
     }
 
     /**
+     * Time-phased MRP — Item 5.
+     *
+     * Offsets material requirements by vendor lead time to determine
+     * WHEN to place orders, not just how much. Groups requirements by
+     * week and shows order release dates.
+     *
+     * @return Collection<int, array{component_item_id: int, component_code: string, component_name: string, total_required: float, current_stock: float, shortage: float, lead_time_days: int, order_release_date: string, need_by_date: string, weekly_demand: array}>
+     */
+    public function timePhasedExplode(): Collection
+    {
+        $orders = ProductionOrder::query()
+            ->whereIn('status', ['draft', 'scheduled', 'in_progress'])
+            ->with(['bom.components.componentItem'])
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return collect();
+        }
+
+        // Build time-phased requirements: component -> [{need_by_date, qty}]
+        $requirements = collect();
+
+        foreach ($orders as $order) {
+            if ($order->bom === null) {
+                continue;
+            }
+
+            $needByDate = $order->target_start_date
+                ? \Carbon\Carbon::parse($order->target_start_date)
+                : now()->addDays(7);
+
+            $orderQty = (float) $order->qty_required;
+
+            foreach ($order->bom->components as $comp) {
+                $qtyPerUnit = (float) $comp->qty_per_unit;
+                $scrapFactor = 1 + ((float) $comp->scrap_factor_pct / 100);
+                $grossRequired = $orderQty * $qtyPerUnit * $scrapFactor;
+
+                $key = $comp->component_item_id;
+                $existing = $requirements->get($key, [
+                    'component_item_id' => $comp->component_item_id,
+                    'component_code' => $comp->componentItem?->item_code ?? '—',
+                    'component_name' => $comp->componentItem?->name ?? '—',
+                    'demands' => [],
+                ]);
+
+                $existing['demands'][] = [
+                    'production_order_id' => $order->id,
+                    'need_by_date' => $needByDate->toDateString(),
+                    'qty_required' => round($grossRequired, 4),
+                ];
+
+                $requirements->put($key, $existing);
+            }
+        }
+
+        // Get current stock and vendor lead times
+        $itemIds = $requirements->keys()->toArray();
+        $stocks = StockBalance::query()
+            ->whereIn('item_id', $itemIds)
+            ->select('item_id', DB::raw('SUM(CAST(quantity_on_hand AS numeric)) as total_qty'))
+            ->groupBy('item_id')
+            ->pluck('total_qty', 'item_id');
+
+        // Get lead times from preferred vendor or item default
+        $leadTimes = DB::table('item_masters')
+            ->leftJoin('vendors', 'item_masters.preferred_vendor_id', '=', 'vendors.id')
+            ->whereIn('item_masters.id', $itemIds)
+            ->select('item_masters.id', DB::raw('COALESCE(vendors.lead_time_days, 14) as lead_time_days'))
+            ->pluck('lead_time_days', 'id');
+
+        return $requirements->map(function (array $req) use ($stocks, $leadTimes) {
+            $currentStock = (float) ($stocks[$req['component_item_id']] ?? 0);
+            $totalRequired = collect($req['demands'])->sum('qty_required');
+            $shortage = max(0, $totalRequired - $currentStock);
+
+            $leadTimeDays = (int) ($leadTimes[$req['component_item_id']] ?? 14);
+
+            // Earliest need-by date determines order release date
+            $earliestNeed = collect($req['demands'])
+                ->min('need_by_date');
+            $needBy = \Carbon\Carbon::parse($earliestNeed);
+            $orderRelease = $needBy->copy()->subDays($leadTimeDays);
+
+            // Group demands by week for time-phased view
+            $weeklyDemand = collect($req['demands'])
+                ->groupBy(fn ($d) => \Carbon\Carbon::parse($d['need_by_date'])->startOfWeek()->format('Y-W'))
+                ->map(fn ($group, $week) => [
+                    'week' => $week,
+                    'qty_required' => round($group->sum('qty_required'), 4),
+                    'order_count' => $group->count(),
+                ])
+                ->values()
+                ->toArray();
+
+            return [
+                'component_item_id' => $req['component_item_id'],
+                'component_code' => $req['component_code'],
+                'component_name' => $req['component_name'],
+                'total_required' => round($totalRequired, 4),
+                'current_stock' => round($currentStock, 4),
+                'shortage' => round($shortage, 4),
+                'lead_time_days' => $leadTimeDays,
+                'need_by_date' => $needBy->toDateString(),
+                'order_release_date' => max($orderRelease->toDateString(), now()->toDateString()),
+                'days_until_order' => max(0, (int) now()->diffInDays($orderRelease, false)),
+                'urgency' => match (true) {
+                    $orderRelease->isPast() => 'overdue',
+                    $orderRelease->diffInDays(now()) <= 3 => 'urgent',
+                    $orderRelease->diffInDays(now()) <= 7 => 'soon',
+                    default => 'planned',
+                },
+                'weekly_demand' => $weeklyDemand,
+            ];
+        })
+            ->filter(fn ($r) => $r['shortage'] > 0)
+            ->sortBy('order_release_date')
+            ->values();
+    }
+
+    /**
      * MRP summary — overview stats.
      *
      * @return array{
