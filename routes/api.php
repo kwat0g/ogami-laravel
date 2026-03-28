@@ -90,5 +90,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         // Enhancement routes — new services from Tier 1-3 enhancements
         Route::name('enhancements.')->group(base_path('routes/api/v1/enhancements.php'));
+
+        // Archive routes — archived list, restore, force-delete for remaining modules
+        Route::name('archive.')->group(base_path('routes/api/v1/archive-routes.php'));
     });
 });
