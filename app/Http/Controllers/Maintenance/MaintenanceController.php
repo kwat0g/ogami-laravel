@@ -65,7 +65,7 @@ final class MaintenanceController extends Controller
         $this->authorize('viewAny', MaintenanceWorkOrder::class);
 
         return MaintenanceWorkOrderResource::collection(
-            $this->service->paginateWorkOrders($request->only(['status', 'type', 'priority', 'equipment_id', 'per_page', 'with_archived']))
+            $this->service->paginateWorkOrders($request->only(['search', 'status', 'type', 'priority', 'equipment_id', 'per_page', 'with_archived']))
         );
     }
 

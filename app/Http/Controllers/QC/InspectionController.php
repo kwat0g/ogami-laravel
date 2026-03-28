@@ -24,7 +24,7 @@ final class InspectionController extends Controller
         $this->authorize('viewAny', Inspection::class);
 
         return InspectionResource::collection(
-            $this->service->paginate($request->only(['stage', 'status', 'item_master_id', 'per_page', 'with_archived']))
+            $this->service->paginate($request->only(['search', 'stage', 'status', 'item_master_id', 'per_page', 'with_archived']))
         );
     }
 

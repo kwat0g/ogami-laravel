@@ -20,7 +20,7 @@ final class QuotationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $page = $this->quotationService->paginate($request->only(['status', 'customer_id', 'per_page']));
+        $page = $this->quotationService->paginate($request->only(['search', 'status', 'customer_id', 'per_page']));
 
         return response()->json($page);
     }

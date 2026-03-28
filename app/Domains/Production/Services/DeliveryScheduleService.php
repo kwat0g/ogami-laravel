@@ -34,6 +34,11 @@ final class DeliveryScheduleService implements ServiceContract
             $query->withTrashed();
         }
 
+        if ($filters['search'] ?? null) {
+            $v = $filters['search'];
+            $query->where(fn ($q) => $q->where('ds_reference', 'ilike', "%{$v}%")->orWhereHas('customer', fn ($q2) => $q2->where('name', 'ilike', "%{$v}%"))->orWhereHas('productItem', fn ($q2) => $q2->where('name', 'ilike', "%{$v}%")));
+        }
+
         if (isset($filters['customer_id'])) {
             $query->where('customer_id', $filters['customer_id']);
         }

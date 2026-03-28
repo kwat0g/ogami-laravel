@@ -21,6 +21,11 @@ final class SalesOrderService implements ServiceContract
         $query = SalesOrder::with(['customer', 'contact', 'createdBy'])
             ->orderByDesc('id');
 
+        if ($filters['search'] ?? null) {
+            $v = $filters['search'];
+            $query->where(fn ($q) => $q->where('order_number', 'ilike', "%{$v}%")->orWhereHas('customer', fn ($q2) => $q2->where('name', 'ilike', "%{$v}%")));
+        }
+
         if (isset($filters['status'])) {
             $query->where('status', $filters['status']);
         }

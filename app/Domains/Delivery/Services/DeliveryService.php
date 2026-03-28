@@ -27,11 +27,12 @@ final class DeliveryService implements ServiceContract
     {
         return DeliveryReceipt::query()
             ->when($filters['with_archived'] ?? false, fn ($q) => $q->withTrashed())
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where(fn ($q2) => $q2->where('dr_reference', 'ilike', "%{$v}%")->orWhereHas('customer', fn ($q3) => $q3->where('name', 'ilike', "%{$v}%"))->orWhereHas('vendor', fn ($q3) => $q3->where('name', 'ilike', "%{$v}%"))))
             ->with(['vendor', 'customer', 'receivedBy'])
             ->when($filters['direction'] ?? null, fn ($q, $v) => $q->where('direction', $v))
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->orderByDesc('created_at')
-            ->paginate(25);
+            ->paginate((int) ($filters['per_page'] ?? 25));
     }
 
     public function storeReceipt(array $data, int $userId): DeliveryReceipt
@@ -132,10 +133,11 @@ final class DeliveryService implements ServiceContract
     {
         return Shipment::query()
             ->when($filters['with_archived'] ?? false, fn ($q) => $q->withTrashed())
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where(fn ($q2) => $q2->where('carrier', 'ilike', "%{$v}%")->orWhere('tracking_number', 'ilike', "%{$v}%")))
             ->with(['deliveryReceipt', 'createdBy'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->orderByDesc('created_at')
-            ->paginate(25);
+            ->paginate((int) ($filters['per_page'] ?? 25));
     }
 
     public function storeShipment(array $data, int $userId): Shipment

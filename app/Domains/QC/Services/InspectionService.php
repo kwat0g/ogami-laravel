@@ -19,6 +19,7 @@ final class InspectionService implements ServiceContract
     {
         return Inspection::query()
             ->when($params['with_archived'] ?? false, fn ($q) => $q->withTrashed())
+            ->when($params['search'] ?? null, fn ($q, $v) => $q->where(fn ($q2) => $q2->where('inspection_reference', 'ilike', "%{$v}%")->orWhereHas('itemMaster', fn ($q3) => $q3->where('name', 'ilike', "%{$v}%"))))
             ->when($params['stage'] ?? null, fn ($q, $v) => $q->where('stage', $v))
             ->when($params['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($params['item_master_id'] ?? null, fn ($q, $v) => $q->where('item_master_id', $v))

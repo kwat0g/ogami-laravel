@@ -24,7 +24,7 @@ final class ProductionOrderController extends Controller
         $this->authorize('viewAny', ProductionOrder::class);
 
         return ProductionOrderResource::collection(
-            $this->service->paginate($request->only(['status', 'product_item_id', 'per_page', 'with_archived']))
+            $this->service->paginate($request->only(['search', 'status', 'product_item_id', 'per_page', 'with_archived']))
         );
     }
 

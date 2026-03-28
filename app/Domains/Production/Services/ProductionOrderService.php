@@ -47,6 +47,11 @@ final class ProductionOrderService implements ServiceContract
             $query->withTrashed();
         }
 
+        if ($filters['search'] ?? null) {
+            $v = $filters['search'];
+            $query->where(fn ($q) => $q->where('po_reference', 'ilike', "%{$v}%")->orWhereHas('productItem', fn ($q2) => $q2->where('name', 'ilike', "%{$v}%")->orWhere('item_code', 'ilike', "%{$v}%")));
+        }
+
         if (isset($filters['status'])) {
             $query->where('status', $filters['status']);
         }
