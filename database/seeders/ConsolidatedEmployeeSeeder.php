@@ -542,8 +542,11 @@ class ConsolidatedEmployeeSeeder extends Seeder
             ->where('id', $employeeId)
             ->update(['user_id' => $user->id]);
 
-        // Update user with department_id
-        $user->update(['department_id' => $deptId]);
+        // Update user with department_id and employee_id
+        $user->update([
+            'department_id' => $deptId,
+            'employee_id' => $employeeId,
+        ]);
 
         // Sync department access (pivot table) - required by ModuleAccessMiddleware
         $user->departments()->sync([$deptId => ['is_primary' => true]]);
@@ -553,6 +556,10 @@ class ConsolidatedEmployeeSeeder extends Seeder
 
         // Assign role
         $user->syncRoles([$data['role']]);
+
+        // Assign default shift and baseline leave balances
+        \Database\Seeders\Helpers\EmployeeContextHelper::assignDefaultShift($employeeId);
+        \Database\Seeders\Helpers\EmployeeContextHelper::allocateLeaveBalances($employeeId);
 
         $this->command->info("    ✓ Created: {$data['email']} ({$data['position']})");
     }

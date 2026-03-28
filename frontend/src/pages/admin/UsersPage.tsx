@@ -193,8 +193,7 @@ export default function UsersPage() {
   const [newRole, setNewRole]       = useState('')
 
   // Destructive action targets
-  const [disableTarget, setDisableTarget] = useState<AdminUser | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
+  // Delete action was removed per requirements
 
   const rows = data?.data ?? []
   const meta = data?.meta
@@ -362,33 +361,16 @@ export default function UsersPage() {
     })
   }
 
-  const handleDisable = (u: AdminUser) => {
-    setDisableTarget(u)
+  const executeDisable = (u: AdminUser) => {
+    return disable.mutateAsync(u.id)
+      .then(() => toast.success('User account disabled.'))
+      .catch((e: unknown) => { toast.error(firstErrorMessage(e) || 'Failed to disable user account.'); throw e; })
   }
 
-  const executeDisable = () => {
-    if (!disableTarget) return
-    disable.mutate(disableTarget.id, {
-      onSuccess: () => {
-        setDisableTarget(null)
-        toast.success('User account disabled.')
-      },
-      onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to disable user account.'),
-    })
-  }
-
-  const handleDelete = (u: AdminUser) => {
-    setDeleteTarget(u)
-  }
-
-  const executeDelete = () => {
-    if (!deleteTarget) return
-    removeUser.mutate(deleteTarget.id, {
-      onSuccess: () => {
-        setDeleteTarget(null)
-        toast.success('User account archived.')
-      },
-      onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to archive user account.'),
+  const handleUnlock = (u: AdminUser) => {
+    unlock.mutate(u.id, {
+      onSuccess: () => toast.success('User account unlocked.'),
+      onError: (e: unknown) => toast.error(firstErrorMessage(e) || 'Failed to unlock user account.'),
     })
   }
 
@@ -412,6 +394,11 @@ export default function UsersPage() {
   }
 
   const isLocked = (u: AdminUser) => u.locked_until && new Date(u.locked_until) > new Date()
+  const isDisabled = (u: AdminUser) => {
+    if (!u.locked_until) return false
+    const diffInYears = (new Date(u.locked_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 365)
+    return diffInYears > 1
+  }
 
   // Only show skeleton on initial load, not during refetch (to preserve focus)
   if (isLoading && !isFetching) return <SkeletonLoader rows={10} />
@@ -499,7 +486,13 @@ export default function UsersPage() {
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  {isLocked(u) ? <StatusBadge status="locked">Locked</StatusBadge> : <StatusBadge status="active">Active</StatusBadge>}
+                  {isDisabled(u) ? (
+                    <StatusBadge status="locked">Disabled</StatusBadge>
+                  ) : isLocked(u) ? (
+                    <StatusBadge status="locked">Locked</StatusBadge>
+                  ) : (
+                    <StatusBadge status="active">Active</StatusBadge>
+                  )}
                   {u.failed_login_attempts > 0 && (
                     <span className="ml-2 text-xs text-neutral-600">{u.failed_login_attempts} failed</span>
                   )}
@@ -526,33 +519,22 @@ export default function UsersPage() {
                       <button onClick={() => openRoleModal(u)} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium">Role</button>
                     )}
                     {canUpdate && isLocked(u) && (
-                      <button onClick={() => unlock.mutate(u.id)} disabled={unlock.isPending} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed">Unlock</button>
+                      <button onClick={() => handleUnlock(u)} disabled={unlock.isPending} className="px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                        {isDisabled(u) ? 'Enable' : 'Unlock'}
+                      </button>
                     )}
-                    {canDisable && !isLocked(u) && (
+                    {canDisable && !isDisabled(u) && (
                       <ConfirmDialog
                         title="Disable User Account?"
-                        description={`${u.name} (${u.email}) will not be able to sign in until their account is unlocked.`}
+                        description={`${u.name} (${u.email}) will not be able to sign in until their account is enabled.`}
                         confirmLabel="Disable Account"
                         variant="danger"
-                        onConfirm={() => handleDisable(u)}
+                        onConfirm={() => executeDisable(u)}
                       >
                         <button className="text-xs text-red-600 hover:text-red-700 font-medium">
                           Disable
                         </button>
                       </ConfirmDialog>
-                    )}
-                    {canDisable && (
-                      <ConfirmDestructiveDialog
-                        title="Archive User Account?"
-                        description={`This will permanently archive ${u.name} (${u.email}). The account will be removed from active user lists. This action cannot be undone.`}
-                        confirmWord="DELETE"
-                        confirmLabel="Archive User"
-                        onConfirm={() => handleDelete(u)}
-                      >
-                        <button className="text-xs text-neutral-700 hover:text-neutral-900 font-medium">
-                          Delete
-                        </button>
-                      </ConfirmDestructiveDialog>
                     )}
                   </div>
                 </td>
@@ -670,31 +652,7 @@ export default function UsersPage() {
         </Modal>
       )}
 
-      {/* ── Disable Account Confirmation Dialog ──────────────────────────── */}
-      {disableTarget && (
-        <ConfirmDialog
-          title="Disable User Account?"
-          description={`${disableTarget.name} (${disableTarget.email}) will not be able to sign in until their account is unlocked.`}
-          confirmLabel="Disable Account"
-          variant="danger"
-          onConfirm={executeDisable}
-        >
-          <span />
-        </ConfirmDialog>
-      )}
 
-      {/* ── Delete Account Destructive Confirmation Dialog ──────────────── */}
-      {deleteTarget && (
-        <ConfirmDestructiveDialog
-          title="Archive User Account?"
-          description={`This will permanently archive ${deleteTarget.name} (${deleteTarget.email}). The account will be removed from active user lists. This action cannot be undone.`}
-          confirmWord="DELETE"
-          confirmLabel="Archive User"
-          onConfirm={executeDelete}
-        >
-          <span />
-        </ConfirmDestructiveDialog>
-      )}
     </div>
   )
 }

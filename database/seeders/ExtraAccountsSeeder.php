@@ -160,6 +160,7 @@ class ExtraAccountsSeeder extends Seeder
                 $employee->save();
 
                 $user->department_id = $employee->department_id;
+                $user->employee_id = $employee->id;
                 $user->save();
 
                 DB::table('user_department_access')->insertOrIgnore([

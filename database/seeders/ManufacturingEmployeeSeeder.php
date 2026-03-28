@@ -165,8 +165,10 @@ class ManufacturingEmployeeSeeder extends Seeder
 
             DB::table('users')
                 ->where('id', $user->id)
-                ->whereNull('department_id')
-                ->update(['department_id' => $employee->department_id]);
+                ->update([
+                    'department_id' => $employee->department_id,
+                    'employee_id' => $employee->id,
+                ]);
 
             DB::table('user_department_access')->insertOrIgnore([
                 'user_id' => $user->id,
@@ -182,43 +184,14 @@ class ManufacturingEmployeeSeeder extends Seeder
 
     private function seedShiftAssignments(): void
     {
-        $shift = DB::table('shift_schedules')
-            ->where('start_time', self::DEFAULT_SHIFT_START)
-            ->where('is_active', true)
-            ->first();
-
-        if (! $shift) {
-            $this->command->warn('  Shift assignments skipped — regular shift not found.');
-
-            return;
-        }
-
-        $assignedBy = DB::table('users')->first()?->id ?? 1;
-
         foreach ($this->getEmployeeData() as $emp) {
             $employee = DB::table('employees')->where('employee_code', $emp['code'])->first();
             if (! $employee) {
                 continue;
             }
 
-            $exists = DB::table('employee_shift_assignments')
-                ->where('employee_id', $employee->id)
-                ->exists();
-
-            if ($exists) {
-                continue;
-            }
-
-            DB::table('employee_shift_assignments')->insert([
-                'employee_id' => $employee->id,
-                'shift_schedule_id' => $shift->id,
-                'effective_from' => $employee->date_hired,
-                'effective_to' => null,
-                'notes' => 'Initial shift (manufacturing seeder)',
-                'assigned_by' => $assignedBy,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            \Database\Seeders\Helpers\EmployeeContextHelper::assignDefaultShift($employee->id);
+            \Database\Seeders\Helpers\EmployeeContextHelper::allocateLeaveBalances($employee->id);
         }
     }
 

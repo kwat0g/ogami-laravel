@@ -274,8 +274,10 @@ class SampleDataSeeder extends Seeder
             // Keep denormalised users.department_id in sync
             DB::table('users')
                 ->where('id', $user->id)
-                ->whereNull('department_id')
-                ->update(['department_id' => $employee->department_id]);
+                ->update([
+                    'department_id' => $employee->department_id,
+                    'employee_id' => $employee->id,
+                ]);
 
             // Provision RDAC: user gets primary access to their own department
             DB::table('user_department_access')->insertOrIgnore([
@@ -430,25 +432,10 @@ class SampleDataSeeder extends Seeder
         $this->command->info('  Months covered: Jan (21d), Feb (20d), Mar (22d), Apr (22d), Jun (22d) — May skipped.');
     }
 
-    // ── 6. Shift Assignments ──────────────────────────────────────────────────
+    // ── 6. Context Assigments (Shifts & Leave Balances)  ──────────────────────────────────────────────────
     private function seedShiftAssignments(): void
     {
-        // Look up the Regular Day Shift (8AM–5PM) as the default office schedule
-        $regularShift = DB::table('shift_schedules')
-            ->where('start_time', '08:00:00')
-            ->where('is_active', true)
-            ->first();
-
-        if (! $regularShift) {
-            $this->command->warn('  Shift assignments skipped — Regular Day Shift not found.');
-
-            return;
-        }
-
-        // Use the admin user as the assigner
-        $assignedBy = DB::table('users')->first()?->id ?? 1;
-
-        $employeeCodes = ['EMP-2026-0001', 'EMP-2026-0003'];
+        $employeeCodes = ['EMP-2026-0001', 'EMP-2026-0003', 'EMP-CRM-001'];
 
         $inserted = 0;
         foreach ($employeeCodes as $code) {
@@ -457,28 +444,12 @@ class SampleDataSeeder extends Seeder
                 continue;
             }
 
-            // Skip if already has an assignment
-            $exists = DB::table('employee_shift_assignments')
-                ->where('employee_id', $employee->id)
-                ->exists();
-
-            if ($exists) {
-                continue;
-            }
-
-            DB::table('employee_shift_assignments')->insert([
-                'employee_id' => $employee->id,
-                'shift_schedule_id' => $regularShift->id,
-                'effective_from' => $employee->date_hired,
-                'effective_to' => null,
-                'notes' => 'Initial shift assignment (seeded)',
-                'assigned_by' => $assignedBy,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            \Database\Seeders\Helpers\EmployeeContextHelper::assignDefaultShift($employee->id);
+            \Database\Seeders\Helpers\EmployeeContextHelper::allocateLeaveBalances($employee->id);
+            
             $inserted++;
         }
 
-        $this->command->info("✓ Shift assignments seeded ({$inserted} records).");
+        $this->command->info("✓ Shift and leave balances context seeded ({$inserted} records).");
     }
 }

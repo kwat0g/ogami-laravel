@@ -48,5 +48,12 @@ export default defineConfig({
             use:          { ...devices['Desktop Chrome'] },
             dependencies: ['setup'],
         },
+        {
+            name:         'lightpanda',
+            use:          {
+                ...devices['Desktop Chrome'],
+                executablePath: '/home/kwat0g/.local/bin/lightpanda',
+            },
+        },
     ],
 })

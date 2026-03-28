@@ -33,11 +33,8 @@ export default function ChangePasswordPage() {
         password_confirmation: values.new_password_confirmation,
       })
 
-      toast.success('Password changed. Please log in with your new password.')
-      clearAuth()
-      bumpAuthEpoch()
-      // Force a full reload to clear any stale navigation/auth state
-      window.location.href = '/login'
+      toast.success('Password changed successfully.')
+      navigate('/', { replace: true })
     } catch (err) {
       const { message, fieldErrors } = parseApiError(err)
 

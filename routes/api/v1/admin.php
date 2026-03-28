@@ -545,6 +545,10 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
             'failed_login_attempts' => 0,
         ]);
 
+        // Clear the RateLimiter cache so the user isn't still throttled
+        // by the in-memory login attempt counter (AuthService checks this first).
+        \Illuminate\Support\Facades\RateLimiter::clear('login:'.strtolower($user->email));
+
         return response()->json(['message' => 'User account unlocked.']);
     })->middleware('throttle:api-action')->name('users.unlock');
 
