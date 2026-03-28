@@ -378,50 +378,10 @@ export default function JournalEntryFormPage() {
           </div>
         </div>
 
-        {/* Template Selector */}
-        <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">Use Template</span>
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={selectedTemplate}
-                onChange={(e) => setSelectedTemplate(e.target.value)}
-                className="text-sm border border-blue-300 rounded px-3 py-1.5 bg-white"
-              >
-                <option value="">Select a template...</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} {t.is_system ? '(System)' : ''}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleApplyTemplate}
-                disabled={!selectedTemplate || applyTemplate.isPending}
-                className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Lines */}
         <div className="bg-white border border-neutral-200 rounded overflow-hidden mb-4">
-          <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200 flex justify-between items-center">
+          <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200">
             <h2 className="text-sm font-semibold text-neutral-700">Journal Lines</h2>
-            <button
-              type="button"
-              onClick={() => setShowSaveTemplate(true)}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-neutral-600 hover:text-neutral-900"
-            >
-              <Save className="h-3 w-3" />
-              Save as Template
-            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
