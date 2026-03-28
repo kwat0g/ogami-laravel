@@ -17,6 +17,8 @@ import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import StatusTimeline from '@/components/ui/StatusTimeline'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
+import NegotiationHistoryPanel from '@/components/procurement/NegotiationHistoryPanel'
 import { getPurchaseOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '@/types/procurement'
 
@@ -684,6 +686,32 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
             </CardBody>
           </Card>
         )}
+
+        {/* Document Chain */}
+        <Card>
+          <CardHeader>Document Chain</CardHeader>
+          <CardBody>
+            <ChainRecordTimeline documentType="purchase_order" documentId={po.id} />
+          </CardBody>
+        </Card>
+
+        {/* Negotiation History */}
+        {po.negotiation_round > 0 && (
+          <Card>
+            <CardHeader>Negotiation History</CardHeader>
+            <CardBody>
+              <NegotiationHistoryPanel poUlid={po.ulid} fulfillmentNotes={po.fulfillment_notes} />
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Activity Timeline */}
+        <Card>
+          <CardHeader>Activity Timeline</CardHeader>
+          <CardBody>
+            <StatusTimeline auditableType="purchase_order" auditableId={po.id} />
+          </CardBody>
+        </Card>
       </div>
     </>
   )

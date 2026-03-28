@@ -13,6 +13,7 @@ import {
   useReturnPurchaseRequest,
 } from '@/hooks/usePurchaseRequests'
 import { useAuthStore } from '@/stores/authStore'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { SodActionButton } from '@/components/ui/SodActionButton'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -618,6 +619,22 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                 {pr.status === 'rejected' && 'This PR has been rejected and cannot be processed further.'}
                 {pr.status === 'cancelled' && 'This PR has been cancelled.'}
               </p>
+            </CardBody>
+          </Card>
+
+          {/* Document Chain */}
+          <Card>
+            <CardHeader>Document Chain</CardHeader>
+            <CardBody>
+              <ChainRecordTimeline documentType="purchase_request" documentId={pr.id} />
+            </CardBody>
+          </Card>
+
+          {/* Activity Timeline */}
+          <Card>
+            <CardHeader>Activity Timeline</CardHeader>
+            <CardBody>
+              <StatusTimeline auditableType="purchase_request" auditableId={pr.id} />
             </CardBody>
           </Card>
         </div>
