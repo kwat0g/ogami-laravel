@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { useFinancialRatios } from '@/hooks/useEnhancements'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Card, CardBody } from '@/components/ui/Card'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 const STATUS_COLORS: Record<string, string> = {
   healthy: 'text-green-600 bg-green-50',
@@ -24,46 +27,48 @@ export default function FinancialRatiosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Financial Ratios</h1>
-          <p className="text-sm text-gray-500 mt-1">Key financial health indicators computed from GL data</p>
-        </div>
-        <select
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          className="border rounded-lg px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-700"
-        >
-          {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-      </div>
+      <PageHeader
+        title="Financial Ratios"
+        subtitle="Key financial health indicators computed from GL data"
+        actions={
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white dark:bg-neutral-800 dark:border-neutral-700"
+          >
+            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        }
+      />
 
       {isLoading ? (
-        <div className="text-center py-12 text-gray-500">Computing ratios...</div>
+        <SkeletonLoader rows={6} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {ratios.map(([key, ratio]) => {
             const r = ratio as { value: number; formula: string; status: string; days_sales_outstanding?: number; days_payable_outstanding?: number }
             const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
             return (
-              <div key={key} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-                <div className="text-xs text-gray-500 uppercase tracking-wide">{label}</div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {key.includes('margin') || key.includes('return') ? `${r.value}%` : r.value}
-                  </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[r.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                    {r.status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-                {r.days_sales_outstanding !== undefined && (
-                  <div className="text-xs text-gray-400 mt-1">DSO: {r.days_sales_outstanding} days</div>
-                )}
-                {r.days_payable_outstanding !== undefined && (
-                  <div className="text-xs text-gray-400 mt-1">DPO: {r.days_payable_outstanding} days</div>
-                )}
-                <div className="text-xs text-gray-400 mt-2">{r.formula}</div>
-              </div>
+              <Card key={key}>
+                <CardBody>
+                  <div className="text-xs text-neutral-500 uppercase tracking-wide">{label}</div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {key.includes('margin') || key.includes('return') ? `${r.value}%` : r.value}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[r.status] ?? 'bg-neutral-100 text-neutral-600'}`}>
+                      {r.status.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  {r.days_sales_outstanding !== undefined && (
+                    <div className="text-xs text-neutral-400 mt-1">DSO: {r.days_sales_outstanding} days</div>
+                  )}
+                  {r.days_payable_outstanding !== undefined && (
+                    <div className="text-xs text-neutral-400 mt-1">DPO: {r.days_payable_outstanding} days</div>
+                  )}
+                  <div className="text-xs text-neutral-400 mt-2">{r.formula}</div>
+                </CardBody>
+              </Card>
             )
           })}
         </div>

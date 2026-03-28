@@ -402,25 +402,24 @@ export default function CustomersPage() {
       <PageHeader
         title="Customers"
         actions={
-          <ExportButton
-            data={data?.data ?? []}
-            columns={[
-              { key: 'name', label: 'Customer Name' },
-              { key: 'tin', label: 'TIN' },
-              { key: 'contact_person', label: 'Contact Person' },
-              { key: 'email', label: 'Email' },
-              { key: 'phone', label: 'Phone' },
-              { key: 'status', label: 'Status' },
-            ]}
-            filename="customers"
-          />
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'name', label: 'Customer Name' },
+                { key: 'tin', label: 'TIN' },
+                { key: 'contact_person', label: 'Contact Person' },
+                { key: 'email', label: 'Email' },
+                { key: 'phone', label: 'Phone' },
+                { key: 'status', label: 'Status' },
+              ]}
+              filename="customers"
+            />
+            <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
+          </div>
         }
       />
 
-      {/* Archive Toggle + Banner */}
-      <div className="flex items-center justify-between">
-        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
-      </div>
       {isArchiveView && <ArchiveViewBanner />}
 
       {/* Header */}

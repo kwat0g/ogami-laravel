@@ -524,25 +524,24 @@ export default function VendorsPage() {
       <PageHeader
         title="Vendors"
         actions={
-          <ExportButton
-            data={data?.data ?? []}
-            columns={[
-              { key: 'name', label: 'Vendor Name' },
-              { key: 'tin', label: 'TIN' },
-              { key: 'contact_person', label: 'Contact Person' },
-              { key: 'email', label: 'Email' },
-              { key: 'phone', label: 'Phone' },
-              { key: 'status', label: 'Status' },
-            ]}
-            filename="vendors"
-          />
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'name', label: 'Vendor Name' },
+                { key: 'tin', label: 'TIN' },
+                { key: 'contact_person', label: 'Contact Person' },
+                { key: 'email', label: 'Email' },
+                { key: 'phone', label: 'Phone' },
+                { key: 'status', label: 'Status' },
+              ]}
+              filename="vendors"
+            />
+            <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
+          </div>
         }
       />
 
-      {/* Archive Toggle + Banner */}
-      <div className="flex items-center justify-between">
-        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
-      </div>
       {isArchiveView && <ArchiveViewBanner />}
 
       {/* Summary Stats */}

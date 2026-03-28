@@ -15,6 +15,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import PageHeader from '@/components/ui/PageHeader'
+import { ExportPdfButton } from '@/components/ui/ExportPdfButton'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow } from '@/components/ui/InfoRow'
@@ -298,7 +299,7 @@ export default function CustomerInvoiceDetailPage() {
   const { hasPermission } = useAuthStore()
 
   if (isLoading) return <SkeletonLoader rows={10} />
-  if (!invoice) return <p className="p-6 text-gray-500">Invoice not found.</p>
+  if (!invoice) return <p className="p-6 text-neutral-500">Invoice not found.</p>
 
   const canApprove = invoice.status === 'draft' && hasPermission('customer_invoices.approve')
   const canCancel = invoice.status === 'draft' && hasPermission('customer_invoices.cancel')
@@ -319,15 +320,7 @@ export default function CustomerInvoiceDetailPage() {
         icon={<FileText className="w-5 h-5" />}
         status={<StatusBadge status={invoice.status}>{invoice.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>}
         actions={
-          <a
-            href={`/api/v1/ar/invoices/${invoiceId}/pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded"
-          >
-            <Download className="w-4 h-4" />
-            Export PDF
-          </a>
+          <ExportPdfButton href={`/api/v1/ar/invoices/${invoiceId}/pdf`} />
         }
       />
 
