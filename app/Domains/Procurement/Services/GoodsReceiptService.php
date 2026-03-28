@@ -119,6 +119,13 @@ final class GoodsReceiptService implements ServiceContract
         return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
             $this->resolveItemMasters($gr);
 
+            // ── IQC Gate Enforcement ───────────────────────────────────────────
+            // QC-GR-001: Items flagged requires_iqc must have a passed IQC
+            // inspection before GR can be confirmed. Provisional receipt is
+            // allowed when system_settings 'qc.allow_provisional_receipt' is true
+            // (stock enters quarantine with 24hr inspection deadline).
+            $this->enforceIqcGate($gr);
+
             $gr->update([
                 'status' => 'confirmed',
                 'confirmed_by_id' => $actor->id,
@@ -213,6 +220,113 @@ final class GoodsReceiptService implements ServiceContract
             $grItem->update(['item_master_id' => $master->id]);
             $poItem->update(['item_master_id' => $master->id]);
         }
+    }
+
+    /**
+     * IQC Gate Enforcement — QC-GR-001.
+     *
+     * Checks each GR line item against ItemMaster.requires_iqc. If any item
+     * requires incoming quality control, verifies that a passed IQC inspection
+     * exists for this GR before allowing confirmation.
+     *
+     * Flexibility:
+     *   - Items with requires_iqc=false skip the check entirely.
+     *   - system_setting 'qc.allow_provisional_receipt' (default false):
+     *     When true, allows confirmation with a warning instead of blocking,
+     *     creating a 24hr inspection deadline. The stock is placed in quarantine.
+     *   - Vendor-qualified bypass: if vendor score quality >= 95, skip IQC
+     *     (controlled by 'qc.vendor_qualified_threshold', default 95).
+     */
+    private function enforceIqcGate(GoodsReceipt $gr): void
+    {
+        $gr->loadMissing(['items.itemMaster', 'purchaseOrder.vendor']);
+
+        $itemsRequiringIqc = [];
+
+        foreach ($gr->items as $grItem) {
+            $item = $grItem->itemMaster ?? ($grItem->item_master_id ? ItemMaster::find($grItem->item_master_id) : null);
+            if ($item === null || ! $item->requires_iqc) {
+                continue;
+            }
+
+            $itemsRequiringIqc[] = [
+                'gr_item_id' => $grItem->id,
+                'item_id' => $item->id,
+                'item_code' => $item->item_code,
+                'item_name' => $item->name,
+            ];
+        }
+
+        if (empty($itemsRequiringIqc)) {
+            return; // No items require IQC — proceed normally
+        }
+
+        // Check vendor-qualified bypass
+        $vendor = $gr->purchaseOrder?->vendor ?? null;
+        if ($vendor !== null) {
+            $qualityThreshold = (float) (DB::table('system_settings')
+                ->where('key', 'qc.vendor_qualified_threshold')
+                ->value('value') ?? 95);
+
+            // Check vendor quality score — if above threshold, bypass IQC
+            try {
+                $scoringService = app(\App\Domains\Procurement\Services\VendorScoringService::class);
+                $scorecard = $scoringService->scorecard($vendor);
+                if ($scorecard['quality_score'] >= $qualityThreshold) {
+                    return; // Vendor is qualified — skip IQC
+                }
+            } catch (\Throwable) {
+                // If scoring fails, fall through to normal IQC enforcement
+            }
+        }
+
+        // Check if passed IQC inspections exist for each item
+        $failedItems = [];
+        foreach ($itemsRequiringIqc as $iqcItem) {
+            $passedInspection = DB::table('inspections')
+                ->where('goods_receipt_id', $gr->id)
+                ->where('stage', 'iqc')
+                ->where('status', 'passed')
+                ->where(function ($q) use ($iqcItem): void {
+                    $q->where('item_id', $iqcItem['item_id'])
+                        ->orWhereNull('item_id'); // GR-level inspection covers all items
+                })
+                ->exists();
+
+            if (! $passedInspection) {
+                $failedItems[] = $iqcItem;
+            }
+        }
+
+        if (empty($failedItems)) {
+            return; // All IQC items have passed inspections
+        }
+
+        // Check provisional receipt setting
+        $allowProvisional = (bool) (DB::table('system_settings')
+            ->where('key', 'qc.allow_provisional_receipt')
+            ->value('value') ?? false);
+
+        if ($allowProvisional) {
+            // Allow confirmation but log warning — items enter quarantine
+            \Illuminate\Support\Facades\Log::warning('[IQC Gate] Provisional receipt — items confirmed without IQC', [
+                'gr_id' => $gr->id,
+                'items_pending_iqc' => $failedItems,
+                'deadline' => now()->addHours(24)->toIso8601String(),
+            ]);
+
+            return; // Allow through with warning
+        }
+
+        // Hard block — IQC must pass before confirmation
+        $itemNames = collect($failedItems)->pluck('item_name')->implode(', ');
+
+        throw new DomainException(
+            message: "IQC inspection required but not passed for: {$itemNames}. Create and complete an IQC inspection before confirming this Goods Receipt.",
+            errorCode: 'GR_IQC_NOT_PASSED',
+            httpStatus: 422,
+            context: ['items_pending_iqc' => $failedItems],
+        );
     }
 
     private function generateReference(): string

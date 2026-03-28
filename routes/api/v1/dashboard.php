@@ -19,6 +19,16 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum'])->group(function () {
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Role-Based Dashboard (auto-selects KPIs based on user role)
+    // GET /api/v1/dashboard/my
+    // ─────────────────────────────────────────────────────────────────────────
+    Route::get('my', function (Request $request) {
+        $service = app(\App\Domains\Dashboard\Services\RoleBasedDashboardService::class);
+
+        return response()->json(['data' => $service->forUser($request->user())]);
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Manager Dashboard
     // GET /api/v1/dashboard/manager
     // ─────────────────────────────────────────────────────────────────────────

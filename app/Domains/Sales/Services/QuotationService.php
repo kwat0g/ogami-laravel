@@ -78,15 +78,50 @@ final class QuotationService implements ServiceContract
         return $quotation->fresh() ?? $quotation;
     }
 
+    /**
+     * Accept a quotation — auto-creates Sales Order if enabled (A2 automation).
+     *
+     * Controlled by system_setting 'automation.quotation_accepted.auto_create_so'.
+     * When enabled, accepting a quotation immediately creates a confirmed SO
+     * which triggers the downstream fulfillment chain (stock reservation or production).
+     */
     public function accept(Quotation $quotation): Quotation
     {
         if ($quotation->status !== 'sent') {
             throw new DomainException('Quotation must be sent to accept.', 'SALES_INVALID_QUOTATION_STATUS', 422);
         }
 
-        $quotation->update(['status' => 'accepted']);
+        return DB::transaction(function () use ($quotation): Quotation {
+            $quotation->update(['status' => 'accepted']);
 
-        return $quotation->fresh() ?? $quotation;
+            // A2: Auto-create Sales Order from accepted quotation
+            $autoCreate = (bool) (DB::table('system_settings')
+                ->where('key', 'automation.quotation_accepted.auto_create_so')
+                ->value('value') ?? true);
+
+            if ($autoCreate) {
+                try {
+                    $actor = $quotation->createdBy ?? \App\Models\User::find($quotation->created_by_id);
+                    if ($actor) {
+                        $soService = app(SalesOrderService::class);
+                        $soService->createFromQuotation($quotation, $actor);
+
+                        \Illuminate\Support\Facades\Log::info('[Sales] Auto-created SO from accepted quotation', [
+                            'quotation_id' => $quotation->id,
+                            'quotation_number' => $quotation->quotation_number,
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    // Don't fail quotation acceptance if SO creation fails
+                    \Illuminate\Support\Facades\Log::warning('[Sales] Auto SO creation from quotation failed', [
+                        'quotation_id' => $quotation->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            return $quotation->fresh() ?? $quotation;
+        });
     }
 
     public function reject(Quotation $quotation): Quotation

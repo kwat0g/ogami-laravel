@@ -115,30 +115,35 @@ final class BomService implements ServiceContract
     /**
      * Rollup standard cost for a BOM.
      *
-     * Computes material cost from components (single-level) and persists
-     * the result on the BOM's standard_cost_centavos column.
+     * Uses CostingService for multi-level BOM explosion (recurses into
+     * sub-assembly BOMs) and includes routing labor + overhead costs from
+     * work centers. Persists the total on standard_cost_centavos.
+     *
+     * @param  string  $costElements  'material_only' | 'material_labor' | 'material_labor_overhead'
      */
-    public function rollupCost(BillOfMaterials $bom): BillOfMaterials
+    public function rollupCost(BillOfMaterials $bom, string $costElements = 'material_labor_overhead'): BillOfMaterials
     {
-        $bom->loadMissing(['components.componentItem']);
-
-        $totalCost = 0;
-
-        foreach ($bom->components as $comp) {
-            $item = $comp->componentItem;
-            $unitCost = (int) (($item->standard_price ?? 0) * 100);
-            $qtyPerUnit = (float) $comp->qty_per_unit;
-            $scrapFactor = 1 + ((float) $comp->scrap_factor_pct / 100);
-            $grossQty = $qtyPerUnit * $scrapFactor;
-            $totalCost += (int) round($grossQty * $unitCost);
-        }
+        $costingService = app(CostingService::class);
+        $result = $costingService->standardCost($bom, $costElements);
 
         $bom->update([
-            'standard_cost_centavos' => $totalCost,
+            'standard_cost_centavos' => $result['total_standard_cost_centavos'],
             'last_cost_rollup_at' => now(),
         ]);
 
         return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+    }
+
+    /**
+     * Where-used report: find all BOMs that use a specific item as a component.
+     *
+     * @return \Illuminate\Support\Collection<int, array{bom_id: int, product_item_id: int, product_name: string, bom_version: string, qty_per_unit: float, is_active: bool}>
+     */
+    public function whereUsed(int $itemId): \Illuminate\Support\Collection
+    {
+        $costingService = app(CostingService::class);
+
+        return $costingService->whereUsed($itemId);
     }
 
     /**

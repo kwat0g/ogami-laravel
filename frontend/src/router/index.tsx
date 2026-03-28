@@ -240,6 +240,7 @@ const NcrDetailPage                  = lazy(() => import('@/pages/qc/NcrDetailPa
 const QcTemplateListPage             = lazy(() => import('@/pages/qc/QcTemplateListPage'))
 const CapaListPage                   = lazy(() => import('@/pages/qc/CapaListPage'))
 const QcDefectRatePage               = lazy(() => import('@/pages/qc/QcDefectRatePage'))
+const QuarantineManagementPage       = lazy(() => import('@/pages/qc/QuarantineManagementPage'))
 
 // VP Approvals
 const VpApprovalsDashboardPage = lazy(() => import('@/pages/approvals/VpApprovalsDashboardPage'))
@@ -299,6 +300,14 @@ const BudgetForecastPage = lazy(() => import('@/pages/budget/BudgetForecastPage'
 // Budget domain
 const CostCentersPage = lazy(() => import('@/pages/budget/CostCentersPage'))
 const BudgetLinesPage = lazy(() => import('@/pages/budget/BudgetLinesPage'))
+const BudgetAmendmentsPage = lazy(() => import('@/pages/budget/BudgetAmendmentsPage'))
+
+// Enhancement pages
+const PerformanceAppraisalListPage   = lazy(() => import('@/pages/hr/PerformanceAppraisalListPage'))
+const CreatePerformanceAppraisalPage = lazy(() => import('@/pages/hr/CreatePerformanceAppraisalPage'))
+const LeadScoringPage                = lazy(() => import('@/pages/crm/LeadScoringPage'))
+const FinancialRatiosPage            = lazy(() => import('@/pages/accounting/FinancialRatiosPage'))
+const CapacityPlanningPage           = lazy(() => import('@/pages/production/CapacityPlanningPage'))
 const BudgetVsActualPage = lazy(() => import('@/pages/budget/BudgetVsActualPage'))
 const DepartmentBudgetsPage = lazy(() => import('@/pages/budget/DepartmentBudgetsPage'))
 
@@ -366,6 +375,8 @@ const router = createBrowserRouter([
       { path: '/hr/employees/all', element: withSuspense(guard('hr.full_access', <EmployeeListPage view="all" />)) },
       { path: '/hr/employees/new', element: withSuspense(guard('hr.full_access', <EmployeeFormPage />)) },
       { path: '/hr/employees/:ulid', element: withSuspense(guard('hr.full_access', <EmployeeDetailPage />)) },
+      { path: '/hr/appraisals', element: withSuspense(guard('hr.full_access', <PerformanceAppraisalListPage />)) },
+      { path: '/hr/appraisals/create', element: withSuspense(guard('hr.full_access', <CreatePerformanceAppraisalPage />)) },
       { path: '/hr/employees/:ulid/edit', element: withSuspense(guard('hr.full_access', <EmployeeFormPage />)) },
 
       // HR — Attendance
@@ -470,6 +481,7 @@ const router = createBrowserRouter([
       { path: '/accounting/trial-balance', element: withSuspense(guard('reports.financial_statements', <TrialBalancePage />)) },
       { path: '/accounting/balance-sheet', element: withSuspense(guard('reports.financial_statements', <BalanceSheetPage />)) },
       { path: '/accounting/income-statement', element: withSuspense(guard('reports.financial_statements', <IncomeStatementPage />)) },
+      { path: '/accounting/financial-ratios', element: withSuspense(guard('reports.financial_statements', <FinancialRatiosPage />)) },
       { path: '/accounting/cash-flow', element: withSuspense(guard('reports.financial_statements', <CashFlowPage />)) },
 
       // ── Banking (GL-006) ──────────────────────────────────────────────────
@@ -520,6 +532,7 @@ const router = createBrowserRouter([
       { path: '/inventory/transfers', element: withSuspense(guard('inventory.transfers.manage', <StockTransferPage />)) },
 
       // ── Production / PPC ──────────────────────────────────────────────────
+      { path: '/production/capacity', element: withSuspense(guard('production.order.view', <CapacityPlanningPage />)) },
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
       { path: '/production/boms/new', element: withSuspense(guard('production.bom.manage', <CreateBomPage />)) },
       { path: '/production/boms/:ulid/edit', element: withSuspense(guard('production.bom.manage', <EditBomPage />)) },
@@ -545,6 +558,7 @@ const router = createBrowserRouter([
       { path: '/qc/templates', element: withSuspense(guard('qc.templates.view', <QcTemplateListPage />)) },
       { path: '/qc/capa',      element: withSuspense(guard('qc.ncr.view',       <CapaListPage />)) },
       { path: '/qc/defect-rate', element: withSuspense(guard('qc.inspections.view', <QcDefectRatePage />)) },
+      { path: '/qc/quarantine', element: withSuspense(guard('qc.inspections.view', <QuarantineManagementPage />)) },
 
       // ── Maintenance ───────────────────────────────────────────────────────
       { path: '/maintenance/equipment', element: withSuspense(guard('maintenance.view', <EquipmentListPage />)) },
@@ -593,6 +607,7 @@ const router = createBrowserRouter([
       { path: '/crm/tickets',             element: withSuspense(guard('crm.tickets.view', <TicketListPage />)) },
       { path: '/crm/tickets/:ulid',       element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
       { path: '/crm/leads',               element: withSuspense(guard('crm.leads.view', <LeadListPage />)) },
+      { path: '/crm/lead-scoring',        element: withSuspense(guard('crm.leads.view', <LeadScoringPage />)) },
       { path: '/crm/leads/:ulid',         element: withSuspense(guard('crm.leads.view', <LeadDetailPage />)) },
       { path: '/crm/opportunities',       element: withSuspense(guard('crm.opportunities.view', <OpportunityListPage />)) },
       { path: '/crm/opportunities/:ulid', element: withSuspense(guard('crm.opportunities.view', <OpportunityDetailPage />)) },
@@ -601,6 +616,7 @@ const router = createBrowserRouter([
       { path: '/budget/cost-centers',       element: withSuspense(guard('budget.view', <CostCentersPage />)) },
       { path: '/budget/department-budgets', element: withSuspense(guard('budget.view', <DepartmentBudgetsPage />)) },
       { path: '/budget/lines',              element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
+      { path: '/budget/amendments',          element: withSuspense(guard('budget.view', <BudgetAmendmentsPage />)) },
       { path: '/budget/vs-actual',          element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
       { path: '/budget/variance',            element: withSuspense(guard('budget.view', <BudgetVarianceReportPage />)) },
       { path: '/budget/forecast',            element: withSuspense(guard('budget.forecast', <BudgetForecastPage />)) },
