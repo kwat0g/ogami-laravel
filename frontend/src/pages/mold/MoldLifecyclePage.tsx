@@ -27,7 +27,7 @@ export default function MoldLifecyclePage() {
                 <th className="text-right p-3">Remaining Value</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {(data ?? []).map((m: any) => (
                 <tr key={m.mold_id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                   <td className="p-3"><span className="font-medium">{m.mold_code}</span> - {m.mold_name}</td>

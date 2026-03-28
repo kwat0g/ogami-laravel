@@ -21,14 +21,14 @@ export default function AssetTransfersPage() {
         <Card className="overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 dark:bg-neutral-800">
-              <tr><th className="text-left p-3">Asset ID</th><th className="text-left p-3">From Dept</th><th className="text-left p-3">To Dept</th><th className="text-left p-3">Date</th><th className="text-left p-3">Status</th><th className="text-left p-3">Requested By</th></tr>
+              <tr><th className="text-left p-3">Asset</th><th className="text-left p-3">From Dept</th><th className="text-left p-3">To Dept</th><th className="text-left p-3">Date</th><th className="text-left p-3">Status</th><th className="text-left p-3">Requested By</th></tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {transfers.map((t: any) => (
                 <tr key={t.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
-                  <td className="p-3">{t.fixed_asset_id}</td>
-                  <td className="p-3">{t.from_department_id}</td>
-                  <td className="p-3">{t.to_department_id}</td>
+                  <td className="p-3 font-medium">{t.fixedAsset?.asset_code ?? t.fixedAsset?.name ?? `Asset #${t.fixed_asset_id}`}</td>
+                  <td className="p-3">{t.fromDepartment?.name ?? `Dept #${t.from_department_id}`}</td>
+                  <td className="p-3">{t.toDepartment?.name ?? `Dept #${t.to_department_id}`}</td>
                   <td className="p-3">{new Date(t.transfer_date).toLocaleDateString()}</td>
                   <td className="p-3"><StatusBadge status={t.status} /></td>
                   <td className="p-3">{t.requestedBy?.name ?? '-'}</td>
