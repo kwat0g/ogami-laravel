@@ -9,6 +9,7 @@ import {
   useApproveCustomerInvoice,
   useCancelCustomerInvoice,
 } from '@/hooks/useAR'
+import { useChartOfAccounts } from '@/hooks/useAccounting'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -19,6 +20,34 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow } from '@/components/ui/InfoRow'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ReceivePaymentPayload, WriteOffPayload } from '@/types/ar'
+
+// ---------------------------------------------------------------------------
+// Account Select Dropdown (replaces raw ID inputs)
+// ---------------------------------------------------------------------------
+function AccountSelect({ value, onChange, filterType, error }: {
+  value: number
+  onChange: (v: number) => void
+  filterType?: string
+  error?: boolean
+}) {
+  const { data: accounts } = useChartOfAccounts({})
+  const filtered = filterType
+    ? (accounts ?? []).filter((a: any) => a.account_type === filterType)
+    : (accounts ?? [])
+  return (
+    <select
+      value={value || ''}
+      onChange={(e) => onChange(parseInt(e.target.value) || 0)}
+      className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 ${error ? 'border-red-400' : 'border-neutral-300'}`}
+      required
+    >
+      <option value="">Select account...</option>
+      {filtered.map((a: any) => (
+        <option key={a.id} value={a.id}>{a.code} - {a.name}</option>
+      ))}
+    </select>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Receive Payment Panel
@@ -122,26 +151,22 @@ function ReceivePaymentPanel({
           {fe('payment_date') && <p className="text-xs text-red-600 mt-0.5">{fe('payment_date')}</p>}
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-neutral-600">Cash Account ID *</span>
-          <input
-            type="number"
-            min={1}
-            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('cash_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
-            value={form.cash_account_id || ''}
-            onChange={(e) => setForm((p) => ({ ...p, cash_account_id: parseInt(e.target.value) || 0 }))}
-            onBlur={() => touch('cash_account_id')}
+          <span className="text-xs font-medium text-neutral-600">Cash Account *</span>
+          <AccountSelect
+            value={form.cash_account_id}
+            onChange={(v) => { setForm((p) => ({ ...p, cash_account_id: v })); touch('cash_account_id') }}
+            filterType="ASSET"
+            error={!!fe('cash_account_id')}
           />
           {fe('cash_account_id') && <p className="text-xs text-red-600 mt-0.5">{fe('cash_account_id')}</p>}
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-neutral-600">AR Account ID *</span>
-          <input
-            type="number"
-            min={1}
-            className={`mt-1 block w-full border rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 ${fe('ar_account_id') ? 'border-red-400' : 'border-neutral-300'}`}
-            value={form.ar_account_id || ''}
-            onChange={(e) => setForm((p) => ({ ...p, ar_account_id: parseInt(e.target.value) || 0 }))}
-            onBlur={() => touch('ar_account_id')}
+          <span className="text-xs font-medium text-neutral-600">AR Account *</span>
+          <AccountSelect
+            value={form.ar_account_id}
+            onChange={(v) => { setForm((p) => ({ ...p, ar_account_id: v })); touch('ar_account_id') }}
+            filterType="ASSET"
+            error={!!fe('ar_account_id')}
           />
           {fe('ar_account_id') && <p className="text-xs text-red-600 mt-0.5">{fe('ar_account_id')}</p>}
         </label>
@@ -355,7 +380,7 @@ export default function CustomerInvoiceDetailPage() {
         </Card>
         <Card>
           <CardBody>
-            <InfoRow label="Fiscal Period" value={`#${invoice.fiscal_period_id}`} />
+            <InfoRow label="Fiscal Period" value={invoice.fiscal_period?.name ?? invoice.fiscal_period?.period_name ?? `Period #${invoice.fiscal_period_id}`} />
           </CardBody>
         </Card>
       </div>

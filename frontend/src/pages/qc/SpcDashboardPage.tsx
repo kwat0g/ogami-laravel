@@ -12,6 +12,11 @@ export default function SpcDashboardPage() {
   const [usl, setUsl] = useState('')
   const [lsl, setLsl] = useState('')
 
+  const { data: templates } = useQuery({
+    queryKey: ['qc-templates'],
+    queryFn: async () => { const { data } = await api.get('/qc/templates', { params: { per_page: 200 } }); return data.data ?? data },
+  })
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['spc-chart', templateId, parameter, usl, lsl],
     queryFn: async () => {
@@ -28,7 +33,16 @@ export default function SpcDashboardPage() {
       <PageHeader title="SPC Control Charts & Process Capability" icon={<Activity className="w-5 h-5 text-neutral-600" />} />
       <Card className="p-4">
         <div className="flex flex-wrap gap-3">
-          <input className="input-sm w-32" placeholder="Template ID" type="number" value={templateId} onChange={e => setTemplateId(e.target.value)} />
+          <select
+            className="border border-neutral-300 rounded px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400 w-52"
+            value={templateId}
+            onChange={e => setTemplateId(e.target.value)}
+          >
+            <option value="">Select Inspection Template...</option>
+            {(templates ?? []).map((t: any) => (
+              <option key={t.id} value={t.id}>{t.name ?? t.code ?? `Template #${t.id}`}</option>
+            ))}
+          </select>
           <input className="input-sm w-48" placeholder="Parameter name" value={parameter} onChange={e => setParameter(e.target.value)} />
           <input className="input-sm w-24" placeholder="USL" type="number" step="any" value={usl} onChange={e => setUsl(e.target.value)} />
           <input className="input-sm w-24" placeholder="LSL" type="number" step="any" value={lsl} onChange={e => setLsl(e.target.value)} />
