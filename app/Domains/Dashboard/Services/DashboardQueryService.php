@@ -20,7 +20,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build manager dashboard data. */
     public function managerData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.mgr.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
@@ -286,7 +285,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build supervisor dashboard data. */
     public function supervisorData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.sup.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
@@ -510,7 +508,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build hr dashboard data. */
     public function hrData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.hr.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
@@ -722,7 +719,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build accounting dashboard data. */
     public function accountingData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.acctg.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
@@ -976,7 +972,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build admin dashboard data. */
     public function adminData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
 
         abort_unless($user->can('system.manage_users'), 403, 'Insufficient permissions.');
         $_ttl = min((int) env('DASHBOARD_CACHE_TTL', 120), 30);
@@ -1088,7 +1083,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build staff dashboard data. */
     public function staffData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $employeeId = $user->employee_id;
 
         if (! $employeeId) {
@@ -1337,7 +1331,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build executive dashboard data. */
     public function executiveData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.exec.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
@@ -1593,7 +1586,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build vp dashboard data. */
     public function vpData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.vp.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
@@ -1710,7 +1702,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build officer dashboard data. */
     public function officerData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.officer.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
@@ -1811,7 +1802,6 @@ final class DashboardQueryService implements ServiceContract
     /** Build purchasingOfficer dashboard data. */
     public function purchasingOfficerData(User $user, ?int $departmentId = null)
     {
-        $user = $user;
         $_ttl = (int) env('DASHBOARD_CACHE_TTL', 120);
         $_cacheKey = 'dash.purchasing_officer.'.$user->id.'.'.now()->format('Y-m-d-H');
         if ($_ttl > 0 && ($cached = Cache::get($_cacheKey)) !== null) {
