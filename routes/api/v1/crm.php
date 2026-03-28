@@ -26,26 +26,29 @@ Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
     Route::prefix('leads')->name('leads.')->group(function () {
         Route::get('/', [LeadController::class, 'index'])->name('index');
         Route::post('/', [LeadController::class, 'store'])->name('store');
+
+        // Lead Scoring routes MUST come before /{lead:ulid} to avoid
+        // "scores" being matched as a ULID parameter (causes 404).
+        Route::get('/scores', function (): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
+            return response()->json(['data' => $service->scoreAll()]);
+        })->name('scores');
+        Route::post('/auto-qualify', function (): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
+            return response()->json(['data' => ['qualified_count' => $service->autoQualify()]]);
+        })->name('auto-qualify')->middleware('throttle:api-action');
+
+        // Parameterized routes MUST come after literal routes
         Route::get('/{lead:ulid}', [LeadController::class, 'show'])->name('show');
         Route::put('/{lead:ulid}', [LeadController::class, 'update'])->name('update');
         Route::post('/{lead:ulid}/convert', [LeadController::class, 'convert'])->name('convert')
             ->middleware('throttle:api-action');
         Route::patch('/{lead:ulid}/disqualify', [LeadController::class, 'disqualify'])->name('disqualify')
             ->middleware('throttle:api-action');
-
-        // ── Lead Scoring (Enhancement) ──────────────────────────────────────
-        Route::get('/scores', function (): \Illuminate\Http\JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            return response()->json(['data' => $service->scoreAll()]);
-        })->name('scores');
         Route::get('/{lead:ulid}/score', function (\App\Domains\CRM\Models\Lead $lead): \Illuminate\Http\JsonResponse {
             $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
             return response()->json(['data' => $service->scoreLead($lead)]);
         })->name('score');
-        Route::post('/auto-qualify', function (): \Illuminate\Http\JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            return response()->json(['data' => ['qualified_count' => $service->autoQualify()]]);
-        })->name('auto-qualify')->middleware('throttle:api-action');
     });
 
     // ── Opportunities ────────────────────────────────────────────────────

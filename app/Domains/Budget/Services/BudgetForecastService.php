@@ -26,34 +26,50 @@ final class BudgetForecastService implements ServiceContract
         $monthsElapsed = max(1, $currentMonth);
         $monthsRemaining = max(0, 12 - $currentMonth);
 
-        $budgetLines = DB::table('annual_budgets')
-            ->join('cost_centers', 'annual_budgets.cost_center_id', '=', 'cost_centers.id')
-            ->join('chart_of_accounts', 'annual_budgets.account_id', '=', 'chart_of_accounts.id')
-            ->where('annual_budgets.fiscal_year', $fiscalYear)
-            ->whereNull('annual_budgets.deleted_at')
-            ->select(
-                'annual_budgets.id',
-                'annual_budgets.cost_center_id',
-                'cost_centers.name as cost_center_name',
-                'annual_budgets.account_id',
-                'chart_of_accounts.name as account_name',
-                'annual_budgets.budgeted_amount_centavos'
-            )
-            ->get();
+        try {
+            $budgetLines = DB::table('annual_budgets')
+                ->join('cost_centers', 'annual_budgets.cost_center_id', '=', 'cost_centers.id')
+                ->join('chart_of_accounts', 'annual_budgets.account_id', '=', 'chart_of_accounts.id')
+                ->where('annual_budgets.fiscal_year', $fiscalYear)
+                ->whereNull('annual_budgets.deleted_at')
+                ->select(
+                    'annual_budgets.id',
+                    'annual_budgets.cost_center_id',
+                    'cost_centers.name as cost_center_name',
+                    'annual_budgets.account_id',
+                    'chart_of_accounts.name as account_name',
+                    'annual_budgets.budgeted_amount_centavos'
+                )
+                ->get();
+        } catch (\Throwable $e) {
+            // Table or columns may not exist yet (migration not run)
+            \Illuminate\Support\Facades\Log::warning('[Budget] Forecast query failed: ' . $e->getMessage());
+
+            return collect([]);
+        }
+
+        if ($budgetLines->isEmpty()) {
+            return collect([]);
+        }
 
         // Get actual spend per budget line from journal entries
-        $actualSpend = DB::table('journal_entry_lines')
-            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->join('fiscal_periods', 'journal_entries.fiscal_period_id', '=', 'fiscal_periods.id')
-            ->where('journal_entries.status', 'posted')
-            ->where('fiscal_periods.fiscal_year', $fiscalYear)
-            ->whereNull('journal_entries.deleted_at')
-            ->select(
-                'journal_entry_lines.account_id',
-                DB::raw('COALESCE(SUM(journal_entry_lines.debit_centavos), 0) as total_debit')
-            )
-            ->groupBy('journal_entry_lines.account_id')
-            ->pluck('total_debit', 'account_id');
+        try {
+            $actualSpend = DB::table('journal_entry_lines')
+                ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+                ->join('fiscal_periods', 'journal_entries.fiscal_period_id', '=', 'fiscal_periods.id')
+                ->where('journal_entries.status', 'posted')
+                ->where('fiscal_periods.fiscal_year', $fiscalYear)
+                ->whereNull('journal_entries.deleted_at')
+                ->select(
+                    'journal_entry_lines.account_id',
+                    DB::raw('COALESCE(SUM(journal_entry_lines.debit_centavos), 0) as total_debit')
+                )
+                ->groupBy('journal_entry_lines.account_id')
+                ->pluck('total_debit', 'account_id');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[Budget] Actual spend query failed: ' . $e->getMessage());
+            $actualSpend = collect([]);
+        }
 
         return $budgetLines->map(function ($line) use ($actualSpend, $monthsElapsed, $monthsRemaining) {
             $budgeted = (int) $line->budgeted_amount_centavos;

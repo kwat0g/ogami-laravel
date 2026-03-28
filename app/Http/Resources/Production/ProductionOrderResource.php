@@ -25,6 +25,8 @@ final class ProductionOrderResource extends JsonResource
             'qty_required' => $this->qty_required,
             'qty_produced' => $this->qty_produced,
             'progress_pct' => $this->resource->progressPct(),
+            'standard_unit_cost_centavos' => $this->standard_unit_cost_centavos ?? 0,
+            'estimated_total_cost_centavos' => $this->estimated_total_cost_centavos ?? 0,
             'target_start_date' => $this->target_start_date?->toDateString(),
             'target_end_date' => $this->target_end_date?->toDateString(),
             'status' => $this->status,

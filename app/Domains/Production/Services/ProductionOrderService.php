@@ -13,6 +13,7 @@ use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\BomComponent;
 use App\Domains\Production\Models\ProductionOrder;
+use App\Domains\Production\Services\CostingService;
 use App\Domains\Production\Models\ProductionOutputLog;
 use App\Domains\QC\Models\Inspection;
 use App\Events\Production\ProductionOrderCompleted;
@@ -138,12 +139,41 @@ final class ProductionOrderService implements ServiceContract
             $data['target_end_date'] = $this->calculateEndDate($data['target_start_date'], $data['bom_id']);
         }
 
+        // Snapshot BOM standard cost at PO creation time (real-world ERP
+        // pattern: freeze the cost estimate so variance analysis works even
+        // if BOM prices change later).
+        $standardUnitCost = 0;
+        $estimatedTotalCost = 0;
+
+        if (! empty($data['bom_id'])) {
+            $bom = BillOfMaterials::find($data['bom_id']);
+            if ($bom !== null) {
+                $standardUnitCost = (int) ($bom->standard_cost_centavos ?? 0);
+
+                // If BOM has no cost yet, compute it on-the-fly
+                if ($standardUnitCost === 0) {
+                    try {
+                        $costingService = app(CostingService::class);
+                        $costResult = $costingService->standardCost($bom, 'material_labor_overhead');
+                        $standardUnitCost = $costResult['total_standard_cost_centavos'];
+                    } catch (\Throwable) {
+                        // Proceed with zero cost if calculation fails
+                    }
+                }
+
+                $qtyRequired = (float) ($data['qty_required'] ?? 0);
+                $estimatedTotalCost = (int) round($standardUnitCost * $qtyRequired);
+            }
+        }
+
         /** @var ProductionOrder $order */
         $order = ProductionOrder::create([
             'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,
             'product_item_id' => $data['product_item_id'],
             'bom_id' => $data['bom_id'],
             'qty_required' => $data['qty_required'],
+            'standard_unit_cost_centavos' => $standardUnitCost,
+            'estimated_total_cost_centavos' => $estimatedTotalCost,
             'target_start_date' => $data['target_start_date'],
             'target_end_date' => $data['target_end_date'],
             'status' => 'draft',

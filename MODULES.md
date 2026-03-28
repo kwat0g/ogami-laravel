@@ -624,6 +624,20 @@ The following enhancements were added across all 22 modules to bring the system 
 | Attendance | Auto-create timesheets at pay period boundaries | Automated |
 | Inventory | Auto-issue MRQ for single-location warehouses | Automated |
 
+### Enhancement Summary (v3 — Module Alignment)
+
+| Module | Enhancement | Type |
+|--------|-------------|------|
+| Production | BOM auto-calculates standard cost on create/update | Fixed |
+| Production | BOM cost breakdown API endpoint (material + labor + overhead) | New |
+| Production | Production Order snapshots BOM standard cost at creation | New |
+| Production | Production Order shows estimated_total_cost_centavos | New |
+| Sales | Profit Margin Service (quotation + SO margin per line item) | New |
+| Sales | Price suggestion endpoint based on target margin and BOM cost | New |
+| Sales | Below-cost flagging on quotation/SO line items | New |
+| API | Enhanced BomResource always includes standard_cost_centavos | Improved |
+| API | Enhanced ProductionOrderResource includes cost snapshot | Improved |
+
 All enhancements are configurable via `system_settings` table keys -- see `EnhancementSettingsSeeder` for 27 configurable settings with defaults.
 
 ---

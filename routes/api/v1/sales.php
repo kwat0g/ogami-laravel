@@ -40,9 +40,25 @@ Route::middleware(['auth:sanctum', 'module_access:sales'])->group(function () {
         Route::get('/', [SalesOrderController::class, 'index'])->name('index');
         Route::post('/', [SalesOrderController::class, 'store'])->name('store');
         Route::get('/{salesOrder:ulid}', [SalesOrderController::class, 'show'])->name('show');
+        Route::get('/{salesOrder:ulid}/margin', function (\App\Domains\Sales\Models\SalesOrder $salesOrder) {
+            $service = app(\App\Domains\Sales\Services\ProfitMarginService::class);
+            return response()->json(['data' => $service->salesOrderMargin($salesOrder)]);
+        })->name('margin');
         Route::patch('/{salesOrder:ulid}/confirm', [SalesOrderController::class, 'confirm'])->name('confirm')
             ->middleware('throttle:api-action');
         Route::patch('/{salesOrder:ulid}/cancel', [SalesOrderController::class, 'cancel'])->name('cancel')
             ->middleware('throttle:api-action');
     });
+
+    // ── Profit Margin Analysis (Enhancement) ─────────────────────────────
+    Route::get('quotations/{quotation:ulid}/margin', function (\App\Domains\Sales\Models\Quotation $quotation) {
+        $service = app(\App\Domains\Sales\Services\ProfitMarginService::class);
+        return response()->json(['data' => $service->quotationMargin($quotation)]);
+    })->name('quotations.margin');
+
+    Route::get('pricing/suggest/{itemId}', function (int $itemId, \Illuminate\Http\Request $request) {
+        $service = app(\App\Domains\Sales\Services\ProfitMarginService::class);
+        $targetMargin = (float) ($request->input('target_margin_pct', 30));
+        return response()->json(['data' => $service->suggestPrice($itemId, $targetMargin)]);
+    })->name('pricing.suggest');
 });

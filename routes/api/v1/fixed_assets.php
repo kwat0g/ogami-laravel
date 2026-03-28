@@ -28,11 +28,6 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
     Route::post('', [FixedAssetController::class, 'store'])
         ->middleware('throttle:api-action')
         ->name('store');
-    Route::get('{fixedAsset}', [FixedAssetController::class, 'show'])
-        ->name('show');
-    Route::put('{fixedAsset}', [FixedAssetController::class, 'update'])
-        ->middleware('throttle:api-action')
-        ->name('update');
 
     // ── Depreciation (batch by fiscal period) ───────────────────────────
     Route::post('depreciate', [FixedAssetController::class, 'depreciatePeriod'])
@@ -116,4 +111,12 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
             return response()->json(['data' => $assetTransfer->fresh()]);
         })->name('approve')->middleware('throttle:api-action');
     });
+
+    // ── Parameterized asset routes (MUST be last to avoid catching
+    //    literal paths like "transfers", "depreciate", etc.) ──────────────
+    Route::get('{fixedAsset}', [FixedAssetController::class, 'show'])
+        ->name('show');
+    Route::put('{fixedAsset}', [FixedAssetController::class, 'update'])
+        ->middleware('throttle:api-action')
+        ->name('update');
 });
