@@ -105,17 +105,6 @@ export default function TeamLeavePage() {
         </span>
       </p>
 
-      {/* Workflow Info */}
-      <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-6">
-        <h3 className="text-sm font-medium text-neutral-900 mb-2">Approval Workflow (AD-084-00)</h3>
-        <ul className="text-sm text-neutral-700 space-y-1">
-          <li>• Step 2: Dept Head approves submitted requests</li>
-          <li>• Step 3: Plant Manager checks head-approved requests</li>
-          <li>• Step 4: GA Officer processes manager-checked requests</li>
-          <li>• Step 5: VP notes GA-processed requests (final approval)</li>
-        </ul>
-      </div>
-
       {/* Filters */}
       <div className="bg-white border border-neutral-200 rounded p-4 mb-4 flex flex-wrap gap-3">
         <select

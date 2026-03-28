@@ -112,7 +112,6 @@ const SECTIONS: NavSection[] = [
       // ── Payroll ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Payroll' },
       { label: 'Payroll Runs', href: '/payroll/runs', permission: 'payroll.view_runs' },
-      { label: 'Pay Periods', href: '/payroll/periods', permission: 'payroll.manage_pay_periods' },
       { label: 'Government Reports', href: '/reports/government', permission: 'payroll.gov_reports' },
     ],
   },
@@ -158,6 +157,9 @@ const SECTIONS: NavSection[] = [
       // ── Banking ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Banking' },
       { label: 'Bank Accounts', href: '/banking/accounts', permission: 'bank_accounts.view' },
+      // ── Budget ───────────────────────────────────────────────────────────────
+      { divider: true, label: 'Budget' },
+      { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
       // ── Reports ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Reports' },
       { label: 'Trial Balance', href: '/accounting/trial-balance', permission: 'reports.financial_statements' },
@@ -177,23 +179,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Loan Review', href: '/accounting/loans', permission: 'loans.accounting_approve' },
     ],
   },
-  // ═════════════════════════════════════════════════════════════════════════════
-  // SECTION 2C: BUDGET & ASSETS
-  // ═════════════════════════════════════════════════════════════════════════════
-  {
-    label: 'Budget & Assets',
-    icon: Building,
-    permission: 'budget.view',
-    roles: ['officer', 'manager', 'head'],
-    departments: ['ACCTG'],
-    children: [
-      { divider: true, label: 'Budget' },
-      { label: 'Cost Centers', href: '/budget/cost-centers', permission: 'budget.view' },
-      { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
-      { divider: true, label: 'Fixed Assets' },
-      { label: 'Asset Register', href: '/fixed-assets', permission: 'fixed_assets.view' },
-    ],
-  },
+  // Budget & Assets section removed — Department Budgets moved to Financial Management
   // ═════════════════════════════════════════════════════════════════════════════
   // SECTION 3: SUPPLY CHAIN
   // ═════════════════════════════════════════════════════════════════════════════
@@ -208,15 +194,12 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Procurement' },
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
-      { label: 'Blanket POs', href: '/procurement/blanket-pos', permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },
       { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
       { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
-      { label: 'Stock Adjustments', href: '/inventory/adjustments', permission: 'inventory.adjustments.create' },
-      { label: 'Warehouse Transfers', href: '/inventory/transfers', permission: 'inventory.transfers.manage' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
@@ -237,7 +220,6 @@ const SECTIONS: NavSection[] = [
       // ── Quality Control ─────────────────────────────────────────────────────
       { divider: true, label: 'Quality Control' },
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
-      { label: 'Quarantine', href: '/qc/quarantine', permission: 'qc.inspections.view' },
       // ── Maintenance ─────────────────────────────────────────────────────────
       { divider: true, label: 'Maintenance' },
       { label: 'Equipment', href: '/maintenance/equipment', permission: 'maintenance.view' },
