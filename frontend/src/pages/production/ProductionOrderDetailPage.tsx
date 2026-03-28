@@ -23,6 +23,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import StatusTimeline from '@/components/ui/StatusTimeline'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { getProductionOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import type { ProductionOrderStatus } from '@/types/production'
 
@@ -818,6 +819,18 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         loading={cancelMut.isPending}
         variant="danger"
       />
+
+      {/* Document Chain */}
+      <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-5">
+        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide mb-3">Document Chain</h3>
+        <ChainRecordTimeline documentType="production_order" documentId={order.id} />
+      </div>
+
+      {/* Activity Timeline */}
+      <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-5">
+        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide mb-3">Activity Timeline</h3>
+        <StatusTimeline auditableType="production_order" auditableId={order.id} />
+      </div>
 
       {/* Void Confirmation Dialog - using ConfirmDestructiveDialog inline */}
       <ConfirmDialog

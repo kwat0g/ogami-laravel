@@ -17,6 +17,8 @@ import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { GoodsReceiptCondition } from '@/types/procurement'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
+import StatusTimeline from '@/components/ui/StatusTimeline'
 
 const conditionBadgeClass: Record<GoodsReceiptCondition, string> = {
   good:     'bg-neutral-100 text-neutral-700',
@@ -350,6 +352,22 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
           </div>
         </div>
       )}
+
+      {/* Document Chain */}
+      <Card>
+        <CardHeader>Document Chain</CardHeader>
+        <CardBody>
+          <ChainRecordTimeline documentType="goods_receipt" documentId={gr.id} />
+        </CardBody>
+      </Card>
+
+      {/* Activity Timeline */}
+      <Card>
+        <CardHeader>Activity Timeline</CardHeader>
+        <CardBody>
+          <StatusTimeline auditableType="goods_receipt" auditableId={gr.id} />
+        </CardBody>
+      </Card>
     </div>
   )
 }
