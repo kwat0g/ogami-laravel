@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, AlertCircle, RefreshCw, MapPin } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
 import { useStockBalances, useWarehouseLocations, useStockAdjust } from '@/hooks/useInventory'
 import { usePermission } from '@/hooks/usePermission'
 import { isHandledApiError } from '@/lib/api'
@@ -20,7 +21,13 @@ interface AdjustState {
 
 export default function StockBalancePage(): React.ReactElement {
   const [search, setSearch]         = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [locationId, setLocationId] = useState<number | ''>('')
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+    setPage(1)
+  }, [])
   const [lowStock, setLowStock]     = useState(false)
   const [page, setPage]             = useState(1)
   const [adjusting, setAdjusting]   = useState<AdjustState | null>(null)
@@ -31,7 +38,7 @@ export default function StockBalancePage(): React.ReactElement {
 
   const { data: locations } = useWarehouseLocations({ is_active: true })
   const { data, isLoading, isError, refetch } = useStockBalances({
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     location_id: locationId || undefined,
     low_stock: lowStock || undefined,
     page,
@@ -116,12 +123,12 @@ export default function StockBalancePage(): React.ReactElement {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
-        <input
-          type="text"
-          placeholder="Search item code or name…"
+        <SearchInput
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white w-52"
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search item code or name..."
+          className="w-52"
         />
         <select
           value={locationId}

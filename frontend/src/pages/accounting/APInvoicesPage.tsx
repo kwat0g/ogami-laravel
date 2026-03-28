@@ -18,14 +18,14 @@ import type { PurchaseOrder } from '@/types/procurement'
 
 const STATUS_COLORS: Record<VendorInvoiceStatus, string> = {
   draft:            'bg-neutral-100 text-neutral-600',
-  pending_approval: 'bg-amber-50 text-amber-700',
-  head_noted:       'bg-blue-50 text-blue-700',
-  manager_checked:  'bg-blue-50 text-blue-700',
-  officer_reviewed: 'bg-indigo-50 text-indigo-700',
-  approved:         'bg-green-50 text-green-700',
-  rejected:         'bg-red-50 text-red-700',
-  partially_paid:   'bg-amber-50 text-amber-700',
-  paid:             'bg-green-100 text-green-800',
+  pending_approval: 'bg-neutral-100 text-neutral-700',
+  head_noted:       'bg-neutral-100 text-neutral-700',
+  manager_checked:  'bg-neutral-100 text-neutral-700',
+  officer_reviewed: 'bg-neutral-200 text-neutral-800',
+  approved:         'bg-neutral-200 text-neutral-800',
+  rejected:         'bg-neutral-100 text-neutral-500',
+  partially_paid:   'bg-neutral-100 text-neutral-700',
+  paid:             'bg-neutral-200 text-neutral-800',
   deleted:          'bg-neutral-100 text-neutral-500',
 }
 

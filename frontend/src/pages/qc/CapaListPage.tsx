@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCapaActions, useCompleteCapaAction } from '@/hooks/useQC'
@@ -10,6 +10,7 @@ import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Card, CardBody } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 const TABS: Array<{ label: string; value: CapaStatus | 'all' }> = [
@@ -24,13 +25,20 @@ export default function CapaListPage() {
   const [tab, setTab] = useState<CapaStatus | 'all'>('all')
   const [confirmCapa, setConfirmCapa] = useState<CapaAction | null>(null)
   const [verifyCapa, setVerifyCapa] = useState<CapaAction | null>(null)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const completeMut = useCompleteCapaAction()
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('qc.ncr.create')
 
-  const { data, isLoading } = useCapaActions(
-    tab !== 'all' ? { status: tab } : {}
-  )
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+  }, [])
+
+  const { data, isLoading } = useCapaActions({
+    ...(tab !== 'all' ? { status: tab } : {}),
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+  })
 
   const capas = data?.data ?? []
 
@@ -59,6 +67,14 @@ export default function CapaListPage() {
   return (
     <div>
       <PageHeader title="CAPA Actions" />
+
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        onSearch={handleSearch}
+        placeholder="Search CAPA actions..."
+        className="max-w-sm mb-4"
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 mb-5 border-b border-neutral-200">
