@@ -48,7 +48,7 @@ final class CreateDeliveryReceiptOnOqcPass implements ShouldQueue
             return;
         }
 
-        $systemUser = User::where('email', 'admin@ogamierp.local')->first();
+        $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
         if ($systemUser === null) {
             Log::warning("QC-DEL-001: System user not found, cannot create DR for OQC #{$inspection->id}");
 

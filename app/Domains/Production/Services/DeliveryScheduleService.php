@@ -139,7 +139,7 @@ final class DeliveryScheduleService implements ServiceContract
         $qtyToProduce = $requiredQty - $availableStock;
 
         // Get system user for auto-creation
-        $systemUser = User::where('email', 'admin@ogamierp.local')->first();
+        $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
         if ($systemUser === null) {
             Log::error('DS-Auto-PO: System user not found, cannot auto-create PO');
 

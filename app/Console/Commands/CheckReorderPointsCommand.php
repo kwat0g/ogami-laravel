@@ -62,10 +62,10 @@ final class CheckReorderPointsCommand extends Command
 
         // Auto-create PRs if enabled
         if ($autoCreatePr && $lowStockItems->isNotEmpty()) {
-            $systemUser = User::where('email', 'admin@ogamierp.local')->first();
+            $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
 
             if ($systemUser === null) {
-                $this->warn('System user (admin@ogamierp.local) not found. Cannot auto-create PRs.');
+                $this->warn('System user not found. Cannot auto-create PRs.');
                 Log::warning('CheckReorderPoints: System user not found, skipping auto-PR creation');
             } else {
                 foreach ($lowStockItems as $item) {

@@ -232,7 +232,7 @@ final class ProductionOrderService implements ServiceContract
             // Auto-generate a draft MRQ from the BOM for material planning
             // @phpstan-ignore-next-line (bom_id is nullable in DB despite PHPDoc int)
             if ($order->bom_id !== null) {
-                $systemUser = User::where('email', 'admin@ogamierp.local')->first();
+                $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
                 if ($systemUser !== null) {
                     try {
                         $this->mrqService->createFromBom($order, $systemUser);
@@ -334,7 +334,7 @@ final class ProductionOrderService implements ServiceContract
 
         // Phase 2: Issue stock for all components
         /** @var User $actor */
-        $actor = auth()->user() ?? User::where('email', 'admin@ogamierp.local')->firstOrFail();
+        $actor = auth()->user() ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->firstOrFail();
 
         foreach ($components as $component) {
             $requiredQty = $this->computeRequiredQty($component, $order);
@@ -416,7 +416,7 @@ final class ProductionOrderService implements ServiceContract
                 );
             }
 
-            $actor = auth()->user() ?? User::where('email', 'admin@ogamierp.local')->first();
+            $actor = auth()->user() ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
             if ($actor === null) {
                 throw new DomainException(
                     'Cannot complete: no authenticated user or system user available for stock receipt.',
