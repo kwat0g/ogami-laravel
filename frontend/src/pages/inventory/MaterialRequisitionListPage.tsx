@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Plus, AlertTriangle } from 'lucide-react'
 import { useMaterialRequisitions } from '@/hooks/useInventory'
 import { useAuthStore } from '@/stores/authStore'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -31,7 +33,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [status, setStatus] = useState<MaterialRequisitionStatus | ''>('')
   const [page, setPage]     = useState(1)
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.mrq.create')
 
@@ -39,7 +41,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
     status: status || undefined,
     page,
     per_page: 20,
-    with_archived: withArchived || undefined,
+    with_archived: undefined,
   })
 
   return (
@@ -85,10 +87,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}

@@ -19,14 +19,14 @@ export default function GoodsReceiptListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<GoodsReceiptStatus | ''>('')
   const [page, setPage] = useState(1)
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   // Note: GRs are auto-created by vendors via markDelivered
   // Internal users can only view and confirm GRs, not create them
 
   const { data, isLoading, isError } = useGoodsReceipts({
     ...(statusFilter ? { status: statusFilter } : {}),
     page,
-    with_archived: withArchived || undefined,
+    with_archived: undefined,
   })
 
   return (
@@ -61,10 +61,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {/* Table */}

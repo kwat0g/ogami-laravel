@@ -7,6 +7,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
 import { useAuthStore } from '@/stores/authStore'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -170,7 +172,7 @@ export default function ItemMasterListPage(): React.ReactElement {
   const [catFilter,  setCat]      = useState<number | ''>('')
   const [activeOnly, setActive]   = useState(true)
   const [page, setPage]           = useState(1)
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)
@@ -189,7 +191,7 @@ export default function ItemMasterListPage(): React.ReactElement {
     is_active: activeOnly || undefined,
     page,
     per_page: 20,
-    with_archived: withArchived || undefined,
+    with_archived: undefined,
   })
 
   return (
@@ -266,10 +268,7 @@ export default function ItemMasterListPage(): React.ReactElement {
           />
           Active only
         </label>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}

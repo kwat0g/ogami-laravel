@@ -4,6 +4,8 @@ import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
 import { useInspectionTemplates, useDeleteInspectionTemplate } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -26,7 +28,7 @@ export default function QcTemplateListPage(): React.ReactElement {
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('qc.templates.manage')
   const [stage, setStage] = useState('')
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<InspectionTemplate | null>(null)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -38,7 +40,7 @@ export default function QcTemplateListPage(): React.ReactElement {
   const { data, isLoading, isError } = useInspectionTemplates({
     stage: stage || undefined,
     per_page: 50,
-    with_archived: withArchived || undefined,
+    with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   } as Record<string, unknown>)
 
@@ -89,10 +91,7 @@ export default function QcTemplateListPage(): React.ReactElement {
           <option value="ipqc">In-Process (IPQC)</option>
           <option value="oqc">Outgoing (OQC)</option>
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300 text-neutral-600" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {isLoading && <SkeletonLoader rows={6} />}

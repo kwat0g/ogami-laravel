@@ -6,6 +6,8 @@ import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
 import { useDeliverySchedules } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { DeliveryScheduleStatus } from '@/types/production'
 import type { DeliverySchedule } from '@/types/production'
@@ -24,7 +26,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
   const [status, setStatus] = useState('')
   const [type, setType] = useState('')
   const [page, setPage] = useState(1)
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -38,7 +40,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
     type: type || undefined,
     page,
     per_page: 20,
-    with_archived: withArchived || undefined,
+    with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
   const { hasPermission } = useAuthStore()
@@ -94,10 +96,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
           <option value="local">Local</option>
           <option value="export">Export</option>
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}
