@@ -34,7 +34,7 @@ export default function LeadDetailPage() {
                   onClick={() => convertMutation.mutate({ create_opportunity: true })}
                   disabled={convertMutation.isPending}
                 >
-                  <UserCheck className="w-4 h-4" /> Convert to Customer
+                  <UserCheck className="w-4 h-4" /> Convert Lead to Customer
                 </button>
                 <button
                   className="btn-danger"
@@ -44,7 +44,7 @@ export default function LeadDetailPage() {
                   }}
                   disabled={disqualifyMutation.isPending}
                 >
-                  <XCircle className="w-4 h-4" /> Disqualify
+                  <XCircle className="w-4 h-4" /> Disqualify Lead
                 </button>
               </>
             )}

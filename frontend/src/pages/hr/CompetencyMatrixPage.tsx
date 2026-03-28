@@ -17,7 +17,7 @@ export default function CompetencyMatrixPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Competency Matrix" icon={<Target className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Employee Skill Gap Analysis" icon={<Target className="w-5 h-5 text-neutral-600" />} />
       <Card className="p-4">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={gapsOnly} onChange={e => setGapsOnly(e.target.checked)} />

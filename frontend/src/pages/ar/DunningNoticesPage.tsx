@@ -18,11 +18,11 @@ export default function DunningNoticesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Dunning Notices"
+        title="Collection Reminders"
         icon={<AlertTriangle className="w-5 h-5 text-neutral-600" />}
         actions={
           <button className="btn-primary" onClick={() => generateMut.mutate()} disabled={generateMut.isPending}>
-            <Send className="w-3.5 h-3.5" /> Generate Notices
+            <Send className="w-3.5 h-3.5" /> Auto-Generate Overdue Reminders
           </button>
         }
       />

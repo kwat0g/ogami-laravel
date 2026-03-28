@@ -22,7 +22,7 @@ export default function QuotationListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Quotations"
+        title="Price Quotations"
         icon={<FileText className="w-5 h-5 text-neutral-600" />}
         actions={
           <Link to="/sales/quotations/new" className="btn-primary">

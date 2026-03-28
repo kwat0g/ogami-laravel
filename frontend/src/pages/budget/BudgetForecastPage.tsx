@@ -13,7 +13,7 @@ export default function BudgetForecastPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Budget Year-End Forecast" icon={<TrendingUp className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Year-End Budget Spend Forecast" icon={<TrendingUp className="w-5 h-5 text-neutral-600" />} />
       <Card className="p-4">
         <select className="input-sm" value={year} onChange={e => setYear(Number(e.target.value))}>
           {[year - 1, year, year + 1].map(y => <option key={y} value={y}>{y}</option>)}

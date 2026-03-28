@@ -22,7 +22,7 @@ export default function SalesOrderListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Sales Orders"
+        title="Sales Order Processing"
         icon={<ShoppingBag className="w-5 h-5 text-neutral-600" />}
         actions={
           <Link to="/sales/orders/new" className="btn-primary">

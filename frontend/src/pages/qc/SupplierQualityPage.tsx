@@ -13,7 +13,7 @@ export default function SupplierQualityPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Supplier Quality Management" icon={<ShieldCheck className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Vendor Inspection & Quality Scores" icon={<ShieldCheck className="w-5 h-5 text-neutral-600" />} />
       {isLoading ? <SkeletonLoader rows={6} /> : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">

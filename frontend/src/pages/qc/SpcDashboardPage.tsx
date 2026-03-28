@@ -25,7 +25,7 @@ export default function SpcDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Statistical Process Control" icon={<Activity className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="SPC Control Charts & Process Capability" icon={<Activity className="w-5 h-5 text-neutral-600" />} />
       <Card className="p-4">
         <div className="flex flex-wrap gap-3">
           <input className="input-sm w-32" placeholder="Template ID" type="number" value={templateId} onChange={e => setTemplateId(e.target.value)} />

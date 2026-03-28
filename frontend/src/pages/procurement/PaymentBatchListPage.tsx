@@ -16,7 +16,7 @@ export default function PaymentBatchListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Payment Batches" icon={<DollarSign className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Vendor Payment Batches" icon={<DollarSign className="w-5 h-5 text-neutral-600" />} />
       <Card className="p-4">
         <select className="input-sm" value={(filters.status as string) ?? ''} onChange={e => setFilters(p => ({ ...p, status: e.target.value || undefined }))}>
           <option value="">All Statuses</option>

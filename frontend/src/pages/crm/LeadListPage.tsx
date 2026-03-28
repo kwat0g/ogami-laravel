@@ -24,7 +24,7 @@ export default function LeadListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Leads"
+        title="Lead Management"
         icon={<UserPlus className="w-5 h-5 text-neutral-600" />}
         actions={
           <Link to="/crm/leads/new" className="btn-primary">
