@@ -52,9 +52,11 @@ final class PayrollComputationService implements ServiceContract
      */
     public function computeForEmployee(Employee $employee, PayrollRun $run): PayrollDetail
     {
-        if (! in_array(strtolower((string) $run->status), ['locked', 'processing'], true)) {
+        // Accept both legacy lowercase and new uppercase statuses
+        $computableStatuses = ['locked', 'processing', 'PROCESSING', 'PRE_RUN_CHECKED'];
+        if (! in_array((string) $run->status, $computableStatuses, true)) {
             throw new DomainException(
-                'Payroll can only be computed when the run is in locked or processing status.',
+                "Payroll can only be computed when the run is in PROCESSING status (current: {$run->status}).",
                 'PR_NOT_COMPUTABLE',
                 422,
                 ['run_id' => $run->id, 'status' => $run->status],
