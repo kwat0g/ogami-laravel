@@ -188,72 +188,53 @@ export default function CustomerInvoicesPage() {
       <PageHeader
         title="Customer Invoices"
         actions={
-          <ExportButton
-            data={data?.data ?? []}
-            columns={[
-              { key: 'invoice_number', label: 'Invoice #' },
-              { key: 'customer.name', label: 'Customer' },
-              { key: 'status', label: 'Status' },
-              { key: 'total_amount_centavos', label: 'Amount', format: (v: unknown) => `${((v as number) / 100).toFixed(2)}` },
-              { key: 'invoice_date', label: 'Invoice Date' },
-              { key: 'due_date', label: 'Due Date' },
-            ]}
-            filename="ar-invoices"
-          />
+          <div className="flex items-center gap-2">
+            <ExportButton
+              data={data?.data ?? []}
+              columns={[
+                { key: 'invoice_number', label: 'Invoice #' },
+                { key: 'customer.name', label: 'Customer' },
+                { key: 'status', label: 'Status' },
+                { key: 'total_amount_centavos', label: 'Amount', format: (v: unknown) => `${((v as number) / 100).toFixed(2)}` },
+                { key: 'invoice_date', label: 'Invoice Date' },
+                { key: 'due_date', label: 'Due Date' },
+              ]}
+              filename="ar-invoices"
+            />
+            <button onClick={handleRefresh} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            {canCreate && (
+              <button
+                onClick={() => navigate('/ar/invoices/new')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+              >
+                <Plus className="w-4 h-4" /> New Invoice
+              </button>
+            )}
+          </div>
         }
       />
 
-      {/* Search */}
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        onSearch={handleSearch}
-        placeholder="Search invoices by number or customer..."
-        className="max-w-sm"
-      />
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-neutral-500">Track and manage AR invoices</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <BulkActions 
-            selectedCount={selectedInvoices.size} 
-            onClear={clearSelection}
-          />
-          <button onClick={handleRefresh} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50 text-neutral-500">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          {canCreate && (
-            <button
-              onClick={() => navigate('/ar/invoices/new')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-            >
-              <Plus className="w-4 h-4" /> New Invoice
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Status Tabs */}
-      <div className="flex gap-1 border-b border-neutral-200">
-        {TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => {
-              setActiveTab(tab.value)
-              clearSelection()
-            }}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.value
-                ? 'border-neutral-900 text-neutral-900'
-                : 'border-transparent text-neutral-500 hover:text-neutral-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Search + Filters */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search invoices by number or customer..."
+          className="w-72"
+        />
+        <select
+          value={activeTab}
+          onChange={(e) => { setActiveTab(e.target.value as CustomerInvoiceStatus | 'all'); clearSelection() }}
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
+        >
+          {TABS.map((tab) => (
+            <option key={tab.value} value={tab.value}>{tab.label}</option>
+          ))}
+        </select>
+        <BulkActions selectedCount={selectedInvoices.size} onClear={clearSelection} />
       </div>
 
       {/* Table */}
