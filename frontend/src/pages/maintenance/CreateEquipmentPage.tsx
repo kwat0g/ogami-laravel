@@ -2,13 +2,24 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { useCreateEquipment } from '@/hooks/useMaintenance'
+import { useCreateEquipment, useEquipment } from '@/hooks/useMaintenance'
+import { useWarehouseLocations } from '@/hooks/useInventory'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { EquipmentStatus } from '@/types/maintenance'
 
 export default function CreateEquipmentPage(): React.ReactElement {
   const navigate = useNavigate()
   const createMut = useCreateEquipment()
+
+  // Fetch existing equipment for category suggestions + warehouse locations
+  const { data: existingEquipment } = useEquipment({ per_page: 500 })
+  const existingCategories = useMemo(() => {
+    const cats = new Set<string>()
+    ;(existingEquipment?.data ?? []).forEach(eq => { if (eq.category) cats.add(eq.category) })
+    return Array.from(cats).sort()
+  }, [existingEquipment])
+
+  const { data: warehouseLocations } = useWarehouseLocations()
 
   const [form, setForm] = useState({
     name: '',
@@ -84,11 +95,15 @@ export default function CreateEquipmentPage(): React.ReactElement {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Category</label>
             <input
               type="text"
+              list="equipment-categories"
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
               value={form.category}
               onChange={e => set('category', e.target.value)}
               placeholder="e.g. Production"
             />
+            <datalist id="equipment-categories">
+              {existingCategories.map(c => <option key={c} value={c} />)}
+            </datalist>
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Status *</label>
@@ -144,11 +159,17 @@ export default function CreateEquipmentPage(): React.ReactElement {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Location</label>
             <input
               type="text"
+              list="equipment-locations"
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
               value={form.location}
               onChange={e => set('location', e.target.value)}
               placeholder="e.g. Production Floor A"
             />
+            <datalist id="equipment-locations">
+              {(warehouseLocations?.data ?? []).map((loc: { id: number; name: string }) => (
+                <option key={loc.id} value={loc.name} />
+              ))}
+            </datalist>
           </div>
         </div>
 

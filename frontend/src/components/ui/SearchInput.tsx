@@ -60,6 +60,7 @@ export default function SearchInput({
         <button
           type="button"
           onClick={() => onChange('')}
+          aria-label="Clear search"
           className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-neutral-600"
         >
           <X className="w-3.5 h-3.5" />
