@@ -126,7 +126,7 @@ final class BomService implements ServiceContract
 
         foreach ($bom->components as $comp) {
             $item = $comp->componentItem;
-            $unitCost = (int) (($item->standard_price ?? 0) * 100);
+            $unitCost = (int) ($item->standard_price_centavos ?? 0);
             $qtyPerUnit = (float) $comp->qty_per_unit;
             $scrapFactor = 1 + ((float) $comp->scrap_factor_pct / 100);
             $grossQty = $qtyPerUnit * $scrapFactor;

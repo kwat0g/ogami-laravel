@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
 /**
  * Product Costing Service — standard and actual cost computation.
  *
- * Standard Cost = sum of (component qty × component standard_price) through BOM
+ * Standard Cost = sum of (component qty × component standard_price_centavos) through BOM
  * Actual Cost = actual material consumed + labor hours × labor rate
  * Variance = Standard - Actual (positive = favorable)
  *
@@ -45,7 +45,7 @@ final class CostingService implements ServiceContract
 
         foreach ($bom->components as $comp) {
             $item = $comp->componentItem;
-            $unitCost = (int) (($item->standard_price ?? 0) * 100); // convert to centavos
+            $unitCost = (int) ($item->standard_price_centavos ?? 0);
             $qtyPerUnit = (float) $comp->qty_per_unit;
             $scrapFactor = 1 + ((float) $comp->scrap_factor_pct / 100);
             $grossQty = $qtyPerUnit * $scrapFactor;
@@ -103,7 +103,7 @@ final class CostingService implements ServiceContract
 
         foreach ($mrqs as $mrq) {
             foreach ($mrq->items as $item) {
-                $unitPrice = (int) (($item->itemMaster?->standard_price ?? 0) * 100);
+                $unitPrice = (int) ($item->itemMaster?->standard_price_centavos ?? 0);
                 $qty = (float) ($item->quantity_issued ?? $item->quantity_requested ?? 0);
                 $materialCost += (int) round($qty * $unitPrice);
             }

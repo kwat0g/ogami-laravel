@@ -7,6 +7,7 @@ namespace App\Domains\Inventory\Services;
 use App\Domains\Inventory\Models\PhysicalCount;
 use App\Domains\Inventory\Models\PhysicalCountItem;
 use App\Domains\Inventory\Models\StockBalance;
+use App\Domains\Inventory\StateMachines\PhysicalCountStateMachine;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
@@ -20,7 +21,10 @@ use Illuminate\Support\Facades\DB;
  */
 final class PhysicalCountService implements ServiceContract
 {
-    public function __construct(private readonly StockService $stockService) {}
+    public function __construct(
+        private readonly StockService $stockService,
+        private readonly PhysicalCountStateMachine $stateMachine = new PhysicalCountStateMachine(),
+    ) {}
 
     /** @param array<string,mixed> $filters */
     public function paginate(array $filters = []): LengthAwarePaginator
@@ -90,15 +94,9 @@ final class PhysicalCountService implements ServiceContract
      */
     public function startCounting(PhysicalCount $count): PhysicalCount
     {
-        if ($count->status !== 'draft') {
-            throw new DomainException(
-                'Physical count must be in draft status to start counting.',
-                'INV_INVALID_COUNT_STATUS',
-                422
-            );
-        }
+        $this->stateMachine->transition($count, 'in_progress');
 
-        $count->update(['status' => 'in_progress']);
+        $count->save();
 
         return $count->fresh(['items.item', 'location']) ?? $count;
     }
@@ -114,7 +112,8 @@ final class PhysicalCountService implements ServiceContract
             throw new DomainException(
                 'Physical count must be in draft or in_progress to record counts.',
                 'INV_INVALID_COUNT_STATUS',
-                422
+                422,
+                ['current_status' => $count->status]
             );
         }
 
@@ -132,7 +131,8 @@ final class PhysicalCountService implements ServiceContract
             }
 
             if ($count->status === 'draft') {
-                $count->update(['status' => 'in_progress']);
+                $this->stateMachine->transition($count, 'in_progress');
+                $count->save();
             }
         });
 
@@ -144,15 +144,7 @@ final class PhysicalCountService implements ServiceContract
      */
     public function submitForApproval(PhysicalCount $count): PhysicalCount
     {
-        if ($count->status !== 'in_progress') {
-            throw new DomainException(
-                'Physical count must be in progress to submit for approval.',
-                'INV_INVALID_COUNT_STATUS',
-                422
-            );
-        }
-
-        // Ensure all items have been counted
+        // Ensure all items have been counted before allowing transition
         $uncounted = $count->items()->whereNull('counted_qty')->count();
         if ($uncounted > 0) {
             throw new DomainException(
@@ -163,7 +155,9 @@ final class PhysicalCountService implements ServiceContract
             );
         }
 
-        $count->update(['status' => 'pending_approval']);
+        $this->stateMachine->transition($count, 'pending_approval');
+
+        $count->save();
 
         return $count->fresh(['items.item', 'location']) ?? $count;
     }
@@ -173,13 +167,7 @@ final class PhysicalCountService implements ServiceContract
      */
     public function approve(PhysicalCount $count, User $approver): PhysicalCount
     {
-        if ($count->status !== 'pending_approval') {
-            throw new DomainException(
-                'Physical count must be pending approval.',
-                'INV_INVALID_COUNT_STATUS',
-                422
-            );
-        }
+        $this->stateMachine->transition($count, 'approved');
 
         return DB::transaction(function () use ($count, $approver): PhysicalCount {
             // Post adjustments for items with variance
@@ -195,11 +183,9 @@ final class PhysicalCountService implements ServiceContract
                 }
             }
 
-            $count->update([
-                'status' => 'approved',
-                'approved_by_id' => $approver->id,
-                'approved_at' => now(),
-            ]);
+            $count->approved_by_id = $approver->id;
+            $count->approved_at = now();
+            $count->save();
 
             return $count->fresh(['items.item', 'location']) ?? $count;
         });

@@ -10,7 +10,6 @@ use App\Http\Controllers\Production\DeliveryScheduleController;
 use App\Http\Controllers\Production\ProductionOrderController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum', 'module_access:production'])->group(function (): void {
@@ -73,58 +72,8 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
 
     // ── Production Cost Analysis Report ──────────────────────────────────────
     Route::get('reports/cost-analysis', function (Request $request): JsonResponse {
-        $query = ProductionOrder::with(['product', 'bom:id,name'])
-            ->whereIn('status', ['completed', 'released', 'in_progress']);
+        $service = app(\App\Domains\Production\Services\ProductionReportService::class);
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->input('date_from'));
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->input('date_to'));
-        }
-
-        $orders = $query->orderByDesc('created_at')->limit(100)->get();
-
-        $rows = $orders->map(function ($order) {
-            // Sum material costs from stock ledger entries linked to this production order
-            $materialCost = DB::table('stock_ledger')
-                ->where('reference_type', 'production_orders')
-                ->where('reference_id', $order->id)
-                ->where('quantity', '<', 0) // issues (negative = consumed)
-                ->join('item_masters', 'stock_ledger.item_id', '=', 'item_masters.id')
-                ->sum(DB::raw('abs(stock_ledger.quantity) * coalesce(item_masters.unit_cost, 0)'));
-
-            // Output qty from production output logs
-            $outputQty = $order->total_output_qty ?? $order->qty_produced ?? 0;
-
-            $unitCost = $outputQty > 0 ? round((float) $materialCost / $outputQty, 2) : 0;
-
-            return [
-                'order_id' => $order->id,
-                'ulid' => $order->ulid,
-                'po_reference' => $order->po_reference ?? "PO-{$order->id}",
-                'product_name' => $order->product?->name ?? '—',
-                'bom_name' => $order->bom?->name ?? '—',
-                'status' => $order->status,
-                'qty_required' => $order->qty_required,
-                'qty_produced' => $outputQty,
-                'material_cost' => round((float) $materialCost, 2),
-                'unit_cost' => $unitCost,
-                'created_at' => $order->created_at?->toDateString(),
-            ];
-        });
-
-        $totalMaterialCost = $rows->sum('material_cost');
-        $totalOutput = $rows->sum('qty_produced');
-
-        return response()->json([
-            'data' => $rows->values(),
-            'summary' => [
-                'total_orders' => $rows->count(),
-                'total_material_cost' => round($totalMaterialCost, 2),
-                'total_output' => $totalOutput,
-                'avg_unit_cost' => $totalOutput > 0 ? round($totalMaterialCost / $totalOutput, 2) : 0,
-            ],
-        ]);
+        return response()->json($service->costAnalysis($request->only(['date_from', 'date_to'])));
     })->name('reports.cost-analysis')->middleware('permission:production.orders.view');
 });

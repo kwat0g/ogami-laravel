@@ -84,7 +84,7 @@ final class DashboardKpiService implements ServiceContract
         // Total inventory value
         $totalValue = DB::table('stock_balances')
             ->join('item_masters', 'stock_balances.item_id', '=', 'item_masters.id')
-            ->selectRaw('COALESCE(SUM(CAST(stock_balances.quantity_on_hand AS numeric) * COALESCE(item_masters.standard_price, 0)), 0) as total_value')
+            ->selectRaw('COALESCE(SUM(CAST(stock_balances.quantity_on_hand AS numeric) * COALESCE(item_masters.standard_price_centavos, 0) / 100.0), 0) as total_value')
             ->value('total_value');
 
         // Dead stock: items with no movement in 90+ days
