@@ -33,6 +33,15 @@ export default function ChangePasswordPage() {
         password_confirmation: values.new_password_confirmation,
       })
 
+      // Update the Zustand store so AppLayout's guard no longer redirects back
+      const currentUser = useAuthStore.getState().user
+      if (currentUser) {
+        useAuthStore.getState().setAuth({
+          ...currentUser,
+          must_change_password: false,
+        })
+      }
+
       toast.success('Password changed successfully.')
       navigate('/', { replace: true })
     } catch (err) {
