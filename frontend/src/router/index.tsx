@@ -390,8 +390,8 @@ const router = createBrowserRouter([
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
       { path: '/hr/reports', element: withSuspense(guard('hr.full_access', <HRReportsPage />)) },
-      { path: '/hr/trainings', element: withSuspense(guard('hr.full_access', <TrainingListPage />)) },
-      { path: '/hr/competency', element: withSuspense(guard('hr.full_access', <CompetencyMatrixPage />)) },
+      { path: '/hr/trainings', element: withSuspense(guard('hr.training.view', <TrainingListPage />)) },
+      { path: '/hr/competency', element: withSuspense(guard('hr.competency.view', <CompetencyMatrixPage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },
@@ -451,7 +451,7 @@ const router = createBrowserRouter([
       { path: '/ar/invoices/new', element: withSuspense(guard('customer_invoices.create', <CustomerInvoiceFormPage />)) },
       { path: '/ar/invoices/:ulid', element: withSuspense(guard('customer_invoices.view', <CustomerInvoiceDetailPage />)) },
       { path: '/ar/aging-report',    element: withSuspense(guard('customer_invoices.view', <ArAgingReportPage />)) },
-      { path: '/ar/dunning',         element: withSuspense(guard('customer_invoices.view', <DunningNoticesPage />)) },
+      { path: '/ar/dunning',         element: withSuspense(guard('ar.dunning.view', <DunningNoticesPage />)) },
 
       // ── Accounting — Loan Approvals ──────────────────────────────────────
       { path: '/accounting/loans', element: withSuspense(guard('loans.accounting_approve', <LoanListPage />)) },
@@ -497,7 +497,7 @@ const router = createBrowserRouter([
       { path: '/procurement/purchase-orders/new', element: withSuspense(guard('procurement.purchase-order.create', <CreatePurchaseOrderPage />)) },
       { path: '/procurement/purchase-orders/:ulid', element: withSuspense(guard('procurement.purchase-order.view', <PurchaseOrderDetailPage />)) },
       { path: '/procurement/goods-receipts', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptListPage />)) },
-      { path: '/procurement/payment-batches', element: withSuspense(guard('vendor_invoices.view', <PaymentBatchListPage />)) },
+      { path: '/procurement/payment-batches', element: withSuspense(guard('ap.payment_batches.view', <PaymentBatchListPage />)) },
       { path: '/procurement/goods-receipts/new', element: withSuspense(guard('procurement.goods-receipt.create', <CreateGoodsReceiptPage />)) },
       { path: '/procurement/goods-receipts/:ulid', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptDetailPage />)) },
       { path: '/procurement/analytics', element: withSuspense(guard('procurement.purchase-order.view', <ProcurementAnalyticsPage />)) },
@@ -517,7 +517,7 @@ const router = createBrowserRouter([
       { path: '/inventory/requisitions/:ulid', element: withSuspense(guard('inventory.mrq.view', <MaterialRequisitionDetailPage />)) },
       { path: '/inventory/valuation', element: withSuspense(guard('inventory.stock.view', <InventoryValuationPage />)) },
       { path: '/inventory/physical-count', element: withSuspense(guard('inventory.adjustments.create', <PhysicalCountPage />)) },
-      { path: '/inventory/transfers', element: withSuspense(guard('inventory.adjustments.create', <StockTransferPage />)) },
+      { path: '/inventory/transfers', element: withSuspense(guard('inventory.transfers.manage', <StockTransferPage />)) },
 
       // ── Production / PPC ──────────────────────────────────────────────────
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
@@ -566,7 +566,7 @@ const router = createBrowserRouter([
       { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.manage', <CreateDeliveryReceiptPage />)) },
       { path: '/delivery/receipts/:ulid', element: withSuspense(guard('delivery.view', <DeliveryReceiptDetailPage />)) },
       { path: '/delivery/shipments', element: withSuspense(guard('delivery.view', <ShipmentsPage />)) },
-      { path: '/delivery/routes', element: withSuspense(guard('delivery.view', <DeliveryRoutesPage />)) },
+      { path: '/delivery/routes', element: withSuspense(guard('delivery.routes.view', <DeliveryRoutesPage />)) },
 
       // ── ISO / IATF ──────────────────────────────────────────────────
       { path: '/iso/documents', element: withSuspense(guard('iso.view', <DocumentRegisterPage />)) },
@@ -592,10 +592,10 @@ const router = createBrowserRouter([
       { path: '/crm/dashboard',           element: withSuspense(guard('crm.tickets.view', <CrmDashboardPage />)) },
       { path: '/crm/tickets',             element: withSuspense(guard('crm.tickets.view', <TicketListPage />)) },
       { path: '/crm/tickets/:ulid',       element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
-      { path: '/crm/leads',               element: withSuspense(guard('crm.tickets.view', <LeadListPage />)) },
-      { path: '/crm/leads/:ulid',         element: withSuspense(guard('crm.tickets.view', <LeadDetailPage />)) },
-      { path: '/crm/opportunities',       element: withSuspense(guard('crm.tickets.view', <OpportunityListPage />)) },
-      { path: '/crm/opportunities/:ulid', element: withSuspense(guard('crm.tickets.view', <OpportunityDetailPage />)) },
+      { path: '/crm/leads',               element: withSuspense(guard('crm.leads.view', <LeadListPage />)) },
+      { path: '/crm/leads/:ulid',         element: withSuspense(guard('crm.leads.view', <LeadDetailPage />)) },
+      { path: '/crm/opportunities',       element: withSuspense(guard('crm.opportunities.view', <OpportunityListPage />)) },
+      { path: '/crm/opportunities/:ulid', element: withSuspense(guard('crm.opportunities.view', <OpportunityDetailPage />)) },
 
       // ── Budget ────────────────────────────────────────────────────────────
       { path: '/budget/cost-centers',       element: withSuspense(guard('budget.view', <CostCentersPage />)) },
@@ -603,13 +603,13 @@ const router = createBrowserRouter([
       { path: '/budget/lines',              element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
       { path: '/budget/vs-actual',          element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
       { path: '/budget/variance',            element: withSuspense(guard('budget.view', <BudgetVarianceReportPage />)) },
-      { path: '/budget/forecast',            element: withSuspense(guard('budget.view', <BudgetForecastPage />)) },
+      { path: '/budget/forecast',            element: withSuspense(guard('budget.forecast', <BudgetForecastPage />)) },
 
       // ── Fixed Assets ──────────────────────────────────────────────────────
       { path: '/fixed-assets',             element: withSuspense(guard('fixed_assets.view', <FixedAssetsPage />)) },
       { path: '/fixed-assets/categories',  element: withSuspense(guard('fixed_assets.view', <FixedAssetCategoriesPage />)) },
       { path: '/fixed-assets/disposals',    element: withSuspense(guard('fixed_assets.manage', <AssetDisposalPage />)) },
-      { path: '/fixed-assets/transfers',   element: withSuspense(guard('fixed_assets.manage', <AssetTransfersPage />)) },
+      { path: '/fixed-assets/transfers',   element: withSuspense(guard('fixed_assets.transfer', <AssetTransfersPage />)) },
       { path: '/fixed-assets/:ulid',       element: withSuspense(guard('fixed_assets.view', <FixedAssetDetailPage />)) },
 
       // ── Recurring Journal Templates ────────────────────────────────────────
@@ -626,10 +626,10 @@ const router = createBrowserRouter([
     // ── Sales / Client Orders Review ───────────────────────────────────────
     { path: '/sales/client-orders', element: withSuspense(guard('sales.order_review', <ClientOrdersReviewPage />)) },
     { path: '/sales/client-orders/:ulid', element: withSuspense(guard('sales.order_review', <ClientOrderReviewDetailPage />)) },
-    { path: '/sales/quotations', element: withSuspense(guard('sales.order_review', <QuotationListPage />)) },
-    { path: '/sales/quotations/:ulid', element: withSuspense(guard('sales.order_review', <QuotationDetailPage />)) },
-    { path: '/sales/orders', element: withSuspense(guard('sales.order_review', <SalesOrderListPage />)) },
-    { path: '/sales/orders/:ulid', element: withSuspense(guard('sales.order_review', <SalesOrderDetailPage />)) },
+    { path: '/sales/quotations', element: withSuspense(guard('sales.quotations.view', <QuotationListPage />)) },
+    { path: '/sales/quotations/:ulid', element: withSuspense(guard('sales.quotations.view', <QuotationDetailPage />)) },
+    { path: '/sales/orders', element: withSuspense(guard('sales.orders.view', <SalesOrderListPage />)) },
+    { path: '/sales/orders/:ulid', element: withSuspense(guard('sales.orders.view', <SalesOrderDetailPage />)) },
     ],
   },
 
