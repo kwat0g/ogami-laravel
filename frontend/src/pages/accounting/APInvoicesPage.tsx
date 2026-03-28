@@ -325,15 +325,15 @@ export default function APInvoicesPage() {
             <>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-neutral-100 text-neutral-800 text-sm rounded hover:bg-neutral-200 border border-neutral-300"
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
               >
                 <FilePlus className="w-4 h-4" /> From PO
               </button>
               <button
                 onClick={() => navigate('/accounting/ap/invoices/new')}
-                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+                className="flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 text-sm rounded hover:bg-neutral-50 border border-neutral-300"
               >
-                <Plus className="w-4 h-4" /> New Invoice
+                <Plus className="w-4 h-4" /> Manual Invoice
               </button>
             </>
           )}

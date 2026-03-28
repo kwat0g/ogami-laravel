@@ -371,9 +371,8 @@ const router = createBrowserRouter([
       { path: '/hr/leave/balances', element: withSuspense(guard('hr.full_access', <LeaveBalancesPage />)) },
       { path: '/hr/leave/calendar', element: withSuspense(guard('hr.full_access', <LeaveCalendarPage />)) },
 
-      // HR — Loans
+      // HR — Loans (view/approve only — loan applications filed by employees via self-service)
       { path: '/hr/loans', element: withSuspense(guard('hr.full_access', <LoanListPage />)) },
-      { path: '/hr/loans/new', element: withSuspense(guard('hr.full_access', <LoanFormPage />)) },
       { path: '/hr/loans/:ulid', element: withSuspense(guard('hr.full_access', <LoanDetailPage />)) },
 
       // HR — Reference
@@ -521,7 +520,7 @@ const router = createBrowserRouter([
     { path: '/production/combined-delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleListPage />)) },
     { path: '/production/combined-delivery-schedules/:ulid', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleDetailPage />)) },
     { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
-      { path: '/production/orders/new', element: withSuspense(guard('production.orders.create', <CreateProductionOrderPage />)) },
+      // Note: No /production/orders/new route — production orders are created from delivery schedules
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
       { path: '/production/cost-analysis', element: withSuspense(guard('production.orders.view', <ProductionCostPage />)) },
       { path: '/production/boms/:ulid/cost-breakdown', element: withSuspense(guard('production.bom.view', <BomCostBreakdownPage />)) },
@@ -605,6 +604,7 @@ const router = createBrowserRouter([
     { path: '/sales/quotations/:ulid', element: withSuspense(guard('sales.quotations.view', <QuotationDetailPage />)) },
     { path: '/sales/quotations/:ulid/margin', element: withSuspense(guard('sales.quotations.view', <QuotationMarginPage />)) },
     { path: '/sales/orders', element: withSuspense(guard('sales.orders.view', <SalesOrderListPage />)) },
+    // Note: No /sales/orders/new route — sales orders are created by converting accepted quotations
     { path: '/sales/orders/:ulid', element: withSuspense(guard('sales.orders.view', <SalesOrderDetailPage />)) },
     ],
   },

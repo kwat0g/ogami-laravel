@@ -61,17 +61,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
               ]}
               filename="production-orders"
             />
-            <DepartmentGuard module="production">
-              {canCreate && (
-                <Link
-                  to="/production/orders/new"
-                  className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Order
-                </Link>
-              )}
-            </DepartmentGuard>
+            {/* Production orders are created from delivery schedules */}
           </div>
         }
       />

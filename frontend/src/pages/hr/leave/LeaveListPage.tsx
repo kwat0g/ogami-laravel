@@ -198,7 +198,7 @@ export default function LeaveListPage() {
                 to="/hr/leave/new"
                 className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
               >
-                + File Leave
+                + File on Behalf
               </Link>
             )}
           </div>

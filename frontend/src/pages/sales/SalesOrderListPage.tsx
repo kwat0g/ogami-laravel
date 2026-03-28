@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, ShoppingBag } from 'lucide-react'
+import { ShoppingBag } from 'lucide-react'
 import { useSalesOrders } from '@/hooks/useSales'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
@@ -31,11 +31,7 @@ export default function SalesOrderListPage() {
       <PageHeader
         title="Sales Order Processing"
         icon={<ShoppingBag className="w-5 h-5 text-neutral-600" />}
-        actions={
-          <Link to="/sales/orders/new" className="btn-primary">
-            <Plus className="w-3.5 h-3.5" /> New Sales Order
-          </Link>
-        }
+        subtitle="Sales orders are created from accepted quotations"
       />
 
       <Card className="p-4">
