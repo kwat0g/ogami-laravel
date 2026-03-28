@@ -66,13 +66,44 @@ final class CustomerController extends Controller
     }
 
     /** Soft-delete (archive) — blocked when the customer has open invoices. */
-    public function destroy(Customer $customer): JsonResponse
+    public function destroy(Request $request, Customer $customer): JsonResponse
     {
         $this->authorize('archive', $customer);
 
-        $this->service->archive($customer);
+        $this->service->archive($customer, $request->user());
 
         return response()->json(['message' => 'Customer archived successfully.']);
+    }
+
+    /** List archived (soft-deleted) customers. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', Customer::class);
+
+        $records = $this->service->listArchived(
+            perPage: $request->integer('per_page', 20),
+            search: $request->input('search'),
+        );
+
+        return CustomerResource::collection($records);
+    }
+
+    /** Restore a soft-deleted customer from the archive. */
+    public function restore(Request $request, int $id): CustomerResource
+    {
+        $customer = $this->service->restore($id, $request->user());
+
+        return new CustomerResource($customer);
+    }
+
+    /** Permanently delete a customer — superadmin only. */
+    public function forceDelete(Request $request, int $id): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDelete($id, $request->user());
+
+        return response()->json(['message' => 'Customer permanently deleted.']);
     }
 
     /**

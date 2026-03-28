@@ -14,6 +14,9 @@ use App\Domains\FixedAssets\Models\FixedAssetCategory;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -28,6 +31,7 @@ use Illuminate\Support\Facades\Log;
  */
 final class FixedAssetService implements ServiceContract
 {
+    use HasArchiveOperations;
     public function __construct(private readonly JournalEntryService $jeService) {}
 
     // ── Asset Registration ───────────────────────────────────────────────────

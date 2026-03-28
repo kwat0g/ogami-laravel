@@ -179,6 +179,37 @@ final class PayrollRunController extends Controller
         ]);
     }
 
+    /** GET /api/v1/payroll/runs-archived */
+    public function archived(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', PayrollRun::class);
+
+        $records = $this->service->listArchived($request->integer('per_page', 20));
+
+        return response()->json(PayrollRunResource::collection($records)->response()->getData());
+    }
+
+    /** POST /api/v1/payroll/runs/{payrollRun}/restore */
+    public function restore(Request $request, int $payrollRun): JsonResponse
+    {
+        $run = $this->service->restoreRun($payrollRun, $request->user());
+
+        return response()->json([
+            'message' => 'Payroll run restored.',
+            'run' => new PayrollRunResource($run),
+        ]);
+    }
+
+    /** DELETE /api/v1/payroll/runs/{payrollRun}/force */
+    public function forceDelete(Request $request, int $payrollRun): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDeleteRun($payrollRun, $request->user());
+
+        return response()->json(['message' => 'Payroll run permanently deleted.']);
+    }
+
     /**
      * PATCH /api/v1/payroll/runs/{payrollRun}/submit
      * HR Manager submits the computed run for Accounting Manager review.

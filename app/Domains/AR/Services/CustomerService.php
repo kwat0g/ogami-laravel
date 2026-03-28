@@ -8,12 +8,15 @@ use App\Domains\AR\Models\Customer;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class CustomerService implements ServiceContract
 {
+    use HasArchiveOperations;
     // ── List / Search ─────────────────────────────────────────────────────────
 
     /**
@@ -87,13 +90,14 @@ final class CustomerService implements ServiceContract
         return $customer->fresh();
     }
 
-    // ── Archive ───────────────────────────────────────────────────────────────
+    // ── Archive (soft-delete) ─────────────────────────────────────────────────
 
     /**
-     * Soft-delete and deactivate a customer.
+     * Soft-delete a customer (move to archive).
+     * Does NOT change is_active — archive != disable (Rule 2).
      * Blocks if the customer has open (unpaid) invoices.
      */
-    public function archive(Customer $customer): void
+    public function archive(Customer $customer, User $user): void
     {
         $openCount = $customer->invoices()
             ->whereNotIn('status', ['paid', 'written_off', 'cancelled'])
@@ -107,8 +111,45 @@ final class CustomerService implements ServiceContract
             );
         }
 
+        $this->archiveRecord($customer, $user);
+    }
+
+    // ── Restore ────────────────────────────────────────────────────────────────
+
+    public function restore(int $id, User $user): Customer
+    {
+        /** @var Customer */
+        return $this->restoreRecord(Customer::class, $id, $user);
+    }
+
+    // ── Permanent Delete ───────────────────────────────────────────────────────
+
+    public function forceDelete(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(Customer::class, $id, $user);
+    }
+
+    // ── List Archived ──────────────────────────────────────────────────────────
+
+    public function listArchived(int $perPage = 20, ?string $search = null): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        return $this->listArchivedRecords(Customer::class, $perPage, $search, ['name', 'tin', 'email']);
+    }
+
+    // ── Deactivate / Activate (status only, no archive) ────────────────────────
+
+    public function deactivate(Customer $customer): Customer
+    {
         $customer->update(['is_active' => false]);
-        $customer->delete();
+
+        return $customer->fresh();
+    }
+
+    public function activate(Customer $customer): Customer
+    {
+        $customer->update(['is_active' => true]);
+
+        return $customer->fresh();
     }
 
     // ── Client Portal Account ─────────────────────────────────────────────────

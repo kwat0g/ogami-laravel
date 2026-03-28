@@ -6,8 +6,11 @@ namespace App\Domains\Maintenance\Services;
 
 use App\Domains\Maintenance\Models\Equipment;
 use App\Domains\Maintenance\Models\PmSchedule;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
+use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /**
@@ -17,6 +20,7 @@ use Illuminate\Support\Collection;
  */
 final class EquipmentService implements ServiceContract
 {
+    use HasArchiveOperations;
     /** @param array<string,mixed> $params */
     public function paginate(array $params = []): LengthAwarePaginator
     {
@@ -49,6 +53,34 @@ final class EquipmentService implements ServiceContract
         $equipment->update($data);
 
         return $equipment;
+    }
+
+    // ── Archive / Restore / Force Delete ────────────────────────────────────
+
+    public function archive(Equipment $equipment, User $user): void
+    {
+        $this->archiveRecord($equipment, $user);
+    }
+
+    public function restore(int $id, User $user): Equipment
+    {
+        /** @var Equipment */
+        return $this->restoreRecord(Equipment::class, $id, $user);
+    }
+
+    public function forceDelete(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(Equipment::class, $id, $user);
+    }
+
+    public function listArchived(int $perPage = 20, ?string $search = null): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        return $this->listArchivedRecords(Equipment::class, $perPage, $search, ['name', 'equipment_code']);
+    }
+
+    protected function dependentRelationships(Model $model): array
+    {
+        return ['workOrders' => 'Work Orders'];
     }
 
     /**

@@ -108,10 +108,32 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
 
     Route::delete('departments/{department}', function (Request $request, Department $department) {
         abort_unless($request->user()->can('employees.manage_structure'), 403);
-        $department->delete();
+        $department->delete(); // soft-delete via SoftDeletes trait
 
         return response()->noContent();
     })->name('departments.destroy');
+
+    Route::get('departments-archived', function (Request $request) {
+        abort_unless($request->user()->can('employees.manage_structure'), 403);
+
+        return Department::onlyTrashed()->with('parentDepartment')->orderBy('name')->paginate(50);
+    })->name('departments.archived');
+
+    Route::post('departments/{department}/restore', function (Request $request, int $department) {
+        abort_unless($request->user()->can('employees.manage_structure'), 403);
+        $dept = Department::onlyTrashed()->findOrFail($department);
+        $dept->restore();
+
+        return response()->json($dept->fresh());
+    })->middleware('throttle:api-action')->name('departments.restore');
+
+    Route::delete('departments/{department}/force', function (Request $request, int $department) {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+        $dept = Department::onlyTrashed()->findOrFail($department);
+        $dept->forceDelete();
+
+        return response()->json(['message' => 'Department permanently deleted.']);
+    })->middleware('throttle:api-action')->name('departments.force-delete');
 
     // ── Positions ─────────────────────────────────────────────────────────────
     Route::get('positions', function (Request $request) {
@@ -158,10 +180,32 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
 
     Route::delete('positions/{position}', function (Request $request, Position $position) {
         abort_unless($request->user()->can('employees.manage_structure'), 403);
-        $position->delete();
+        $position->delete(); // soft-delete via SoftDeletes trait
 
         return response()->noContent();
     })->name('positions.destroy');
+
+    Route::get('positions-archived', function (Request $request) {
+        abort_unless($request->user()->can('employees.manage_structure'), 403);
+
+        return Position::onlyTrashed()->with('department')->orderBy('title')->paginate(50);
+    })->name('positions.archived');
+
+    Route::post('positions/{position}/restore', function (Request $request, int $position) {
+        abort_unless($request->user()->can('employees.manage_structure'), 403);
+        $pos = Position::onlyTrashed()->findOrFail($position);
+        $pos->restore();
+
+        return response()->json($pos->fresh()->load('department'));
+    })->middleware('throttle:api-action')->name('positions.restore');
+
+    Route::delete('positions/{position}/force', function (Request $request, int $position) {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+        $pos = Position::onlyTrashed()->findOrFail($position);
+        $pos->forceDelete();
+
+        return response()->json(['message' => 'Position permanently deleted.']);
+    })->middleware('throttle:api-action')->name('positions.force-delete');
 
     // ── HR Reports ───────────────────────────────────────────────────────────
 

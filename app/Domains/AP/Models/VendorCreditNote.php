@@ -34,7 +34,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class VendorCreditNote extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'vendor_credit_notes';
 

@@ -36,7 +36,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class PaymentBatch extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'payment_batches';
 

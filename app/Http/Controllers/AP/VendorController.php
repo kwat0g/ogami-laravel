@@ -81,13 +81,44 @@ final class VendorController extends Controller
     }
 
     /** Soft-delete (archive) vendor — blocked when there are open invoices. */
-    public function destroy(Vendor $vendor): JsonResponse
+    public function destroy(Request $request, Vendor $vendor): JsonResponse
     {
         $this->authorize('archive', $vendor);
 
-        $this->service->archive($vendor);
+        $this->service->archive($vendor, $request->user());
 
         return response()->json(['message' => 'Vendor archived successfully.']);
+    }
+
+    /** List archived (soft-deleted) vendors. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', Vendor::class);
+
+        $records = $this->service->listArchived(
+            perPage: $request->integer('per_page', 20),
+            search: $request->input('search'),
+        );
+
+        return VendorResource::collection($records);
+    }
+
+    /** Restore a soft-deleted vendor from the archive. */
+    public function restore(Request $request, int $id): VendorResource
+    {
+        $vendor = $this->service->restore($id, $request->user());
+
+        return new VendorResource($vendor->load('ewtRate'));
+    }
+
+    /** Permanently delete a vendor — superadmin only. */
+    public function forceDelete(Request $request, int $id): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDelete($id, $request->user());
+
+        return response()->json(['message' => 'Vendor permanently deleted.']);
     }
 
     /** Mark a vendor as accredited — allows use on Purchase Orders. */

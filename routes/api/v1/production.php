@@ -21,6 +21,9 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     Route::put('boms/{bom}', [BomController::class, 'update']);
     Route::patch('boms/{bom}/activate', [BomController::class, 'activate']);
     Route::delete('boms/{bom}', [BomController::class, 'destroy']);
+    Route::get('boms-archived', [BomController::class, 'archived']);
+    Route::post('boms/{bom}/restore', [BomController::class, 'restore'])->middleware('throttle:api-action');
+    Route::delete('boms/{bom}/force', [BomController::class, 'forceDelete'])->middleware('throttle:api-action');
     Route::get('boms/{bom}/cost-breakdown', [BomController::class, 'costBreakdown']);
     Route::post('boms/{bom}/rollup-cost', [BomController::class, 'rollupCost'])->middleware('throttle:api-action');
     Route::get('boms/{bom}/cost-compare', [BomController::class, 'costCompare']);
@@ -49,9 +52,12 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
 
     // ── Production Orders ────────────────────────────────────────────────────
     Route::get('orders', [ProductionOrderController::class, 'index']);
+    Route::get('orders-archived', [ProductionOrderController::class, 'archived']);
     Route::post('orders', [ProductionOrderController::class, 'store']);
     Route::get('orders/smart-defaults', [ProductionOrderController::class, 'smartDefaults']);
     Route::get('orders/{productionOrder}', [ProductionOrderController::class, 'show']);
+    Route::post('orders/{productionOrder}/restore', [ProductionOrderController::class, 'restore'])->middleware('throttle:api-action');
+    Route::delete('orders/{productionOrder}/force', [ProductionOrderController::class, 'forceDelete'])->middleware('throttle:api-action');
 
     Route::middleware('throttle:api-action')->group(function (): void {
         Route::patch('orders/{productionOrder}/release', [ProductionOrderController::class, 'release']);

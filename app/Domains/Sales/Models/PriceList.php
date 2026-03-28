@@ -33,7 +33,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class PriceList extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'price_lists';
 

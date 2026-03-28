@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Domains\Accounting\Services;
 
 use App\Domains\Accounting\Models\ChartOfAccount;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +26,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class ChartOfAccountService implements ServiceContract
 {
+    use HasArchiveOperations;
     /** Maximum hierarchy depth allowed (COA-006). */
     private const MAX_DEPTH = 5;
 
@@ -82,10 +87,11 @@ final class ChartOfAccountService implements ServiceContract
 
     /**
      * Archive (soft-delete) an account.
+     * Does NOT change is_active — archive != disable (Rule 2).
      * COA-003: system accounts cannot be archived.
      * COA-005: balance must be zero before archiving.
      */
-    public function archiveAccount(ChartOfAccount $account): void
+    public function archiveAccount(ChartOfAccount $account, ?User $user = null): void
     {
         if ($account->is_system) {
             throw new DomainException(
@@ -108,9 +114,46 @@ final class ChartOfAccountService implements ServiceContract
         }
 
         DB::transaction(function () use ($account): void {
-            $account->update(['is_active' => false]);
-            $account->delete(); // soft-delete
+            $account->delete(); // soft-delete via SoftDeletes trait
         });
+    }
+
+    // ── Restore ────────────────────────────────────────────────────────────────
+
+    public function restoreAccount(int $id, User $user): ChartOfAccount
+    {
+        /** @var ChartOfAccount */
+        return $this->restoreRecord(ChartOfAccount::class, $id, $user);
+    }
+
+    // ── Permanent Delete ───────────────────────────────────────────────────────
+
+    public function forceDeleteAccount(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(ChartOfAccount::class, $id, $user);
+    }
+
+    // ── List Archived ──────────────────────────────────────────────────────────
+
+    public function listArchived(int $perPage = 20, ?string $search = null): LengthAwarePaginator
+    {
+        return $this->listArchivedRecords(ChartOfAccount::class, $perPage, $search, ['code', 'name']);
+    }
+
+    // ── Deactivate / Activate (status only, no archive) ────────────────────────
+
+    public function deactivateAccount(ChartOfAccount $account): ChartOfAccount
+    {
+        $account->update(['is_active' => false]);
+
+        return $account->fresh();
+    }
+
+    public function activateAccount(ChartOfAccount $account): ChartOfAccount
+    {
+        $account->update(['is_active' => true]);
+
+        return $account->fresh();
     }
 
     // ── Reads ────────────────────────────────────────────────────────────────

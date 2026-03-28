@@ -5,7 +5,12 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useDeliveryReceipts } from '@/hooks/useDelivery';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/authStore'
+import { useQuery } from '@tanstack/react-query'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
+import api from '@/lib/api';
 import { ExportButton } from '@/components/ui/ExportButton';
 import type { DrDirection, DrStatus } from '@/types/delivery';
 
@@ -23,7 +28,7 @@ const DIRECTION_COLORS: Record<DrDirection, string> = {
 export default function DeliveryReceiptListPage() {
   const [direction, setDirection] = useState('');
   const [status, setStatus] = useState('');
-  const [withArchived, setWithArchived] = useState(false);
+  const [isArchiveView, setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -32,10 +37,16 @@ export default function DeliveryReceiptListPage() {
   const params: Record<string, string | number | boolean> = { page, per_page: 20 };
   if (direction) params.direction = direction;
   if (status) params.status = status;
-  if (withArchived) params.with_archived = true;
+  // Archive view handled by separate query
   if (debouncedSearch) params.search = debouncedSearch;
 
   const { data, isLoading } = useDeliveryReceipts(Object.keys(params).length ? params : undefined);
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['delivery-receipts', 'archived'],
+    queryFn: () => api.get('/delivery/receipts-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);
@@ -90,10 +101,7 @@ export default function DeliveryReceiptListPage() {
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       <div className="overflow-hidden rounded border border-neutral-200 bg-white">

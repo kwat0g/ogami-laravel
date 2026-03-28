@@ -8,6 +8,11 @@ import {
   useBatchRejectPurchaseRequests,
 } from '@/hooks/usePurchaseRequests'
 import { useAuthStore } from '@/stores/authStore'
+import { useQuery } from '@tanstack/react-query'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
+import api from '@/lib/api'
 import { toast } from 'sonner'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -188,7 +193,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
     per_page: 25,
     status: (searchParams.get('status') as PurchaseRequestFilters['status']) ?? undefined,
   })
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [prToConfirm, setPrToConfirm] = useState<PurchaseRequest | null>(null)
 
   // Batch selection state
@@ -198,7 +203,13 @@ export default function PurchaseRequestListPage(): React.ReactElement {
   const [batchReviewComments, setBatchReviewComments] = useState('')
   const [batchReviewOpen, setBatchReviewOpen] = useState(false)
 
-  const { data, isLoading, isError } = usePurchaseRequests({ ...filters, with_archived: withArchived || undefined })
+  const { data, isLoading, isError } = usePurchaseRequests({ ...filters, with_archived: undefined })
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['purchase-requests', 'archived'],
+    queryFn: () => api.get('/procurement/purchase-requests-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
   const duplicateMutation = useDuplicatePurchaseRequest()
   const batchReview = useBatchReviewPurchaseRequests()
   const batchReject = useBatchRejectPurchaseRequests()
@@ -206,7 +217,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
   // Clear selection on filter change
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [filters, withArchived])
+  }, [filters, isArchiveView])
 
   const rows = data?.data ?? []
   const pendingRows = rows.filter((r) => r.status === 'pending_review')
@@ -369,15 +380,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
           ))}
         </select>
 
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={withArchived}
-            onChange={(e) => setWithArchived(e.target.checked)}
-            className="rounded border-neutral-300"
-          />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {/* Batch Actions Bar */}

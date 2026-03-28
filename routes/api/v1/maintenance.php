@@ -15,6 +15,11 @@ Route::middleware(['auth:sanctum', 'module_access:maintenance'])->group(function
     Route::get('/equipment/{equipment}', [MaintenanceController::class, 'showEquipment']);
     Route::put('/equipment/{equipment}', [MaintenanceController::class, 'updateEquipment']);
     Route::post('/equipment/{equipment}/pm-schedules', [MaintenanceController::class, 'storePmSchedule']);
+    Route::get('/equipment-archived', [MaintenanceController::class, 'archivedEquipment']);
+    Route::post('/equipment/{equipment}/restore', [MaintenanceController::class, 'restoreEquipment'])
+        ->middleware('throttle:api-action');
+    Route::delete('/equipment/{equipment}/force', [MaintenanceController::class, 'forceDeleteEquipment'])
+        ->middleware('throttle:api-action');
 
     // Work Orders
     Route::get('/work-orders', [MaintenanceController::class, 'indexWorkOrders']);

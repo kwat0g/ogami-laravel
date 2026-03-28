@@ -3,6 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus } from 'lucide-react'
 import { useInspections } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { useQuery } from '@tanstack/react-query'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
+import api from '@/lib/api'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
@@ -30,7 +35,7 @@ export default function InspectionListPage(): React.ReactElement {
   const [stage, setStage]   = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -44,8 +49,14 @@ export default function InspectionListPage(): React.ReactElement {
     status: status || undefined,
     page,
     per_page: 20,
-    with_archived: withArchived || undefined,
+    with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['qc-inspections', 'archived'],
+    queryFn: () => api.get('/qc/inspections-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('qc.inspections.create')
@@ -119,10 +130,7 @@ export default function InspectionListPage(): React.ReactElement {
             <option key={s} value={s}>{s.replace('_', ' ')}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300 text-neutral-600" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {isLoading && <SkeletonLoader rows={8} />}

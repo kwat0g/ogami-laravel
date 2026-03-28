@@ -14,6 +14,8 @@ import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Asset Categories Modal
@@ -23,6 +25,7 @@ function AssetCategoriesModal({ onClose }: { onClose: () => void }) {
   const create = useCreateFixedAssetCategory()
   const canManage = useAuthStore(s => s.hasPermission('fixed_assets.manage'))
   const [showForm, setShowForm] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [form, setForm] = useState({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' as const })
 
   const list: FixedAssetCategory[] = categories ?? []

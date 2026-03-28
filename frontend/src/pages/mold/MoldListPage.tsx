@@ -1,11 +1,20 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Settings } from 'lucide-react';
+import { Plus, Settings, RotateCcw, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useMolds } from '@/hooks/useMold';
 import { useAuthStore } from '@/stores/authStore';
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton';
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveRowActions from '@/components/ui/ArchiveRowActions';
+import ArchiveEmptyState from '@/components/ui/ArchiveEmptyState';
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog';
+import { firstErrorMessage } from '@/lib/errorHandler';
+import api from '@/lib/api';
 import type { MoldStatus } from '@/types/mold';
 
 const STATUS_COLORS: Record<MoldStatus, string> = {
@@ -16,19 +25,28 @@ const STATUS_COLORS: Record<MoldStatus, string> = {
 
 export default function MoldListPage() {
   const [status, setStatus] = useState('');
-  const [withArchived, setWithArchived] = useState(false);
+  const [isArchiveView, setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useMolds({
+  const { data, isLoading, refetch } = useMolds({
     ...(status ? { status } : {}),
-    ...(withArchived ? { with_archived: true } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
     page,
     per_page: 20,
   });
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['molds', 'archived', debouncedSearch],
+    queryFn: () => api.get('/mold/molds-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
+    enabled: isArchiveView,
+  });
+
+  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
+  const currentLoading = isArchiveView ? archivedLoading : isLoading;
   const canManage = useAuthStore(s => s.hasPermission('mold.manage'));
+  const isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'));
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);
@@ -65,11 +83,10 @@ export default function MoldListPage() {
           <option value="under_maintenance">Under Maintenance</option>
           <option value="retired">Retired</option>
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300 text-neutral-600" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
+
+      {isArchiveView && <ArchiveViewBanner />}
 
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
         <table className="w-full text-sm">

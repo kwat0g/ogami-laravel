@@ -207,4 +207,20 @@ final class LoanPolicy
         // SoD: VP cannot be the officer who reviewed it
         return (int) $user->id !== (int) $loan->officer_reviewed_by;
     }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
 }

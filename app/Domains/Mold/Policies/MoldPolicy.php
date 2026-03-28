@@ -35,4 +35,20 @@ final class MoldPolicy
     {
         return $user->can('mold.log_shots');
     }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
 }

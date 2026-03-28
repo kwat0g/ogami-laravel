@@ -58,6 +58,41 @@ final class MaintenanceController extends Controller
         return new EquipmentResource($this->service->updateEquipment($equipment, $request->validated()));
     }
 
+    /** List archived equipment. */
+    public function archivedEquipment(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', Equipment::class);
+
+        $equipmentService = app(\App\Domains\Maintenance\Services\EquipmentService::class);
+
+        return EquipmentResource::collection(
+            $equipmentService->listArchived(
+                perPage: $request->integer('per_page', 20),
+                search: $request->input('search'),
+            )
+        );
+    }
+
+    /** Restore an archived equipment record. */
+    public function restoreEquipment(Request $request, int $equipment): EquipmentResource
+    {
+        $equipmentService = app(\App\Domains\Maintenance\Services\EquipmentService::class);
+        $restored = $equipmentService->restore($equipment, $request->user());
+
+        return new EquipmentResource($restored);
+    }
+
+    /** Permanently delete equipment — superadmin only. */
+    public function forceDeleteEquipment(Request $request, int $equipment): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $equipmentService = app(\App\Domains\Maintenance\Services\EquipmentService::class);
+        $equipmentService->forceDelete($equipment, $request->user());
+
+        return response()->json(['message' => 'Equipment permanently deleted.']);
+    }
+
     // ── Work Orders ──────────────────────────────────────────────────────────
 
     public function indexWorkOrders(Request $request): AnonymousResourceCollection

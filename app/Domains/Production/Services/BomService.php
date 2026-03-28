@@ -6,12 +6,16 @@ namespace App\Domains\Production\Services;
 
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\BomComponent;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
+use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final class BomService implements ServiceContract
 {
+    use HasArchiveOperations;
     /**
      * @param  array<string,mixed>  $filters
      */
@@ -113,12 +117,43 @@ final class BomService implements ServiceContract
         return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
     }
 
-    public function archive(BillOfMaterials $bom): void
+    /**
+     * Soft-delete a BOM (move to archive).
+     * Does NOT change is_active — archive != disable (Rule 2).
+     */
+    public function archive(BillOfMaterials $bom, ?User $user = null): void
     {
         \DB::transaction(function () use ($bom): void {
-            $bom->update(['is_active' => false]);
-            $bom->delete();
+            $bom->delete(); // soft-delete via SoftDeletes trait
         });
+    }
+
+    /** Deactivate a BOM (status only, stays in active list). */
+    public function deactivate(BillOfMaterials $bom): BillOfMaterials
+    {
+        $bom->update(['is_active' => false]);
+
+        return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+    }
+
+    public function restore(int $id, User $user): BillOfMaterials
+    {
+        /** @var BillOfMaterials */
+        return $this->restoreRecord(BillOfMaterials::class, $id, $user);
+    }
+
+    public function forceDelete(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(BillOfMaterials::class, $id, $user);
+    }
+
+    public function listArchived(int $perPage = 20, ?string $search = null): LengthAwarePaginator
+    {
+        $query = BillOfMaterials::onlyTrashed()
+            ->with('productItem', 'components.componentItem')
+            ->latest('deleted_at');
+
+        return $query->paginate($perPage);
     }
 
     /** @param array<string,mixed> $filters */

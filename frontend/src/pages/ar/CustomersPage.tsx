@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Plus, Archive, CheckCircle, CreditCard, RefreshCw } from 'lucide-react'
+import { Plus, Archive, CheckCircle, CreditCard, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import SearchInput from '@/components/ui/SearchInput'
 import {
   useCustomers,
@@ -12,11 +13,15 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveEmptyState from '@/components/ui/ArchiveEmptyState'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useActionConfirmation } from '@/hooks/useActionConfirmation'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
 import { ExportButton } from '@/components/ui/ExportButton'
+import api from '@/lib/api'
 import type { Customer, CreateCustomerPayload } from '@/types/ar'
 
 // ---------------------------------------------------------------------------
@@ -362,9 +367,11 @@ function CustomerFormModal({ initial, onClose, onSuccess }: CustomerFormModalPro
 export default function CustomersPage() {
   const canManage = useAuthStore(s => s.hasPermission('customers.manage'))
   const canArchive = useAuthStore(s => s.hasPermission('customers.archive'))
+  const isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [modalCustomer, setModalCustomer] = useState<Customer | null | undefined>(undefined)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)
@@ -372,7 +379,14 @@ export default function CustomersPage() {
 
   const { data, isLoading, refetch } = useCustomers({ search: debouncedSearch || undefined, per_page: 50 })
 
-  const customers = data?.data ?? []
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['customers', 'archived', debouncedSearch],
+    queryFn: () => api.get('/customers-archived', { params: { search: debouncedSearch || undefined, per_page: 50 } }),
+    enabled: isArchiveView,
+  })
+
+  const customers = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
+  const currentLoading = isArchiveView ? archivedLoading : isLoading
 
   const handleRefresh = async () => {
     try {
@@ -403,10 +417,16 @@ export default function CustomersPage() {
         }
       />
 
+      {/* Archive Toggle + Banner */}
+      <div className="flex items-center justify-between">
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
+      </div>
+      {isArchiveView && <ArchiveViewBanner />}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-neutral-500">Manage customer accounts and credit limits</p>
+          <p className="text-sm text-neutral-500">{isArchiveView ? 'Archived customer records' : 'Manage customer accounts and credit limits'}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -416,16 +436,18 @@ export default function CustomersPage() {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <DepartmentGuard module="customers">
-            {canManage && (
-              <button
-                onClick={() => setModalCustomer(null)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-              >
-                <Plus className="w-4 h-4" /> New Customer
-              </button>
-            )}
-          </DepartmentGuard>
+          {!isArchiveView && (
+            <DepartmentGuard module="customers">
+              {canManage && (
+                <button
+                  onClick={() => setModalCustomer(null)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+                >
+                  <Plus className="w-4 h-4" /> New Customer
+                </button>
+              )}
+            </DepartmentGuard>
+          )}
         </div>
       </div>
 
@@ -439,14 +461,19 @@ export default function CustomersPage() {
       />
 
       {/* Table */}
-      {isLoading ? (
+      {currentLoading ? (
         <SkeletonLoader rows={6} />
+      ) : customers.length === 0 ? (
+        <ArchiveEmptyState isArchiveView={isArchiveView} recordLabel="customers" />
       ) : (
         <div className="overflow-x-auto rounded border border-neutral-200">
           <table className="min-w-full divide-y divide-neutral-100 text-sm">
             <thead className="bg-neutral-50">
               <tr>
-                {['Name', 'TIN', 'Contact', 'Credit Usage', 'Status', ''].map((h) => (
+                {(isArchiveView
+                  ? ['Name', 'TIN', 'Contact', 'Archived On', '']
+                  : ['Name', 'TIN', 'Contact', 'Credit Usage', 'Status', '']
+                ).map((h) => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500">
                     {h}
                   </th>
@@ -454,44 +481,92 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-100">
-              {customers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-neutral-400">
-                    No customers found.
+              {customers.map((c: Customer & { deleted_at?: string }) => (
+                <tr key={c.id} className={`even:bg-neutral-100 hover:bg-neutral-50 transition-colors ${isArchiveView ? 'text-neutral-400' : ''}`}>
+                  <td className="px-3 py-2 font-medium text-neutral-900">{c.name}</td>
+                  <td className="px-3 py-2 text-neutral-500">{c.tin ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-500">
+                    {c.contact_person ?? c.email ?? '—'}
                   </td>
-                </tr>
-              ) : (
-                customers.map((c) => (
-                  <tr key={c.id} className="even:bg-neutral-100 hover:bg-neutral-50 transition-colors">
-                    <td className="px-3 py-2 font-medium text-neutral-900">{c.name}</td>
-                    <td className="px-3 py-2 text-neutral-500">{c.tin ?? '—'}</td>
-                    <td className="px-3 py-2 text-neutral-500">
-                      {c.contact_person ?? c.email ?? '—'}
-                    </td>
-                    <td className="px-3 py-2">
-                      <CreditMeter customer={c} />
-                    </td>
-                    <td className="px-3 py-2">
-                      <StatusBadge active={c.is_active} />
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-3">
-                        {canManage && (
-                          <button
-                            onClick={() => setModalCustomer(c)}
-                            className="text-xs text-neutral-600 hover:underline flex items-center gap-1"
+                  {isArchiveView ? (
+                    <>
+                      <td className="px-3 py-2 text-xs text-neutral-500">
+                        {c.deleted_at ? new Date(c.deleted_at).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-3">
+                          <ConfirmDestructiveDialog
+                            title="Restore Customer?"
+                            description={`Restore "${c.name}" to the active customer list?`}
+                            confirmWord="RESTORE"
+                            confirmLabel="Restore"
+                            variant="warning"
+                            onConfirm={async () => {
+                              try {
+                                await api.post(`/customers/${c.id}/restore`)
+                                toast.success(`Customer "${c.name}" restored.`)
+                                refetch()
+                                refetchArchived()
+                              } catch (err) {
+                                toast.error(firstErrorMessage(err))
+                              }
+                            }}
                           >
-                            <CreditCard className="w-3 h-3" /> Edit
-                          </button>
-                        )}
-                        {canArchive && c.is_active && (
-                          <ArchiveCustomerButton customer={c} onSuccess={() => refetch()} />
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                            <button className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                              <RotateCcw className="w-3 h-3" /> Restore
+                            </button>
+                          </ConfirmDestructiveDialog>
+                          {isSuperAdmin && (
+                            <ConfirmDestructiveDialog
+                              title="Permanently Delete Customer?"
+                              description='This action cannot be undone. Type "DELETE" to confirm.'
+                              confirmWord="DELETE"
+                              confirmLabel="Permanently Delete"
+                              onConfirm={async () => {
+                                try {
+                                  await api.delete(`/customers/${c.id}/force`)
+                                  toast.success('Customer permanently deleted.')
+                                  refetchArchived()
+                                } catch (err) {
+                                  toast.error(firstErrorMessage(err))
+                                }
+                              }}
+                            >
+                              <button className="text-xs text-red-600 hover:underline flex items-center gap-1">
+                                <Trash2 className="w-3 h-3" /> Delete Forever
+                              </button>
+                            </ConfirmDestructiveDialog>
+                          )}
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-3 py-2">
+                        <CreditMeter customer={c} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <StatusBadge active={c.is_active} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-3">
+                          {canManage && (
+                            <button
+                              onClick={() => setModalCustomer(c)}
+                              className="text-xs text-neutral-600 hover:underline flex items-center gap-1"
+                            >
+                              <CreditCard className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                          {canArchive && c.is_active && (
+                            <ArchiveCustomerButton customer={c} onSuccess={() => { refetch(); refetchArchived() }} />
+                          )}
+                        </div>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -1,11 +1,16 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Wrench } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/ui/PageHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useEquipment } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton';
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveRowActions from '@/components/ui/ArchiveRowActions';
+import api from '@/lib/api';
 import type { EquipmentStatus } from '@/types/maintenance';
 
 const STATUS_COLORS: Record<EquipmentStatus, string> = {
@@ -16,18 +21,26 @@ const STATUS_COLORS: Record<EquipmentStatus, string> = {
 
 export default function EquipmentListPage() {
   const [status, setStatus] = useState('');
-  const [withArchived, setWithArchived] = useState(false);
+  const [isArchiveView, setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useEquipment({
     ...(status ? { status } : {}),
-    ...(withArchived ? { with_archived: true } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
     page,
     per_page: 20,
   });
+
+  const { data: archivedData, isLoading: archivedLoading } = useQuery({
+    queryKey: ['equipment', 'archived', debouncedSearch],
+    queryFn: () => api.get('/maintenance/equipment-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
+    enabled: isArchiveView,
+  });
+
+  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
+  const currentLoading = isArchiveView ? archivedLoading : isLoading;
   const canManage = useAuthStore(s => s.hasPermission('maintenance.manage'));
 
   const handleSearch = useCallback((val: string) => {
@@ -69,11 +82,10 @@ export default function EquipmentListPage() {
           <option value="under_maintenance">Under Maintenance</option>
           <option value="decommissioned">Decommissioned</option>
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300 text-neutral-600" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
+
+      {isArchiveView && <ArchiveViewBanner />}
 
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
         <table className="w-full text-sm">

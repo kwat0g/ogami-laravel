@@ -80,12 +80,43 @@ final class ChartOfAccountController extends Controller
      * COA-003: system accounts blocked in service.
      * COA-005: non-zero balance blocked in service.
      */
-    public function destroy(ChartOfAccount $account): JsonResponse
+    public function destroy(Request $request, ChartOfAccount $account): JsonResponse
     {
         $this->authorize('delete', $account);
 
-        $this->service->archiveAccount($account);
+        $this->service->archiveAccount($account, $request->user());
 
         return response()->json(['message' => "Account '{$account->code}' has been archived."]);
+    }
+
+    /** List archived (soft-deleted) accounts. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', ChartOfAccount::class);
+
+        $records = $this->service->listArchived(
+            perPage: $request->integer('per_page', 20),
+            search: $request->input('search'),
+        );
+
+        return ChartOfAccountResource::collection($records);
+    }
+
+    /** Restore a soft-deleted account from the archive. */
+    public function restore(Request $request, int $id): ChartOfAccountResource
+    {
+        $account = $this->service->restoreAccount($id, $request->user());
+
+        return new ChartOfAccountResource($account->load('children', 'parent'));
+    }
+
+    /** Permanently delete an account — superadmin only. */
+    public function forceDelete(Request $request, int $id): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDeleteAccount($id, $request->user());
+
+        return response()->json(['message' => 'Account permanently deleted.']);
     }
 }

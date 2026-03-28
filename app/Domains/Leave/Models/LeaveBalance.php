@@ -6,6 +6,7 @@ namespace App\Domains\Leave\Models;
 
 use App\Domains\HR\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Auditable as AuditableTrait;
@@ -37,7 +38,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class LeaveBalance extends Model implements Auditable
 {
-    use AuditableTrait;
+    use AuditableTrait, SoftDeletes;
 
     protected $table = 'leave_balances';
 

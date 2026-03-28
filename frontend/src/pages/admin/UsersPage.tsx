@@ -31,6 +31,8 @@ import { Building2, User, Settings, CheckCircle, ChevronLeft, ChevronRight, Load
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ── Role badge colors ─────────────────────────────────────────────────────────
 const roleBadgeClass: Record<string, string> = {
@@ -151,6 +153,7 @@ export default function UsersPage() {
 
   // Separate local state for search input to prevent focus loss
   const [searchInput, setSearchInput] = useState('')
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [filters, setFilters] = useState({ search: '', role: '', page: 1, per_page: 15 })
   
   // Debounce search to prevent excessive API calls

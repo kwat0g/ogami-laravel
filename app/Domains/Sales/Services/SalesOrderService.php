@@ -10,11 +10,14 @@ use App\Domains\Sales\Models\SalesOrderItem;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 final class SalesOrderService implements ServiceContract
 {
+    use HasArchiveOperations;
     /** @param array<string,mixed> $filters */
     public function paginate(array $filters = []): LengthAwarePaginator
     {
@@ -35,6 +38,34 @@ final class SalesOrderService implements ServiceContract
         }
 
         return $query->paginate((int) ($filters['per_page'] ?? 20));
+    }
+
+    // ── Archive / Restore / Force Delete ────────────────────────────────────
+
+    public function archive(SalesOrder $order, User $user): void
+    {
+        $this->archiveRecord($order, $user);
+    }
+
+    public function restore(int $id, User $user): SalesOrder
+    {
+        /** @var SalesOrder */
+        return $this->restoreRecord(SalesOrder::class, $id, $user);
+    }
+
+    public function forceDelete(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(SalesOrder::class, $id, $user);
+    }
+
+    public function listArchived(int $perPage = 20, ?string $search = null): LengthAwarePaginator
+    {
+        return $this->listArchivedRecords(SalesOrder::class, $perPage, $search, ['order_number']);
+    }
+
+    protected function dependentRelationships(Model $model): array
+    {
+        return ['items' => 'Order Items'];
     }
 
     /** @param array<string,mixed> $data */

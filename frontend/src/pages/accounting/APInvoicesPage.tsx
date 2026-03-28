@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import type { VendorInvoiceStatus } from '@/types/ap'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { PurchaseOrder } from '@/types/procurement'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -182,6 +184,7 @@ export default function APInvoicesPage() {
   const canApprove = useAuthStore(s => s.hasPermission('vendor_invoices.approve'))
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')

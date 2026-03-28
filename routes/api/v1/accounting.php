@@ -44,6 +44,17 @@ Route::middleware(['auth:sanctum', 'module_access:accounting'])->group(function 
     Route::delete('accounts/{account}', [ChartOfAccountController::class, 'destroy'])
         ->name('accounts.destroy');
 
+    Route::get('accounts-archived', [ChartOfAccountController::class, 'archived'])
+        ->name('accounts.archived');
+
+    Route::post('accounts/{account}/restore', [ChartOfAccountController::class, 'restore'])
+        ->middleware('throttle:api-action')
+        ->name('accounts.restore');
+
+    Route::delete('accounts/{account}/force', [ChartOfAccountController::class, 'forceDelete'])
+        ->middleware('throttle:api-action')
+        ->name('accounts.force-delete');
+
     // ── Fiscal Periods ───────────────────────────────────────────────────────
     Route::get('fiscal-periods', [FiscalPeriodController::class, 'index'])
         ->name('fiscal-periods.index');
@@ -129,6 +140,13 @@ Route::middleware(['auth:sanctum', 'module_access:vendors'])->group(function () 
     Route::get('vendors/{vendor}/items', [VendorController::class, 'items'])->name('vendors.items');
     Route::put('vendors/{vendor}', [VendorController::class, 'update'])->name('vendors.update');
     Route::delete('vendors/{vendor}', [VendorController::class, 'destroy'])->name('vendors.destroy');
+    Route::get('vendors-archived', [VendorController::class, 'archived'])->name('vendors.archived');
+    Route::post('vendors/{vendor}/restore', [VendorController::class, 'restore'])
+        ->middleware('throttle:api-action')
+        ->name('vendors.restore');
+    Route::delete('vendors/{vendor}/force', [VendorController::class, 'forceDelete'])
+        ->middleware('throttle:api-action')
+        ->name('vendors.force-delete');
     Route::patch('vendors/{vendor}/accredit', [VendorController::class, 'accredit'])
         ->middleware('throttle:api-action')
         ->name('vendors.accredit');

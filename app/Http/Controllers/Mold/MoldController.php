@@ -69,4 +69,35 @@ final class MoldController extends Controller
 
         return response()->json(['data' => $mold]);
     }
+
+    /** List archived (soft-deleted) molds. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', MoldMaster::class);
+
+        return MoldMasterResource::collection(
+            $this->service->listArchived(
+                perPage: $request->integer('per_page', 20),
+                search: $request->input('search'),
+            )
+        );
+    }
+
+    /** Restore a soft-deleted mold from the archive. */
+    public function restore(Request $request, int $moldMaster): MoldMasterResource
+    {
+        $mold = $this->service->restoreMold($moldMaster, $request->user());
+
+        return new MoldMasterResource($mold);
+    }
+
+    /** Permanently delete a mold — superadmin only. */
+    public function forceDelete(Request $request, int $moldMaster): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDelete($moldMaster, $request->user());
+
+        return response()->json(['message' => 'Mold permanently deleted.']);
+    }
 }

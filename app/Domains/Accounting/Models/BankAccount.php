@@ -31,7 +31,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class BankAccount extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'bank_accounts';
 

@@ -173,4 +173,20 @@ final class EmployeePolicy
     {
         return $employee->user_id !== null && (int) $employee->user_id === (int) $user->id;
     }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
 }

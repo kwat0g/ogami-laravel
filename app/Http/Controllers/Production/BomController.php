@@ -57,13 +57,44 @@ final class BomController extends Controller
         return new BomResource($this->service->activate($bom));
     }
 
-    public function destroy(BillOfMaterials $bom): JsonResponse
+    public function destroy(Request $request, BillOfMaterials $bom): JsonResponse
     {
         $this->authorize('update', $bom);
 
-        $this->service->archive($bom);
+        $this->service->archive($bom, $request->user());
 
         return response()->json(['message' => 'BOM archived.']);
+    }
+
+    /** List archived (soft-deleted) BOMs. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', BillOfMaterials::class);
+
+        return BomResource::collection(
+            $this->service->listArchived(
+                perPage: $request->integer('per_page', 20),
+                search: $request->input('search'),
+            )
+        );
+    }
+
+    /** Restore a soft-deleted BOM from the archive. */
+    public function restore(Request $request, int $bom): BomResource
+    {
+        $restored = $this->service->restore($bom, $request->user());
+
+        return new BomResource($restored->load('productItem', 'components.componentItem'));
+    }
+
+    /** Permanently delete a BOM — superadmin only. */
+    public function forceDelete(Request $request, int $bom): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDelete($bom, $request->user());
+
+        return response()->json(['message' => 'BOM permanently deleted.']);
     }
 
     /**

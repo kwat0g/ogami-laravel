@@ -27,7 +27,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 class CustomerAdvancePayment extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $fillable = [
         'customer_id',

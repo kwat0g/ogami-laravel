@@ -39,6 +39,17 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
     Route::delete('customers/{customer:ulid}', [CustomerController::class, 'destroy'])
         ->name('customers.destroy');
 
+    Route::get('customers-archived', [CustomerController::class, 'archived'])
+        ->name('customers.archived');
+
+    Route::post('customers/{customer}/restore', [CustomerController::class, 'restore'])
+        ->middleware('throttle:api-action')
+        ->name('customers.restore');
+
+    Route::delete('customers/{customer}/force', [CustomerController::class, 'forceDelete'])
+        ->middleware('throttle:api-action')
+        ->name('customers.force-delete');
+
     // Client Portal Account provisioning (admin only)
     Route::post('customers/{customer:ulid}/provision-account', [CustomerController::class, 'provisionPortalAccount'])
         ->middleware(['permission:system.manage_users', 'throttle:api-action'])

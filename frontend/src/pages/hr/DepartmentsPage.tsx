@@ -14,6 +14,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { Department } from '@/types/hr'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 interface DeptFormState {
   id?: number

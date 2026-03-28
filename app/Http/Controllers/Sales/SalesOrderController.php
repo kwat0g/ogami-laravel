@@ -60,4 +60,45 @@ final class SalesOrderController extends Controller
 
         return new SalesOrderResource($this->service->cancel($salesOrder));
     }
+
+    /** Soft-delete (archive) a sales order. */
+    public function destroy(Request $request, SalesOrder $salesOrder): JsonResponse
+    {
+        $this->authorize('delete', $salesOrder);
+
+        $this->service->archive($salesOrder, $request->user());
+
+        return response()->json(['message' => 'Sales order archived.']);
+    }
+
+    /** List archived sales orders. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', SalesOrder::class);
+
+        return SalesOrderResource::collection(
+            $this->service->listArchived(
+                perPage: $request->integer('per_page', 20),
+                search: $request->input('search'),
+            )
+        );
+    }
+
+    /** Restore a soft-deleted sales order. */
+    public function restore(Request $request, int $salesOrder): SalesOrderResource
+    {
+        $order = $this->service->restore($salesOrder, $request->user());
+
+        return new SalesOrderResource($order);
+    }
+
+    /** Permanently delete — superadmin only. */
+    public function forceDelete(Request $request, int $salesOrder): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDelete($salesOrder, $request->user());
+
+        return response()->json(['message' => 'Sales order permanently deleted.']);
+    }
 }

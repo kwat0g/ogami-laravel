@@ -132,4 +132,32 @@ final class ProductionOrderController extends Controller
             'data' => $defaults,
         ]);
     }
+
+    /** List archived (soft-deleted) production orders. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', ProductionOrder::class);
+
+        return ProductionOrderResource::collection(
+            $this->service->listArchived($request->only(['search', 'per_page']))
+        );
+    }
+
+    /** Restore a soft-deleted production order from the archive. */
+    public function restore(Request $request, int $productionOrder): ProductionOrderResource
+    {
+        $order = $this->service->restoreOrder($productionOrder, $request->user());
+
+        return new ProductionOrderResource($order->load('productItem', 'bom'));
+    }
+
+    /** Permanently delete a production order — superadmin only. */
+    public function forceDelete(Request $request, int $productionOrder): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDeleteOrder($productionOrder, $request->user());
+
+        return response()->json(['message' => 'Production order permanently deleted.']);
+    }
 }

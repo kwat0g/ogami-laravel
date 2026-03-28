@@ -53,4 +53,20 @@ final class ChartOfAccountPolicy
         return $user->hasPermissionTo('chart_of_accounts.manage')
             && ! $account->is_system_account;
     }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(\App\Models\User $user, $model): bool
+    {
+        return $user->hasRole('super_admin');
+    }
 }

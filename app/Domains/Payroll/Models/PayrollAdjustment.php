@@ -33,7 +33,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class PayrollAdjustment extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'payroll_adjustments';
 

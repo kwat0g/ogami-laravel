@@ -26,13 +26,19 @@ export default function PurchaseOrderListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | ''>('')
   const [page, setPage] = useState(1)
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
 
   const { data, isLoading, isError } = usePurchaseOrders({
     ...(statusFilter ? { status: statusFilter } : {}),
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['purchase-orders', 'archived'],
+    queryFn: () => api.get('/procurement/purchase-orders-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
     page,
-    with_archived: withArchived || undefined,
+    with_archived: undefined,
   })
 
   return (
@@ -78,10 +84,7 @@ export default function PurchaseOrderListPage(): React.ReactElement {
             <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
       {/* Table */}

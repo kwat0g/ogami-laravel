@@ -9,12 +9,16 @@ use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class VendorService implements ServiceContract
 {
+    use HasArchiveOperations;
     // ── Create ────────────────────────────────────────────────────────────────
 
     public function create(array $data, int $userId): Vendor
@@ -57,10 +61,11 @@ final class VendorService implements ServiceContract
     // ── Archive (soft-delete) ─────────────────────────────────────────────────
 
     /**
-     * Deactivate and soft-delete a vendor.
+     * Soft-delete a vendor (move to archive).
+     * Does NOT change is_active — archive != disable (Rule 2).
      * Blocked when the vendor has open (non-paid) invoices.
      */
-    public function archive(Vendor $vendor): void
+    public function archive(Vendor $vendor, User $user): void
     {
         $hasOpenInvoices = $vendor->invoices()
             ->whereNotIn('status', ['paid', 'deleted'])
@@ -74,10 +79,45 @@ final class VendorService implements ServiceContract
             );
         }
 
-        DB::transaction(function () use ($vendor) {
-            $vendor->update(['is_active' => false]);
-            $vendor->delete(); // soft-delete via SoftDeletes
-        });
+        $this->archiveRecord($vendor, $user);
+    }
+
+    // ── Restore ────────────────────────────────────────────────────────────────
+
+    public function restore(int $id, User $user): Vendor
+    {
+        /** @var Vendor */
+        return $this->restoreRecord(Vendor::class, $id, $user);
+    }
+
+    // ── Permanent Delete ───────────────────────────────────────────────────────
+
+    public function forceDelete(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(Vendor::class, $id, $user);
+    }
+
+    // ── List Archived ──────────────────────────────────────────────────────────
+
+    public function listArchived(int $perPage = 20, ?string $search = null): LengthAwarePaginator
+    {
+        return $this->listArchivedRecords(Vendor::class, $perPage, $search, ['name', 'tin', 'contact_person']);
+    }
+
+    // ── Deactivate / Activate (status only, no archive) ────────────────────────
+
+    public function deactivate(Vendor $vendor): Vendor
+    {
+        $vendor->update(['is_active' => false]);
+
+        return $vendor->fresh();
+    }
+
+    public function activate(Vendor $vendor): Vendor
+    {
+        $vendor->update(['is_active' => true]);
+
+        return $vendor->fresh();
     }
 
     // ── Accreditation ─────────────────────────────────────────────────────────

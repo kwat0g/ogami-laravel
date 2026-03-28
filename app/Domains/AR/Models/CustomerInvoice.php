@@ -45,7 +45,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 class CustomerInvoice extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $fillable = [
         'invoice_number',

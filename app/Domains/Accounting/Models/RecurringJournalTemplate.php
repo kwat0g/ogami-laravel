@@ -33,7 +33,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class RecurringJournalTemplate extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'recurring_journal_templates';
 

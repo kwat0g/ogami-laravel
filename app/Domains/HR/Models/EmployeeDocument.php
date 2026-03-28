@@ -29,7 +29,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class EmployeeDocument extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'employee_documents';
 

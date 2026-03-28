@@ -13,6 +13,11 @@ Route::middleware(['auth:sanctum', 'module_access:mold'])->group(function (): vo
     Route::post('/molds/{moldMaster}/shots', [MoldController::class, 'logShots'])
         ->middleware('throttle:60,1');
     Route::patch('/molds/{moldMaster}/retire', [MoldController::class, 'retire']);
+    Route::get('/molds-archived', [MoldController::class, 'archived']);
+    Route::post('/molds/{moldMaster}/restore', [MoldController::class, 'restore'])
+        ->middleware('throttle:api-action');
+    Route::delete('/molds/{moldMaster}/force', [MoldController::class, 'forceDelete'])
+        ->middleware('throttle:api-action');
 
     // ── Mold Analytics (Phase 2) — Cost Amortization & Lifecycle ──────────
     Route::get('/molds/{moldMaster}/cost-amortization', function (\App\Domains\Mold\Models\MoldMaster $moldMaster): \Illuminate\Http\JsonResponse {

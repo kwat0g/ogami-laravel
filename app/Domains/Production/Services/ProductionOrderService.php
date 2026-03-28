@@ -21,13 +21,16 @@ use App\Events\Production\ProductionOrderCompleted;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 final class ProductionOrderService implements ServiceContract
 {
+    use HasArchiveOperations;
     public function __construct(
         private readonly StockService $stockService,
         private readonly MaterialRequisitionService $mrqService,
@@ -61,6 +64,33 @@ final class ProductionOrderService implements ServiceContract
         }
 
         return $query->paginate((int) ($filters['per_page'] ?? 20));
+    }
+
+    // ── Archive / Restore / Force Delete ────────────────────────────────────
+
+    public function listArchived(array $filters = []): LengthAwarePaginator
+    {
+        $query = ProductionOrder::onlyTrashed()
+            ->with('productItem', 'bom', 'createdBy')
+            ->orderByDesc('deleted_at');
+
+        if ($filters['search'] ?? null) {
+            $v = $filters['search'];
+            $query->where(fn ($q) => $q->where('po_reference', 'ilike', "%{$v}%"));
+        }
+
+        return $query->paginate((int) ($filters['per_page'] ?? 20));
+    }
+
+    public function restoreOrder(int $id, User $user): ProductionOrder
+    {
+        /** @var ProductionOrder */
+        return $this->restoreRecord(ProductionOrder::class, $id, $user);
+    }
+
+    public function forceDeleteOrder(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(ProductionOrder::class, $id, $user);
     }
 
     /**
