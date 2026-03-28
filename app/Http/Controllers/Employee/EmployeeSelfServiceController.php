@@ -451,10 +451,7 @@ final class EmployeeSelfServiceController extends Controller
             'total_overtime_minutes' => $entries->sum('overtime_minutes'),
         ];
 
-        $settings = \DB::table('system_settings')
-            ->whereIn('key', ['company_name', 'company_address'])
-            ->pluck('value', 'key')
-            ->toArray();
+        $settings = app(\App\Services\SystemSettingService::class)->getCompanyInfo();
 
         $monthNames = [1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
             5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',

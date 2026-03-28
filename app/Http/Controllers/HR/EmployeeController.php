@@ -16,7 +16,6 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Thin HTTP adapter for Employee domain.
@@ -80,11 +79,8 @@ final class EmployeeController extends Controller
         $currentEmployee = $request->user()->employee;
         $excludeEmployeeIds = $currentEmployee instanceof Employee ? [$currentEmployee->id] : [];
 
-        $higherRoleUserIds = DB::table('model_has_roles')
-            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
-            ->whereIn('roles.name', ['admin', 'executive', 'manager', 'officer'])
-            ->where('model_has_roles.model_type', User::class)
-            ->pluck('model_has_roles.model_id')
+        $higherRoleUserIds = User::role(['admin', 'executive', 'manager', 'officer'])
+            ->pluck('id')
             ->all();
 
         if (! empty($higherRoleUserIds)) {
