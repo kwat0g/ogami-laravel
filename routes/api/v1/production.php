@@ -79,20 +79,13 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     })->name('reports.cost-analysis')->middleware('permission:production.orders.view');
 
     // ── Capacity Planning (Enhancement) ──────────────────────────────────
-    Route::get('capacity', function (Request $request): JsonResponse {
-        $service = app(\App\Domains\Production\Services\CapacityPlanningService::class);
-        return response()->json(['data' => $service->utilizationReport($request->input('from'), $request->input('to'))]);
-    });
-    Route::get('capacity/check/{productionOrder}', function (ProductionOrder $productionOrder): JsonResponse {
-        $service = app(\App\Domains\Production\Services\CapacityPlanningService::class);
-        return response()->json(['data' => $service->checkFeasibility($productionOrder)]);
-    });
+    // TODO: Phase 2 — CapacityPlanningService not yet implemented
+    // Route::get('capacity', function (Request $request): JsonResponse { ... });
+    // Route::get('capacity/check/{productionOrder}', function (...): JsonResponse { ... });
 
     // ── Time-Phased MRP (Enhancement) ───────────────────────────────────
-    Route::get('mrp/time-phased', function (): JsonResponse {
-        $service = app(\App\Domains\Production\Services\MrpService::class);
-        return response()->json(['data' => $service->timePhasedExplode()]);
-    });
+    // TODO: Phase 2 — MrpService not yet implemented
+    // Route::get('mrp/time-phased', function (): JsonResponse { ... });
 
     // ── BOM Where-Used (Enhancement) ────────────────────────────────────
     Route::get('bom/where-used/{itemId}', function (int $itemId): JsonResponse {

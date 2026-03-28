@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 use App\Domains\CRM\Models\ClientOrder;
 use App\Http\Controllers\CRM\ClientOrderController;
-use App\Http\Controllers\CRM\LeadController;
-use App\Http\Controllers\CRM\OpportunityController;
+// TODO: Phase 2 — Lead and Opportunity domain models/services not yet implemented
+// use App\Http\Controllers\CRM\LeadController;
+// use App\Http\Controllers\CRM\OpportunityController;
 use App\Http\Controllers\CRM\TicketController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -23,46 +24,32 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
 
     // ── Leads ────────────────────────────────────────────────────────────
-    Route::prefix('leads')->name('leads.')->group(function () {
-        Route::get('/', [LeadController::class, 'index'])->name('index');
-        Route::post('/', [LeadController::class, 'store'])->name('store');
-
-        // Lead Scoring routes MUST come before /{lead:ulid} to avoid
-        // "scores" being matched as a ULID parameter (causes 404).
-        Route::get('/scores', function (): \Illuminate\Http\JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            return response()->json(['data' => $service->scoreAll()]);
-        })->name('scores');
-        Route::post('/auto-qualify', function (): \Illuminate\Http\JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            return response()->json(['data' => ['qualified_count' => $service->autoQualify()]]);
-        })->name('auto-qualify')->middleware('throttle:api-action');
-
-        // Parameterized routes MUST come after literal routes
-        Route::get('/{lead:ulid}', [LeadController::class, 'show'])->name('show');
-        Route::put('/{lead:ulid}', [LeadController::class, 'update'])->name('update');
-        Route::post('/{lead:ulid}/convert', [LeadController::class, 'convert'])->name('convert')
-            ->middleware('throttle:api-action');
-        Route::patch('/{lead:ulid}/disqualify', [LeadController::class, 'disqualify'])->name('disqualify')
-            ->middleware('throttle:api-action');
-        Route::get('/{lead:ulid}/score', function (\App\Domains\CRM\Models\Lead $lead): \Illuminate\Http\JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            return response()->json(['data' => $service->scoreLead($lead)]);
-        })->name('score');
-    });
+    // TODO: Phase 2 — Lead model, LeadService, and LeadScoringService not yet implemented.
+    // Uncomment when app/Domains/CRM/Models/Lead.php and related services are created.
+    // Route::prefix('leads')->name('leads.')->group(function () {
+    //     Route::get('/', [LeadController::class, 'index'])->name('index');
+    //     Route::post('/', [LeadController::class, 'store'])->name('store');
+    //     Route::get('/scores', ...)->name('scores');
+    //     Route::post('/auto-qualify', ...)->name('auto-qualify');
+    //     Route::get('/{lead:ulid}', [LeadController::class, 'show'])->name('show');
+    //     Route::put('/{lead:ulid}', [LeadController::class, 'update'])->name('update');
+    //     Route::post('/{lead:ulid}/convert', [LeadController::class, 'convert'])->name('convert');
+    //     Route::patch('/{lead:ulid}/disqualify', [LeadController::class, 'disqualify'])->name('disqualify');
+    //     Route::get('/{lead:ulid}/score', ...)->name('score');
+    // });
 
     // ── Opportunities ────────────────────────────────────────────────────
-    Route::prefix('opportunities')->name('opportunities.')->group(function () {
-        Route::get('/', [OpportunityController::class, 'index'])->name('index');
-        Route::post('/', [OpportunityController::class, 'store'])->name('store');
-        Route::get('/pipeline', [OpportunityController::class, 'pipeline'])->name('pipeline');
-        Route::get('/{opportunity:ulid}', [OpportunityController::class, 'show'])->name('show');
-        Route::put('/{opportunity:ulid}', [OpportunityController::class, 'update'])->name('update');
-        Route::patch('/{opportunity:ulid}/close-won', [OpportunityController::class, 'closeWon'])->name('close-won')
-            ->middleware('throttle:api-action');
-        Route::patch('/{opportunity:ulid}/close-lost', [OpportunityController::class, 'closeLost'])->name('close-lost')
-            ->middleware('throttle:api-action');
-    });
+    // TODO: Phase 2 — Opportunity model and OpportunityService not yet implemented.
+    // Uncomment when app/Domains/CRM/Models/Opportunity.php and related services are created.
+    // Route::prefix('opportunities')->name('opportunities.')->group(function () {
+    //     Route::get('/', [OpportunityController::class, 'index'])->name('index');
+    //     Route::post('/', [OpportunityController::class, 'store'])->name('store');
+    //     Route::get('/pipeline', [OpportunityController::class, 'pipeline'])->name('pipeline');
+    //     Route::get('/{opportunity:ulid}', [OpportunityController::class, 'show'])->name('show');
+    //     Route::put('/{opportunity:ulid}', [OpportunityController::class, 'update'])->name('update');
+    //     Route::patch('/{opportunity:ulid}/close-won', [OpportunityController::class, 'closeWon'])->name('close-won');
+    //     Route::patch('/{opportunity:ulid}/close-lost', [OpportunityController::class, 'closeLost'])->name('close-lost');
+    // });
 
     // ── Tickets ──────────────────────────────────────────────────────────
     Route::prefix('tickets')->name('tickets.')->group(function () {

@@ -8,7 +8,10 @@ use App\Domains\Sales\Models\Quotation;
 use App\Domains\Sales\Services\QuotationService;
 use App\Domains\Sales\Services\SalesOrderService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Sales\StoreQuotationRequest;
+use App\Http\Resources\Sales\QuotationResource;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
 
 final class QuotationController extends Controller
@@ -18,58 +21,57 @@ final class QuotationController extends Controller
         private readonly SalesOrderService $salesOrderService,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Quotation::class);
+
         $page = $this->quotationService->paginate($request->only(['search', 'status', 'customer_id', 'per_page']));
 
-        return response()->json($page);
+        return QuotationResource::collection($page);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreQuotationRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'customer_id' => ['required', 'integer', 'exists:customers,id'],
-            'contact_id' => ['sometimes', 'integer', 'exists:crm_contacts,id'],
-            'opportunity_id' => ['sometimes', 'integer', 'exists:crm_opportunities,id'],
-            'validity_date' => ['required', 'date', 'after:today'],
-            'notes' => ['sometimes', 'string'],
-            'terms_and_conditions' => ['sometimes', 'string'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.item_id' => ['required', 'integer', 'exists:item_masters,id'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-            'items.*.unit_price_centavos' => ['required', 'integer', 'min:0'],
-            'items.*.remarks' => ['sometimes', 'string'],
-        ]);
+        // Authorization handled by StoreQuotationRequest::authorize()
+        $quotation = $this->quotationService->store($request->validated(), $request->user());
 
-        $quotation = $this->quotationService->store($data, $request->user());
-
-        return response()->json(['data' => $quotation], 201);
+        return (new QuotationResource($quotation))->response()->setStatusCode(201);
     }
 
-    public function show(Quotation $quotation): JsonResponse
+    public function show(Quotation $quotation): QuotationResource
     {
-        return response()->json([
-            'data' => $quotation->load(['customer', 'contact', 'opportunity', 'items.item', 'createdBy']),
-        ]);
+        $this->authorize('view', $quotation);
+
+        return new QuotationResource(
+            $quotation->load(['customer', 'contact', 'opportunity', 'items.item', 'createdBy'])
+        );
     }
 
-    public function send(Quotation $quotation): JsonResponse
+    public function send(Quotation $quotation): QuotationResource
     {
-        return response()->json(['data' => $this->quotationService->send($quotation)]);
+        $this->authorize('send', $quotation);
+
+        return new QuotationResource($this->quotationService->send($quotation));
     }
 
-    public function accept(Quotation $quotation): JsonResponse
+    public function accept(Quotation $quotation): QuotationResource
     {
-        return response()->json(['data' => $this->quotationService->accept($quotation)]);
+        $this->authorize('accept', $quotation);
+
+        return new QuotationResource($this->quotationService->accept($quotation));
     }
 
-    public function reject(Quotation $quotation): JsonResponse
+    public function reject(Quotation $quotation): QuotationResource
     {
-        return response()->json(['data' => $this->quotationService->reject($quotation)]);
+        $this->authorize('reject', $quotation);
+
+        return new QuotationResource($this->quotationService->reject($quotation));
     }
 
     public function convertToOrder(Request $request, Quotation $quotation): JsonResponse
     {
+        $this->authorize('convertToOrder', $quotation);
+
         $order = $this->salesOrderService->createFromQuotation($quotation, $request->user());
 
         return response()->json(['data' => $order], 201);
