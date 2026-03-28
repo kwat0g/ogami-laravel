@@ -223,6 +223,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
       { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
+      { label: 'Stock Adjustments', href: '/inventory/adjustments', permission: 'inventory.adjustments.create' },
       { label: 'Warehouse Transfers', href: '/inventory/transfers', permission: 'inventory.transfers.manage' },
     ],
   },
