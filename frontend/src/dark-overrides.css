@@ -128,3 +128,85 @@
 .dark .border-blue-100 { border-color: rgb(30 58 138 / 0.3) !important; }
 .dark .border-emerald-200 { border-color: rgb(6 78 59 / 0.5) !important; }
 .dark .border-purple-200 { border-color: rgb(88 28 135 / 0.5) !important; }
+
+/* ── Additional dark mode overrides (gray-* equivalents) ──────────────────── */
+
+/* Gray colors (some pages use gray-* instead of neutral-*) */
+.dark .bg-gray-50 { background-color: rgb(10 10 10) !important; }
+.dark .bg-gray-100 { background-color: rgb(23 23 23) !important; }
+.dark .bg-gray-200 { background-color: rgb(38 38 38) !important; }
+.dark .text-gray-900 { color: rgb(245 245 245) !important; }
+.dark .text-gray-800 { color: rgb(229 229 229) !important; }
+.dark .text-gray-700 { color: rgb(212 212 212) !important; }
+.dark .text-gray-600 { color: rgb(163 163 163) !important; }
+.dark .text-gray-500 { color: rgb(163 163 163) !important; }
+.dark .text-gray-400 { color: rgb(115 115 115) !important; }
+.dark .border-gray-200 { border-color: rgb(64 64 64) !important; }
+.dark .border-gray-100 { border-color: rgb(38 38 38) !important; }
+.dark .border-gray-300 { border-color: rgb(82 82 82) !important; }
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(64 64 64) !important; }
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(38 38 38) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: rgb(38 38 38) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: rgb(38 38 38) !important; }
+
+/* Indigo backgrounds (used in KPI cards and wizard steps) */
+.dark .bg-indigo-50 { background-color: rgb(49 46 129 / 0.35) !important; }
+.dark .bg-indigo-100 { background-color: rgb(49 46 129 / 0.3) !important; }
+.dark .text-indigo-700 { color: rgb(165 180 252) !important; }
+.dark .text-indigo-600 { color: rgb(129 140 248) !important; }
+.dark .border-indigo-200 { border-color: rgb(49 46 129 / 0.5) !important; }
+.dark .border-indigo-300 { border-color: rgb(49 46 129 / 0.6) !important; }
+
+/* Cyan backgrounds */
+.dark .bg-cyan-50 { background-color: rgb(22 78 99 / 0.35) !important; }
+.dark .bg-cyan-100 { background-color: rgb(22 78 99 / 0.3) !important; }
+.dark .text-cyan-700 { color: rgb(103 232 249) !important; }
+
+/* Teal backgrounds */
+.dark .bg-teal-50 { background-color: rgb(19 78 74 / 0.35) !important; }
+.dark .bg-teal-100 { background-color: rgb(19 78 74 / 0.3) !important; }
+.dark .text-teal-700 { color: rgb(94 234 212) !important; }
+
+/* Violet/purple backgrounds (used in AP module badges) */
+.dark .bg-violet-100 { background-color: rgb(76 29 149 / 0.3) !important; }
+.dark .text-violet-700 { color: rgb(196 181 253) !important; }
+
+/* Rose/pink backgrounds */
+.dark .bg-rose-50 { background-color: rgb(136 19 55 / 0.35) !important; }
+.dark .bg-rose-100 { background-color: rgb(136 19 55 / 0.3) !important; }
+.dark .text-rose-700 { color: rgb(251 113 133) !important; }
+.dark .bg-pink-100 { background-color: rgb(131 24 67 / 0.3) !important; }
+.dark .text-pink-700 { color: rgb(244 114 182) !important; }
+
+/* Sky backgrounds (used in delivery badges) */
+.dark .bg-sky-100 { background-color: rgb(12 74 110 / 0.3) !important; }
+.dark .text-sky-700 { color: rgb(125 211 252) !important; }
+
+/* Amber text brightness boost */
+.dark .text-amber-800 { color: rgb(253 224 71) !important; }
+
+/* Even row striping for tables using gray-* */
+.dark .even\:bg-neutral-50:nth-child(even) { background-color: rgb(14 14 14) !important; }
+.dark .even\:bg-gray-50:nth-child(even) { background-color: rgb(14 14 14) !important; }
+
+/* Wizard step indicators and progress bars */
+.dark .bg-neutral-200 { background-color: rgb(38 38 38) !important; }
+.dark .bg-neutral-300 { background-color: rgb(64 64 64) !important; }
+
+/* Card body inner backgrounds */
+.dark .bg-amber-50\/50 { background-color: rgb(120 53 15 / 0.2) !important; }
+.dark .bg-emerald-50\/50 { background-color: rgb(6 78 59 / 0.2) !important; }
+
+/* Fixed text colors that were too dark */
+.dark .text-neutral-400 { color: rgb(115 115 115) !important; }
+
+/* Recharts tooltip dark mode */
+.dark .recharts-default-tooltip {
+  background-color: rgb(38 38 38) !important;
+  border-color: rgb(64 64 64) !important;
+  color: rgb(245 245 245) !important;
+}
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line {
+  stroke: rgb(38 38 38) !important;
+}

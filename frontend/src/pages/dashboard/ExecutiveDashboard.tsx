@@ -6,6 +6,7 @@
  */
 import { useExecutiveDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { Card } from '@/components/ui/Card'
 import {
   KpiCard,
@@ -61,13 +62,7 @@ export default function ExecutiveDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-neutral-900">Executive Overview</h1>
-        <p className="text-sm text-neutral-500 mt-0.5">
-          Company-wide performance, financial health, and workforce metrics
-        </p>
-      </div>
+      <DashboardHeader roleLabel="Executive" subtitle="Company-wide performance, financial health, and workforce metrics" />
 
       {/* Pending Executive Approvals */}
       {pendingTotal > 0 && (
@@ -278,7 +273,7 @@ export default function ExecutiveDashboard() {
           { label: 'Payroll', href: '/payroll/runs', icon: DollarSign },
           { label: 'AP Invoices', href: '/accounting/ap/invoices', icon: TrendingDown },
           { label: 'AR Invoices', href: '/ar/invoices', icon: TrendingUp },
-          { label: 'Budget', href: '/budget/vs-actual', icon: BarChart3 },
+          { label: 'Budget', href: '/budget/cost-centers', icon: BarChart3 },
           { label: 'Departments', href: '/hr/departments', icon: Building },
           { label: 'Production', href: '/production/orders', icon: Briefcase },
           { label: 'Reports', href: '/reports/financial', icon: FileText },

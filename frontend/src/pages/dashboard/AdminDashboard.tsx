@@ -6,6 +6,7 @@
  */
 import { useAuth } from '@/hooks/useAuth'
 import { useAdminDashboardStats } from '@/hooks/useDashboard'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -46,7 +47,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">System Administration</h1>
+        <DashboardHeader roleLabel="System Admin" subtitle="System health, user management, and infrastructure status" />
         <p className="text-sm text-neutral-500 mt-0.5">
           User management, system health, and infrastructure monitoring
         </p>

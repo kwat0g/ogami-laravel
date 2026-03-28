@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAccountingDashboardStats } from '@/hooks/useDashboard'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {

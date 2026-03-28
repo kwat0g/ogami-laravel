@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { usePurchaseRequests } from '@/hooks/usePurchaseRequests'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
+import { useGoodsReceipts } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {
@@ -95,20 +97,25 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
   const { data: prData,  isLoading: loadingPR } = usePurchaseRequests({ status: 'submitted', per_page: 1 })
   const { data: poData,  isLoading: loadingPO } = usePurchaseOrders({ status: 'draft',     per_page: 1 })
   const { data: sentPO,  isLoading: loadingSent } = usePurchaseOrders({ status: 'sent',   per_page: 1 })
+  const { data: grData, isLoading: loadingGR } = useGoodsReceipts({ status: 'draft', per_page: 1 })
+  const { data: reviewPR, isLoading: loadingReview } = usePurchaseRequests({ status: 'pending_review', per_page: 1 })
 
-  const isLoading = loadingPR || loadingPO || loadingSent
+  const isLoading = loadingPR || loadingPO || loadingSent || loadingGR || loadingReview
 
   if (isLoading) return <SkeletonLoader rows={8} />
 
   const pendingPRs = (prData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const reviewPRs  = (reviewPR as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
   const draftPOs   = (poData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
   const sentPOs    = (sentPO as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const pendingGRs = (grData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const totalActionable = pendingPRs + reviewPRs + draftPOs + pendingGRs
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">Purchasing Dashboard</h1>
+        <DashboardHeader roleLabel="Purchasing Officer" subtitle="Purchase requests, orders, and vendor management" />
         <p className="text-sm text-neutral-500 mt-0.5">Manage purchase requests, orders, vendor relationships, and goods receipts</p>
       </div>
 
@@ -129,7 +136,7 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard
           label="Pending PRs"
           value={pendingPRs}
@@ -153,6 +160,30 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
           icon={Truck}
           href="/procurement/purchase-orders"
         />
+        <KpiCard
+          label="Pending Review"
+          value={reviewPRs}
+          sub="PRs to review"
+          icon={ClipboardList}
+          href="/procurement/purchase-requests?status=pending_review"
+          alert={reviewPRs > 0}
+        />
+        <KpiCard
+          label="Pending GRs"
+          value={pendingGRs}
+          sub="Draft goods receipts"
+          icon={Package}
+          href="/procurement/goods-receipts"
+          alert={pendingGRs > 0}
+        />
+        <KpiCard
+          label="Action Items"
+          value={totalActionable}
+          sub={totalActionable > 0 ? 'Needs your attention' : 'All clear'}
+          icon={AlertCircle}
+          href="/procurement/purchase-requests"
+          alert={totalActionable > 0}
+        />
       </div>
 
       {/* Procurement Pipeline Visual */}
@@ -171,7 +202,7 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
             <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0" />
             <PipelineStep label="PO Sent" count={sentPOs} active={sentPOs > 0} />
             <ChevronRight className="h-4 w-4 text-neutral-300 shrink-0" />
-            <PipelineStep label="Received" count={0} />
+            <PipelineStep label="GR Pending" count={pendingGRs} active={pendingGRs > 0} />
             <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
           </div>
         </CardBody>
