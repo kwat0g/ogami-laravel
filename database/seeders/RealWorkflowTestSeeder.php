@@ -149,6 +149,7 @@ class RealWorkflowTestSeeder extends Seeder
                     'type' => 'finished_goods',
                     'unit_of_measure' => 'pcs',
                     'category_id' => $category->id,
+                    'standard_price_centavos' => $data['price'] ?? 0,
                     'is_active' => true,
                 ]
             );

@@ -26,6 +26,7 @@ final class ItemMasterFactory extends Factory
             'name' => 'Item '.$this->faker->word().' '.$seq,
             'unit_of_measure' => 'pcs',
             'description' => 'Test item description',
+            'standard_price_centavos' => $this->faker->numberBetween(100, 50000),
             'reorder_point' => 10,
             'reorder_qty' => 50,
             'type' => 'raw_material',

@@ -111,22 +111,22 @@ class ComprehensiveTestDataSeeder extends Seeder
         $pkCat = DB::table('item_categories')->where('code', 'PACKAGING')->value('id');
 
         $items = [
-            // Raw Materials
-            ['code' => 'RM-PE-001',  'name' => 'Polyethylene Resin',      'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 500,  'stock' => 1200],
-            ['code' => 'RM-PP-001',  'name' => 'Polypropylene Resin',     'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 300,  'stock' => 850],
-            ['code' => 'RM-MB-001',  'name' => 'Color Masterbatch Black', 'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 50,   'stock' => 80],
-            ['code' => 'RM-MB-002',  'name' => 'Color Masterbatch White', 'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 50,   'stock' => 40],
-            // Finished Goods
-            ['code' => 'FG-CONT-1L', 'name' => 'Plastic Container 1L',   'uom' => 'pcs', 'type' => 'finished_good', 'cat' => $fgCat,  'reorder' => 500,  'stock' => 2400],
-            ['code' => 'FG-CONT-5L', 'name' => 'Plastic Container 5L',   'uom' => 'pcs', 'type' => 'finished_good', 'cat' => $fgCat,  'reorder' => 200,  'stock' => 600],
-            ['code' => 'FG-CAP-001', 'name' => 'Plastic Cap Standard',   'uom' => 'pcs', 'type' => 'finished_good', 'cat' => $fgCat,  'reorder' => 1000, 'stock' => 450],
+            // Raw Materials (prices in centavos — e.g., 8500 = P85.00/kg)
+            ['code' => 'RM-PE-001',  'name' => 'Polyethylene Resin',      'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 500,  'stock' => 1200, 'price' => 8500],
+            ['code' => 'RM-PP-001',  'name' => 'Polypropylene Resin',     'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 300,  'stock' => 850,  'price' => 7200],
+            ['code' => 'RM-MB-001',  'name' => 'Color Masterbatch Black', 'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 50,   'stock' => 80,   'price' => 15000],
+            ['code' => 'RM-MB-002',  'name' => 'Color Masterbatch White', 'uom' => 'kg',  'type' => 'raw_material',  'cat' => $rmCat,  'reorder' => 50,   'stock' => 40,   'price' => 16500],
+            // Finished Goods (cost = BOM cost, set as estimated selling price)
+            ['code' => 'FG-CONT-1L', 'name' => 'Plastic Container 1L',   'uom' => 'pcs', 'type' => 'finished_good', 'cat' => $fgCat,  'reorder' => 500,  'stock' => 2400, 'price' => 4500],
+            ['code' => 'FG-CONT-5L', 'name' => 'Plastic Container 5L',   'uom' => 'pcs', 'type' => 'finished_good', 'cat' => $fgCat,  'reorder' => 200,  'stock' => 600,  'price' => 12000],
+            ['code' => 'FG-CAP-001', 'name' => 'Plastic Cap Standard',   'uom' => 'pcs', 'type' => 'finished_good', 'cat' => $fgCat,  'reorder' => 1000, 'stock' => 450,  'price' => 1200],
             // Spare Parts (low stock to trigger reorder alert)
-            ['code' => 'SP-SCREW-01', 'name' => 'Injection Screw M12',    'uom' => 'pcs', 'type' => 'spare_part',    'cat' => $spCat,  'reorder' => 5,    'stock' => 3],
-            ['code' => 'SP-BELT-01', 'name' => 'Drive Belt 50mm',        'uom' => 'pcs', 'type' => 'spare_part',    'cat' => $spCat,  'reorder' => 4,    'stock' => 2],
+            ['code' => 'SP-SCREW-01', 'name' => 'Injection Screw M12',    'uom' => 'pcs', 'type' => 'spare_part',    'cat' => $spCat,  'reorder' => 5,    'stock' => 3,    'price' => 250000],
+            ['code' => 'SP-BELT-01', 'name' => 'Drive Belt 50mm',        'uom' => 'pcs', 'type' => 'spare_part',    'cat' => $spCat,  'reorder' => 4,    'stock' => 2,    'price' => 85000],
             // Consumables
-            ['code' => 'CON-OIL-01', 'name' => 'Hydraulic Oil 46',       'uom' => 'L',   'type' => 'consumable',    'cat' => $conCat, 'reorder' => 20,   'stock' => 55],
+            ['code' => 'CON-OIL-01', 'name' => 'Hydraulic Oil 46',       'uom' => 'L',   'type' => 'consumable',    'cat' => $conCat, 'reorder' => 20,   'stock' => 55,   'price' => 35000],
             // Packaging
-            ['code' => 'PKG-BOX-S',  'name' => 'Carton Box Small',       'uom' => 'pcs', 'type' => 'raw_material',  'cat' => $pkCat,  'reorder' => 100,  'stock' => 320],
+            ['code' => 'PKG-BOX-S',  'name' => 'Carton Box Small',       'uom' => 'pcs', 'type' => 'raw_material',  'cat' => $pkCat,  'reorder' => 100,  'stock' => 320,  'price' => 2500],
         ];
 
         $location = DB::table('warehouse_locations')->where('code', 'WH-RM-01')->value('id')
@@ -145,6 +145,7 @@ class ComprehensiveTestDataSeeder extends Seeder
                 'name' => $item['name'],
                 'unit_of_measure' => $item['uom'],
                 'type' => $item['type'],
+                'standard_price_centavos' => $item['price'] ?? 0,
                 'reorder_point' => $item['reorder'],
                 'is_active' => true,
                 'created_at' => now(),
