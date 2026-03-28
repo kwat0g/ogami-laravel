@@ -40,14 +40,14 @@ export default function PositionsPage() {
   const update = useUpdatePosition()
   const remove = useDeletePosition()
 
-  const [form, setForm]         = useState<PosFormState | null>(null)
+  const [form, setForm] = useState<PosFormState | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const deptList = depts?.data ?? []
-  const rows     = data?.data ?? []
+  const rows = data?.data ?? []
 
   const openCreate = () => { setForm(emptyForm()); setFormError(null) }
-  const openEdit   = (pos: Position) => {
+  const openEdit = (pos: Position) => {
     setForm({ id: pos.id, code: pos.code ?? '', title: pos.title, department_id: pos.department_id ?? undefined, pay_grade: pos.pay_grade ?? '', description: pos.description ?? '', is_active: pos.is_active })
     setFormError(null)
   }
@@ -77,7 +77,7 @@ export default function PositionsPage() {
     setFormError(null)
     if (!form.title.trim()) { setFormError('Title is required.'); return }
     if (!form.id && !form.code.trim()) { setFormError('Code is required.'); return }
-    
+
     try {
       if (form.id) {
         await update.mutateAsync({ ...form, id: form.id as number })
@@ -100,24 +100,28 @@ export default function PositionsPage() {
 
   return (
     <div>
-      <PageHeader title="Positions" />
-
-      <div className="flex justify-end gap-2 mb-4">
-        <button
-          onClick={() => navigate('/hr/shifts')}
-          className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50"
-        >
-          Shift Schedules
-        </button>
-        {canManage && (
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-          >
-            + Add Position
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Positions"
+        backTo="/hr/departments"
+        actions={
+          <>
+            <button
+              onClick={() => navigate('/hr/shifts')}
+              className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 bg-white"
+            >
+              Shift Schedules
+            </button>
+            {canManage && (
+              <button
+                onClick={openCreate}
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+              >
+                + Add Position
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Filter by dept */}
       <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4">
@@ -185,7 +189,7 @@ export default function PositionsPage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Code <span className="text-neutral-400 text-xs font-normal">(auto-generated from title)</span>
                 </label>
-                <input 
+                <input
                   value={form.title ? form.title.split(/\s+/).map((w: string) => w.charAt(0)).join('').toUpperCase().slice(0, 8) : ''}
                   readOnly
                   disabled
@@ -196,18 +200,17 @@ export default function PositionsPage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Title <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  value={form.title} 
+                <input
+                  value={form.title}
                   onChange={(e) => set('title', e.target.value)}
-                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
-                    !form.title.trim() && formError ? 'border-red-500' : 'border-neutral-300'
-                  }`} 
+                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${!form.title.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                    }`}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Department</label>
-                <select 
-                  value={form.department_id ?? ''} 
+                <select
+                  value={form.department_id ?? ''}
                   onChange={(e) => set('department_id', Number(e.target.value) || undefined)}
                   className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                 >
@@ -217,11 +220,11 @@ export default function PositionsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
-                <textarea 
-                  value={form.description} 
-                  onChange={(e) => set('description', e.target.value)} 
+                <textarea
+                  value={form.description}
+                  onChange={(e) => set('description', e.target.value)}
                   rows={2}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                 />
               </div>
               <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
@@ -231,8 +234,8 @@ export default function PositionsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
-              <button 
-                onClick={handleSave} 
+              <button
+                onClick={handleSave}
                 disabled={create.isPending || update.isPending}
                 className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
               >

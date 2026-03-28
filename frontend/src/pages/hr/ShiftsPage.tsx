@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import {
@@ -62,20 +63,21 @@ function shiftFromExisting(s: ShiftSchedule): ShiftForm {
 
 export default function ShiftsPage() {
   const { hasPermission } = useAuthStore()
+  const navigate = useNavigate()
   const canManage = hasPermission('attendance.manage_shifts')
   const { data, isLoading, isError, refetch } = useShifts()
   const create = useCreateShift()
-  const upd    = useUpdateShift()
+  const upd = useUpdateShift()
   const remove = useDeleteShift()
 
-  const [form, setForm]         = useState<ShiftForm | null>(null)
+  const [form, setForm] = useState<ShiftForm | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const rows = data?.data ?? []
 
   const openCreate = () => { setForm(emptyForm()); setFormError(null) }
-  const openEdit   = (s: ShiftSchedule) => { setForm(shiftFromExisting(s)); setFormError(null) }
-  const closeForm  = () => setForm(null)
+  const openEdit = (s: ShiftSchedule) => { setForm(shiftFromExisting(s)); setFormError(null) }
+  const closeForm = () => setForm(null)
 
   const set = <K extends keyof ShiftForm>(field: K, value: ShiftForm[K]) =>
     setForm((f) => f ? { ...f, [field]: value } : f)
@@ -104,7 +106,7 @@ export default function ShiftsPage() {
     if (!form) return
     setFormError(null)
     if (!form.name.trim()) { setFormError('Shift name is required.'); return }
-    
+
     try {
       if (form.id) {
         const { work_days_arr, ...rest } = form
@@ -125,22 +127,32 @@ export default function ShiftsPage() {
   }
 
   if (isLoading) return <SkeletonLoader rows={6} />
-  if (isError)   return <div className="text-red-600 text-sm mt-4">Failed to load shifts.</div>
+  if (isError) return <div className="text-red-600 text-sm mt-4">Failed to load shifts.</div>
 
   return (
     <div>
-      <PageHeader title="Shift Schedules" />
-
-      {canManage && (
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-          >
-            + Add Shift
-          </button>
-        </div>
-      )}
+      <PageHeader
+        title="Shift Schedules"
+        backTo="/hr/departments"
+        actions={
+          <>
+            <button
+              onClick={() => navigate('/hr/positions')}
+              className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 bg-white"
+            >
+              Positions
+            </button>
+            {canManage && (
+              <button
+                onClick={openCreate}
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+              >
+                + Add Shift
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -209,41 +221,40 @@ export default function ShiftsPage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Shift Name <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  value={form.name} 
+                <input
+                  value={form.name}
                   onChange={(e) => set('name', e.target.value)}
-                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
-                    !form.name.trim() && formError ? 'border-red-500' : 'border-neutral-300'
-                  }`} 
+                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${!form.name.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                    }`}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Description <span className="text-neutral-400">(optional)</span></label>
-                <input 
-                  value={form.description} 
+                <input
+                  value={form.description}
                   onChange={(e) => set('description', e.target.value)}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Start Time</label>
-                  <input 
-                    type="time" 
-                    value={form.start_time} 
+                  <input
+                    type="time"
+                    value={form.start_time}
                     onChange={(e) => set('start_time', e.target.value)}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">End Time</label>
-                  <input 
-                    type="time" 
-                    value={form.end_time} 
+                  <input
+                    type="time"
+                    value={form.end_time}
                     onChange={(e) => set('end_time', e.target.value)}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                   />
                 </div>
               </div>
@@ -251,22 +262,22 @@ export default function ShiftsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Break (minutes)</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    value={form.break_minutes} 
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.break_minutes}
                     onChange={(e) => set('break_minutes', Number(e.target.value))}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Grace Period (minutes)</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    value={form.grace_period_minutes} 
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.grace_period_minutes}
                     onChange={(e) => set('grace_period_minutes', Number(e.target.value))}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                   />
                 </div>
               </div>
@@ -306,8 +317,8 @@ export default function ShiftsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
-              <button 
-                onClick={handleSave} 
+              <button
+                onClick={handleSave}
                 disabled={create.isPending || upd.isPending}
                 className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
               >

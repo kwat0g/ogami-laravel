@@ -34,14 +34,14 @@ export default function DepartmentsPage() {
   const update = useUpdateDepartment()
   const remove = useDeleteDepartment()
 
-  const [form, setForm]       = useState<DeptFormState | null>(null)
+  const [form, setForm] = useState<DeptFormState | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const rows = data?.data ?? []
 
   const openCreate = () => { setForm(emptyForm()); setFormError(null) }
-  const openEdit   = (dept: Department) => { setForm({ id: dept.id, code: dept.code, name: dept.name, cost_center_code: dept.cost_center_code ?? '', is_active: dept.is_active }); setFormError(null) }
-  const closeForm  = () => setForm(null)
+  const openEdit = (dept: Department) => { setForm({ id: dept.id, code: dept.code, name: dept.name, cost_center_code: dept.cost_center_code ?? '', is_active: dept.is_active }); setFormError(null) }
+  const closeForm = () => setForm(null)
 
   const handleSave = async () => {
     if (!form) return
@@ -81,34 +81,37 @@ export default function DepartmentsPage() {
     setForm((f) => f ? { ...f, [field]: value } : f)
 
   if (isLoading) return <SkeletonLoader rows={8} />
-  if (isError)   return <div className="text-red-600 text-sm mt-4">Failed to load departments.</div>
+  if (isError) return <div className="text-red-600 text-sm mt-4">Failed to load departments.</div>
 
   return (
     <div>
-      <PageHeader title="Departments" />
-
-      <div className="flex justify-end gap-2 mb-4">
-        <button
-          onClick={() => navigate('/hr/positions')}
-          className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50"
-        >
-          Positions
-        </button>
-        <button
-          onClick={() => navigate('/hr/shifts')}
-          className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50"
-        >
-          Shift Schedules
-        </button>
-        {canManage && (
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-          >
-            + Add Department
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Departments"
+        actions={
+          <>
+            <button
+              onClick={() => navigate('/hr/positions')}
+              className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 bg-white"
+            >
+              Positions
+            </button>
+            <button
+              onClick={() => navigate('/hr/shifts')}
+              className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 bg-white"
+            >
+              Shift Schedules
+            </button>
+            {canManage && (
+              <button
+                onClick={openCreate}
+                className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
+              >
+                + Add Department
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Table */}
       <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
@@ -168,20 +171,19 @@ export default function DepartmentsPage() {
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
                     Code <span className="text-red-500">*</span>
                   </label>
-                  <input 
-                    value={form.code} 
+                  <input
+                    value={form.code}
                     onChange={(e) => set('code', e.target.value)}
-                    className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
-                      !form.code.trim() && formError ? 'border-red-500' : 'border-neutral-300'
-                    }`} 
+                    className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${!form.code.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                      }`}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Cost Center</label>
-                  <input 
-                    value={form.cost_center_code} 
+                  <input
+                    value={form.cost_center_code}
                     onChange={(e) => set('cost_center_code', e.target.value)}
-                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400" 
+                    className="w-full border border-neutral-300 rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400"
                   />
                 </div>
               </div>
@@ -189,12 +191,11 @@ export default function DepartmentsPage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Name <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  value={form.name} 
+                <input
+                  value={form.name}
                   onChange={(e) => set('name', e.target.value)}
-                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${
-                    !form.name.trim() && formError ? 'border-red-500' : 'border-neutral-300'
-                  }`} 
+                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 ${!form.name.trim() && formError ? 'border-red-500' : 'border-neutral-300'
+                    }`}
                 />
               </div>
               <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
@@ -204,8 +205,8 @@ export default function DepartmentsPage() {
             </div>
             <div className="flex justify-end gap-3 mt-5">
               <button onClick={closeForm} className="px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 rounded">Cancel</button>
-              <button 
-                onClick={handleSave} 
+              <button
+                onClick={handleSave}
                 disabled={create.isPending || update.isPending}
                 className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
                 {create.isPending || update.isPending ? 'Saving…' : form.id ? 'Save Changes' : 'Create'}
