@@ -134,7 +134,6 @@ const LoanDetailPage = lazy(() => import('@/pages/hr/loans/LoanDetailPage'))
 const DepartmentsPage = lazy(() => import('@/pages/hr/DepartmentsPage'))
 const PositionsPage = lazy(() => import('@/pages/hr/PositionsPage'))
 const ShiftsPage = lazy(() => import('@/pages/hr/ShiftsPage'))
-const HRReportsPage = lazy(() => import('@/pages/hr/HRReportsPage'))
 
 // Team Management (department-scoped)
 const TeamEmployeeListPage = lazy(() => import('@/pages/team/TeamEmployeeListPage'))
@@ -379,7 +378,6 @@ const router = createBrowserRouter([
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
-      { path: '/hr/reports', element: withSuspense(guard('hr.full_access', <HRReportsPage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },
