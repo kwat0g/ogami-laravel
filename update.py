@@ -235,6 +235,11 @@ def update() -> None:
         "pnpm install --no-frozen-lockfile 2>&1 | tail -5",
         timeout=300,
     )
+    # Purge stale assets before building so no old bundles remain
+    vps.run(
+        f"rm -rf {APP_DIR}/public/build/assets/* && "
+        f"echo 'Purged build/assets/ before build ✔'"
+    )
     vps.run(
         f"cd {APP_DIR}/frontend && "
         "pnpm build 2>&1 | tail -10",
