@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Domains\HR\Models\PerformanceAppraisal;
-use App\Http\Controllers\HR\PerformanceAppraisalController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -11,75 +9,12 @@ use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
 | Enhancement Module Routes — /api/v1/
-| Routes for all Tier 1-3 enhancement services.
+| Routes for enhancement services.
 | All routes require Sanctum authentication.
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth:sanctum'])->group(function () {
-
-    // ── Performance Appraisal ───────────────────────────────────────────
-    Route::prefix('hr/appraisals')->group(function () {
-        Route::get('/', [PerformanceAppraisalController::class, 'index']);
-        Route::post('/', [PerformanceAppraisalController::class, 'store']);
-        Route::get('/department-summary', [PerformanceAppraisalController::class, 'departmentSummary']);
-        Route::get('/employee/{employeeId}', [PerformanceAppraisalController::class, 'employeeHistory']);
-        Route::get('/{appraisal}', [PerformanceAppraisalController::class, 'show']);
-        Route::patch('/{appraisal}/submit', [PerformanceAppraisalController::class, 'submit'])->middleware('throttle:api-action');
-        Route::patch('/{appraisal}/review', [PerformanceAppraisalController::class, 'review'])->middleware('throttle:api-action');
-        Route::patch('/{appraisal}/hr-approve', [PerformanceAppraisalController::class, 'hrApprove'])->middleware('throttle:api-action');
-        Route::patch('/{appraisal}/complete', [PerformanceAppraisalController::class, 'complete'])->middleware('throttle:api-action');
-    });
-
-    // ── Budget Amendments ───────────────────────────────────────────────
-    Route::prefix('budget/amendments')->group(function () {
-        Route::get('/', function (Request $request): JsonResponse {
-            $service = app(\App\Domains\Budget\Services\BudgetAmendmentService::class);
-            return response()->json($service->paginate($request->only(['fiscal_year', 'status', 'cost_center_id', 'per_page'])));
-        });
-        Route::post('/', function (Request $request): JsonResponse {
-            $data = $request->validate([
-                'cost_center_id' => 'required|exists:cost_centers,id',
-                'fiscal_year' => 'required|integer',
-                'amendment_type' => 'required|in:reallocation,increase,decrease',
-                'source_account_id' => 'nullable|exists:chart_of_accounts,id',
-                'target_account_id' => 'required|exists:chart_of_accounts,id',
-                'amount_centavos' => 'required|integer|min:1',
-                'justification' => 'required|string',
-            ]);
-            $service = app(\App\Domains\Budget\Services\BudgetAmendmentService::class);
-            return response()->json(['data' => $service->store($data, $request->user())], 201);
-        });
-        Route::patch('/{amendment}/submit', function (\App\Domains\Budget\Models\BudgetAmendment $amendment): JsonResponse {
-            $service = app(\App\Domains\Budget\Services\BudgetAmendmentService::class);
-            return response()->json(['data' => $service->submit($amendment)]);
-        })->middleware('throttle:api-action');
-        Route::patch('/{amendment}/approve', function (Request $request, \App\Domains\Budget\Models\BudgetAmendment $amendment): JsonResponse {
-            $service = app(\App\Domains\Budget\Services\BudgetAmendmentService::class);
-            return response()->json(['data' => $service->approve($amendment, $request->user(), $request->input('remarks', ''))]);
-        })->middleware('throttle:api-action');
-        Route::patch('/{amendment}/reject', function (Request $request, \App\Domains\Budget\Models\BudgetAmendment $amendment): JsonResponse {
-            $service = app(\App\Domains\Budget\Services\BudgetAmendmentService::class);
-            return response()->json(['data' => $service->reject($amendment, $request->user(), $request->input('remarks', ''))]);
-        })->middleware('throttle:api-action');
-    });
-
-    // ── CRM Lead Scoring ────────────────────────────────────────────────
-    Route::prefix('crm/leads')->group(function () {
-        Route::get('/scores', function (): JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            return response()->json(['data' => $service->scoreAll()]);
-        });
-        Route::get('/{lead}/score', function (\App\Domains\CRM\Models\Lead $lead): JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            return response()->json(['data' => $service->scoreLead($lead)]);
-        });
-        Route::post('/auto-qualify', function (): JsonResponse {
-            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
-            $count = $service->autoQualify();
-            return response()->json(['data' => ['qualified_count' => $count]]);
-        })->middleware('throttle:api-action');
-    });
 
     // ── AP Early Payment Discounts ──────────────────────────────────────
     Route::prefix('ap')->group(function () {

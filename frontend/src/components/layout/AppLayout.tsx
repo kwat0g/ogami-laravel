@@ -103,15 +103,13 @@ const SECTIONS: NavSection[] = [
       // ── Human Resources ─────────────────────────────────────────────────────
       { divider: true, label: 'Human Resources' },
       { label: 'Employees', href: '/hr/employees/all', permission: 'hr.full_access' },
-      { label: 'Performance Appraisals', href: '/hr/appraisals', permission: 'hr.full_access' },
       { label: 'Departments', href: '/hr/departments', permission: 'hr.full_access', activePaths: ['/hr/positions', '/hr/shifts'] },
       { label: 'Attendance', href: '/hr/attendance', permission: 'hr.full_access' },
       { label: 'Leave', href: '/hr/leave', permission: 'hr.full_access', end: true },
       { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
       { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
       { label: 'HR Reports', href: '/hr/reports', permission: 'hr.full_access' },
-      { label: 'Training Programs', href: '/hr/trainings', permission: 'hr.training.view' },
-      { label: 'Employee Competency', href: '/hr/competency', permission: 'hr.competency.view' },
+
       // ── Payroll ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Payroll' },
       { label: 'Payroll Runs', href: '/payroll/runs', permission: 'payroll.view_runs' },
@@ -193,13 +191,9 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Budget' },
       { label: 'Cost Centers', href: '/budget/cost-centers', permission: 'budget.view' },
       { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
-      { label: 'Budget Lines', href: '/budget/lines', permission: 'budget.view' },
-      { label: 'Budget Amendments', href: '/budget/amendments', permission: 'budget.view' },
-      { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
       { label: 'Year-End Forecast', href: '/budget/forecast', permission: 'budget.forecast' },
       { divider: true, label: 'Fixed Assets' },
       { label: 'Asset Register', href: '/fixed-assets', permission: 'fixed_assets.view' },
-      { label: 'Asset Disposals', href: '/fixed-assets/disposals', permission: 'fixed_assets.manage' },
       { label: 'Dept. Transfers', href: '/fixed-assets/transfers', permission: 'fixed_assets.transfer' },
     ],
   },
@@ -241,8 +235,6 @@ const SECTIONS: NavSection[] = [
       // ── Production ──────────────────────────────────────────────────────────
       { divider: true, label: 'Production' },
       { label: 'Production Orders', href: '/production/orders', permission: 'production.orders.view' },
-      { label: 'Capacity Planning', href: '/production/capacity', permission: 'production.order.view' },
-      { label: 'Time-Phased MRP', href: '/production/mrp', permission: 'production.order.view' },
       { label: 'Bill of Materials', href: '/production/boms', permission: 'production.bom.view' },
       { label: 'Delivery Schedules', href: '/production/delivery-schedules', permission: 'production.delivery-schedule.view' },
       // ── Quality Control ─────────────────────────────────────────────────────
@@ -266,8 +258,6 @@ const SECTIONS: NavSection[] = [
     departments: ['SALES', 'WH', 'PROD', 'PLANT'],
     children: [
       { divider: true, label: 'CRM' },
-      { label: 'Lead Management', href: '/crm/leads', permission: 'crm.leads.view' },
-      { label: 'Lead Scoring', href: '/crm/lead-scoring', permission: 'crm.leads.view' },
       { label: 'Sales Pipeline', href: '/crm/opportunities', permission: 'crm.opportunities.view' },
       { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
       { divider: true, label: 'Sales' },
@@ -300,7 +290,6 @@ const EXECUTIVE_SECTION: NavSection = {
     // ── Financial Reports (exec read-only view) ───────────────────────────────
     { divider: true, label: 'Reports' },
     { label: 'Trial Balance', href: '/accounting/trial-balance', permission: 'reports.financial_statements' },
-    { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
     { label: 'Financial Ratios', href: '/accounting/financial-ratios', permission: 'reports.financial_statements' },
     { divider: true, label: 'Analytics' },
     { label: 'Executive Analytics', href: '/dashboard/executive-analytics', permission: 'reports.financial_statements' },

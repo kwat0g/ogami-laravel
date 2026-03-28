@@ -81,7 +81,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::prefix('maintenance')->name('maintenance.')->group(base_path('routes/api/v1/maintenance.php'));
         Route::prefix('mold')->name('mold.')->group(base_path('routes/api/v1/mold.php'));
         Route::prefix('delivery')->name('delivery.')->group(base_path('routes/api/v1/delivery.php'));
-        Route::prefix('iso')->name('iso.')->group(base_path('routes/api/v1/iso.php'));
         Route::prefix('crm')->name('crm.')->group(base_path('routes/api/v1/crm.php'));
         Route::prefix('sales')->name('sales.')->group(base_path('routes/api/v1/sales.php'));
         Route::prefix('fixed-assets')->name('fixed-assets.')->group(base_path('routes/api/v1/fixed_assets.php'));

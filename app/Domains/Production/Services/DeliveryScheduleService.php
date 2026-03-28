@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Production\Services;
 
-use App\Domains\Inventory\Models\StockBalance;
+use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\DeliverySchedule;
 use App\Domains\Production\Models\ProductionOrder;
@@ -19,6 +19,7 @@ final class DeliveryScheduleService implements ServiceContract
 {
     public function __construct(
         private readonly ProductionOrderService $poService,
+        private readonly StockService $stockService,
     ) {}
 
     /**
@@ -254,32 +255,19 @@ final class DeliveryScheduleService implements ServiceContract
         }
 
         return DB::transaction(function () use ($ds, $userId, $requiredQty): DeliverySchedule {
-            // Deduct stock from warehouse (default location)
+            // Deduct stock via StockService (maintains audit trail in stock_ledger)
             $locationId = $this->getDefaultWarehouseLocation();
+            $actor = User::findOrFail($userId);
 
-            // Create stock ledger entry for deduction
-            DB::table('stock_ledger')->insert([
-                'item_id' => $ds->product_item_id,
-                'location_id' => $locationId,
-                'transaction_type' => 'delivery',
-                'reference_type' => DeliverySchedule::class,
-                'reference_id' => $ds->id,
-                'quantity' => -$requiredQty,
-                'balance_after' => $this->getAvailableStock($ds->product_item_id) - $requiredQty,
-                'remarks' => "Direct fulfillment for Delivery Schedule {$ds->ds_reference}",
-                'created_by_id' => $userId,
-                'created_at' => now(),
-            ]);
-
-            // Update stock balance
-            $stockBalance = StockBalance::where('item_id', $ds->product_item_id)
-                ->where('location_id', $locationId)
-                ->first();
-
-            if ($stockBalance) {
-                $stockBalance->quantity_on_hand -= $requiredQty;
-                $stockBalance->save();
-            }
+            $this->stockService->issue(
+                itemId: $ds->product_item_id,
+                locationId: $locationId,
+                quantity: $requiredQty,
+                referenceType: DeliverySchedule::class,
+                referenceId: $ds->id,
+                actor: $actor,
+                remarks: "Direct fulfillment for Delivery Schedule {$ds->ds_reference}",
+            );
 
             // Update delivery schedule status to ready
             $ds->update([
