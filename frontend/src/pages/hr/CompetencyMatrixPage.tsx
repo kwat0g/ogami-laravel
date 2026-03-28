@@ -30,7 +30,7 @@ export default function CompetencyMatrixPage() {
             <thead className="bg-neutral-50 dark:bg-neutral-800">
               <tr><th className="text-left p-3">Employee</th><th className="text-left p-3">Skill</th><th className="text-left p-3">Category</th><th className="text-center p-3">Current</th><th className="text-center p-3">Required</th><th className="text-center p-3">Gap</th></tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {items.map((c: any) => {
                 const hasGap = c.current_level < c.required_level
                 return (

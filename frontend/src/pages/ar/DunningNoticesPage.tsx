@@ -43,7 +43,7 @@ export default function DunningNoticesPage() {
             <thead className="bg-neutral-50 dark:bg-neutral-800">
               <tr><th className="text-left p-3">Customer</th><th className="text-left p-3">Level</th><th className="text-right p-3">Amount Due</th><th className="text-right p-3">Days Overdue</th><th className="text-left p-3">Status</th><th className="text-left p-3">Sent</th></tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {notices.map((n: any) => (
                 <tr key={n.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                   <td className="p-3">{n.customer?.name ?? '-'}</td>
