@@ -279,6 +279,23 @@ const SalesOrderListPage  = lazy(() => import('@/pages/sales/SalesOrderListPage'
 // Inventory Enhancements (Phase 1)
 const StockTransferPage   = lazy(() => import('@/pages/inventory/StockTransferPage'))
 
+// Phase 2-4 pages
+const OpportunityDetailPage = lazy(() => import('@/pages/crm/OpportunityDetailPage'))
+const QuotationDetailPage = lazy(() => import('@/pages/sales/QuotationDetailPage'))
+const SalesOrderDetailPage = lazy(() => import('@/pages/sales/SalesOrderDetailPage'))
+const PaymentBatchListPage = lazy(() => import('@/pages/procurement/PaymentBatchListPage'))
+const DunningNoticesPage = lazy(() => import('@/pages/ar/DunningNoticesPage'))
+const MaintenanceAnalyticsPage = lazy(() => import('@/pages/maintenance/MaintenanceAnalyticsPage'))
+const MoldLifecyclePage = lazy(() => import('@/pages/mold/MoldLifecyclePage'))
+const SpcDashboardPage = lazy(() => import('@/pages/qc/SpcDashboardPage'))
+const SupplierQualityPage = lazy(() => import('@/pages/qc/SupplierQualityPage'))
+const BirFormGeneratorPage = lazy(() => import('@/pages/tax/BirFormGeneratorPage'))
+const TrainingListPage = lazy(() => import('@/pages/hr/TrainingListPage'))
+const CompetencyMatrixPage = lazy(() => import('@/pages/hr/CompetencyMatrixPage'))
+const DeliveryRoutesPage = lazy(() => import('@/pages/delivery/DeliveryRoutesPage'))
+const AssetTransfersPage = lazy(() => import('@/pages/fixed-assets/AssetTransfersPage'))
+const BudgetForecastPage = lazy(() => import('@/pages/budget/BudgetForecastPage'))
+
 // Budget domain
 const CostCentersPage = lazy(() => import('@/pages/budget/CostCentersPage'))
 const BudgetLinesPage = lazy(() => import('@/pages/budget/BudgetLinesPage'))
@@ -373,6 +390,8 @@ const router = createBrowserRouter([
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
       { path: '/hr/reports', element: withSuspense(guard('hr.full_access', <HRReportsPage />)) },
+      { path: '/hr/trainings', element: withSuspense(guard('hr.full_access', <TrainingListPage />)) },
+      { path: '/hr/competency', element: withSuspense(guard('hr.full_access', <CompetencyMatrixPage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },
@@ -432,6 +451,7 @@ const router = createBrowserRouter([
       { path: '/ar/invoices/new', element: withSuspense(guard('customer_invoices.create', <CustomerInvoiceFormPage />)) },
       { path: '/ar/invoices/:ulid', element: withSuspense(guard('customer_invoices.view', <CustomerInvoiceDetailPage />)) },
       { path: '/ar/aging-report',    element: withSuspense(guard('customer_invoices.view', <ArAgingReportPage />)) },
+      { path: '/ar/dunning',         element: withSuspense(guard('customer_invoices.view', <DunningNoticesPage />)) },
 
       // ── Accounting — Loan Approvals ──────────────────────────────────────
       { path: '/accounting/loans', element: withSuspense(guard('loans.accounting_approve', <LoanListPage />)) },
@@ -440,6 +460,7 @@ const router = createBrowserRouter([
       // ── Tax domain ────────────────────────────────────────────────────────
       { path: '/accounting/vat-ledger', element: withSuspense(guard('reports.vat', <VatLedgerPage />)) },
       { path: '/accounting/tax-summary', element: withSuspense(guard('reports.vat', <TaxPeriodSummaryPage />)) },
+      { path: '/tax/bir-forms', element: withSuspense(guard('reports.vat', <BirFormGeneratorPage />)) },
 
       // ── Reports ───────────────────────────────────────────────────────────
       { path: '/reports/government', element: withSuspense(guard('payroll.gov_reports', <GovernmentReportsPage />)) },
@@ -476,6 +497,7 @@ const router = createBrowserRouter([
       { path: '/procurement/purchase-orders/new', element: withSuspense(guard('procurement.purchase-order.create', <CreatePurchaseOrderPage />)) },
       { path: '/procurement/purchase-orders/:ulid', element: withSuspense(guard('procurement.purchase-order.view', <PurchaseOrderDetailPage />)) },
       { path: '/procurement/goods-receipts', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptListPage />)) },
+      { path: '/procurement/payment-batches', element: withSuspense(guard('vendor_invoices.view', <PaymentBatchListPage />)) },
       { path: '/procurement/goods-receipts/new', element: withSuspense(guard('procurement.goods-receipt.create', <CreateGoodsReceiptPage />)) },
       { path: '/procurement/goods-receipts/:ulid', element: withSuspense(guard('procurement.goods-receipt.view', <GoodsReceiptDetailPage />)) },
       { path: '/procurement/analytics', element: withSuspense(guard('procurement.purchase-order.view', <ProcurementAnalyticsPage />)) },
@@ -516,6 +538,8 @@ const router = createBrowserRouter([
       { path: '/qc/inspections/new', element: withSuspense(guard('qc.inspections.create', <CreateInspectionPage />)) },
       { path: '/qc/inspections/:ulid', element: withSuspense(guard('qc.inspections.view', <InspectionDetailPage />)) },
       { path: '/qc/ncrs', element: withSuspense(guard('qc.ncr.view', <NcrListPage />)) },
+      { path: '/qc/spc', element: withSuspense(guard('qc.inspections.view', <SpcDashboardPage />)) },
+      { path: '/qc/supplier-quality', element: withSuspense(guard('qc.inspections.view', <SupplierQualityPage />)) },
       { path: '/qc/ncrs/new', element: withSuspense(guard('qc.ncr.create', <CreateNcrPage />)) },
       { path: '/qc/ncrs/:ulid', element: withSuspense(guard('qc.ncr.view', <NcrDetailPage />)) },
       { path: '/qc/templates', element: withSuspense(guard('qc.templates.view', <QcTemplateListPage />)) },
@@ -529,17 +553,20 @@ const router = createBrowserRouter([
       { path: '/maintenance/work-orders', element: withSuspense(guard('maintenance.view', <WorkOrderListPage />)) },
       { path: '/maintenance/work-orders/new', element: withSuspense(guard('maintenance.manage', <CreateWorkOrderPage />)) },
       { path: '/maintenance/work-orders/:ulid', element: withSuspense(guard('maintenance.view', <WorkOrderDetailPage />)) },
+      { path: '/maintenance/analytics', element: withSuspense(guard('maintenance.view', <MaintenanceAnalyticsPage />)) },
 
       // ── Mold ─────────────────────────────────────────────────────────────
       { path: '/mold/masters', element: withSuspense(guard('mold.view', <MoldListPage />)) },
       { path: '/mold/masters/new', element: withSuspense(guard('mold.manage', <CreateMoldPage />)) },
       { path: '/mold/masters/:ulid', element: withSuspense(guard('mold.view', <MoldDetailPage />)) },
+      { path: '/mold/lifecycle', element: withSuspense(guard('mold.view', <MoldLifecyclePage />)) },
 
       // ── Delivery / Logistics ─────────────────────────────────────────
       { path: '/delivery/receipts', element: withSuspense(guard('delivery.view', <DeliveryReceiptListPage />)) },
       { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.manage', <CreateDeliveryReceiptPage />)) },
       { path: '/delivery/receipts/:ulid', element: withSuspense(guard('delivery.view', <DeliveryReceiptDetailPage />)) },
       { path: '/delivery/shipments', element: withSuspense(guard('delivery.view', <ShipmentsPage />)) },
+      { path: '/delivery/routes', element: withSuspense(guard('delivery.view', <DeliveryRoutesPage />)) },
 
       // ── ISO / IATF ──────────────────────────────────────────────────
       { path: '/iso/documents', element: withSuspense(guard('iso.view', <DocumentRegisterPage />)) },
@@ -568,6 +595,7 @@ const router = createBrowserRouter([
       { path: '/crm/leads',               element: withSuspense(guard('crm.tickets.view', <LeadListPage />)) },
       { path: '/crm/leads/:ulid',         element: withSuspense(guard('crm.tickets.view', <LeadDetailPage />)) },
       { path: '/crm/opportunities',       element: withSuspense(guard('crm.tickets.view', <OpportunityListPage />)) },
+      { path: '/crm/opportunities/:ulid', element: withSuspense(guard('crm.tickets.view', <OpportunityDetailPage />)) },
 
       // ── Budget ────────────────────────────────────────────────────────────
       { path: '/budget/cost-centers',       element: withSuspense(guard('budget.view', <CostCentersPage />)) },
@@ -575,11 +603,13 @@ const router = createBrowserRouter([
       { path: '/budget/lines',              element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
       { path: '/budget/vs-actual',          element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
       { path: '/budget/variance',            element: withSuspense(guard('budget.view', <BudgetVarianceReportPage />)) },
+      { path: '/budget/forecast',            element: withSuspense(guard('budget.view', <BudgetForecastPage />)) },
 
       // ── Fixed Assets ──────────────────────────────────────────────────────
       { path: '/fixed-assets',             element: withSuspense(guard('fixed_assets.view', <FixedAssetsPage />)) },
       { path: '/fixed-assets/categories',  element: withSuspense(guard('fixed_assets.view', <FixedAssetCategoriesPage />)) },
       { path: '/fixed-assets/disposals',    element: withSuspense(guard('fixed_assets.manage', <AssetDisposalPage />)) },
+      { path: '/fixed-assets/transfers',   element: withSuspense(guard('fixed_assets.manage', <AssetTransfersPage />)) },
       { path: '/fixed-assets/:ulid',       element: withSuspense(guard('fixed_assets.view', <FixedAssetDetailPage />)) },
 
       // ── Recurring Journal Templates ────────────────────────────────────────
@@ -597,7 +627,9 @@ const router = createBrowserRouter([
     { path: '/sales/client-orders', element: withSuspense(guard('sales.order_review', <ClientOrdersReviewPage />)) },
     { path: '/sales/client-orders/:ulid', element: withSuspense(guard('sales.order_review', <ClientOrderReviewDetailPage />)) },
     { path: '/sales/quotations', element: withSuspense(guard('sales.order_review', <QuotationListPage />)) },
+    { path: '/sales/quotations/:ulid', element: withSuspense(guard('sales.order_review', <QuotationDetailPage />)) },
     { path: '/sales/orders', element: withSuspense(guard('sales.order_review', <SalesOrderListPage />)) },
+    { path: '/sales/orders/:ulid', element: withSuspense(guard('sales.order_review', <SalesOrderDetailPage />)) },
     ],
   },
 
