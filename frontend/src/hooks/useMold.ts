@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { MoldMaster, CreateMoldPayload, LogShotsPayload } from '@/types/mold';
 import type { Paginated } from '@/types/production';
@@ -7,6 +7,7 @@ export function useMolds(params?: Record<string, string | number | boolean>) {
   return useQuery<Paginated<MoldMaster>>({
     queryKey: ['molds', params],
     queryFn: () => api.get('/mold/molds', { params }).then(r => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 
