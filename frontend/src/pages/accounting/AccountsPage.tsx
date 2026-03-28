@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, RefreshCw, ChevronRight, ChevronDown, Archive } from 'lucide-react'
+import { Plus, RefreshCw, ChevronRight, ChevronDown, Archive, Trash2 } from 'lucide-react'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useChartOfAccounts,
@@ -99,9 +101,9 @@ function AccountRow({ account, depth, onEdit, onArchive, canManage }: AccountRow
                 {!account.is_system && (
                   <button
                     onClick={() => onArchive(account)}
-                    className="text-xs text-neutral-500 hover:underline"
+                    className="text-xs text-red-500 hover:underline"
                   >
-                    Archive
+                    Delete
                   </button>
                 )}
               </>
@@ -366,15 +368,7 @@ export default function AccountsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-sm text-neutral-600 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeArchived}
-              onChange={(e) => setIncludeArchived(e.target.checked)}
-              className="rounded border-neutral-300"
-            />
-            Show archived
-          </label>
+          <ArchiveToggleButton isArchiveView={includeArchived} onToggle={() => setIncludeArchived(prev => !prev)} />
           <button
             onClick={() => void refetch()}
             disabled={isFetching}
