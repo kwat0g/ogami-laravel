@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Package, AlertTriangle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useShipments, useCreateShipment, useUpdateShipmentStatus, useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import { PageHeader } from '@/components/ui/PageHeader';
+import SearchInput from '@/components/ui/SearchInput';
+import Pagination from '@/components/ui/Pagination';
 import { toast } from 'sonner';
 import { firstErrorMessage } from '@/lib/errorHandler';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -37,7 +39,15 @@ const NEXT_STATUS_LABEL: Partial<Record<ShipmentStatus, string>> = {
 
 export default function ShipmentsPage() {
   const [status, setStatus] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val);
+    setPage(1);
+  }, []);
   const [expandedUlid, setExpandedUlid] = useState<string | null>(null);
   const [actualArrival, setActualArrival] = useState('');
   const [deliveryReceiptId, setDeliveryReceiptId] = useState<number | null>(null);
@@ -54,10 +64,11 @@ export default function ShipmentsPage() {
     nextStatus: ShipmentStatus | null;
   }>({ open: false, ulid: null, nextStatus: null });
 
-  const params: Record<string, string> = {};
+  const params: Record<string, string | number> = { page, per_page: 20 };
   if (status) params.status = status;
+  if (debouncedSearch) params.search = debouncedSearch;
 
-  const { data, isLoading, isError } = useShipments(Object.keys(params).length ? params : undefined);
+  const { data, isLoading, isError } = useShipments(params);
   const { data: drData } = useDeliveryReceipts({ status: 'confirmed', per_page: '100' });
   const confirmedDrs = drData?.data ?? [];
   const createMut = useCreateShipment();
