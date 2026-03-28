@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTeamLoans } from '@/hooks/useLoans'
+import { PageHeader } from '@/components/ui/PageHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
@@ -30,10 +31,7 @@ export default function TeamLoanPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Team Loans</h1>
-      </div>
+      <PageHeader title="Team Loans" />
       <p className="text-sm text-neutral-500 mb-4">
         {data?.meta?.total ?? 0} records
         <span className="ml-2 text-xs text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">

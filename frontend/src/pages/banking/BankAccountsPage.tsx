@@ -186,22 +186,24 @@ export default function BankAccountsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader title="Bank Accounts" />
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-neutral-500">Manage bank accounts linked to GL (GL-006)</p>
-        </div>
-        <DepartmentGuard module="bank_accounts">
-          {canCreate && (
-            <button
-              type="button"
-              onClick={() => { setEditing(undefined); setShowForm(true) }}
-              className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
-            >
-              + New Account
-            </button>
-          )}
-        </DepartmentGuard>
+      <PageHeader
+        title="Bank Accounts"
+        actions={
+          canCreate ? (
+            <DepartmentGuard module="bank_accounts">
+              <button
+                type="button"
+                onClick={() => { setEditing(undefined); setShowForm(true) }}
+                className="px-4 py-2 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800"
+              >
+                + New Account
+              </button>
+            </DepartmentGuard>
+          ) : undefined
+        }
+      />
+      <div>
+        <p className="text-sm text-neutral-500">Manage bank accounts linked to GL (GL-006)</p>
       </div>
 
       {isLoading && <SkeletonLoader rows={5} />}

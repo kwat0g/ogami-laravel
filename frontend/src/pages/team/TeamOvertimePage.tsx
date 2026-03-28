@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
@@ -165,10 +166,7 @@ export default function TeamOvertimePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Team Overtime</h1>
-      </div>
+      <PageHeader title="Team Overtime" />
       <p className="text-sm text-neutral-500 mb-4">
         {data?.meta?.total ?? 0} records
         <span className="ml-2 text-xs text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">

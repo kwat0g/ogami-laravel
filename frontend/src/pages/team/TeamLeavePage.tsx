@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/authStore'
 import {
   useTeamLeaveRequests,
@@ -94,10 +95,7 @@ export default function TeamLeavePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Team Leave Requests</h1>
-      </div>
+      <PageHeader title="Team Leave Requests" />
       <p className="text-sm text-neutral-500 mb-4">
         {data?.meta?.total ?? 0} records
         <span className="ml-2 text-xs text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">
