@@ -164,12 +164,24 @@ class RolePermissionSeeder extends Seeder
         'crm.tickets.manage',
         'crm.tickets.assign',
         'crm.tickets.close',
+        // CRM Leads & Opportunities (Phase 1)
+        'crm.leads.view',
+        'crm.leads.manage',
+        'crm.leads.convert',
+        'crm.opportunities.view',
+        'crm.opportunities.manage',
         // CRM Client Orders (Sales)
         'sales.order_review',
         'sales.order_approve',
         'sales.order_reject',
         'sales.order_negotiate',
         'sales.order_vp_approve',
+        // Sales Quotations & Orders (Phase 1)
+        'sales.quotations.view',
+        'sales.quotations.manage',
+        'sales.orders.view',
+        'sales.orders.manage',
+        'sales.pricing.view',
         // Inventory / Warehouse
         'inventory.items.view',
         'inventory.items.create',
@@ -210,6 +222,25 @@ class RolePermissionSeeder extends Seeder
         'mold.view',
         'mold.manage',
         'mold.log_shots',
+        // Inventory Physical Counts & Transfers (Phase 1)
+        'inventory.physical_count.view',
+        'inventory.physical_count.manage',
+        'inventory.transfers.manage',
+        // AP Payment Batches (Phase 2)
+        'ap.payment_batches.view',
+        'ap.payment_batches.manage',
+        'ap.payment_batches.approve',
+        // AR Dunning (Phase 2)
+        'ar.dunning.view',
+        'ar.dunning.manage',
+        // HR Training & Competency (Phase 3)
+        'hr.training.view',
+        'hr.training.manage',
+        'hr.competency.view',
+        'hr.competency.manage',
+        // Delivery Routes (Phase 3)
+        'delivery.routes.view',
+        'delivery.routes.manage',
         // Delivery / Logistics
         'delivery.view',
         'delivery.manage',
@@ -226,6 +257,9 @@ class RolePermissionSeeder extends Seeder
         // Fixed Assets
         'fixed_assets.view',
         'fixed_assets.manage',
+        'fixed_assets.transfer',
+        // Budget Forecast (Phase 4)
+        'budget.forecast',
         // Payroll (SoD: finance_manager does NOT have initiate/hr_approve - those are HR Manager only)
         'payroll.view_own_payslip',
         'payroll.download_own_payslip',
@@ -459,6 +493,16 @@ class RolePermissionSeeder extends Seeder
             // Sales/Client Orders
             'sales.order_review', 'sales.order_approve', 'sales.order_reject', 'sales.order_negotiate',
             'sales.order_vp_approve',
+            // New module permissions (Phase 1-4)
+            'crm.leads.view', 'crm.opportunities.view',
+            'sales.quotations.view', 'sales.orders.view', 'sales.pricing.view',
+            'inventory.physical_count.view',
+            'ap.payment_batches.view',
+            'ar.dunning.view',
+            'hr.training.view', 'hr.competency.view',
+            'delivery.routes.view',
+            'fixed_assets.transfer',
+            'budget.forecast',
             // Self-service
             'self.view_profile', 'self.view_attendance',
             'leaves.view_own', 'leaves.view_team',
@@ -536,6 +580,21 @@ class RolePermissionSeeder extends Seeder
             'inventory.items.view', 'inventory.items.create', 'inventory.items.edit',
             'inventory.stock.view', 'inventory.locations.view', 'inventory.locations.manage',
             'inventory.adjustments.create',
+            // New module permissions (Phase 1-4) — Manager gets full access
+            'crm.leads.view', 'crm.leads.manage', 'crm.leads.convert',
+            'crm.opportunities.view', 'crm.opportunities.manage',
+            'sales.quotations.view', 'sales.quotations.manage',
+            'sales.orders.view', 'sales.orders.manage',
+            'sales.pricing.view',
+            'inventory.physical_count.view', 'inventory.physical_count.manage',
+            'inventory.transfers.manage',
+            'ap.payment_batches.view', 'ap.payment_batches.manage', 'ap.payment_batches.approve',
+            'ar.dunning.view', 'ar.dunning.manage',
+            'hr.training.view', 'hr.training.manage',
+            'hr.competency.view', 'hr.competency.manage',
+            'delivery.routes.view', 'delivery.routes.manage',
+            'fixed_assets.transfer',
+            'budget.forecast',
             // Inventory (Step 3 checker for MRQ — view context only; no warehouse operations)
             'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note', 'inventory.mrq.check', 'inventory.mrq.review', 'inventory.mrq.vp_approve', 'inventory.mrq.fulfill',
             // Payroll (Accounting Manager needs acctg_approve, not hr_approve)
@@ -640,6 +699,21 @@ class RolePermissionSeeder extends Seeder
             // Vendors (Purchasing Officers can create/manage vendors)
             'vendors.view', 'vendors.manage', 'vendors.archive', 'vendors.accredit', 'vendors.suspend',
             'vendor_invoices.view',
+            // New module permissions (Phase 1-4) — Officer level
+            'crm.leads.view', 'crm.leads.manage',
+            'crm.opportunities.view', 'crm.opportunities.manage',
+            'sales.quotations.view', 'sales.quotations.manage',
+            'sales.orders.view', 'sales.orders.manage',
+            'sales.pricing.view',
+            'inventory.physical_count.view', 'inventory.physical_count.manage',
+            'inventory.transfers.manage',
+            'ap.payment_batches.view', 'ap.payment_batches.manage',
+            'ar.dunning.view', 'ar.dunning.manage',
+            'hr.training.view', 'hr.training.manage',
+            'hr.competency.view',
+            'delivery.routes.view',
+            'fixed_assets.transfer',
+            'budget.forecast',
         ]);
 
         // ── Head (Department Supervisor) ─────────────────────────────────────
@@ -680,12 +754,29 @@ class RolePermissionSeeder extends Seeder
             'iso.view', 'iso.audit',
             // CRM (for Sales Head)
             'crm.tickets.view', 'crm.tickets.create', 'crm.tickets.reply', 'crm.tickets.manage',
+            'crm.leads.view', 'crm.leads.manage', 'crm.leads.convert',
+            'crm.opportunities.view', 'crm.opportunities.manage',
             // Sales/Client Orders — head can review only; approve/reject/negotiate is Sales Manager/VP scope
             'sales.order_review',
-            // Fixed Assets (view)
-            'fixed_assets.view',
-            // Budget (view)
-            'budget.view',
+            'sales.quotations.view', 'sales.quotations.manage',
+            'sales.orders.view', 'sales.orders.manage',
+            'sales.pricing.view',
+            // Inventory physical counts & transfers (Warehouse Head)
+            'inventory.physical_count.view', 'inventory.physical_count.manage',
+            'inventory.transfers.manage',
+            // AP Payment Batches (Accounting Head)
+            'ap.payment_batches.view',
+            // AR Dunning (Accounting/Sales Head)
+            'ar.dunning.view', 'ar.dunning.manage',
+            // HR Training (for all dept heads)
+            'hr.training.view',
+            'hr.competency.view',
+            // Delivery Routes (Warehouse Head)
+            'delivery.routes.view', 'delivery.routes.manage',
+            // Fixed Assets (view + transfer)
+            'fixed_assets.view', 'fixed_assets.transfer',
+            // Budget (view + forecast)
+            'budget.view', 'budget.forecast',
             // Accounting view (for cross-reference)
             'journal_entries.view', 'chart_of_accounts.view',
             'vendors.view', 'customers.view',
@@ -724,6 +815,13 @@ class RolePermissionSeeder extends Seeder
             'mold.view', 'mold.log_shots',
             // Delivery (Staff: view for warehouse staff)
             'delivery.view',
+            // New module permissions (Phase 1-4) — Staff: view only
+            'crm.leads.view', 'crm.opportunities.view',
+            'sales.quotations.view', 'sales.orders.view', 'sales.pricing.view',
+            'inventory.physical_count.view',
+            'ar.dunning.view',
+            'hr.training.view', 'hr.competency.view',
+            'delivery.routes.view',
             // Legacy
             'payslips.view', 'payslips.download', 'leaves.view', 'leaves.create',
             'leave_balances.view', 'loans.view', 'attendance.view',
