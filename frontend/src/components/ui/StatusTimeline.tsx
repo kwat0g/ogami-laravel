@@ -1,151 +1,106 @@
-/**
- * StatusTimeline - Reusable workflow stepper component
- *
- * Shows the progression of an entity through its state machine.
- * Completed steps show green checkmarks, the current step pulses blue,
- * and future steps are greyed out.
- *
- * Usage:
- *   <StatusTimeline
- *     steps={[
- *       { label: 'Draft', status: 'draft' },
- *       { label: 'Submitted', status: 'submitted', actor: 'John Doe', timestamp: '2026-01-15' },
- *       { label: 'Approved', status: 'approved' },
- *     ]}
- *     currentStatus="submitted"
- *   />
- */
-import { CheckCircle2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
-export interface TimelineStep {
-  /** Display label for this step */
-  label: string
-  /** The status value this step represents */
-  status: string
-  /** Who performed this action (shown below label when completed) */
-  actor?: string | null
-  /** When this step was completed (ISO date string or formatted) */
-  timestamp?: string | null
-  /** Optional comment/note */
-  comment?: string | null
+interface AuditEntry {
+  id: number
+  event: string
+  old_values: Record<string, unknown>
+  new_values: Record<string, unknown>
+  user_id: number | null
+  user_name: string | null
+  created_at: string
 }
 
-interface StatusTimelineProps {
-  /** Ordered list of steps in the workflow */
-  steps: TimelineStep[]
-  /** Current status of the entity */
-  currentStatus: string
-  /** Vertical or horizontal layout */
-  direction?: 'vertical' | 'horizontal'
-  /** If true, treat currentStatus as a terminal/rejected state (show red) */
-  isRejected?: boolean
-}
-
-function formatTimestamp(ts: string): string {
+function formatDate(dateStr: string): string {
   try {
-    const d = new Date(ts)
-    if (isNaN(d.getTime())) return ts
-    return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+    return new Date(dateStr).toLocaleDateString('en-PH', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   } catch {
-    return ts
+    return dateStr
   }
 }
 
-export function StatusTimeline({ steps, currentStatus, direction = 'vertical', isRejected = false }: StatusTimelineProps): JSX.Element {
-  const currentIdx = steps.findIndex(s => s.status === currentStatus)
+const EVENT_LABELS: Record<string, string> = {
+  created: 'Created',
+  updated: 'Updated',
+  deleted: 'Deleted',
+  restored: 'Restored',
+}
 
-  if (direction === 'horizontal') {
-    return (
-      <div className="flex items-center gap-0 overflow-x-auto py-2">
-        {steps.map((step, idx) => {
-          const isDone = idx < currentIdx || (idx === currentIdx && !isRejected)
-          const isCurrent = idx === currentIdx
-          const isLast = idx === steps.length - 1
+interface Props {
+  auditableType: string
+  auditableId: number
+  title?: string
+}
+
+/**
+ * Status Timeline — shows the audit history of status transitions for any model.
+ * Uses owen-it/laravel-auditing data via a generic API endpoint.
+ */
+export default function StatusTimeline({ auditableType, auditableId, title = 'Activity Timeline' }: Props) {
+  const { data: audits, isLoading } = useQuery({
+    queryKey: ['audit-trail', auditableType, auditableId],
+    queryFn: async () => {
+      const res = await api.get<{ data: AuditEntry[] }>(
+        `/audit-trail/${auditableType}/${auditableId}`,
+      )
+      return res.data.data
+    },
+    staleTime: 60_000,
+  })
+
+  if (isLoading) return <SkeletonLoader rows={3} />
+  if (!audits || audits.length === 0) return <div className="text-xs text-neutral-400 py-2">No activity recorded.</div>
+
+  return (
+    <div className="space-y-2">
+      <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">{title}</h4>
+      <div className="space-y-1">
+        {audits.map((audit) => {
+          const statusChanged = audit.new_values?.status !== undefined
+          const oldStatus = audit.old_values?.status as string | undefined
+          const newStatus = audit.new_values?.status as string | undefined
+          const changedFields = Object.keys(audit.new_values).filter((k) => k !== 'updated_at')
 
           return (
-            <div key={step.status} className="flex items-center">
-              <div className="flex flex-col items-center min-w-[80px]">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-                    isDone && !isCurrent
-                      ? 'bg-green-100 text-green-700'
-                      : isCurrent && isRejected
-                        ? 'bg-red-100 text-red-700 ring-2 ring-red-400'
-                        : isCurrent
-                          ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-400 animate-pulse'
-                          : 'bg-neutral-100 text-neutral-400'
-                  }`}
-                >
-                  {isDone && !isCurrent ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
-                </div>
-                <span className={`text-[10px] mt-1 text-center leading-tight ${
-                  isCurrent ? 'font-semibold text-neutral-900' : isDone ? 'text-neutral-600' : 'text-neutral-400'
-                }`}>
-                  {step.label}
-                </span>
+            <div key={audit.id} className="flex items-start gap-2 text-xs py-1 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+              <div className="text-neutral-400 whitespace-nowrap w-32 flex-shrink-0">
+                {formatDate(audit.created_at)}
               </div>
-              {!isLast && (
-                <div className={`w-8 h-0.5 -mt-4 ${idx < currentIdx ? 'bg-green-300' : 'bg-neutral-200'}`} />
-              )}
+              <div className="flex-1">
+                {statusChanged ? (
+                  <span>
+                    Status changed from{' '}
+                    <span className="font-medium text-neutral-600 dark:text-neutral-300">
+                      {(oldStatus ?? 'new').replace(/_/g, ' ')}
+                    </span>
+                    {' to '}
+                    <span className="font-semibold text-neutral-900 dark:text-white">
+                      {(newStatus ?? '').replace(/_/g, ' ')}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-neutral-500">
+                    {EVENT_LABELS[audit.event] ?? audit.event}
+                    {changedFields.length > 0 && (
+                      <span className="text-neutral-400"> ({changedFields.join(', ')})</span>
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="text-neutral-400 whitespace-nowrap flex-shrink-0">
+                {audit.user_name ?? 'System'}
+              </div>
             </div>
           )
         })}
       </div>
-    )
-  }
-
-  // Vertical layout (default)
-  return (
-    <div className="space-y-0">
-      {steps.map((step, idx) => {
-        const isDone = idx < currentIdx || (idx === currentIdx && !isRejected)
-        const isCurrent = idx === currentIdx
-        const isLast = idx === steps.length - 1
-
-        return (
-          <div key={step.status} className="flex items-start gap-3">
-            {/* Node + connector line */}
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0 transition-all ${
-                  isDone && !isCurrent
-                    ? 'bg-green-100 text-green-700'
-                    : isCurrent && isRejected
-                      ? 'bg-red-100 text-red-700 ring-2 ring-red-400'
-                      : isCurrent
-                        ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-400'
-                        : 'bg-neutral-100 text-neutral-400'
-                }`}
-              >
-                {isDone && !isCurrent ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
-              </div>
-              {!isLast && (
-                <div className={`w-0.5 h-8 ${idx < currentIdx ? 'bg-green-200' : 'bg-neutral-200'}`} />
-              )}
-            </div>
-
-            {/* Content */}
-            <div className={`pb-4 ${isLast ? 'pb-0' : ''}`}>
-              <p className={`text-sm font-medium ${
-                isCurrent ? 'text-neutral-900' : isDone ? 'text-neutral-700' : 'text-neutral-400'
-              }`}>
-                {step.label}
-              </p>
-              {isDone && step.actor && (
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  by {step.actor}
-                  {step.timestamp && <span className="ml-1 text-neutral-400">- {formatTimestamp(step.timestamp)}</span>}
-                </p>
-              )}
-              {isDone && step.comment && (
-                <p className="text-xs text-neutral-500 mt-0.5 italic">"{step.comment}"</p>
-              )}
-            </div>
-          </div>
-        )
-      })}
     </div>
   )
 }
-
-export default StatusTimeline
