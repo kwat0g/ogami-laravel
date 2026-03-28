@@ -268,6 +268,16 @@ const VendorInvoicesPage         = lazy(() => import('@/pages/vendor-portal/Vend
 const TicketListPage      = lazy(() => import('@/pages/crm/TicketListPage'))
 const TicketDetailPage    = lazy(() => import('@/pages/crm/TicketDetailPage'))
 const CrmDashboardPage    = lazy(() => import('@/pages/crm/CrmDashboardPage'))
+const LeadListPage        = lazy(() => import('@/pages/crm/LeadListPage'))
+const LeadDetailPage      = lazy(() => import('@/pages/crm/LeadDetailPage'))
+const OpportunityListPage = lazy(() => import('@/pages/crm/OpportunityListPage'))
+
+// Sales Module (Phase 1)
+const QuotationListPage   = lazy(() => import('@/pages/sales/QuotationListPage'))
+const SalesOrderListPage  = lazy(() => import('@/pages/sales/SalesOrderListPage'))
+
+// Inventory Enhancements (Phase 1)
+const StockTransferPage   = lazy(() => import('@/pages/inventory/StockTransferPage'))
 
 // Budget domain
 const CostCentersPage = lazy(() => import('@/pages/budget/CostCentersPage'))
@@ -485,6 +495,7 @@ const router = createBrowserRouter([
       { path: '/inventory/requisitions/:ulid', element: withSuspense(guard('inventory.mrq.view', <MaterialRequisitionDetailPage />)) },
       { path: '/inventory/valuation', element: withSuspense(guard('inventory.stock.view', <InventoryValuationPage />)) },
       { path: '/inventory/physical-count', element: withSuspense(guard('inventory.adjustments.create', <PhysicalCountPage />)) },
+      { path: '/inventory/transfers', element: withSuspense(guard('inventory.adjustments.create', <StockTransferPage />)) },
 
       // ── Production / PPC ──────────────────────────────────────────────────
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
@@ -551,9 +562,12 @@ const router = createBrowserRouter([
       { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },      { path: '/admin/backup', element: withSuspense(guard('system.manage_backups', <BackupPage />)) },
 
       // ── CRM — Staff portal ────────────────────────────────────────────────
-      { path: '/crm/dashboard',      element: withSuspense(guard('crm.tickets.view', <CrmDashboardPage />)) },
-      { path: '/crm/tickets',        element: withSuspense(guard('crm.tickets.view', <TicketListPage />)) },
-      { path: '/crm/tickets/:ulid',  element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
+      { path: '/crm/dashboard',           element: withSuspense(guard('crm.tickets.view', <CrmDashboardPage />)) },
+      { path: '/crm/tickets',             element: withSuspense(guard('crm.tickets.view', <TicketListPage />)) },
+      { path: '/crm/tickets/:ulid',       element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
+      { path: '/crm/leads',               element: withSuspense(guard('crm.tickets.view', <LeadListPage />)) },
+      { path: '/crm/leads/:ulid',         element: withSuspense(guard('crm.tickets.view', <LeadDetailPage />)) },
+      { path: '/crm/opportunities',       element: withSuspense(guard('crm.tickets.view', <OpportunityListPage />)) },
 
       // ── Budget ────────────────────────────────────────────────────────────
       { path: '/budget/cost-centers',       element: withSuspense(guard('budget.view', <CostCentersPage />)) },
@@ -582,6 +596,8 @@ const router = createBrowserRouter([
     // ── Sales / Client Orders Review ───────────────────────────────────────
     { path: '/sales/client-orders', element: withSuspense(guard('sales.order_review', <ClientOrdersReviewPage />)) },
     { path: '/sales/client-orders/:ulid', element: withSuspense(guard('sales.order_review', <ClientOrderReviewDetailPage />)) },
+    { path: '/sales/quotations', element: withSuspense(guard('sales.order_review', <QuotationListPage />)) },
+    { path: '/sales/orders', element: withSuspense(guard('sales.order_review', <SalesOrderListPage />)) },
     ],
   },
 
