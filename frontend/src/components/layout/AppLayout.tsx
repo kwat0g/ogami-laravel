@@ -153,7 +153,6 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Accounts Payable' },
       { label: 'Vendors', href: '/accounting/vendors', permission: 'vendors.view' },
       { label: 'Vendor Invoices', href: '/accounting/ap/invoices', permission: 'vendor_invoices.view' },
-      { label: 'Loan Review', href: '/accounting/loans', permission: 'loans.accounting_approve' },
       // ── Accounts Receivable ─────────────────────────────────────────────────
       { divider: true, label: 'Accounts Receivable' },
       { label: 'Customers', href: '/ar/customers', permission: 'customers.view' },
@@ -222,7 +221,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
       { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
-      { label: 'Stock Adjustments', href: '/inventory/adjustments', permission: 'inventory.adjustments.create' },
       { label: 'Warehouse Transfers', href: '/inventory/transfers', permission: 'inventory.transfers.manage' },
     ],
   },
@@ -238,7 +236,7 @@ const SECTIONS: NavSection[] = [
     children: [
       // ── Production ──────────────────────────────────────────────────────────
       { divider: true, label: 'Production' },
-      { label: 'Work Orders', href: '/production/orders', permission: 'production.orders.view' },
+      { label: 'Production Orders', href: '/production/orders', permission: 'production.orders.view' },
       { label: 'Bill of Materials', href: '/production/boms', permission: 'production.bom.view' },
       { label: 'Delivery Schedules', href: '/production/delivery-schedules', permission: 'production.delivery-schedule.view' },
       // ── Quality Control ─────────────────────────────────────────────────────
@@ -247,7 +245,7 @@ const SECTIONS: NavSection[] = [
       // ── Maintenance ─────────────────────────────────────────────────────────
       { divider: true, label: 'Maintenance' },
       { label: 'Equipment', href: '/maintenance/equipment', permission: 'maintenance.view' },
-      { label: 'Work Orders', href: '/maintenance/work-orders', permission: 'maintenance.view' },
+      { label: 'Maintenance Work Orders', href: '/maintenance/work-orders', permission: 'maintenance.view' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════

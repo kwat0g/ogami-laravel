@@ -98,6 +98,11 @@ export default function StockBalancePage(): React.ReactElement {
               ]}
               filename="stock-balances"
             />
+            {canAdjust && (
+              <Link to="/inventory/adjustments" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
+                Adjustment History
+              </Link>
+            )}
             <Link to="/inventory/valuation" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
               Valuation
             </Link>
