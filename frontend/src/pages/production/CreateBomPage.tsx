@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCreateBom } from '@/hooks/useProduction'
 import { useItems } from '@/hooks/useInventory'
@@ -251,6 +251,70 @@ export default function CreateBomPage(): React.ReactElement {
             })}
           </div>
         </div>
+
+        {/* Live Cost Estimate */}
+        {components.some(c => c.component_item_id > 0) && (
+          <div className="bg-blue-50 border border-blue-200 rounded p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calculator className="w-4 h-4 text-blue-600" />
+              <h3 className="text-sm font-semibold text-blue-800">Estimated Material Cost (before saving)</h3>
+            </div>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-blue-600">
+                  <th className="text-left py-1">Component</th>
+                  <th className="text-right py-1">Qty</th>
+                  <th className="text-right py-1">Scrap %</th>
+                  <th className="text-right py-1">Unit Price</th>
+                  <th className="text-right py-1">Line Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {components.filter(c => c.component_item_id > 0).map((c, idx) => {
+                  const item = items.find(i => i.id === c.component_item_id)
+                  const unitPrice = item?.standard_price_centavos ?? 0
+                  const qty = Number(c.qty_per_unit) || 0
+                  const scrap = 1 + (Number(c.scrap_factor_pct) || 0) / 100
+                  const lineCost = Math.round(qty * scrap * unitPrice)
+                  return (
+                    <tr key={idx} className="border-t border-blue-100">
+                      <td className="py-1 text-blue-900">{item?.name ?? '-'}</td>
+                      <td className="py-1 text-right tabular-nums">{qty}</td>
+                      <td className="py-1 text-right tabular-nums">{c.scrap_factor_pct}%</td>
+                      <td className="py-1 text-right tabular-nums">
+                        {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(unitPrice / 100)}
+                      </td>
+                      <td className="py-1 text-right tabular-nums font-medium">
+                        {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(lineCost / 100)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-blue-300 font-semibold text-blue-900">
+                  <td colSpan={4} className="py-2 text-right">Estimated Total Material Cost:</td>
+                  <td className="py-2 text-right tabular-nums">
+                    {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(
+                      components
+                        .filter(c => c.component_item_id > 0)
+                        .reduce((sum, c) => {
+                          const item = items.find(i => i.id === c.component_item_id)
+                          const unitPrice = item?.standard_price_centavos ?? 0
+                          const qty = Number(c.qty_per_unit) || 0
+                          const scrap = 1 + (Number(c.scrap_factor_pct) || 0) / 100
+                          return sum + Math.round(qty * scrap * unitPrice)
+                        }, 0) / 100
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+            <p className="text-[10px] text-blue-500 mt-2">
+              * Estimated from component standard prices. Final cost may include labor and overhead after saving.
+            </p>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-3">

@@ -22,8 +22,8 @@ export default function BomListPage(): React.ReactElement {
   const deleteMut = useDeleteBom()
   const qc = useQueryClient()
   const rollupCost = useMutation({
-    mutationFn: async (bomId: number) => {
-      const { data } = await api.post(`/production/boms/${bomId}/rollup-cost`)
+    mutationFn: async (bomUlid: string) => {
+      const { data } = await api.post(`/production/boms/${bomUlid}/rollup-cost`)
       return data
     },
     onSuccess: () => {
@@ -117,13 +117,13 @@ export default function BomListPage(): React.ReactElement {
                         </span>
                         <div className="flex items-center gap-2">
                           <Link
-                            to={`/production/boms/${bom.id}/cost-breakdown`}
+                            to={`/production/boms/${bom.ulid}/cost-breakdown`}
                             className="text-blue-600 hover:underline text-xs"
                           >
                             View Details
                           </Link>
                           <button
-                            onClick={() => rollupCost.mutate(bom.id)}
+                            onClick={() => rollupCost.mutate(bom.ulid)}
                             disabled={rollupCost.isPending}
                             className="text-neutral-500 hover:text-blue-600 hover:underline text-xs flex items-center gap-1"
                             title="Recalculate standard cost"

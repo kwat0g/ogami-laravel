@@ -56,15 +56,15 @@ function pctOf(part: number, total: number): string {
 }
 
 export default function BomCostBreakdownPage() {
-  const { id } = useParams<{ id: string }>()
+  const { ulid } = useParams<{ ulid: string }>()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['bom-cost-breakdown', id],
+    queryKey: ['bom-cost-breakdown', ulid],
     queryFn: async () => {
-      const { data } = await api.get<{ data: CostBreakdown }>(`/production/boms/${id}/cost-breakdown`)
+      const { data } = await api.get<{ data: CostBreakdown }>(`/production/boms/${ulid}/cost-breakdown`)
       return data.data
     },
-    enabled: !!id,
+    enabled: !!ulid,
   })
 
   if (isLoading) return <SkeletonLoader rows={10} />
