@@ -184,12 +184,6 @@ export default function LeaveListPage() {
               filename="leave-requests"
             />
             <Link
-              to="/hr/leave/calendar"
-              className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors"
-            >
-              Calendar
-            </Link>
-            <Link
               to="/hr/leave/balances"
               className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-4 py-2 rounded transition-colors"
             >
