@@ -16,6 +16,172 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+    // ── System Health Overview (12-module pulse) ───────────────────────
+    Route::get('dashboard/system-health', function (): JsonResponse {
+        $modules = [];
+
+        // 1. HR (People)
+        $modules[] = [
+            'module' => 'HR',
+            'icon' => 'users',
+            'color' => '#3b82f6',
+            'metrics' => [
+                ['label' => 'Active Employees', 'value' => (int) DB::table('employees')->whereNull('deleted_at')->where('employment_status', 'active')->count()],
+                ['label' => 'On Leave Today', 'value' => (int) DB::table('leave_requests')->where('status', 'approved')->where('date_from', '<=', now()->toDateString())->where('date_to', '>=', now()->toDateString())->count()],
+                ['label' => 'Pending Leave', 'value' => (int) DB::table('leave_requests')->whereIn('status', ['pending', 'pending_supervisor', 'pending_hr'])->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/hr/employees/all',
+        ];
+
+        // 2. Payroll
+        $lastRun = DB::table('payroll_runs')->whereNull('deleted_at')->orderByDesc('created_at')->first();
+        $modules[] = [
+            'module' => 'Payroll',
+            'icon' => 'banknote',
+            'color' => '#10b981',
+            'metrics' => [
+                ['label' => 'Last Run', 'value' => $lastRun?->status ?? 'No runs'],
+                ['label' => 'Total Runs', 'value' => (int) DB::table('payroll_runs')->whereNull('deleted_at')->count()],
+                ['label' => 'Pending Approval', 'value' => (int) DB::table('payroll_runs')->whereIn('status', ['SUBMITTED', 'HR_APPROVED', 'ACCTG_APPROVED'])->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/payroll/runs',
+        ];
+
+        // 3. Accounting (GL + AP + AR + Tax)
+        $modules[] = [
+            'module' => 'Accounting',
+            'icon' => 'book-open',
+            'color' => '#8b5cf6',
+            'metrics' => [
+                ['label' => 'Journal Entries', 'value' => (int) DB::table('journal_entries')->whereNull('deleted_at')->count()],
+                ['label' => 'Open AP Invoices', 'value' => (int) DB::table('vendor_invoices')->whereNotIn('status', ['paid', 'cancelled', 'voided'])->whereNull('deleted_at')->count()],
+                ['label' => 'Open AR Invoices', 'value' => (int) DB::table('customer_invoices')->whereNotIn('status', ['paid', 'cancelled', 'voided'])->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/accounting/journal-entries',
+        ];
+
+        // 4. Procurement
+        $modules[] = [
+            'module' => 'Procurement',
+            'icon' => 'shopping-cart',
+            'color' => '#f59e0b',
+            'metrics' => [
+                ['label' => 'Pending PRs', 'value' => (int) DB::table('purchase_requests')->whereNotIn('status', ['cancelled', 'rejected', 'converted_to_po'])->whereNull('deleted_at')->count()],
+                ['label' => 'Active POs', 'value' => (int) DB::table('purchase_orders')->whereNotIn('status', ['closed', 'cancelled'])->whereNull('deleted_at')->count()],
+                ['label' => 'Pending GRs', 'value' => (int) DB::table('goods_receipts')->where('status', 'draft')->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/procurement/purchase-requests',
+        ];
+
+        // 5. Inventory
+        $modules[] = [
+            'module' => 'Inventory',
+            'icon' => 'package',
+            'color' => '#06b6d4',
+            'metrics' => [
+                ['label' => 'Item Masters', 'value' => (int) DB::table('item_masters')->whereNull('deleted_at')->count()],
+                ['label' => 'Low Stock Items', 'value' => (int) DB::table('stock_balances')->join('item_masters', 'stock_balances.item_id', '=', 'item_masters.id')->whereColumn('stock_balances.quantity_on_hand', '<=', 'item_masters.reorder_point')->where('item_masters.reorder_point', '>', 0)->count()],
+                ['label' => 'Pending MRQs', 'value' => (int) DB::table('material_requisitions')->whereNotIn('status', ['fulfilled', 'cancelled', 'rejected'])->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/inventory/items',
+        ];
+
+        // 6. Production
+        $modules[] = [
+            'module' => 'Production',
+            'icon' => 'factory',
+            'color' => '#ec4899',
+            'metrics' => [
+                ['label' => 'Active Orders', 'value' => (int) DB::table('production_orders')->whereIn('status', ['released', 'in_progress'])->whereNull('deleted_at')->count()],
+                ['label' => 'Draft Orders', 'value' => (int) DB::table('production_orders')->where('status', 'draft')->whereNull('deleted_at')->count()],
+                ['label' => 'BOMs', 'value' => (int) DB::table('bill_of_materials')->where('is_active', true)->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/production/orders',
+        ];
+
+        // 7. QC
+        $modules[] = [
+            'module' => 'Quality Control',
+            'icon' => 'shield-check',
+            'color' => '#14b8a6',
+            'metrics' => [
+                ['label' => 'Pending Inspections', 'value' => (int) DB::table('inspections')->whereIn('status', ['scheduled', 'in_progress'])->whereNull('deleted_at')->count()],
+                ['label' => 'Open NCRs', 'value' => (int) DB::table('non_conformance_reports')->whereNotIn('status', ['closed', 'cancelled'])->whereNull('deleted_at')->count()],
+                ['label' => 'Pass Rate', 'value' => (function () {
+                    $total = DB::table('inspections')->whereIn('status', ['passed', 'failed'])->count();
+                    $passed = DB::table('inspections')->where('status', 'passed')->count();
+                    return $total > 0 ? round(($passed / $total) * 100) . '%' : 'N/A';
+                })()],
+            ],
+            'href' => '/qc/inspections',
+        ];
+
+        // 8. Maintenance
+        $modules[] = [
+            'module' => 'Maintenance',
+            'icon' => 'wrench',
+            'color' => '#f97316',
+            'metrics' => [
+                ['label' => 'Open Work Orders', 'value' => (int) DB::table('maintenance_work_orders')->whereNotIn('status', ['completed', 'cancelled', 'closed'])->whereNull('deleted_at')->count()],
+                ['label' => 'Equipment Count', 'value' => (int) DB::table('equipment')->whereNull('deleted_at')->count()],
+                ['label' => 'Active Molds', 'value' => (int) DB::table('mold_masters')->where('status', 'active')->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/maintenance/work-orders',
+        ];
+
+        // 9. Delivery
+        $modules[] = [
+            'module' => 'Delivery',
+            'icon' => 'truck',
+            'color' => '#6366f1',
+            'metrics' => [
+                ['label' => 'Pending DRs', 'value' => (int) DB::table('delivery_receipts')->where('status', 'draft')->whereNull('deleted_at')->count()],
+                ['label' => 'Ready Schedules', 'value' => (int) DB::table('delivery_schedules')->where('status', 'ready')->whereNull('deleted_at')->count()],
+                ['label' => 'Vehicles', 'value' => (int) DB::table('vehicles')->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/delivery/receipts',
+        ];
+
+        // 10. CRM & Sales
+        $modules[] = [
+            'module' => 'CRM & Sales',
+            'icon' => 'handshake',
+            'color' => '#e11d48',
+            'metrics' => [
+                ['label' => 'Active Orders', 'value' => (int) DB::table('client_orders')->whereNotIn('status', ['cancelled', 'delivered', 'completed'])->whereNull('deleted_at')->count()],
+                ['label' => 'Open Tickets', 'value' => (int) DB::table('crm_tickets')->whereNotIn('status', ['closed', 'resolved'])->whereNull('deleted_at')->count()],
+                ['label' => 'Customers', 'value' => (int) DB::table('customers')->whereNull('deleted_at')->count()],
+            ],
+            'href' => '/crm/orders',
+        ];
+
+        // 11. Budget
+        $modules[] = [
+            'module' => 'Budget',
+            'icon' => 'wallet',
+            'color' => '#84cc16',
+            'metrics' => [
+                ['label' => 'Cost Centers', 'value' => (int) DB::table('cost_centers')->where('is_active', true)->count()],
+                ['label' => 'Dept Budgets Set', 'value' => (int) DB::table('departments')->where('annual_budget_centavos', '>', 0)->count()],
+            ],
+            'href' => '/budget/cost-centers',
+        ];
+
+        // 12. Fixed Assets
+        $modules[] = [
+            'module' => 'Fixed Assets',
+            'icon' => 'landmark',
+            'color' => '#a855f7',
+            'metrics' => [
+                ['label' => 'Active Assets', 'value' => (int) DB::table('fixed_assets')->where('status', 'active')->whereNull('deleted_at')->count()],
+                ['label' => 'Total Book Value', 'value' => '₱' . number_format((float) DB::table('fixed_assets')->where('status', 'active')->whereNull('deleted_at')->sum('book_value_centavos') / 100, 0)],
+            ],
+            'href' => '/fixed-assets',
+        ];
+
+        return response()->json(['data' => $modules]);
+    });
+
     // ── Chain Record Timeline ────────────────────────────────────────────
     Route::get('chain-record/{type}/{id}', function (string $type, int $id): JsonResponse {
         $service = app(\App\Services\ChainRecordService::class);

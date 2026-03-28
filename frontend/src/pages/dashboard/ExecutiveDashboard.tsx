@@ -18,6 +18,7 @@ import {
   QuickActions,
   formatPeso,
 } from '@/components/dashboard/DashboardWidgets'
+import SystemHealthOverview from '@/components/dashboard/SystemHealthOverview'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
@@ -68,6 +69,9 @@ export default function ExecutiveDashboard() {
           Company-wide performance, financial health, and workforce metrics
         </p>
       </div>
+
+      {/* System Health Overview — 12-module command center */}
+      <SystemHealthOverview />
 
       {/* Pending Executive Approvals */}
       {pendingTotal > 0 && (
