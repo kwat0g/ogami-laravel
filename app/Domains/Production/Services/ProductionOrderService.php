@@ -553,6 +553,73 @@ final class ProductionOrderService implements ServiceContract
             'remarks' => $data['remarks'] ?? null,
         ]);
 
+        // ── A3: Auto-log mold shots from production output ──────────────────
+        // MOLD-AUTO-001: If this production order is linked to a mold (via BOM
+        // or direct assignment), automatically log shot count based on output qty
+        // and mold cavity count: shots = ceil(qty_produced / cavity_count).
+        // Controlled by system_setting 'automation.production_output.auto_log_mold_shots'.
+        $this->autoLogMoldShots($order, $data, $user);
+
         return $log->load('operator', 'recordedBy');
+    }
+
+    /**
+     * Auto-log mold shots when production output is recorded.
+     *
+     * If the production order's product has an associated mold, calculate
+     * shots = ceil(qty_produced / cavity_count) and log them.
+     */
+    private function autoLogMoldShots(ProductionOrder $order, array $data, User $user): void
+    {
+        // Check if automation is enabled
+        $enabled = (bool) (\DB::table('system_settings')
+            ->where('key', 'automation.production_output.auto_log_mold_shots')
+            ->value('value') ?? true);
+
+        if (! $enabled) {
+            return;
+        }
+
+        try {
+            // Find mold linked to this production order's product
+            $mold = \App\Domains\Mold\Models\MoldMaster::query()
+                ->where('product_item_id', $order->product_item_id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($mold === null) {
+                return;
+            }
+
+            $qtyProduced = (float) ($data['qty_produced'] ?? 0);
+            $cavityCount = max(1, (int) $mold->cavity_count);
+            $shotCount = (int) ceil($qtyProduced / $cavityCount);
+
+            if ($shotCount <= 0) {
+                return;
+            }
+
+            $moldService = app(\App\Domains\Mold\Services\MoldService::class);
+            $moldService->logShots($mold, [
+                'shot_count' => $shotCount,
+                'production_order_id' => $order->id,
+                'operator_id' => $data['operator_id'] ?? $user->id,
+                'log_date' => $data['log_date'] ?? today()->toDateString(),
+                'remarks' => "Auto-logged from production output: {$qtyProduced} units / {$cavityCount} cavities = {$shotCount} shots",
+            ], $user->id);
+
+            Log::info("[Production] Auto-logged {$shotCount} mold shots for mold #{$mold->mold_code}", [
+                'production_order_id' => $order->id,
+                'mold_id' => $mold->id,
+                'qty_produced' => $qtyProduced,
+                'cavity_count' => $cavityCount,
+            ]);
+        } catch (\Throwable $e) {
+            // Don't fail production output if mold shot logging fails
+            Log::warning('[Production] Auto mold shot logging failed', [
+                'production_order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
