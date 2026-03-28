@@ -105,8 +105,10 @@ export default function BomListPage(): React.ReactElement {
                 {data?.data?.map((bom) => (
                   <tr key={bom.id} className="even:bg-neutral-100 hover:bg-neutral-50">
                     <td className="px-4 py-3">
-                      <div className="font-mono text-neutral-900 font-medium text-xs">{bom.product_item?.item_code}</div>
-                      <div className="text-neutral-700 text-sm">{bom.product_item?.name}</div>
+                      <Link to={`/production/boms/${bom.ulid}`} className="block hover:underline">
+                        <div className="font-mono text-neutral-900 font-medium text-xs">{bom.product_item?.item_code}</div>
+                        <div className="text-neutral-700 text-sm">{bom.product_item?.name}</div>
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-neutral-500">v{bom.version}</td>
                     <td className="px-4 py-3 text-neutral-500">{bom.components?.length ?? '—'} items</td>
@@ -117,7 +119,7 @@ export default function BomListPage(): React.ReactElement {
                         </span>
                         <div className="flex items-center gap-2">
                           <Link
-                            to={`/production/boms/${bom.ulid}/cost-breakdown`}
+                            to={`/production/boms/${bom.ulid}`}
                             className="text-blue-600 hover:underline text-xs"
                           >
                             View Details

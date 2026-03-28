@@ -201,6 +201,7 @@ const CreateProductionOrderPage      = lazy(() => import('@/pages/production/Cre
 const ProductionOrderDetailPage      = lazy(() => import('@/pages/production/ProductionOrderDetailPage'))
 const ProductionCostPage             = lazy(() => import('@/pages/production/ProductionCostPage'))
 const BomCostBreakdownPage           = lazy(() => import('@/pages/production/BomCostBreakdownPage'))
+const BomDetailPage                  = lazy(() => import('@/pages/production/BomDetailPage'))
 
 // Delivery
 const DeliveryReceiptListPage         = lazy(() => import('@/pages/delivery/DeliveryReceiptListPage'))
@@ -541,6 +542,7 @@ const router = createBrowserRouter([
       { path: '/production/mrp', element: withSuspense(guard('production.order.view', <TimePhasedMrpPage />)) },
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
       { path: '/production/boms/new', element: withSuspense(guard('production.bom.manage', <CreateBomPage />)) },
+      { path: '/production/boms/:ulid', element: withSuspense(guard('production.bom.view', <BomDetailPage />)) },
       { path: '/production/boms/:ulid/edit', element: withSuspense(guard('production.bom.manage', <EditBomPage />)) },
     { path: '/production/delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
     { path: '/production/delivery-schedules/new', element: withSuspense(guard('production.delivery-schedule.manage', <CreateDeliverySchedulePage />)) },
