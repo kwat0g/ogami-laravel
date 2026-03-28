@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useProductionOrders, useBoms, useDeliverySchedules } from '@/hooks/useProduction'
+import { useInspections } from '@/hooks/useQC'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
+import { MiniDonutChart } from '@/components/dashboard/DashboardWidgets'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {
@@ -10,6 +13,8 @@ import {
   ClipboardList,
   ArrowUpRight,
   AlertCircle,
+  ShieldCheck,
+  Activity,
 } from 'lucide-react'
 
 function KpiCard({
@@ -79,10 +84,13 @@ function ModuleLink({
 export default function ProductionManagerDashboard(): React.ReactElement {
   const { data: releasedOrders, isLoading: l1 } = useProductionOrders({ status: 'released', per_page: 1 })
   const { data: draftOrders,    isLoading: l2 } = useProductionOrders({ status: 'draft',    per_page: 1 })
+  const { data: inProgressOrders, isLoading: l2b } = useProductionOrders({ status: 'in_progress', per_page: 1 })
+  const { data: completedOrders,  isLoading: l2c } = useProductionOrders({ status: 'completed', per_page: 1 })
   const { data: boms,           isLoading: l3 } = useBoms({ per_page: 1 })
   const { data: schedules,      isLoading: l4 } = useDeliverySchedules({ per_page: 1 })
+  const { data: inspections,    isLoading: l5 } = useInspections({ stage: 'ipqc', per_page: 1 })
 
-  if (l1 || l2 || l3 || l4) return <SkeletonLoader rows={8} />
+  if (l1 || l2 || l2b || l2c || l3 || l4 || l5) return <SkeletonLoader rows={8} />
 
   const draftCount = draftOrders?.meta?.total ?? 0
 
@@ -90,7 +98,7 @@ export default function ProductionManagerDashboard(): React.ReactElement {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">Production Dashboard</h1>
+        <DashboardHeader roleLabel="Production Manager" subtitle="Production orders, BOMs, and delivery schedules" />
         <p className="text-sm text-neutral-500 mt-0.5">Supervise production activities, BOMs, and delivery schedules</p>
       </div>
 
@@ -111,7 +119,7 @@ export default function ProductionManagerDashboard(): React.ReactElement {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         <KpiCard
           label="In Production"
           value={releasedOrders?.meta?.total ?? 0}
@@ -135,12 +143,70 @@ export default function ProductionManagerDashboard(): React.ReactElement {
           href="/production/boms"
         />
         <KpiCard
-          label="Delivery Schedules"
-          value={schedules?.meta?.total ?? 0}
-          sub="Customer commitments"
-          icon={Truck}
-          href="/production/delivery-schedules"
+          label="In Progress"
+          value={inProgressOrders?.meta?.total ?? 0}
+          sub="Active on floor"
+          icon={Activity}
+          href="/production/orders"
         />
+        <KpiCard
+          label="Completed"
+          value={completedOrders?.meta?.total ?? 0}
+          sub="Awaiting closure"
+          icon={Package}
+          href="/production/orders"
+        />
+        <KpiCard
+          label="QC Inspections"
+          value={inspections?.meta?.total ?? 0}
+          sub="In-process QC"
+          icon={ShieldCheck}
+          href="/qc/inspections"
+        />
+      </div>
+
+      {/* Production Status Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Factory className="h-4 w-4 text-neutral-500" />
+              Order Status Distribution
+            </div>
+          </CardHeader>
+          <CardBody>
+            <MiniDonutChart
+              data={[
+                { name: 'Draft', value: draftCount, color: '#9ca3af' },
+                { name: 'Released', value: releasedOrders?.meta?.total ?? 0, color: '#3b82f6' },
+                { name: 'In Progress', value: inProgressOrders?.meta?.total ?? 0, color: '#f59e0b' },
+                { name: 'Completed', value: completedOrders?.meta?.total ?? 0, color: '#10b981' },
+              ].filter(d => d.value > 0)}
+              height={180}
+              centerLabel="Total"
+              centerValue={(draftCount + (releasedOrders?.meta?.total ?? 0) + (inProgressOrders?.meta?.total ?? 0) + (completedOrders?.meta?.total ?? 0))}
+            />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Truck className="h-4 w-4 text-neutral-500" />
+              Delivery Commitments
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="flex items-center justify-center h-[180px]">
+              <div className="text-center">
+                <p className="text-4xl font-bold text-neutral-900">{schedules?.meta?.total ?? 0}</p>
+                <p className="text-sm text-neutral-500 mt-2">Active Delivery Schedules</p>
+                <Link to="/production/delivery-schedules" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                  View all schedules
+                </Link>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
       </div>
 
       {/* Production + Inventory side by side */}

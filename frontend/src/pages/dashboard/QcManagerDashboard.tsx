@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useInspections, useNcrs } from '@/hooks/useQC'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {
@@ -91,7 +92,7 @@ export default function QcManagerDashboard(): React.ReactElement {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">Quality Control Dashboard</h1>
+        <DashboardHeader roleLabel="QC Manager" subtitle="Inspections, NCRs, and quality analytics" />
         <p className="text-sm text-neutral-500 mt-0.5">Inspections, non-conformance reports, and corrective actions</p>
       </div>
 

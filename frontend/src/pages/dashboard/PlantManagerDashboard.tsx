@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useProductionOrders } from '@/hooks/useProduction'
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import { useWorkOrders } from '@/hooks/useMaintenance'
 import { useInspections, useNcrs } from '@/hooks/useQC'
 import { useMolds } from '@/hooks/useMold'
@@ -103,7 +104,7 @@ export default function PlantManagerDashboard(): React.ReactElement {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">Plant Operations Dashboard</h1>
+        <DashboardHeader roleLabel="Plant Manager" subtitle="Production, maintenance, quality, and mold operations" />
         <p className="text-sm text-neutral-500 mt-0.5">Overview of all plant departments — Production, QC, Maintenance, Mold, Delivery, ISO</p>
       </div>
 
