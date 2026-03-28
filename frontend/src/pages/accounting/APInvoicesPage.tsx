@@ -311,70 +311,53 @@ export default function APInvoicesPage() {
             <Link to="/accounting/ap/monitor" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
               Due Date Monitor
             </Link>
+            <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50">
+              <RefreshCw className="w-4 h-4 text-neutral-500" />
+            </button>
+            {canCreate && (
+              <>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+                >
+                  <FilePlus className="w-4 h-4" /> From PO
+                </button>
+                <button
+                  onClick={() => navigate('/accounting/ap/invoices/new')}
+                  className="flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 text-sm rounded hover:bg-neutral-50 border border-neutral-300"
+                >
+                  <Plus className="w-4 h-4" /> Manual Invoice
+                </button>
+              </>
+            )}
           </div>
         }
       />
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-neutral-500">Accounts payable invoice lifecycle</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50">
-            <RefreshCw className="w-4 h-4 text-neutral-500" />
-          </button>
-          {canCreate && (
-            <>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
-              >
-                <FilePlus className="w-4 h-4" /> From PO
-              </button>
-              <button
-                onClick={() => navigate('/accounting/ap/invoices/new')}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-neutral-700 text-sm rounded hover:bg-neutral-50 border border-neutral-300"
-              >
-                <Plus className="w-4 h-4" /> Manual Invoice
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Search + Status Tabs */}
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        onSearch={handleSearch}
-        placeholder="Search invoices by OR number or vendor..."
-        className="max-w-sm"
-      />
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          onClick={() => { setActiveStatus(null); setDueSoonOnly(false) }}
-          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${activeStatus === null && !dueSoonOnly ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+      {/* Search + Filters */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search invoices by OR number or vendor..."
+          className="w-72"
+        />
+        <select
+          value={activeStatus ?? ''}
+          onChange={(e) => { setActiveStatus(e.target.value ? e.target.value as VendorInvoiceStatus : null); setDueSoonOnly(false) }}
+          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
-          All
-        </button>
-        {ALL_STATUSES.map(s => (
-          <button
-            key={s}
-            onClick={() => { setActiveStatus(s); setDueSoonOnly(false) }}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${activeStatus === s ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-          >
-            {STATUS_LABEL[s]}
-          </button>
-        ))}
-        <button
-          onClick={() => { setDueSoonOnly(true); setActiveStatus(null) }}
-          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${dueSoonOnly ? 'bg-neutral-700 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-        >
-          Due Soon / Overdue
-        </button>
+          <option value="">All Statuses</option>
+          {Object.entries(STATUS_LABEL).map(([key, label]) => (
+            <option key={key} value={key}>{label}</option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer">
+          <input type="checkbox" checked={dueSoonOnly} onChange={(e) => { setDueSoonOnly(e.target.checked); if (e.target.checked) setActiveStatus(null) }} className="rounded border-neutral-300" />
+          Due Soon
+        </label>
       </div>
-
       {/* Batch Actions Bar */}
       {canApprove && selectedIds.size > 0 && (
         <div className="bg-accent-soft border border-accent/20 rounded-lg p-3 flex items-center gap-3 flex-wrap">
