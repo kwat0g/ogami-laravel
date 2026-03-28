@@ -85,6 +85,10 @@ use App\Domains\QC\Models\NonConformanceReport;
 use App\Domains\QC\Policies\InspectionPolicy;
 use App\Domains\QC\Policies\InspectionTemplatePolicy;
 use App\Domains\QC\Policies\NcrPolicy;
+use App\Domains\Sales\Models\Quotation;
+use App\Domains\Sales\Models\SalesOrder;
+use App\Domains\Sales\Policies\QuotationPolicy;
+use App\Domains\Sales\Policies\SalesOrderPolicy;
 use App\Domains\Tax\Models\BirFiling;
 use App\Domains\Tax\Models\VatLedger;
 use App\Domains\Tax\Policies\BirFilingPolicy;
@@ -186,6 +190,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(FixedAsset::class, FixedAssetPolicy::class);
         Gate::policy(CostCenter::class, BudgetPolicy::class);
         Gate::policy(AnnualBudget::class, BudgetPolicy::class);
+
+        // ── Sales policies
+        Gate::policy(Quotation::class, QuotationPolicy::class);
+        Gate::policy(SalesOrder::class, SalesOrderPolicy::class);
 
         // ── Observer registrations ───────────────────────────────────────────
         // PayrollRun → GL auto-post when status transitions to 'approved'.

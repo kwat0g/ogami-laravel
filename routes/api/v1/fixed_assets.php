@@ -77,51 +77,12 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
     })->name('depreciation-export');
 
     // ── Asset Transfers (Phase 4) ─────────────────────────────────────────
-    Route::prefix('transfers')->name('transfers.')->group(function () {
-        Route::get('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
-            $transfers = \App\Domains\FixedAssets\Models\AssetTransfer::with([
-                    'fixedAsset', 'fromDepartment', 'toDepartment', 'requestedBy', 'approvedBy',
-                ])
-                ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
-                ->orderByDesc('id')
-                ->paginate((int) ($request->input('per_page', 20)));
-            return response()->json($transfers);
-        })->name('index');
-
-        Route::post('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
-            $data = $request->validate([
-                'fixed_asset_id' => ['required', 'integer', 'exists:fixed_assets,id'],
-                'from_department_id' => ['required', 'integer', 'exists:departments,id'],
-                'to_department_id' => ['required', 'integer', 'exists:departments,id', 'different:from_department_id'],
-                'transfer_date' => ['required', 'date'],
-                'reason' => ['sometimes', 'string'],
-            ]);
-            $transfer = \App\Domains\FixedAssets\Models\AssetTransfer::create([
-                ...$data,
-                'status' => 'pending',
-                'requested_by_id' => $request->user()->id,
-            ]);
-            return response()->json(['data' => $transfer], 201);
-        })->name('store');
-
-        Route::patch('/{assetTransfer:ulid}/approve', function (\Illuminate\Http\Request $request, \App\Domains\FixedAssets\Models\AssetTransfer $assetTransfer): \Illuminate\Http\JsonResponse {
-            // SoD: requester cannot approve their own transfer
-            if ($request->user()->id === $assetTransfer->requested_by_id) {
-                return response()->json([
-                    'success' => false,
-                    'error_code' => 'SOD_SELF_APPROVAL',
-                    'message' => 'You cannot approve a transfer you requested (Separation of Duties).',
-                ], 403);
-            }
-
-            $assetTransfer->update([
-                'status' => 'approved',
-                'approved_by_id' => $request->user()->id,
-                'approved_at' => now(),
-            ]);
-            return response()->json(['data' => $assetTransfer->fresh(['fixedAsset', 'fromDepartment', 'toDepartment', 'requestedBy', 'approvedBy'])]);
-        })->name('approve')->middleware('throttle:api-action');
-    });
+    // TODO: Phase 4 — AssetTransfer model not yet implemented
+    // Route::prefix('transfers')->name('transfers.')->group(function () {
+    //     Route::get('/', ...)->name('index');
+    //     Route::post('/', ...)->name('store');
+    //     Route::patch('/{assetTransfer:ulid}/approve', ...)->name('approve');
+    // });
 
     // ── Parameterized asset routes (MUST be last to avoid catching
     //    literal paths like "transfers", "depreciate", etc.) ──────────────

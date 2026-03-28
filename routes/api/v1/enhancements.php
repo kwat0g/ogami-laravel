@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// ── General authenticated routes (dashboard, chain record, audit trail) ───────
 Route::middleware(['auth:sanctum'])->group(function () {
 
     // ── System Health Overview (12-module pulse) ───────────────────────
@@ -324,20 +325,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // ── Production Capacity Planning ────────────────────────────────────
+    // TODO: Phase 2 — CapacityPlanningService and MrpService not yet implemented
+    // Route::prefix('production')->group(function () {
+    //     Route::get('/capacity', function (Request $request): JsonResponse { ... });
+    //     Route::get('/capacity/check/{productionOrder}', function (...): JsonResponse { ... });
+    //     Route::get('/mrp/time-phased', function (): JsonResponse { ... });
+    // });
     Route::prefix('production')->group(function () {
-        Route::get('/capacity', function (Request $request): JsonResponse {
-            $service = app(\App\Domains\Production\Services\CapacityPlanningService::class);
-            return response()->json(['data' => $service->utilizationReport($request->input('from'), $request->input('to'))]);
-        });
-        Route::get('/capacity/check/{productionOrder}', function (\App\Domains\Production\Models\ProductionOrder $productionOrder): JsonResponse {
-            $service = app(\App\Domains\Production\Services\CapacityPlanningService::class);
-            return response()->json(['data' => $service->checkFeasibility($productionOrder)]);
-        });
-        Route::get('/mrp/time-phased', function (): JsonResponse {
-            $service = app(\App\Domains\Production\Services\MrpService::class);
-            return response()->json(['data' => $service->timePhasedExplode()]);
-        });
         Route::get('/bom/where-used/{itemId}', function (int $itemId): JsonResponse {
+            abort_unless(auth()->user()?->hasPermissionTo('production.bom.view'), 403, 'Unauthorized');
             $service = app(\App\Domains\Production\Services\CostingService::class);
             return response()->json(['data' => $service->whereUsed($itemId)]);
         });
@@ -371,20 +367,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // ── ISO Document Acknowledgment ─────────────────────────────────────
-    Route::prefix('iso')->group(function () {
-        Route::get('/pending-acknowledgments', function (Request $request): JsonResponse {
-            $service = app(\App\Domains\ISO\Services\DocumentAcknowledgmentService::class);
-            return response()->json(['data' => $service->pendingForUser($request->user())]);
-        });
-        Route::post('/acknowledge/{distributionId}', function (Request $request, int $distributionId): JsonResponse {
-            $service = app(\App\Domains\ISO\Services\DocumentAcknowledgmentService::class);
-            return response()->json(['data' => $service->acknowledge($distributionId, $request->user())]);
-        })->middleware('throttle:api-action');
-        Route::get('/acknowledgment-status/{document}', function (\App\Domains\ISO\Models\ControlledDocument $document): JsonResponse {
-            $service = app(\App\Domains\ISO\Services\DocumentAcknowledgmentService::class);
-            return response()->json(['data' => $service->acknowledgmentStatus($document)]);
-        });
-    });
+    // TODO: Phase 2 — ISO domain layer (Models, Services) not yet implemented
+    // Route::prefix('iso')->group(function () {
+    //     Route::get('/pending-acknowledgments', ...);
+    //     Route::post('/acknowledge/{distributionId}', ...);
+    //     Route::get('/acknowledgment-status/{document}', ...);
+    // });
 
     // ── Loan Payoff ─────────────────────────────────────────────────────
     Route::prefix('loans')->group(function () {
@@ -435,21 +423,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // ── Fixed Asset Revaluation ─────────────────────────────────────────
-    Route::prefix('fixed-assets')->group(function () {
-        Route::post('/{fixedAsset}/revalue', function (Request $request, \App\Domains\FixedAssets\Models\FixedAsset $fixedAsset): JsonResponse {
-            $data = $request->validate([
-                'fair_value_centavos' => 'required|integer|min:0',
-                'reason' => 'required|string',
-            ]);
-            $service = app(\App\Domains\FixedAssets\Services\AssetRevaluationService::class);
-            return response()->json(['data' => $service->revalue($fixedAsset, $data['fair_value_centavos'], $request->user(), $data['reason'])]);
-        })->middleware('throttle:api-action');
-        Route::post('/{fixedAsset}/impairment-test', function (Request $request, \App\Domains\FixedAssets\Models\FixedAsset $fixedAsset): JsonResponse {
-            $data = $request->validate(['recoverable_amount_centavos' => 'required|integer|min:0']);
-            $service = app(\App\Domains\FixedAssets\Services\AssetRevaluationService::class);
-            return response()->json(['data' => $service->impairmentTest($fixedAsset, $data['recoverable_amount_centavos'], $request->user())]);
-        })->middleware('throttle:api-action');
-    });
+    // TODO: Phase 4 — AssetRevaluationService not yet implemented
+    // Route::prefix('fixed-assets')->group(function () {
+    //     Route::post('/{fixedAsset}/revalue', ...);
+    //     Route::post('/{fixedAsset}/impairment-test', ...);
+    // });
 
     // ── Tax Alphalist ───────────────────────────────────────────────────
     Route::prefix('tax')->group(function () {

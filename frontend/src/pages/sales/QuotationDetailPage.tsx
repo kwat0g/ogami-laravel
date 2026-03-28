@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send, Check, X, ArrowRight } from 'lucide-react'
-import { useQuotation, useSendQuotation, useAcceptQuotation, useConvertQuotationToOrder } from '@/hooks/useSales'
+import { useQuotation, useSendQuotation, useAcceptQuotation, useRejectQuotation, useConvertQuotationToOrder } from '@/hooks/useSales'
+import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -11,12 +12,19 @@ function fmt(c: number) { return new Intl.NumberFormat('en-PH', { style: 'curren
 export default function QuotationDetailPage() {
   const { ulid } = useParams<{ ulid: string }>()
   const nav = useNavigate()
-  const { data: q, isLoading } = useQuotation(ulid ?? '')
+  const { data: q, isLoading, isError } = useQuotation(ulid ?? '')
   const sendMut = useSendQuotation(ulid ?? '')
   const acceptMut = useAcceptQuotation(ulid ?? '')
+  const rejectMut = typeof useRejectQuotation === 'function' ? useRejectQuotation(ulid ?? '') : null
   const convertMut = useConvertQuotationToOrder(ulid ?? '')
 
+  const canSend = useAuthStore(s => s.hasPermission('sales.quotations.send'))
+  const canAccept = useAuthStore(s => s.hasPermission('sales.quotations.accept'))
+  const canReject = useAuthStore(s => s.hasPermission('sales.quotations.manage'))
+  const canConvert = useAuthStore(s => s.hasPermission('sales.orders.confirm'))
+
   if (isLoading) return <SkeletonLoader rows={6} />
+  if (isError) return <div className="p-6 text-red-600">Failed to load quotation. Please try again.</div>
   if (!q) return <div className="p-6 text-neutral-500">Quotation not found</div>
 
   return (
@@ -26,9 +34,26 @@ export default function QuotationDetailPage() {
         icon={<button onClick={() => nav('/sales/quotations')} className="p-1 hover:bg-neutral-100 rounded"><ArrowLeft className="w-5 h-5" /></button>}
         actions={
           <div className="flex gap-2">
-            {q.status === 'draft' && <button className="btn-primary" onClick={() => sendMut.mutate()} disabled={sendMut.isPending}><Send className="w-4 h-4" /> Send</button>}
-            {q.status === 'sent' && <button className="btn-primary" onClick={() => acceptMut.mutate()} disabled={acceptMut.isPending}><Check className="w-4 h-4" /> Accept</button>}
-            {q.status === 'accepted' && <button className="btn-primary" onClick={() => convertMut.mutate()} disabled={convertMut.isPending}><ArrowRight className="w-4 h-4" /> Convert to Order</button>}
+            {q.status === 'draft' && canSend && (
+              <button className="btn-primary" onClick={() => sendMut.mutate()} disabled={sendMut.isPending}>
+                <Send className="w-4 h-4" /> Send
+              </button>
+            )}
+            {q.status === 'sent' && canAccept && (
+              <button className="btn-primary" onClick={() => acceptMut.mutate()} disabled={acceptMut.isPending}>
+                <Check className="w-4 h-4" /> Accept
+              </button>
+            )}
+            {q.status === 'sent' && canReject && rejectMut && (
+              <button className="btn-outline" onClick={() => rejectMut.mutate()} disabled={rejectMut.isPending}>
+                <X className="w-4 h-4" /> Reject
+              </button>
+            )}
+            {q.status === 'accepted' && canConvert && (
+              <button className="btn-primary" onClick={() => convertMut.mutate()} disabled={convertMut.isPending}>
+                <ArrowRight className="w-4 h-4" /> Convert to Order
+              </button>
+            )}
           </div>
         }
       />

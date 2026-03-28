@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, FileText } from 'lucide-react'
 import { useQuotations } from '@/hooks/useSales'
+import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
@@ -19,8 +20,9 @@ function formatCentavos(c: number) {
 export default function QuotationListPage() {
   const [filters, setFilters] = useState<Record<string, unknown>>({ per_page: 20, page: 1 })
   const [search, setSearch] = useState('')
-  const { data, isLoading } = useQuotations({ ...filters, ...(search ? {} : {}) })
+  const { data, isLoading, isError } = useQuotations({ ...filters, ...(search ? {} : {}) })
   const quotations = data?.data ?? []
+  const canCreate = useAuthStore(s => s.hasPermission('sales.quotations.create'))
 
   const handleSearch = useCallback((val: string) => {
     setFilters(p => ({ ...p, search: val || undefined, page: 1 }))
@@ -31,11 +33,11 @@ export default function QuotationListPage() {
       <PageHeader
         title="Price Quotations"
         icon={<FileText className="w-5 h-5 text-neutral-600" />}
-        actions={
+        actions={canCreate ? (
           <Link to="/sales/quotations/new" className="btn-primary">
             <Plus className="w-3.5 h-3.5" /> New Quotation
           </Link>
-        }
+        ) : undefined}
       />
 
       <Card className="p-4">
@@ -54,7 +56,9 @@ export default function QuotationListPage() {
         </div>
       </Card>
 
-      {isLoading ? <SkeletonLoader rows={8} /> : quotations.length === 0 ? (
+      {isLoading ? <SkeletonLoader rows={8} /> : isError ? (
+        <Card className="p-6 text-center text-red-600">Failed to load quotations. Please try again.</Card>
+      ) : quotations.length === 0 ? (
         <EmptyState title="No quotations" description="Create your first quotation." />
       ) : (
         <Card className="overflow-hidden">
