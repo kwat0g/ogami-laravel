@@ -25,23 +25,33 @@ final class GoodsReceiptController extends Controller
      *   ?status=draft|confirmed
      *   ?purchase_order_id=12
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection|JsonResponse
     {
         $this->authorize('viewAny', GoodsReceipt::class);
 
-        $query = GoodsReceipt::with(['purchaseOrder', 'receivedBy'])
-            ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
-            ->when(
-                $request->filled('status'),
-                fn ($q) => $q->where('status', $request->input('status')),
-            )
-            ->when(
-                $request->filled('purchase_order_id'),
-                fn ($q) => $q->where('purchase_order_id', $request->integer('purchase_order_id')),
-            )
-            ->orderByDesc('created_at');
+        try {
+            $query = GoodsReceipt::with(['purchaseOrder', 'receivedBy'])
+                ->when($request->boolean('with_archived'), fn ($q) => $q->withTrashed())
+                ->when(
+                    $request->filled('status'),
+                    fn ($q) => $q->where('status', $request->input('status')),
+                )
+                ->when(
+                    $request->filled('purchase_order_id'),
+                    fn ($q) => $q->where('purchase_order_id', $request->integer('purchase_order_id')),
+                )
+                ->orderByDesc('created_at');
 
-        return GoodsReceiptResource::collection($query->paginate(25));
+            return GoodsReceiptResource::collection($query->paginate(25));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('[Procurement] GR index failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'error_code' => 'GR_INDEX_ERROR',
+                'message' => 'Failed to load goods receipts. Please check that all migrations have been run.',
+            ], 500);
+        }
     }
 
     public function store(StoreGoodsReceiptRequest $request): GoodsReceiptResource

@@ -31,10 +31,10 @@ final class GoodsReceiptResource extends JsonResource
             'confirmed_at' => $gr->confirmed_at?->toIso8601String(),
 
             'received_by_id' => $gr->received_by_id,
-            'received_by' => $this->whenLoaded('receivedBy', fn () => [
+            'received_by' => $this->whenLoaded('receivedBy', fn () => $gr->receivedBy ? [
                 'id' => $gr->receivedBy->id,
                 'name' => $gr->receivedBy->name,
-            ]),
+            ] : null),
 
             'confirmed_by_id' => $gr->confirmed_by_id,
             'confirmed_by' => $this->whenLoaded('confirmedBy', fn () => $gr->confirmedBy ? [

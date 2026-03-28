@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, AlertCircle, RefreshCw, MapPin } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -181,8 +181,8 @@ export default function StockBalancePage(): React.ReactElement {
                   const isActiveRow    = adjusting?.bal.item_id === bal.item_id && adjusting?.bal.location_id === bal.location_id
 
                   return (
-                    <>
-                      <tr key={`${bal.item_id}-${bal.location_id}`} className={`hover:bg-neutral-50 ${isBelowReorder ? 'bg-red-50/30' : ''} ${isActiveRow ? 'bg-neutral-50' : ''}`}>
+                    <React.Fragment key={`${bal.item_id}-${bal.location_id}`}>
+                      <tr className={`hover:bg-neutral-50 ${isBelowReorder ? 'bg-red-50/30' : ''} ${isActiveRow ? 'bg-neutral-50' : ''}`}>
                         <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{bal.item?.item_code ?? `#${bal.item_id}`}</td>
                         <td className="px-4 py-3 text-neutral-900">{bal.item?.name ?? '—'}</td>
                         <td className="px-4 py-3 text-neutral-500">{bal.location ? `${bal.location.code} — ${bal.location.name}` : `#${bal.location_id}`}</td>
@@ -272,7 +272,7 @@ export default function StockBalancePage(): React.ReactElement {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   )
                 })}
               </tbody>
