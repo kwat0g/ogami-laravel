@@ -322,7 +322,7 @@ export default function OvertimeListPage() {
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-neutral-500">Filed By:</span>
-                                <span className="text-neutral-900">User #{row.created_by_id}</span>
+                                <span className="text-neutral-900">{row.created_by?.name ?? row.employee?.full_name ?? `User #${row.created_by_id}`}</span>
                               </div>
                             </div>
                           </div>

@@ -28,14 +28,14 @@ export default function CompetencyMatrixPage() {
         <Card className="overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 dark:bg-neutral-800">
-              <tr><th className="text-left p-3">Employee ID</th><th className="text-left p-3">Skill</th><th className="text-left p-3">Category</th><th className="text-center p-3">Current</th><th className="text-center p-3">Required</th><th className="text-center p-3">Gap</th></tr>
+              <tr><th className="text-left p-3">Employee</th><th className="text-left p-3">Skill</th><th className="text-left p-3">Category</th><th className="text-center p-3">Current</th><th className="text-center p-3">Required</th><th className="text-center p-3">Gap</th></tr>
             </thead>
             <tbody className="divide-y">
               {items.map((c: any) => {
                 const hasGap = c.current_level < c.required_level
                 return (
                   <tr key={c.id} className={hasGap ? 'bg-red-50/50' : ''}>
-                    <td className="p-3">{c.employee_id}</td>
+                    <td className="p-3">{c.employee_name ?? c.employee?.full_name ?? `Employee #${c.employee_id}`}</td>
                     <td className="p-3 font-medium">{c.skill_name}</td>
                     <td className="p-3">{c.category ?? '-'}</td>
                     <td className="p-3 text-center">{renderLevel(c.current_level)}</td>
