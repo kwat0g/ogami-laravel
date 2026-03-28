@@ -108,7 +108,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Leave', href: '/hr/leave', permission: 'hr.full_access', end: true },
       { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
       { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
-      { label: 'HR Reports', href: '/hr/reports', permission: 'hr.full_access' },
 
       // ── Payroll ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Payroll' },
