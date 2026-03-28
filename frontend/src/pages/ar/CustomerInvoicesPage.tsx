@@ -16,6 +16,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { CustomerInvoice, CustomerInvoiceStatus } from '@/types/ar'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Status Badge
@@ -144,6 +146,7 @@ export default function CustomerInvoicesPage() {
   const [activeTab, setActiveTab] = useState<CustomerInvoiceStatus | 'all'>('all')
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const handleSearch = useCallback((val: string) => {

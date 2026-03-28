@@ -10,6 +10,8 @@ import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import EmptyState from '@/components/ui/EmptyState'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 const STATUS_OPTIONS = ['', 'draft', 'sent', 'accepted', 'converted_to_order', 'rejected', 'expired']
 
@@ -20,6 +22,7 @@ function formatCentavos(c: number) {
 export default function QuotationListPage() {
   const [filters, setFilters] = useState<Record<string, unknown>>({ per_page: 20, page: 1 })
   const [search, setSearch] = useState('')
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const { data, isLoading, isError } = useQuotations({ ...filters, ...(search ? {} : {}) })
   const quotations = data?.data ?? []
   const canCreate = useAuthStore(s => s.hasPermission('sales.quotations.create'))

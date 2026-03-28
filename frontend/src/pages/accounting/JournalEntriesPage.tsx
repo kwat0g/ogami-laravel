@@ -19,6 +19,8 @@ import { ActionButton, DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { JournalEntry, JournalEntryStatus, JournalEntryFilters } from '@/types/accounting'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -170,6 +172,7 @@ export default function JournalEntriesPage() {
   const [fiscalPeriodId, setFiscalPeriodId] = useState<number | undefined>(undefined)
   const [sourceType, setSourceType] = useState<string | undefined>(undefined)
   const [dateFrom, setDateFrom] = useState('')
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [dateTo, setDateTo] = useState('')
 
   const filters: JournalEntryFilters = {

@@ -9,6 +9,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { LoanFilters, LoanStatus } from '@/types/hr'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 export default function LoanListPage() {
   const navigate = useNavigate()

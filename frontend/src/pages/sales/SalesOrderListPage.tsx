@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import EmptyState from '@/components/ui/EmptyState'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 const STATUS_OPTIONS = ['', 'draft', 'confirmed', 'in_production', 'partially_delivered', 'delivered', 'invoiced', 'cancelled']
 
@@ -19,6 +21,7 @@ function formatCentavos(c: number) {
 export default function SalesOrderListPage() {
   const [filters, setFilters] = useState<Record<string, unknown>>({ per_page: 20, page: 1 })
   const [search, setSearch] = useState('')
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const { data, isLoading } = useSalesOrders(filters)
   const orders = data?.data ?? []
 
