@@ -56,3 +56,24 @@ export interface AssetDepreciationEntry {
   created_at: string
   fiscal_period?: { id: number; name: string }
 }
+
+export interface AssetTransfer {
+  id: number
+  ulid: string
+  fixed_asset_id: number
+  from_department_id: number
+  to_department_id: number
+  transfer_date: string
+  status: 'pending' | 'approved' | 'completed' | 'rejected'
+  reason: string | null
+  requested_by_id: number
+  approved_by_id: number | null
+  approved_at: string | null
+  created_at: string
+  updated_at: string
+  fixed_asset?: FixedAsset
+  from_department?: { id: number; code: string; name: string }
+  to_department?: { id: number; code: string; name: string }
+  requested_by?: { id: number; name: string }
+  approved_by?: { id: number; name: string } | null
+}

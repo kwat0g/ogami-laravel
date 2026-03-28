@@ -6,11 +6,12 @@ import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import EmptyState from '@/components/ui/EmptyState'
+import type { AssetTransfer } from '@/types/fixed_assets'
 
 export default function AssetTransfersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['asset-transfers'],
-    queryFn: async () => { const { data } = await api.get('/fixed-assets/transfers'); return data },
+    queryFn: async () => { const { data } = await api.get<{ data: AssetTransfer[] }>('/fixed-assets/transfers'); return data },
   })
   const transfers = data?.data ?? []
 
@@ -24,14 +25,14 @@ export default function AssetTransfersPage() {
               <tr><th className="text-left p-3">Asset</th><th className="text-left p-3">From Dept</th><th className="text-left p-3">To Dept</th><th className="text-left p-3">Date</th><th className="text-left p-3">Status</th><th className="text-left p-3">Requested By</th></tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {transfers.map((t: any) => (
+              {transfers.map((t: AssetTransfer) => (
                 <tr key={t.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
-                  <td className="p-3 font-medium">{t.fixedAsset?.asset_code ?? t.fixedAsset?.name ?? `Asset #${t.fixed_asset_id}`}</td>
-                  <td className="p-3">{t.fromDepartment?.name ?? `Dept #${t.from_department_id}`}</td>
-                  <td className="p-3">{t.toDepartment?.name ?? `Dept #${t.to_department_id}`}</td>
+                  <td className="p-3 font-medium">{t.fixed_asset?.name ?? `Asset #${t.fixed_asset_id}`}</td>
+                  <td className="p-3">{t.from_department?.name ?? `Dept #${t.from_department_id}`}</td>
+                  <td className="p-3">{t.to_department?.name ?? `Dept #${t.to_department_id}`}</td>
                   <td className="p-3">{new Date(t.transfer_date).toLocaleDateString()}</td>
                   <td className="p-3"><StatusBadge status={t.status} /></td>
-                  <td className="p-3">{t.requestedBy?.name ?? '-'}</td>
+                  <td className="p-3">{t.requested_by?.name ?? '-'}</td>
                 </tr>
               ))}
             </tbody>

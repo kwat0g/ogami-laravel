@@ -19,6 +19,8 @@ export interface Bom {
   is_active: boolean
   notes: string | null
   standard_production_days?: number
+  standard_cost_centavos: number
+  last_cost_rollup_at: string | null
   components?: BomComponent[]
   created_at: string | null
   updated_at: string | null
@@ -58,6 +60,8 @@ export interface ProductionOrder {
   qty_required: string
   qty_produced: string
   progress_pct: number
+  standard_unit_cost_centavos: number
+  estimated_total_cost_centavos: number
   target_start_date: string
   target_end_date: string
   status: ProductionOrderStatus
