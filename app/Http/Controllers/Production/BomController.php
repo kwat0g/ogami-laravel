@@ -67,6 +67,22 @@ final class BomController extends Controller
     }
 
     /**
+     * Full cost breakdown for a BOM (material + labor + overhead).
+     *
+     * Returns the detailed component-level and routing-level cost analysis.
+     * This is the "Bill" part of "Bill of Materials" — always available,
+     * not requiring a separate rollup action.
+     */
+    public function costBreakdown(BillOfMaterials $bom): JsonResponse
+    {
+        $this->authorize('view', $bom);
+
+        return response()->json([
+            'data' => $this->service->getCostBreakdown($bom),
+        ]);
+    }
+
+    /**
      * Rollup and persist standard cost on the BOM.
      */
     public function rollupCost(BillOfMaterials $bom): BomResource

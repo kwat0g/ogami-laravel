@@ -29,6 +29,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $qty_required
  * @property string $qty_produced
  * @property string $qty_rejected
+ * @property int $standard_unit_cost_centavos
+ * @property int $estimated_total_cost_centavos
  * @property string $target_start_date
  * @property string $target_end_date
  * @property string $status
@@ -50,6 +52,8 @@ final class ProductionOrder extends Model implements Auditable
         'product_item_id',
         'bom_id',
         'qty_required',
+        'standard_unit_cost_centavos',
+        'estimated_total_cost_centavos',
         'target_start_date',
         'target_end_date',
         'status',
@@ -62,6 +66,8 @@ final class ProductionOrder extends Model implements Auditable
         'qty_required' => 'decimal:4',
         'qty_produced' => 'decimal:4',
         'qty_rejected' => 'decimal:4',
+        'standard_unit_cost_centavos' => 'integer',
+        'estimated_total_cost_centavos' => 'integer',
         'target_start_date' => 'date',
         'target_end_date' => 'date',
     ];

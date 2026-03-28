@@ -57,7 +57,13 @@ final class BomService implements ServiceContract
                 ]);
             }
 
-            return $bom->load('productItem', 'components.componentItem');
+            // Auto-calculate standard cost on BOM creation (thesis-grade: BOM
+            // must always reflect its actual material/labor/overhead cost, not
+            // require a separate manual rollup step).
+            $bom->load('productItem', 'components.componentItem');
+            $this->autoRollupCost($bom);
+
+            return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
         });
     }
 
@@ -71,6 +77,8 @@ final class BomService implements ServiceContract
                 'notes' => $data['notes'] ?? $bom->notes,
             ]);
 
+            $componentsChanged = false;
+
             if (isset($data['components'])) {
                 $bom->components()->delete();
                 foreach ($data['components'] as $comp) {
@@ -82,9 +90,19 @@ final class BomService implements ServiceContract
                         'scrap_factor_pct' => $comp['scrap_factor_pct'] ?? 0,
                     ]);
                 }
+                $componentsChanged = true;
             }
 
-            return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+            $bom = $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+
+            // Auto-recalculate cost when components change (keeps BOM cost
+            // always in sync with its material composition).
+            if ($componentsChanged) {
+                $this->autoRollupCost($bom);
+                $bom = $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+            }
+
+            return $bom;
         });
     }
 
@@ -144,6 +162,49 @@ final class BomService implements ServiceContract
         $costingService = app(CostingService::class);
 
         return $costingService->whereUsed($itemId);
+    }
+
+    /**
+     * Get cost breakdown for a BOM without persisting anything.
+     *
+     * Returns the full material + labor + overhead breakdown for display
+     * in the BOM detail view (thesis-grade: cost visibility at all times).
+     *
+     * @return array{material_cost_centavos: int, labor_cost_centavos: int, overhead_cost_centavos: int, total_standard_cost_centavos: int, components: array, routings: array}
+     */
+    public function getCostBreakdown(BillOfMaterials $bom, string $costElements = 'material_labor_overhead'): array
+    {
+        $costingService = app(CostingService::class);
+
+        return $costingService->standardCost($bom, $costElements);
+    }
+
+    /**
+     * Auto-calculate and persist standard cost on a BOM.
+     *
+     * Called automatically on create/update so the BOM always reflects
+     * current material costs. Silently handles cases where components
+     * have no pricing yet (cost will be 0 until prices are set).
+     */
+    private function autoRollupCost(BillOfMaterials $bom): void
+    {
+        try {
+            $costingService = app(CostingService::class);
+            $result = $costingService->standardCost($bom, 'material_labor_overhead');
+
+            $bom->update([
+                'standard_cost_centavos' => $result['total_standard_cost_centavos'],
+                'last_cost_rollup_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            // Don't fail BOM creation/update if cost calculation has issues
+            // (e.g., circular BOM, missing item prices). Cost will be 0 until
+            // the issue is resolved and a manual rollup is triggered.
+            \Illuminate\Support\Facades\Log::warning('[Production] Auto cost rollup failed for BOM', [
+                'bom_id' => $bom->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
