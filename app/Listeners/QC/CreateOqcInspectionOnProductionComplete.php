@@ -45,7 +45,7 @@ final class CreateOqcInspectionOnProductionComplete implements ShouldQueue
             return;
         }
 
-        $systemUser = User::where('email', 'admin@ogamierp.local')->first();
+        $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
 
         if ($systemUser === null) {
             Log::warning("QC-OQC-001: System user not found, cannot auto-create OQC for WO #{$order->id}");

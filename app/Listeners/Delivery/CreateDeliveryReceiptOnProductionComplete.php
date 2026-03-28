@@ -52,7 +52,7 @@ final class CreateDeliveryReceiptOnProductionComplete implements ShouldBeUnique,
         }
 
         // Resolve the system user for auto-created records
-        $systemUser = User::where('email', 'admin@ogamierp.local')->first();
+        $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
 
         if ($systemUser === null) {
             return;
