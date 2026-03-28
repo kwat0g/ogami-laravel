@@ -180,22 +180,39 @@ describe('Response Schemas', () => {
     it('accepts a valid PR response with items', () => {
       const result = purchaseRequestResponseSchema.safeParse({
         id: 1,
-        pr_number: 'PR-2026-0001',
+        pr_reference: 'PR-2026-0001',
         department_id: 3,
-        requested_by: 10,
-        status: 'pending',
-        purpose: 'Office supplies',
-        total_amount: 5000,
+        requested_by_id: 10,
+        requested_by: { id: 10, name: 'Juan dela Cruz' },
+        urgency: 'normal',
+        justification: 'Office supplies needed',
+        status: 'draft',
+        total_estimated_cost: 5000,
         items: [
           {
             id: 1,
-            description: 'Bond paper A4',
+            item_description: 'Bond paper A4',
+            unit_of_measure: 'ream',
             quantity: 10,
-            unit: 'ream',
-            unit_cost: 250,
-            total_cost: 2500,
+            estimated_unit_cost: 250,
+            estimated_total: 2500,
+            line_order: 1,
           },
         ],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('accepts a minimal PR response (no optional fields)', () => {
+      const result = purchaseRequestResponseSchema.safeParse({
+        id: 2,
+        pr_reference: 'PR-2026-0002',
+        department_id: 5,
+        requested_by_id: 12,
+        urgency: 'urgent',
+        justification: 'Urgent production supplies',
+        status: 'pending_review',
+        total_estimated_cost: 15000,
       })
       expect(result.success).toBe(true)
     })

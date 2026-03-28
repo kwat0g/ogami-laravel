@@ -174,31 +174,90 @@ export const paginatedPayrollRunsSchema = paginatedResponseSchema(payrollRunResp
 
 // ── Purchase Request response ─────────────────────────────────────────────
 
+/** Matches PurchaseRequestResource.php toArray() output. */
+const actorSummarySchema = z.object({
+  id:   z.number(),
+  name: z.string(),
+}).nullable().optional()
+
+export const purchaseRequestItemResponseSchema = z.object({
+  id:                  z.number().int().positive(),
+  vendor_item_id:      z.number().nullable().optional(),
+  item_description:    z.string(),
+  unit_of_measure:     z.string(),
+  quantity:            z.number(),
+  estimated_unit_cost: z.number(),
+  estimated_total:     z.number(),
+  specifications:      z.string().nullable().optional(),
+  line_order:          z.number().int(),
+})
+
 export const purchaseRequestResponseSchema = z.object({
-  id:              z.number().int().positive(),
-  ulid:            z.string().optional(),
-  pr_number:       z.string(),
-  department_id:   z.number().int().positive(),
-  requested_by:    z.number().int().positive(),
-  status:          z.string(),
-  purpose:         z.string().nullable().optional(),
-  date_needed:     z.string().nullable().optional(),
-  total_amount:    z.number(),
-  approved_by:     z.number().nullable().optional(),
-  approved_at:     z.string().nullable().optional(),
-  department:      departmentSummarySchema.nullable().optional(),
-  requester:       employeeSummarySchema.nullable().optional(),
-  items:           z.array(z.object({
-    id:            z.number().int().positive(),
-    item_master_id: z.number().nullable().optional(),
-    description:   z.string(),
-    quantity:      z.number(),
-    unit:          z.string().nullable().optional(),
-    unit_cost:     z.number(),
-    total_cost:    z.number(),
-  })).optional(),
-  created_at:      z.string().nullable().optional(),
-  updated_at:      z.string().nullable().optional(),
+  id:                    z.number().int().positive(),
+  ulid:                  z.string().optional(),
+  pr_reference:          z.string(),
+  vendor_id:             z.number().nullable().optional(),
+  department_id:         z.number().int().positive(),
+  department:            z.object({ id: z.number(), name: z.string() }).nullable().optional(),
+  urgency:               z.string(),
+  justification:         z.string(),
+  notes:                 z.string().nullable().optional(),
+  status:                z.string(),
+  total_estimated_cost:  z.number(),
+
+  // Actors
+  requested_by_id:       z.number().int().positive(),
+  requested_by:          actorSummarySchema,
+
+  submitted_by_id:       z.number().nullable().optional(),
+  submitted_at:          z.string().nullable().optional(),
+  submitted_by:          actorSummarySchema,
+
+  noted_by_id:           z.number().nullable().optional(),
+  noted_at:              z.string().nullable().optional(),
+  noted_comments:        z.string().nullable().optional(),
+  noted_by:              actorSummarySchema,
+
+  checked_by_id:         z.number().nullable().optional(),
+  checked_at:            z.string().nullable().optional(),
+  checked_comments:      z.string().nullable().optional(),
+  checked_by:            actorSummarySchema,
+
+  reviewed_by_id:        z.number().nullable().optional(),
+  reviewed_at:           z.string().nullable().optional(),
+  reviewed_comments:     z.string().nullable().optional(),
+  reviewed_by:           actorSummarySchema,
+
+  budget_checked_by_id:  z.number().nullable().optional(),
+  budget_checked_at:     z.string().nullable().optional(),
+  budget_checked_comments: z.string().nullable().optional(),
+  budget_checked_by:     actorSummarySchema,
+
+  vp_approved_by_id:     z.number().nullable().optional(),
+  vp_approved_at:        z.string().nullable().optional(),
+  vp_comments:           z.string().nullable().optional(),
+  vp_approved_by:        actorSummarySchema,
+
+  rejected_by_id:        z.number().nullable().optional(),
+  rejected_at:           z.string().nullable().optional(),
+  rejection_reason:      z.string().nullable().optional(),
+  rejection_stage:       z.string().nullable().optional(),
+
+  converted_to_po_id:    z.number().nullable().optional(),
+  converted_at:          z.string().nullable().optional(),
+
+  material_requisition_id: z.number().nullable().optional(),
+  source_mrq:            z.object({
+    id:           z.number(),
+    ulid:         z.string(),
+    mr_reference: z.string(),
+  }).nullable().optional(),
+
+  items:                 z.array(purchaseRequestItemResponseSchema).optional(),
+
+  deleted_at:            z.string().nullable().optional(),
+  created_at:            z.string().nullable().optional(),
+  updated_at:            z.string().nullable().optional(),
 })
 
 export type PurchaseRequestResponse = z.infer<typeof purchaseRequestResponseSchema>
