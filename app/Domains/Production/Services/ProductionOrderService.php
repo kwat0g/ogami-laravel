@@ -11,6 +11,7 @@ use App\Domains\Inventory\Services\MaterialRequisitionService;
 use App\Domains\Inventory\Services\StockReservationService;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BillOfMaterials;
+use App\Domains\Production\StateMachines\ProductionOrderStateMachine;
 use App\Domains\Production\Models\BomComponent;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Domains\Production\Services\CostingService;
@@ -196,9 +197,8 @@ final class ProductionOrderService implements ServiceContract
      */
     public function release(ProductionOrder $order, array $options = []): ProductionOrder
     {
-        if ($order->status !== 'draft') {
-            throw new DomainException('Only draft orders can be released.', 'PROD_ORDER_NOT_DRAFT', 422);
-        }
+        $stateMachine = new ProductionOrderStateMachine();
+        $stateMachine->transition($order, 'released'); // Validates draft -> released
 
         return DB::transaction(function () use ($order, $options): ProductionOrder {
             // ── PROD-002: QC Gate — check for failed inspections ─────────────
@@ -368,9 +368,8 @@ final class ProductionOrderService implements ServiceContract
 
     public function start(ProductionOrder $order): ProductionOrder
     {
-        if ($order->status !== 'released') {
-            throw new DomainException('Only released orders can be started.', 'PROD_ORDER_NOT_RELEASED', 422);
-        }
+        $stateMachine = new ProductionOrderStateMachine();
+        $stateMachine->transition($order, 'in_progress'); // Validates released -> in_progress
 
         // Ensure all linked MRQs are fulfilled before production begins (PROD-MRQ-001).
         $unfulfilledMrq = MaterialRequisition::query()
@@ -393,9 +392,8 @@ final class ProductionOrderService implements ServiceContract
 
     public function complete(ProductionOrder $order): ProductionOrder
     {
-        if ($order->status !== 'in_progress') {
-            throw new DomainException('Order is not in progress.', 'PROD_ORDER_NOT_IN_PROGRESS', 422);
-        }
+        $stateMachine = new ProductionOrderStateMachine();
+        $stateMachine->transition($order, 'completed'); // Validates in_progress -> completed
 
         if ((float) $order->qty_produced <= 0) {
             throw new DomainException(
@@ -410,20 +408,34 @@ final class ProductionOrderService implements ServiceContract
 
             // Move finished goods into stock
             $location = WarehouseLocation::where('is_active', true)->first();
-            if ($location !== null) {
-                $systemUser = User::where('email', 'admin@ogamierp.local')->first();
-                if ($systemUser !== null) {
-                    $netQty = (float) $order->qty_produced - (float) $order->qty_rejected;
-                    $this->stockService->receive(
-                        itemId: $order->product_item_id,
-                        locationId: $location->id,
-                        quantity: $netQty,
-                        referenceType: 'production_orders',
-                        referenceId: $order->id,
-                        actor: $systemUser,
-                        remarks: "Auto-receive from WO {$order->po_reference}",
-                    );
-                }
+            if ($location === null) {
+                throw new DomainException(
+                    'Cannot complete: no active warehouse location configured.',
+                    'PROD_NO_WAREHOUSE',
+                    422,
+                );
+            }
+
+            $actor = auth()->user() ?? User::where('email', 'admin@ogamierp.local')->first();
+            if ($actor === null) {
+                throw new DomainException(
+                    'Cannot complete: no authenticated user or system user available for stock receipt.',
+                    'PROD_NO_ACTOR',
+                    500,
+                );
+            }
+
+            $netQty = (float) $order->qty_produced - (float) $order->qty_rejected;
+            if ($netQty > 0) {
+                $this->stockService->receive(
+                    itemId: $order->product_item_id,
+                    locationId: $location->id,
+                    quantity: $netQty,
+                    referenceType: 'production_orders',
+                    referenceId: $order->id,
+                    actor: $actor,
+                    remarks: "Auto-receive from WO {$order->po_reference}",
+                );
             }
 
             // PROD-DEL-001: Notify Delivery domain AFTER the transaction commits so the
@@ -436,9 +448,8 @@ final class ProductionOrderService implements ServiceContract
 
     public function cancel(ProductionOrder $order): ProductionOrder
     {
-        if (! in_array($order->status, ['draft', 'released'], true)) {
-            throw new DomainException('Only draft or released orders can be cancelled.', 'PROD_ORDER_CANNOT_CANCEL', 422);
-        }
+        $stateMachine = new ProductionOrderStateMachine();
+        $stateMachine->transition($order, 'cancelled'); // Validates draft|released|in_progress|on_hold -> cancelled
 
         return DB::transaction(function () use ($order): ProductionOrder {
             $mrqs = MaterialRequisition::query()
@@ -568,8 +579,12 @@ final class ProductionOrderService implements ServiceContract
     /** @param array<string,mixed> $data */
     public function logOutput(ProductionOrder $order, array $data, User $user): ProductionOutputLog
     {
-        if (! in_array($order->status, ['released', 'in_progress'], true)) {
-            throw new DomainException('Production order is not active.', 'PROD_ORDER_NOT_ACTIVE', 422);
+        if ($order->status !== 'in_progress') {
+            throw new DomainException(
+                'Output can only be logged when order is in_progress. Current status: ' . $order->status,
+                'PROD_ORDER_NOT_IN_PROGRESS',
+                422,
+            );
         }
 
         /** @var ProductionOutputLog $log */
