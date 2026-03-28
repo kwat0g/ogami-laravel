@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTeamAttendanceLogs } from '@/hooks/useAttendance'
 import { useDebounce } from '@/hooks/useDebounce'
+import { PageHeader } from '@/components/ui/PageHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { AttendanceFilters, AttendanceLog } from '@/types/hr'
 import { 
@@ -114,10 +115,7 @@ export default function TeamAttendancePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Team Attendance</h1>
-      </div>
+      <PageHeader title="Team Attendance" />
       <p className="text-sm text-neutral-500 mb-4">
         {data?.meta?.total ?? 0} records
         <span className="ml-2 text-xs text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded">
