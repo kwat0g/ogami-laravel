@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react'
-import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, BarChart2 } from 'lucide-react'
+import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, BarChart2, RotateCcw, Trash2 } from 'lucide-react'
 import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
@@ -14,11 +15,16 @@ import {
   useSuspendVendor,
   useVendorScorecard,
 } from '@/hooks/useAP'
+import { useRestoreRecord, useForceDeleteRecord } from '@/hooks/useArchiveActions'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveEmptyState from '@/components/ui/ArchiveEmptyState'
 import { DepartmentGuard, ActionButton } from '@/components/ui/guards'
+import api from '@/lib/api'
 import type { Vendor, CreateVendorPayload, VendorAccreditationStatus } from '@/types/ap'
 
 // ---------------------------------------------------------------------------
@@ -478,27 +484,39 @@ export default function VendorsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Vendor | null>(null)
   const [scorecardVendorId, setScorecardVendorId] = useState<number | null>(null)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)
   }, [])
 
+  // Active list
   const { data, isLoading, refetch } = useVendors({
     search: debouncedSearch || undefined,
-    is_active: true,
+    is_active: undefined,
   })
 
-  const vendors = data?.data ?? []
+  // Archived list
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['vendors', 'archived', debouncedSearch],
+    queryFn: () => api.get('/vendors-archived', { params: { search: debouncedSearch || undefined, per_page: 50 } }),
+    enabled: isArchiveView,
+  })
+
+  const vendors = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
+  const currentLoading = isArchiveView ? archivedLoading : isLoading
+  const currentRefetch = isArchiveView ? refetchArchived : refetch
   
-  // Calculate summary stats
-  const activeVendors = vendors.filter(v => v.is_active).length
-  const accreditedVendors = vendors.filter(v => v.accreditation_status === 'accredited').length
-  const ewtVendors = vendors.filter(v => v.is_ewt_subject).length
+  // Calculate summary stats (only for active view)
+  const activeVendors = isArchiveView ? 0 : vendors.filter((v: Vendor) => v.is_active).length
+  const accreditedVendors = isArchiveView ? 0 : vendors.filter((v: Vendor) => v.accreditation_status === 'accredited').length
+  const ewtVendors = isArchiveView ? 0 : vendors.filter((v: Vendor) => v.is_ewt_subject).length
 
   const canManage = useAuthStore((s) => s.hasPermission('vendors.manage'))
   const canAccredit = useAuthStore((s) => s.hasPermission('vendors.accredit'))
   const canSuspend = useAuthStore((s) => s.hasPermission('vendors.suspend'))
   const canArchive = useAuthStore((s) => s.hasPermission('vendors.archive'))
+  const isSuperAdmin = useAuthStore((s) => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
 
 
   return (
@@ -521,8 +539,14 @@ export default function VendorsPage() {
         }
       />
 
+      {/* Archive Toggle + Banner */}
+      <div className="flex items-center justify-between">
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
+      </div>
+      {isArchiveView && <ArchiveViewBanner />}
+
       {/* Summary Stats */}
-      {!isLoading && vendors.length > 0 && (
+      {!isArchiveView && !isLoading && vendors.length > 0 && (
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Vendors</p>
@@ -549,19 +573,21 @@ export default function VendorsPage() {
           <p className="text-sm text-neutral-500">Manage supplier records and EWT configuration</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => refetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50">
+          <button onClick={() => currentRefetch()} className="p-2 rounded border border-neutral-300 hover:bg-neutral-50">
             <RefreshCw className="w-4 h-4 text-neutral-500" />
           </button>
-          <DepartmentGuard module="vendors">
-            {canManage && (
-              <button
-                onClick={() => { setEditing(null); setShowForm(true) }}
-                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
-              >
-                <Plus className="w-4 h-4" /> Add Vendor
-              </button>
-            )}
-          </DepartmentGuard>
+          {!isArchiveView && (
+            <DepartmentGuard module="vendors">
+              {canManage && (
+                <button
+                  onClick={() => { setEditing(null); setShowForm(true) }}
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+                >
+                  <Plus className="w-4 h-4" /> Add Vendor
+                </button>
+              )}
+            </DepartmentGuard>
+          )}
         </div>
       </div>
 
@@ -577,10 +603,10 @@ export default function VendorsPage() {
       </div>
 
       {/* Table */}
-      {isLoading ? (
+      {currentLoading ? (
         <SkeletonLoader rows={8} />
       ) : vendors.length === 0 ? (
-        <div className="text-center py-16 text-neutral-400">No vendors found.</div>
+        <ArchiveEmptyState isArchiveView={isArchiveView} recordLabel="vendors" />
       ) : (
         <div className="bg-white rounded border border-neutral-200 overflow-hidden">
           <table className="w-full text-sm">
@@ -588,10 +614,11 @@ export default function VendorsPage() {
               <tr>
                 <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Name</th>
                 <th className="text-left px-3 py-2.5 font-medium text-neutral-600">TIN</th>
-                <th className="text-left px-3 py-2.5 font-medium text-neutral-600">ATC</th>
-                <th className="text-left px-3 py-2.5 font-medium text-neutral-600">EWT</th>
-                <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Status</th>
-                <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Accreditation</th>
+                {!isArchiveView && <th className="text-left px-3 py-2.5 font-medium text-neutral-600">ATC</th>}
+                {!isArchiveView && <th className="text-left px-3 py-2.5 font-medium text-neutral-600">EWT</th>}
+                {!isArchiveView && <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Status</th>}
+                {!isArchiveView && <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Accreditation</th>}
+                {isArchiveView && <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Archived On</th>}
                 <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Actions</th>
               </tr>
             </thead>
@@ -610,62 +637,118 @@ export default function VendorsPage() {
                     )}
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-neutral-600">{vendor.tin ?? '—'}</td>
-                  <td className="px-3 py-2">
-                    {vendor.atc_code ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 font-mono">
-                        {vendor.atc_code}
-                      </span>
-                    ) : (
-                      <span className="text-neutral-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    {vendor.is_ewt_subject ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
-                        EWT Subject
-                      </span>
-                    ) : (
-                      <span className="text-neutral-400 text-xs">No EWT</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    {vendor.is_active ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
-                        <CheckCircle className="w-3 h-3" /> Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    <AccreditationBadge status={vendor.accreditation_status ?? 'pending'} />
-                  </td>
-                  <td className="px-3 py-2">
-                    <DepartmentGuard module="vendors">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setScorecardVendorId(scorecardVendorId === vendor.id ? null : vendor.id)}
-                          className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800"
-                          title="View Performance Scorecard"
-                        >
-                          <BarChart2 className="w-3.5 h-3.5" />
-                          Perf
-                        </button>
-                        {canManage && (
-                          <button
-                            onClick={() => { setEditing(vendor); setShowForm(true) }}
-                            className="text-xs text-neutral-600 hover:underline"
-                          >
-                            Edit
-                          </button>
+                  {!isArchiveView && (
+                    <>
+                      <td className="px-3 py-2">
+                        {vendor.atc_code ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 font-mono">
+                            {vendor.atc_code}
+                          </span>
+                        ) : (
+                          <span className="text-neutral-300">—</span>
                         )}
-                        {canAccredit && <AccreditVendorButton vendor={vendor} />}
-                        {canSuspend && <SuspendVendorButton vendor={vendor} />}
-                        {canArchive && vendor.is_active && <ArchiveVendorButton vendor={vendor} />}
+                      </td>
+                      <td className="px-3 py-2">
+                        {vendor.is_ewt_subject ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                            EWT Subject
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400 text-xs">No EWT</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {vendor.is_active ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+                            <CheckCircle className="w-3 h-3" /> Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500">
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <AccreditationBadge status={vendor.accreditation_status ?? 'pending'} />
+                      </td>
+                    </>
+                  )}
+                  {isArchiveView && (
+                    <td className="px-3 py-2 text-xs text-neutral-500">
+                      {vendor.deleted_at ? new Date(vendor.deleted_at).toLocaleDateString() : '—'}
+                    </td>
+                  )}
+                  <td className="px-3 py-2">
+                    {isArchiveView ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <ConfirmDestructiveDialog
+                          title="Restore Vendor?"
+                          description={`Restore "${vendor.name}" to the active vendor list?`}
+                          confirmWord="RESTORE"
+                          confirmLabel="Restore"
+                          variant="warning"
+                          onConfirm={async () => {
+                            try {
+                              await api.post(`/vendors/${vendor.id}/restore`)
+                              toast.success(`Vendor "${vendor.name}" restored.`)
+                              refetch()
+                              refetchArchived()
+                            } catch (err) {
+                              toast.error(firstErrorMessage(err))
+                            }
+                          }}
+                        >
+                          <button className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <RotateCcw className="w-3 h-3" /> Restore
+                          </button>
+                        </ConfirmDestructiveDialog>
+                        {isSuperAdmin && (
+                          <ConfirmDestructiveDialog
+                            title="Permanently Delete Vendor?"
+                            description='This action cannot be undone. Type "DELETE" to confirm.'
+                            confirmWord="DELETE"
+                            confirmLabel="Permanently Delete"
+                            onConfirm={async () => {
+                              try {
+                                await api.delete(`/vendors/${vendor.id}/force`)
+                                toast.success('Vendor permanently deleted.')
+                                refetchArchived()
+                              } catch (err) {
+                                toast.error(firstErrorMessage(err))
+                              }
+                            }}
+                          >
+                            <button className="text-xs text-red-600 hover:underline flex items-center gap-1">
+                              <Trash2 className="w-3 h-3" /> Delete Forever
+                            </button>
+                          </ConfirmDestructiveDialog>
+                        )}
                       </div>
-                    </DepartmentGuard>
+                    ) : (
+                      <DepartmentGuard module="vendors">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setScorecardVendorId(scorecardVendorId === vendor.id ? null : vendor.id)}
+                            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-800"
+                            title="View Performance Scorecard"
+                          >
+                            <BarChart2 className="w-3.5 h-3.5" />
+                            Perf
+                          </button>
+                          {canManage && (
+                            <button
+                              onClick={() => { setEditing(vendor); setShowForm(true) }}
+                              className="text-xs text-neutral-600 hover:underline"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {canAccredit && <AccreditVendorButton vendor={vendor} />}
+                          {canSuspend && <SuspendVendorButton vendor={vendor} />}
+                          {canArchive && vendor.is_active && <ArchiveVendorButton vendor={vendor} />}
+                        </div>
+                      </DepartmentGuard>
+                    )}
                   </td>
                 </tr>
                 {scorecardVendorId === vendor.id && (
