@@ -7,7 +7,8 @@ import Pagination from '@/components/ui/Pagination';
 import { useWorkOrders } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner';
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveRowActions from '@/components/ui/ArchiveRowActions';
 import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
 
 const PRIORITY_COLORS: Record<WorkOrderPriority, string> = {
