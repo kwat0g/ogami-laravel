@@ -33,6 +33,7 @@ export default function Pagination({ meta, onPageChange, showTotal = true }: Pag
         <button
           disabled={current_page <= 1}
           onClick={() => onPageChange(current_page - 1)}
+          aria-label="Previous page"
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" /> Prev
@@ -43,6 +44,7 @@ export default function Pagination({ meta, onPageChange, showTotal = true }: Pag
         <button
           disabled={current_page >= last_page}
           onClick={() => onPageChange(current_page + 1)}
+          aria-label="Next page"
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Next <ChevronRight className="w-4 h-4" />
