@@ -437,11 +437,12 @@ final class PurchaseRequestService implements ServiceContract
 
     // ── Cancel ───────────────────────────────────────────────────────────────
 
-    public function cancel(PurchaseRequest $pr, User $actor): PurchaseRequest
+    public function cancel(PurchaseRequest $pr, User $actor, string $reason = ''): PurchaseRequest
     {
-        if ($pr->status !== 'draft') {
+        $cancellableStatuses = ['draft', 'pending_review', 'reviewed', 'returned'];
+        if (! in_array($pr->status, $cancellableStatuses, true)) {
             throw new DomainException(
-                message: "Cannot cancel PR in status '{$pr->status}'. Only draft PRs can be cancelled.",
+                message: "Cannot cancel PR in status '{$pr->status}'. Allowed statuses: " . implode(', ', $cancellableStatuses),
                 errorCode: 'PR_CANNOT_CANCEL',
                 httpStatus: 422,
             );
@@ -451,6 +452,7 @@ final class PurchaseRequestService implements ServiceContract
             'status' => 'cancelled',
             'cancelled_by_id' => $actor->id,
             'cancelled_at' => now(),
+            'cancellation_reason' => $reason ?: null,
         ]);
 
         return $pr->refresh();

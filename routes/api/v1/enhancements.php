@@ -69,6 +69,76 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return response()->json(['data' => $audits]);
     })->where('type', '[a-z_]+')->where('id', '[0-9]+');
 
+    // ── Material Consumption Report (Production Order variance) ─────────
+    Route::get('production/orders/{order}/material-consumption', function (\App\Domains\Production\Models\ProductionOrder $order): JsonResponse {
+        $bom = $order->bom_id ? \App\Domains\Production\Models\BillOfMaterials::with('components.componentItem')->find($order->bom_id) : null;
+
+        // BOM expected quantities (per unit * qty required)
+        $bomExpected = [];
+        if ($bom) {
+            foreach ($bom->components as $comp) {
+                $bomExpected[$comp->component_item_id] = [
+                    'item_id' => $comp->component_item_id,
+                    'item_name' => $comp->componentItem?->name ?? "Item #{$comp->component_item_id}",
+                    'item_code' => $comp->componentItem?->item_code ?? '',
+                    'expected_qty' => round((float) $comp->quantity_per_unit * (float) $order->qty_required, 4),
+                    'actual_qty' => 0.0,
+                    'variance' => 0.0,
+                    'variance_pct' => 0.0,
+                ];
+            }
+        }
+
+        // Actual consumed quantities from fulfilled MRQs
+        $mrqs = \App\Domains\Inventory\Models\MaterialRequisition::where('production_order_id', $order->id)
+            ->whereIn('status', ['fulfilled', 'issued'])
+            ->with('items')
+            ->get();
+
+        foreach ($mrqs as $mrq) {
+            foreach ($mrq->items as $item) {
+                $itemId = $item->item_id;
+                if (isset($bomExpected[$itemId])) {
+                    $bomExpected[$itemId]['actual_qty'] += (float) $item->qty_requested;
+                } else {
+                    // Unplanned material (not in BOM)
+                    $bomExpected[$itemId] = [
+                        'item_id' => $itemId,
+                        'item_name' => $item->itemMaster?->name ?? "Item #{$itemId}",
+                        'item_code' => $item->itemMaster?->item_code ?? '',
+                        'expected_qty' => 0.0,
+                        'actual_qty' => (float) $item->qty_requested,
+                        'variance' => 0.0,
+                        'variance_pct' => 0.0,
+                    ];
+                }
+            }
+        }
+
+        // Calculate variances
+        $report = collect($bomExpected)->map(function (array $row): array {
+            $row['variance'] = round($row['actual_qty'] - $row['expected_qty'], 4);
+            $row['variance_pct'] = $row['expected_qty'] > 0
+                ? round(($row['variance'] / $row['expected_qty']) * 100, 2)
+                : ($row['actual_qty'] > 0 ? 100.0 : 0.0);
+
+            return $row;
+        })->values()->all();
+
+        return response()->json([
+            'data' => [
+                'production_order_id' => $order->id,
+                'po_reference' => $order->po_reference,
+                'qty_required' => (float) $order->qty_required,
+                'qty_produced' => (float) $order->qty_produced,
+                'bom_version' => $bom?->version ?? null,
+                'materials' => $report,
+                'total_bom_items' => $bom?->components->count() ?? 0,
+                'total_mrq_fulfilled' => $mrqs->count(),
+            ],
+        ]);
+    })->where('order', '[0-9]+');
+
     // ── AP Early Payment Discounts ──────────────────────────────────────
     Route::prefix('ap')->group(function () {
         Route::get('/discount-summary', function (): JsonResponse {
