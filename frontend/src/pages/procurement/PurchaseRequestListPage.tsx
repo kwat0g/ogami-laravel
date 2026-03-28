@@ -182,7 +182,12 @@ function DuplicateConfirmModal({
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 
-export default function PurchaseRequestListPage(): React.ReactElement {
+interface PurchaseRequestListPageProps {
+  lockedStatus?: PurchaseRequestFilters['status']
+  pageTitle?: string
+}
+
+export default function PurchaseRequestListPage({ lockedStatus, pageTitle }: PurchaseRequestListPageProps = {}): React.ReactElement {
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('procurement.purchase-request.create') || hasPermission('procurement.purchase-request.create-dept')
@@ -191,7 +196,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
   const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState<PurchaseRequestFilters>({
     per_page: 25,
-    status: (searchParams.get('status') as PurchaseRequestFilters['status']) ?? undefined,
+    status: lockedStatus ?? (searchParams.get('status') as PurchaseRequestFilters['status']) ?? undefined,
   })
   const [isArchiveView, setIsArchiveView] = useState(false)
   const [prToConfirm, setPrToConfirm] = useState<PurchaseRequest | null>(null)
@@ -311,7 +316,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
   return (
     <div>
       <PageHeader
-        title="Purchase Requests"
+        title={pageTitle ?? "Purchase Requests"}
         actions={
           <div className="flex items-center gap-2">
             <ExportButton
@@ -352,6 +357,7 @@ export default function PurchaseRequestListPage(): React.ReactElement {
               page: 1,
             }))
           }
+          disabled={!!lockedStatus}
         >
           <option value="">All Statuses</option>
           {STATUSES.map((s) => (
