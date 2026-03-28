@@ -6,7 +6,7 @@ import { useCreateBom } from '@/hooks/useProduction'
 import { useItems } from '@/hooks/useInventory'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
-const UOM_OPTIONS = ['pcs', 'kg', 'g', 'L', 'mL', 'm', 'cm', 'box', 'roll', 'set', 'pair']
+const UOM_OPTIONS = ['pcs', 'set', 'pair', 'box', 'roll', 'sheet', 'unit', 'kg', 'g', 'lb', 'ton', 'L', 'mL', 'gal', 'm', 'cm', 'mm', 'ft', 'in', 'sqm', 'bag', 'drum', 'pack']
 
 interface ComponentRow {
   component_item_id: number

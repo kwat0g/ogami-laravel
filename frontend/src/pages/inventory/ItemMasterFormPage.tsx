@@ -188,10 +188,45 @@ export default function ItemMasterFormPage(): React.ReactElement {
               {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
             </div>
 
-            {/* UOM */}
+            {/* UOM — dropdown instead of manual typing */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Unit of Measure *</label>
-              <input {...register('unit_of_measure')} className={fieldCls(errors.unit_of_measure)} placeholder="e.g. pcs, kg, L" />
+              <select {...register('unit_of_measure')} className={fieldCls(errors.unit_of_measure)}>
+                <option value="">Select UOM...</option>
+                <optgroup label="Count">
+                  <option value="pcs">pcs (Pieces)</option>
+                  <option value="set">set (Set)</option>
+                  <option value="pair">pair (Pair)</option>
+                  <option value="box">box (Box)</option>
+                  <option value="roll">roll (Roll)</option>
+                  <option value="sheet">sheet (Sheet)</option>
+                  <option value="unit">unit (Unit)</option>
+                </optgroup>
+                <optgroup label="Weight">
+                  <option value="kg">kg (Kilogram)</option>
+                  <option value="g">g (Gram)</option>
+                  <option value="lb">lb (Pound)</option>
+                  <option value="ton">ton (Metric Ton)</option>
+                </optgroup>
+                <optgroup label="Volume">
+                  <option value="L">L (Liter)</option>
+                  <option value="mL">mL (Milliliter)</option>
+                  <option value="gal">gal (Gallon)</option>
+                </optgroup>
+                <optgroup label="Length">
+                  <option value="m">m (Meter)</option>
+                  <option value="cm">cm (Centimeter)</option>
+                  <option value="mm">mm (Millimeter)</option>
+                  <option value="ft">ft (Foot)</option>
+                  <option value="in">in (Inch)</option>
+                </optgroup>
+                <optgroup label="Area / Other">
+                  <option value="sqm">sqm (Square Meter)</option>
+                  <option value="bag">bag (Bag)</option>
+                  <option value="drum">drum (Drum)</option>
+                  <option value="pack">pack (Pack)</option>
+                </optgroup>
+              </select>
               {errors.unit_of_measure && <p className="text-red-500 text-xs mt-1">{errors.unit_of_measure.message}</p>}
             </div>
 
