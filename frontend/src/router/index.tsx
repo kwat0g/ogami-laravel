@@ -304,6 +304,7 @@ const BudgetAmendmentsPage = lazy(() => import('@/pages/budget/BudgetAmendmentsP
 
 // Enhancement pages
 const PerformanceAppraisalListPage   = lazy(() => import('@/pages/hr/PerformanceAppraisalListPage'))
+const CreatePerformanceAppraisalPage = lazy(() => import('@/pages/hr/CreatePerformanceAppraisalPage'))
 const LeadScoringPage                = lazy(() => import('@/pages/crm/LeadScoringPage'))
 const FinancialRatiosPage            = lazy(() => import('@/pages/accounting/FinancialRatiosPage'))
 const CapacityPlanningPage           = lazy(() => import('@/pages/production/CapacityPlanningPage'))
@@ -375,6 +376,7 @@ const router = createBrowserRouter([
       { path: '/hr/employees/new', element: withSuspense(guard('hr.full_access', <EmployeeFormPage />)) },
       { path: '/hr/employees/:ulid', element: withSuspense(guard('hr.full_access', <EmployeeDetailPage />)) },
       { path: '/hr/appraisals', element: withSuspense(guard('hr.full_access', <PerformanceAppraisalListPage />)) },
+      { path: '/hr/appraisals/create', element: withSuspense(guard('hr.full_access', <CreatePerformanceAppraisalPage />)) },
       { path: '/hr/employees/:ulid/edit', element: withSuspense(guard('hr.full_access', <EmployeeFormPage />)) },
 
       // HR — Attendance

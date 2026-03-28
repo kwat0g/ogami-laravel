@@ -585,6 +585,49 @@ Delivery (Sales) → Stock Ledger −
 
 ---
 
+## Enhancement Summary (v2)
+
+The following enhancements were added across all 22 modules to bring the system to thesis-grade / real-world ERP standards:
+
+| Module | Enhancement | Type |
+|--------|-------------|------|
+| Production | Multi-level BOM cost rollup (recurses into sub-assemblies) | Improved |
+| Production | Routing labor + overhead included in standard cost (from WorkCenter rates) | New |
+| Production | BOM where-used report (reverse lookup) | New |
+| Production | Time-phased MRP with vendor lead times and order release dates | Improved |
+| Production | Capacity planning against work centers with feasibility checking | New |
+| Production | Auto-post cost variance GL entry on production order completion | Automated |
+| Inventory | FIFO and weighted average costing (per-item costing method) | New |
+| Inventory | QC quarantine zone for stock pending inspection | New |
+| QC | IQC gate enforcement on Goods Receipt (blocks unconfirmed items) | New |
+| Sales | SO fulfillment chain: make-to-stock, make-to-order, partial | New |
+| Sales | Quotation auto-converts to Sales Order on acceptance | Automated |
+| Sales | Credit limit enforcement (soft/hard modes) | New |
+| HR | Performance Appraisal with weighted KPI criteria (4-step workflow) | New |
+| Payroll | Comprehensive Final Pay (leave monetization, 13th month proration, separation pay) | Improved |
+| Budget | Budget amendment workflow (reallocation, increase, decrease) | New |
+| CRM | Lead scoring (4-factor: source, engagement, recency, profile) | New |
+| CRM | SLA enforcement on support tickets | New |
+| AP | Early payment discount parsing and payment optimization | Improved |
+| AR | Automated dunning batch command (ar:run-dunning) | Automated |
+| Leave | Team conflict detection (min staffing, position overlap, team cap) | New |
+| Accounting | Financial ratio calculations (8 ratios from GL data) | New |
+| Tax | BIR alphalist generation (2316 employees, 2307 vendors) | New |
+| Fixed Assets | Asset revaluation + impairment testing with GL posting | New |
+| Loan | Early payoff calculation + loan restructuring | New |
+| Procurement | Blanket purchase orders with committed amount tracking | New |
+| Procurement | PR consolidation suggestion for same-vendor merging | Improved |
+| Delivery | Proof of delivery capture (signature, photo, GPS) | New |
+| ISO | Document read acknowledgment tracking | New |
+| Dashboard | Role-based dashboards (7 types: executive, production, HR, accounting, warehouse, sales, employee) | New |
+| Mold | Auto-log shots from production output (shots = qty / cavity_count) | Automated |
+| Attendance | Auto-create timesheets at pay period boundaries | Automated |
+| Inventory | Auto-issue MRQ for single-location warehouses | Automated |
+
+All enhancements are configurable via `system_settings` table keys -- see `EnhancementSettingsSeeder` for 27 configurable settings with defaults.
+
+---
+
 ## Roles Quick Reference
 
 | Role | Key Access |
