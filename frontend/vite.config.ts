@@ -41,6 +41,9 @@ export default defineConfig(({ command }) => ({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           query: ['@tanstack/react-query'],
           charts: ['recharts'],
+          forms: ['react-hook-form', 'zod'],
+          icons: ['lucide-react'],
+          ui: ['sonner', 'zustand'],
         },
       },
       input: {

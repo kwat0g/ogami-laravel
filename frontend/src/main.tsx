@@ -14,6 +14,15 @@ console.log(SkeletonLoader)
 // Remove legacy localStorage keys left over from the token-based auth flow.
 // Auth is now session-cookie based — no sensitive data is stored in localStorage.
 ;['auth_token', 'ogami-auth'].forEach((k) => localStorage.removeItem(k))
+// Handle Vite preload errors (e.g. failed dynamic imports after deployment)
+window.addEventListener('vite:preloadError', (event) => {
+  // Prevent the default error logging
+  if (event.preventDefault) {
+    event.preventDefault()
+  }
+  // Reload the page so the browser fetches the new index.html and correct chunk paths
+  window.location.reload()
+})
 
 const queryClient = new QueryClient({
   defaultOptions: {
