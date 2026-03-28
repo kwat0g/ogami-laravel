@@ -9,6 +9,7 @@ use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * Dashboard Query Service -- role-specific dashboard DB queries.
