@@ -101,7 +101,7 @@ export default function SalaryGradesTable(): JSX.Element {
     e.preventDefault()
     
     const payload = {
-      code: formData.code,
+      code: editingGrade ? formData.code : `SG-${String(formData.level || '').padStart(2, '0')}`,
       name: formData.name,
       level: parseInt(formData.level),
       min_monthly_rate: Math.round(parseFloat(formData.min_monthly_rate) * 100),
@@ -327,16 +327,14 @@ export default function SalaryGradesTable(): JSX.Element {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="code" className="text-sm font-medium text-neutral-700">
-                  Code <span className="text-red-500">*</span>
+                  Code {editingGrade ? '' : <span className="text-neutral-400 text-xs font-normal">(auto-generated)</span>}
                 </Label>
                 <Input
                   id="code"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  placeholder="e.g., SG-01"
-                  required
-                  disabled={!!editingGrade}
-                  className="h-11"
+                  value={editingGrade ? formData.code : `SG-${String(formData.level || '').padStart(2, '0')}`}
+                  readOnly
+                  disabled
+                  className="h-11 bg-neutral-50 text-neutral-500 font-mono"
                 />
               </div>
               

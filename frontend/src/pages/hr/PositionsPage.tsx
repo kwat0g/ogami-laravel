@@ -70,6 +70,10 @@ export default function PositionsPage() {
 
   const handleSave = async () => {
     if (!form) return
+    // Auto-generate code from title for new positions
+    if (!form.id && form.title) {
+      form.code = form.title.split(/\s+/).map((w: string) => w.charAt(0)).join('').toUpperCase().slice(0, 8)
+    }
     setFormError(null)
     if (!form.title.trim()) { setFormError('Title is required.'); return }
     if (!form.id && !form.code.trim()) { setFormError('Code is required.'); return }
@@ -179,15 +183,13 @@ export default function PositionsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">
-                  Code <span className="text-red-500">*</span>
+                  Code <span className="text-neutral-400 text-xs font-normal">(auto-generated from title)</span>
                 </label>
                 <input 
-                  value={form.code} 
-                  onChange={(e) => set('code', e.target.value.toUpperCase())}
-                  placeholder="e.g. HR-MGR"
-                  className={`w-full border rounded px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-neutral-400 font-mono ${
-                    !form.code.trim() && formError ? 'border-red-500' : 'border-neutral-300'
-                  }`} 
+                  value={form.title ? form.title.split(/\s+/).map((w: string) => w.charAt(0)).join('').toUpperCase().slice(0, 8) : ''}
+                  readOnly
+                  disabled
+                  className="w-full border rounded px-3 py-2 text-sm outline-none bg-neutral-50 border-neutral-200 text-neutral-500 font-mono"
                 />
               </div>
               <div>

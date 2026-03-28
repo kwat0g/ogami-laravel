@@ -104,7 +104,7 @@ export default function LoanTypesTable(): JSX.Element {
     e.preventDefault()
     
     const payload = {
-      code: formData.code,
+      code: editingType ? formData.code : (formData.name ? formData.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '') : ''),
       name: formData.name,
       category: formData.category as LoanType['category'],
       description: formData.description || null as unknown as undefined,
@@ -344,16 +344,14 @@ export default function LoanTypesTable(): JSX.Element {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="code" className="text-sm font-medium text-neutral-700">
-                  Code <span className="text-red-500">*</span>
+                  Code {editingType ? '' : <span className="text-neutral-400 text-xs font-normal">(auto-generated from name)</span>}
                 </Label>
                 <Input
                   id="code"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  placeholder="e.g., SSS_SALARY"
-                  required
-                  disabled={!!editingType}
-                  className="h-11"
+                  value={editingType ? formData.code : formData.name ? formData.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '') : ''}
+                  readOnly
+                  disabled
+                  className="h-11 bg-neutral-50 text-neutral-500 font-mono"
                 />
               </div>
               
