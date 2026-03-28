@@ -24,6 +24,11 @@ Route::middleware(['auth:sanctum', 'module_access:qc'])->group(function () {
     Route::put('templates/{inspectionTemplate}', [InspectionTemplateController::class, 'update']);
     Route::delete('templates/{inspectionTemplate}', [InspectionTemplateController::class, 'destroy'])
         ->middleware('throttle:10,1');
+    Route::get('templates-archived', [InspectionTemplateController::class, 'archived']);
+    Route::post('templates/{inspectionTemplate}/restore', [InspectionTemplateController::class, 'restore'])
+        ->middleware('throttle:10,1');
+    Route::delete('templates/{inspectionTemplate}/force', [InspectionTemplateController::class, 'forceDelete'])
+        ->middleware('throttle:10,1');
 
     // Inspections
     Route::get('inspections', [InspectionController::class, 'index']);

@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Domains\QC\Services;
 
 use App\Domains\QC\Models\InspectionTemplate;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
+use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 final class InspectionTemplateService implements ServiceContract
 {
+    use HasArchiveOperations;
     /** @param array<string,mixed> $params */
     public function paginate(array $params = []): LengthAwarePaginator
     {
@@ -83,8 +87,33 @@ final class InspectionTemplateService implements ServiceContract
         return InspectionTemplate::where('stage', $stage)->where('is_active', true)->with('items')->orderBy('name')->get();
     }
 
+    /** Soft-delete (archive) a template. */
     public function delete(InspectionTemplate $template): void
     {
-        $template->delete();
+        $template->delete(); // SoftDeletes trait handles this
+    }
+
+    public function restore(int $id, User $user): InspectionTemplate
+    {
+        /** @var InspectionTemplate */
+        return $this->restoreRecord(InspectionTemplate::class, $id, $user);
+    }
+
+    public function forceDelete(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(InspectionTemplate::class, $id, $user);
+    }
+
+    public function listArchived(array $params = []): LengthAwarePaginator
+    {
+        return InspectionTemplate::onlyTrashed()
+            ->with('items')
+            ->when($params['stage'] ?? null, fn ($q, $v) => $q->where('stage', $v))
+            ->when(
+                ! empty($params['search']),
+                fn ($q) => $q->where('name', 'ilike', '%' . $params['search'] . '%')
+            )
+            ->latest('deleted_at')
+            ->paginate((int) ($params['per_page'] ?? 20));
     }
 }

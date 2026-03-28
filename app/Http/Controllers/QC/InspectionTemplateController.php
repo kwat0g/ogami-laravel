@@ -58,4 +58,32 @@ final class InspectionTemplateController extends Controller
 
         return response()->noContent();
     }
+
+    /** List archived (soft-deleted) templates. */
+    public function archived(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', InspectionTemplate::class);
+
+        return InspectionTemplateResource::collection(
+            $this->service->listArchived($request->only(['stage', 'search', 'per_page']))
+        );
+    }
+
+    /** Restore a soft-deleted template from the archive. */
+    public function restore(Request $request, int $inspectionTemplate): InspectionTemplateResource
+    {
+        $template = $this->service->restore($inspectionTemplate, $request->user());
+
+        return new InspectionTemplateResource($template->load('items'));
+    }
+
+    /** Permanently delete a template — superadmin only. */
+    public function forceDelete(Request $request, int $inspectionTemplate): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
+
+        $this->service->forceDelete($inspectionTemplate, $request->user());
+
+        return response()->json(['message' => 'Template permanently deleted.']);
+    }
 }
