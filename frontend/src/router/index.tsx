@@ -560,7 +560,7 @@ const router = createBrowserRouter([
       { path: '/delivery/routes', element: withSuspense(guard('delivery.routes.view', <DeliveryRoutesPage />)) },
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────
-      { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve', <VpApprovalsDashboardPage />)) },
+      { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve|procurement.purchase-request.view|inventory.mrq.vp_approve|payroll.vp_approve|leaves.vp_note', <VpApprovalsDashboardPage />)) },
       { path: '/approvals/loans',   element: <Navigate to="/approvals/pending" replace /> },
       { path: '/approvals/loans/:ulid', element: withSuspense(guard('loans.vp_approve', <LoanDetailPage />)) },
 

@@ -182,7 +182,10 @@ export const PERMISSIONS = {
   mold: perms('mold', ['view', 'manage', 'log_shots']),
 
   // ── Delivery / Logistics ─────────────────────────────────────────────────
-  delivery: perms('delivery', ['view', 'manage']),
+  delivery: {
+    ...perms('delivery', ['view', 'manage']),
+    routes: perms('delivery.routes', ['view', 'manage']),
+  },
 
   // ── ISO / IATF ───────────────────────────────────────────────────────────
   iso: perms('iso', ['view', 'manage', 'audit']),
@@ -195,6 +198,8 @@ export const PERMISSIONS = {
   // ── Sales / Client Orders ─────────────────────────────────────────────────
   sales: {
     orders: perms('sales', ['order_review', 'order_approve', 'order_reject', 'order_negotiate', 'order_vp_approve']),
+    quotations: perms('sales.quotations', ['view', 'create', 'update', 'send', 'accept']),
+    sales_orders: perms('sales.orders', ['view', 'confirm', 'cancel']),
   },
 
   // ── VP Approvals ─────────────────────────────────────────────────────────
@@ -206,11 +211,21 @@ export const PERMISSIONS = {
   vendor_portal: perms('vendor_portal', [
     'view_orders', 'update_fulfillment', 'manage_items', 'view_receipts',
   ]),
+  // ── AP Extras ──────────────────────────────────────────────────────────
+  ap: {
+    payment_batches: perms('ap.payment_batches', ['view', 'create', 'approve']),
+  },
+
+  // ── AR Extras ─────────────────────────────────────────────────────────
+  ar: {
+    dunning: perms('ar.dunning', ['view', 'create', 'send']),
+  },
+
   // ── Budget ───────────────────────────────────────────────────────────
   budget: perms('budget', ['view', 'manage', 'approve']),
 
   // ── Fixed Assets ─────────────────────────────────────────────────────
-  fixed_assets: perms('fixed_assets', ['view', 'manage']),} as const
+  fixed_assets: perms('fixed_assets', ['view', 'manage', 'dispose']),} as const
 
 export type PermissionString =
   typeof PERMISSIONS[keyof typeof PERMISSIONS][keyof typeof PERMISSIONS[keyof typeof PERMISSIONS]]

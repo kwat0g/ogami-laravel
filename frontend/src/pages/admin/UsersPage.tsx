@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useDebounce } from 'use-debounce'
+import { useDebounce } from '@/hooks/useDebounce'
 import { toast } from 'sonner'
 import {
   useAdminUsers,
@@ -154,7 +154,7 @@ export default function UsersPage() {
   const [filters, setFilters] = useState({ search: '', role: '', page: 1, per_page: 15 })
   
   // Debounce search to prevent excessive API calls
-  const [debouncedSearch] = useDebounce(searchInput, 300)
+  const debouncedSearch = useDebounce(searchInput, 400)
   
   // Update filters when debounced search changes
   useEffect(() => {
@@ -195,7 +195,7 @@ export default function UsersPage() {
 
   const rows = data?.data ?? []
   const meta = data?.meta
-  const [debouncedTargetSearch] = useDebounce(wizard?.targetSearch ?? '', 250)
+  const debouncedTargetSearch = useDebounce(wizard?.targetSearch ?? '', 400)
 
   // ── Available employees for step 2 ───────────────────────────────────────
   const { data: availableEmployees = [], isLoading: empLoading } = useEmployeesAvailable(

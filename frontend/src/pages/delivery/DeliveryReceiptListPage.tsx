@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Truck } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import SearchInput from '@/components/ui/SearchInput';
+import Pagination from '@/components/ui/Pagination';
 import { useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import { ExportButton } from '@/components/ui/ExportButton';
@@ -22,14 +24,23 @@ export default function DeliveryReceiptListPage() {
   const [direction, setDirection] = useState('');
   const [status, setStatus] = useState('');
   const [withArchived, setWithArchived] = useState(false);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
   const canManage = useAuthStore(s => s.hasPermission('delivery.manage'));
 
-  const params: Record<string, string | boolean> = {};
+  const params: Record<string, string | number | boolean> = { page, per_page: 20 };
   if (direction) params.direction = direction;
   if (status) params.status = status;
   if (withArchived) params.with_archived = true;
+  if (debouncedSearch) params.search = debouncedSearch;
 
   const { data, isLoading } = useDeliveryReceipts(Object.keys(params).length ? params : undefined);
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val);
+    setPage(1);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -60,13 +71,20 @@ export default function DeliveryReceiptListPage() {
         }
       />
 
-      <div className="flex gap-2">
-        <select value={direction} onChange={e => setDirection(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none">
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search receipts..."
+          className="w-64"
+        />
+        <select value={direction} onChange={e => { setDirection(e.target.value); setPage(1); }} className="rounded border border-neutral-300 px-2 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none">
           <option value="">All Directions</option>
           <option value="inbound">Inbound</option>
           <option value="outbound">Outbound</option>
         </select>
-        <select value={status} onChange={e => setStatus(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none">
+        <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="rounded border border-neutral-300 px-2 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none">
           <option value="">All Statuses</option>
           <option value="draft">Draft</option>
           <option value="confirmed">Confirmed</option>
@@ -128,6 +146,8 @@ export default function DeliveryReceiptListPage() {
           </tbody>
         </table>
       </div>
+
+      {data?.meta && <Pagination meta={data.meta} onPageChange={setPage} />}
     </div>
   );
 }

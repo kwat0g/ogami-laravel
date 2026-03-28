@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Wrench } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import SearchInput from '@/components/ui/SearchInput';
+import Pagination from '@/components/ui/Pagination';
 import { useEquipment } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
 import type { EquipmentStatus } from '@/types/maintenance';
@@ -15,8 +17,23 @@ const STATUS_COLORS: Record<EquipmentStatus, string> = {
 export default function EquipmentListPage() {
   const [status, setStatus] = useState('');
   const [withArchived, setWithArchived] = useState(false);
-  const { data, isLoading } = useEquipment({ ...(status ? { status } : {}), ...(withArchived ? { with_archived: true } : {}) });
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useEquipment({
+    ...(status ? { status } : {}),
+    ...(withArchived ? { with_archived: true } : {}),
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    page,
+    per_page: 20,
+  });
   const canManage = useAuthStore(s => s.hasPermission('maintenance.manage'));
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val);
+    setPage(1);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -34,11 +51,18 @@ export default function EquipmentListPage() {
         }
       />
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search equipment..."
+          className="w-64"
+        />
         <select
           value={status}
-          onChange={e => setStatus(e.target.value)}
-          className="rounded border border-neutral-300 px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+          onChange={e => { setStatus(e.target.value); setPage(1); }}
+          className="rounded border border-neutral-300 px-2 py-2 text-sm focus:ring-1 focus:ring-neutral-400"
         >
           <option value="">All Statuses</option>
           <option value="operational">Operational</option>
@@ -88,7 +112,7 @@ export default function EquipmentListPage() {
                   <td className="px-4 py-3 text-neutral-500">{eq.location ?? '—'}</td>
                   <td className="px-4 py-3">
                     {eq.deleted_at && <span className="rounded px-2 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-700 mr-1">Archived</span>}
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[eq.status] || STATUS_COLORS.active}`}>
+                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[eq.status] || STATUS_COLORS.operational}`}>
                       {eq.status?.replace('_', ' ') || 'Unknown'}
                     </span>
                   </td>
@@ -99,6 +123,8 @@ export default function EquipmentListPage() {
           </tbody>
         </table>
       </div>
+
+      {data?.meta && <Pagination meta={data.meta} onPageChange={setPage} />}
     </div>
   );
 }
