@@ -209,14 +209,6 @@ const CreateDeliveryReceiptPage       = lazy(() => import('@/pages/delivery/Crea
 const DeliveryReceiptDetailPage       = lazy(() => import('@/pages/delivery/DeliveryReceiptDetailPage'))
 const ShipmentsPage                   = lazy(() => import('@/pages/delivery/ShipmentsPage'))
 
-// ISO / IATF
-const DocumentRegisterPage           = lazy(() => import('@/pages/iso/DocumentRegisterPage'))
-const CreateIsoDocumentPage          = lazy(() => import('@/pages/iso/CreateIsoDocumentPage'))
-const IsoDocumentDetailPage          = lazy(() => import('@/pages/iso/IsoDocumentDetailPage'))
-const AuditListPage                  = lazy(() => import('@/pages/iso/AuditListPage'))
-const CreateIsoAuditPage             = lazy(() => import('@/pages/iso/CreateIsoAuditPage'))
-const IsoAuditDetailPage             = lazy(() => import('@/pages/iso/IsoAuditDetailPage'))
-
 // Maintenance
 const EquipmentListPage              = lazy(() => import('@/pages/maintenance/EquipmentListPage'))
 const EquipmentDetailPage            = lazy(() => import('@/pages/maintenance/EquipmentDetailPage'))
@@ -271,9 +263,7 @@ const VendorInvoicesPage         = lazy(() => import('@/pages/vendor-portal/Vend
 const TicketListPage      = lazy(() => import('@/pages/crm/TicketListPage'))
 const TicketDetailPage    = lazy(() => import('@/pages/crm/TicketDetailPage'))
 const CrmDashboardPage    = lazy(() => import('@/pages/crm/CrmDashboardPage'))
-const LeadListPage        = lazy(() => import('@/pages/crm/LeadListPage'))
-const LeadDetailPage      = lazy(() => import('@/pages/crm/LeadDetailPage'))
-const OpportunityListPage = lazy(() => import('@/pages/crm/OpportunityListPage'))
+
 
 // Sales Module (Phase 1)
 const QuotationListPage      = lazy(() => import('@/pages/sales/QuotationListPage'))
@@ -284,7 +274,6 @@ const SalesOrderListPage     = lazy(() => import('@/pages/sales/SalesOrderListPa
 const StockTransferPage   = lazy(() => import('@/pages/inventory/StockTransferPage'))
 
 // Phase 2-4 pages
-const OpportunityDetailPage = lazy(() => import('@/pages/crm/OpportunityDetailPage'))
 const QuotationDetailPage = lazy(() => import('@/pages/sales/QuotationDetailPage'))
 const SalesOrderDetailPage = lazy(() => import('@/pages/sales/SalesOrderDetailPage'))
 const PaymentBatchListPage = lazy(() => import('@/pages/procurement/PaymentBatchListPage'))
@@ -294,33 +283,19 @@ const MoldLifecyclePage = lazy(() => import('@/pages/mold/MoldLifecyclePage'))
 const SpcDashboardPage = lazy(() => import('@/pages/qc/SpcDashboardPage'))
 const SupplierQualityPage = lazy(() => import('@/pages/qc/SupplierQualityPage'))
 const BirFormGeneratorPage = lazy(() => import('@/pages/tax/BirFormGeneratorPage'))
-const TrainingListPage = lazy(() => import('@/pages/hr/TrainingListPage'))
-const CompetencyMatrixPage = lazy(() => import('@/pages/hr/CompetencyMatrixPage'))
 const DeliveryRoutesPage = lazy(() => import('@/pages/delivery/DeliveryRoutesPage'))
-const AssetTransfersPage = lazy(() => import('@/pages/fixed-assets/AssetTransfersPage'))
-const BudgetForecastPage = lazy(() => import('@/pages/budget/BudgetForecastPage'))
 
-// Budget domain
+// Budget domain (reduced)
 const CostCentersPage = lazy(() => import('@/pages/budget/CostCentersPage'))
-const BudgetLinesPage = lazy(() => import('@/pages/budget/BudgetLinesPage'))
-const BudgetAmendmentsPage = lazy(() => import('@/pages/budget/BudgetAmendmentsPage'))
-
-// Enhancement pages
-const PerformanceAppraisalListPage   = lazy(() => import('@/pages/hr/PerformanceAppraisalListPage'))
-const CreatePerformanceAppraisalPage = lazy(() => import('@/pages/hr/CreatePerformanceAppraisalPage'))
-const LeadScoringPage                = lazy(() => import('@/pages/crm/LeadScoringPage'))
-const FinancialRatiosPage            = lazy(() => import('@/pages/accounting/FinancialRatiosPage'))
-const CapacityPlanningPage           = lazy(() => import('@/pages/production/CapacityPlanningPage'))
-const TimePhasedMrpPage              = lazy(() => import('@/pages/production/TimePhasedMrpPage'))
-const BlanketPurchaseOrdersPage      = lazy(() => import('@/pages/procurement/BlanketPurchaseOrdersPage'))
-const BudgetVsActualPage = lazy(() => import('@/pages/budget/BudgetVsActualPage'))
 const DepartmentBudgetsPage = lazy(() => import('@/pages/budget/DepartmentBudgetsPage'))
 
-// Fixed Assets domain
+// Enhancement pages
+const FinancialRatiosPage            = lazy(() => import('@/pages/accounting/FinancialRatiosPage'))
+const BlanketPurchaseOrdersPage      = lazy(() => import('@/pages/procurement/BlanketPurchaseOrdersPage'))
+
+// Fixed Assets domain (reduced)
 const FixedAssetsPage          = lazy(() => import('@/pages/fixed-assets/FixedAssetsPage'))
 const FixedAssetDetailPage     = lazy(() => import('@/pages/fixed-assets/FixedAssetDetailPage'))
-const FixedAssetCategoriesPage = lazy(() => import('@/pages/fixed-assets/FixedAssetCategoriesPage'))
-const AssetDisposalPage        = lazy(() => import('@/pages/fixed-assets/AssetDisposalPage'))
 
 // Recurring Templates
 const RecurringTemplatesPage = lazy(() => import('@/pages/accounting/RecurringTemplatesPage'))
@@ -333,7 +308,6 @@ const ArAgingReportPage       = lazy(() => import('@/pages/ar/ArAgingReportPage'
 
 // Analytics pages (new)
 const ExecutiveAnalyticsDashboard = lazy(() => import('@/pages/dashboard/ExecutiveAnalyticsDashboard'))
-const BudgetVarianceReportPage    = lazy(() => import('@/pages/budget/BudgetVarianceReportPage'))
 const VendorScorecardPage         = lazy(() => import('@/pages/procurement/VendorScorecardPage'))
 
 // Vendor RFQs
@@ -380,8 +354,6 @@ const router = createBrowserRouter([
       { path: '/hr/employees/all', element: withSuspense(guard('hr.full_access', <EmployeeListPage view="all" />)) },
       { path: '/hr/employees/new', element: withSuspense(guard('hr.full_access', <EmployeeFormPage />)) },
       { path: '/hr/employees/:ulid', element: withSuspense(guard('hr.full_access', <EmployeeDetailPage />)) },
-      { path: '/hr/appraisals', element: withSuspense(guard('hr.full_access', <PerformanceAppraisalListPage />)) },
-      { path: '/hr/appraisals/create', element: withSuspense(guard('hr.full_access', <CreatePerformanceAppraisalPage />)) },
       { path: '/hr/employees/:ulid/edit', element: withSuspense(guard('hr.full_access', <EmployeeFormPage />)) },
 
       // HR — Attendance
@@ -406,8 +378,6 @@ const router = createBrowserRouter([
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
       { path: '/hr/reports', element: withSuspense(guard('hr.full_access', <HRReportsPage />)) },
-      { path: '/hr/trainings', element: withSuspense(guard('hr.training.view', <TrainingListPage />)) },
-      { path: '/hr/competency', element: withSuspense(guard('hr.competency.view', <CompetencyMatrixPage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },
@@ -538,8 +508,6 @@ const router = createBrowserRouter([
       { path: '/inventory/transfers', element: withSuspense(guard('inventory.transfers.manage', <StockTransferPage />)) },
 
       // ── Production / PPC ──────────────────────────────────────────────────
-      { path: '/production/capacity', element: withSuspense(guard('production.order.view', <CapacityPlanningPage />)) },
-      { path: '/production/mrp', element: withSuspense(guard('production.order.view', <TimePhasedMrpPage />)) },
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
       { path: '/production/boms/new', element: withSuspense(guard('production.bom.manage', <CreateBomPage />)) },
       { path: '/production/boms/:ulid', element: withSuspense(guard('production.bom.view', <BomDetailPage />)) },
@@ -591,14 +559,6 @@ const router = createBrowserRouter([
       { path: '/delivery/shipments', element: withSuspense(guard('delivery.view', <ShipmentsPage />)) },
       { path: '/delivery/routes', element: withSuspense(guard('delivery.routes.view', <DeliveryRoutesPage />)) },
 
-      // ── ISO / IATF ──────────────────────────────────────────────────
-      { path: '/iso/documents', element: withSuspense(guard('iso.view', <DocumentRegisterPage />)) },
-      { path: '/iso/documents/new', element: withSuspense(guard('iso.manage', <CreateIsoDocumentPage />)) },
-      { path: '/iso/documents/:ulid', element: withSuspense(guard('iso.view', <IsoDocumentDetailPage />)) },
-      { path: '/iso/audits', element: withSuspense(guard('iso.view', <AuditListPage />)) },
-      { path: '/iso/audits/new', element: withSuspense(guard('iso.manage', <CreateIsoAuditPage />)) },
-      { path: '/iso/audits/:ulid', element: withSuspense(guard('iso.view', <IsoAuditDetailPage />)) },
-
       // ── VP Approvals Dashboard ────────────────────────────────────────────
       { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve', <VpApprovalsDashboardPage />)) },
       { path: '/approvals/loans',   element: <Navigate to="/approvals/pending" replace /> },
@@ -615,26 +575,13 @@ const router = createBrowserRouter([
       { path: '/crm/dashboard',           element: withSuspense(guard('crm.tickets.view', <CrmDashboardPage />)) },
       { path: '/crm/tickets',             element: withSuspense(guard('crm.tickets.view', <TicketListPage />)) },
       { path: '/crm/tickets/:ulid',       element: withSuspense(guard('crm.tickets.view', <TicketDetailPage />)) },
-      { path: '/crm/leads',               element: withSuspense(guard('crm.leads.view', <LeadListPage />)) },
-      { path: '/crm/lead-scoring',        element: withSuspense(guard('crm.leads.view', <LeadScoringPage />)) },
-      { path: '/crm/leads/:ulid',         element: withSuspense(guard('crm.leads.view', <LeadDetailPage />)) },
-      { path: '/crm/opportunities',       element: withSuspense(guard('crm.opportunities.view', <OpportunityListPage />)) },
-      { path: '/crm/opportunities/:ulid', element: withSuspense(guard('crm.opportunities.view', <OpportunityDetailPage />)) },
 
       // ── Budget ────────────────────────────────────────────────────────────
       { path: '/budget/cost-centers',       element: withSuspense(guard('budget.view', <CostCentersPage />)) },
       { path: '/budget/department-budgets', element: withSuspense(guard('budget.view', <DepartmentBudgetsPage />)) },
-      { path: '/budget/lines',              element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
-      { path: '/budget/amendments',          element: withSuspense(guard('budget.view', <BudgetAmendmentsPage />)) },
-      { path: '/budget/vs-actual',          element: withSuspense(guard('budget.view', <BudgetVsActualPage />)) },
-      { path: '/budget/variance',            element: withSuspense(guard('budget.view', <BudgetVarianceReportPage />)) },
-      { path: '/budget/forecast',            element: withSuspense(guard('budget.forecast', <BudgetForecastPage />)) },
 
       // ── Fixed Assets ──────────────────────────────────────────────────────
       { path: '/fixed-assets',             element: withSuspense(guard('fixed_assets.view', <FixedAssetsPage />)) },
-      { path: '/fixed-assets/categories',  element: withSuspense(guard('fixed_assets.view', <FixedAssetCategoriesPage />)) },
-      { path: '/fixed-assets/disposals',    element: withSuspense(guard('fixed_assets.manage', <AssetDisposalPage />)) },
-      { path: '/fixed-assets/transfers',   element: withSuspense(guard('fixed_assets.transfer', <AssetTransfersPage />)) },
       { path: '/fixed-assets/:ulid',       element: withSuspense(guard('fixed_assets.view', <FixedAssetDetailPage />)) },
 
       // ── Recurring Journal Templates ────────────────────────────────────────

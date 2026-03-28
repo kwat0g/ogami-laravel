@@ -51,9 +51,6 @@ use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Policies\ItemMasterPolicy;
 use App\Domains\Inventory\Policies\MaterialRequisitionPolicy;
-use App\Domains\ISO\Models\ControlledDocument;
-use App\Domains\ISO\Models\InternalAudit;
-use App\Domains\ISO\Policies\ISOPolicy;
 use App\Domains\Leave\Models\LeaveBalance;
 use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Leave\Policies\LeaveBalancePolicy;
@@ -186,8 +183,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MaintenanceWorkOrder::class, MaintenancePolicy::class);
         Gate::policy(MoldMaster::class, MoldPolicy::class);
         Gate::policy(DeliveryReceipt::class, DeliveryPolicy::class);
-        Gate::policy(ControlledDocument::class, ISOPolicy::class);
-        Gate::policy(InternalAudit::class, ISOPolicy::class);
         Gate::policy(FixedAsset::class, FixedAssetPolicy::class);
         Gate::policy(CostCenter::class, BudgetPolicy::class);
         Gate::policy(AnnualBudget::class, BudgetPolicy::class);
