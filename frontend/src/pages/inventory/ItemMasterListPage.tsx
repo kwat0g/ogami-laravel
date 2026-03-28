@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, AlertTriangle, Tags, Trash2, X } from 'lucide-react'
 import { useItems, useItemCategories, useCreateItemCategory } from '@/hooks/useInventory'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import { useAuthStore } from '@/stores/authStore'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -163,11 +165,17 @@ const typeBadge: Record<ItemMaster['type'], string> = {
 
 export default function ItemMasterListPage(): React.ReactElement {
   const [search, setSearch]       = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [typeFilter, setType]     = useState('')
   const [catFilter,  setCat]      = useState<number | ''>('')
   const [activeOnly, setActive]   = useState(true)
   const [page, setPage]           = useState(1)
   const [withArchived, setWithArchived] = useState(false)
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+    setPage(1)
+  }, [])
   const [showCategories, setShowCategories] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.items.create')
@@ -175,7 +183,7 @@ export default function ItemMasterListPage(): React.ReactElement {
 
   const { data: categories } = useItemCategories()
   const { data, isLoading, isError } = useItems({
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     type: typeFilter || undefined,
     category_id: catFilter || undefined,
     is_active: activeOnly || undefined,
@@ -224,12 +232,12 @@ export default function ItemMasterListPage(): React.ReactElement {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
-        <input
-          type="text"
-          placeholder="Search code or name…"
+        <SearchInput
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white w-52"
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search code or name..."
+          className="w-52"
         />
         <select
           value={typeFilter}

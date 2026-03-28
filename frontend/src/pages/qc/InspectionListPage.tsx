@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus } from 'lucide-react'
 import { useInspections } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import { DepartmentGuard } from '@/components/ui/guards'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { InspectionStage, InspectionStatus } from '@/types/qc'
@@ -29,6 +31,13 @@ export default function InspectionListPage(): React.ReactElement {
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
   const [withArchived, setWithArchived] = useState(false)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+    setPage(1)
+  }, [])
 
   const { data, isLoading, isError } = useInspections({
     stage:  stage || undefined,
@@ -36,6 +45,7 @@ export default function InspectionListPage(): React.ReactElement {
     page,
     per_page: 20,
     with_archived: withArchived || undefined,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('qc.inspections.create')
@@ -80,7 +90,14 @@ export default function InspectionListPage(): React.ReactElement {
         }
       />
 
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap gap-3 mb-5 items-center">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search inspections..."
+          className="w-64"
+        />
         <select
           value={stage}
           onChange={(e) => { setStage(e.target.value); setPage(1) }}
