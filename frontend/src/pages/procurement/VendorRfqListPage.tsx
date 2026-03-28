@@ -84,7 +84,14 @@ export default function VendorRfqListPage(): React.ReactElement {
       </div>
 
       {/* Filter */}
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search RFQs..."
+          className="w-64"
+        />
         <select value={statusFilter ?? ''} onChange={(e) => setStatusFilter(e.target.value || undefined)}
           className="border border-neutral-300 rounded px-3 py-1.5 text-sm">
           <option value="">All statuses</option>
