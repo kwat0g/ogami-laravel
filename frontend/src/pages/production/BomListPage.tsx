@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Plus, Pencil, Archive } from 'lucide-react'
+import { AlertTriangle, Plus, Pencil, Archive, Calculator } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useBoms, useDeleteBom } from '@/hooks/useProduction'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
@@ -18,6 +20,18 @@ export default function BomListPage(): React.ReactElement {
   const canCreate = hasPermission('production.bom.manage')
   const navigate  = useNavigate()
   const deleteMut = useDeleteBom()
+  const qc = useQueryClient()
+  const rollupCost = useMutation({
+    mutationFn: async (bomId: number) => {
+      const { data } = await api.post(`/production/boms/${bomId}/rollup-cost`)
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['boms'] })
+      toast.success('Cost rollup completed.')
+    },
+    onError: (err) => toast.error(firstErrorMessage(err, 'Cost rollup failed.')),
+  })
 
   const handleArchive = async (ulid: string) => {
     try {
@@ -77,7 +91,7 @@ export default function BomListPage(): React.ReactElement {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['Product Item', 'Version', 'Components', 'Status', 'Created', ''].map((h) => (
+                  {['Product Item', 'Version', 'Components', 'Std Cost', 'Status', 'Created', ''].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                   ))}
                 </tr>
@@ -85,7 +99,7 @@ export default function BomListPage(): React.ReactElement {
               <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">No BOMs found.</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No BOMs found.</td>
                   </tr>
                 )}
                 {data?.data?.map((bom) => (
@@ -96,6 +110,19 @@ export default function BomListPage(): React.ReactElement {
                     </td>
                     <td className="px-4 py-3 text-neutral-500">v{bom.version}</td>
                     <td className="px-4 py-3 text-neutral-500">{bom.components?.length ?? '—'} items</td>
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {bom.standard_cost_centavos
+                        ? new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(bom.standard_cost_centavos / 100)
+                        : <button
+                            onClick={() => rollupCost.mutate(bom.id)}
+                            disabled={rollupCost.isPending}
+                            className="text-blue-600 hover:underline text-xs flex items-center gap-1"
+                            title="Compute standard cost"
+                          >
+                            <Calculator className="w-3 h-3" /> Rollup
+                          </button>
+                      }
+                    </td>
                     <td className="px-4 py-3">
                       {bom.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
                       {bom.is_active
