@@ -219,6 +219,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
       { label: 'Stock Adjustments', href: '/inventory/adjustments', permission: 'inventory.adjustments.create' },
+      { label: 'Stock Transfers', href: '/inventory/transfers', permission: 'inventory.adjustments.create' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
@@ -256,8 +257,13 @@ const SECTIONS: NavSection[] = [
     departments: ['SALES', 'WH', 'PROD', 'PLANT'],
     children: [
       { divider: true, label: 'CRM' },
-      { label: 'Client Orders', href: '/sales/client-orders', permission: 'sales.order_review' },
+      { label: 'Leads', href: '/crm/leads', permission: 'crm.tickets.view' },
+      { label: 'Opportunities', href: '/crm/opportunities', permission: 'crm.tickets.view' },
       { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
+      { divider: true, label: 'Sales' },
+      { label: 'Client Orders', href: '/sales/client-orders', permission: 'sales.order_review' },
+      { label: 'Quotations', href: '/sales/quotations', permission: 'sales.order_review' },
+      { label: 'Sales Orders', href: '/sales/orders', permission: 'sales.order_review' },
       { divider: true, label: 'Delivery' },
       { label: 'Delivery Receipts', href: '/delivery/receipts', permission: 'delivery.view' },
       { label: 'Shipments', href: '/delivery/shipments', permission: 'delivery.view' },

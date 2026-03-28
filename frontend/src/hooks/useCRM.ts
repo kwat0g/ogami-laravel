@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { Ticket, TicketFilters, TicketMessage } from '@/types/crm'
+import type { Ticket, TicketFilters, TicketMessage, Lead, LeadFilters, Opportunity, OpportunityFilters, PipelineSummary } from '@/types/crm'
 
 // ── Queries ──────────────────────────────────────────────────────────────────
 
@@ -127,6 +127,144 @@ export function useReopenTicket(ulid: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['crm-ticket', ulid] })
       qc.invalidateQueries({ queryKey: ['crm-tickets'] })
+    },
+  })
+}
+
+// ── CRM Leads ──────────────────────────────────────────────────────────────
+
+export function useLeads(filters: LeadFilters = {}) {
+  return useQuery({
+    queryKey: ['crm-leads', filters],
+    queryFn: async () => {
+      const { data } = await api.get<{
+        data: Lead[]
+        current_page: number
+        last_page: number
+        per_page: number
+        total: number
+      }>('/crm/leads', { params: filters })
+      return {
+        data: data.data,
+        meta: { current_page: data.current_page, last_page: data.last_page, per_page: data.per_page, total: data.total },
+      }
+    },
+  })
+}
+
+export function useLead(ulid: string) {
+  return useQuery({
+    queryKey: ['crm-lead', ulid],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: Lead }>(`/crm/leads/${ulid}`)
+      return data.data
+    },
+    enabled: !!ulid,
+  })
+}
+
+export function useCreateLead() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Partial<Lead>) => {
+      const { data } = await api.post<{ data: Lead }>('/crm/leads', payload)
+      return data.data
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['crm-leads'] }) },
+  })
+}
+
+export function useUpdateLead(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Partial<Lead>) => {
+      const { data } = await api.put<{ data: Lead }>(`/crm/leads/${ulid}`, payload)
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-lead', ulid] })
+      qc.invalidateQueries({ queryKey: ['crm-leads'] })
+    },
+  })
+}
+
+export function useConvertLead(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: { create_opportunity?: boolean; opportunity_title?: string; expected_value_centavos?: number }) => {
+      const { data } = await api.post(`/crm/leads/${ulid}/convert`, payload)
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-lead', ulid] })
+      qc.invalidateQueries({ queryKey: ['crm-leads'] })
+    },
+  })
+}
+
+export function useDisqualifyLead(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: { reason: string }) => {
+      const { data } = await api.patch(`/crm/leads/${ulid}/disqualify`, payload)
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['crm-lead', ulid] })
+      qc.invalidateQueries({ queryKey: ['crm-leads'] })
+    },
+  })
+}
+
+// ── CRM Opportunities ──────────────────────────────────────────────────────
+
+export function useOpportunities(filters: OpportunityFilters = {}) {
+  return useQuery({
+    queryKey: ['crm-opportunities', filters],
+    queryFn: async () => {
+      const { data } = await api.get<{
+        data: Opportunity[]
+        current_page: number
+        last_page: number
+        per_page: number
+        total: number
+      }>('/crm/opportunities', { params: filters })
+      return {
+        data: data.data,
+        meta: { current_page: data.current_page, last_page: data.last_page, per_page: data.per_page, total: data.total },
+      }
+    },
+  })
+}
+
+export function useOpportunity(ulid: string) {
+  return useQuery({
+    queryKey: ['crm-opportunity', ulid],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: Opportunity }>(`/crm/opportunities/${ulid}`)
+      return data.data
+    },
+    enabled: !!ulid,
+  })
+}
+
+export function useCreateOpportunity() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Partial<Opportunity>) => {
+      const { data } = await api.post<{ data: Opportunity }>('/crm/opportunities', payload)
+      return data.data
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['crm-opportunities'] }) },
+  })
+}
+
+export function usePipelineSummary() {
+  return useQuery({
+    queryKey: ['crm-pipeline'],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: PipelineSummary[] }>('/crm/opportunities/pipeline')
+      return data.data
     },
   })
 }
