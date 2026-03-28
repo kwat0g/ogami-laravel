@@ -49,12 +49,12 @@ export default function NcrListPage(): React.ReactElement {
     per_page: 20,
     with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
+  })
 
   const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['qc-ncrs', 'archived'],
     queryFn: () => api.get('/qc/ncrs-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,
-  })
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('qc.ncr.create')

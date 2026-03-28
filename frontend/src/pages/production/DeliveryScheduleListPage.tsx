@@ -45,12 +45,12 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
     per_page: 20,
     with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
+  })
 
   const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['delivery-schedules', 'archived'],
     queryFn: () => api.get('/production/delivery-schedules-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,
-  })
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('production.delivery-schedule.manage')
