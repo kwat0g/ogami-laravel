@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, BarChart2 } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -473,12 +474,17 @@ function VendorScorecardPanel({ vendorId }: { vendorId: number }) {
 
 export default function VendorsPage() {
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Vendor | null>(null)
   const [scorecardVendorId, setScorecardVendorId] = useState<number | null>(null)
 
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+  }, [])
+
   const { data, isLoading, refetch } = useVendors({
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     is_active: true,
   })
 
@@ -561,11 +567,12 @@ export default function VendorsPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-4">
-        <input
-          className="border border-neutral-300 rounded px-3 py-2 text-sm w-72 focus:ring-1 focus:ring-neutral-400"
-          placeholder="Search by name or TIN…"
+        <SearchInput
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search by name or TIN..."
+          className="w-72"
         />
       </div>
 

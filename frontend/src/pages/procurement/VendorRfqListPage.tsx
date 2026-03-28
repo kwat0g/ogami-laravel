@@ -1,18 +1,25 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, Eye, Send } from 'lucide-react'
 import { useVendorRfqs, useCreateVendorRfq, useSendVendorRfq, type VendorRfq } from '@/hooks/useVendorRfqs'
 import { useAuthStore } from '@/stores/authStore'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import SearchInput from '@/components/ui/SearchInput'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function VendorRfqListPage(): React.ReactElement {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', description: '', deadline: '', vendor_ids: '' })
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
-  const { data, isLoading } = useVendorRfqs({ status: statusFilter })
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+  }, [])
+
+  const { data, isLoading } = useVendorRfqs({ status: statusFilter, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
   const create = useCreateVendorRfq()
   const send = useSendVendorRfq()
 
