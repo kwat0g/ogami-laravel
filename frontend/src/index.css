@@ -143,6 +143,78 @@
     @apply dark:text-neutral-300;
   }
 
+  /* Dark mode for common card/panel patterns */
+  .dark .bg-white {
+    background-color: rgb(23 23 23) !important; /* neutral-900 */
+  }
+  .dark .bg-neutral-50 {
+    background-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .dark .bg-neutral-100 {
+    background-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .dark .border-neutral-200 {
+    border-color: rgb(64 64 64) !important; /* neutral-700 */
+  }
+  .dark .border-neutral-100 {
+    border-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .dark .divide-neutral-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .dark .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(64 64 64) !important; /* neutral-700 */
+  }
+  .dark .text-neutral-900 {
+    color: rgb(245 245 245) !important; /* neutral-100 */
+  }
+  .dark .text-neutral-800 {
+    color: rgb(229 229 229) !important; /* neutral-200 */
+  }
+  .dark .text-neutral-700 {
+    color: rgb(212 212 212) !important; /* neutral-300 */
+  }
+  .dark .text-neutral-600 {
+    color: rgb(163 163 163) !important; /* neutral-400 */
+  }
+  .dark .text-neutral-500 {
+    color: rgb(115 115 115) !important; /* neutral-500 — stays same */
+  }
+  .dark .hover\:bg-neutral-50:hover {
+    background-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .dark .hover\:bg-neutral-100:hover {
+    background-color: rgb(38 38 38) !important; /* neutral-800 */
+  }
+  .dark .even\:bg-neutral-100:nth-child(even) {
+    background-color: rgb(30 30 30) !important;
+  }
+  /* Modal/dialog content in dark mode */
+  .dark .bg-black\/50 {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+  }
+  .dark .bg-black\/40 {
+    background-color: rgba(0, 0, 0, 0.65) !important;
+  }
+  /* Form input dark mode (ones not using .input class) */
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="number"],
+  .dark input[type="date"],
+  .dark input[type="search"],
+  .dark input[type="password"],
+  .dark textarea {
+    background-color: rgb(38 38 38);
+    color: rgb(229 229 229);
+    border-color: rgb(64 64 64);
+  }
+  .dark input[type="text"]::placeholder,
+  .dark input[type="email"]::placeholder,
+  .dark input[type="search"]::placeholder,
+  .dark textarea::placeholder {
+    color: rgb(115 115 115);
+  }
+
   /* Section divider with gradient */
   .section-divider {
     @apply h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-neutral-700 to-transparent;
