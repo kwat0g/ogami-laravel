@@ -1,4 +1,0 @@
-import{j as e}from"./query-CLCPLPS4.js";import{A as s}from"./arrow-left-BI1hwx7h.js";import{A as o}from"./archive-BTehthWK.js";function i({isArchiveView:t,onToggle:n,archivedCount:r}){return e.jsx("button",{onClick:n,className:`
-        inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded border transition-colors
-        ${t?"bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100":"bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-50"}
-      `,children:t?e.jsxs(e.Fragment,{children:[e.jsx(s,{className:"h-4 w-4"}),"Back to Active"]}):e.jsxs(e.Fragment,{children:[e.jsx(o,{className:"h-4 w-4"}),"View Archive",r!==void 0&&r>0&&e.jsx("span",{className:"ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold rounded-full bg-neutral-200 text-neutral-600",children:r})]})})}export{i as A};
