@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Plus, RefreshCw, FilePlus, X, CheckSquare, XSquare } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
 import { useAPInvoices, useCreateInvoiceFromPO, useBatchApproveAPInvoices, useBatchRejectAPInvoices } from '@/hooks/useAP'
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
 import { useAuthStore } from '@/stores/authStore'
@@ -182,6 +183,12 @@ export default function APInvoicesPage() {
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+  }, [])
 
   // Batch selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -191,6 +198,7 @@ export default function APInvoicesPage() {
   const { data, isLoading, refetch } = useAPInvoices({
     status: activeStatus ?? undefined,
     due_soon: dueSoonOnly || undefined,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
   const createFromPOMutation = useCreateInvoiceFromPO()
@@ -332,7 +340,14 @@ export default function APInvoicesPage() {
         </div>
       </div>
 
-      {/* Status Tabs */}
+      {/* Search + Status Tabs */}
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        onSearch={handleSearch}
+        placeholder="Search invoices by OR number or vendor..."
+        className="max-w-sm"
+      />
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => { setActiveStatus(null); setDueSoonOnly(false) }}

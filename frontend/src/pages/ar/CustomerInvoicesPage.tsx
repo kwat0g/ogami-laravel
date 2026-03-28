@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { Plus, RefreshCw } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
 import {
   useCustomerInvoices,
   useApproveCustomerInvoice,
@@ -142,8 +143,17 @@ export default function CustomerInvoicesPage() {
   const canCancel = useAuthStore(s => s.hasPermission('customer_invoices.cancel'))
   const [activeTab, setActiveTab] = useState<CustomerInvoiceStatus | 'all'>('all')
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
-  const filters = activeTab === 'all' ? {} : { status: activeTab }
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+  }, [])
+
+  const filters = {
+    ...(activeTab === 'all' ? {} : { status: activeTab }),
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+  }
   const { data, isLoading, refetch } = useCustomerInvoices(filters)
   const invoices = data?.data ?? []
 
@@ -188,6 +198,15 @@ export default function CustomerInvoicesPage() {
             filename="ar-invoices"
           />
         }
+      />
+
+      {/* Search */}
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        onSearch={handleSearch}
+        placeholder="Search invoices by number or customer..."
+        className="max-w-sm"
       />
 
       {/* Header */}
