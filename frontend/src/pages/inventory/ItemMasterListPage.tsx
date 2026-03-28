@@ -26,6 +26,12 @@ import type { ItemMaster, ItemCategory } from '@/types/inventory'
 
 function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
   const { data: categories, isLoading, refetch } = useItemCategories()
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['items', 'archived'],
+    queryFn: () => api.get('/inventory/items-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
   const { mutate: create, isPending } = useCreateItemCategory()
   const canCreate = useAuthStore(s => s.hasPermission('inventory.items.create'))
   const canDelete = useAuthStore(s => s.hasPermission('inventory.items.delete'))

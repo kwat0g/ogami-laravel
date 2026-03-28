@@ -204,6 +204,12 @@ export default function PurchaseRequestListPage(): React.ReactElement {
   const [batchReviewOpen, setBatchReviewOpen] = useState(false)
 
   const { data, isLoading, isError } = usePurchaseRequests({ ...filters, with_archived: undefined })
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['purchase-requests', 'archived'],
+    queryFn: () => api.get('/procurement/purchase-requests-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
   const duplicateMutation = useDuplicatePurchaseRequest()
   const batchReview = useBatchReviewPurchaseRequests()
   const batchReject = useBatchRejectPurchaseRequests()

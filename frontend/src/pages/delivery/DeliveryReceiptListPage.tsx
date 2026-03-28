@@ -42,6 +42,12 @@ export default function DeliveryReceiptListPage() {
 
   const { data, isLoading } = useDeliveryReceipts(Object.keys(params).length ? params : undefined);
 
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['delivery-receipts', 'archived'],
+    queryFn: () => api.get('/delivery/receipts-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
+
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);
     setPage(1);

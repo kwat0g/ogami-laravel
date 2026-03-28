@@ -51,6 +51,12 @@ export default function InspectionListPage(): React.ReactElement {
     per_page: 20,
     with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['qc-inspections', 'archived'],
+    queryFn: () => api.get('/qc/inspections-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('qc.inspections.create')

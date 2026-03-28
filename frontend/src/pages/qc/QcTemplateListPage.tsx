@@ -40,12 +40,21 @@ export default function QcTemplateListPage(): React.ReactElement {
     setDebouncedSearch(val)
   }, [])
 
-  const { data, isLoading, isError } = useInspectionTemplates({
+  const { data, isLoading, isError, refetch } = useInspectionTemplates({
     stage: stage || undefined,
     per_page: 50,
     with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   } as Record<string, unknown>)
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['qc-templates', 'archived', debouncedSearch, stage],
+    queryFn: () => api.get('/qc/templates-archived', { params: { search: debouncedSearch || undefined, stage: stage || undefined, per_page: 50 } }),
+    enabled: isArchiveView,
+  })
+
+  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
+  const currentLoading = isArchiveView ? archivedLoading : isLoading
 
   const deleteMut = useDeleteInspectionTemplate()
 

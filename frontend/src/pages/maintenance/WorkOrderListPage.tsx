@@ -52,6 +52,12 @@ export default function WorkOrderListPage() {
 
   const { data, isLoading } = useWorkOrders(params);
 
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['work-orders', 'archived'],
+    queryFn: () => api.get('/maintenance/work-orders-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
+
   return (
     <div className="space-y-4">
       <PageHeader

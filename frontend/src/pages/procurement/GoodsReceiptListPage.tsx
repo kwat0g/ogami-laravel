@@ -25,6 +25,12 @@ export default function GoodsReceiptListPage(): React.ReactElement {
 
   const { data, isLoading, isError } = useGoodsReceipts({
     ...(statusFilter ? { status: statusFilter } : {}),
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['goods-receipts', 'archived'],
+    queryFn: () => api.get('/procurement/goods-receipts-archived', { params: { per_page: 20 } }),
+    enabled: isArchiveView,
+  })
     page,
     with_archived: undefined,
   })
