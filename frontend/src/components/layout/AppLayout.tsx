@@ -109,6 +109,8 @@ const SECTIONS: NavSection[] = [
       { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
       { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
       { label: 'HR Reports', href: '/hr/reports', permission: 'hr.full_access' },
+      { label: 'Training', href: '/hr/trainings', permission: 'hr.full_access' },
+      { label: 'Competency Matrix', href: '/hr/competency', permission: 'hr.full_access' },
       // ── Payroll ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Payroll' },
       { label: 'Payroll Runs', href: '/payroll/runs', permission: 'payroll.view_runs' },
@@ -193,9 +195,11 @@ const SECTIONS: NavSection[] = [
       { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
       { label: 'Budget Lines', href: '/budget/lines', permission: 'budget.view' },
       { label: 'Budget vs Actual', href: '/budget/vs-actual', permission: 'budget.view' },
+      { label: 'Budget Forecast', href: '/budget/forecast', permission: 'budget.view' },
       { divider: true, label: 'Fixed Assets' },
       { label: 'Asset Register', href: '/fixed-assets', permission: 'fixed_assets.view' },
       { label: 'Asset Disposals', href: '/fixed-assets/disposals', permission: 'fixed_assets.manage' },
+      { label: 'Asset Transfers', href: '/fixed-assets/transfers', permission: 'fixed_assets.manage' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
@@ -267,6 +271,7 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Delivery' },
       { label: 'Delivery Receipts', href: '/delivery/receipts', permission: 'delivery.view' },
       { label: 'Shipments', href: '/delivery/shipments', permission: 'delivery.view' },
+      { label: 'Routes', href: '/delivery/routes', permission: 'delivery.view' },
     ],
   },
   // Note: Executive users have a separate default dashboard at /approvals/pending
