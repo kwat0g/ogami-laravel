@@ -185,12 +185,17 @@ final class CapacityPlanningService implements ServiceContract
         $days = 0;
         $current = $from->copy();
 
-        // Get holidays in the range
-        $holidays = DB::table('holidays')
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
-            ->pluck('date')
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
-            ->toArray();
+        // Get holidays in the range (gracefully handle missing table)
+        $holidays = [];
+        try {
+            $holidays = DB::table('holidays')
+                ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+                ->pluck('date')
+                ->map(fn ($d) => Carbon::parse($d)->toDateString())
+                ->toArray();
+        } catch (\Throwable) {
+            // holidays table may not exist yet — proceed without holiday exclusion
+        }
 
         while ($current->lte($to)) {
             if ($current->isWeekday() && ! in_array($current->toDateString(), $holidays, true)) {

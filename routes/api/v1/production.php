@@ -76,4 +76,26 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
 
         return response()->json($service->costAnalysis($request->only(['date_from', 'date_to'])));
     })->name('reports.cost-analysis')->middleware('permission:production.orders.view');
+
+    // ── Capacity Planning (Enhancement) ──────────────────────────────────
+    Route::get('capacity', function (Request $request): JsonResponse {
+        $service = app(\App\Domains\Production\Services\CapacityPlanningService::class);
+        return response()->json(['data' => $service->utilizationReport($request->input('from'), $request->input('to'))]);
+    });
+    Route::get('capacity/check/{productionOrder}', function (ProductionOrder $productionOrder): JsonResponse {
+        $service = app(\App\Domains\Production\Services\CapacityPlanningService::class);
+        return response()->json(['data' => $service->checkFeasibility($productionOrder)]);
+    });
+
+    // ── Time-Phased MRP (Enhancement) ───────────────────────────────────
+    Route::get('mrp/time-phased', function (): JsonResponse {
+        $service = app(\App\Domains\Production\Services\MrpService::class);
+        return response()->json(['data' => $service->timePhasedExplode()]);
+    });
+
+    // ── BOM Where-Used (Enhancement) ────────────────────────────────────
+    Route::get('bom/where-used/{itemId}', function (int $itemId): JsonResponse {
+        $service = app(\App\Domains\Production\Services\CostingService::class);
+        return response()->json(['data' => $service->whereUsed($itemId)]);
+    });
 });

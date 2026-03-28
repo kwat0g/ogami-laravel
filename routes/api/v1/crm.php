@@ -32,6 +32,20 @@ Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
             ->middleware('throttle:api-action');
         Route::patch('/{lead:ulid}/disqualify', [LeadController::class, 'disqualify'])->name('disqualify')
             ->middleware('throttle:api-action');
+
+        // ── Lead Scoring (Enhancement) ──────────────────────────────────────
+        Route::get('/scores', function (): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
+            return response()->json(['data' => $service->scoreAll()]);
+        })->name('scores');
+        Route::get('/{lead:ulid}/score', function (\App\Domains\CRM\Models\Lead $lead): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
+            return response()->json(['data' => $service->scoreLead($lead)]);
+        })->name('score');
+        Route::post('/auto-qualify', function (): \Illuminate\Http\JsonResponse {
+            $service = app(\App\Domains\CRM\Services\LeadScoringService::class);
+            return response()->json(['data' => ['qualified_count' => $service->autoQualify()]]);
+        })->name('auto-qualify')->middleware('throttle:api-action');
     });
 
     // ── Opportunities ────────────────────────────────────────────────────
