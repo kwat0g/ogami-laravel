@@ -147,6 +147,32 @@ def update() -> None:
 
     vps = VPS()
 
+    # ── R0. Clear caches & purge stale build assets ──────────────────────────
+    banner("R0 — Clear all caches & purge stale build assets (VPS)")
+
+    # Clear all Laravel caches first (config, route, view, event, compiled)
+    vps.run(
+        f"cd {APP_DIR} && "
+        "php artisan optimize:clear 2>&1 || true"
+    )
+    # Clear application cache store
+    vps.run(
+        f"cd {APP_DIR} && "
+        "php artisan cache:clear 2>&1 || true"
+    )
+    # Reset OPcache so PHP picks up new files immediately
+    vps.run(
+        "php -r \"if (function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache cleared'; } "
+        "else { echo 'OPcache not loaded'; }\" 2>&1 || true"
+    )
+    # Delete ALL files inside public/build/assets/ to remove stale JS/CSS bundles
+    vps.run(
+        f"rm -rf {APP_DIR}/public/build/assets/* && "
+        f"echo 'Purged build/assets/ ✔' && "
+        f"ls -la {APP_DIR}/public/build/assets/ 2>&1 || "
+        f"echo 'build/assets/ directory is clean'"
+    )
+
     # ── R1. Pull latest code ─────────────────────────────────────────────────
     banner("R1 — Pull latest code (VPS)")
     vps.run(f"git config --global --add safe.directory {APP_DIR} 2>&1 || true")
@@ -221,17 +247,37 @@ def update() -> None:
 
     # ── R4. Rebuild Laravel caches ───────────────────────────────────────────
     banner("R4 — Rebuild caches")
+    # Clear everything first (config, route, view, event, compiled, cache)
     vps.run(
         f"cd {APP_DIR} && "
         "php artisan optimize:clear && "     # clears config, route, view, event, cache in one shot
+        "php artisan cache:clear 2>&1 || true"
+    )
+    # Rebuild caches with fresh code
+    vps.run(
+        f"cd {APP_DIR} && "
         "php artisan config:cache && "
         "php artisan route:cache && "
         "php artisan view:cache && "
         "php artisan event:cache 2>&1"
     )
+    # Fix permissions
     vps.run(
         f"chown -R www-data:www-data {APP_DIR}/storage {APP_DIR}/bootstrap/cache"
     )
+    # Reset OPcache so PHP-FPM serves fresh bytecode
+    vps.run(
+        "php -r \"if (function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache cleared'; } "
+        "else { echo 'OPcache not loaded'; }\" 2>&1 || true"
+    )
+    # Restart PHP-FPM to ensure all workers load the new code
+    vps.run(
+        "systemctl restart php*-fpm 2>&1 || "
+        "service php*-fpm restart 2>&1 || "
+        "echo 'PHP-FPM restart skipped (not found)'"
+    )
+    # Reload nginx to pick up any config changes
+    vps.run("nginx -s reload 2>&1 || true")
 
     # ── R5. Restart queue workers ────────────────────────────────────────────
     banner("R5 — Restart workers")

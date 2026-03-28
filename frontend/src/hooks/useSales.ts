@@ -74,6 +74,20 @@ export function useAcceptQuotation(ulid: string) {
   })
 }
 
+export function useRejectQuotation(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch<{ data: Quotation }>(`/sales/quotations/${ulid}/reject`)
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sales-quotation', ulid] })
+      qc.invalidateQueries({ queryKey: ['sales-quotations'] })
+    },
+  })
+}
+
 export function useConvertQuotationToOrder(ulid: string) {
   const qc = useQueryClient()
   return useMutation({

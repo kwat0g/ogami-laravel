@@ -15,7 +15,7 @@ export default function QuotationDetailPage() {
   const { data: q, isLoading, isError } = useQuotation(ulid ?? '')
   const sendMut = useSendQuotation(ulid ?? '')
   const acceptMut = useAcceptQuotation(ulid ?? '')
-  const rejectMut = typeof useRejectQuotation === 'function' ? useRejectQuotation(ulid ?? '') : null
+  const rejectMut = useRejectQuotation(ulid ?? '')
   const convertMut = useConvertQuotationToOrder(ulid ?? '')
 
   const canSend = useAuthStore(s => s.hasPermission('sales.quotations.send'))
@@ -44,7 +44,7 @@ export default function QuotationDetailPage() {
                 <Check className="w-4 h-4" /> Accept
               </button>
             )}
-            {q.status === 'sent' && canReject && rejectMut && (
+            {q.status === 'sent' && canReject && (
               <button className="btn-outline" onClick={() => rejectMut.mutate()} disabled={rejectMut.isPending}>
                 <X className="w-4 h-4" /> Reject
               </button>
