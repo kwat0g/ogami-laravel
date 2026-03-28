@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Plus } from 'lucide-react'
+import { AlertTriangle, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
@@ -9,6 +11,12 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { DepartmentGuard } from '@/components/ui/guards'
 import { ExportButton } from '@/components/ui/ExportButton'
+import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
+import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
+import ArchiveEmptyState from '@/components/ui/ArchiveEmptyState'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
+import api from '@/lib/api'
 import type { ProductionOrderStatus } from '@/types/production'
 
 const statusBadge: Record<ProductionOrderStatus, string> = {
@@ -23,7 +31,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
-  const [withArchived, setWithArchived] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -32,13 +40,22 @@ export default function ProductionOrderListPage(): React.ReactElement {
     setPage(1)
   }, [])
 
-  const { data, isLoading, isError } = useProductionOrders({
+  const { data, isLoading, isError, refetch } = useProductionOrders({
     status: status || undefined,
     page,
     per_page: 20,
-    with_archived: withArchived || undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
+
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+    queryKey: ['production-orders', 'archived', debouncedSearch],
+    queryFn: () => api.get('/production/orders-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
+    enabled: isArchiveView,
+  })
+
+  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
+  const currentLoading = isArchiveView ? archivedLoading : isLoading
+  const isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('production.orders.create')
 
@@ -84,38 +101,38 @@ export default function ProductionOrderListPage(): React.ReactElement {
             <option key={s} value={s}>{s.replace('_', ' ')}</option>
           ))}
         </select>
-        <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
-          <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
-          <span>Show Archived</span>
-        </label>
+        <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
       </div>
 
-      {isLoading && <SkeletonLoader rows={8} />}
+      {isArchiveView && <ArchiveViewBanner />}
+
+      {currentLoading && <SkeletonLoader rows={8} />}
       {isError && (
         <div className="flex items-center gap-2 text-red-600 text-sm">
           <AlertTriangle className="w-4 h-4" /> Failed to load work orders.
         </div>
       )}
 
-      {!isLoading && !isError && (
+      {!currentLoading && !isError && (
         <>
+          {currentData.length === 0 ? (
+            <ArchiveEmptyState isArchiveView={isArchiveView} recordLabel="production orders" />
+          ) : (
           <div className="bg-white border border-neutral-200 rounded overflow-hidden">
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['WO Reference', 'Product', 'Qty Required', 'Progress', 'Target Start', 'Target End', 'Status'].map((h) => (
+                  {(isArchiveView
+                    ? ['WO Reference', 'Product', 'Status', 'Archived On', '']
+                    : ['WO Reference', 'Product', 'Qty Required', 'Progress', 'Target Start', 'Target End', 'Status']
+                  ).map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {data?.data?.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No work orders found.</td>
-                  </tr>
-                )}
-                {data?.data?.map((order) => (
-                  <tr key={order.id} className="even:bg-neutral-100 hover:bg-neutral-50 cursor-pointer" onClick={() => navigate(`/production/orders/${order.ulid}`)}>
+                {currentData.map((order: any) => (
+                  <tr key={order.id} className={`even:bg-neutral-100 hover:bg-neutral-50 ${isArchiveView ? '' : 'cursor-pointer'}`} onClick={() => !isArchiveView && navigate(`/production/orders/${order.ulid}`)}>
                     <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{order.po_reference}</td>
                     <td className="px-4 py-3">
                       <div className="text-xs font-mono text-neutral-400">{order.product_item?.item_code}</div>
@@ -156,7 +173,8 @@ export default function ProductionOrderListPage(): React.ReactElement {
               </tbody>
             </table>
           </div>
-          {data && data.meta.last_page > 1 && (
+          )}
+          {!isArchiveView && data && data.meta.last_page > 1 && (
             <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
               <span>Page {data.meta.current_page} of {data.meta.last_page} · {data.meta.total} orders</span>
               <div className="flex gap-2">
