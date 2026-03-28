@@ -7,9 +7,12 @@ namespace App\Domains\Payroll\Services;
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Domains\Payroll\StateMachines\PayrollRunStateMachine;
 use App\Domains\Payroll\Validators\PayrollRunValidator;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -20,6 +23,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class PayrollRunService implements ServiceContract
 {
+    use HasArchiveOperations;
     public function __construct(
         private readonly PayrollRunStateMachine $machine,
         private readonly PayrollRunValidator $validator,
@@ -182,6 +186,27 @@ final class PayrollRunService implements ServiceContract
 
             return PayrollRun::withTrashed()->findOrFail($run->id);
         });
+    }
+
+    // ── Restore / Force Delete / List Archived ─────────────────────────────
+
+    public function restoreRun(int $id, User $user): PayrollRun
+    {
+        /** @var PayrollRun */
+        return $this->restoreRecord(PayrollRun::class, $id, $user);
+    }
+
+    public function forceDeleteRun(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(PayrollRun::class, $id, $user);
+    }
+
+    public function listArchived(int $perPage = 20): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        return PayrollRun::onlyTrashed()
+            ->with('payPeriod')
+            ->orderByDesc('deleted_at')
+            ->paginate($perPage);
     }
 
     /**
