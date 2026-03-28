@@ -178,8 +178,14 @@ class RolePermissionSeeder extends Seeder
         'sales.order_vp_approve',
         // Sales Quotations & Orders (Phase 1)
         'sales.quotations.view',
+        'sales.quotations.create',
+        'sales.quotations.update',
+        'sales.quotations.send',
+        'sales.quotations.accept',
         'sales.quotations.manage',
         'sales.orders.view',
+        'sales.orders.confirm',
+        'sales.orders.cancel',
         'sales.orders.manage',
         'sales.pricing.view',
         // Inventory / Warehouse
@@ -228,10 +234,13 @@ class RolePermissionSeeder extends Seeder
         'inventory.transfers.manage',
         // AP Payment Batches (Phase 2)
         'ap.payment_batches.view',
+        'ap.payment_batches.create',
         'ap.payment_batches.manage',
         'ap.payment_batches.approve',
         // AR Dunning (Phase 2)
         'ar.dunning.view',
+        'ar.dunning.create',
+        'ar.dunning.send',
         'ar.dunning.manage',
         // HR Training & Competency (Phase 3)
         'hr.training.view',
@@ -257,6 +266,7 @@ class RolePermissionSeeder extends Seeder
         // Fixed Assets
         'fixed_assets.view',
         'fixed_assets.manage',
+        'fixed_assets.dispose',
         'fixed_assets.transfer',
         // Budget Forecast (Phase 4)
         'budget.forecast',
@@ -537,7 +547,7 @@ class RolePermissionSeeder extends Seeder
             // Budget (view-only)
             'budget.view', 'budget.manage', 'budget.approve',
             // Fixed Assets
-            'fixed_assets.view', 'fixed_assets.manage',
+            'fixed_assets.view', 'fixed_assets.manage', 'fixed_assets.dispose',
             // Accounting / GL / AP / AR (for Accounting Manager)
             'journal_entries.view', 'journal_entries.create', 'journal_entries.update',
             'journal_entries.submit', 'journal_entries.post', 'journal_entries.reverse',
@@ -583,13 +593,13 @@ class RolePermissionSeeder extends Seeder
             // New module permissions (Phase 1-4) — Manager gets full access
             'crm.leads.view', 'crm.leads.manage', 'crm.leads.convert',
             'crm.opportunities.view', 'crm.opportunities.manage',
-            'sales.quotations.view', 'sales.quotations.manage',
-            'sales.orders.view', 'sales.orders.manage',
+            'sales.quotations.view', 'sales.quotations.create', 'sales.quotations.update', 'sales.quotations.send', 'sales.quotations.accept', 'sales.quotations.manage',
+            'sales.orders.view', 'sales.orders.confirm', 'sales.orders.cancel', 'sales.orders.manage',
             'sales.pricing.view',
             'inventory.physical_count.view', 'inventory.physical_count.manage',
             'inventory.transfers.manage',
-            'ap.payment_batches.view', 'ap.payment_batches.manage', 'ap.payment_batches.approve',
-            'ar.dunning.view', 'ar.dunning.manage',
+            'ap.payment_batches.view', 'ap.payment_batches.create', 'ap.payment_batches.manage', 'ap.payment_batches.approve',
+            'ar.dunning.view', 'ar.dunning.create', 'ar.dunning.send', 'ar.dunning.manage',
             'hr.training.view', 'hr.training.manage',
             'hr.competency.view', 'hr.competency.manage',
             'delivery.routes.view', 'delivery.routes.manage',
@@ -702,8 +712,8 @@ class RolePermissionSeeder extends Seeder
             // New module permissions (Phase 1-4) — Officer level
             'crm.leads.view', 'crm.leads.manage',
             'crm.opportunities.view', 'crm.opportunities.manage',
-            'sales.quotations.view', 'sales.quotations.manage',
-            'sales.orders.view', 'sales.orders.manage',
+            'sales.quotations.view', 'sales.quotations.create', 'sales.quotations.update', 'sales.quotations.send', 'sales.quotations.accept', 'sales.quotations.manage',
+            'sales.orders.view', 'sales.orders.confirm', 'sales.orders.cancel', 'sales.orders.manage',
             'sales.pricing.view',
             'inventory.physical_count.view', 'inventory.physical_count.manage',
             'inventory.transfers.manage',
@@ -758,8 +768,8 @@ class RolePermissionSeeder extends Seeder
             'crm.opportunities.view', 'crm.opportunities.manage',
             // Sales/Client Orders — head can review only; approve/reject/negotiate is Sales Manager/VP scope
             'sales.order_review',
-            'sales.quotations.view', 'sales.quotations.manage',
-            'sales.orders.view', 'sales.orders.manage',
+            'sales.quotations.view', 'sales.quotations.create', 'sales.quotations.update', 'sales.quotations.send', 'sales.quotations.accept', 'sales.quotations.manage',
+            'sales.orders.view', 'sales.orders.confirm', 'sales.orders.cancel', 'sales.orders.manage',
             'sales.pricing.view',
             // Inventory physical counts & transfers (Warehouse Head)
             'inventory.physical_count.view', 'inventory.physical_count.manage',
