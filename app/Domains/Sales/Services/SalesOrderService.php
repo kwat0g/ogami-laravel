@@ -107,19 +107,176 @@ final class SalesOrderService implements ServiceContract
         });
     }
 
+    /**
+     * Confirm a Sales Order and trigger downstream fulfillment.
+     *
+     * Flexibility — multiple fulfillment paths:
+     *   - Make-to-stock: if all items have sufficient stock, reserve and create DR
+     *   - Make-to-order: if stock insufficient, auto-create Production Orders
+     *   - Partial: some lines from stock, others to production
+     *
+     * Credit check enforced via Customer.enforceCredit() when credit_limit > 0.
+     * Controlled by system_setting 'automation.so_confirmed.auto_create_production'.
+     */
     public function confirm(SalesOrder $order, User $approver): SalesOrder
     {
         if ($order->status !== 'draft') {
             throw new DomainException('Sales order must be in draft to confirm.', 'SALES_INVALID_ORDER_STATUS', 422);
         }
 
-        $order->update([
-            'status' => 'confirmed',
-            'approved_by_id' => $approver->id,
-            'approved_at' => now(),
-        ]);
+        $order->loadMissing(['items.item', 'customer']);
 
-        return $order->fresh(['items.item', 'customer']) ?? $order;
+        // ── Credit limit enforcement ──────────────────────────────────────
+        $customer = $order->customer;
+        if ($customer !== null) {
+            try {
+                $totalAmount = ((float) $order->total_centavos) / 100;
+                $customer->enforceCredit($totalAmount);
+            } catch (\Throwable $e) {
+                // Check if soft limit mode — warn but allow
+                $softLimit = (bool) (DB::table('system_settings')
+                    ->where('key', 'credit.soft_limit_warn_only')
+                    ->value('value') ?? false);
+
+                if (! $softLimit) {
+                    throw $e; // Hard block
+                }
+                // Soft limit: log warning but proceed
+                \Illuminate\Support\Facades\Log::warning('[Sales] Credit limit exceeded (soft mode)', [
+                    'sales_order_id' => $order->id,
+                    'customer_id' => $customer->id,
+                ]);
+            }
+        }
+
+        return DB::transaction(function () use ($order, $approver): SalesOrder {
+            $order->update([
+                'status' => 'confirmed',
+                'approved_by_id' => $approver->id,
+                'approved_at' => now(),
+            ]);
+
+            // ── Auto-fulfillment chain ───────────────────────────────────────
+            $autoCreate = (bool) (DB::table('system_settings')
+                ->where('key', 'automation.so_confirmed.auto_create_production')
+                ->value('value') ?? true);
+
+            if ($autoCreate) {
+                $this->triggerFulfillment($order);
+            }
+
+            return $order->fresh(['items.item', 'customer']) ?? $order;
+        });
+    }
+
+    /**
+     * Trigger fulfillment for confirmed SO items.
+     *
+     * For each line item:
+     *   1. Check available stock (from StockBalance)
+     *   2. If sufficient: reserve stock, mark line as ready for delivery
+     *   3. If insufficient: create a Production Order for the deficit
+     *      (requires active BOM for the item)
+     */
+    private function triggerFulfillment(SalesOrder $order): void
+    {
+        $order->loadMissing('items.item');
+        $hasProduction = false;
+
+        foreach ($order->items as $soItem) {
+            $item = $soItem->item;
+            if ($item === null) {
+                continue;
+            }
+
+            $qtyNeeded = (float) $soItem->quantity;
+            $availableStock = (float) \App\Domains\Inventory\Models\StockBalance::query()
+                ->where('item_id', $item->id)
+                ->sum('quantity_on_hand');
+
+            if ($availableStock >= $qtyNeeded) {
+                // Make-to-stock: reserve stock
+                try {
+                    $reservationService = app(\App\Domains\Inventory\Services\StockReservationService::class);
+                    $reservationService->createReservation(
+                        itemId: $item->id,
+                        quantity: $qtyNeeded,
+                        reservationType: 'sales_order',
+                        referenceId: $order->id,
+                        referenceType: 'sales_orders',
+                        notes: "Reserved for SO {$order->order_number}",
+                    );
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('[Sales] Stock reservation failed', [
+                        'sales_order_id' => $order->id,
+                        'item_id' => $item->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                // Make-to-order: create production order for deficit
+                $deficit = $qtyNeeded - max(0, $availableStock);
+
+                // Reserve whatever stock is available
+                if ($availableStock > 0) {
+                    try {
+                        $reservationService = app(\App\Domains\Inventory\Services\StockReservationService::class);
+                        $reservationService->createReservation(
+                            itemId: $item->id,
+                            quantity: $availableStock,
+                            reservationType: 'sales_order',
+                            referenceId: $order->id,
+                            referenceType: 'sales_orders',
+                            notes: "Partial reservation for SO {$order->order_number} ({$availableStock} of {$qtyNeeded})",
+                        );
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('[Sales] Partial reservation failed', [
+                            'sales_order_id' => $order->id,
+                            'item_id' => $item->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                // Find active BOM for the item
+                $bom = \App\Domains\Production\Models\BillOfMaterials::where('product_item_id', $item->id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if ($bom !== null) {
+                    try {
+                        \App\Domains\Production\Models\ProductionOrder::create([
+                            'product_item_id' => $item->id,
+                            'bom_id' => $bom->id,
+                            'qty_required' => $deficit,
+                            'target_start_date' => now()->toDateString(),
+                            'target_end_date' => $order->promised_delivery_date ?? now()->addDays(14)->toDateString(),
+                            'status' => 'draft',
+                            'notes' => "Auto-created from Sales Order {$order->order_number} (deficit: {$deficit} units)",
+                            'created_by_id' => $order->approved_by_id ?? $order->created_by_id,
+                        ]);
+                        $hasProduction = true;
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('[Sales] Auto production order creation failed', [
+                            'sales_order_id' => $order->id,
+                            'item_id' => $item->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                } else {
+                    \Illuminate\Support\Facades\Log::warning('[Sales] No active BOM for item, cannot auto-create production order', [
+                        'sales_order_id' => $order->id,
+                        'item_id' => $item->id,
+                        'item_name' => $item->name,
+                    ]);
+                }
+            }
+        }
+
+        // Update SO status based on fulfillment path
+        if ($hasProduction) {
+            $order->update(['status' => 'in_production']);
+        }
     }
 
     public function cancel(SalesOrder $order): SalesOrder
