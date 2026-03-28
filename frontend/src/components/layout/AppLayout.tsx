@@ -217,6 +217,7 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Procurement' },
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
+      { label: 'Blanket POs', href: '/procurement/blanket-pos', permission: 'procurement.purchase-order.view' },
       { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },
@@ -241,6 +242,7 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Production' },
       { label: 'Production Orders', href: '/production/orders', permission: 'production.orders.view' },
       { label: 'Capacity Planning', href: '/production/capacity', permission: 'production.order.view' },
+      { label: 'Time-Phased MRP', href: '/production/mrp', permission: 'production.order.view' },
       { label: 'Bill of Materials', href: '/production/boms', permission: 'production.bom.view' },
       { label: 'Delivery Schedules', href: '/production/delivery-schedules', permission: 'production.delivery-schedule.view' },
       // ── Quality Control ─────────────────────────────────────────────────────

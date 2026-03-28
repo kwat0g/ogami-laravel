@@ -308,6 +308,8 @@ const CreatePerformanceAppraisalPage = lazy(() => import('@/pages/hr/CreatePerfo
 const LeadScoringPage                = lazy(() => import('@/pages/crm/LeadScoringPage'))
 const FinancialRatiosPage            = lazy(() => import('@/pages/accounting/FinancialRatiosPage'))
 const CapacityPlanningPage           = lazy(() => import('@/pages/production/CapacityPlanningPage'))
+const TimePhasedMrpPage              = lazy(() => import('@/pages/production/TimePhasedMrpPage'))
+const BlanketPurchaseOrdersPage      = lazy(() => import('@/pages/procurement/BlanketPurchaseOrdersPage'))
 const BudgetVsActualPage = lazy(() => import('@/pages/budget/BudgetVsActualPage'))
 const DepartmentBudgetsPage = lazy(() => import('@/pages/budget/DepartmentBudgetsPage'))
 
@@ -505,6 +507,7 @@ const router = createBrowserRouter([
       { path: '/procurement/purchase-requests/new', element: withSuspense(guard('procurement.purchase-request.create|procurement.purchase-request.create-dept', <CreatePurchaseRequestPage />)) },
       { path: '/procurement/purchase-requests/:ulid/edit', element: withSuspense(guard('procurement.purchase-request.create|procurement.purchase-request.create-dept', <CreatePurchaseRequestPage />)) },
       { path: '/procurement/purchase-requests/:ulid', element: withSuspense(guard('procurement.purchase-request.view', <PurchaseRequestDetailPage />)) },
+      { path: '/procurement/blanket-pos', element: withSuspense(guard('procurement.purchase-order.view', <BlanketPurchaseOrdersPage />)) },
       { path: '/procurement/purchase-orders', element: withSuspense(guard('procurement.purchase-order.view', <PurchaseOrderListPage />)) },
       { path: '/procurement/purchase-orders/new', element: withSuspense(guard('procurement.purchase-order.create', <CreatePurchaseOrderPage />)) },
       { path: '/procurement/purchase-orders/:ulid', element: withSuspense(guard('procurement.purchase-order.view', <PurchaseOrderDetailPage />)) },
@@ -533,6 +536,7 @@ const router = createBrowserRouter([
 
       // ── Production / PPC ──────────────────────────────────────────────────
       { path: '/production/capacity', element: withSuspense(guard('production.order.view', <CapacityPlanningPage />)) },
+      { path: '/production/mrp', element: withSuspense(guard('production.order.view', <TimePhasedMrpPage />)) },
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
       { path: '/production/boms/new', element: withSuspense(guard('production.bom.manage', <CreateBomPage />)) },
       { path: '/production/boms/:ulid/edit', element: withSuspense(guard('production.bom.manage', <EditBomPage />)) },
