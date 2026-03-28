@@ -124,6 +124,15 @@ final class SalesOrderService implements ServiceContract
             throw new DomainException('Sales order must be in draft to confirm.', 'SALES_INVALID_ORDER_STATUS', 422);
         }
 
+        // SoD: creator cannot confirm their own sales order
+        if ($approver->id === $order->created_by_id) {
+            throw new DomainException(
+                'You cannot confirm a sales order you created (Separation of Duties).',
+                'SALES_SOD_SELF_CONFIRM',
+                403,
+            );
+        }
+
         $order->loadMissing(['items.item', 'customer']);
 
         // ── Credit limit enforcement ──────────────────────────────────────

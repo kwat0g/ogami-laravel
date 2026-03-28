@@ -79,7 +79,9 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
     // ── Asset Transfers (Phase 4) ─────────────────────────────────────────
     Route::prefix('transfers')->name('transfers.')->group(function () {
         Route::get('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
-            $transfers = \App\Domains\FixedAssets\Models\AssetTransfer::with(['requestedBy', 'approvedBy'])
+            $transfers = \App\Domains\FixedAssets\Models\AssetTransfer::with([
+                    'fixedAsset', 'fromDepartment', 'toDepartment', 'requestedBy', 'approvedBy',
+                ])
                 ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
                 ->orderByDesc('id')
                 ->paginate((int) ($request->input('per_page', 20)));
@@ -103,12 +105,21 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
         })->name('store');
 
         Route::patch('/{assetTransfer:ulid}/approve', function (\Illuminate\Http\Request $request, \App\Domains\FixedAssets\Models\AssetTransfer $assetTransfer): \Illuminate\Http\JsonResponse {
+            // SoD: requester cannot approve their own transfer
+            if ($request->user()->id === $assetTransfer->requested_by_id) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'SOD_SELF_APPROVAL',
+                    'message' => 'You cannot approve a transfer you requested (Separation of Duties).',
+                ], 403);
+            }
+
             $assetTransfer->update([
                 'status' => 'approved',
                 'approved_by_id' => $request->user()->id,
                 'approved_at' => now(),
             ]);
-            return response()->json(['data' => $assetTransfer->fresh()]);
+            return response()->json(['data' => $assetTransfer->fresh(['fixedAsset', 'fromDepartment', 'toDepartment', 'requestedBy', 'approvedBy'])]);
         })->name('approve')->middleware('throttle:api-action');
     });
 

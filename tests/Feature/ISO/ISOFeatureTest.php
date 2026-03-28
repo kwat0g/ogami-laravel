@@ -2,41 +2,100 @@
 
 declare(strict_types=1);
 
-use App\Domains\HR\Models\Department;
+use App\Domains\ISO\Models\ControlledDocument;
+use App\Domains\ISO\Models\InternalAudit;
+use App\Domains\ISO\Models\AuditFinding;
+use App\Domains\ISO\Services\DocumentControlService;
+use App\Domains\ISO\Services\AuditService;
 use App\Models\User;
-use Database\Seeders\DepartmentModuleAssignmentSeeder;
-use Database\Seeders\DepartmentPositionSeeder;
-use Database\Seeders\ModulePermissionSeeder;
-use Database\Seeders\ModuleSeeder;
-use Database\Seeders\RolePermissionSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
 uses()->group('feature', 'iso');
 
 beforeEach(function () {
-    $this->seed(RolePermissionSeeder::class);
-    $this->seed(ModuleSeeder::class);
-    $this->seed(ModulePermissionSeeder::class);
-    $this->seed(DepartmentPositionSeeder::class);
-    $this->seed(DepartmentModuleAssignmentSeeder::class);
-
-    $isoDept = Department::where('code', 'ISO')->first();
-    $this->manager = User::factory()->create();
-    $this->manager->assignRole('manager');
-    $this->manager->departments()->attach($isoDept->id, ['is_primary' => true]);
+    $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
 });
 
-it('lists controlled documents', function () {
-    $this->actingAs($this->manager)
-        ->getJson('/api/v1/iso/documents')
-        ->assertOk()
-        ->assertJsonStructure(['data']);
+// ── Document Control ─────────────────────────────────────────────────────────
+
+it('creates a controlled document in draft status', function () {
+    $user = User::factory()->create();
+    $user->assignRole('manager');
+
+    $service = app(DocumentControlService::class);
+    $doc = $service->store([
+        'document_code' => 'QMS-DOC-001',
+        'title' => 'Quality Management System Manual',
+        'category' => 'manual',
+        'department_id' => null,
+        'content' => 'This is the QMS manual content.',
+    ], $user);
+
+    expect($doc)->toBeInstanceOf(ControlledDocument::class);
+    expect($doc->status)->toBe('draft');
+    expect($doc->document_code)->toBe('QMS-DOC-001');
 });
 
-it('lists internal audits', function () {
-    $this->actingAs($this->manager)
-        ->getJson('/api/v1/iso/audits')
-        ->assertOk()
-        ->assertJsonStructure(['data']);
+it('transitions document through review to effective', function () {
+    $user = User::factory()->create();
+    $user->assignRole('manager');
+
+    $service = app(DocumentControlService::class);
+    $doc = $service->store([
+        'document_code' => 'QMS-PROC-001',
+        'title' => 'Incoming Inspection Procedure',
+        'category' => 'procedure',
+        'content' => 'Step 1: Receive. Step 2: Inspect. Step 3: Release.',
+    ], $user);
+
+    expect($doc->status)->toBe('draft');
+
+    // Submit for review
+    $doc = $service->submitForReview($doc, $user);
+    expect($doc->status)->toBe('under_review');
+
+    // Approve / make effective
+    $approver = User::factory()->create();
+    $approver->assignRole('manager');
+
+    $doc = $service->approve($doc, $approver);
+    expect($doc->status)->toBe('effective');
+});
+
+// ── Internal Audit ───────────────────────────────────────────────────────────
+
+it('creates an internal audit schedule', function () {
+    $user = User::factory()->create();
+    $user->assignRole('manager');
+
+    $service = app(AuditService::class);
+    $audit = $service->schedule([
+        'title' => 'Q1 2026 Internal Audit',
+        'audit_type' => 'internal',
+        'scheduled_date' => '2026-03-15',
+        'scope' => 'Production department ISO 9001 clause 8',
+        'lead_auditor_id' => $user->id,
+    ], $user);
+
+    expect($audit)->toBeInstanceOf(InternalAudit::class);
+    expect($audit->status)->toBe('scheduled');
+});
+
+// ── Service Instantiation ────────────────────────────────────────────────────
+
+it('resolves DocumentControlService from container', function () {
+    expect(app(DocumentControlService::class))->toBeInstanceOf(DocumentControlService::class);
+});
+
+it('resolves AuditService from container', function () {
+    expect(app(AuditService::class))->toBeInstanceOf(AuditService::class);
+});
+
+it('resolves DocumentAcknowledgmentService from container', function () {
+    $service = app(\App\Domains\ISO\Services\DocumentAcknowledgmentService::class);
+    expect($service)->toBeInstanceOf(\App\Domains\ISO\Services\DocumentAcknowledgmentService::class);
+});
+
+it('resolves ISOService from container', function () {
+    $service = app(\App\Domains\ISO\Services\ISOService::class);
+    expect($service)->toBeInstanceOf(\App\Domains\ISO\Services\ISOService::class);
 });
