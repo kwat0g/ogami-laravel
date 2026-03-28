@@ -95,12 +95,40 @@ final class GoodsReceiptService implements ServiceContract
     /**
      * Confirm a GR draft → triggers three-way match + AP invoice creation.
      */
-    public function confirm(GoodsReceipt $gr, User $actor): GoodsReceipt
+    /**
+     * Submit a GR draft for QC inspection — sets status to pending_qc.
+     * Used when the GR contains items that require incoming quality control.
+     * After QC passes, call confirm() to complete the receipt.
+     */
+    public function submitForQc(GoodsReceipt $gr, User $actor): GoodsReceipt
     {
         if ($gr->status !== 'draft') {
             throw new DomainException(
-                message: "GR is already in status '{$gr->status}'.",
+                message: "GR must be in draft status to submit for QC (current: {$gr->status}).",
                 errorCode: 'GR_NOT_DRAFT',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
+            $this->resolveItemMasters($gr);
+
+            $gr->update([
+                'status' => 'pending_qc',
+                'submitted_for_qc_by_id' => $actor->id,
+                'submitted_for_qc_at' => now(),
+            ]);
+
+            return $gr->refresh();
+        });
+    }
+
+    public function confirm(GoodsReceipt $gr, User $actor): GoodsReceipt
+    {
+        if (! in_array($gr->status, ['draft', 'pending_qc'], true)) {
+            throw new DomainException(
+                message: "GR must be in draft or pending_qc status to confirm (current: {$gr->status}).",
+                errorCode: 'GR_NOT_CONFIRMABLE',
                 httpStatus: 422,
             );
         }

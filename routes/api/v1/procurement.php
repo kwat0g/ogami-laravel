@@ -210,6 +210,10 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
         Route::get('/{goodsReceipt}', [GoodsReceiptController::class, 'show'])
             ->name('show');
 
+        Route::post('/{goodsReceipt}/submit-for-qc', [GoodsReceiptController::class, 'submitForQc'])
+            ->middleware('throttle:api-action')
+            ->name('submit-for-qc');
+
         Route::post('/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])
             ->middleware('throttle:api-action')
             ->name('confirm');

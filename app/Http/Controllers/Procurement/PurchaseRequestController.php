@@ -319,11 +319,13 @@ final class PurchaseRequestController extends Controller
         ]);
     }
 
-    public function cancel(PurchaseRequest $purchaseRequest): JsonResponse
+    public function cancel(Request $request, PurchaseRequest $purchaseRequest): JsonResponse
     {
         $this->authorize('cancel', $purchaseRequest);
 
-        $this->service->cancel($purchaseRequest, auth()->user());
+        $reason = $request->input('cancellation_reason', '');
+
+        $this->service->cancel($purchaseRequest, auth()->user(), $reason);
 
         return response()->json(['success' => true, 'message' => 'Purchase Request cancelled.']);
     }

@@ -80,6 +80,19 @@ final class GoodsReceiptController extends Controller
         );
     }
 
+    /**
+     * Submit a GR for incoming quality control inspection.
+     * Flow: draft -> pending_qc -> confirmed (after QC passes)
+     */
+    public function submitForQc(GoodsReceipt $goodsReceipt): GoodsReceiptResource
+    {
+        $this->authorize('confirm', $goodsReceipt);
+
+        $gr = $this->service->submitForQc($goodsReceipt->load('items'), auth()->user());
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'receivedBy', 'items']));
+    }
+
     public function confirm(GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
         $this->authorize('confirm', $goodsReceipt);
