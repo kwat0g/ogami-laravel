@@ -175,7 +175,7 @@ const SECTIONS: NavSection[] = [
     roles: ['officer', 'manager', 'head'],
     departments: ['ACCTG'],
     children: [
-      { label: 'Budget Verification', href: '/procurement/purchase-requests?status=reviewed', permission: 'procurement.purchase-request.budget-check' },
+      { label: 'Budget Verification', href: '/approvals/budget-verification', permission: 'procurement.purchase-request.budget-check' },
       { label: 'Loan Review', href: '/accounting/loans', permission: 'loans.accounting_approve' },
     ],
   },

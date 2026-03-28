@@ -178,7 +178,7 @@ export default function ItemMasterListPage(): React.ReactElement {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [typeFilter, setType]     = useState('')
   const [catFilter,  setCat]      = useState<number | ''>('')
-  const [activeOnly, setActive]   = useState(true)
+  const [activeOnly, setActive]   = useState(false)
   const [page, setPage]           = useState(1)
   const [isArchiveView, setIsArchiveView] = useState(false)
 
