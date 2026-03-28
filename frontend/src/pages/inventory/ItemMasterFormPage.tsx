@@ -20,7 +20,7 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ItemMaster } from '@/types/inventory'
 
 const schema = z.object({
-  item_code:       z.string().min(2, 'Item code is required (min 2 chars)'),
+  item_code:       z.string().optional(),
   category_id:     z.number({ required_error: 'Category is required' }),
   name:            z.string().min(2, 'Name must be at least 2 characters'),
   unit_of_measure: z.string().min(1, 'UOM is required'),
@@ -126,17 +126,23 @@ export default function ItemMasterFormPage(): React.ReactElement {
         <CardHeader>Item Information</CardHeader>
         <CardBody>
           <form onSubmit={onSubmit} className="space-y-5">
-            {/* Item Code */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Item Code *</label>
-              <input
-                {...register('item_code')}
-                disabled={isEdit}
-                className={fieldCls(errors.item_code)}
-                placeholder="e.g. RAW-001"
-              />
-              {errors.item_code && <p className="text-red-500 text-xs mt-1">{errors.item_code.message}</p>}
-            </div>
+            {/* Item Code — auto-generated on create, read-only on edit */}
+            {isEdit && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Item Code</label>
+                <input
+                  value={item?.item_code ?? ''}
+                  disabled
+                  className="w-full text-sm border rounded px-3 py-2.5 bg-neutral-50 border-neutral-200 text-neutral-500 font-mono"
+                />
+                <p className="text-xs text-neutral-400 mt-1">Item code cannot be changed after creation.</p>
+              </div>
+            )}
+            {!isEdit && (
+              <div className="bg-blue-50 border border-blue-200 rounded px-3 py-2.5 text-sm text-blue-700">
+                Item code will be auto-generated based on the item type (e.g., RM-00001, FG-00001, SP-00001).
+              </div>
+            )}
 
             {/* Category */}
             <div>
