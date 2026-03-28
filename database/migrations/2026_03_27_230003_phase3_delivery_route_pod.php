@@ -32,13 +32,15 @@ return new class extends Migration
         DB::statement("ALTER TABLE delivery_routes ADD CONSTRAINT chk_delivery_routes_status CHECK (status IN ('planned','in_transit','completed','cancelled'))");
 
         // Proof of delivery on delivery receipts
-        Schema::table('delivery_receipts', function (Blueprint $table): void {
-            $table->json('proof_of_delivery')->nullable()->after('status');
-            $table->timestamp('pod_received_at')->nullable()->after('proof_of_delivery');
-            $table->foreignId('delivery_route_id')->nullable()->after('pod_received_at')
-                ->constrained('delivery_routes')->nullOnDelete();
-            $table->unsignedBigInteger('freight_cost_centavos')->default(0)->after('delivery_route_id');
-        });
+        if (! Schema::hasColumn('delivery_receipts', 'proof_of_delivery')) {
+            Schema::table('delivery_receipts', function (Blueprint $table): void {
+                $table->json('proof_of_delivery')->nullable()->after('status');
+                $table->timestamp('pod_received_at')->nullable()->after('proof_of_delivery');
+                $table->foreignId('delivery_route_id')->nullable()->after('pod_received_at')
+                    ->constrained('delivery_routes')->nullOnDelete();
+                $table->unsignedBigInteger('freight_cost_centavos')->default(0)->after('delivery_route_id');
+            });
+        }
     }
 
     public function down(): void

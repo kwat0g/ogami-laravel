@@ -17,11 +17,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('annual_budgets', function (Blueprint $table): void {
-            $table->foreignId('reviewed_by_id')->nullable()->after('approved_at')->constrained('users')->nullOnDelete();
-            $table->timestamp('reviewed_at')->nullable()->after('reviewed_by_id');
-            $table->string('review_remarks')->nullable()->after('reviewed_at');
-        });
+        if (! Schema::hasColumn('annual_budgets', 'reviewed_by_id')) {
+            Schema::table('annual_budgets', function (Blueprint $table): void {
+                $table->foreignId('reviewed_by_id')->nullable()->after('approved_at')->constrained('users')->nullOnDelete();
+                $table->timestamp('reviewed_at')->nullable()->after('reviewed_by_id');
+                $table->string('review_remarks')->nullable()->after('reviewed_at');
+            });
+        }
 
         // Update status constraint to include full lifecycle
         DB::statement('ALTER TABLE annual_budgets DROP CONSTRAINT IF EXISTS chk_annual_budgets_status');
