@@ -24,7 +24,7 @@ export default function OpportunityListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Opportunity Pipeline"
+        title="Sales Pipeline"
         icon={<TrendingUp className="w-5 h-5 text-neutral-600" />}
         actions={
           <Link to="/crm/opportunities/new" className="btn-primary">

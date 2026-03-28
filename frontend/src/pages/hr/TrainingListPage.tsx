@@ -18,7 +18,7 @@ export default function TrainingListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Training Programs" icon={<GraduationCap className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Employee Training Programs" icon={<GraduationCap className="w-5 h-5 text-neutral-600" />} />
       <Card className="p-4">
         <select className="input-sm" value={status} onChange={e => setStatus(e.target.value)}>
           <option value="">All Statuses</option>

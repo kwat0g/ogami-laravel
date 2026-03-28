@@ -15,7 +15,7 @@ export default function MoldLifecyclePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Mold Lifecycle Dashboard" icon={<BarChart3 className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Mold Cost Amortization & Lifecycle" icon={<BarChart3 className="w-5 h-5 text-neutral-600" />} />
       {isLoading ? <SkeletonLoader rows={6} /> : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">

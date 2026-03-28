@@ -12,7 +12,7 @@ export default function MaintenanceAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Maintenance Analytics" icon={<Activity className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Equipment Reliability & Cost Analytics" icon={<Activity className="w-5 h-5 text-neutral-600" />} />
       <h3 className="font-semibold text-lg">Equipment Reliability (MTBF/MTTR)</h3>
       {metricsLoading ? <SkeletonLoader rows={5} /> : (
         <Card className="overflow-hidden">

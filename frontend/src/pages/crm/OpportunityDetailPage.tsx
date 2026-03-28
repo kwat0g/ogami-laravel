@@ -38,10 +38,10 @@ export default function OpportunityDetailPage() {
         actions={!isClosed ? (
           <div className="flex gap-2">
             <button className="btn-primary" onClick={() => closeWon.mutate()} disabled={closeWon.isPending}>
-              <CheckCircle className="w-4 h-4" /> Close Won
+              <CheckCircle className="w-4 h-4" /> Mark as Won
             </button>
             <button className="btn-danger" onClick={() => { const r = prompt('Loss reason:'); if (r) closeLost.mutate(r) }} disabled={closeLost.isPending}>
-              <XCircle className="w-4 h-4" /> Close Lost
+              <XCircle className="w-4 h-4" /> Mark as Lost
             </button>
           </div>
         ) : undefined}

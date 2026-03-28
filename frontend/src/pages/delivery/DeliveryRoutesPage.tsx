@@ -16,7 +16,7 @@ export default function DeliveryRoutesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Delivery Routes" icon={<MapPin className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Delivery Route Planning" icon={<MapPin className="w-5 h-5 text-neutral-600" />} />
       {isLoading ? <SkeletonLoader rows={5} /> : routes.length === 0 ? <EmptyState title="No delivery routes" /> : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">

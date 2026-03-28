@@ -20,7 +20,7 @@ export default function BirFormGeneratorPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="BIR Form Generator" icon={<FileText className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="BIR Tax Form Data Generator" icon={<FileText className="w-5 h-5 text-neutral-600" />} />
       <Card className="p-4">
         <div className="flex flex-wrap gap-3">
           <select className="input-sm" value={formType} onChange={e => setFormType(e.target.value as 'vat' | 'withholding')}>

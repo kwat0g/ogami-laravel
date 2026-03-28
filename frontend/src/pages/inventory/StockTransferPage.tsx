@@ -38,7 +38,7 @@ export default function StockTransferPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Stock Transfer"
+        title="Warehouse-to-Warehouse Transfer"
         icon={<ArrowRightLeft className="w-5 h-5 text-neutral-600" />}
       />
 

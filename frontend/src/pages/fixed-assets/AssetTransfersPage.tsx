@@ -16,7 +16,7 @@ export default function AssetTransfersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Asset Transfers" icon={<ArrowRightLeft className="w-5 h-5 text-neutral-600" />} />
+      <PageHeader title="Asset Department Transfers" icon={<ArrowRightLeft className="w-5 h-5 text-neutral-600" />} />
       {isLoading ? <SkeletonLoader rows={5} /> : transfers.length === 0 ? <EmptyState title="No asset transfers" /> : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">
