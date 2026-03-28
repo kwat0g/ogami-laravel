@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ClipboardCheck, AlertTriangle, Plus, Trash2 } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
 import { useInspectionTemplates, useDeleteInspectionTemplate } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
@@ -27,12 +28,19 @@ export default function QcTemplateListPage(): React.ReactElement {
   const [stage, setStage] = useState('')
   const [withArchived, setWithArchived] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<InspectionTemplate | null>(null)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+  }, [])
 
   const { data, isLoading, isError } = useInspectionTemplates({
     stage: stage || undefined,
     per_page: 50,
     with_archived: withArchived || undefined,
-  })
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+  } as Record<string, unknown>)
 
   const deleteMut = useDeleteInspectionTemplate()
 
@@ -63,7 +71,14 @@ export default function QcTemplateListPage(): React.ReactElement {
         }
       />
 
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap gap-3 mb-5 items-center">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search templates..."
+          className="w-64"
+        />
         <select
           value={stage}
           onChange={(e) => setStage(e.target.value)}
