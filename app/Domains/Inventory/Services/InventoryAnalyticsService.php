@@ -59,8 +59,8 @@ final class InventoryAnalyticsService implements ServiceContract
             $cons = $consumption->get($item->id);
             $qty = $cons ? (float) $cons->total_qty : 0.0;
 
-            // Use standard_price if available, otherwise estimate from last PO
-            $unitCost = (float) ($item->standard_price ?? 0);
+            // Use standard_price_centavos if available, otherwise estimate from last PO
+            $unitCost = (float) ($item->standard_price_centavos ?? 0);
 
             return [
                 'item_id' => $item->id,
@@ -124,7 +124,7 @@ final class InventoryAnalyticsService implements ServiceContract
             ->map(function (Collection $locationBalances) {
                 $item = $locationBalances->first()->item;
                 $totalQty = $locationBalances->sum('quantity_on_hand');
-                $unitCost = (float) ($item->standard_price ?? 0);
+                $unitCost = (float) ($item->standard_price_centavos ?? 0);
                 $totalValue = $totalQty * $unitCost;
 
                 return [

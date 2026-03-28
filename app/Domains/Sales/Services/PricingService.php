@@ -83,7 +83,7 @@ final class PricingService implements ServiceContract
 
         // 4. Fallback to item standard price
         $item = ItemMaster::find($itemId);
-        $standardPrice = $item !== null ? (int) (($item->standard_price ?? 0) * 100) : 0;
+        $standardPrice = $item !== null ? (int) ($item->standard_price_centavos ?? 0) : 0;
 
         return [
             'unit_price_centavos' => $standardPrice,

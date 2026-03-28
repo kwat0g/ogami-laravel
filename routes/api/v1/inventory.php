@@ -8,7 +8,6 @@ use App\Http\Controllers\Inventory\PhysicalCountController;
 use App\Http\Controllers\Inventory\StockController;
 use App\Http\Controllers\Inventory\WarehouseLocationController;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,54 +66,9 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
 
     // ── Inventory Valuation Report ───────────────────────────────────────────
     Route::get('reports/valuation', function (): JsonResponse {
-        $poCosts = DB::table('purchase_order_items')
-            ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
-            ->whereNotNull('purchase_order_items.item_master_id')
-            ->whereIn('purchase_orders.status', ['sent', 'partially_received', 'fully_received', 'closed'])
-            ->select(
-                'purchase_order_items.item_master_id',
-                DB::raw('avg(purchase_order_items.agreed_unit_cost) as unit_cost'),
-            )
-            ->groupBy('purchase_order_items.item_master_id');
+        $service = app(\App\Domains\Inventory\Services\InventoryReportService::class);
 
-        $rows = DB::table('stock_balances')
-            ->join('item_masters', 'stock_balances.item_id', '=', 'item_masters.id')
-            ->leftJoin('item_categories', 'item_masters.category_id', '=', 'item_categories.id')
-            ->leftJoin('warehouse_locations', 'stock_balances.location_id', '=', 'warehouse_locations.id')
-            ->leftJoinSub($poCosts, 'po_costs', function ($join): void {
-                $join->on('item_masters.id', '=', 'po_costs.item_master_id');
-            })
-            ->where('stock_balances.quantity_on_hand', '>', 0)
-            ->select(
-                'item_masters.id as item_id',
-                'item_masters.item_code',
-                'item_masters.name as item_name',
-                DB::raw("coalesce(item_categories.name, 'Uncategorized') as category"),
-                'warehouse_locations.name as location',
-                'item_masters.unit_of_measure as uom',
-                'stock_balances.quantity_on_hand as quantity',
-                'po_costs.unit_cost',
-                DB::raw('round(stock_balances.quantity_on_hand * coalesce(po_costs.unit_cost, 0), 2) as total_value'),
-            )
-            ->orderBy('item_categories.name')
-            ->orderBy('item_masters.name')
-            ->get();
-
-        // Group by category for summary
-        $byCategory = $rows->groupBy('category')->map(fn ($items, $cat) => [
-            'category' => $cat,
-            'item_count' => $items->count(),
-            'total_qty' => $items->sum('quantity'),
-            'total_value' => round($items->sum('total_value'), 2),
-        ])->values();
-
-        $grandTotal = round($rows->sum('total_value'), 2);
-
-        return response()->json([
-            'data' => $rows,
-            'by_category' => $byCategory,
-            'grand_total' => $grandTotal,
-        ]);
+        return response()->json($service->valuationReport());
     })->name('reports.valuation');
 
     // ── Inventory Analytics ─────────────────────────────────────────────────
