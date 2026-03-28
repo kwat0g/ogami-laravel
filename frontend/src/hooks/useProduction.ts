@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type {
   Bom,
@@ -22,6 +22,7 @@ export function useBoms(params: { product_item_id?: number; is_active?: boolean;
       return res.data
     },
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -74,6 +75,7 @@ export function useDeliverySchedules(params: {
     },
     staleTime: 30_000,
     refetchOnWindowFocus: true,
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -134,6 +136,7 @@ export function useProductionOrders(params: {
     },
     staleTime: 30_000,
     refetchOnWindowFocus: true,
+    placeholderData: keepPreviousData,
   })
 }
 

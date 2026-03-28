@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { DeliveryReceipt, CreateDeliveryReceiptPayload, Shipment, CreateShipmentPayload, UpdateShipmentStatusPayload } from '@/types/delivery';
 
@@ -6,6 +6,7 @@ export function useDeliveryReceipts(params?: Record<string, string | boolean>) {
   return useQuery<{ data: DeliveryReceipt[]; meta: unknown }>({
     queryKey: ['delivery-receipts', params],
     queryFn: () => api.get('/delivery/receipts', { params }).then(r => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -39,6 +40,7 @@ export function useShipments(params?: Record<string, string | boolean>) {
   return useQuery<{ data: Shipment[]; meta: unknown }>({
     queryKey: ['shipments', params],
     queryFn: () => api.get('/delivery/shipments', { params }).then(r => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 
