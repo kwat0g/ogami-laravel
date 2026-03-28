@@ -49,7 +49,7 @@ function ArchiveVendorButton({ vendor }: { vendor: Vendor }) {
       }}
     >
       <button className="text-xs text-neutral-500 hover:underline flex items-center gap-1">
-        <Archive className="w-3 h-3" /> Archive
+        <Trash2 className="w-3 h-3" /> Delete
       </button>
     </ConfirmDestructiveDialog>
   )
