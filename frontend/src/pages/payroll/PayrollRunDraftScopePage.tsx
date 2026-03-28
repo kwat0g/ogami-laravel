@@ -410,27 +410,27 @@ export default function PayrollRunDraftScopePage() {
 
           {/* ── Auto-excluded: missing bank accounts ── */}
           {autoExcludedEmployees.length > 0 && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded p-4 space-y-3">
+            <div className="bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-neutral-900 shrink-0" />
-                <p className="text-sm font-semibold text-neutral-800">
+                <Info className="h-4 w-4 text-neutral-900 dark:text-neutral-200 shrink-0" />
+                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                   {autoExcludedEmployees.length} employee
                   {autoExcludedEmployees.length !== 1 ? 's' : ''} automatically excluded
                 </p>
               </div>
-              <p className="text-xs text-neutral-800">
+              <p className="text-xs text-neutral-800 dark:text-neutral-300">
                 These employees have no bank account on file and were excluded from this run
                 automatically. You may remove them from the exclusion list below to include them
                 (payroll will need to be disbursed manually).
               </p>
-              <div className="border border-neutral-100 rounded overflow-hidden divide-y divide-neutral-50 max-h-36 overflow-y-auto">
+              <div className="border border-neutral-100 dark:border-neutral-700 rounded overflow-hidden divide-y divide-neutral-50 dark:divide-neutral-700 max-h-48 overflow-y-auto">
                 {autoExcludedEmployees.map((emp) => (
-                  <div key={emp.id} className="flex items-center gap-3 px-3 py-2 bg-white/70">
-                    <span className="text-xs font-mono text-neutral-400 shrink-0">
+                  <div key={emp.id} className="flex items-center gap-3 px-3 py-2 bg-white/70 dark:bg-neutral-800/70">
+                    <span className="text-xs font-mono text-neutral-400 dark:text-neutral-500 shrink-0">
                       {emp.employee_code}
                     </span>
-                    <span className="text-sm text-neutral-700">{emp.full_name}</span>
-                    <span className="text-xs text-neutral-400 ml-auto shrink-0">
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">{emp.full_name}</span>
+                    <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-auto shrink-0">
                       {emp.department_name}
                     </span>
                   </div>
@@ -440,9 +440,9 @@ export default function PayrollRunDraftScopePage() {
           )}
 
           {/* ── Manual Exclusions ─────────────────────────────────────────── */}
-          <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-800">Manual Exclusions</h3>
-            <p className="text-xs text-neutral-500">
+          <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Manual Exclusions</h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Exclude specific employees from this run. These are stored locally until you reach the
               final step.
             </p>
@@ -461,13 +461,13 @@ export default function PayrollRunDraftScopePage() {
                   value={exclReason}
                   onChange={(e) => setExclReason(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddExclusion()}
-                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
+                  className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 rounded px-3 py-2 text-sm"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleAddExclusion}
-                className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm font-medium flex items-center gap-1 transition-colors"
+                className="px-3 py-2 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded text-sm font-medium flex items-center gap-1 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" /> Exclude
               </button>
@@ -475,18 +475,18 @@ export default function PayrollRunDraftScopePage() {
 
             {/* List */}
             {exclusions.length > 0 && (
-              <div className="border border-red-100 rounded divide-y divide-red-50">
+              <div className="border border-red-100 dark:border-red-900/30 rounded divide-y divide-red-50 dark:divide-red-900/20 max-h-48 overflow-y-auto">
                 {exclusions.map((exc) => (
                   <div key={exc.employee_id} className="flex items-center gap-3 px-4 py-2">
-                    <Users className="h-4 w-4 text-red-400 shrink-0" />
+                    <Users className="h-4 w-4 text-red-400 dark:text-red-500 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm text-neutral-800">{exc.label}</span>
-                      <p className="text-xs text-neutral-500 truncate">{exc.reason}</p>
+                      <span className="text-sm text-neutral-800 dark:text-neutral-200">{exc.label}</span>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{exc.reason}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleRemoveExclusion(exc.employee_id)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -499,9 +499,9 @@ export default function PayrollRunDraftScopePage() {
 
         {/* ── Right: Live Preview ──────────────────────────────────────────── */}
         <div className="space-y-4">
-          <div className="bg-white border border-neutral-200 rounded p-5 space-y-4 sticky top-6">
-            <h3 className="text-sm font-semibold text-neutral-800 flex items-center gap-2">
-              <Users className="h-4 w-4 text-neutral-500" />
+          <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded p-5 space-y-4 sticky top-6">
+            <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+              <Users className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
               In-Scope Preview
               {previewLoading && <Loader2 className="h-3 w-3 animate-spin text-neutral-400" />}
             </h3>
