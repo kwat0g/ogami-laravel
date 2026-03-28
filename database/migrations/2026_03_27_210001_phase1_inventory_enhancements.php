@@ -19,11 +19,13 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Costing method on item masters
-        Schema::table('item_masters', function (Blueprint $table): void {
-            $table->string('costing_method', 30)->default('standard')->after('type');
-        });
+        if (! Schema::hasColumn('item_masters', 'costing_method')) {
+            Schema::table('item_masters', function (Blueprint $table): void {
+                $table->string('costing_method', 30)->default('standard')->after('type');
+            });
 
-        DB::statement("ALTER TABLE item_masters ADD CONSTRAINT chk_item_masters_costing_method CHECK (costing_method IN ('standard','fifo','weighted_average'))");
+            DB::statement("ALTER TABLE item_masters ADD CONSTRAINT chk_item_masters_costing_method CHECK (costing_method IN ('standard','fifo','weighted_average'))");
+        }
 
         // 2. Physical count tables
         Schema::create('physical_counts', function (Blueprint $table): void {
@@ -54,17 +56,19 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 3. Expiry date on lot batches
-        Schema::table('lot_batches', function (Blueprint $table): void {
-            $table->date('expiry_date')->nullable()->after('received_date');
-        });
+        // 3. Expiry date on lot batches — skip if column already exists
+        //    (lot_batches.expiry_date was added in 2026_03_05_000011_create_inventory_tables)
+        if (! Schema::hasColumn('lot_batches', 'expiry_date')) {
+            Schema::table('lot_batches', function (Blueprint $table): void {
+                $table->date('expiry_date')->nullable()->after('received_date');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('lot_batches', function (Blueprint $table): void {
-            $table->dropColumn('expiry_date');
-        });
+        // Only drop if we were the ones who added it
+        // (Column existed before in the original create_inventory_tables migration)
 
         Schema::dropIfExists('physical_count_items');
         Schema::dropIfExists('physical_counts');

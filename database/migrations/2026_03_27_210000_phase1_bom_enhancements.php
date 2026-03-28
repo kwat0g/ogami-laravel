@@ -18,19 +18,23 @@ return new class extends Migration
     public function up(): void
     {
         // 1. BOM cost rollup columns
-        Schema::table('bill_of_materials', function (Blueprint $table): void {
-            $table->unsignedBigInteger('standard_cost_centavos')->default(0)->after('standard_production_days');
-            $table->timestamp('last_cost_rollup_at')->nullable()->after('standard_cost_centavos');
-        });
+        if (! Schema::hasColumn('bill_of_materials', 'standard_cost_centavos')) {
+            Schema::table('bill_of_materials', function (Blueprint $table): void {
+                $table->unsignedBigInteger('standard_cost_centavos')->default(0)->after('standard_production_days');
+                $table->timestamp('last_cost_rollup_at')->nullable()->after('standard_cost_centavos');
+            });
+        }
 
         // 2. Multi-level BOM support: self-referencing parent component
-        Schema::table('bom_components', function (Blueprint $table): void {
-            $table->foreignId('parent_bom_component_id')
-                ->nullable()
-                ->after('bom_id')
-                ->constrained('bom_components')
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('bom_components', 'parent_bom_component_id')) {
+            Schema::table('bom_components', function (Blueprint $table): void {
+                $table->foreignId('parent_bom_component_id')
+                    ->nullable()
+                    ->after('bom_id')
+                    ->constrained('bom_components')
+                    ->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void
