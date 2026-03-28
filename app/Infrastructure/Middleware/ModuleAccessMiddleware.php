@@ -31,6 +31,7 @@ use Symfony\Component\HttpFoundation\Response;
  *   - mold: ['MOLD', 'PROD']
  *   - delivery: ['WH', 'SALES', 'PROD', 'PLANT']
  *   - crm: ['SALES']
+ *   - sales: ['SALES', 'ACCTG']
  *   - ar: ['SALES', 'ACCTG']
  *   - ap: ['ACCTG', 'PURCH']
  *
@@ -111,6 +112,7 @@ class ModuleAccessMiddleware
         'iso' => ['ISO', 'QC'],
         'crm' => ['SALES'],
         'tickets' => ['SALES'],
+        'sales' => ['SALES', 'ACCTG'],
 
         'admin' => ['IT', 'EXEC'],
         'users' => ['IT', 'EXEC'],
