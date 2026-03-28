@@ -48,7 +48,15 @@ Route::middleware(['auth:sanctum', 'module_access:sales'])->group(function () {
             ->middleware('throttle:api-action');
         Route::patch('/{salesOrder:ulid}/cancel', [SalesOrderController::class, 'cancel'])->name('cancel')
             ->middleware('throttle:api-action');
+        Route::delete('/{salesOrder:ulid}', [SalesOrderController::class, 'destroy'])->name('destroy')
+            ->middleware('throttle:api-action');
     });
+
+    Route::get('orders-archived', [SalesOrderController::class, 'archived'])->name('orders.archived');
+    Route::post('orders/{salesOrder}/restore', [SalesOrderController::class, 'restore'])->name('orders.restore')
+        ->middleware('throttle:api-action');
+    Route::delete('orders/{salesOrder}/force', [SalesOrderController::class, 'forceDelete'])->name('orders.force-delete')
+        ->middleware('throttle:api-action');
 
     // ── Profit Margin Analysis (Enhancement) ─────────────────────────────
     Route::get('quotations/{quotation:ulid}/margin', function (\App\Domains\Sales\Models\Quotation $quotation) {

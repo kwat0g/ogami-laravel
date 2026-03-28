@@ -70,6 +70,15 @@ Route::middleware(['auth:sanctum', 'module_access:payroll'])->group(function () 
         ->middleware('throttle:api-action')
         ->name('runs.destroy');
 
+    Route::get('runs-archived', [PayrollRunController::class, 'archived'])
+        ->name('runs.archived');
+    Route::post('runs/{payrollRun}/restore', [PayrollRunController::class, 'restore'])
+        ->middleware('throttle:api-action')
+        ->name('runs.restore');
+    Route::delete('runs/{payrollRun}/force', [PayrollRunController::class, 'forceDelete'])
+        ->middleware('throttle:api-action')
+        ->name('runs.force-delete');
+
     // ── Workflow v1.0 — Step 2: Scope ─────────────────────────────────────────
     Route::get('runs/{payrollRun}/scope-preview', [PayrollRunController::class, 'scopePreview'])
         ->name('runs.scope-preview');
