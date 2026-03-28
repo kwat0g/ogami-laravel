@@ -25,6 +25,7 @@ const schema = z.object({
   name:            z.string().min(2, 'Name must be at least 2 characters'),
   unit_of_measure: z.string().min(1, 'UOM is required'),
   description:     z.string().min(5, 'Description must be at least 5 characters'),
+  standard_price:  z.number().min(0, 'Price cannot be negative').default(0),
   reorder_point:   z.number().min(0).default(0),
   reorder_qty:     z.number().min(0).default(0),
   type:                z.enum(['raw_material', 'semi_finished', 'finished_good', 'consumable', 'spare_part']),
@@ -69,6 +70,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
         name:            item.name,
         unit_of_measure: item.unit_of_measure,
         description:     item.description ?? '',
+        standard_price:  (item.standard_price_centavos ?? 0) / 100,
         reorder_point:   parseFloat(item.reorder_point),
         reorder_qty:         parseFloat(item.reorder_qty),
         type:                item.type,
@@ -80,11 +82,19 @@ export default function ItemMasterFormPage(): React.ReactElement {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
+      // Convert peso amount to centavos for the backend
+      const payload = {
+        ...values,
+        standard_price_centavos: Math.round((values.standard_price ?? 0) * 100),
+      }
+      // Remove the peso field -- backend expects centavos
+      delete (payload as Record<string, unknown>).standard_price
+
       if (isEdit) {
-        await updateMutation.mutateAsync(values)
+        await updateMutation.mutateAsync(payload)
         toast.success('Item updated.')
       } else {
-        await createMutation.mutateAsync(values)
+        await createMutation.mutateAsync(payload)
         toast.success('Item created.')
         navigate('/inventory/items')
       }
@@ -177,6 +187,24 @@ export default function ItemMasterFormPage(): React.ReactElement {
               <label className="block text-sm font-medium text-neutral-700 mb-1">Unit of Measure *</label>
               <input {...register('unit_of_measure')} className={fieldCls(errors.unit_of_measure)} placeholder="e.g. pcs, kg, L" />
               {errors.unit_of_measure && <p className="text-red-500 text-xs mt-1">{errors.unit_of_measure.message}</p>}
+            </div>
+
+            {/* Standard Price */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Standard Price (PHP)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">₱</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register('standard_price', { valueAsNumber: true })}
+                  className={`${fieldCls(errors.standard_price)} pl-7`}
+                  placeholder="0.00"
+                />
+              </div>
+              {errors.standard_price && <p className="text-red-500 text-xs mt-1">{errors.standard_price.message}</p>}
+              <p className="text-xs text-neutral-400 mt-1">Unit cost used for BOM calculations and inventory valuation. Auto-updated on goods receipt.</p>
             </div>
 
             {/* Reorder */}

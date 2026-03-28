@@ -279,7 +279,7 @@ export default function ItemMasterListPage(): React.ReactElement {
               <table className="min-w-full text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
-                    {['Item Code', 'Name', 'Category', 'Type', 'UOM', 'Reorder Pt.', 'IQC', 'Status', ''].map((h) => (
+                    {['Item Code', 'Name', 'Category', 'Type', 'UOM', 'Std Price', 'Reorder Pt.', 'IQC', 'Status', ''].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                     ))}
                   </tr>
@@ -301,6 +301,11 @@ export default function ItemMasterListPage(): React.ReactElement {
                         </StatusBadge>
                       </td>
                       <td className="px-4 py-3 text-neutral-500">{item.unit_of_measure}</td>
+                      <td className="px-4 py-3 text-neutral-700 font-mono tabular-nums text-xs">
+                        {(item.standard_price_centavos ?? 0) > 0
+                          ? new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format((item.standard_price_centavos ?? 0) / 100)
+                          : <span className="text-neutral-300">--</span>}
+                      </td>
                       <td className="px-4 py-3 text-neutral-500">{item.reorder_point}</td>
                       <td className="px-4 py-3">
                         {item.requires_iqc
