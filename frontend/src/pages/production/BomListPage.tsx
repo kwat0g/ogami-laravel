@@ -1,15 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Plus, Pencil, Archive, Calculator } from 'lucide-react'
+import { AlertTriangle, Plus, Eye } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { useBoms, useDeleteBom } from '@/hooks/useProduction'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { useBoms } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import { toast } from 'sonner'
-import { firstErrorMessage } from '@/lib/errorHandler'
-import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { ExportButton } from '@/components/ui/ExportButton'
 
 export default function BomListPage(): React.ReactElement {
@@ -19,28 +14,6 @@ export default function BomListPage(): React.ReactElement {
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('production.bom.manage')
   const navigate  = useNavigate()
-  const deleteMut = useDeleteBom()
-  const qc = useQueryClient()
-  const rollupCost = useMutation({
-    mutationFn: async (bomUlid: string) => {
-      const { data } = await api.post(`/production/boms/${bomUlid}/rollup-cost`)
-      return data
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['boms'] })
-      toast.success('Cost rollup completed.')
-    },
-    onError: (err) => toast.error(firstErrorMessage(err, 'Cost rollup failed.')),
-  })
-
-  const handleArchive = async (ulid: string) => {
-    try {
-      await deleteMut.mutateAsync(ulid)
-      toast.success('BOM archived successfully.')
-    } catch (err) {
-      toast.error(firstErrorMessage(err))
-    }
-  }
 
   return (
     <div>
@@ -51,7 +24,7 @@ export default function BomListPage(): React.ReactElement {
             <ExportButton
               data={data?.data ?? []}
               columns={[
-                { key: 'name', label: 'BOM Name' },
+                { key: 'product_item.item_code', label: 'Item Code' },
                 { key: 'product_item.name', label: 'Product' },
                 { key: 'version', label: 'Version' },
                 { key: 'is_active', label: 'Active', format: (v: unknown) => v ? 'Yes' : 'No' },
@@ -91,7 +64,7 @@ export default function BomListPage(): React.ReactElement {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['Product Item', 'Version', 'Components', 'Std Cost', 'Status', 'Created', ''].map((h) => (
+                  {['Product Item', 'Version', 'Components', 'Status', 'Created', ''].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                   ))}
                 </tr>
@@ -99,42 +72,21 @@ export default function BomListPage(): React.ReactElement {
               <tbody className="divide-y divide-neutral-100">
                 {data?.data?.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">No BOMs found.</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">No BOMs found.</td>
                   </tr>
                 )}
                 {data?.data?.map((bom) => (
-                  <tr key={bom.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                  <tr
+                    key={bom.id}
+                    onClick={() => navigate(`/production/boms/${bom.ulid}`)}
+                    className="hover:bg-neutral-50 cursor-pointer transition-colors"
+                  >
                     <td className="px-4 py-3">
-                      <Link to={`/production/boms/${bom.ulid}`} className="block hover:underline">
-                        <div className="font-mono text-neutral-900 font-medium text-xs">{bom.product_item?.item_code}</div>
-                        <div className="text-neutral-700 text-sm">{bom.product_item?.name}</div>
-                      </Link>
+                      <div className="font-mono text-neutral-900 font-medium text-xs">{bom.product_item?.item_code}</div>
+                      <div className="text-neutral-700 text-sm">{bom.product_item?.name}</div>
                     </td>
                     <td className="px-4 py-3 text-neutral-500">v{bom.version}</td>
                     <td className="px-4 py-3 text-neutral-500">{bom.components?.length ?? '—'} items</td>
-                    <td className="px-4 py-3 font-mono text-xs">
-                      <div className="flex flex-col gap-1">
-                        <span className={`font-semibold ${bom.standard_cost_centavos > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                          {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format((bom.standard_cost_centavos ?? 0) / 100)}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <Link
-                            to={`/production/boms/${bom.ulid}`}
-                            className="text-blue-600 hover:underline text-xs"
-                          >
-                            View Details
-                          </Link>
-                          <button
-                            onClick={() => rollupCost.mutate(bom.ulid)}
-                            disabled={rollupCost.isPending}
-                            className="text-neutral-500 hover:text-blue-600 hover:underline text-xs flex items-center gap-1"
-                            title="Recalculate standard cost"
-                          >
-                            <Calculator className="w-3 h-3" /> Recalc
-                          </button>
-                        </div>
-                      </div>
-                    </td>
                     <td className="px-4 py-3">
                       {bom.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
                       {bom.is_active
@@ -144,33 +96,15 @@ export default function BomListPage(): React.ReactElement {
                     <td className="px-4 py-3 text-neutral-400 text-xs">
                       {bom.created_at ? new Date(bom.created_at).toLocaleDateString('en-PH') : '—'}
                     </td>
-                    {canCreate && !bom.deleted_at && (
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => navigate(`/production/boms/${bom.ulid}/edit`)}
-                            className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
-                          >
-                            <Pencil className="w-3.5 h-3.5" /> Edit
-                          </button>
-                          <ConfirmDestructiveDialog
-                            title="Archive BOM?"
-                            description={`This will archive the BOM for "${bom.product_item?.name ?? 'BOM'}". It will move to the Archived section and cannot be used for new production orders.`}
-                            confirmWord="ARCHIVE"
-                            confirmLabel="Archive"
-                            onConfirm={() => handleArchive(bom.ulid)}
-                          >
-                            <button
-                              disabled={deleteMut.isPending}
-                              className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-500 hover:bg-neutral-50 hover:border-neutral-300 hover:text-red-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              <Archive className="w-3.5 h-3.5" /> Archive
-                            </button>
-                          </ConfirmDestructiveDialog>
-                        </div>
-                      </td>
-                    )}
-                    {(!canCreate || bom.deleted_at) && <td />}
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        to={`/production/boms/${bom.ulid}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-neutral-200 rounded bg-white text-neutral-600 hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 font-medium"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
