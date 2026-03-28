@@ -30,7 +30,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class VendorPayment extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'vendor_payments';
 

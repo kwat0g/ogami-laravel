@@ -24,7 +24,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class EwtRate extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'ewt_rates';
 

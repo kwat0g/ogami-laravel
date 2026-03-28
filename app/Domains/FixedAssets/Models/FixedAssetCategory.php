@@ -33,7 +33,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class FixedAssetCategory extends Model implements Auditable
 {
-    use AuditableTrait, HasFactory, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasFactory, HasPublicUlid, SoftDeletes;
 
     protected static function newFactory(): FixedAssetCategoryFactory
     {

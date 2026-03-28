@@ -51,7 +51,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class OvertimeRequest extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'overtime_requests';
 

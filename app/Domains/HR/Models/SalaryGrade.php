@@ -28,7 +28,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class SalaryGrade extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'salary_grades';
 

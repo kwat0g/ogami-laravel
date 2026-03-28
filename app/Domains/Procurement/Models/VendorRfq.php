@@ -32,7 +32,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class VendorRfq extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'vendor_rfqs';
 

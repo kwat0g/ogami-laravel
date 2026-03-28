@@ -43,7 +43,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class Quotation extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'quotations';
 

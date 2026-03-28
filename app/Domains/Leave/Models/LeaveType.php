@@ -34,7 +34,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class LeaveType extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'leave_types';
 

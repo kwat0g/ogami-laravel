@@ -45,7 +45,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class SalesOrder extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'sales_orders';
 

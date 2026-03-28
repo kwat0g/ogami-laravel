@@ -32,7 +32,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class AssetDisposal extends Model implements Auditable
 {
-    use AuditableTrait, HasPublicUlid, SoftDeletes;
+    use AuditableTrait, SoftDeletes, HasPublicUlid, SoftDeletes;
 
     protected $table = 'fixed_asset_disposals';
 

@@ -30,7 +30,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class LoanType extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    use AuditableTrait, SoftDeletes, SoftDeletes;
 
     protected $table = 'loan_types';
 
