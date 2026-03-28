@@ -95,7 +95,7 @@ export default function CreateBomPage(): React.ReactElement {
     if (!validateForm()) return
 
     try {
-      await createMut.mutateAsync({
+      const result = await createMut.mutateAsync({
         product_item_id: productItemId,
         version: version || undefined,
         notes: notes || undefined,
@@ -106,7 +106,9 @@ export default function CreateBomPage(): React.ReactElement {
           scrap_factor_pct: Number(c.scrap_factor_pct) || undefined,
         })),
       })
-      toast.success('BOM created successfully.')
+      const costCentavos = result?.data?.standard_cost_centavos ?? 0
+      const costFormatted = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(costCentavos / 100)
+      toast.success(`BOM created successfully. Standard cost: ${costFormatted}`)
       navigate('/production/boms')
     } catch (err) {
       toast.error(firstErrorMessage(err))

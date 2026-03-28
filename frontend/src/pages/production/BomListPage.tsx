@@ -111,17 +111,27 @@ export default function BomListPage(): React.ReactElement {
                     <td className="px-4 py-3 text-neutral-500">v{bom.version}</td>
                     <td className="px-4 py-3 text-neutral-500">{bom.components?.length ?? '—'} items</td>
                     <td className="px-4 py-3 font-mono text-xs">
-                      {bom.standard_cost_centavos
-                        ? new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(bom.standard_cost_centavos / 100)
-                        : <button
+                      <div className="flex flex-col gap-1">
+                        <span className={`font-semibold ${bom.standard_cost_centavos > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
+                          {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format((bom.standard_cost_centavos ?? 0) / 100)}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/production/boms/${bom.id}/cost-breakdown`}
+                            className="text-blue-600 hover:underline text-xs"
+                          >
+                            View Details
+                          </Link>
+                          <button
                             onClick={() => rollupCost.mutate(bom.id)}
                             disabled={rollupCost.isPending}
-                            className="text-blue-600 hover:underline text-xs flex items-center gap-1"
-                            title="Compute standard cost"
+                            className="text-neutral-500 hover:text-blue-600 hover:underline text-xs flex items-center gap-1"
+                            title="Recalculate standard cost"
                           >
-                            <Calculator className="w-3 h-3" /> Rollup
+                            <Calculator className="w-3 h-3" /> Recalc
                           </button>
-                      }
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {bom.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}

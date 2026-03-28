@@ -577,8 +577,20 @@ function UserMenu({
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  // Auto-close on mouse leave with a small delay (prevents flicker)
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleMouseEnter = () => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+    setOpen(true)
+  }
+
+  const handleMouseLeave = () => {
+    hoverTimeout.current = setTimeout(() => setOpen(false), 200)
+  }
+
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative" ref={menuRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <button
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
@@ -829,8 +841,8 @@ export default function AppLayout() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto flex flex-col min-w-0">
-        {/* Top bar */}
-        <header className="h-14 flex-shrink-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between px-4 sm:px-6">
+        {/* Top bar — sticky so it stays visible when scrolling page content */}
+        <header className="h-14 flex-shrink-0 sticky top-0 z-30 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger menu */}
             <div className="lg:hidden">
