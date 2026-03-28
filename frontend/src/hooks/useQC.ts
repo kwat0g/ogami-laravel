@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type {
   CapaAction,
@@ -31,6 +31,7 @@ export function useInspectionTemplates(params?: TemplateParams) {
       )
       return res.data
     },
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -62,6 +63,7 @@ export function useInspections(params?: InspectionParams) {
       const res = await api.get<Paginated<Inspection>>('/qc/inspections', { params })
       return res.data
     },
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -128,6 +130,7 @@ export function useNcrs(params?: NcrParams) {
       const res = await api.get<Paginated<NonConformanceReport>>('/qc/ncrs', { params })
       return res.data
     },
+    placeholderData: keepPreviousData,
   })
 }
 

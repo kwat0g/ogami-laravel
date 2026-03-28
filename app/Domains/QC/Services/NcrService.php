@@ -19,6 +19,7 @@ final class NcrService implements ServiceContract
     {
         return NonConformanceReport::query()
             ->when($params['with_archived'] ?? false, fn ($q) => $q->withTrashed())
+            ->when($params['search'] ?? null, fn ($q, $v) => $q->where(fn ($q2) => $q2->where('ncr_reference', 'ilike', "%{$v}%")->orWhere('title', 'ilike', "%{$v}%")))
             ->when($params['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($params['severity'] ?? null, fn ($q, $v) => $q->where('severity', $v))
             ->with(['inspection.itemMaster', 'raisedBy', 'capaActions'])

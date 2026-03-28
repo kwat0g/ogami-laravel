@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useNavigate } from 'react-router-dom'
 import { 
   Package, 
@@ -120,18 +121,6 @@ function formatCurrency(centavos: number) {
   return '₱' + (centavos / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })
 }
 
-// Simple debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value)
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay)
-    return () => clearTimeout(timer)
-  }, [value, delay])
-
-  return debouncedValue
-}
-
 export default function ClientOrdersPage(): JSX.Element {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -140,8 +129,8 @@ export default function ClientOrdersPage(): JSX.Element {
   const { data: orders, isLoading } = useMyClientOrders()
   const cancelMutation = useCancelClientOrder()
 
-  // Debounce search query with 300ms delay
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  // Debounce search query with 400ms delay
+  const debouncedSearchQuery = useDebounce(searchQuery, 400)
 
   const filteredOrders = useMemo(() => {
     return orders?.data?.filter((order: ClientOrder) => {

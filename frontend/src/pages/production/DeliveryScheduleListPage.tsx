@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus, Factory } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import { useDeliverySchedules } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -23,6 +25,13 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
   const [type, setType] = useState('')
   const [page, setPage] = useState(1)
   const [withArchived, setWithArchived] = useState(false)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+    setPage(1)
+  }, [])
 
   const { data, isLoading, isError } = useDeliverySchedules({
     status: status || undefined,
@@ -30,6 +39,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
     page,
     per_page: 20,
     with_archived: withArchived || undefined,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('production.delivery-schedule.manage')
@@ -57,7 +67,14 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
         }
       />
 
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap gap-3 mb-5 items-center">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search schedules..."
+          className="w-64"
+        />
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1) }}

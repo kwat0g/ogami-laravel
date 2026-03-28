@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, List } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import SearchInput from '@/components/ui/SearchInput';
+import Pagination from '@/components/ui/Pagination';
 import { useWorkOrders } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
 import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
@@ -26,15 +28,24 @@ export default function WorkOrderListPage() {
   const [type, setType] = useState('');
   const [priority, setPriority] = useState('');
   const [withArchived, setWithArchived] = useState(false);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
   const canManage = useAuthStore(s => s.hasPermission('maintenance.manage'));
 
-  const params: Record<string, string | boolean> = {};
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val);
+    setPage(1);
+  }, []);
+
+  const params: Record<string, string | number | boolean> = { page, per_page: 20 };
   if (status) params.status = status;
   if (type) params.type = type;
   if (priority) params.priority = priority;
   if (withArchived) params.with_archived = true;
+  if (debouncedSearch) params.search = debouncedSearch;
 
-  const { data, isLoading } = useWorkOrders(Object.keys(params).length ? params : undefined);
+  const { data, isLoading } = useWorkOrders(params);
 
   return (
     <div className="space-y-4">
@@ -52,8 +63,15 @@ export default function WorkOrderListPage() {
         }
       />
 
-      <div className="flex gap-2 flex-wrap">
-        <select value={type} onChange={e => setType(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400">
+      <div className="flex gap-2 flex-wrap items-center">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search work orders..."
+          className="w-64"
+        />
+        <select value={type} onChange={e => { setType(e.target.value); setPage(1); }} className="rounded border border-neutral-300 px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400">
           <option value="">All Types</option>
           <option value="corrective">Corrective</option>
           <option value="preventive">Preventive</option>
@@ -130,6 +148,8 @@ export default function WorkOrderListPage() {
           </tbody>
         </table>
       </div>
+
+      {data?.meta && <Pagination meta={data.meta} onPageChange={setPage} />}
     </div>
   );
 }

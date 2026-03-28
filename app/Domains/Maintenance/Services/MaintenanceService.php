@@ -52,6 +52,7 @@ final class MaintenanceService implements ServiceContract
     {
         return MaintenanceWorkOrder::query()
             ->when($params['with_archived'] ?? false, fn ($q) => $q->withTrashed())
+            ->when($params['search'] ?? null, fn ($q, $v) => $q->where(fn ($q2) => $q2->where('title', 'ilike', "%{$v}%")->orWhere('mwo_reference', 'ilike', "%{$v}%")))
             ->when($params['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($params['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
             ->when($params['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))

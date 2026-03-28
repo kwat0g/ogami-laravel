@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, FileText } from 'lucide-react'
 import { useQuotations } from '@/hooks/useSales'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -15,9 +17,14 @@ function formatCentavos(c: number) {
 }
 
 export default function QuotationListPage() {
-  const [filters, setFilters] = useState<Record<string, unknown>>({ per_page: 20 })
-  const { data, isLoading } = useQuotations(filters)
+  const [filters, setFilters] = useState<Record<string, unknown>>({ per_page: 20, page: 1 })
+  const [search, setSearch] = useState('')
+  const { data, isLoading } = useQuotations({ ...filters, ...(search ? {} : {}) })
   const quotations = data?.data ?? []
+
+  const handleSearch = useCallback((val: string) => {
+    setFilters(p => ({ ...p, search: val || undefined, page: 1 }))
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -32,10 +39,19 @@ export default function QuotationListPage() {
       />
 
       <Card className="p-4">
-        <select className="input-sm" value={(filters.status as string) ?? ''} onChange={e => setFilters(p => ({ ...p, status: e.target.value || undefined }))}>
-          <option value="">All Statuses</option>
-          {STATUS_OPTIONS.filter(Boolean).map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-        </select>
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            onSearch={handleSearch}
+            placeholder="Search quotations..."
+            className="w-64"
+          />
+          <select className="input-sm" value={(filters.status as string) ?? ''} onChange={e => setFilters(p => ({ ...p, status: e.target.value || undefined, page: 1 }))}>
+            <option value="">All Statuses</option>
+            {STATUS_OPTIONS.filter(Boolean).map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+          </select>
+        </div>
       </Card>
 
       {isLoading ? <SkeletonLoader rows={8} /> : quotations.length === 0 ? (

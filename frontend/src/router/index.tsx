@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, Outlet, RouterProvider } from 'react-rou
 import { lazy, Suspense } from 'react'
 import AppLayout from '@/components/layout/AppLayout'
 import AuthLayout from '@/components/layout/AuthLayout'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { getLandingPath } from '@/lib/roleLanding'
 import { useAuthStore } from '@/stores/authStore'
@@ -328,7 +329,9 @@ const ClientOrdersReviewPage    = lazy(() => import('@/pages/sales/ClientOrdersR
 const ClientOrderReviewDetailPage = lazy(() => import('@/pages/sales/ClientOrderDetailPage'))
 
 const withSuspense = (node: React.ReactNode) => (
-  <Suspense fallback={<SkeletonLoader rows={6} />}>{node}</Suspense>
+  <ErrorBoundary>
+    <Suspense fallback={<SkeletonLoader rows={6} />}>{node}</Suspense>
+  </ErrorBoundary>
 )
 
 const router = createBrowserRouter([
@@ -560,7 +563,7 @@ const router = createBrowserRouter([
       { path: '/delivery/routes', element: withSuspense(guard('delivery.routes.view', <DeliveryRoutesPage />)) },
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────
-      { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve', <VpApprovalsDashboardPage />)) },
+      { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve|procurement.purchase-request.view|inventory.mrq.vp_approve|payroll.vp_approve|leaves.vp_note', <VpApprovalsDashboardPage />)) },
       { path: '/approvals/loans',   element: <Navigate to="/approvals/pending" replace /> },
       { path: '/approvals/loans/:ulid', element: withSuspense(guard('loans.vp_approve', <LoanDetailPage />)) },
 

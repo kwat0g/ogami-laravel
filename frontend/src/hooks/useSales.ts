@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Quotation, SalesOrder, PriceResolveResult } from '@/types/sales'
 
@@ -7,6 +7,7 @@ import type { Quotation, SalesOrder, PriceResolveResult } from '@/types/sales'
 export function useQuotations(filters: Record<string, unknown> = {}) {
   return useQuery({
     queryKey: ['sales-quotations', filters],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data } = await api.get<{
         data: Quotation[]

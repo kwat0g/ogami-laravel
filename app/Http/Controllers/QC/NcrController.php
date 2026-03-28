@@ -24,7 +24,7 @@ final class NcrController extends Controller
         $this->authorize('viewAny', NonConformanceReport::class);
 
         return NcrResource::collection(
-            $this->service->paginate($request->only(['status', 'severity', 'per_page', 'with_archived']))
+            $this->service->paginate($request->only(['search', 'status', 'severity', 'per_page', 'with_archived']))
         );
     }
 

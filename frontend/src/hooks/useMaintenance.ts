@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { firstErrorMessage } from '@/lib/errorHandler';
@@ -16,6 +16,7 @@ export function useEquipment(params?: Record<string, string | number | boolean>)
   return useQuery<{ data: Equipment[]; meta: unknown }>({
     queryKey: ['equipment', params],
     queryFn: () => api.get('/maintenance/equipment', { params }).then(r => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -59,6 +60,7 @@ export function useWorkOrders(params?: Record<string, string | number | boolean>
   return useQuery<{ data: MaintenanceWorkOrder[]; meta: unknown }>({
     queryKey: ['work-orders', params],
     queryFn: () => api.get('/maintenance/work-orders', { params }).then(r => r.data),
+    placeholderData: keepPreviousData,
   });
 }
 

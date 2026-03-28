@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus, Eye } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import { useBoms } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -10,7 +12,15 @@ import { ExportButton } from '@/components/ui/ExportButton'
 export default function BomListPage(): React.ReactElement {
   const [page, setPage] = useState(1)
   const [withArchived, setWithArchived] = useState(false)
-  const { data, isLoading, isError } = useBoms({ per_page: 20, with_archived: withArchived || undefined })
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+    setPage(1)
+  }, [])
+
+  const { data, isLoading, isError } = useBoms({ per_page: 20, with_archived: withArchived || undefined, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('production.bom.manage')
   const navigate  = useNavigate()
@@ -44,7 +54,14 @@ export default function BomListPage(): React.ReactElement {
         }
       />
 
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap gap-3 mb-5 items-center">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search BOMs..."
+          className="w-64"
+        />
         <label className="flex items-center gap-2 text-sm text-neutral-600 cursor-pointer select-none">
           <input type="checkbox" checked={withArchived} onChange={(e) => setWithArchived(e.target.checked)} className="rounded border-neutral-300" />
           <span>Show Archived</span>
@@ -110,15 +127,7 @@ export default function BomListPage(): React.ReactElement {
               </tbody>
             </table>
           </div>
-          {data && data.meta.last_page > 1 && (
-            <div className="flex items-center justify-between mt-4 text-sm text-neutral-600">
-              <span>Page {data.meta.current_page} of {data.meta.last_page}</span>
-              <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Previous</button>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page >= data.meta.last_page} className="px-3 py-1.5 border border-neutral-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-50">Next</button>
-              </div>
-            </div>
-          )}
+          {data?.meta && <Pagination meta={data.meta} onPageChange={setPage} />}
         </>
       )}
     </div>

@@ -27,7 +27,7 @@ final class DeliveryController extends Controller
         $this->authorize('viewAny', DeliveryReceipt::class);
 
         return DeliveryReceiptResource::collection(
-            $this->service->paginateReceipts($request->only(['direction', 'status', 'with_archived']))
+            $this->service->paginateReceipts($request->only(['search', 'direction', 'status', 'per_page', 'with_archived']))
         );
     }
 
@@ -62,7 +62,7 @@ final class DeliveryController extends Controller
         $this->authorize('viewAny', DeliveryReceipt::class);
 
         return ShipmentResource::collection(
-            $this->service->paginateShipments($request->only(['status', 'with_archived']))
+            $this->service->paginateShipments($request->only(['search', 'status', 'per_page', 'with_archived']))
         );
     }
 

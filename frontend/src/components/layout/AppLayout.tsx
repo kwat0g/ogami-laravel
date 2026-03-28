@@ -191,10 +191,8 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Budget' },
       { label: 'Cost Centers', href: '/budget/cost-centers', permission: 'budget.view' },
       { label: 'Department Budgets', href: '/budget/department-budgets', permission: 'budget.view' },
-      { label: 'Year-End Forecast', href: '/budget/forecast', permission: 'budget.forecast' },
       { divider: true, label: 'Fixed Assets' },
       { label: 'Asset Register', href: '/fixed-assets', permission: 'fixed_assets.view' },
-      { label: 'Dept. Transfers', href: '/fixed-assets/transfers', permission: 'fixed_assets.transfer' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
@@ -258,7 +256,6 @@ const SECTIONS: NavSection[] = [
     departments: ['SALES', 'WH', 'PROD', 'PLANT'],
     children: [
       { divider: true, label: 'CRM' },
-      { label: 'Sales Pipeline', href: '/crm/opportunities', permission: 'crm.opportunities.view' },
       { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
       { divider: true, label: 'Sales' },
       { label: 'Client Orders', href: '/sales/client-orders', permission: 'sales.order_review' },

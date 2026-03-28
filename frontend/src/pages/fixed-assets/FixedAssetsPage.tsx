@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { Plus, Eye, Package, Tags, X } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import { useFixedAssets, useFixedAssetCategories, useDepreciatePeriod, useCreateFixedAssetCategory } from '@/hooks/useFixedAssets'
 import { useFiscalPeriods } from '@/hooks/useAccounting'
 import type { FixedAsset, FixedAssetCategory } from '@/types/fixed_assets'
@@ -115,8 +117,16 @@ export default function FixedAssetsPage(): React.ReactElement {
   const [showDepreciate, setShowDepreciate] = useState(false)
   const [showCategories, setShowCategories] = useState(false)
   const [depPeriod, setDepPeriod] = useState(0)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useFixedAssets({ category_id: categoryFilter })
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+    setPage(1)
+  }, [])
+
+  const { data, isLoading } = useFixedAssets({ category_id: categoryFilter, ...(debouncedSearch ? { search: debouncedSearch } : {}), page, per_page: 20 })
   const { data: categories } = useFixedAssetCategories()
   const { data: periodsData } = useFiscalPeriods('open')
   const depreciate = useDepreciatePeriod()
@@ -190,8 +200,15 @@ export default function FixedAssetsPage(): React.ReactElement {
       )}
 
       {/* Filter */}
-      <div className="flex items-center gap-4">
-        <select value={categoryFilter ?? ''} onChange={(e) => setCategoryFilter(e.target.value ? Number(e.target.value) : undefined)}
+      <div className="flex flex-wrap items-center gap-4">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search assets..."
+          className="w-64"
+        />
+        <select value={categoryFilter ?? ''} onChange={(e) => { setCategoryFilter(e.target.value ? Number(e.target.value) : undefined); setPage(1); }}
           className="border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none">
           <option value="">All categories</option>
           {(categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

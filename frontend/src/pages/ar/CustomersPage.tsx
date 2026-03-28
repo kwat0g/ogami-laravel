@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Plus, Archive, CheckCircle, CreditCard, RefreshCw } from 'lucide-react'
+import SearchInput from '@/components/ui/SearchInput'
 import {
   useCustomers,
   useCreateCustomer,
@@ -362,8 +363,14 @@ export default function CustomersPage() {
   const canManage = useAuthStore(s => s.hasPermission('customers.manage'))
   const canArchive = useAuthStore(s => s.hasPermission('customers.archive'))
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [modalCustomer, setModalCustomer] = useState<Customer | null | undefined>(undefined)
-  const { data, isLoading, refetch } = useCustomers({ search, per_page: 50 })
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val)
+  }, [])
+
+  const { data, isLoading, refetch } = useCustomers({ search: debouncedSearch || undefined, per_page: 50 })
 
   const customers = data?.data ?? []
 
@@ -423,12 +430,12 @@ export default function CustomersPage() {
       </div>
 
       {/* Search */}
-      <input
-        type="search"
-        placeholder="Search by name or TIN…"
+      <SearchInput
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-sm border border-neutral-300 rounded px-3 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400"
+        onChange={setSearch}
+        onSearch={handleSearch}
+        placeholder="Search by name or TIN..."
+        className="max-w-sm"
       />
 
       {/* Table */}

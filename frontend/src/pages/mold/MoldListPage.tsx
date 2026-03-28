@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Settings } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import SearchInput from '@/components/ui/SearchInput';
+import Pagination from '@/components/ui/Pagination';
 import { useMolds } from '@/hooks/useMold';
 import { useAuthStore } from '@/stores/authStore';
 import type { MoldStatus } from '@/types/mold';
@@ -15,8 +17,23 @@ const STATUS_COLORS: Record<MoldStatus, string> = {
 export default function MoldListPage() {
   const [status, setStatus] = useState('');
   const [withArchived, setWithArchived] = useState(false);
-  const { data, isLoading } = useMolds({ ...(status ? { status } : {}), ...(withArchived ? { with_archived: true } : {}) });
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useMolds({
+    ...(status ? { status } : {}),
+    ...(withArchived ? { with_archived: true } : {}),
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    page,
+    per_page: 20,
+  });
   const canManage = useAuthStore(s => s.hasPermission('mold.manage'));
+
+  const handleSearch = useCallback((val: string) => {
+    setDebouncedSearch(val);
+    setPage(1);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -34,8 +51,15 @@ export default function MoldListPage() {
         }
       />
 
-      <div className="flex gap-2">
-        <select value={status} onChange={e => setStatus(e.target.value)} className="rounded border border-neutral-300 px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400">
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onSearch={handleSearch}
+          placeholder="Search molds..."
+          className="w-64"
+        />
+        <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} className="rounded border border-neutral-300 px-2 py-2 text-sm focus:ring-1 focus:ring-neutral-400">
           <option value="">All Statuses</option>
           <option value="active">Active</option>
           <option value="under_maintenance">Under Maintenance</option>
@@ -109,6 +133,8 @@ export default function MoldListPage() {
           </tbody>
         </table>
       </div>
+
+      {data?.meta && <Pagination meta={data.meta} onPageChange={setPage} />}
     </div>
   );
 }
