@@ -211,6 +211,11 @@ export const PERMISSIONS = {
   vendor_portal: perms('vendor_portal', [
     'view_orders', 'update_fulfillment', 'manage_items', 'view_receipts',
   ]),
+
+  // ── Client Portal ──────────────────────────────────────────────────────
+  client_portal: perms('client_portal', [
+    'view_dashboard', 'view_shop', 'view_orders',
+  ]),
   // ── AP Extras ──────────────────────────────────────────────────────────
   ap: {
     payment_batches: perms('ap.payment_batches', ['view', 'create', 'approve']),

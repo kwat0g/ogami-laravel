@@ -157,6 +157,10 @@ class RolePermissionSeeder extends Seeder
         'vendor_portal.update_fulfillment',
         'vendor_portal.manage_items',
         'vendor_portal.view_receipts',
+        // Client Portal
+        'client_portal.view_dashboard',
+        'client_portal.view_shop',
+        'client_portal.view_orders',
         // CRM
         'crm.tickets.view',
         'crm.tickets.create',
@@ -850,6 +854,9 @@ class RolePermissionSeeder extends Seeder
 
         // ── Client Portal — external client/customer user access ─────────────
         $client->syncPermissions([
+            'client_portal.view_dashboard',
+            'client_portal.view_shop',
+            'client_portal.view_orders',
             'crm.tickets.view',
             'crm.tickets.create',
             'crm.tickets.reply',
