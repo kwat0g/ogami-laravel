@@ -101,13 +101,12 @@ export default function TeamOvertimePage() {
     }
   }
 
-  if (isLoading) return <SkeletonLoader rows={10} />
-  if (isError)   return <div className="text-neutral-600 text-sm mt-4">Failed to load overtime requests.</div>
-
+  // Derive data (safe even when loading/error - defaults to empty arrays)
   const rows = data?.data ?? []
   const pendingRows = rows.filter((r: { status: string }) => r.status === 'pending')
   const allPendingSelected = pendingRows.length > 0 && pendingRows.every((r: { id: number }) => selectedIds.has(r.id))
 
+  // All hooks must be called before any early return (Rules of Hooks)
   const toggleSelect = useCallback((id: number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -152,6 +151,10 @@ export default function TeamOvertimePage() {
       },
     )
   }, [selectedIds, batchRejectRemarks, batchRejectOt])
+
+  // Early returns AFTER all hooks (Rules of Hooks compliant)
+  if (isLoading) return <SkeletonLoader rows={10} />
+  if (isError)   return <div className="text-neutral-600 text-sm mt-4">Failed to load overtime requests.</div>
 
   // Format minutes to hours and minutes
   const formatDuration = (mins: number) => {
