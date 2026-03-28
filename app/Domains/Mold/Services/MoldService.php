@@ -7,12 +7,16 @@ namespace App\Domains\Mold\Services;
 use App\Domains\Maintenance\Services\MaintenanceService;
 use App\Domains\Mold\Models\MoldMaster;
 use App\Domains\Mold\Models\MoldShotLog;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 
 final class MoldService implements ServiceContract
 {
+    use HasArchiveOperations;
     public function __construct(private readonly MaintenanceService $maintenanceService) {}
 
     /** @param array<string,mixed> $params */
@@ -38,6 +42,34 @@ final class MoldService implements ServiceContract
         $mold->update($data);
 
         return $mold;
+    }
+
+    // ── Archive / Restore / Force Delete ────────────────────────────────────
+
+    public function archive(MoldMaster $mold, User $user): void
+    {
+        $this->archiveRecord($mold, $user);
+    }
+
+    public function restoreMold(int $id, User $user): MoldMaster
+    {
+        /** @var MoldMaster */
+        return $this->restoreRecord(MoldMaster::class, $id, $user);
+    }
+
+    public function forceDelete(int $id, User $user): void
+    {
+        $this->forceDeleteRecord(MoldMaster::class, $id, $user);
+    }
+
+    public function listArchived(int $perPage = 20, ?string $search = null): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        return $this->listArchivedRecords(MoldMaster::class, $perPage, $search, ['name', 'mold_code']);
+    }
+
+    protected function dependentRelationships(Model $model): array
+    {
+        return ['shotLogs' => 'Shot Logs'];
     }
 
     /** @param array<string,mixed> $data */
