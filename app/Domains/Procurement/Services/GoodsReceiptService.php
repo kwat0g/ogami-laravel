@@ -19,7 +19,6 @@ final class GoodsReceiptService implements ServiceContract
 {
     public function __construct(
         private readonly ThreeWayMatchService $threeWayMatchService,
-        private readonly \App\Domains\AP\Services\InvoiceAutoDraftService $invoiceAutoDraftService,
     ) {}
 
     // ── Store (draft) ────────────────────────────────────────────────────────
@@ -167,16 +166,10 @@ final class GoodsReceiptService implements ServiceContract
 
             $this->threeWayMatchService->runMatch($gr->refresh());
 
-            // Auto-draft AP invoice from GR + PO data (creates as 'draft' status)
-            try {
-                $this->invoiceAutoDraftService->createFromGoodsReceipt($gr->refresh());
-            } catch (\Throwable $e) {
-                // Don't fail the GR confirmation if auto-draft fails — log and continue
-                \Illuminate\Support\Facades\Log::warning('[GR Confirm] AP invoice auto-draft failed', [
-                    'gr_id' => $gr->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            // NOTE: AP invoice auto-drafting is handled by the
+            // CreateApInvoiceOnThreeWayMatch event listener triggered from
+            // ThreeWayMatchService. Do NOT call invoiceAutoDraftService here
+            // to avoid creating duplicate invoices.
 
             return $gr->refresh();
         });
@@ -189,10 +182,10 @@ final class GoodsReceiptService implements ServiceContract
      */
     public function reject(GoodsReceipt $gr, User $actor, string $reason): GoodsReceipt
     {
-        if ($gr->status !== 'draft') {
+        if (! in_array($gr->status, ['draft', 'pending_qc'], true)) {
             throw new DomainException(
-                message: "Only draft GRs can be rejected. Current status: '{$gr->status}'.",
-                errorCode: 'GR_NOT_DRAFT',
+                message: "Only draft or pending_qc GRs can be rejected. Current status: '{$gr->status}'.",
+                errorCode: 'GR_NOT_REJECTABLE',
                 httpStatus: 422,
             );
         }
