@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useAttendanceToday, useTimeIn, useTimeOut, useGeofenceSettings } from '@/hooks/useAttendance'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { firstErrorMessage } from '@/lib/errorHandler'
 
 function formatTime12hr(time: string | null | undefined): string {
   if (!time) return '\u2014'
@@ -90,10 +91,7 @@ export default function TimeClockWidget() {
       })
       toast.success('Timed in successfully!')
     } catch (err) {
-      const error = err as { response?: { data?: { error?: { code?: string; message?: string } } } }
-      const code = error.response?.data?.error?.code ?? ''
-      const message = error.response?.data?.error?.message
-      toast.error(ERROR_MESSAGES[code] || message || 'Failed to time in.')
+      toast.error(firstErrorMessage(err, 'Failed to time in.'))
     }
   }
 
@@ -111,10 +109,7 @@ export default function TimeClockWidget() {
       })
       toast.success('Timed out successfully!')
     } catch (err) {
-      const error = err as { response?: { data?: { error?: { code?: string; message?: string } } } }
-      const code = error.response?.data?.error?.code ?? ''
-      const message = error.response?.data?.error?.message
-      toast.error(ERROR_MESSAGES[code] || message || 'Failed to time out.')
+      toast.error(firstErrorMessage(err, 'Failed to time out.'))
     }
   }
 

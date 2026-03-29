@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Clock, MapPin, AlertTriangle, CheckCircle2, XCircle, Loader2, RefreshCw, Briefcase, Calendar, Coffee, Timer } from 'lucide-react'
 import { toast } from 'sonner'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useAttendanceToday, useTimeIn, useTimeOut, useAttendanceLogs } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
@@ -118,14 +119,7 @@ export default function TimeInOutPage() {
       })
       toast.success('Timed in successfully!')
     } catch (err) {
-      const error = err as { response?: { data?: { error?: { code?: string; message?: string } } } }
-      const code = error.response?.data?.error?.code
-      const message = error.response?.data?.error?.message
-      if (code === 'OUTSIDE_GEOFENCE') {
-        toast.error(message || 'You are outside the geofence. Please provide a reason.')
-      } else {
-        toast.error(message || 'Failed to time in.')
-      }
+      toast.error(firstErrorMessage(err, 'Failed to time in.'))
     }
   }
 
@@ -143,8 +137,7 @@ export default function TimeInOutPage() {
       })
       toast.success('Timed out successfully!')
     } catch (err) {
-      const error = err as { response?: { data?: { error?: { message?: string } } } }
-      toast.error(error.response?.data?.error?.message || 'Failed to time out.')
+      toast.error(firstErrorMessage(err, 'Failed to time out.'))
     }
   }
 
