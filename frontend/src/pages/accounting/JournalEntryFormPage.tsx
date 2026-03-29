@@ -379,7 +379,7 @@ export default function JournalEntryFormPage() {
         </div>
 
         {/* Lines */}
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden mb-4">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden mb-4">
           <div className="px-4 py-3 bg-neutral-50 border-b border-neutral-200">
             <h2 className="text-sm font-semibold text-neutral-700">Journal Lines</h2>
           </div>

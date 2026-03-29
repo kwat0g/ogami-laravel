@@ -49,7 +49,7 @@ export default function QcDefectRatePage(): React.ReactElement {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Monthly Trend */}
-        <div className="lg:col-span-2 bg-white border border-neutral-200 rounded-lg overflow-hidden">
+        <div className="lg:col-span-2 bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-neutral-200 bg-neutral-50">
             <h2 className="text-sm font-semibold text-neutral-700">Monthly Trend (Last 12 Months)</h2>
           </div>
@@ -84,7 +84,7 @@ export default function QcDefectRatePage(): React.ReactElement {
         </div>
 
         {/* Top Defect Categories */}
-        <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-neutral-200 bg-neutral-50">
             <h2 className="text-sm font-semibold text-neutral-700">Top Defect Categories</h2>
           </div>

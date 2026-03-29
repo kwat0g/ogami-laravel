@@ -112,7 +112,7 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
       )}
 
       {/* Summary Card */}
-      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100">
           <h3 className="text-sm font-semibold text-neutral-800">Payroll Summary</h3>
         </div>
@@ -144,7 +144,7 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
 
       {/* Approval Trail */}
       {approvals && approvals.length > 0 && (
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-neutral-100">
             <h3 className="text-sm font-semibold text-neutral-800">Approval History</h3>
           </div>
@@ -172,7 +172,7 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
 
       {/* Top 5 Employees Preview */}
       {breakdown?.data && breakdown.data.length > 0 && (
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-neutral-100">
             <h3 className="text-sm font-semibold text-neutral-800">
               Employee Preview (Top {Math.min(5, breakdown.meta?.total ?? 0)} of{' '}

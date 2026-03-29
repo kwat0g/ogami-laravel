@@ -376,7 +376,7 @@ export default function SystemSettingsPage() {
 
         {/* Settings Form */}
         <div className="lg:col-span-3">
-          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-neutral-100 rounded">

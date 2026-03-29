@@ -262,7 +262,7 @@ export default function PayrollRunAcctgReviewPage() {
 
       {/* GL Preview */}
       {gl && (
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-neutral-100">
             <h3 className="text-sm font-semibold text-neutral-800">Journal Entry Preview</h3>
             <p className="text-xs text-neutral-500 mt-0.5">
@@ -330,7 +330,7 @@ export default function PayrollRunAcctgReviewPage() {
       )}
 
       {/* Employee Breakdown */}
-      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100">
           <h3 className="text-sm font-semibold text-neutral-800">Employee Payroll Breakdown</h3>
           <p className="text-xs text-neutral-500 mt-0.5">

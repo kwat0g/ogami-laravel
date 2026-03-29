@@ -779,7 +779,7 @@ export default function LoanDetailPage() {
 
       {/* Amortization schedule */}
       <h2 className="text-lg font-semibold text-neutral-900 mb-3">Amortization Schedule</h2>
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         {schedLoading ? <SkeletonLoader rows={6} /> : (
           <table className="min-w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">

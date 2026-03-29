@@ -113,7 +113,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
           {currentData.length === 0 ? (
             <ArchiveEmptyState isArchiveView={isArchiveView} recordLabel="production orders" />
           ) : (
-          <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>

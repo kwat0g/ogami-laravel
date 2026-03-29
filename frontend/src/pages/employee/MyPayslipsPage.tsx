@@ -219,7 +219,7 @@ export default function MyPayslipsPage() {
       <YtdCard year={year} />
 
       {/* Payslip list */}
-      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100">
           <h2 className="text-sm font-semibold text-neutral-700">
             Pay History — {year}

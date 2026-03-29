@@ -86,7 +86,7 @@ export default function ProductionCostPage(): React.ReactElement {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         {isLoading ? (
           <p className="p-6 text-sm text-neutral-500">Loading…</p>
         ) : rows.length === 0 ? (
