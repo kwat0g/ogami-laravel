@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateBom } from '@/hooks/useProduction'
 import { useItems } from '@/hooks/useInventory'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -117,7 +118,7 @@ export default function CreateBomPage(): React.ReactElement {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Bill of Materials</h1>
+      <PageHeader title="New Bill of Materials" backTo="/production/boms" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header */}

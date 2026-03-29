@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useBoms,
   useDeliverySchedules,
@@ -148,7 +149,7 @@ export default function CreateProductionOrderPage(): React.ReactElement {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Production Order</h1>
+      <PageHeader title="New Production Order" backTo="/production/orders" />
 
       <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
         {/* Product Item */}

@@ -1,4 +1,5 @@
 import { useVendorGoodsReceipts, type VendorPortalGoodsReceipt } from '@/hooks/useVendorPortal'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function VendorGoodsReceiptsPage(): React.ReactElement {
   const { data, isLoading } = useVendorGoodsReceipts()
@@ -8,11 +9,11 @@ export default function VendorGoodsReceiptsPage(): React.ReactElement {
   const receipts: VendorPortalGoodsReceipt[] = data?.data ?? []
 
   return (
-    <div>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-neutral-900">Goods Receipts</h1>
-        <p className="text-sm text-neutral-500">View delivery receipts for your purchase orders.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Goods Receipts"
+        subtitle="View delivery receipts for your purchase orders"
+      />
 
       {receipts.length === 0 ? (
         <div className="bg-white border border-neutral-200 rounded-lg px-6 py-12 text-center">

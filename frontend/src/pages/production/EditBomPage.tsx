@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Trash2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useBom, useUpdateBom } from '@/hooks/useProduction'
 import { useItems } from '@/hooks/useInventory'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -134,7 +135,7 @@ export default function EditBomPage(): React.ReactElement {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-lg font-semibold text-neutral-900 mb-6">Edit Bill of Materials</h1>
+      <PageHeader title="Edit Bill of Materials" backTo="/production/boms" />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header */}
