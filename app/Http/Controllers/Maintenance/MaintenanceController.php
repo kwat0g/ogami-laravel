@@ -76,6 +76,8 @@ final class MaintenanceController extends Controller
     /** Restore an archived equipment record. */
     public function restoreEquipment(Request $request, int $equipment): EquipmentResource
     {
+        $this->authorize('create', Equipment::class);
+
         $equipmentService = app(\App\Domains\Maintenance\Services\EquipmentService::class);
         $restored = $equipmentService->restore($equipment, $request->user());
 

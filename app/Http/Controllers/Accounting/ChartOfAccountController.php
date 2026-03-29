@@ -105,6 +105,8 @@ final class ChartOfAccountController extends Controller
     /** Restore a soft-deleted account from the archive. */
     public function restore(Request $request, int $id): ChartOfAccountResource
     {
+        $this->authorize('create', ChartOfAccount::class);
+
         $account = $this->service->restoreAccount($id, $request->user());
 
         return new ChartOfAccountResource($account->load('children', 'parent'));

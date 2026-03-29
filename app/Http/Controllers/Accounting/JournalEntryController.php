@@ -121,6 +121,8 @@ final class JournalEntryController extends Controller
      */
     public function templates(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', JournalEntry::class);
+
         $templates = $this->service->getTemplates($request->user()?->id);
 
         return response()->json(['data' => $templates]);
@@ -131,6 +133,8 @@ final class JournalEntryController extends Controller
      */
     public function applyTemplate(Request $request, int $templateId): JsonResponse
     {
+        $this->authorize('create', JournalEntry::class);
+
         $result = $this->service->applyTemplate($templateId);
 
         return response()->json($result);
@@ -141,6 +145,8 @@ final class JournalEntryController extends Controller
      */
     public function storeTemplate(Request $request): JsonResponse
     {
+        $this->authorize('create', JournalEntry::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -167,6 +173,8 @@ final class JournalEntryController extends Controller
      */
     public function deleteTemplate(Request $request, int $templateId): JsonResponse
     {
+        $this->authorize('create', JournalEntry::class);
+
         $template = JournalEntryTemplate::findOrFail($templateId);
 
         $this->service->deleteTemplate($template, $request->user()->id);

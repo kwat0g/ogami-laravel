@@ -22,6 +22,17 @@ final class PayrollAdjustmentController extends Controller
      */
     public function index(Request $request, PayrollRun $payrollRun): JsonResponse
     {
+        abort_unless(
+            $request->user()->hasAnyPermission([
+                'payroll.initiate',
+                'payroll.compute',
+                'payroll.hr_approve',
+                'payroll.approve',
+            ]),
+            403,
+            'You do not have permission to view payroll adjustments.',
+        );
+
         $adjustments = $payrollRun->adjustments()
             ->with('employee:id,first_name,last_name,employee_code')
             ->orderBy('id', 'desc')
@@ -37,6 +48,17 @@ final class PayrollAdjustmentController extends Controller
      */
     public function store(StorePayrollAdjustmentRequest $request, PayrollRun $payrollRun): JsonResponse
     {
+        abort_unless(
+            $request->user()->hasAnyPermission([
+                'payroll.initiate',
+                'payroll.compute',
+                'payroll.hr_approve',
+                'payroll.approve',
+            ]),
+            403,
+            'You do not have permission to manage payroll adjustments.',
+        );
+
         // Can only add adjustments to a draft or locked run
         abort_if(
             in_array($payrollRun->status, ['processing', 'completed', 'cancelled'], true),

@@ -91,6 +91,8 @@ final class CustomerController extends Controller
     /** Restore a soft-deleted customer from the archive. */
     public function restore(Request $request, int $id): CustomerResource
     {
+        $this->authorize('create', Customer::class);
+
         $customer = $this->service->restore($id, $request->user());
 
         return new CustomerResource($customer);
