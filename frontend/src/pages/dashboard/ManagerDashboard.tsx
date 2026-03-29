@@ -262,7 +262,7 @@ export default function ManagerDashboard() {
           { label: 'Leave Requests', href: '/team/leave', icon: Calendar },
           { label: 'Overtime', href: '/team/overtime', icon: TrendingUp },
           { label: 'Loan Requests', href: '/team/loans', icon: FileCheck },
-          { label: 'Team Performance', href: '/team/employees', icon: Briefcase },
+          { label: 'Team Performance', href: '/team/employees?tab=performance', icon: Briefcase },
         ]} />
       </div>
     </div>
