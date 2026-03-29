@@ -26,6 +26,12 @@ class AccountMappingSeeder extends Seeder
             ['module' => 'payroll', 'event' => 'PAYROLL_POST', 'sub_key' => 'wht', 'side' => 'credit', 'account_code' => '2103', 'description' => 'Withholding Tax Payable'],
             ['module' => 'payroll', 'event' => 'PAYROLL_POST', 'sub_key' => 'net_pay', 'side' => 'credit', 'account_code' => '2104', 'description' => 'Wages Payable (net pay)'],
 
+            // ── Procurement (GR) ─────────────────────────────────────────────
+            ['module' => 'procurement', 'event' => 'GR_POST', 'sub_key' => null, 'side' => 'debit', 'account_code' => '1300', 'description' => 'Raw Materials Inventory'],
+            ['module' => 'procurement', 'event' => 'GR_POST', 'sub_key' => null, 'side' => 'credit', 'account_code' => '2001', 'description' => 'GR/IR Clearing (AP accrual)'],
+            ['module' => 'procurement', 'event' => 'GR_REVERSAL', 'sub_key' => null, 'side' => 'debit', 'account_code' => '2001', 'description' => 'AP (decrease on return)'],
+            ['module' => 'procurement', 'event' => 'GR_REVERSAL', 'sub_key' => null, 'side' => 'credit', 'account_code' => '1300', 'description' => 'Inventory (decrease on return)'],
+
             // ── AP ──────────────────────────────────────────────────────────
             ['module' => 'ap', 'event' => 'INVOICE_POST', 'sub_key' => null, 'side' => 'debit', 'account_code' => '6001', 'description' => 'General Expense'],
             ['module' => 'ap', 'event' => 'INVOICE_POST', 'sub_key' => null, 'side' => 'credit', 'account_code' => '2001', 'description' => 'Accounts Payable'],

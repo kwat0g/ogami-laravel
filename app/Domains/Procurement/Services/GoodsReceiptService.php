@@ -266,6 +266,115 @@ final class GoodsReceiptService implements ServiceContract
         return $gr->refresh();
     }
 
+    // ── Return to Supplier (F-016) ──────────────────────────────────────────
+
+    /**
+     * Reverse a confirmed GR — return goods to supplier.
+     *
+     * Creates a reversal record, issues stock OUT via StockService,
+     * updates PO received quantities, and posts a reversal JE.
+     *
+     * @param  array{reason: string, items?: list<array{gr_item_id: int, quantity_returned: float}>}  $data
+     *
+     * @throws DomainException
+     */
+    public function returnToSupplier(GoodsReceipt $gr, array $data, User $actor): GoodsReceipt
+    {
+        if ($gr->status !== 'confirmed') {
+            throw new DomainException(
+                message: "Only confirmed GRs can be returned to supplier (current: {$gr->status}).",
+                errorCode: 'GR_NOT_CONFIRMED',
+                httpStatus: 422,
+            );
+        }
+
+        if ($gr->returned_at !== null) {
+            throw new DomainException(
+                message: 'This Goods Receipt has already been returned.',
+                errorCode: 'GR_ALREADY_RETURNED',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($gr, $data, $actor): GoodsReceipt {
+            $gr->load(['items.poItem', 'purchaseOrder']);
+
+            // Determine which items to return (all if not specified)
+            $itemsToReturn = $data['items'] ?? null;
+
+            // Resolve stock location (same logic as UpdateStockOnThreeWayMatch)
+            $locationId = DB::table('warehouse_locations')
+                ->whereNull('deleted_at')
+                ->where('is_active', true)
+                ->orderByRaw("CASE WHEN LOWER(name) LIKE '%receiv%' OR LOWER(code) LIKE '%recv%' THEN 0 ELSE 1 END")
+                ->value('id');
+
+            $stockService = app(\App\Domains\Inventory\Services\StockService::class);
+
+            foreach ($gr->items as $grItem) {
+                // If specific items requested, check if this one is included
+                $qtyToReturn = null;
+                if ($itemsToReturn !== null) {
+                    $match = collect($itemsToReturn)->firstWhere('gr_item_id', $grItem->id);
+                    if ($match === null) {
+                        continue;
+                    }
+                    $qtyToReturn = (float) $match['quantity_returned'];
+                } else {
+                    $qtyToReturn = (float) $grItem->quantity_received;
+                }
+
+                if ($qtyToReturn <= 0) {
+                    continue;
+                }
+
+                // Issue stock OUT (return to supplier)
+                if ($grItem->item_master_id && $locationId) {
+                    try {
+                        $stockService->issue(
+                            itemId: $grItem->item_master_id,
+                            locationId: $locationId,
+                            quantity: $qtyToReturn,
+                            referenceType: 'goods_receipt_return',
+                            referenceId: $gr->id,
+                            actor: $actor,
+                            remarks: "Return to supplier — GR {$gr->gr_reference}: {$data['reason']}",
+                        );
+                    } catch (\Throwable $e) {
+                        throw new DomainException(
+                            message: "Cannot return item: {$e->getMessage()}",
+                            errorCode: 'GR_RETURN_STOCK_ERROR',
+                            httpStatus: 422,
+                        );
+                    }
+                }
+
+                // Reverse the PO item received quantity
+                $poItem = $grItem->poItem;
+                if ($poItem !== null) {
+                    $newReceived = max(0, (float) $poItem->quantity_received - $qtyToReturn);
+                    $poItem->update(['quantity_received' => $newReceived]);
+                }
+            }
+
+            // Update GR status
+            $gr->update([
+                'status' => 'returned',
+                'returned_at' => now(),
+                'returned_by_id' => $actor->id,
+                'return_reason' => $data['reason'],
+            ]);
+
+            // Re-open PO if items are now pending again
+            $po = $gr->purchaseOrder;
+            if ($po && $po->status === 'fully_received') {
+                $po->update(['status' => 'partially_received']);
+            }
+
+            return $gr->refresh();
+        });
+    }
+
     // ── Private ──────────────────────────────────────────────────────────────
 
     /**
