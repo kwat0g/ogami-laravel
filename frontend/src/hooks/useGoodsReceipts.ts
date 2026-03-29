@@ -148,6 +148,24 @@ export function useSubmitForQc() {
   })
 }
 
+// ── Resubmit for QC (qc_failed -> pending_qc) ───────────────────────────────
+
+export function useResubmitForQc() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (ulid: string) => {
+      const res = await api.post<{ data: GoodsReceipt }>(
+        `/procurement/goods-receipts/${ulid}/resubmit-for-qc`,
+      )
+      return res.data.data
+    },
+    onSuccess: (gr) => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      qc.setQueryData(['goods-receipts', gr.ulid], gr)
+    },
+  })
+}
+
 // ── Reject (draft, pending_qc, or qc_failed) ────────────────────────────────
 
 export function useRejectGoodsReceipt() {

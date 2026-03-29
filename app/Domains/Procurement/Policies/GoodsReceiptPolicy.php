@@ -71,6 +71,12 @@ final class GoodsReceiptPolicy
             && $gr->status === 'qc_failed';
     }
 
+    public function resubmitForQc(User $user, GoodsReceipt $gr): bool
+    {
+        return $user->hasPermissionTo('procurement.goods-receipt.confirm')
+            && $gr->status === 'qc_failed';
+    }
+
     public function returnToSupplier(User $user, GoodsReceipt $gr): bool
     {
         return $user->hasPermissionTo('procurement.goods-receipt.confirm')

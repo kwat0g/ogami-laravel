@@ -633,7 +633,11 @@ it('GR-004 confirming GR with rejected items and no remarks throws error', funct
         $this->purchOfficer,
     );
 
-    expect(fn () => $this->grService->confirm($gr, $this->purchOfficer))
+    // QC flow: submit for QC then mark passed before attempting confirm
+    $gr = $this->grService->submitForQc($gr->load('items'), $this->purchOfficer);
+    $gr = $this->grService->markQcPassed($gr, $this->purchOfficer);
+
+    expect(fn () => $this->grService->confirm($gr->load('items'), $this->purchOfficer))
         ->toThrow(DomainException::class, 'remarks explanation');
 });
 
@@ -648,7 +652,7 @@ it('GR-005 confirming GR triggers 3-way match and increments stock balance', fun
         [['po_item_id' => $poItem->id, 'quantity_received' => 50, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
     );
-    $gr = $this->grService->confirm($gr, $this->purchOfficer);
+    $gr = \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService);
 
     expect($gr->status)->toBe('confirmed');
     expect($gr->three_way_match_passed)->toBeTrue();
@@ -674,7 +678,7 @@ it('GR-006 partial GR confirmation sets PO to partially_received', function () {
         [['po_item_id' => $poItem->id, 'quantity_received' => 20, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
     );
-    $this->grService->confirm($gr, $this->purchOfficer);
+    \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService);
 
     $po->refresh();
     expect($po->status)->toBe('partially_received');
@@ -694,7 +698,7 @@ it('GR-007 second GR completing remaining qty sets PO to fully_received', functi
         [['po_item_id' => $poItem->id, 'quantity_received' => 20, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
     );
-    $this->grService->confirm($gr1, $this->purchOfficer);
+    \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr1, $this->purchOfficer, $this->grService);
 
     // GR 2: remaining 30
     $gr2 = $this->grService->store(
@@ -702,7 +706,7 @@ it('GR-007 second GR completing remaining qty sets PO to fully_received', functi
         [['po_item_id' => $poItem->id, 'quantity_received' => 30, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
     );
-    $this->grService->confirm($gr2, $this->purchOfficer);
+    \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr2, $this->purchOfficer, $this->grService);
 
     $po->refresh();
     expect($po->status)->toBe('fully_received');
@@ -779,7 +783,7 @@ it('TWM-001 three-way match fails when linked PR is not approved', function () {
 
     $gr = rawGrWithItem($po, $poItem, 10);
 
-    expect(fn () => $this->grService->confirm($gr, $this->purchOfficer))
+    expect(fn () => \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService))
         ->toThrow(DomainException::class, 'not in an approved status');
 });
 
@@ -818,7 +822,7 @@ it('TWM-002 three-way match fails when PO is not in a receivable status', functi
 
     $gr = rawGrWithItem($po, $poItem, 10);
 
-    expect(fn () => $this->grService->confirm($gr, $this->purchOfficer))
+    expect(fn () => \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService))
         ->toThrow(DomainException::class, 'not in a receivable status');
 });
 
@@ -830,7 +834,7 @@ it('TWM-003 three-way match fails when GR quantity would overflow ordered quanti
     // Create GR with qty=999 bypassing service guard
     $gr = rawGrWithItem($po, $poItem, 999);
 
-    expect(fn () => $this->grService->confirm($gr, $this->purchOfficer))
+    expect(fn () => \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService))
         ->toThrow(DomainException::class, 'would exceed ordered quantity');
 });
 
@@ -848,7 +852,7 @@ it('STOCK-001 stock balance accumulates correctly across multiple GR confirmatio
         [['po_item_id' => $poItem->id, 'quantity_received' => 15, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
     );
-    $this->grService->confirm($gr1, $this->purchOfficer);
+    \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr1, $this->purchOfficer, $this->grService);
 
     $stock = StockBalance::where('item_id', $this->item->id)->firstOrFail();
     expect((float) $stock->quantity_on_hand)->toBe(15.0);
@@ -858,7 +862,7 @@ it('STOCK-001 stock balance accumulates correctly across multiple GR confirmatio
         [['po_item_id' => $poItem->id, 'quantity_received' => 35, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
     );
-    $this->grService->confirm($gr2, $this->purchOfficer);
+    \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr2, $this->purchOfficer, $this->grService);
 
     $stock->refresh();
     expect((float) $stock->quantity_on_hand)->toBe(50.0);
@@ -876,7 +880,7 @@ it('STOCK-002 auto-creates ItemMaster and updates stock when PO item has no item
         [['po_item_id' => $poItem->id, 'quantity_received' => 10, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
     );
-    $this->grService->confirm($gr, $this->purchOfficer);
+    \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService);
 
     expect(ItemMaster::count())->toBe($initialCount + 1);
 
@@ -906,7 +910,7 @@ it('STOCK-003 stock update is skipped gracefully when no active warehouse locati
     );
 
     // Must not throw — listener warns and skips
-    $gr = $this->grService->confirm($gr, $this->purchOfficer);
+    $gr = \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService);
 
     expect($gr->status)->toBe('confirmed');
     expect($gr->three_way_match_passed)->toBeTrue();

@@ -264,6 +264,57 @@ final class GoodsReceiptService implements ServiceContract
         });
     }
 
+    // ── Re-submit for QC (re-inspection after failure) ─────────────────────────
+
+    /**
+     * Re-submit a QC-failed GR for re-inspection.
+     * Transitions qc_failed -> pending_qc, voiding previous inspections.
+     * Used after vendor rework or when re-inspection is requested.
+     */
+    public function resubmitForQc(GoodsReceipt $gr, User $actor): GoodsReceipt
+    {
+        if ($gr->status !== 'qc_failed') {
+            throw new DomainException(
+                message: "GR must be in qc_failed status to resubmit for QC (current: {$gr->status}).",
+                errorCode: 'GR_NOT_QC_FAILED',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
+            // Void existing failed inspections so new ones can be created
+            $gr->inspections()
+                ->where('stage', 'iqc')
+                ->whereIn('status', ['failed', 'passed'])
+                ->each(function ($inspection) {
+                    $inspection->update(['status' => 'voided']);
+                    $inspection->delete(); // soft-delete
+                });
+
+            // Reset item QC statuses
+            $gr->items()->update([
+                'qc_status' => 'pending',
+                'quantity_accepted' => null,
+                'quantity_rejected' => null,
+            ]);
+
+            $gr->update([
+                'status' => 'pending_qc',
+                'qc_result' => null,
+                'qc_completed_at' => null,
+                'qc_completed_by_id' => null,
+                'qc_notes' => ($gr->qc_notes ? $gr->qc_notes . "\n" : '') . "[Re-submitted for QC by {$actor->name} at " . now()->toIso8601String() . ']',
+                'submitted_for_qc_by_id' => $actor->id,
+                'submitted_for_qc_at' => now(),
+            ]);
+
+            // Fire event to auto-create new IQC inspections
+            DB::afterCommit(fn () => GoodsReceiptSubmittedForQc::dispatch($gr->fresh()));
+
+            return $gr->refresh();
+        });
+    }
+
     // ── Accept with Defects (partial acceptance) ─────────────────────────────
 
     /**

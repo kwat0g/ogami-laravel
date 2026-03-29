@@ -199,6 +199,19 @@ final class GoodsReceiptController extends Controller
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'items']));
     }
 
+    /**
+     * Re-submit a QC-failed GR for re-inspection.
+     * Voids previous inspections and creates new IQC inspections.
+     */
+    public function resubmitForQc(GoodsReceipt $goodsReceipt): GoodsReceiptResource
+    {
+        $this->authorize('resubmitForQc', $goodsReceipt);
+
+        $gr = $this->service->resubmitForQc($goodsReceipt->load('items'), auth()->user());
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'items', 'inspections']));
+    }
+
     public function reject(Request $request, GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
         $this->authorize('reject', $goodsReceipt);

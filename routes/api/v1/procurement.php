@@ -234,6 +234,10 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             ->middleware('throttle:api-action')
             ->name('accept-with-defects');
 
+        Route::post('/{goodsReceipt}/resubmit-for-qc', [GoodsReceiptController::class, 'resubmitForQc'])
+            ->middleware('throttle:api-action')
+            ->name('resubmit-for-qc');
+
         Route::post('/{goodsReceipt}/return-to-supplier', [GoodsReceiptController::class, 'returnToSupplier'])
             ->middleware('throttle:api-action')
             ->name('return-to-supplier');

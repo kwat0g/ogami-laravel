@@ -12,6 +12,7 @@ import {
   useUpdateGoodsReceiptItem,
   useAcceptWithDefects,
   useReturnToSupplier,
+  useResubmitForQc,
 } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -132,6 +133,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const canReject = isDraft || isPendingQc || isQcFailed
   const acceptWithDefectsMutation = useAcceptWithDefects()
   const returnToSupplierMutation = useReturnToSupplier()
+  const resubmitForQcMutation = useResubmitForQc()
   const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending || acceptWithDefectsMutation.isPending || returnToSupplierMutation.isPending
 
   function handleSubmitForQc(): void {
@@ -196,6 +198,25 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
             >
               <FlaskConical className="w-4 h-4" />
               {submitForQcMutation.isPending ? 'Submitting…' : 'Submit for QC'}
+            </button>
+          )}
+
+          {/* Resubmit for QC: only when QC failed */}
+          {isQcFailed && (
+            <button
+              type="button"
+              disabled={anyPending}
+              onClick={() => {
+                if (!gr) return
+                resubmitForQcMutation.mutate(gr.ulid, {
+                  onSuccess: () => toast.success('GR resubmitted for QC re-inspection.'),
+                  onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to resubmit for QC.'),
+                })
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-blue-300 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FlaskConical className="w-4 h-4" />
+              {resubmitForQcMutation.isPending ? 'Resubmitting...' : 'Resubmit for QC'}
             </button>
           )}
 

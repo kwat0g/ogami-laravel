@@ -233,6 +233,17 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(\App\Events\QC\InspectionPassed::class, \App\Listeners\Procurement\UpdateGrOnInspectionResult::class);
         Event::listen(\App\Events\QC\InspectionFailed::class, \App\Listeners\Procurement\UpdateGrOnInspectionResult::class);
 
+        // GR-QC notifications: notify QC team on submission, warehouse on failure.
+        // NotifyOnGrQcEvents has named handle methods — must be registered manually.
+        Event::listen(
+            \App\Events\Procurement\GoodsReceiptSubmittedForQc::class,
+            [\App\Listeners\Procurement\NotifyOnGrQcEvents::class, 'handleSubmittedForQc'],
+        );
+        Event::listen(
+            \App\Events\Procurement\GoodsReceiptQcCompleted::class,
+            [\App\Listeners\Procurement\NotifyOnGrQcEvents::class, 'handleQcCompleted'],
+        );
+
         // ── RBAC v2: Dynamic permission resolution via DepartmentModuleService ──
         // This integrates our module-based permission system with Laravel's Gate.
         // We use Gate::after to override Spatie's permission check for department-assigned users.
