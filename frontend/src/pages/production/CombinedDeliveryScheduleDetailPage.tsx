@@ -268,7 +268,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-neutral-900">{schedule.cds_reference}</h1>
+            <h1 className="text-lg font-semibold text-neutral-900">{schedule.cds_reference}</h1>
             <span className={`px-2 py-1 rounded text-xs font-medium capitalize ${STATUS_COLORS[status]}`}>
               {schedule.status_label || status.replace('_', ' ')}
             </span>

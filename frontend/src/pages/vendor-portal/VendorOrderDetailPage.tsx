@@ -426,7 +426,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
       </div>
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">{order.po_reference}</h1>
+          <h1 className="text-lg font-semibold text-neutral-900">{order.po_reference}</h1>
           <div className="flex items-center gap-2 mt-1">
             <span className="px-2 py-0.5 bg-neutral-100 rounded text-neutral-700 text-sm font-medium capitalize">
               {order.status.replace(/_/g, ' ')}
