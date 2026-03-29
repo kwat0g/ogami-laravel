@@ -180,9 +180,10 @@ final class ProductionOrderService implements ServiceContract
         // if BOM prices change later).
         $standardUnitCost = 0;
         $estimatedTotalCost = 0;
+        $bomSnapshot = null;
 
         if (! empty($data['bom_id'])) {
-            $bom = BillOfMaterials::find($data['bom_id']);
+            $bom = BillOfMaterials::with('components.componentItem')->find($data['bom_id']);
             if ($bom !== null) {
                 $standardUnitCost = (int) ($bom->standard_cost_centavos ?? 0);
 
@@ -199,6 +200,24 @@ final class ProductionOrderService implements ServiceContract
 
                 $qtyRequired = (float) ($data['qty_required'] ?? 0);
                 $estimatedTotalCost = (int) round($standardUnitCost * $qtyRequired);
+
+                // PRD-S01: Snapshot BOM components at creation time so that
+                // subsequent BOM changes don't affect this production order.
+                $bomSnapshot = [
+                    'bom_id' => $bom->id,
+                    'bom_version' => $bom->version ?? 1,
+                    'product_item_id' => $bom->product_item_id,
+                    'standard_cost_centavos' => $standardUnitCost,
+                    'snapshotted_at' => now()->toIso8601String(),
+                    'components' => $bom->components->map(fn (BomComponent $c) => [
+                        'component_item_id' => $c->component_item_id,
+                        'item_code' => $c->componentItem?->item_code,
+                        'item_name' => $c->componentItem?->name,
+                        'qty_per_unit' => (float) $c->qty_per_unit,
+                        'unit_of_measure' => $c->unit_of_measure,
+                        'scrap_factor_pct' => (float) $c->scrap_factor_pct,
+                    ])->all(),
+                ];
             }
         }
 
@@ -208,6 +227,7 @@ final class ProductionOrderService implements ServiceContract
             'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,
             'product_item_id' => $data['product_item_id'],
             'bom_id' => $data['bom_id'],
+            'bom_snapshot' => $bomSnapshot,
             'qty_required' => $data['qty_required'],
             'standard_unit_cost_centavos' => $standardUnitCost,
             'estimated_total_cost_centavos' => $estimatedTotalCost,

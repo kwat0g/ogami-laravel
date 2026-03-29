@@ -51,6 +51,7 @@ final class ProductionOrder extends Model implements Auditable
         'client_order_id',
         'product_item_id',
         'bom_id',
+        'bom_snapshot',
         'qty_required',
         'standard_unit_cost_centavos',
         'estimated_total_cost_centavos',
@@ -68,6 +69,7 @@ final class ProductionOrder extends Model implements Auditable
         'qty_rejected' => 'decimal:4',
         'standard_unit_cost_centavos' => 'integer',
         'estimated_total_cost_centavos' => 'integer',
+        'bom_snapshot' => 'array',
         'target_start_date' => 'date',
         'target_end_date' => 'date',
     ];

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\Sales\Services;
 
+use App\Domains\AR\Models\Customer;
 use App\Domains\Sales\Models\Quotation;
 use App\Domains\Sales\Models\SalesOrder;
 use App\Domains\Sales\Models\SalesOrderItem;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
+use App\Shared\Exceptions\CreditLimitExceededException;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Database\Eloquent\Model;
@@ -71,6 +73,9 @@ final class SalesOrderService implements ServiceContract
     /** @param array<string,mixed> $data */
     public function store(array $data, User $actor): SalesOrder
     {
+        // SAL-S12: Credit limit soft-block — warn if customer exceeds credit limit
+        $this->checkCreditLimit($data);
+
         return DB::transaction(function () use ($data, $actor): SalesOrder {
             $order = SalesOrder::create([
                 'order_number' => $data['order_number'] ?? 'SO-' . now()->format('Ymd-His'),
@@ -333,5 +338,62 @@ final class SalesOrderService implements ServiceContract
         $order->update(['status' => 'cancelled']);
 
         return $order->fresh() ?? $order;
+    }
+
+    // ── Private helpers ─────────────────────────────────────────────────────
+
+    /**
+     * SAL-S12: Credit limit soft-block with approval override.
+     *
+     * Checks if the customer's outstanding AR balance + this order total
+     * would exceed their credit limit. If so, throws CreditLimitExceededException
+     * which the controller can catch and return as a warning requiring override.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws CreditLimitExceededException
+     */
+    private function checkCreditLimit(array $data): void
+    {
+        $customerId = $data['customer_id'] ?? null;
+        if ($customerId === null) {
+            return;
+        }
+
+        // Allow explicit override (e.g., manager approved despite credit limit)
+        if (($data['override_credit_limit'] ?? false) === true) {
+            return;
+        }
+
+        $customer = Customer::find($customerId);
+        if ($customer === null || (float) $customer->credit_limit <= 0) {
+            return; // No credit limit configured — no check needed
+        }
+
+        $creditLimitCentavos = (int) round((float) $customer->credit_limit * 100);
+
+        // Calculate outstanding AR balance (unpaid invoices)
+        $outstandingCentavos = (int) DB::table('customer_invoices')
+            ->where('customer_id', $customerId)
+            ->whereIn('status', ['approved', 'sent', 'overdue'])
+            ->selectRaw('COALESCE(SUM(CAST(total_amount * 100 AS BIGINT)), 0) as total')
+            ->value('total');
+
+        // Calculate this order's estimated total
+        $orderTotalCentavos = 0;
+        foreach ($data['items'] ?? [] as $item) {
+            $orderTotalCentavos += (int) round((float) ($item['quantity'] ?? 0) * ($item['unit_price_centavos'] ?? 0));
+        }
+
+        $projectedTotal = $outstandingCentavos + $orderTotalCentavos;
+
+        if ($projectedTotal > $creditLimitCentavos) {
+            throw new CreditLimitExceededException(
+                customerName: $customer->name,
+                currentOutstanding: $outstandingCentavos / 100,
+                creditLimit: (float) $customer->credit_limit,
+                invoiceAmount: $orderTotalCentavos / 100,
+            );
+        }
     }
 }
