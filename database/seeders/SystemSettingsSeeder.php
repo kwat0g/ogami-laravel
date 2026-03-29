@@ -89,6 +89,24 @@ class SystemSettingsSeeder extends Seeder
                 'group' => 'attendance',
                 'editable_by_role' => 'hr_manager',
             ],
+            [
+                'key' => 'attendance.geofence_mode',
+                'label' => 'Geofence Enforcement Mode',
+                'value' => json_encode('strict'),
+                'data_type' => 'string',
+                'group' => 'attendance',
+                'editable_by_role' => 'admin',
+                'description' => 'strict = block clock-in outside geofence | override = allow with reason | disabled = no geofence check',
+            ],
+            [
+                'key' => 'attendance.geofence_enabled',
+                'label' => 'Geofence Enforcement Enabled',
+                'value' => json_encode(true),
+                'data_type' => 'boolean',
+                'group' => 'attendance',
+                'editable_by_role' => 'admin',
+                'description' => 'Master toggle — admin can temporarily disable all geofence checks',
+            ],
 
             // ─── Leave ────────────────────────────────────────────────────────
             [

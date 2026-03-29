@@ -6,9 +6,12 @@ use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\Attendance\Models\EmployeeShiftAssignment;
 use App\Domains\Attendance\Models\ShiftSchedule;
 use App\Domains\HR\Models\Employee;
+use App\Http\Controllers\Attendance\AttendanceCorrectionController;
 use App\Http\Controllers\Attendance\AttendanceImportController;
 use App\Http\Controllers\Attendance\AttendanceLogController;
+use App\Http\Controllers\Attendance\AttendanceTimeController;
 use App\Http\Controllers\Attendance\OvertimeRequestController;
+use App\Http\Controllers\Attendance\WorkLocationController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -264,4 +267,57 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
             'Content-Type' => 'text/csv',
         ]);
     })->name('dtr-export');
+
+    // ── Geofence Settings ─────────────────────────────────────────────────
+    Route::get('geofence-settings', [AttendanceTimeController::class, 'geofenceSettings'])
+        ->name('geofence-settings');
+    Route::post('geofence-toggle', [AttendanceTimeController::class, 'toggleGeofence'])
+        ->middleware(['permission:attendance.work_locations.manage', 'throttle:api-action'])
+        ->name('geofence-toggle');
+    Route::post('geofence-mode', [AttendanceTimeController::class, 'updateGeofenceMode'])
+        ->middleware(['permission:attendance.work_locations.manage', 'throttle:api-action'])
+        ->name('geofence-mode');
+
+    // ── GPS Time Clock (Employee Self-Service) ─────────────────────────────
+    Route::post('time-in', [AttendanceTimeController::class, 'timeIn'])
+        ->middleware('throttle:api-action')
+        ->name('time-in');
+    Route::post('time-out', [AttendanceTimeController::class, 'timeOut'])
+        ->middleware('throttle:api-action')
+        ->name('time-out');
+    Route::get('today', [AttendanceTimeController::class, 'today'])
+        ->name('today');
+    Route::get('my-logs', [AttendanceTimeController::class, 'myLogs'])
+        ->name('my-logs');
+
+    // ── Correction Requests ────────────────────────────────────────────────
+    Route::get('correction-requests', [AttendanceCorrectionController::class, 'index'])
+        ->name('corrections.index');
+    Route::post('correction-requests', [AttendanceCorrectionController::class, 'store'])
+        ->name('corrections.store');
+    Route::get('correction-requests/{ulid}', [AttendanceCorrectionController::class, 'show'])
+        ->name('corrections.show');
+    Route::post('correction-requests/{ulid}/submit', [AttendanceCorrectionController::class, 'submit'])
+        ->middleware('throttle:api-action')
+        ->name('corrections.submit');
+    Route::post('correction-requests/{ulid}/approve', [AttendanceCorrectionController::class, 'approve'])
+        ->middleware(['permission:attendance.corrections.review', 'throttle:api-action'])
+        ->name('corrections.approve');
+    Route::post('correction-requests/{ulid}/reject', [AttendanceCorrectionController::class, 'reject'])
+        ->middleware(['permission:attendance.corrections.review', 'throttle:api-action'])
+        ->name('corrections.reject');
+
+    // ── Work Locations (Admin) ─────────────────────────────────────────────
+    Route::get('work-locations', [WorkLocationController::class, 'index'])
+        ->name('work-locations.index');
+    Route::post('work-locations', [WorkLocationController::class, 'store'])
+        ->middleware('throttle:api-action')
+        ->name('work-locations.store');
+    Route::get('work-locations/{workLocation}', [WorkLocationController::class, 'show'])
+        ->name('work-locations.show');
+    Route::patch('work-locations/{workLocation}', [WorkLocationController::class, 'update'])
+        ->middleware('throttle:api-action')
+        ->name('work-locations.update');
+    Route::delete('work-locations/{workLocation}', [WorkLocationController::class, 'destroy'])
+        ->name('work-locations.destroy');
 });

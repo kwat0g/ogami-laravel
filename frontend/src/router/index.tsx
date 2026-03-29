@@ -132,6 +132,8 @@ const AttendanceListPage = lazyWithRetry(() => import('@/pages/hr/attendance/Att
 const AttendanceImportPage = lazyWithRetry(() => import('@/pages/hr/attendance/AttendanceImportPage'))
 const AttendanceDashboardPage = lazyWithRetry(() => import('@/pages/hr/attendance/AttendanceDashboardPage'))
 const OvertimeListPage = lazyWithRetry(() => import('@/pages/hr/attendance/OvertimeListPage'))
+const TimeInOutPage = lazyWithRetry(() => import('@/pages/employee/TimeInOutPage'))
+const WorkLocationsPage = lazyWithRetry(() => import('@/pages/hr/attendance/WorkLocationsPage'))
 
 // HR — Leave
 const LeaveListPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveListPage'))
@@ -388,6 +390,7 @@ const router = createBrowserRouter([
       { path: '/hr/attendance', element: withSuspense(guard('hr.full_access', <AttendanceListPage />)) },
       { path: '/hr/attendance/import', element: withSuspense(guard('hr.full_access', <AttendanceImportPage />)) },
       { path: '/hr/attendance/dashboard', element: withSuspense(guard('hr.full_access', <AttendanceDashboardPage />)) },
+      { path: '/hr/attendance/work-locations', element: withSuspense(guard('hr.full_access', <WorkLocationsPage />)) },
       { path: '/hr/overtime', element: withSuspense(guard('hr.full_access', <OvertimeListPage />)) },
 
       // HR — Leave
@@ -507,7 +510,7 @@ const router = createBrowserRouter([
       { path: '/me/leaves', element: withSuspense(guard('leaves.view_own', <MyLeavesPage />)) },
       { path: '/me/loans', element: withSuspense(guard('loans.view_own', <MyLoansPage />)) },
       { path: '/me/overtime', element: withSuspense(guard('overtime.view', <MyOTPage />)) },
-      { path: '/me/attendance', element: withSuspense(guard('attendance.view_own', <MyAttendancePage />)) },
+      { path: '/me/attendance', element: withSuspense(guard('attendance.view_own', <TimeInOutPage />)) },
       { path: '/me/profile', element: withSuspense(guard('self.view_profile', <MyProfilePage />)) },
 
       // ── Account actions ────────────────────────────────────────────────────

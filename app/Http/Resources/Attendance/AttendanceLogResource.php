@@ -7,6 +7,7 @@ namespace App\Http\Resources\Attendance;
 use App\Domains\Attendance\Models\AttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Attendance\WorkLocationResource;
 
 /**
  * @mixin AttendanceLog
@@ -46,6 +47,20 @@ final class AttendanceLogResource extends JsonResource
             ]),
             'remarks' => $log->remarks,
             'import_batch_id' => $log->import_batch_id,
+            // Geolocation fields
+            'attendance_status' => $log->attendance_status,
+            'is_flagged' => $log->is_flagged ?? false,
+            'flag_reason' => $log->flag_reason,
+            'time_in_within_geofence' => $log->time_in_within_geofence,
+            'time_in_distance_meters' => $log->time_in_distance_meters ? (float) $log->time_in_distance_meters : null,
+            'time_in_accuracy_meters' => $log->time_in_accuracy_meters ? (float) $log->time_in_accuracy_meters : null,
+            'time_out_within_geofence' => $log->time_out_within_geofence,
+            'time_out_distance_meters' => $log->time_out_distance_meters ? (float) $log->time_out_distance_meters : null,
+            'work_location' => $this->whenLoaded('workLocation', fn () => $log->workLocation
+                ? new WorkLocationResource($log->workLocation)
+                : null),
+            'correction_note' => $log->correction_note,
+            'corrected_at' => $log->corrected_at?->toIso8601String(),
             'created_at' => $log->created_at->toIso8601String(),
             'updated_at' => $log->updated_at->toIso8601String(),
         ];

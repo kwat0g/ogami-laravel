@@ -96,6 +96,11 @@ class RolePermissionSeeder extends Seeder
         // Attendance
         'attendance.view_own',
         'attendance.view_team',
+        'attendance.time_clock',
+        'attendance.corrections.submit',
+        'attendance.corrections.review',
+        'attendance.work_locations.manage',
+        'attendance.work_locations.assign',
         'attendance.import_csv',
         'attendance.view_anomalies',
         'attendance.resolve_anomalies',
@@ -565,6 +570,8 @@ class RolePermissionSeeder extends Seeder
             // Attendance
             'attendance.view_own', 'attendance.view_team', 'attendance.import_csv',
             'attendance.view_anomalies', 'attendance.resolve_anomalies', 'attendance.manage_shifts',
+            'attendance.time_clock', 'attendance.corrections.submit', 'attendance.corrections.review',
+            'attendance.work_locations.manage', 'attendance.work_locations.assign',
             'overtime.view', 'overtime.submit', 'overtime.approve', 'overtime.reject', 'overtime.supervise',
             // Leave
             'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.file_on_behalf',
@@ -840,7 +847,7 @@ class RolePermissionSeeder extends Seeder
             'loans.view_own', 'loans.apply',
             'employees.view_masked_gov_ids',
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
-            'attendance.view_own',
+            'attendance.view_own', 'attendance.time_clock', 'attendance.corrections.submit',
             'overtime.view', 'overtime.submit',
             // Inventory (Staff: view only — MRQ creation is Head/Manager responsibility)
             'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
