@@ -51,15 +51,19 @@ declare -A SERVICE_PORT=( [ogami_postgres]=5432 [ogami_redis]=6379 )
 
 for container in ogami_postgres ogami_redis; do
   port="${SERVICE_PORT[$container]}"
-  # Check if ANY container is already binding this port
-  if docker ps --format '{{.Ports}}' | grep -q ":${port}->"; then
-    running_name=$(docker ps --format '{{.Names}}\t{{.Ports}}' | awk -v p=":${port}->" '$0 ~ p {print $1}')
-    echo -e "${GREEN}✓ port ${port} already served by ${running_name} (skipping ${container})${RESET}"
-  elif docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
-    echo -e "${GREEN}✓ ${container} is running${RESET}"
-  else
+  # Check if ANY process is already binding this port on 127.0.0.1
+  if ss -lnt | grep -q ":${port} "; then
+    if docker ps --format '{{.Ports}}' | grep -q ":${port}->"; then
+      running_name=$(docker ps --format '{{.Names}}\t{{.Ports}}' | awk -v p=":${port}->" '$0 ~ p {print $1}')
+      echo -e "${GREEN}✓ port ${port} already served by Docker container: ${running_name}${RESET}"
+    else
+      echo -e "${GREEN}✓ port ${port} already served by a native process (skipping ${container})${RESET}"
+    fi
+  elif docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
     echo -e "${YELLOW}Starting container: ${container}${RESET}"
-    docker start "$container"
+    docker start "$container" || echo -e "${RED}✗ Failed to start ${container}${RESET}"
+  else
+    echo -e "${YELLOW}⚠ ${container} not found. Run 'docker compose up -d ${container/ogami_/}' to create it.${RESET}"
   fi
 done
 

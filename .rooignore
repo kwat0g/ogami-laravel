@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+public/build/
+.next/
+.nuxt/
+vendor/
+
+# Logs & cache
+*.log
+*.cache
+.cache/
+tmp/
+temp/
+
+node_modules/
+vendor/
+storage/
+bootstrap/cache/
+public/build/
+public/hot
+dist/
+build/
+coverage/
+*.log
+*.lock
+.env*
+
+# Environment & secrets
+.env
+.env.*
+*.key
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+.agents
+.gemini
+.githooks
+.github
+.kilo
+
+
+# Laravel specific
+storage/
+bootstrap/cache/
+*.min.js
+*.map
+*.svg
+*.png
+*.jpg
+*.zip
