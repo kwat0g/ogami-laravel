@@ -22,7 +22,7 @@ final class OfferController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_unless($request->user()->can('recruitment.offers.view'), 403);
+        $this->authorize('viewAny', JobOffer::class);
 
         $result = $this->service->list(
             $request->only(['status', 'search']),
@@ -44,14 +44,14 @@ final class OfferController extends Controller
 
     public function show(Request $request, JobOffer $offer): JobOfferResource
     {
-        abort_unless($request->user()->can('recruitment.offers.view'), 403);
+        $this->authorize('viewAny', JobOffer::class);
 
         return new JobOfferResource($this->service->show($offer));
     }
 
     public function update(Request $request, JobOffer $offer): JobOfferResource
     {
-        abort_unless($request->user()->can('recruitment.offers.create'), 403);
+        $this->authorize('update', $offer);
 
         $data = $request->validate([
             'offered_salary' => ['sometimes', 'integer', 'min:1'],
@@ -65,7 +65,7 @@ final class OfferController extends Controller
 
     public function send(Request $request, JobOffer $offer): JobOfferResource
     {
-        abort_unless($request->user()->can('recruitment.offers.send'), 403);
+        $this->authorize('send', $offer);
 
         return new JobOfferResource($this->service->sendOffer($offer, $request->user()));
     }
@@ -84,7 +84,7 @@ final class OfferController extends Controller
 
     public function withdraw(Request $request, JobOffer $offer): JobOfferResource
     {
-        abort_unless($request->user()->can('recruitment.offers.create'), 403);
+        $this->authorize('update', $offer);
 
         return new JobOfferResource($this->service->withdrawOffer($offer, $request->user()));
     }

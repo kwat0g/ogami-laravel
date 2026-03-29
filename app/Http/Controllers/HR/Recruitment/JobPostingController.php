@@ -23,7 +23,7 @@ final class JobPostingController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_unless($request->user()->can('recruitment.postings.view'), 403);
+        $this->authorize('viewAny', JobPosting::class);
 
         $result = $this->service->list(
             $request->only(['status', 'job_requisition_id', 'search']),
@@ -45,14 +45,14 @@ final class JobPostingController extends Controller
 
     public function show(Request $request, JobPosting $posting): JobPostingResource
     {
-        abort_unless($request->user()->can('recruitment.postings.view'), 403);
+        $this->authorize('viewAny', JobPosting::class);
 
         return new JobPostingResource($this->service->show($posting));
     }
 
     public function update(Request $request, JobPosting $posting): JobPostingResource
     {
-        abort_unless($request->user()->can('recruitment.postings.create'), 403);
+        $this->authorize('update', $posting);
 
         $data = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
@@ -69,14 +69,14 @@ final class JobPostingController extends Controller
 
     public function publish(Request $request, JobPosting $posting): JobPostingResource
     {
-        abort_unless($request->user()->can('recruitment.postings.publish'), 403);
+        $this->authorize('publish', $posting);
 
         return new JobPostingResource($this->service->publish($posting, $request->user()));
     }
 
     public function close(Request $request, JobPosting $posting): JobPostingResource
     {
-        abort_unless($request->user()->can('recruitment.postings.close'), 403);
+        $this->authorize('close', $posting);
 
         return new JobPostingResource($this->service->close($posting, $request->user()));
     }

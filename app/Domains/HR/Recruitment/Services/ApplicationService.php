@@ -15,9 +15,11 @@ use App\Notifications\Recruitment\ApplicationRejectedNotification;
 use App\Notifications\Recruitment\ApplicationShortlistedNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 final class ApplicationService implements ServiceContract
 {
@@ -60,10 +62,11 @@ final class ApplicationService implements ServiceContract
             'preEmploymentChecklist.requirements',
             'hiring',
             'reviewer',
+            'audits',
         ]);
     }
 
-    public function apply(JobPosting $posting, array $candidateData, array $appData): Application
+    public function apply(JobPosting $posting, array $candidateData, array $appData, ?UploadedFile $resume = null): Application
     {
         if (! $posting->isOpen()) {
             throw new DomainException(
@@ -75,11 +78,25 @@ final class ApplicationService implements ServiceContract
         }
 
         $application = DB::transaction(function () use ($posting, $candidateData, $appData): Application {
+            // Handle resume upload before creating candidate
+            $resumePath = null;
+            if ($resume) {
+                $resumePath = $resume->store('recruitment/resumes', 'local');
+            }
+
             // Find or create candidate by email
+            $candidateCreateData = $candidateData;
+            if ($resumePath) {
+                $candidateCreateData['resume_path'] = $resumePath;
+            }
             $candidate = Candidate::firstOrCreate(
                 ['email' => $candidateData['email']],
-                $candidateData,
+                $candidateCreateData,
             );
+            // Update resume path even if candidate already existed
+            if ($resumePath && $candidate->resume_path !== $resumePath) {
+                $candidate->update(['resume_path' => $resumePath]);
+            }
 
             // Check duplicate application
             $exists = Application::where('job_posting_id', $posting->id)

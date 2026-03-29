@@ -82,6 +82,15 @@ final class ApplicationResource extends JsonResource
                 'start_date' => (string) $this->hiring->start_date,
                 'employee_id' => $this->hiring->employee_id,
             ] : null),
+            'audit_trail' => $this->whenLoaded('audits', fn () => $this->audits->map(fn ($audit) => [
+                'id' => $audit->id,
+                'event' => $audit->event,
+                'old_values' => $audit->old_values,
+                'new_values' => $audit->new_values,
+                'user_id' => $audit->user_id,
+                'user_type' => $audit->user_type,
+                'created_at' => $audit->created_at?->toIso8601String(),
+            ])),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
