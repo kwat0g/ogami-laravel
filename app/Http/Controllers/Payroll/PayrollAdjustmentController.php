@@ -62,7 +62,17 @@ final class PayrollAdjustmentController extends Controller
      */
     public function destroy(Request $request, PayrollAdjustment $payrollAdjustment): JsonResponse
     {
-        $this->authorize('manage-payroll-adjustments', $payrollAdjustment);
+        // Require same payroll operational permissions as store()
+        abort_unless(
+            $request->user()->hasAnyPermission([
+                'payroll.initiate',
+                'payroll.compute',
+                'payroll.hr_approve',
+                'payroll.approve',
+            ]),
+            403,
+            'You do not have permission to manage payroll adjustments.',
+        );
 
         /** @var PayrollRun $run */
         $run = $payrollAdjustment->payrollRun;
