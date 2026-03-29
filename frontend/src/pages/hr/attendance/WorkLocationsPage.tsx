@@ -12,6 +12,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useWorkLocations, useGeofenceSettings, useToggleGeofence, type WorkLocation } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
 import api from '@/lib/api'
@@ -28,6 +30,7 @@ export default function WorkLocationsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<WorkLocation | null>(null)
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<WorkLocation | null>(null)
 
   // Form state
   const [form, setForm] = useState({
@@ -103,21 +106,21 @@ export default function WorkLocationsPage() {
       resetForm()
       void refetch()
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error.response?.data?.message ?? 'Failed to save work location.')
+      toast.error(firstErrorMessage(err) || 'Failed to save work location.')
     } finally {
       setSaving(false)
     }
   }
 
-  const handleDelete = async (loc: WorkLocation) => {
-    if (!confirm(`Delete "${loc.name}"? This cannot be undone.`)) return
+  const handleDelete = async () => {
+    if (!deleteTarget) return
     try {
-      await api.delete(`/attendance/work-locations/${loc.id}`)
+      await api.delete(`/attendance/work-locations/${deleteTarget.id}`)
       toast.success('Work location deleted.')
+      setDeleteTarget(null)
       void refetch()
-    } catch {
-      toast.error('Failed to delete work location.')
+    } catch (err) {
+      toast.error(firstErrorMessage(err) || 'Failed to delete work location.')
     }
   }
 
@@ -295,7 +298,7 @@ export default function WorkLocationsPage() {
                           className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400">
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => handleDelete(loc)} title="Delete"
+                        <button onClick={() => setDeleteTarget(loc)} title="Delete"
                           className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-400 hover:text-red-600">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -308,6 +311,16 @@ export default function WorkLocationsPage() {
           </table>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDestructiveDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete Work Location"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? Employees assigned to this location will lose their assignment.`}
+        confirmLabel="Delete"
+      />
 
       {/* Setup instructions */}
       <div className="mt-6 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-700 dark:text-blue-400">

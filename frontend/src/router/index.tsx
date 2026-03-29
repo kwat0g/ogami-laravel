@@ -390,7 +390,7 @@ const router = createBrowserRouter([
       { path: '/hr/attendance', element: withSuspense(guard('hr.full_access', <AttendanceListPage />)) },
       { path: '/hr/attendance/import', element: withSuspense(guard('hr.full_access', <AttendanceImportPage />)) },
       { path: '/hr/attendance/dashboard', element: withSuspense(guard('hr.full_access', <AttendanceDashboardPage />)) },
-      { path: '/hr/attendance/work-locations', element: withSuspense(guard('attendance.work_locations.manage', <WorkLocationsPage />)) },
+      { path: '/hr/attendance/work-locations', element: withSuspense(guard('hr.full_access', <WorkLocationsPage />)) },
       { path: '/hr/overtime', element: withSuspense(guard('hr.full_access', <OvertimeListPage />)) },
 
       // HR — Leave
