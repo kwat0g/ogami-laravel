@@ -7,7 +7,8 @@
  */
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import { MapPin, Plus, Edit3, Trash2, Check, X, Loader2, Shield, ShieldOff, Crosshair, Navigation } from 'lucide-react'
+import { MapPin, Plus, Edit3, Trash2, Check, X, Loader2, Shield, ShieldOff, Crosshair } from 'lucide-react'
+import LocationPickerMap from '@/components/attendance/LocationPickerMap'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -228,48 +229,52 @@ export default function WorkLocationsPage() {
                 placeholder="e.g. Main Office, Factory Building A, Warehouse" />
             </div>
 
-            {/* Step 2: Pin the location */}
-            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+            {/* Step 2: Map with draggable pin */}
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
-                    <Navigation className="w-4 h-4" /> Pin Your Location
-                  </h4>
-                  <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">Go to the location and click the button, or paste coordinates from Google Maps</p>
-                </div>
+                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                  Drag the pin or click the map to set the location
+                </label>
                 <button
                   type="button"
                   onClick={useMyLocation}
                   disabled={gettingLocation}
-                  className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded transition-colors"
                 >
-                  {gettingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}
-                  Use My Current Location
+                  {gettingLocation ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crosshair className="w-3.5 h-3.5" />}
+                  Use My Location
                 </button>
               </div>
+
+              <LocationPickerMap
+                latitude={form.latitude ? parseFloat(form.latitude) : null}
+                longitude={form.longitude ? parseFloat(form.longitude) : null}
+                radiusMeters={parseInt(form.radius_meters, 10) || 100}
+                onLocationChange={(lat, lon) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    latitude: lat.toFixed(7),
+                    longitude: lon.toFixed(7),
+                  }))
+                  // Auto-fetch address
+                  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat.toFixed(7)}&lon=${lon.toFixed(7)}&format=json&zoom=18`)
+                    .then((r) => r.json())
+                    .then((data) => {
+                      if (data?.display_name) {
+                        setForm((prev) => ({ ...prev, address: data.display_name.substring(0, 200) }))
+                      }
+                    })
+                    .catch(() => {})
+                }}
+              />
+
               {form.latitude && form.longitude && (
-                <div className="flex items-center gap-3 pt-2 border-t border-blue-200 dark:border-blue-800">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-mono text-blue-800 dark:text-blue-300">
-                    {parseFloat(form.latitude).toFixed(6)}, {parseFloat(form.longitude).toFixed(6)}
-                  </span>
-                  {form.address && <span className="text-xs text-blue-600 dark:text-blue-400">({form.address})</span>}
+                <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+                  <MapPin className="w-3 h-3" />
+                  <span className="font-mono">{parseFloat(form.latitude).toFixed(6)}, {parseFloat(form.longitude).toFixed(6)}</span>
+                  {form.address && <span className="truncate max-w-xs">-- {form.address}</span>}
                 </div>
               )}
-              {!form.latitude && !form.longitude && (
-                <p className="text-xs text-blue-600 dark:text-blue-400 italic">No location pinned yet. Click the button above or enter coordinates below.</p>
-              )}
-              <details className="text-xs">
-                <summary className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline">Enter coordinates manually</summary>
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <input type="number" step="0.0000001" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                    className="text-sm border border-blue-200 dark:border-blue-700 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-mono focus:outline-none focus:ring-1 focus:ring-blue-400"
-                    placeholder="Latitude (e.g. 14.5547)" />
-                  <input type="number" step="0.0000001" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                    className="text-sm border border-blue-200 dark:border-blue-700 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-mono focus:outline-none focus:ring-1 focus:ring-blue-400"
-                    placeholder="Longitude (e.g. 121.0244)" />
-                </div>
-              </details>
             </div>
 
             {/* Step 3: How far can employees be? */}
