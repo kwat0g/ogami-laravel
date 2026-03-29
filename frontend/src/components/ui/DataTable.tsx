@@ -110,7 +110,7 @@ export default function DataTable<TData>({
                     <span className="inline-flex items-center gap-1">
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       {canSort && (
-                        <span className="text-gray-400">
+                        <span className="text-neutral-400">
                           {sorted === 'asc'  ? <ChevronUp   className="h-3 w-3" /> :
                            sorted === 'desc' ? <ChevronDown className="h-3 w-3" /> :
                                               <ChevronsUpDown className="h-3 w-3" />}
@@ -128,7 +128,7 @@ export default function DataTable<TData>({
         <tbody className="bg-white divide-y divide-neutral-100">
           {table.getRowModel().rows.length === 0 ? (
             <tr>
-              <td colSpan={colCount} className="px-4 py-10 text-center text-sm text-gray-400">
+              <td colSpan={colCount} className="px-4 py-10 text-center text-sm text-neutral-400">
                 {emptyMessage}
               </td>
             </tr>

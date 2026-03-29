@@ -52,21 +52,21 @@ export default function ScheduleInterviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-        <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-neutral-800">
+        <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">
           Schedule Interview
         </h2>
-        <p className="mb-6 text-sm text-gray-500">
+        <p className="mb-6 text-sm text-neutral-500">
           Schedule an interview for {candidateName}.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase">Interview Type</label>
+            <label className="block text-xs font-medium text-neutral-500 uppercase">Interview Type</label>
             <select
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
               required
             >
               <option value="hr_screening">HR Screening</option>
@@ -78,58 +78,58 @@ export default function ScheduleInterviewModal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase">Scheduled Date & Time</label>
+            <label className="block text-xs font-medium text-neutral-500 uppercase">Scheduled Date & Time</label>
             <input
               type="datetime-local"
               required
               value={form.scheduled_at}
               onChange={(e) => setForm({ ...form, scheduled_at: e.target.value })}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Duration (min)</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Duration (min)</label>
               <input
                 type="number"
                 min="15"
                 max="480"
                 value={form.duration_minutes}
                 onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Interviewer ID</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Interviewer ID</label>
               <input
                 type="number"
                 required
                 value={form.interviewer_id}
                 onChange={(e) => setForm({ ...form, interviewer_id: e.target.value })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                 placeholder="User ID"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase">Location</label>
+            <label className="block text-xs font-medium text-neutral-500 uppercase">Location</label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
               placeholder="e.g. Conference Room A, Zoom link..."
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase">Notes</label>
+            <label className="block text-xs font-medium text-neutral-500 uppercase">Notes</label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
               rows={2}
               placeholder="Any additional notes for the interviewer..."
             />
@@ -139,7 +139,7 @@ export default function ScheduleInterviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
             >
               Cancel
             </button>

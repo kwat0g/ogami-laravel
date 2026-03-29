@@ -54,11 +54,11 @@ export default function ApplicationDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-500">{app.application_number}</p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-sm text-neutral-500">{app.application_number}</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
             {app.candidate?.full_name}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-500">
             {app.posting?.position} - {app.posting?.department}
           </p>
         </div>
@@ -121,22 +121,22 @@ export default function ApplicationDetailPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: Timeline */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Application Journey</h3>
+        <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
+          <h3 className="mb-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Application Journey</h3>
           <ApplicationTimeline application={app} />
         </div>
 
         {/* Right: Tabs */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tab Navigation */}
-          <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-700">
             {(['profile', 'interviews', 'offer', 'documents', 'history'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition ${tab === t
                     ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
                   }`}
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -145,32 +145,32 @@ export default function ApplicationDetailPage() {
           </div>
 
           {/* Tab Content */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
             {tab === 'profile' && (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500">Email</p>
+                    <p className="text-xs text-neutral-500">Email</p>
                     <p className="text-sm">{app.candidate?.email}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Source</p>
+                    <p className="text-xs text-neutral-500">Source</p>
                     <p className="text-sm">{app.source_label}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Applied On</p>
+                    <p className="text-xs text-neutral-500">Applied On</p>
                     <p className="text-sm">{app.application_date}</p>
                   </div>
                   {app.reviewer && (
                     <div>
-                      <p className="text-xs text-gray-500">Reviewed By</p>
+                      <p className="text-xs text-neutral-500">Reviewed By</p>
                       <p className="text-sm">{app.reviewer.name}</p>
                     </div>
                   )}
                 </div>
                 {app.cover_letter && (
                   <div>
-                    <p className="text-xs text-gray-500">Cover Letter</p>
+                    <p className="text-xs text-neutral-500">Cover Letter</p>
                     <p className="mt-1 text-sm whitespace-pre-line">{app.cover_letter}</p>
                   </div>
                 )}
@@ -182,7 +182,7 @@ export default function ApplicationDetailPage() {
                       placeholder="Rejection reason..."
                       value={rejectReason}
                       onChange={(e) => setRejectReason(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
                       rows={2}
                     />
                     <button
@@ -206,7 +206,7 @@ export default function ApplicationDetailPage() {
                       placeholder="Withdrawal reason..."
                       value={withdrawReason}
                       onChange={(e) => setWithdrawReason(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
                       rows={2}
                     />
                     <button
@@ -216,7 +216,7 @@ export default function ApplicationDetailPage() {
                         }
                       }}
                       disabled={action.isPending || !withdrawReason.trim()}
-                      className="mt-2 rounded-md bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-500 disabled:opacity-50"
+                      className="mt-2 rounded-md bg-neutral-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-neutral-500 disabled:opacity-50"
                     >
                       Withdraw Application
                     </button>
@@ -239,22 +239,22 @@ export default function ApplicationDetailPage() {
                   </div>
                 )}
                 {app.interviews.length === 0 ? (
-                  <p className="text-sm text-gray-400">No interviews scheduled.</p>
+                  <p className="text-sm text-neutral-400">No interviews scheduled.</p>
                 ) : (
                   app.interviews.map((interview: any) => (
-                    <div key={interview.id} className="rounded-lg border border-gray-100 p-4">
+                    <div key={interview.id} className="rounded-lg border border-neutral-100 p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium">Round {interview.round} - {interview.type_label}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-neutral-500">
                             {new Date(interview.scheduled_at).toLocaleString()} - {interview.duration_minutes} min
                           </p>
-                          <p className="text-xs text-gray-500">Interviewer: {interview.interviewer.name}</p>
+                          <p className="text-xs text-neutral-500">Interviewer: {interview.interviewer.name}</p>
                         </div>
                         <StatusBadge status={interview.status} label={interview.status_label} />
                       </div>
                       {interview.evaluation && (
-                        <div className="mt-3 rounded bg-gray-50 p-3 dark:bg-gray-700">
+                        <div className="mt-3 rounded bg-neutral-50 p-3 dark:bg-neutral-700">
                           <div className="flex items-center gap-4">
                             <span className="text-sm font-bold">Score: {interview.evaluation.overall_score}/5</span>
                             <StatusBadge
@@ -263,7 +263,7 @@ export default function ApplicationDetailPage() {
                             />
                           </div>
                           {interview.evaluation.general_remarks && (
-                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">{interview.evaluation.general_remarks}</p>
+                            <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">{interview.evaluation.general_remarks}</p>
                           )}
                         </div>
                       )}
@@ -279,27 +279,27 @@ export default function ApplicationDetailPage() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-gray-500">Offer Number</p>
+                        <p className="text-xs text-neutral-500">Offer Number</p>
                         <p className="text-sm font-medium">{app.offer.offer_number}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Status</p>
+                        <p className="text-xs text-neutral-500">Status</p>
                         <StatusBadge status={app.offer.status} label={app.offer.status_label} />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Salary</p>
+                        <p className="text-xs text-neutral-500">Salary</p>
                         <p className="text-sm font-medium">{(app.offer.offered_salary / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Start Date</p>
+                        <p className="text-xs text-neutral-500">Start Date</p>
                         <p className="text-sm">{app.offer.start_date}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Position</p>
+                        <p className="text-xs text-neutral-500">Position</p>
                         <p className="text-sm">{app.offer.offered_position?.title}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Department</p>
+                        <p className="text-xs text-neutral-500">Department</p>
                         <p className="text-sm">{app.offer.offered_department?.name}</p>
                       </div>
                     </div>
@@ -311,7 +311,7 @@ export default function ApplicationDetailPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-400">No offer created yet.</p>
+                    <p className="text-sm text-neutral-400">No offer created yet.</p>
                     {/* GAP-03: Create Offer button */}
                     {canPrepareOffer && (
                       <button
@@ -340,7 +340,7 @@ export default function ApplicationDetailPage() {
             )}
 
             {tab === 'history' && (
-              <p className="text-sm text-gray-400">Audit trail is available via the system audit log.</p>
+              <p className="text-sm text-neutral-400">Audit trail is available via the system audit log.</p>
             )}
           </div>
         </div>
@@ -482,7 +482,7 @@ function PreEmploymentTab({
             {app.pre_employment.progress.completed}/{app.pre_employment.progress.total} ({app.pre_employment.progress.percentage}%)
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-neutral-200 rounded-full h-2">
           <div
             className="bg-green-500 h-2 rounded-full transition-all"
             style={{ width: `${app.pre_employment.progress.percentage}%` }}
@@ -508,7 +508,7 @@ function PreEmploymentTab({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm">{req.label}</p>
-                  {!req.is_required && <span className="text-xs text-gray-400">(Optional)</span>}
+                  {!req.is_required && <span className="text-xs text-neutral-400">(Optional)</span>}
                 </div>
                 <StatusBadge status={req.status} label={req.status_label} />
               </div>
@@ -557,7 +557,7 @@ function PreEmploymentTab({
                       placeholder="Remarks..."
                       value={rejectRemarks[req.id] || ''}
                       onChange={(e) => setRejectRemarks({ ...rejectRemarks, [req.id]: e.target.value })}
-                      className="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700"
+                      className="rounded border border-neutral-300 px-2 py-1 text-xs dark:border-neutral-600 dark:bg-neutral-700"
                     />
                     <button
                       onClick={() => handleReject(req.id)}
@@ -574,7 +574,7 @@ function PreEmploymentTab({
                   <button
                     onClick={() => handleWaive(req.id)}
                     disabled={preEmploymentAction.isPending}
-                    className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                    className="rounded bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-200 disabled:opacity-50"
                   >
                     Waive
                   </button>
@@ -593,11 +593,11 @@ function PreEmploymentTab({
         app.documents.map((doc: any) => (
           <div key={doc.id} className="flex items-center justify-between rounded border p-3">
             <span className="text-sm">{doc.label}</span>
-            <span className="text-xs text-gray-500">{doc.mime_type}</span>
+            <span className="text-xs text-neutral-500">{doc.mime_type}</span>
           </div>
         ))
       ) : (
-        <p className="text-sm text-gray-400">No documents uploaded.</p>
+        <p className="text-sm text-neutral-400">No documents uploaded.</p>
       )}
 
       {/* GAP-04: Init Pre-Employment Checklist button */}

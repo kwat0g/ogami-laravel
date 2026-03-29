@@ -32,11 +32,11 @@ export default function OfferDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-500">{offer.offer_number}</p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-sm text-neutral-500">{offer.offer_number}</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
             Offer for {offer.application?.candidate?.full_name}
           </h1>
-          <p className="text-sm text-gray-500">{offer.offered_position?.title} - {offer.offered_department?.name}</p>
+          <p className="text-sm text-neutral-500">{offer.offered_position?.title} - {offer.offered_department?.name}</p>
         </div>
         <StatusBadge status={offer.status} label={offer.status_label} />
       </div>
@@ -58,7 +58,7 @@ export default function OfferDetailPage() {
           <>
             <button
               onClick={() => setShowPreview(true)}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+              className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
             >
               Preview Offer Letter
             </button>
@@ -94,7 +94,7 @@ export default function OfferDetailPage() {
             <button
               onClick={() => { if (confirm('Withdraw this offer? This cannot be undone.')) handleAction('withdraw') }}
               disabled={action.isPending}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
             >
               {action.isPending ? 'Processing...' : 'Withdraw Offer'}
             </button>
@@ -109,45 +109,45 @@ export default function OfferDetailPage() {
           placeholder="Rejection reason (required to reject)..."
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
         />
       )}
 
       {/* Details */}
-      <div className="grid grid-cols-2 gap-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="grid grid-cols-2 gap-6 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
         <div>
-          <p className="text-xs text-gray-500">Offered Salary</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">
+          <p className="text-xs text-neutral-500">Offered Salary</p>
+          <p className="text-xl font-bold text-neutral-900 dark:text-white">
             {(offer.offered_salary / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Employment Type</p>
+          <p className="text-xs text-neutral-500">Employment Type</p>
           <p className="text-sm font-medium">{offer.employment_type_label}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Start Date</p>
+          <p className="text-xs text-neutral-500">Start Date</p>
           <p className="text-sm font-medium">{offer.start_date}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Prepared By</p>
+          <p className="text-xs text-neutral-500">Prepared By</p>
           <p className="text-sm font-medium">{offer.preparer?.name ?? '-'}</p>
         </div>
         {offer.sent_at && (
           <div>
-            <p className="text-xs text-gray-500">Sent At</p>
+            <p className="text-xs text-neutral-500">Sent At</p>
             <p className="text-sm">{new Date(offer.sent_at).toLocaleString()}</p>
           </div>
         )}
         {offer.responded_at && (
           <div>
-            <p className="text-xs text-gray-500">Responded At</p>
+            <p className="text-xs text-neutral-500">Responded At</p>
             <p className="text-sm">{new Date(offer.responded_at).toLocaleString()}</p>
           </div>
         )}
         {offer.rejection_reason && (
           <div className="col-span-2">
-            <p className="text-xs text-gray-500">Rejection Reason</p>
+            <p className="text-xs text-neutral-500">Rejection Reason</p>
             <p className="text-sm text-red-600">{offer.rejection_reason}</p>
           </div>
         )}

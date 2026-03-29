@@ -21,23 +21,23 @@ export default function OfferLetterPreview({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-8 shadow-xl dark:bg-gray-800">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-8 shadow-xl dark:bg-neutral-800">
         {/* Close button */}
         <div className="mb-6 flex justify-between">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Offer Letter Preview</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Offer Letter Preview</h2>
+          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
             <span className="text-xl">&times;</span>
           </button>
         </div>
 
         {/* Letter content */}
-        <div className="prose prose-sm max-w-none space-y-4 text-gray-700 dark:text-gray-300">
+        <div className="prose prose-sm max-w-none space-y-4 text-neutral-700 dark:text-neutral-300">
           <div className="border-b pb-4">
             <p className="text-lg font-bold text-blue-800 dark:text-blue-400">OGAMI MANUFACTURING CORP.</p>
-            <p className="text-xs text-gray-500">Human Resources Department</p>
+            <p className="text-xs text-neutral-500">Human Resources Department</p>
           </div>
 
-          <p className="text-right text-sm text-gray-500">{new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="text-right text-sm text-neutral-500">{new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
           <p>Dear <strong>{candidateName}</strong>,</p>
 
@@ -47,23 +47,23 @@ export default function OfferLetterPreview({
             at Ogami Manufacturing Corp.
           </p>
 
-          <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
+          <div className="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-700">
             <h4 className="mb-2 font-semibold">Employment Details:</h4>
             <table className="w-full text-sm">
               <tbody>
-                <tr className="border-b border-gray-200 dark:border-gray-600">
+                <tr className="border-b border-neutral-200 dark:border-neutral-600">
                   <td className="py-2 font-medium">Position</td>
                   <td className="py-2">{positionTitle}</td>
                 </tr>
-                <tr className="border-b border-gray-200 dark:border-gray-600">
+                <tr className="border-b border-neutral-200 dark:border-neutral-600">
                   <td className="py-2 font-medium">Department</td>
                   <td className="py-2">{departmentName}</td>
                 </tr>
-                <tr className="border-b border-gray-200 dark:border-gray-600">
+                <tr className="border-b border-neutral-200 dark:border-neutral-600">
                   <td className="py-2 font-medium">Employment Type</td>
                   <td className="py-2">{employmentType}</td>
                 </tr>
-                <tr className="border-b border-gray-200 dark:border-gray-600">
+                <tr className="border-b border-neutral-200 dark:border-neutral-600">
                   <td className="py-2 font-medium">Monthly Salary</td>
                   <td className="py-2 font-bold text-green-700 dark:text-green-400">{formattedSalary}</td>
                 </tr>
@@ -95,7 +95,7 @@ export default function OfferLetterPreview({
           <div className="mt-8">
             <p>Sincerely,</p>
             <p className="mt-4 font-semibold">Human Resources Department</p>
-            <p className="text-sm text-gray-500">Ogami Manufacturing Corp.</p>
+            <p className="text-sm text-neutral-500">Ogami Manufacturing Corp.</p>
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export default function OfferLetterPreview({
         <div className="mt-6 flex justify-end gap-3 border-t pt-4">
           <button
             onClick={onClose}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+            className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
           >
             Close
           </button>

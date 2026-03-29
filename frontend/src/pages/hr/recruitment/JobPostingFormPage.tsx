@@ -61,12 +61,12 @@ export default function JobPostingFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Create Job Posting</h1>
+      <h1 className="mb-6 text-2xl font-bold text-neutral-900 dark:text-white">Create Job Posting</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* GAP-07: Requisition dropdown instead of raw integer ID */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Requisition</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Requisition</label>
           <select
             value={form.job_requisition_id}
             onChange={(e) => {
@@ -84,7 +84,7 @@ export default function JobPostingFormPage() {
                 }))
               }
             }}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             required
           >
             <option value="">Select an approved requisition...</option>
@@ -101,35 +101,35 @@ export default function JobPostingFormPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Job Title</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Job Title</label>
           <input
             type="text"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Job Description</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Job Description</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={5}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             required
             placeholder="Minimum 50 characters..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Requirements</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Requirements</label>
           <textarea
             value={form.requirements}
             onChange={(e) => setForm({ ...form, requirements: e.target.value })}
             rows={4}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             required
             placeholder="Minimum 20 characters..."
           />
@@ -137,21 +137,21 @@ export default function JobPostingFormPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Location</label>
             <input
               type="text"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Closing Date</label>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Closing Date</label>
             <input
               type="date"
               value={form.closes_at}
               onChange={(e) => setForm({ ...form, closes_at: e.target.value })}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             />
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function JobPostingFormPage() {
               type="checkbox"
               checked={form.is_internal}
               onChange={(e) => setForm({ ...form, is_internal: e.target.checked })}
-              className="rounded border-gray-300"
+              className="rounded border-neutral-300"
             />
             Internal posting
           </label>
@@ -171,14 +171,14 @@ export default function JobPostingFormPage() {
               type="checkbox"
               checked={form.is_external}
               onChange={(e) => setForm({ ...form, is_external: e.target.checked })}
-              className="rounded border-gray-300"
+              className="rounded border-neutral-300"
             />
             External posting
           </label>
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={() => navigate(-1)} className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300">
+          <button type="button" onClick={() => navigate(-1)} className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300">
             Cancel
           </button>
           <button type="submit" disabled={createMutation.isPending} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50">

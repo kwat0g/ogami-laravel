@@ -26,16 +26,16 @@ export default function ReadOnlyField({
   if (layout === 'inline') {
     return (
       <div className={['flex items-center justify-between gap-4 py-1', className].join(' ')}>
-        <span className="text-sm text-gray-500 shrink-0">{label}</span>
-        <span className="text-sm font-medium text-gray-900 text-right">{value ?? '—'}</span>
+        <span className="text-sm text-neutral-500 shrink-0">{label}</span>
+        <span className="text-sm font-medium text-neutral-900 text-right">{value ?? '—'}</span>
       </div>
     )
   }
 
   return (
     <div className={['space-y-0.5', className].join(' ')}>
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className="text-sm text-gray-900">{value ?? <span className="text-gray-400">—</span>}</p>
+      <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">{label}</p>
+      <p className="text-sm text-neutral-900">{value ?? <span className="text-neutral-400">—</span>}</p>
     </div>
   )
 }

@@ -69,22 +69,22 @@ export default function PrepareOfferModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-        <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-neutral-800">
+        <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">
           Prepare Job Offer
         </h2>
-        <p className="mb-6 text-sm text-gray-500">
+        <p className="mb-6 text-sm text-neutral-500">
           Create an offer for {candidateName}.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Department</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Department</label>
               <select
                 value={form.offered_department_id}
                 onChange={(e) => handleDepartmentChange(e.target.value)}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                 required
               >
                 <option value="">Select department...</option>
@@ -95,11 +95,11 @@ export default function PrepareOfferModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Position</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Position</label>
               <select
                 value={form.offered_position_id}
                 onChange={(e) => setForm({ ...form, offered_position_id: e.target.value })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                 required
                 disabled={!departmentId}
               >
@@ -114,28 +114,28 @@ export default function PrepareOfferModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Monthly Salary (centavos)</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Monthly Salary (centavos)</label>
               <input
                 type="number"
                 required
                 min="1"
                 value={form.offered_salary}
                 onChange={(e) => setForm({ ...form, offered_salary: e.target.value })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                 placeholder="e.g. 3000000 = PHP 30,000"
               />
               {form.offered_salary && (
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-neutral-400">
                   = {(Number(form.offered_salary) / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Employment Type</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Employment Type</label>
               <select
                 value={form.employment_type}
                 onChange={(e) => setForm({ ...form, employment_type: e.target.value })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
               >
                 <option value="regular">Regular</option>
                 <option value="contractual">Contractual</option>
@@ -147,22 +147,22 @@ export default function PrepareOfferModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Start Date</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Start Date</label>
               <input
                 type="date"
                 required
                 value={form.start_date}
                 onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase">Expires At</label>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Expires At</label>
               <input
                 type="date"
                 value={form.expires_at}
                 onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
               />
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function PrepareOfferModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
             >
               Cancel
             </button>

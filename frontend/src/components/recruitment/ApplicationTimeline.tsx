@@ -78,23 +78,23 @@ export default function ApplicationTimeline({ application }: { application: Appl
 
   return (
     <nav aria-label="Application Progress">
-      <ol className="relative border-l border-gray-200 dark:border-gray-700 ml-3">
+      <ol className="relative border-l border-neutral-200 dark:border-neutral-700 ml-3">
         {steps.map((step, idx) => (
           <li key={idx} className="mb-6 ml-6">
             <span
               className={`absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full ring-4 ring-white text-xs font-bold
                 ${step.status === 'done' ? 'bg-green-500 text-white' : ''}
                 ${step.status === 'current' ? 'bg-blue-500 text-white' : ''}
-                ${step.status === 'pending' ? 'bg-gray-200 text-gray-500' : ''}
+                ${step.status === 'pending' ? 'bg-neutral-200 text-neutral-500' : ''}
               `}
             >
               {step.status === 'done' ? '\u2713' : idx + 1}
             </span>
-            <h3 className={`text-sm font-semibold ${step.status === 'pending' ? 'text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+            <h3 className={`text-sm font-semibold ${step.status === 'pending' ? 'text-neutral-400' : 'text-neutral-900 dark:text-white'}`}>
               {step.label}
             </h3>
-            {step.date && <time className="text-xs text-gray-500">{step.date}</time>}
-            {step.detail && <p className="text-xs text-gray-500">{step.detail}</p>}
+            {step.date && <time className="text-xs text-neutral-500">{step.date}</time>}
+            {step.detail && <p className="text-xs text-neutral-500">{step.detail}</p>}
           </li>
         ))}
       </ol>

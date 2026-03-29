@@ -45,10 +45,10 @@ export default function InterviewDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
             Interview - Round {interview.round}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-500">
             {interview.application?.candidate?.full_name} - {interview.type?.replace('_', ' ')}
           </p>
         </div>
@@ -80,7 +80,7 @@ export default function InterviewDetailPage() {
                   placeholder="Cancel reason..."
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                  className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
                 />
                 <button
                   onClick={() => handleAction('cancel', { reason: cancelReason || null })}
@@ -96,26 +96,26 @@ export default function InterviewDetailPage() {
       )}
 
       {/* Details */}
-      <div className="grid grid-cols-2 gap-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="grid grid-cols-2 gap-6 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
         <div>
-          <p className="text-xs text-gray-500">Scheduled At</p>
+          <p className="text-xs text-neutral-500">Scheduled At</p>
           <p className="text-sm font-medium">{new Date(interview.scheduled_at).toLocaleString()}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Duration</p>
+          <p className="text-xs text-neutral-500">Duration</p>
           <p className="text-sm font-medium">{interview.duration_minutes} minutes</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Interviewer</p>
+          <p className="text-xs text-neutral-500">Interviewer</p>
           <p className="text-sm font-medium">{interview.interviewer?.name}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Location</p>
+          <p className="text-xs text-neutral-500">Location</p>
           <p className="text-sm font-medium">{interview.location ?? 'Not specified'}</p>
         </div>
         {interview.notes && (
           <div className="col-span-2">
-            <p className="text-xs text-gray-500">Notes</p>
+            <p className="text-xs text-neutral-500">Notes</p>
             <p className="text-sm">{interview.notes}</p>
           </div>
         )}
@@ -123,10 +123,10 @@ export default function InterviewDetailPage() {
 
       {/* Evaluation */}
       {interview.evaluation ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Evaluation</h3>
+        <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
+          <h3 className="mb-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Evaluation</h3>
           <div className="mb-4 flex items-center gap-4">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+            <span className="text-2xl font-bold text-neutral-900 dark:text-white">
               {interview.evaluation.overall_score}/5
             </span>
             <StatusBadge
@@ -137,25 +137,25 @@ export default function InterviewDetailPage() {
           <div className="space-y-2">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {interview.evaluation.scorecard?.map((item: any, idx: number) => (
-              <div key={idx} className="flex items-center justify-between rounded bg-gray-50 px-4 py-2 dark:bg-gray-700">
-                <span className="text-sm text-gray-700 dark:text-gray-300">{item.criterion}</span>
+              <div key={idx} className="flex items-center justify-between rounded bg-neutral-50 px-4 py-2 dark:bg-neutral-700">
+                <span className="text-sm text-neutral-700 dark:text-neutral-300">{item.criterion}</span>
                 <div className="flex items-center gap-3">
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <span key={star} className={`text-sm ${star <= item.score ? 'text-amber-400' : 'text-gray-300'}`}>
+                      <span key={star} className={`text-sm ${star <= item.score ? 'text-amber-400' : 'text-neutral-300'}`}>
                         ★
                       </span>
                     ))}
                   </div>
-                  {item.comments && <span className="text-xs text-gray-500">{item.comments}</span>}
+                  {item.comments && <span className="text-xs text-neutral-500">{item.comments}</span>}
                 </div>
               </div>
             ))}
           </div>
           {interview.evaluation.general_remarks && (
             <div className="mt-4">
-              <p className="text-xs text-gray-500">General Remarks</p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">{interview.evaluation.general_remarks}</p>
+              <p className="text-xs text-neutral-500">General Remarks</p>
+              <p className="text-sm text-neutral-700 dark:text-neutral-300">{interview.evaluation.general_remarks}</p>
             </div>
           )}
         </div>

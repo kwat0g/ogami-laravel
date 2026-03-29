@@ -38,43 +38,43 @@ export default function HiringModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-                <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-neutral-800">
+                <h2 className="mb-4 text-xl font-bold text-neutral-900 dark:text-white">
                     Hire {candidateName}
                 </h2>
-                <p className="mb-6 text-sm text-gray-500">
+                <p className="mb-6 text-sm text-neutral-500">
                     This will convert the candidate into an employee and create their record.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Actual Start Date</label>
+                        <label className="block text-xs font-medium text-neutral-500 uppercase">Actual Start Date</label>
                         <input
                             type="date"
                             required
                             value={formData.start_date}
                             onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase">Date of Birth</label>
+                            <label className="block text-xs font-medium text-neutral-500 uppercase">Date of Birth</label>
                             <input
                                 type="date"
                                 required
                                 value={formData.date_of_birth}
                                 onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase">Gender</label>
+                            <label className="block text-xs font-medium text-neutral-500 uppercase">Gender</label>
                             <select
                                 value={formData.gender}
                                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                             >
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
@@ -85,11 +85,11 @@ export default function HiringModal({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase">Civil Status</label>
+                            <label className="block text-xs font-medium text-neutral-500 uppercase">Civil Status</label>
                             <select
                                 value={formData.civil_status}
                                 onChange={(e) => setFormData({ ...formData, civil_status: e.target.value })}
-                                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                             >
                                 <option value="SINGLE">Single</option>
                                 <option value="MARRIED">Married</option>
@@ -98,11 +98,11 @@ export default function HiringModal({
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 uppercase">BIR Status</label>
+                            <label className="block text-xs font-medium text-neutral-500 uppercase">BIR Status</label>
                             <select
                                 value={formData.bir_status}
                                 onChange={(e) => setFormData({ ...formData, bir_status: e.target.value })}
-                                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                             >
                                 <option value="S">S</option>
                                 <option value="S1">S1</option>
@@ -120,11 +120,11 @@ export default function HiringModal({
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase">Notes</label>
+                        <label className="block text-xs font-medium text-neutral-500 uppercase">Notes</label>
                         <textarea
                             value={formData.notes}
                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
                             rows={3}
                             placeholder="Any additional hiring notes..."
                         />
@@ -134,7 +134,7 @@ export default function HiringModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+                            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
                         >
                             Cancel
                         </button>
