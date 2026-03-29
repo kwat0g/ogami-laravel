@@ -12,29 +12,39 @@ final class RecurringJournalTemplatePolicy
 {
     use HandlesAuthorization;
 
+    /** Admin bypass — admin role has unconditional access to all resources. */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
+            return true;
+        }
+
+        return null;
+    }
+
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('accounting.view');
+        return $user->hasAnyPermission(['journal_entries.view', 'journal_entries.create']);
     }
 
     public function view(User $user, RecurringJournalTemplate $template): bool
     {
-        return $user->hasPermissionTo('accounting.view');
+        return $user->hasAnyPermission(['journal_entries.view', 'journal_entries.create']);
     }
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('accounting.journal_entry.create');
+        return $user->hasPermissionTo('journal_entries.create');
     }
 
     public function update(User $user, RecurringJournalTemplate $template): bool
     {
-        return $user->hasPermissionTo('accounting.journal_entry.create');
+        return $user->hasPermissionTo('journal_entries.create');
     }
 
     public function delete(User $user, RecurringJournalTemplate $template): bool
     {
-        return $user->hasPermissionTo('accounting.journal_entry.create');
+        return $user->hasPermissionTo('journal_entries.create');
     }
 
     /**
