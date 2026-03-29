@@ -133,6 +133,7 @@ const AttendanceImportPage = lazyWithRetry(() => import('@/pages/hr/attendance/A
 const AttendanceDashboardPage = lazyWithRetry(() => import('@/pages/hr/attendance/AttendanceDashboardPage'))
 const OvertimeListPage = lazyWithRetry(() => import('@/pages/hr/attendance/OvertimeListPage'))
 const TimeInOutPage = lazyWithRetry(() => import('@/pages/employee/TimeInOutPage'))
+const WorkLocationsPage = lazyWithRetry(() => import('@/pages/hr/attendance/WorkLocationsPage'))
 
 // HR — Leave
 const LeaveListPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveListPage'))
@@ -389,6 +390,7 @@ const router = createBrowserRouter([
       { path: '/hr/attendance', element: withSuspense(guard('hr.full_access', <AttendanceListPage />)) },
       { path: '/hr/attendance/import', element: withSuspense(guard('hr.full_access', <AttendanceImportPage />)) },
       { path: '/hr/attendance/dashboard', element: withSuspense(guard('hr.full_access', <AttendanceDashboardPage />)) },
+      { path: '/hr/attendance/work-locations', element: withSuspense(guard('attendance.work_locations.manage', <WorkLocationsPage />)) },
       { path: '/hr/overtime', element: withSuspense(guard('hr.full_access', <OvertimeListPage />)) },
 
       // HR — Leave
