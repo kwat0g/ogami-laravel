@@ -49,7 +49,7 @@ export default function ClientNewTicketPage() {
       <button onClick={() => navigate('/client-portal/tickets')} className="text-sm text-neutral-500 hover:text-neutral-700 mb-4">
         &larr; Back
       </button>
-      <h1 className="text-2xl font-bold mb-6">Submit a Support Ticket</h1>
+      <h1 className="text-lg font-semibold mb-6">Submit a Support Ticket</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded border border-neutral-200 p-6 space-y-4">
         <div>

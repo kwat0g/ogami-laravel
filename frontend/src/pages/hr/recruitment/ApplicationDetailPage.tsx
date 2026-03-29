@@ -55,7 +55,7 @@ export default function ApplicationDetailPage() {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-neutral-500">{app.application_number}</p>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+          <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
             {app.candidate?.full_name}
           </h1>
           <p className="text-sm text-neutral-500">

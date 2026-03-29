@@ -510,15 +510,15 @@ export default function PayrollRunDraftScopePage() {
               <>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="bg-green-50 rounded p-3">
-                    <p className="text-2xl font-bold text-green-700">{preview.total_eligible}</p>
+                    <p className="text-lg font-semibold text-green-700">{preview.total_eligible}</p>
                     <p className="text-xs text-green-600">Eligible</p>
                   </div>
                   <div className="bg-red-50 rounded p-3">
-                    <p className="text-2xl font-bold text-red-600">{preview.manually_excluded}</p>
+                    <p className="text-lg font-semibold text-red-600">{preview.manually_excluded}</p>
                     <p className="text-xs text-red-500">Excluded</p>
                   </div>
                   <div className="bg-neutral-50 rounded p-3">
-                    <p className="text-2xl font-bold text-neutral-800">{preview.net_in_scope}</p>
+                    <p className="text-lg font-semibold text-neutral-800">{preview.net_in_scope}</p>
                     <p className="text-xs text-neutral-900">In Scope</p>
                   </div>
                 </div>

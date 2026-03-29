@@ -270,7 +270,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
             <div className="p-4 border-t border-neutral-100 bg-neutral-50/50">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-neutral-600">Order Total</span>
-                <span className="text-xl font-bold text-neutral-900">{formatPrice(order.total_amount_centavos)}</span>
+                <span className="text-lg font-semibold text-neutral-900">{formatPrice(order.total_amount_centavos)}</span>
               </div>
             </div>
           </Card>

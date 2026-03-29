@@ -103,7 +103,7 @@ function StatCard({
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-2xl font-bold text-neutral-900">{value}</p>
+            <p className="text-lg font-semibold text-neutral-900">{value}</p>
             <p className="text-sm text-neutral-600 mt-0.5">{label}</p>
             {subtext && <p className="text-xs text-neutral-400 mt-1">{subtext}</p>}
           </div>

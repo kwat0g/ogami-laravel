@@ -176,17 +176,17 @@ export default function PayrollRunComputingPage() {
         {isComputed && run && (
           <div className="grid grid-cols-3 gap-4 pt-2">
             <div className="text-center">
-              <p className="text-xl font-bold text-neutral-900">{run.total_employees}</p>
+              <p className="text-lg font-semibold text-neutral-900">{run.total_employees}</p>
               <p className="text-xs text-neutral-500">Employees Processed</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-neutral-900">
+              <p className="text-lg font-semibold text-neutral-900">
                 {formatCentavos(run.gross_pay_total_centavos)}
               </p>
               <p className="text-xs text-neutral-500">Total Gross</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-neutral-900">
+              <p className="text-lg font-semibold text-neutral-900">
                 {formatCentavos(run.net_pay_total_centavos)}
               </p>
               <p className="text-xs text-neutral-500">Total Net Pay</p>

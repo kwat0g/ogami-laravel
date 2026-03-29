@@ -401,7 +401,7 @@ export default function ClientShopPage(): JSX.Element {
               <div className="border-t border-neutral-100 pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-neutral-600">Order Total</span>
-                  <span className="text-xl font-bold text-neutral-900">{formatPrice(orderTotal)}</span>
+                  <span className="text-lg font-semibold text-neutral-900">{formatPrice(orderTotal)}</span>
                 </div>
               </div>
 

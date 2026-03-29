@@ -387,7 +387,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
         </div>
         <div className="bg-white rounded border border-neutral-200 p-4">
           <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total Amount</p>
-          <p className="text-xl font-bold text-neutral-900 mt-1 font-mono">
+          <p className="text-lg font-semibold text-neutral-900 mt-1 font-mono">
             {formatCurrency(order.total_amount_centavos)}
           </p>
         </div>

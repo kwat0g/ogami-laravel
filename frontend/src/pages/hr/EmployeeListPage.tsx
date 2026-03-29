@@ -108,21 +108,21 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
             <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">
               Total Employees
             </p>
-            <p className="text-2xl font-bold text-blue-700 mt-1">{employees.length}</p>
+            <p className="text-lg font-semibold text-blue-700 mt-1">{employees.length}</p>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Active</p>
-            <p className="text-2xl font-bold text-emerald-700 mt-1">{activeCount}</p>
+            <p className="text-lg font-semibold text-emerald-700 mt-1">{activeCount}</p>
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">On Leave</p>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{onLeaveCount}</p>
+            <p className="text-lg font-semibold text-amber-700 mt-1">{onLeaveCount}</p>
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
             <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">
               Total Monthly Payroll
             </p>
-            <p className="text-xl font-bold text-purple-700 font-mono mt-1">
+            <p className="text-lg font-semibold text-purple-700 font-mono mt-1">
               ₱{(totalPayroll / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}
             </p>
           </div>

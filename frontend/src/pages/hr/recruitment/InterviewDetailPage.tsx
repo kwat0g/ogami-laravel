@@ -45,7 +45,7 @@ export default function InterviewDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+          <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
             Interview - Round {interview.round}
           </h1>
           <p className="text-sm text-neutral-500">
@@ -126,7 +126,7 @@ export default function InterviewDetailPage() {
         <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
           <h3 className="mb-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Evaluation</h3>
           <div className="mb-4 flex items-center gap-4">
-            <span className="text-2xl font-bold text-neutral-900 dark:text-white">
+            <span className="text-lg font-semibold text-neutral-900 dark:text-white">
               {interview.evaluation.overall_score}/5
             </span>
             <StatusBadge

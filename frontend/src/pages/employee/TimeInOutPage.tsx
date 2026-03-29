@@ -260,7 +260,7 @@ export default function TimeInOutPage() {
               <Briefcase className="w-4 h-4" />
               <span className="text-xs font-medium">Present</span>
             </div>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.present}</p>
+            <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{stats.present}</p>
           </div>
         </Card>
         <Card>
@@ -269,7 +269,7 @@ export default function TimeInOutPage() {
               <Calendar className="w-4 h-4" />
               <span className="text-xs font-medium">Absent</span>
             </div>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.absent}</p>
+            <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{stats.absent}</p>
           </div>
         </Card>
         <Card>
@@ -278,7 +278,7 @@ export default function TimeInOutPage() {
               <Clock className="w-4 h-4" />
               <span className="text-xs font-medium">Late</span>
             </div>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.late}</p>
+            <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{stats.late}</p>
           </div>
         </Card>
         <Card>
@@ -287,7 +287,7 @@ export default function TimeInOutPage() {
               <Coffee className="w-4 h-4" />
               <span className="text-xs font-medium">Incomplete</span>
             </div>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.incomplete}</p>
+            <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{stats.incomplete}</p>
           </div>
         </Card>
         <Card className="col-span-2 lg:col-span-1">
@@ -296,7 +296,7 @@ export default function TimeInOutPage() {
               <Timer className="w-4 h-4" />
               <span className="text-xs font-medium">OT Hours</span>
             </div>
-            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{Math.round(stats.totalOvertime / 60 * 10) / 10}h</p>
+            <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{Math.round(stats.totalOvertime / 60 * 10) / 10}h</p>
           </div>
         </Card>
       </div>

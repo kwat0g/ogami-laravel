@@ -220,19 +220,19 @@ export default function FixedAssetsPage(): React.ReactElement {
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white border border-neutral-200 rounded-xl p-4">
             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total Acquisition Cost</p>
-            <p className="text-xl font-bold text-neutral-900 font-mono mt-1">
+            <p className="text-lg font-semibold text-neutral-900 font-mono mt-1">
               ₱{(totalCost / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="bg-white border border-neutral-200 rounded-xl p-4">
             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total Book Value</p>
-            <p className="text-xl font-bold text-neutral-900 font-mono mt-1">
+            <p className="text-lg font-semibold text-neutral-900 font-mono mt-1">
               ₱{(totalBookValue / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Accumulated Depreciation</p>
-            <p className="text-xl font-bold text-neutral-700 font-mono mt-1">
+            <p className="text-lg font-semibold text-neutral-700 font-mono mt-1">
               ₱{(totalDepreciation / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>

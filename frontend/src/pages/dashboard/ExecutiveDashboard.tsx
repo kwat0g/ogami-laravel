@@ -254,15 +254,15 @@ export default function ExecutiveDashboard() {
           <SectionHeader title="Financial Ratios" />
           <div className="grid grid-cols-3 gap-3">
             <Card className="p-4 text-center">
-              <p className="text-2xl font-bold text-neutral-900">{financialRatios.gross_profit_margin.toFixed(1)}%</p>
+              <p className="text-lg font-semibold text-neutral-900">{financialRatios.gross_profit_margin.toFixed(1)}%</p>
               <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">Gross Profit Margin</p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-2xl font-bold text-neutral-900">{financialRatios.current_ratio.toFixed(2)}</p>
+              <p className="text-lg font-semibold text-neutral-900">{financialRatios.current_ratio.toFixed(2)}</p>
               <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">Current Ratio</p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-2xl font-bold text-neutral-900">{financialRatios.debt_to_equity.toFixed(2)}</p>
+              <p className="text-lg font-semibold text-neutral-900">{financialRatios.debt_to_equity.toFixed(2)}</p>
               <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">Debt to Equity</p>
             </Card>
           </div>

@@ -59,7 +59,7 @@ export default function QuotationDetailPage() {
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-4"><span className="text-xs text-neutral-500">Status</span><p className="mt-1"><StatusBadge status={q.status} /></p></Card>
-        <Card className="p-4"><span className="text-xs text-neutral-500">Total</span><p className="mt-1 text-xl font-bold font-mono">{fmt(q.total_centavos)}</p></Card>
+        <Card className="p-4"><span className="text-xs text-neutral-500">Total</span><p className="mt-1 text-lg font-semibold font-mono">{fmt(q.total_centavos)}</p></Card>
         <Card className="p-4"><span className="text-xs text-neutral-500">Valid Until</span><p className="mt-1 font-medium">{new Date(q.validity_date).toLocaleDateString()}</p></Card>
       </div>
       <Card className="p-6">

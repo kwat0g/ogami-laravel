@@ -440,7 +440,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
         </div>
         <div className="text-right">
           <p className="text-xs text-neutral-500">Total Amount</p>
-          <p className="text-xl font-bold text-neutral-900">
+          <p className="text-lg font-semibold text-neutral-900">
             ₱{Number(order.total_po_amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>

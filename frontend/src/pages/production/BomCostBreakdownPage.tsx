@@ -88,7 +88,7 @@ export default function BomCostBreakdownPage() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-neutral-700">Standard Cost per Unit</h3>
-          <span className="text-xl font-bold text-neutral-900">{formatPeso(total)}</span>
+          <span className="text-lg font-semibold text-neutral-900">{formatPeso(total)}</span>
         </div>
 
         {/* Visual cost breakdown bar */}

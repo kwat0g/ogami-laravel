@@ -51,7 +51,7 @@ function VendorDetailCard({ vendor }: { vendor: VendorScore }): JSX.Element {
           </div>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-bold text-neutral-900">{vendor.composite_score.toFixed(1)}</p>
+          <p className="text-lg font-semibold text-neutral-900">{vendor.composite_score.toFixed(1)}</p>
           <p className="text-[10px] uppercase tracking-wide text-neutral-400">Composite</p>
         </div>
       </div>

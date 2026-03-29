@@ -49,19 +49,19 @@ export default function CrmDashboardPage(): React.ReactElement {
         <Card>
           <CardBody className="py-4">
             <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Open Tickets</div>
-            <div className="text-2xl font-bold text-neutral-900 mt-1">{d.open_tickets}</div>
+            <div className="text-lg font-semibold text-neutral-900 mt-1">{d.open_tickets}</div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="py-4">
             <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide">In Progress</div>
-            <div className="text-2xl font-bold text-blue-600 mt-1">{d.in_progress_tickets}</div>
+            <div className="text-lg font-semibold text-blue-600 mt-1">{d.in_progress_tickets}</div>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="py-4">
             <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Resolved Today</div>
-            <div className="text-2xl font-bold text-emerald-600 mt-1 flex items-center gap-1">
+            <div className="text-lg font-semibold text-emerald-600 mt-1 flex items-center gap-1">
               <CheckCircle className="w-5 h-5" /> {d.resolved_today}
             </div>
           </CardBody>
@@ -69,7 +69,7 @@ export default function CrmDashboardPage(): React.ReactElement {
         <Card>
           <CardBody className="py-4">
             <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Avg Resolution</div>
-            <div className="text-2xl font-bold text-neutral-700 mt-1 flex items-center gap-1">
+            <div className="text-lg font-semibold text-neutral-700 mt-1 flex items-center gap-1">
               <Clock className="w-5 h-5" /> {d.avg_resolution_hours}h
             </div>
           </CardBody>

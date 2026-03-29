@@ -194,7 +194,7 @@ function Card({ label, value, color }: { label: string; value: string; color: st
         <span className={`w-2 h-2 rounded-full ${color}`} />
         <span className="text-xs font-medium text-neutral-500">{label}</span>
       </div>
-      <span className="text-2xl font-bold text-neutral-900 tabular-nums">{value}</span>
+      <span className="text-lg font-semibold text-neutral-900 tabular-nums">{value}</span>
     </div>
   )
 }

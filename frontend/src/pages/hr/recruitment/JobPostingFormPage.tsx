@@ -61,7 +61,7 @@ export default function JobPostingFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-6 text-2xl font-bold text-neutral-900 dark:text-white">Create Job Posting</h1>
+      <h1 className="mb-6 text-lg font-semibold text-neutral-900 dark:text-white">Create Job Posting</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* GAP-07: Requisition dropdown instead of raw integer ID */}

@@ -25,7 +25,7 @@ export default function JobPostingDetailPage() {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-neutral-500">{posting.posting_number}</p>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">{posting.title}</h1>
+          <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">{posting.title}</h1>
           <p className="text-sm text-neutral-500">{posting.requisition?.department} - {posting.requisition?.position}</p>
         </div>
         <StatusBadge status={posting.status} label={posting.status_label} />

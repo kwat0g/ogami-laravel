@@ -47,7 +47,7 @@ export default function EmployeeDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
           Welcome, {user?.name?.split(' ')[0] ?? 'there'}
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
@@ -112,7 +112,7 @@ export default function EmployeeDashboard() {
             <Card key={label} className={color}>
               <div className="p-3 text-center">
                 <Icon className="h-4 w-4 mx-auto mb-2 opacity-70" />
-                <p className="text-xl font-bold">{value}</p>
+                <p className="text-lg font-semibold">{value}</p>
                 <p className="text-[10px] uppercase tracking-wide font-medium mt-0.5">{label}</p>
               </div>
             </Card>
@@ -162,15 +162,15 @@ export default function EmployeeDashboard() {
           <SectionHeader title="Year-over-Year Comparison" />
           <div className="grid grid-cols-3 gap-3">
             <Card className="p-4 text-center">
-              <p className="text-xl font-bold text-neutral-900">{formatPeso(analytics.ytd_comparison.current_year_gross)}</p>
+              <p className="text-lg font-semibold text-neutral-900">{formatPeso(analytics.ytd_comparison.current_year_gross)}</p>
               <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">{currentYear} YTD Gross</p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-xl font-bold text-neutral-700">{formatPeso(analytics.ytd_comparison.last_year_gross)}</p>
+              <p className="text-lg font-semibold text-neutral-700">{formatPeso(analytics.ytd_comparison.last_year_gross)}</p>
               <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide">{currentYear - 1} YTD Gross</p>
             </Card>
             <Card className={`p-4 text-center ${analytics.ytd_comparison.change_percent >= 0 ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-              <p className={`text-xl font-bold ${analytics.ytd_comparison.change_percent >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              <p className={`text-lg font-semibold ${analytics.ytd_comparison.change_percent >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {analytics.ytd_comparison.change_percent > 0 ? '+' : ''}{analytics.ytd_comparison.change_percent.toFixed(1)}%
               </p>
               <p className={`text-xs mt-1 uppercase tracking-wide ${analytics.ytd_comparison.change_percent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -188,11 +188,11 @@ export default function EmployeeDashboard() {
             <PiggyBank className="h-6 w-6 text-blue-600 shrink-0" />
             <div className="flex-1">
               <p className="text-xs text-blue-700 font-medium uppercase tracking-wide">Total Outstanding Balance</p>
-              <p className="text-2xl font-bold text-blue-900 mt-0.5">{formatPeso(stats?.loans.total_outstanding ?? 0)}</p>
+              <p className="text-lg font-semibold text-blue-900 mt-0.5">{formatPeso(stats?.loans.total_outstanding ?? 0)}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-blue-700 font-medium uppercase tracking-wide">Active Loans</p>
-              <p className="text-2xl font-bold text-blue-900 mt-0.5">{stats?.loans.active_loans}</p>
+              <p className="text-lg font-semibold text-blue-900 mt-0.5">{stats?.loans.active_loans}</p>
             </div>
           </div>
         </WidgetCard>

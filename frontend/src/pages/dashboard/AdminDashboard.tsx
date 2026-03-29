@@ -136,21 +136,21 @@ export default function AdminDashboard() {
             <Card className="bg-green-50 border-green-100">
               <div className="p-4 text-center">
                 <UserCheck className="h-5 w-5 text-green-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-700">{stats?.recent_activity.logins_today ?? 0}</p>
+                <p className="text-lg font-semibold text-green-700">{stats?.recent_activity.logins_today ?? 0}</p>
                 <p className="text-[10px] text-green-600 uppercase tracking-wide font-medium mt-1">Logins</p>
               </div>
             </Card>
             <Card className="bg-blue-50 border-blue-100">
               <div className="p-4 text-center">
                 <Shield className="h-5 w-5 text-blue-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-blue-700">{stats?.recent_activity.password_changes ?? 0}</p>
+                <p className="text-lg font-semibold text-blue-700">{stats?.recent_activity.password_changes ?? 0}</p>
                 <p className="text-[10px] text-blue-600 uppercase tracking-wide font-medium mt-1">Pwd Changes</p>
               </div>
             </Card>
             <Card className="bg-purple-50 border-purple-100">
               <div className="p-4 text-center">
                 <Users className="h-5 w-5 text-purple-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-700">{stats?.recent_activity.new_users ?? 0}</p>
+                <p className="text-lg font-semibold text-purple-700">{stats?.recent_activity.new_users ?? 0}</p>
                 <p className="text-[10px] text-purple-600 uppercase tracking-wide font-medium mt-1">New Users</p>
               </div>
             </Card>

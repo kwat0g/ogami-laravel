@@ -159,21 +159,21 @@ export default function APDueDateMonitorPage() {
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-neutral-50 rounded p-4 border border-neutral-200">
           <div className="text-xs font-medium text-neutral-600">Overdue</div>
-          <div className="text-2xl font-bold text-neutral-900 mt-1">{overdueInvoices.length}</div>
+          <div className="text-lg font-semibold text-neutral-900 mt-1">{overdueInvoices.length}</div>
           <div className="text-xs text-neutral-500 mt-0.5">
             {formatCurrency(overdueInvoices.reduce((s, i) => s + i.balance_due, 0))} outstanding
           </div>
         </div>
         <div className="bg-neutral-50 rounded p-4 border border-neutral-200">
           <div className="text-xs font-medium text-neutral-600">Due ≤ 7 days</div>
-          <div className="text-2xl font-bold text-neutral-900 mt-1">{dueSoonInvoices.length}</div>
+          <div className="text-lg font-semibold text-neutral-900 mt-1">{dueSoonInvoices.length}</div>
           <div className="text-xs text-neutral-500 mt-0.5">
             {formatCurrency(dueSoonInvoices.reduce((s, i) => s + i.balance_due, 0))} outstanding
           </div>
         </div>
         <div className="bg-neutral-50 rounded p-4 border border-neutral-200">
           <div className="text-xs font-medium text-neutral-600">Pending Approval</div>
-          <div className="text-2xl font-bold text-neutral-900 mt-1">{pendingInvoices.length}</div>
+          <div className="text-lg font-semibold text-neutral-900 mt-1">{pendingInvoices.length}</div>
           <div className="text-xs text-neutral-500 mt-0.5">
             {formatCurrency(pendingInvoices.reduce((s, i) => s + i.net_payable, 0))} net payable
           </div>

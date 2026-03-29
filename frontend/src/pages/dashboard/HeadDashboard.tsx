@@ -60,7 +60,7 @@ export default function HeadDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">Department Head Dashboard</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Department Head Dashboard</h1>
         <p className="text-sm text-neutral-500 mt-0.5">
           Team oversight, pending notations, and operational module access
         </p>

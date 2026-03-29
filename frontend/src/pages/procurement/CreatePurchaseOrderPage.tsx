@@ -398,7 +398,7 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
             <div className="flex justify-end mt-4">
               <div className="text-right">
                 <p className="text-xs text-neutral-500">Grand Total</p>
-                <p className="text-xl font-bold text-neutral-900">
+                <p className="text-lg font-semibold text-neutral-900">
                   ₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                 </p>
               </div>

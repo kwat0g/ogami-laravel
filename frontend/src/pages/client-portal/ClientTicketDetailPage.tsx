@@ -84,7 +84,7 @@ export default function ClientTicketDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-mono text-neutral-400 mb-1">{ticket.ticket_number}</div>
-            <h1 className="text-xl font-bold text-neutral-900 mb-2">{ticket.subject}</h1>
+            <h1 className="text-lg font-semibold text-neutral-900 mb-2">{ticket.subject}</h1>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className={`px-2 py-0.5 rounded-full font-medium capitalize ${statusBadge[ticket.status]}`}>
                 {ticket.status.replace('_', ' ')}
