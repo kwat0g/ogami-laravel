@@ -60,6 +60,12 @@ final class AttendanceLogPolicy
         return $user->hasAnyPermission(['attendance.import_csv', 'attendance.create']);
     }
 
+    /** Import CSV file — HR Manager + HR Supervisor (used by AttendanceImportController) */
+    public function import(User $user): bool
+    {
+        return $user->hasAnyPermission(['attendance.import_csv', 'attendance.import', 'attendance.create']);
+    }
+
     /** Resolve anomalies / manual override — HR Manager + HR Supervisor */
     public function update(User $user, AttendanceLog $log): bool
     {

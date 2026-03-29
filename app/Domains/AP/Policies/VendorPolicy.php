@@ -66,6 +66,12 @@ final class VendorPolicy
         return $user->hasPermissionTo('vendors.suspend');
     }
 
+    /** Manage vendor items — Purchasing Officer or above (used by VendorItemController). */
+    public function manage(User $user, Vendor $vendor): bool
+    {
+        return $user->hasAnyPermission(['vendors.update', 'vendors.create', 'vendors.manage']);
+    }
+
     /** Provision a vendor portal user account — admin / system user management only. */
     public function provisionAccount(User $user, Vendor $vendor): bool
     {

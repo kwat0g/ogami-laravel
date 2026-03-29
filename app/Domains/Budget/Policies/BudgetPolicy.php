@@ -38,6 +38,12 @@ final class BudgetPolicy
         return $user->hasPermissionTo('budget.manage');
     }
 
+    /** Approve an annual budget — requires budget.approve or budget.manage permission. */
+    public function approve(User $user): bool
+    {
+        return $user->hasAnyPermission(['budget.approve', 'budget.manage']);
+    }
+
     /**
      * Determine whether the user can restore the model.
      */
