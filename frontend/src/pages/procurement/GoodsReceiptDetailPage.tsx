@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, ClipboardCheck, Trash2, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Trash2, XCircle, FlaskConical, Pencil } from 'lucide-react'
 import { usePermission } from '@/hooks/usePermission'
 import {
   useGoodsReceipt,
   useConfirmGoodsReceipt,
   useDeleteGoodsReceipt,
   useRejectGoodsReceipt,
+  useSubmitForQc,
+  useUpdateGoodsReceiptItem,
 } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -21,11 +23,13 @@ import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import StatusTimeline from '@/components/ui/StatusTimeline'
 
 const conditionBadgeClass: Record<GoodsReceiptCondition, string> = {
-  good:     'bg-neutral-100 text-neutral-700',
-  damaged:  'bg-neutral-100 text-neutral-700',
-  partial:  'bg-neutral-100 text-neutral-700',
-  rejected: 'bg-neutral-100 text-neutral-500',
+  good:     'bg-green-100 text-green-700',
+  damaged:  'bg-amber-100 text-amber-700',
+  partial:  'bg-blue-100 text-blue-700',
+  rejected: 'bg-red-100 text-red-600',
 }
+
+const CONDITIONS: GoodsReceiptCondition[] = ['good', 'damaged', 'partial', 'rejected']
 
 const conditionLabel: Record<GoodsReceiptCondition, string> = {
   good:     'Good',
@@ -40,12 +44,15 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const canConfirmPermission = usePermission('procurement.goods-receipt.confirm')
 
   const { data: gr, isLoading, isError } = useGoodsReceipt(ulid ?? null)
-  const confirmMutation = useConfirmGoodsReceipt()
-  const deleteMutation  = useDeleteGoodsReceipt()
-  const rejectMutation  = useRejectGoodsReceipt()
+  const confirmMutation    = useConfirmGoodsReceipt()
+  const deleteMutation     = useDeleteGoodsReceipt()
+  const rejectMutation     = useRejectGoodsReceipt()
+  const submitForQcMutation = useSubmitForQc()
+  const updateItemMutation  = useUpdateGoodsReceiptItem()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
+  const [editingItemId, setEditingItemId] = useState<number | null>(null)
 
   function handleDelete(): void {
     if (!gr) return
@@ -113,7 +120,40 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
     )
   }
 
-  const canConfirm = gr.status === 'draft'
+  const isDraft = gr.status === 'draft'
+  const isPendingQc = gr.status === 'pending_qc'
+  const canConfirm = isDraft || isPendingQc
+  const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending
+
+  function handleSubmitForQc(): void {
+    if (!gr) return
+    submitForQcMutation.mutate(gr.ulid, {
+      onSuccess: () => toast.success('GR submitted for incoming quality control.'),
+      onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to submit for QC.'),
+    })
+  }
+
+  function handleItemConditionChange(itemId: number, condition: GoodsReceiptCondition): void {
+    if (!gr) return
+    updateItemMutation.mutate(
+      { ulid: gr.ulid, itemId, data: { condition } },
+      {
+        onSuccess: () => toast.success('Item condition updated.'),
+        onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to update item.'),
+      },
+    )
+  }
+
+  function handleItemRemarksChange(itemId: number, remarks: string): void {
+    if (!gr) return
+    updateItemMutation.mutate(
+      { ulid: gr.ulid, itemId, data: { remarks } },
+      {
+        onSuccess: () => toast.success('Remarks saved.'),
+        onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to save remarks.'),
+      },
+    )
+  }
 
   const headerActions = canConfirm ? (
     <>
@@ -121,21 +161,32 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         <>
           <ConfirmDialog
             title="Post Goods Receipt?"
-            description="This will confirm the receipt and update inventory levels."
+            description="This will confirm the receipt, update inventory levels, and trigger three-way matching."
             onConfirm={handleConfirm}
           >
             <button
               type="button"
-              disabled={confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending}
+              disabled={anyPending}
               className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ClipboardCheck className="w-4 h-4" />
               {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
             </button>
           </ConfirmDialog>
+          {isDraft && (
+            <button
+              type="button"
+              disabled={anyPending}
+              onClick={handleSubmitForQc}
+              className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-blue-300 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FlaskConical className="w-4 h-4" />
+              {submitForQcMutation.isPending ? 'Submitting…' : 'Submit for QC'}
+            </button>
+          )}
           <button
             type="button"
-            disabled={confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending}
+            disabled={anyPending}
             onClick={() => setShowRejectModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-orange-300 text-orange-600 text-sm font-medium hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -144,20 +195,22 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
           </button>
         </>
       )}
-      <ConfirmDialog
-        title="Cancel Goods Receipt?"
-        description="This will cancel the draft Goods Receipt. This action cannot be undone."
-        onConfirm={handleDelete}
-      >
-        <button
-          type="button"
-          disabled={confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+      {isDraft && (
+        <ConfirmDialog
+          title="Cancel Goods Receipt?"
+          description="This will cancel the draft Goods Receipt. This action cannot be undone."
+          onConfirm={handleDelete}
         >
-          <Trash2 className="w-4 h-4" />
-          Cancel GR
-        </button>
-      </ConfirmDialog>
+          <button
+            type="button"
+            disabled={anyPending}
+            className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 className="w-4 h-4" />
+            Cancel GR
+          </button>
+        </ConfirmDialog>
+      )}
     </>
   ) : undefined
 
@@ -274,8 +327,8 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {gr.items.map((item, idx) => (
-                  <tr key={item.id} className="even:bg-neutral-100 hover:bg-neutral-50">
+                {gr.items.map((item: any, idx: number) => (
+                  <tr key={item.id} className="even:bg-neutral-50/50 hover:bg-neutral-50">
                     <td className="px-4 py-3 text-neutral-400">{idx + 1}</td>
                     <td className="px-4 py-3 text-neutral-600 font-mono text-xs">{item.po_item_id}</td>
                     <td className="px-4 py-3 text-right text-neutral-800 font-medium">
@@ -283,16 +336,55 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                     </td>
                     <td className="px-4 py-3 text-neutral-600">{item.unit_of_measure}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          conditionBadgeClass[item.condition]
-                        }`}
-                      >
-                        {conditionLabel[item.condition]}
-                      </span>
+                      {isDraft ? (
+                        <select
+                          value={item.condition}
+                          onChange={(e) => handleItemConditionChange(item.id, e.target.value as GoodsReceiptCondition)}
+                          disabled={updateItemMutation.isPending}
+                          className={`text-xs font-medium rounded px-2 py-1 border-0 cursor-pointer ${conditionBadgeClass[item.condition as GoodsReceiptCondition]}`}
+                        >
+                          {CONDITIONS.map((c) => (
+                            <option key={c} value={c}>{conditionLabel[c]}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            conditionBadgeClass[item.condition as GoodsReceiptCondition]
+                          }`}
+                        >
+                          {conditionLabel[item.condition as GoodsReceiptCondition]}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-neutral-500 text-xs italic">
-                      {item.remarks ?? '—'}
+                    <td className="px-4 py-3">
+                      {isDraft && editingItemId === item.id ? (
+                        <input
+                          type="text"
+                          defaultValue={item.remarks ?? ''}
+                          className="text-xs border border-neutral-300 rounded px-2 py-1 w-full"
+                          placeholder="Add remarks..."
+                          autoFocus
+                          onBlur={(e) => {
+                            handleItemRemarksChange(item.id, e.target.value)
+                            setEditingItemId(null)
+                          }}
+                          onKeyDown={(e: any) => {
+                            if (e.key === 'Enter') {
+                              handleItemRemarksChange(item.id, e.target.value)
+                              setEditingItemId(null)
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className={`text-xs italic ${isDraft ? 'cursor-pointer hover:text-neutral-700' : ''} text-neutral-500`}
+                          onClick={() => isDraft && setEditingItemId(item.id)}
+                        >
+                          {item.remarks ?? (isDraft ? 'Click to add remarks…' : '—')}
+                          {isDraft && <Pencil className="w-3 h-3 inline ml-1 text-neutral-400" />}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

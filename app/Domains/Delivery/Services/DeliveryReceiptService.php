@@ -81,6 +81,32 @@ final class DeliveryReceiptService implements ServiceContract
         }
 
         return DB::transaction(function () use ($receipt, $actor): DeliveryReceipt {
+            // QC Gate: For outbound deliveries, verify items have passed QC
+            if ($receipt->direction === 'outbound') {
+                $receipt->loadMissing('items');
+                foreach ($receipt->items as $item) {
+                    if ($item->item_master_id === null) {
+                        continue;
+                    }
+                    // Check if this item requires QC and has a failed/open inspection
+                    $openOrFailed = DB::table('inspections')
+                        ->where('item_id', $item->item_master_id)
+                        ->where('stage', 'final')
+                        ->whereIn('status', ['open', 'failed'])
+                        ->whereNull('deleted_at')
+                        ->exists();
+
+                    if ($openOrFailed) {
+                        $itemName = $item->itemMaster?->name ?? "Item #{$item->item_master_id}";
+                        throw new DomainException(
+                            "Cannot confirm outbound delivery: {$itemName} has open/failed QC inspections. Resolve them first.",
+                            'DELIVERY_QC_GATE_BLOCKED',
+                            422,
+                        );
+                    }
+                }
+            }
+
             $receipt->update(['status' => 'confirmed']);
 
             $receipt->loadMissing('items');
@@ -136,13 +162,26 @@ final class DeliveryReceiptService implements ServiceContract
 
         $total = (clone $query)->count();
 
-        // Consider on-time if receipt_date <= delivery_schedule expected date
-        // Since we may not always have a schedule, count all confirmed as "delivered"
+        // Compare receipt_date against the linked delivery schedule's expected date
+        $onTime = (clone $query)
+            ->whereHas('deliverySchedule', function ($q) {
+                $q->whereColumn('delivery_receipts.receipt_date', '<=', 'delivery_schedules.expected_date');
+            })
+            ->count();
+
+        // Receipts without a schedule are excluded from late count
+        $withSchedule = (clone $query)
+            ->whereNotNull('delivery_schedule_id')
+            ->count();
+
+        $late = $withSchedule > 0 ? max(0, $withSchedule - $onTime) : 0;
+        $onTimeRate = $withSchedule > 0 ? round(($onTime / $withSchedule) * 100, 1) : ($total > 0 ? 100.0 : 0.0);
+
         return [
             'total_deliveries' => $total,
-            'on_time' => $total, // TODO: compare against schedule expected dates
-            'late' => 0,
-            'on_time_rate_pct' => $total > 0 ? 100.0 : 0.0,
+            'on_time' => $onTime,
+            'late' => $late,
+            'on_time_rate_pct' => $onTimeRate,
         ];
     }
 }

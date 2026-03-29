@@ -84,7 +84,7 @@ final class PurchaseOrderService implements ServiceContract
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $po->id,
                     'pr_item_id' => $item->id,
-                    'item_master_id' => null,
+                    'item_master_id' => $item->item_master_id,
                     'item_description' => $item->item_description,
                     'unit_of_measure' => $item->unit_of_measure,
                     'quantity_ordered' => $item->quantity,

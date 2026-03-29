@@ -186,7 +186,7 @@ final class FinancialRatioService implements ServiceContract
         $currentAssets = max(0, $balanceQuery('asset'));
         $inventory = (float) DB::table('stock_balances')
             ->join('item_masters', 'stock_balances.item_id', '=', 'item_masters.id')
-            ->selectRaw('COALESCE(SUM(CAST(stock_balances.quantity_on_hand AS numeric) * COALESCE(item_masters.standard_price, 0)), 0)')
+            ->selectRaw('COALESCE(SUM(CAST(stock_balances.quantity_on_hand AS numeric) * COALESCE(item_masters.standard_price_centavos, 0) / 100.0), 0)')
             ->value('coalesce') ?? 0;
 
         $arBalance = (float) DB::table('customer_invoices')

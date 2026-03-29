@@ -76,9 +76,14 @@ final class InvoiceAutoDraftService implements ServiceContract
                 continue;
             }
 
+            // Skip rejected/damaged items
+            if (in_array($grItem->condition ?? '', ['rejected', 'damaged'], true)) {
+                continue;
+            }
+
             $qty = (float) $grItem->quantity_received;
-            $unitPrice = (float) $poItem->unit_price;
-            $netAmountCentavos += (int) round($qty * $unitPrice * 100);
+            $agreedCostPesos = (float) ($poItem->agreed_unit_cost ?? 0);
+            $netAmountCentavos += (int) round($qty * $agreedCostPesos * 100);
         }
 
         if ($netAmountCentavos <= 0) {

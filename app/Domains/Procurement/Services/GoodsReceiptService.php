@@ -6,6 +6,7 @@ namespace App\Domains\Procurement\Services;
 
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
+use App\Events\Inventory\ItemPriceChanged;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\GoodsReceiptItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
@@ -63,11 +64,12 @@ final class GoodsReceiptService implements ServiceContract
             ]);
 
             foreach ($items as $item) {
-                // Validate quantity against PO pending amount
+                // Validate quantity against effective pending (accounts for negotiated quantities)
                 $poItem = $po->items()->findOrFail($item['po_item_id']);
-                if ((float) $item['quantity_received'] > (float) $poItem->quantity_pending) {
+                $effectivePending = $poItem->effectiveQuantity() - (float) $poItem->quantity_received;
+                if ((float) $item['quantity_received'] > $effectivePending) {
                     throw new DomainException(
-                        message: "Received quantity ({$item['quantity_received']}) exceeds pending quantity ({$poItem->quantity_pending}) for PO item #{$poItem->id}.",
+                        message: "Received quantity ({$item['quantity_received']}) exceeds effective pending ({$effectivePending}) for PO item #{$poItem->id}.",
                         errorCode: 'GR_QTY_EXCEEDS_PENDING',
                         httpStatus: 422,
                     );
@@ -89,11 +91,75 @@ final class GoodsReceiptService implements ServiceContract
         });
     }
 
-    // ── Confirm ──────────────────────────────────────────────────────────────
+    // ── Update (draft only) ─────────────────────────────────────────────────
 
     /**
-     * Confirm a GR draft → triggers three-way match + AP invoice creation.
+     * Update a draft GR header (received_date, delivery_note, condition_notes).
      */
+    public function update(GoodsReceipt $gr, array $data): GoodsReceipt
+    {
+        if ($gr->status !== 'draft') {
+            throw new DomainException(
+                message: "Only draft Goods Receipts can be updated (current: {$gr->status}).",
+                errorCode: 'GR_NOT_EDITABLE',
+                httpStatus: 422,
+            );
+        }
+
+        $gr->update(array_intersect_key($data, array_flip([
+            'received_date', 'delivery_note_number', 'condition_notes',
+        ])));
+
+        return $gr->refresh();
+    }
+
+    /**
+     * Update a specific GR line item (quantity, condition, remarks).
+     * Allows warehouse staff to mark individual items as damaged/rejected.
+     */
+    public function updateItem(GoodsReceipt $gr, int $itemId, array $data): GoodsReceipt
+    {
+        if ($gr->status !== 'draft') {
+            throw new DomainException(
+                message: "Only draft GR items can be updated (current: {$gr->status}).",
+                errorCode: 'GR_NOT_EDITABLE',
+                httpStatus: 422,
+            );
+        }
+
+        $grItem = $gr->items()->findOrFail($itemId);
+
+        // Validate quantity against PO pending if changed
+        if (isset($data['quantity_received'])) {
+            $poItem = $grItem->poItem;
+            if ($poItem && (float) $data['quantity_received'] > (float) $poItem->quantity_pending) {
+                throw new DomainException(
+                    message: "Received quantity ({$data['quantity_received']}) exceeds PO pending ({$poItem->quantity_pending}).",
+                    errorCode: 'GR_QTY_EXCEEDS_PENDING',
+                    httpStatus: 422,
+                );
+            }
+        }
+
+        // Require remarks for rejected/damaged items
+        $condition = $data['condition'] ?? $grItem->condition;
+        if (in_array($condition, ['rejected', 'damaged'], true) && empty($data['remarks'] ?? $grItem->remarks)) {
+            throw new DomainException(
+                message: 'Remarks are required when marking items as rejected or damaged.',
+                errorCode: 'GR_CONDITION_NEEDS_REMARKS',
+                httpStatus: 422,
+            );
+        }
+
+        $grItem->update(array_intersect_key($data, array_flip([
+            'quantity_received', 'condition', 'remarks',
+        ])));
+
+        return $gr->refresh()->load('items');
+    }
+
+    // ── Confirm ──────────────────────────────────────────────────────────────
+
     /**
      * Submit a GR draft for QC inspection — sets status to pending_qc.
      * Used when the GR contains items that require incoming quality control.
@@ -412,7 +478,12 @@ final class GoodsReceiptService implements ServiceContract
                     }
                 } else {
                     // Standard costing: update directly from PO price
-                    $item->update(['standard_price_centavos' => $agreedCostCentavos]);
+                    $oldPrice = (int) ($item->standard_price_centavos ?? 0);
+                    if ($oldPrice !== $agreedCostCentavos) {
+                        $item->update(['standard_price_centavos' => $agreedCostCentavos]);
+                        // Fire event so BOM costs are auto-rolled up
+                        event(new ItemPriceChanged($itemId, $oldPrice, $agreedCostCentavos, 'goods_receipt'));
+                    }
                 }
             }
         } catch (\Throwable $e) {

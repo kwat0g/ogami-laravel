@@ -71,6 +71,42 @@ final class GoodsReceiptController extends Controller
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'receivedBy', 'items']));
     }
 
+    /**
+     * Update a draft GR header (received_date, delivery_note_number, condition_notes).
+     */
+    public function update(Request $request, GoodsReceipt $goodsReceipt): GoodsReceiptResource
+    {
+        $this->authorize('confirm', $goodsReceipt);
+
+        $data = $request->validate([
+            'received_date' => ['sometimes', 'date'],
+            'delivery_note_number' => ['nullable', 'string', 'max:255'],
+            'condition_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $gr = $this->service->update($goodsReceipt, $data);
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'receivedBy', 'items']));
+    }
+
+    /**
+     * Update a specific GR line item (quantity_received, condition, remarks).
+     */
+    public function updateItem(Request $request, GoodsReceipt $goodsReceipt, int $itemId): GoodsReceiptResource
+    {
+        $this->authorize('confirm', $goodsReceipt);
+
+        $data = $request->validate([
+            'quantity_received' => ['sometimes', 'numeric', 'min:0'],
+            'condition' => ['sometimes', 'string', 'in:good,damaged,partial,rejected'],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $gr = $this->service->updateItem($goodsReceipt->load('items'), $itemId, $data);
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'receivedBy', 'items.poItem']));
+    }
+
     public function show(GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
         $this->authorize('view', $goodsReceipt);

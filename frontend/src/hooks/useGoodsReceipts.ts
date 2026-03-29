@@ -92,6 +92,62 @@ export function useConfirmGoodsReceipt() {
   })
 }
 
+// ── Update draft GR header ───────────────────────────────────────────────────
+
+export function useUpdateGoodsReceipt() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ulid, data }: { ulid: string; data: Record<string, unknown> }) => {
+      const res = await api.put<{ data: GoodsReceipt }>(
+        `/procurement/goods-receipts/${ulid}`,
+        data,
+      )
+      return res.data.data
+    },
+    onSuccess: (gr) => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      qc.setQueryData(['goods-receipts', gr.ulid], gr)
+    },
+  })
+}
+
+// ── Update draft GR item (condition, quantity, remarks) ──────────────────────
+
+export function useUpdateGoodsReceiptItem() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ulid, itemId, data }: { ulid: string; itemId: number; data: Record<string, unknown> }) => {
+      const res = await api.patch<{ data: GoodsReceipt }>(
+        `/procurement/goods-receipts/${ulid}/items/${itemId}`,
+        data,
+      )
+      return res.data.data
+    },
+    onSuccess: (gr) => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      qc.setQueryData(['goods-receipts', gr.ulid], gr)
+    },
+  })
+}
+
+// ── Submit for QC (draft -> pending_qc) ──────────────────────────────────────
+
+export function useSubmitForQc() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (ulid: string) => {
+      const res = await api.post<{ data: GoodsReceipt }>(
+        `/procurement/goods-receipts/${ulid}/submit-for-qc`,
+      )
+      return res.data.data
+    },
+    onSuccess: (gr) => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      qc.setQueryData(['goods-receipts', gr.ulid], gr)
+    },
+  })
+}
+
 // ── Reject (draft only) ─────────────────────────────────────────────────────
 
 export function useRejectGoodsReceipt() {

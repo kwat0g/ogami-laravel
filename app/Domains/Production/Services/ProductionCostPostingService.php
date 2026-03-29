@@ -67,17 +67,21 @@ final class ProductionCostPostingService implements ServiceContract
                 );
             }
 
-            // Find accounts (use generic names - real implementation would use config)
-            $wipAccount = ChartOfAccount::where('name', 'like', '%Work in Process%')
-                ->orWhere('name', 'like', '%WIP%')
-                ->first();
-            $varianceAccount = ChartOfAccount::where('name', 'like', '%Cost Variance%')
-                ->orWhere('name', 'like', '%Manufacturing Variance%')
-                ->first();
-            $inventoryAccount = ChartOfAccount::where('name', 'like', '%Raw Material%')
-                ->orWhere('account_type', 'asset')
-                ->where('name', 'like', '%Inventor%')
-                ->first();
+            // Find accounts by code (reliable) with fallback to name-based search
+            $wipAccount = ChartOfAccount::where('code', '1400')->first()
+                ?? ChartOfAccount::where('name', 'like', '%Work in Process%')->orWhere('name', 'like', '%WIP%')->first();
+            $varianceAccount = ChartOfAccount::where('code', '5900')->first()
+                ?? ChartOfAccount::where('name', 'like', '%Cost Variance%')->orWhere('name', 'like', '%Manufacturing Variance%')->first();
+            $inventoryAccount = ChartOfAccount::where('code', '1300')->first()
+                ?? ChartOfAccount::where('name', 'like', '%Raw Material%')->where('name', 'like', '%Inventor%')->first();
+
+            if (! $wipAccount || ! $inventoryAccount) {
+                throw new DomainException(
+                    'Missing GL accounts for production cost posting. Ensure WIP (1400) and Raw Material Inventory (1300) accounts exist.',
+                    'PROD_MISSING_GL_ACCOUNTS',
+                    422,
+                );
+            }
 
             // Create the journal entry
             $je = JournalEntry::create([
