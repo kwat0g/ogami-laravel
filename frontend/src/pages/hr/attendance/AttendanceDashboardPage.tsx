@@ -14,7 +14,7 @@ export default function AttendanceDashboardPage() {
   const { hasPermission } = useAuthStore()
   const canApproveOT = hasPermission('overtime.approve')
 
-  const { data, isLoading, isError, _refetch } = useAttendanceDashboard()
+  const { data, isLoading, isError, refetch } = useAttendanceDashboard()
 
   // OT approval state
   const [approvingId, setApprovingId]       = useState<number | null>(null)

@@ -26,7 +26,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
   const [status, setStatus] = useState('')
   const [type, setType] = useState('')
   const [page, setPage] = useState(1)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -44,7 +44,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['delivery-schedules', 'archived'],
     queryFn: () => api.get('/production/delivery-schedules-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

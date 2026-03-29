@@ -100,7 +100,7 @@ export default function LeaveBalancesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmployeeIdNum, selectedEmpBalances])
 
-  const { data, isLoading, isFetching, isError, _refetch } = useLeaveBalances({
+  const { data, isLoading, isFetching, isError, refetch } = useLeaveBalances({
     year,
     department_id: departmentId,
     search: debouncedSearch || undefined,

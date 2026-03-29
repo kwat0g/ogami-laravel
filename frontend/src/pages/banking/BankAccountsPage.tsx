@@ -176,7 +176,7 @@ export default function BankAccountsPage() {
   const { data, isLoading } = useBankAccounts()
   const accounts = data ?? []
   const [showForm, setShowForm] = useState(false)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [editing, setEditing] = useState<BankAccount | undefined>()
 
   const canCreate = hasPermission('bank_accounts.create')

@@ -170,7 +170,7 @@ export default function JournalEntriesPage() {
   const [fiscalPeriodId, setFiscalPeriodId] = useState<number | undefined>(undefined)
   const [sourceType, setSourceType] = useState<string | undefined>(undefined)
   const [dateFrom, setDateFrom] = useState('')
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [dateTo, setDateTo] = useState('')
 
   const filters: JournalEntryFilters = {

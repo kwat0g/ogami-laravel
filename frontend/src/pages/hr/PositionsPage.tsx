@@ -34,7 +34,7 @@ export default function PositionsPage() {
   const [deptFilter, setDeptFilter] = useState<number | undefined>()
 
   const { data: depts, isLoading: deptsLoading } = useDepartments()
-  const { data, isLoading, isError, _refetch } = usePositions(deptFilter)
+  const { data, isLoading, isError, refetch } = usePositions(deptFilter)
   const create = useCreatePosition()
   const update = useUpdatePosition()
   const remove = useDeletePosition()

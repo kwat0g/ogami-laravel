@@ -37,7 +37,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
   const canEdit = hasPermission('employees.update')
   const [filters, setFilters] = useState<EmployeeFilters>({ per_page: 25 })
   const [searchValue, setSearchValue] = useState('')
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
   const isTeamView = view === 'team'
   const employeesQuery = useEmployees(filters)

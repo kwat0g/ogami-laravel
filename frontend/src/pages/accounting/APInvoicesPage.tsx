@@ -182,7 +182,7 @@ export default function APInvoicesPage() {
   const canApprove = useAuthStore(s => s.hasPermission('vendor_invoices.approve'))
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -196,7 +196,7 @@ export default function APInvoicesPage() {
   const [batchRejectOpen, setBatchRejectOpen] = useState(false)
   const [batchRejectNote, setBatchRejectNote] = useState('')
 
-  const { data, isLoading, _refetch } = useAPInvoices({
+  const { data, isLoading, refetch } = useAPInvoices({
     status: activeStatus ?? undefined,
     due_soon: dueSoonOnly || undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),

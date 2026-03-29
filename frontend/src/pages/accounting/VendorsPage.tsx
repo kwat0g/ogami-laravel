@@ -483,20 +483,20 @@ export default function VendorsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Vendor | null>(null)
   const [scorecardVendorId, setScorecardVendorId] = useState<number | null>(null)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)
   }, [])
 
   // Active list
-  const { data, isLoading, _refetch } = useVendors({
+  const { data, isLoading, refetch } = useVendors({
     search: debouncedSearch || undefined,
     is_active: undefined,
   })
 
   // Archived list
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['vendors', 'archived', debouncedSearch],
     queryFn: () => api.get('/vendors-archived', { params: { search: debouncedSearch || undefined, per_page: 50 } }),
     enabled: isArchiveView,

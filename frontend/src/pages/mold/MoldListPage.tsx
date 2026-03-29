@@ -20,19 +20,19 @@ const STATUS_COLORS: Record<MoldStatus, string> = {
 
 export default function MoldListPage() {
   const [status, setStatus] = useState('');
-  const [_isArchiveView, _setIsArchiveView] = useState(false);
+  const [isArchiveView, setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  const { data, isLoading, _refetch } = useMolds({
+  const { data, isLoading, refetch } = useMolds({
     ...(status ? { status } : {}),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
     page,
     per_page: 20,
   });
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['molds', 'archived', debouncedSearch],
     queryFn: () => api.get('/mold/molds-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
     enabled: isArchiveView,

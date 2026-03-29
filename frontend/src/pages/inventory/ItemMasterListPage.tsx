@@ -22,9 +22,9 @@ import type { ItemMaster, ItemCategory } from '@/types/inventory'
 // ---------------------------------------------------------------------------
 
 function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
-  const { data: categories, isLoading, _refetch } = useItemCategories()
+  const { data: categories, isLoading, refetch } = useItemCategories()
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['items', 'archived'],
     queryFn: () => api.get('/inventory/items-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,
@@ -177,7 +177,7 @@ export default function ItemMasterListPage(): React.ReactElement {
   const [catFilter,  setCat]      = useState<number | ''>('')
   const [activeOnly, setActive]   = useState(false)
   const [page, setPage]           = useState(1)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)

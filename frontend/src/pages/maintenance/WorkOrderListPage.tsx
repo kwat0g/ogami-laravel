@@ -30,7 +30,7 @@ export default function WorkOrderListPage() {
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [priority, setPriority] = useState('');
-  const [_isArchiveView, _setIsArchiveView] = useState(false);
+  const [isArchiveView, setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -50,7 +50,7 @@ export default function WorkOrderListPage() {
 
   const { data, isLoading } = useWorkOrders(params);
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['work-orders', 'archived'],
     queryFn: () => api.get('/maintenance/work-orders-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

@@ -121,7 +121,7 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
 // ---------------------------------------------------------------------------
 
 export default function ItemCategoriesPage(): React.ReactElement {
-  const { data: categories, isLoading, _refetch } = useItemCategories()
+  const { data: categories, isLoading, refetch } = useItemCategories()
   const [showForm, setShowForm] = useState(false)
   const [, setDeletingId] = useState<number | null>(null)
   const canCreate = useAuthStore(s => s.hasPermission('inventory.items.create'))

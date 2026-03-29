@@ -30,7 +30,7 @@ export default function NcrListPage(): React.ReactElement {
   const [status, setStatus]     = useState('')
   const [severity, setSeverity] = useState('')
   const [page, setPage]         = useState(1)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -48,7 +48,7 @@ export default function NcrListPage(): React.ReactElement {
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['qc-ncrs', 'archived'],
     queryFn: () => api.get('/qc/ncrs-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

@@ -28,7 +28,7 @@ export default function DepartmentsPage() {
   const { hasPermission } = useAuthStore()
   const navigate = useNavigate()
   const canManage = hasPermission('employees.manage_structure')
-  const { data, isLoading, isError, _refetch } = useDepartments()
+  const { data, isLoading, isError, refetch } = useDepartments()
   const create = useCreateDepartment()
   const update = useUpdateDepartment()
   const remove = useDeleteDepartment()

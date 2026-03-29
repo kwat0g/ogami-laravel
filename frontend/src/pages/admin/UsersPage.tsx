@@ -150,7 +150,7 @@ export default function UsersPage() {
 
   // Separate local state for search input to prevent focus loss
   const [searchInput, setSearchInput] = useState('')
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [filters, setFilters] = useState({ search: '', role: '', page: 1, per_page: 15 })
   
   // Debounce search to prevent excessive API calls

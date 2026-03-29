@@ -32,7 +32,7 @@ export default function LoanDetailPage() {
   const loanListPath = location.pathname.startsWith('/accounting') ? '/accounting/loans' : '/hr/loans'
   const { user, hasPermission } = useAuthStore()
   const loanId = id ?? null
-  const { data: loan, isLoading, isError, _refetch } = useLoan(loanId)
+  const { data: loan, isLoading, isError, refetch } = useLoan(loanId)
 
   const isRequester = user?.id === loan?.requested_by
   const canApprove = hasPermission('loans.approve') && !isRequester

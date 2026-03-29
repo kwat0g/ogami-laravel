@@ -31,7 +31,7 @@ export default function MyOTPage() {
   const dateFrom = `${year}-${String(month).padStart(2, '0')}-01`
   const dateTo = new Date(year, month, 0).toISOString().slice(0, 10)
 
-  const { data: otData, isLoading, _refetch } = useOvertimeRequests({
+  const { data: otData, isLoading, refetch } = useOvertimeRequests({
     employee_id: employeeId,
     date_from: dateFrom,
     date_to: dateTo,

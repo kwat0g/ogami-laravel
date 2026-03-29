@@ -23,7 +23,7 @@ import { useQueryClient } from '@tanstack/react-query'
 export default function WorkLocationsPage() {
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('attendance.work_locations.manage')
-  const { data: locationsData, isLoading, _refetch } = useWorkLocations()
+  const { data: locationsData, isLoading, refetch } = useWorkLocations()
   const { data: geofenceSettings } = useGeofenceSettings()
   const toggleGeofence = useToggleGeofence()
   const _queryClient = useQueryClient()

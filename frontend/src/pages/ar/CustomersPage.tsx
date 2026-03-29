@@ -370,15 +370,15 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [modalCustomer, setModalCustomer] = useState<Customer | null | undefined>(undefined)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)
   }, [])
 
-  const { data, isLoading, _refetch } = useCustomers({ search: debouncedSearch || undefined, per_page: 50 })
+  const { data, isLoading, refetch } = useCustomers({ search: debouncedSearch || undefined, per_page: 50 })
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['customers', 'archived', debouncedSearch],
     queryFn: () => api.get('/customers-archived', { params: { search: debouncedSearch || undefined, per_page: 50 } }),
     enabled: isArchiveView,

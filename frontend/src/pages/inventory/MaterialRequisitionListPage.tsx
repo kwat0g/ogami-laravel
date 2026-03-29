@@ -34,7 +34,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [status, setStatus] = useState<MaterialRequisitionStatus | ''>('')
   const [page, setPage]     = useState(1)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.mrq.create')
 
@@ -45,7 +45,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
     with_archived: undefined,
   })
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['mrqs', 'archived'],
     queryFn: () => api.get('/inventory/mrqs-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

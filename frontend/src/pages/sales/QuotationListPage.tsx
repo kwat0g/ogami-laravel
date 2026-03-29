@@ -19,7 +19,7 @@ function formatCentavos(c: number) {
 export default function QuotationListPage() {
   const [filters, setFilters] = useState<Record<string, unknown>>({ per_page: 20, page: 1 })
   const [search, setSearch] = useState('')
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const { data, isLoading, isError } = useQuotations({ ...filters, ...(search ? {} : {}) })
   const quotations = data?.data ?? []
   const canCreate = useAuthStore(s => s.hasPermission('sales.quotations.create'))

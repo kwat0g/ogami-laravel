@@ -26,7 +26,7 @@ export default function LeaveListPage() {
   // Batch selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [batchRejectRemarksOpen, setBatchRejectRemarksOpen] = useState(false)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [batchRejectRemarks, setBatchRejectRemarks] = useState('')
   
   // Search with debounce

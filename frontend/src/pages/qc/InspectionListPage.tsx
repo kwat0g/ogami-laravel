@@ -32,7 +32,7 @@ export default function InspectionListPage(): React.ReactElement {
   const [stage, setStage]   = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -50,7 +50,7 @@ export default function InspectionListPage(): React.ReactElement {
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['qc-inspections', 'archived'],
     queryFn: () => api.get('/qc/inspections-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

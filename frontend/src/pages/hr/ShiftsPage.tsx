@@ -64,7 +64,7 @@ export default function ShiftsPage() {
   const { hasPermission } = useAuthStore()
   const navigate = useNavigate()
   const canManage = hasPermission('attendance.manage_shifts')
-  const { data, isLoading, isError, _refetch } = useShifts()
+  const { data, isLoading, isError, refetch } = useShifts()
   const create = useCreateShift()
   const upd = useUpdateShift()
   const remove = useDeleteShift()

@@ -22,7 +22,7 @@ function AssetCategoriesModal({ onClose }: { onClose: () => void }) {
   const create = useCreateFixedAssetCategory()
   const canManage = useAuthStore(s => s.hasPermission('fixed_assets.manage'))
   const [showForm, setShowForm] = useState(false)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [form, setForm] = useState({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' as const })
 
   const list: FixedAssetCategory[] = categories ?? []

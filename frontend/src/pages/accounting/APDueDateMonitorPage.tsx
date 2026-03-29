@@ -115,7 +115,7 @@ function Column({
 
 export default function APDueDateMonitorPage() {
   // Overdue: approved/partially_paid AND due_date < today
-  const { data: dueSoonData, isLoading: loadingDueSoon, _refetch } = useAPInvoicesDueSoon(7)
+  const { data: dueSoonData, isLoading: loadingDueSoon, refetch } = useAPInvoicesDueSoon(7)
 
   // Overdue: load separately via status filter
   const { data: overdueData, isLoading: loadingOverdue } = useAPInvoices({

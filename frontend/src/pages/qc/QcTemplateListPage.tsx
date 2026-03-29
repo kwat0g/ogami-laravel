@@ -29,7 +29,7 @@ export default function QcTemplateListPage(): React.ReactElement {
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('qc.templates.manage')
   const [stage, setStage] = useState('')
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<InspectionTemplate | null>(null)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -38,14 +38,14 @@ export default function QcTemplateListPage(): React.ReactElement {
     setDebouncedSearch(val)
   }, [])
 
-  const { data, isLoading, isError, _refetch } = useInspectionTemplates({
+  const { data, isLoading, isError, refetch } = useInspectionTemplates({
     stage: stage || undefined,
     per_page: 50,
     with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   } as Record<string, unknown>)
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['qc-templates', 'archived', debouncedSearch, stage],
     queryFn: () => api.get('/qc/templates-archived', { params: { search: debouncedSearch || undefined, stage: stage || undefined, per_page: 50 } }),
     enabled: isArchiveView,

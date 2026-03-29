@@ -16,7 +16,7 @@ const emptyForm = (): { id?: number; code: string; name: string; is_active: bool
 
 export default function CostCentersPage(): React.ReactElement {
   const [form, setForm] = useState(emptyForm())
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [editing, setEditing] = useState(false)
   const { data, isLoading } = useCostCenters()
   const create = useCreateCostCenter()

@@ -36,7 +36,7 @@ export default function StockBalancePage(): React.ReactElement {
   const adjustMut = useStockAdjust()
 
   const { data: locations } = useWarehouseLocations({ is_active: true })
-  const { data, isLoading, isError, _refetch } = useStockBalances({
+  const { data, isLoading, isError, refetch } = useStockBalances({
     search: debouncedSearch || undefined,
     location_id: locationId || undefined,
     low_stock: lowStock || undefined,

@@ -26,7 +26,7 @@ const DIRECTION_COLORS: Record<DrDirection, string> = {
 export default function DeliveryReceiptListPage() {
   const [direction, setDirection] = useState('');
   const [status, setStatus] = useState('');
-  const [_isArchiveView, _setIsArchiveView] = useState(false);
+  const [isArchiveView, setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -40,7 +40,7 @@ export default function DeliveryReceiptListPage() {
 
   const { data, isLoading } = useDeliveryReceipts(Object.keys(params).length ? params : undefined);
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['delivery-receipts', 'archived'],
     queryFn: () => api.get('/delivery/receipts-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

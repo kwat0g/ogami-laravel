@@ -144,7 +144,7 @@ export default function CustomerInvoicesPage() {
   const [activeTab, setActiveTab] = useState<CustomerInvoiceStatus | 'all'>('all')
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const handleSearch = useCallback((val: string) => {
@@ -155,7 +155,7 @@ export default function CustomerInvoicesPage() {
     ...(activeTab === 'all' ? {} : { status: activeTab }),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   }
-  const { data, isLoading, _refetch } = useCustomerInvoices(filters)
+  const { data, isLoading, refetch } = useCustomerInvoices(filters)
   const invoices = data?.data ?? []
 
   const handleRefresh = async () => {

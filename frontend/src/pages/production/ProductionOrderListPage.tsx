@@ -26,7 +26,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -35,14 +35,14 @@ export default function ProductionOrderListPage(): React.ReactElement {
     setPage(1)
   }, [])
 
-  const { data, isLoading, isError, _refetch } = useProductionOrders({
+  const { data, isLoading, isError, refetch } = useProductionOrders({
     status: status || undefined,
     page,
     per_page: 20,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['production-orders', 'archived', debouncedSearch],
     queryFn: () => api.get('/production/orders-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
     enabled: isArchiveView,

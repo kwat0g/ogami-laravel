@@ -19,7 +19,7 @@ import api from '@/lib/api'
 
 export default function BomListPage(): React.ReactElement {
   const [_page, setPage] = useState(1)
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -28,8 +28,8 @@ export default function BomListPage(): React.ReactElement {
     setPage(1)
   }, [])
 
-  const { data, isLoading, isError, _refetch } = useBoms({ per_page: 20, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
-  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
+  const { data, isLoading, isError, refetch } = useBoms({ per_page: 20, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
+  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
     queryKey: ['boms', 'archived', debouncedSearch],
     queryFn: () => api.get('/production/boms-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
     enabled: isArchiveView,

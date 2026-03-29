@@ -33,7 +33,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
   const canManage = useAuthStore(s => s.hasPermission('inventory.locations.manage'))
   const canDelete = useAuthStore(s => s.hasPermission('inventory.locations.delete'))
 
-  const { data: locations, isLoading, isError, _refetch } = useWarehouseLocations({
+  const { data: locations, isLoading, isError, refetch } = useWarehouseLocations({
     is_active: showInactive ? undefined : true,
   })
 

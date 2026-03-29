@@ -97,7 +97,7 @@ export default function PayrollRunValidatePage() {
   const navigate = useNavigate()
 
   const { data: run } = usePayrollRun(runId)
-  const { data: result, isFetching, _refetch } = usePreRunChecks(runId, true)
+  const { data: result, isFetching, refetch } = usePreRunChecks(runId, true)
   const acknowledge = useAcknowledgePreRun(runId)
   const cancelRun = useCancelPayrollRun(runId)
 

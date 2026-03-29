@@ -18,7 +18,7 @@ function formatCentavos(c: number) {
 export default function SalesOrderListPage() {
   const [filters, setFilters] = useState<Record<string, unknown>>({ per_page: 20, page: 1 })
   const [search, setSearch] = useState('')
-  const [_isArchiveView, _setIsArchiveView] = useState(false)
+  const [isArchiveView, setIsArchiveView] = useState(false)
   const { data, isLoading } = useSalesOrders(filters)
   const orders = data?.data ?? []
 
