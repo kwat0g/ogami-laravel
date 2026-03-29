@@ -60,6 +60,17 @@ final class InspectionService implements ServiceContract
             throw new DomainException('Inspection is not in open status.', 'QC_INSPECTION_NOT_OPEN', 422);
         }
 
+        // GAP-QC-2: Validate qty_passed + qty_failed does not exceed qty_inspected
+        $totalReported = $passed + $failed;
+        $qtyInspected = (int) $inspection->qty_inspected;
+        if ($qtyInspected > 0 && $totalReported > $qtyInspected) {
+            throw new DomainException(
+                "Reported qty (passed: {$passed} + failed: {$failed} = {$totalReported}) exceeds qty inspected ({$qtyInspected}).",
+                'QC_QTY_EXCEEDS_INSPECTED',
+                422,
+            );
+        }
+
         return DB::transaction(function () use ($inspection, $results, $passed, $failed) {
             $inspection->results()->delete();
 
