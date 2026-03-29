@@ -57,7 +57,7 @@ final class FixedAsset extends Model implements Auditable
     protected $table = 'fixed_assets';
 
     protected $fillable = [
-        'asset_code',
+        // NOTE: asset_code is set by a PostgreSQL trigger — never mass-assign it.
         'category_id',
         'department_id',
         'name',

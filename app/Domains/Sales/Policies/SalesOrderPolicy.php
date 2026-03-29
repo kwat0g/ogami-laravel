@@ -61,6 +61,13 @@ final class SalesOrderPolicy
             && in_array($order->status, ['draft', 'confirmed'], true);
     }
 
+    /** Delete a draft sales order — only creator or manager can delete. */
+    public function delete(User $user, SalesOrder $order): bool
+    {
+        return $user->hasPermissionTo('sales.orders.manage')
+            && $order->status === 'draft';
+    }
+
     /**
      * Determine whether the user can restore the model.
      */

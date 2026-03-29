@@ -521,8 +521,8 @@ export interface CreateEmployeePayload {
   last_name:        string
   middle_name?:     string
   suffix?:          string
-  date_of_birth?:   string
-  gender?:          'male' | 'female' | 'other'
+  date_of_birth:    string
+  gender:           'male' | 'female' | 'other'
   civil_status?:    'SINGLE' | 'MARRIED' | 'WIDOWED' | 'LEGALLY_SEPARATED' | 'HEAD_OF_FAMILY' | null
   citizenship?:     string
   present_address?: string

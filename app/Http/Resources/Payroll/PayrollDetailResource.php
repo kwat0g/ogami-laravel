@@ -82,14 +82,14 @@ final class PayrollDetailResource extends JsonResource
                 'first_name' => $this->employee->first_name,
                 'last_name' => $this->employee->last_name,
             ] : null),
-            'payroll_run' => $this->payrollRun ? [
+            'payroll_run' => $this->whenLoaded('payrollRun', fn () => $this->payrollRun ? [
                 'id' => $this->payrollRun->id,
                 'reference_no' => $this->payrollRun->reference_no,
                 'pay_period_label' => $this->payrollRun->pay_period_label,
                 'pay_date' => $this->payrollRun->pay_date,
                 'run_type' => $this->payrollRun->run_type,
                 'status' => $this->payrollRun->status,
-            ] : null,
+            ] : null),
         ];
     }
 }

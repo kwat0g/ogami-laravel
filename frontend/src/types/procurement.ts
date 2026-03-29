@@ -250,6 +250,7 @@ export interface PurchaseRequestItemPayload {
 
 export interface CreatePurchaseRequestPayload {
   department_id: number
+  vendor_id: number
   urgency?: PurchaseRequestUrgency
   justification: string
   notes?: string

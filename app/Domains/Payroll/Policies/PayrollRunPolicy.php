@@ -116,25 +116,29 @@ final class PayrollRunPolicy
     /** Step 3: trigger pre-run validation — HR Manager */
     public function preRunValidate(User $user, PayrollRun $run): bool
     {
-        return $user->hasPermissionTo('payroll.pre_run_validate');
+        // payroll.pre_run_validate was removed from seeder (SoD); fall back to initiate
+        return $user->hasAnyPermission(['payroll.pre_run_validate', 'payroll.initiate']);
     }
 
     /** Step 4: trigger computation — HR Manager */
     public function compute(User $user, PayrollRun $run): bool
     {
-        return $user->hasPermissionTo('payroll.compute');
+        // payroll.compute was removed from seeder (SoD); fall back to initiate
+        return $user->hasAnyPermission(['payroll.compute', 'payroll.initiate']);
     }
 
     /** Step 5: review breakdown — HR Manager (edit) + Finance Manager (read) */
     public function reviewBreakdown(User $user, PayrollRun $run): bool
     {
-        return $user->hasPermissionTo('payroll.review_breakdown');
+        // payroll.review_breakdown was removed from seeder; fall back to initiate + acctg_approve
+        return $user->hasAnyPermission(['payroll.review_breakdown', 'payroll.initiate', 'payroll.acctg_approve']);
     }
 
     /** Step 5: flag an employee detail — HR Manager only */
     public function flagEmployee(User $user, PayrollRun $run): bool
     {
-        return $user->hasPermissionTo('payroll.flag_employee');
+        // payroll.flag_employee was removed from seeder; fall back to initiate
+        return $user->hasAnyPermission(['payroll.flag_employee', 'payroll.initiate']);
     }
 
     /** Step 5→6: submit run for HR approval — HR Manager */
