@@ -175,7 +175,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             'color' => '#a855f7',
             'metrics' => [
                 ['label' => 'Active Assets', 'value' => (int) DB::table('fixed_assets')->where('status', 'active')->whereNull('deleted_at')->count()],
-                ['label' => 'Total Book Value', 'value' => '₱' . number_format((float) DB::table('fixed_assets')->where('status', 'active')->whereNull('deleted_at')->sum('book_value_centavos') / 100, 0)],
+                ['label' => 'Total Book Value', 'value' => '₱' . number_format((float) DB::table('fixed_assets')->where('status', 'active')->whereNull('deleted_at')->selectRaw('SUM(acquisition_cost_centavos - accumulated_depreciation_centavos) as val')->value('val') / 100, 0)],
             ],
             'href' => '/fixed-assets',
         ];

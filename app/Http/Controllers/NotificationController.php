@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Str;
 
 /**
  * In-app notification center API.
@@ -80,6 +81,10 @@ final class NotificationController extends Controller
      */
     public function markRead(Request $request, string $id): JsonResponse
     {
+        if (! Str::isUuid($id)) {
+            abort(404, 'Notification not found.');
+        }
+
         /** @var DatabaseNotification $notification */
         $notification = $request->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
@@ -106,6 +111,10 @@ final class NotificationController extends Controller
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
+        if (! Str::isUuid($id)) {
+            abort(404, 'Notification not found.');
+        }
+
         /** @var DatabaseNotification $notification */
         $notification = $request->user()->notifications()->findOrFail($id);
         $notification->delete();

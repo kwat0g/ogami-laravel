@@ -102,11 +102,7 @@ final class ItemMasterService implements ServiceContract
     {
         return ItemMaster::query()
             ->where('is_active', true)
-            ->whereColumn('reorder_point', '>', function ($query): void {
-                $query->selectRaw('COALESCE(SUM(sb.quantity_on_hand), 0)')
-                    ->from('stock_balances as sb')
-                    ->whereColumn('sb.item_id', 'item_masters.id');
-            })
+            ->whereRaw('CAST(reorder_point AS NUMERIC) > (SELECT COALESCE(SUM(CAST(sb.quantity_on_hand AS NUMERIC)), 0) FROM stock_balances as sb WHERE sb.item_id = item_masters.id)')
             ->with('category')
             ->get();
     }

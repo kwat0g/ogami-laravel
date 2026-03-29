@@ -24,10 +24,7 @@ final class SupplierQualityService implements ServiceContract
     public function vendorQualitySummary(?int $vendorId = null, ?string $fromDate = null, ?string $toDate = null): Collection
     {
         $query = DB::table('inspections')
-            ->join('goods_receipts', function ($join): void {
-                $join->on('inspections.inspectable_id', '=', 'goods_receipts.id')
-                    ->where('inspections.inspectable_type', '=', 'goods_receipts');
-            })
+            ->join('goods_receipts', 'inspections.goods_receipt_id', '=', 'goods_receipts.id')
             ->join('purchase_orders', 'goods_receipts.purchase_order_id', '=', 'purchase_orders.id')
             ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
             ->whereNull('inspections.deleted_at')
@@ -38,19 +35,16 @@ final class SupplierQualityService implements ServiceContract
                 'vendors.id as vendor_id',
                 'vendors.name as vendor_name',
                 DB::raw('COUNT(*) as total_inspections'),
-                DB::raw("SUM(CASE WHEN inspections.result = 'pass' THEN 1 ELSE 0 END) as passed"),
-                DB::raw("SUM(CASE WHEN inspections.result = 'fail' THEN 1 ELSE 0 END) as failed"),
+                DB::raw("SUM(CASE WHEN inspections.status = 'passed' THEN 1 ELSE 0 END) as passed"),
+                DB::raw("SUM(CASE WHEN inspections.status = 'failed' THEN 1 ELSE 0 END) as failed"),
             )
             ->groupBy('vendors.id', 'vendors.name')
             ->get();
 
         // Get NCR counts per vendor
-        $ncrCounts = DB::table('ncrs')
+        $ncrCounts = DB::table('non_conformance_reports as ncrs')
             ->join('inspections', 'ncrs.inspection_id', '=', 'inspections.id')
-            ->join('goods_receipts', function ($join): void {
-                $join->on('inspections.inspectable_id', '=', 'goods_receipts.id')
-                    ->where('inspections.inspectable_type', '=', 'goods_receipts');
-            })
+            ->join('goods_receipts', 'inspections.goods_receipt_id', '=', 'goods_receipts.id')
             ->join('purchase_orders', 'goods_receipts.purchase_order_id', '=', 'purchase_orders.id')
             ->whereNull('ncrs.deleted_at')
             ->select('purchase_orders.vendor_id', DB::raw('COUNT(*) as ncr_count'))

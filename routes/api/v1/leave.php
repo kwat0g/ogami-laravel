@@ -87,24 +87,24 @@ Route::middleware(['auth:sanctum', 'module_access:leaves'])->group(function () {
                 'employees.employee_code',
                 DB::raw("concat(employees.first_name, ' ', employees.last_name) as full_name"),
                 'leave_types.name as leave_type',
-                'leave_requests.start_date',
-                'leave_requests.end_date',
+                'leave_requests.date_from',
+                'leave_requests.date_to',
                 'leave_requests.total_days',
                 'leave_requests.status',
                 'leave_requests.created_at',
             );
 
         if ($request->filled('date_from')) {
-            $query->where('leave_requests.start_date', '>=', $request->input('date_from'));
+            $query->where('leave_requests.date_from', '>=', $request->input('date_from'));
         }
         if ($request->filled('date_to')) {
-            $query->where('leave_requests.end_date', '<=', $request->input('date_to'));
+            $query->where('leave_requests.date_to', '<=', $request->input('date_to'));
         }
         if ($request->filled('department_id')) {
             $query->where('employees.department_id', $request->input('department_id'));
         }
 
-        $rows = $query->orderBy('leave_requests.start_date', 'desc')->get();
+        $rows = $query->orderBy('leave_requests.date_from', 'desc')->get();
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
@@ -113,7 +113,7 @@ Route::middleware(['auth:sanctum', 'module_access:leaves'])->group(function () {
             }
             fputcsv($out, ['Employee Code', 'Name', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Status', 'Filed On']);
             foreach ($rows as $r) {
-                fputcsv($out, [$r->employee_code, $r->full_name, $r->leave_type, $r->start_date, $r->end_date, $r->total_days, $r->status, $r->created_at]);
+                fputcsv($out, [$r->employee_code, $r->full_name, $r->leave_type, $r->date_from, $r->date_to, $r->total_days, $r->status, $r->created_at]);
             }
             fclose($out);
         }, 'leave_report_'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);

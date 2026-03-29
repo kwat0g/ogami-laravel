@@ -69,17 +69,17 @@ final class BirPdfGeneratorService implements ServiceContract
             ->select(
                 'pd.employee_id',
                 DB::raw("CONCAT(e.last_name, ', ', e.first_name) as employee_name"),
-                'e.tin',
+                'e.tin_encrypted as tin',
                 DB::raw('SUM(pd.basic_pay_centavos + pd.overtime_pay_centavos + pd.holiday_pay_centavos + pd.night_diff_pay_centavos) as total_compensation_centavos'),
                 DB::raw('SUM(pd.gross_pay_centavos) as gross_pay_centavos'),
                 DB::raw('SUM(pd.withholding_tax_centavos) as tax_withheld_centavos'),
-                DB::raw('SUM(pd.sss_contribution_centavos) as sss_centavos'),
-                DB::raw('SUM(pd.philhealth_contribution_centavos) as philhealth_centavos'),
-                DB::raw('SUM(pd.pagibig_contribution_centavos) as pagibig_centavos'),
+                DB::raw('SUM(pd.sss_ee_centavos) as sss_amount_centavos'),
+                DB::raw('SUM(pd.philhealth_ee_centavos) as philhealth_amount_centavos'),
+                DB::raw('SUM(pd.pagibig_ee_centavos) as pagibig_amount_centavos'),
                 DB::raw('SUM(COALESCE(pd.thirteenth_month_centavos, 0)) as thirteenth_month_centavos'),
                 DB::raw('SUM(pd.net_pay_centavos) as net_pay_centavos'),
             )
-            ->groupBy('pd.employee_id', 'e.last_name', 'e.first_name', 'e.tin')
+            ->groupBy('pd.employee_id', 'e.last_name', 'e.first_name', 'e.tin_encrypted')
             ->orderBy('e.last_name')
             ->get()
             ->map(fn ($row) => [

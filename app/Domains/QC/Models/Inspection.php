@@ -107,4 +107,10 @@ final class Inspection extends Model implements AuditableContract
     {
         return $this->hasMany(NonConformanceReport::class, 'inspection_id');
     }
+
+    /** @return BelongsTo<\App\Domains\Procurement\Models\GoodsReceipt, $this> */
+    public function goodsReceipt(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Procurement\Models\GoodsReceipt::class, 'goods_receipt_id');
+    }
 }

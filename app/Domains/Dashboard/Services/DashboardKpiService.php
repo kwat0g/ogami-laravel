@@ -37,7 +37,7 @@ final class DashboardKpiService implements ServiceContract
     {
         $balances = DB::table('bank_accounts')
             ->whereNull('deleted_at')
-            ->select('bank_name', 'account_name', 'current_balance')
+            ->select('bank_name', 'name as account_name', 'opening_balance as current_balance')
             ->get();
 
         $total = $balances->sum('current_balance');
@@ -61,14 +61,14 @@ final class DashboardKpiService implements ServiceContract
             ->whereIn('status', ['approved', 'partially_paid'])
             ->where('due_date', '<', $today)
             ->whereNull('deleted_at')
-            ->selectRaw('COUNT(*) as count, COALESCE(SUM(balance_due), 0) as total')
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(net_amount + vat_amount - ewt_amount), 0) as total')
             ->first();
 
         $current = DB::table('vendor_invoices')
             ->whereIn('status', ['approved', 'partially_paid'])
             ->where('due_date', '>=', $today)
             ->whereNull('deleted_at')
-            ->selectRaw('COUNT(*) as count, COALESCE(SUM(balance_due), 0) as total')
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(net_amount + vat_amount - ewt_amount), 0) as total')
             ->first();
 
         return [
@@ -91,9 +91,9 @@ final class DashboardKpiService implements ServiceContract
         $deadStockCount = DB::table('item_masters')
             ->whereNotExists(function ($q): void {
                 $q->select(DB::raw(1))
-                    ->from('stock_ledger_entries')
-                    ->whereColumn('stock_ledger_entries.item_id', 'item_masters.id')
-                    ->where('stock_ledger_entries.created_at', '>=', now()->subDays(90));
+                    ->from('stock_ledger')
+                    ->whereColumn('stock_ledger.item_id', 'item_masters.id')
+                    ->where('stock_ledger.created_at', '>=', now()->subDays(90));
             })
             ->where('item_masters.is_active', true)
             ->whereNull('item_masters.deleted_at')
@@ -121,8 +121,8 @@ final class DashboardKpiService implements ServiceContract
             ->whereNull('deleted_at')
             ->selectRaw("
                 TO_CHAR(pay_date, 'YYYY-MM') as month,
-                COALESCE(SUM(total_gross_pay), 0) as total_gross,
-                COALESCE(SUM(total_net_pay), 0) as total_net,
+                COALESCE(SUM(gross_pay_total_centavos), 0) / 100 as total_gross,
+                COALESCE(SUM(net_pay_total_centavos), 0) / 100 as total_net,
                 COUNT(*) as run_count
             ")
             ->groupByRaw("TO_CHAR(pay_date, 'YYYY-MM')")

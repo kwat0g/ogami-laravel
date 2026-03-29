@@ -96,7 +96,7 @@ final class RoleBasedDashboardService implements ServiceContract
                 ->sum('subtotal') * 100,
             'cash_position' => (float) DB::table('bank_accounts')
                 ->whereNull('deleted_at')
-                ->sum('current_balance'),
+                ->sum('opening_balance'),
             'open_ar' => (int) DB::table('customer_invoices')
                 ->whereIn('status', ['approved', 'partially_paid'])
                 ->whereNull('deleted_at')

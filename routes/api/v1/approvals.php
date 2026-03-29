@@ -55,10 +55,9 @@ Route::middleware(['auth:sanctum', 'module_access:approvals'])->group(function (
                 ->join('leave_types', 'leave_requests.leave_type_id', '=', 'leave_types.id')
                 ->when(! $isGlobal, fn ($q) => $q->whereIn('leave_requests.employee_id', $empIds ?? []))
                 ->where('leave_requests.status', 'approved')
-                ->whereNull('leave_requests.vp_approved_at')
+                ->whereNull('leave_requests.vp_noted_at')
                 ->select(
                     'leave_requests.id',
-                    'leave_requests.ulid',
                     DB::raw("concat(employees.first_name, ' ', employees.last_name) as requestor"),
                     'leave_types.name as type',
                     'leave_requests.date_from',
@@ -102,7 +101,7 @@ Route::middleware(['auth:sanctum', 'module_access:approvals'])->group(function (
                     'loans.id',
                     DB::raw("concat(employees.first_name, ' ', employees.last_name) as requestor"),
                     'loan_types.name as loan_type',
-                    'loans.principal_amount',
+                    'loans.principal_centavos as principal_amount',
                     'loans.status',
                     'loans.created_at'
                 )
@@ -139,7 +138,15 @@ Route::middleware(['auth:sanctum', 'module_access:approvals'])->group(function (
         if ($user->can('journal_entries.approve')) {
             $accountingApprovals['journal_entries'] = DB::table('journal_entries')
                 ->where('status', 'submitted')
-                ->select('id', 'ulid', 'reference', 'date', 'description', 'total_amount', 'created_at')
+                ->select(
+                    'id',
+                    'ulid',
+                    'je_number as reference',
+                    'date',
+                    'description',
+                    DB::raw('(SELECT COALESCE(SUM(debit), 0) FROM journal_entry_lines WHERE journal_entry_id = journal_entries.id) as total_amount'),
+                    'created_at'
+                )
                 ->orderBy('created_at')
                 ->limit(20)
                 ->get();

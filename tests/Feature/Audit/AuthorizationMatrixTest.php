@@ -56,7 +56,7 @@ function assertCannotAccess(object $test, User $user, string $endpoint, string $
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('super_admin can access all module endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = User::where('email', 'superadmin@ogamierp.local')->firstOrFail();
 
     $endpoints = [
@@ -99,7 +99,7 @@ test('super_admin can access all module endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('staff role: can access self-service, blocked from admin endpoints', function () {
-    Artisan::call('db:seed');
+
 
     // Find any staff user from the seeded data
     $staff = User::role('staff')->first();
@@ -141,7 +141,7 @@ test('staff role: can access self-service, blocked from admin endpoints', functi
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('head role: can access team-scoped endpoints', function () {
-    Artisan::call('db:seed');
+
 
     $head = User::role('head')->first();
     if (! $head) {
@@ -160,7 +160,7 @@ test('head role: can access team-scoped endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('manager role: can access department module endpoints', function () {
-    Artisan::call('db:seed');
+
 
     $manager = User::role('manager')->first();
     if (! $manager) {
@@ -179,7 +179,7 @@ test('manager role: can access department module endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('vice_president role: bypasses department scope', function () {
-    Artisan::call('db:seed');
+
 
     $vp = User::role('vice_president')->first();
     if (! $vp) {
@@ -207,7 +207,7 @@ test('vice_president role: bypasses department scope', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('vendor role: can access vendor portal, blocked from internal endpoints', function () {
-    Artisan::call('db:seed');
+
 
     $vendor = User::role('vendor')->first();
     if (! $vendor) {
@@ -264,7 +264,7 @@ test('SoD: audit that key SoD constraints are documented and testable', function
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('module access: verify bypass roles can access all modules', function () {
-    Artisan::call('db:seed');
+
 
     $superadmin = User::where('email', 'superadmin@ogamierp.local')->firstOrFail();
 

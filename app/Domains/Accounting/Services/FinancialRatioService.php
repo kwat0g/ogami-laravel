@@ -165,10 +165,10 @@ final class FinancialRatioService implements ServiceContract
             ->join('fiscal_periods as fp', 'fp.id', '=', 'je.fiscal_period_id')
             ->join('chart_of_accounts as coa', 'coa.id', '=', 'jel.account_id')
             ->where('je.status', 'posted')
-            ->where('fp.fiscal_year', $year)
+            ->whereYear('fp.date_from', $year)
             ->whereNull('je.deleted_at')
             ->where('coa.account_type', $typePattern)
-            ->selectRaw('COALESCE(SUM(jel.debit_centavos) - SUM(jel.credit_centavos), 0) as balance')
+            ->selectRaw('COALESCE(SUM(jel.debit) - SUM(jel.credit), 0) as balance')
             ->value('balance') / 100; // Convert centavos to pesos
 
         $creditBalance = fn (string $type) => (float) DB::table('journal_entry_lines as jel')
@@ -176,10 +176,10 @@ final class FinancialRatioService implements ServiceContract
             ->join('fiscal_periods as fp', 'fp.id', '=', 'je.fiscal_period_id')
             ->join('chart_of_accounts as coa', 'coa.id', '=', 'jel.account_id')
             ->where('je.status', 'posted')
-            ->where('fp.fiscal_year', $year)
+            ->whereYear('fp.date_from', $year)
             ->whereNull('je.deleted_at')
             ->where('coa.account_type', $type)
-            ->selectRaw('COALESCE(SUM(jel.credit_centavos) - SUM(jel.debit_centavos), 0) as balance')
+            ->selectRaw('COALESCE(SUM(jel.credit) - SUM(jel.debit), 0) as balance')
             ->value('balance') / 100;
 
         // Simplified: use account_type categories
@@ -192,12 +192,13 @@ final class FinancialRatioService implements ServiceContract
         $arBalance = (float) DB::table('customer_invoices')
             ->whereIn('status', ['approved', 'partially_paid'])
             ->whereNull('deleted_at')
-            ->sum('balance_due');
+            ->sum('total_amount');
 
         $apBalance = (float) DB::table('vendor_invoices')
             ->whereIn('status', ['approved', 'partially_paid'])
             ->whereNull('deleted_at')
-            ->sum('balance_due');
+            ->selectRaw('COALESCE(SUM(net_amount + vat_amount - ewt_amount), 0) as total')
+            ->value('total');
 
         $revenue = $creditBalance('revenue');
         $expenses = $balanceQuery('expense');
@@ -206,10 +207,10 @@ final class FinancialRatioService implements ServiceContract
             ->join('fiscal_periods as fp', 'fp.id', '=', 'je.fiscal_period_id')
             ->join('chart_of_accounts as coa', 'coa.id', '=', 'jel.account_id')
             ->where('je.status', 'posted')
-            ->where('fp.fiscal_year', $year)
+            ->whereYear('fp.date_from', $year)
             ->whereNull('je.deleted_at')
             ->where('coa.name', 'ILIKE', '%cost of%')
-            ->selectRaw('COALESCE(SUM(jel.debit_centavos) - SUM(jel.credit_centavos), 0) as balance')
+            ->selectRaw('COALESCE(SUM(jel.debit) - SUM(jel.credit), 0) as balance')
             ->value('balance') / 100;
 
         return [

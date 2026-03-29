@@ -36,7 +36,7 @@ final class OrgChartService implements ServiceContract
     {
         $departments = Department::orderBy('name')->get();
         $employees = Employee::query()
-            ->whereIn('status', ['active', 'on_leave'])
+            ->whereIn('employment_status', ['active', 'on_leave'])
             ->with(['department', 'position'])
             ->orderBy('last_name')
             ->get();
@@ -120,7 +120,7 @@ final class OrgChartService implements ServiceContract
     {
         return Employee::query()
             ->where('reports_to', $employee->id)
-            ->whereIn('status', ['active', 'on_leave'])
+            ->whereIn('employment_status', ['active', 'on_leave'])
             ->with(['position', 'department'])
             ->orderBy('last_name')
             ->get()
@@ -141,7 +141,7 @@ final class OrgChartService implements ServiceContract
     public function headcountByDepartment(): Collection
     {
         return Employee::query()
-            ->whereIn('status', ['active', 'on_leave'])
+            ->whereIn('employment_status', ['active', 'on_leave'])
             ->with('department')
             ->get()
             ->groupBy('department_id')
@@ -152,8 +152,8 @@ final class OrgChartService implements ServiceContract
                     'department_id' => $dept?->id ?? 0,
                     'department_name' => $dept?->name ?? 'Unassigned',
                     'headcount' => $employees->count(),
-                    'active' => $employees->where('status', 'active')->count(),
-                    'on_leave' => $employees->where('status', 'on_leave')->count(),
+                    'active' => $employees->where('employment_status', 'active')->count(),
+                    'on_leave' => $employees->where('employment_status', 'on_leave')->count(),
                 ];
             })
             ->sortByDesc('headcount')

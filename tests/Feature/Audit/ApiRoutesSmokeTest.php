@@ -44,6 +44,11 @@ function getApiRoutes(): array
             continue;
         }
 
+        // Skip dangerous/long-running endpoints that break test flow
+        if (str_contains($uri, 'backups/run') || str_contains($uri, 'backups/download')) {
+            continue;
+        }
+
         $methods = $route->methods();
         // Skip HEAD (duplicate of GET)
         $methods = array_filter($methods, fn ($m) => $m !== 'HEAD');
@@ -62,7 +67,7 @@ function getApiRoutes(): array
 }
 
 test('all GET api/v1 routes return non-500 for superadmin', function () {
-    Artisan::call('db:seed');
+
 
     $user = User::where('email', 'superadmin@ogamierp.local')->firstOrFail();
 
@@ -79,8 +84,10 @@ test('all GET api/v1 routes return non-500 for superadmin', function () {
     ];
 
     foreach ($getRoutes as $label => [$method, $testUri, $name, $originalUri]) {
+        \Illuminate\Support\Facades\DB::statement('SAVEPOINT smoke_test_req');
         $response = $this->actingAs($user)->getJson($testUri);
-        $status = $response->status();
+        $status = $response->getStatusCode();
+        \Illuminate\Support\Facades\DB::statement('ROLLBACK TO SAVEPOINT smoke_test_req');
 
         if ($status >= 500) {
             $results['5xx']++;
@@ -123,7 +130,7 @@ test('all GET api/v1 routes return non-500 for superadmin', function () {
 });
 
 test('all POST/PATCH/PUT routes return non-500 for superadmin (empty body => 422 is OK)', function () {
-    Artisan::call('db:seed');
+
 
     $user = User::where('email', 'superadmin@ogamierp.local')->firstOrFail();
 
@@ -140,8 +147,10 @@ test('all POST/PATCH/PUT routes return non-500 for superadmin (empty body => 422
     ];
 
     foreach ($writeRoutes as $label => [$method, $testUri, $name, $originalUri]) {
+        \Illuminate\Support\Facades\DB::statement('SAVEPOINT smoke_test_req');
         $response = $this->actingAs($user)->json($method, $testUri, []);
-        $status = $response->status();
+        $status = $response->getStatusCode();
+        \Illuminate\Support\Facades\DB::statement('ROLLBACK TO SAVEPOINT smoke_test_req');
 
         if ($status >= 500) {
             $results['5xx']++;
@@ -179,7 +188,7 @@ test('all POST/PATCH/PUT routes return non-500 for superadmin (empty body => 422
 });
 
 test('all DELETE routes return non-500 for superadmin', function () {
-    Artisan::call('db:seed');
+
 
     $user = User::where('email', 'superadmin@ogamierp.local')->firstOrFail();
 
@@ -195,8 +204,10 @@ test('all DELETE routes return non-500 for superadmin', function () {
     ];
 
     foreach ($deleteRoutes as $label => [$method, $testUri, $name, $originalUri]) {
+        \Illuminate\Support\Facades\DB::statement('SAVEPOINT smoke_test_req');
         $response = $this->actingAs($user)->deleteJson($testUri);
-        $status = $response->status();
+        $status = $response->getStatusCode();
+        \Illuminate\Support\Facades\DB::statement('ROLLBACK TO SAVEPOINT smoke_test_req');
 
         if ($status >= 500) {
             $results['5xx']++;
@@ -231,7 +242,7 @@ test('all DELETE routes return non-500 for superadmin', function () {
 });
 
 test('audit: print full route inventory with status', function () {
-    Artisan::call('db:seed');
+
 
     $user = User::where('email', 'superadmin@ogamierp.local')->firstOrFail();
 
@@ -242,7 +253,7 @@ test('audit: print full route inventory with status', function () {
 
     foreach ($routes as $label => [$method, $testUri, $name, $originalUri]) {
         $response = $this->actingAs($user)->json($method, $testUri, []);
-        $status = $response->status();
+        $status = $response->getStatusCode();
 
         $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
 

@@ -103,8 +103,8 @@ final class ProductionCostPostingService implements ServiceContract
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
                     'account_id' => $wipAccount->id,
-                    'debit_centavos' => $totalActualCost,
-                    'credit_centavos' => 0,
+                    'debit' => $totalActualCost > 0 ? $totalActualCost / 100 : null,
+                    'credit' => null,
                     'description' => "Production output: Order #{$order->id}",
                 ]);
             }
@@ -114,8 +114,8 @@ final class ProductionCostPostingService implements ServiceContract
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
                     'account_id' => $inventoryAccount->id,
-                    'debit_centavos' => 0,
-                    'credit_centavos' => $actual['material_cost_centavos'],
+                    'debit' => null,
+                    'credit' => $actual['material_cost_centavos'] > 0 ? $actual['material_cost_centavos'] / 100 : null,
                     'description' => "Material consumed: Order #{$order->id}",
                 ]);
             }
@@ -126,8 +126,8 @@ final class ProductionCostPostingService implements ServiceContract
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
                     'account_id' => $wipAccount->id,
-                    'debit_centavos' => 0,
-                    'credit_centavos' => $laborCost,
+                    'debit' => null,
+                    'credit' => $laborCost > 0 ? $laborCost / 100 : null,
                     'description' => "Labor cost applied: Order #{$order->id}",
                 ]);
             }
@@ -138,8 +138,8 @@ final class ProductionCostPostingService implements ServiceContract
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
                     'account_id' => $varianceAccount->id,
-                    'debit_centavos' => $varianceAmount > 0 ? 0 : abs($varianceAmount),
-                    'credit_centavos' => $varianceAmount > 0 ? $varianceAmount : 0,
+                    'debit' => $varianceAmount < 0 ? abs($varianceAmount) / 100 : null,
+                    'credit' => $varianceAmount > 0 ? $varianceAmount / 100 : null,
                     'description' => ($variance['favorable'] ? 'Favorable' : 'Unfavorable') . " variance: Order #{$order->id}",
                 ]);
             }

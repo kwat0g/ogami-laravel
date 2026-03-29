@@ -319,7 +319,7 @@ final class AttendanceLogController extends Controller
             ->where('work_date', '>=', now()->subDays(14)->toDateString())
             ->where(fn ($q) => $q
                 ->where('is_present', false)
-                ->orWhere('tardiness_minutes', '>', 0)
+                ->orWhere('late_minutes', '>', 0)
                 ->orWhere('undertime_minutes', '>', 0)
             )
             ->orderByDesc('work_date')
@@ -342,7 +342,7 @@ final class AttendanceLogController extends Controller
             ->where('work_date', '<=', $today)
             ->selectRaw('
                 COUNT(*) FILTER (WHERE is_present = false)            AS absent_count,
-                COUNT(*) FILTER (WHERE tardiness_minutes > 0)         AS tardy_count,
+                COUNT(*) FILTER (WHERE late_minutes > 0)         AS tardy_count,
                 COALESCE(SUM(overtime_minutes), 0)                    AS total_ot_minutes,
                 COUNT(DISTINCT employee_id)                           AS employee_count
             ')

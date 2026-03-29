@@ -130,7 +130,12 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     Route::delete('departments/{department}/force', function (Request $request, int $department) {
         abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
         $dept = Department::onlyTrashed()->findOrFail($department);
-        $dept->forceDelete();
+        
+        try {
+            $dept->forceDelete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json(['message' => 'Cannot permanently delete department because it is referenced by other records.'], 409);
+        }
 
         return response()->json(['message' => 'Department permanently deleted.']);
     })->middleware('throttle:api-action')->name('departments.force-delete');
@@ -202,7 +207,12 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     Route::delete('positions/{position}/force', function (Request $request, int $position) {
         abort_unless($request->user()->hasRole('super_admin'), 403, 'Only super admins can permanently delete records.');
         $pos = Position::onlyTrashed()->findOrFail($position);
-        $pos->forceDelete();
+        
+        try {
+            $pos->forceDelete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json(['message' => 'Cannot permanently delete position because it is referenced by other records.'], 409);
+        }
 
         return response()->json(['message' => 'Position permanently deleted.']);
     })->middleware('throttle:api-action')->name('positions.force-delete');
@@ -270,15 +280,15 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
             $employees = DB::table('employees')
                 ->join('departments', 'employees.department_id', '=', 'departments.id')
                 ->where('employees.is_active', true)
-                ->whereNotNull('employees.birth_date')
+                ->whereNotNull('employees.date_of_birth')
                 ->select(
                     'employees.id', 'employees.employee_code',
                     DB::raw("concat(employees.first_name, ' ', employees.last_name) as full_name"),
-                    'employees.birth_date', 'departments.name as department',
+                    'employees.date_of_birth', 'departments.name as department',
                 )
                 ->get()
                 ->map(function ($e) use ($today) {
-                    $bd = Carbon::parse($e->birth_date);
+                    $bd = Carbon::parse($e->date_of_birth);
                     $next = $bd->copy()->year($today->year);
                     if ($next->lt($today)) {
                         $next->addYear();

@@ -15,7 +15,6 @@ use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Shared\Contracts\ServiceContract;
 
 /**
  * LowStockReorderService
@@ -235,7 +234,8 @@ final class LowStockReorderService implements ServiceContract
     private function getLastPurchasePrice(ItemMaster $item, ?int $vendorId): float
     {
         if (! $vendorId) {
-            return (float) ($item->standard_cost ?? 0);
+            $cost = (float) (($item->standard_price_centavos ?? 0) / 100);
+            return $cost > 0 ? $cost : 1.00;
         }
 
         $lastPoItem = DB::table('purchase_order_items')
@@ -247,6 +247,8 @@ final class LowStockReorderService implements ServiceContract
             ->select('purchase_order_items.agreed_unit_cost')
             ->first();
 
-        return (float) ($lastPoItem?->agreed_unit_cost ?? (($item->standard_price_centavos ?? 0) / 100));
+        $price = (float) ($lastPoItem?->agreed_unit_cost ?? (($item->standard_price_centavos ?? 0) / 100));
+        
+        return $price > 0 ? $price : 1.00;
     }
 }

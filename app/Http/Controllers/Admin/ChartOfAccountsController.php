@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Http\Controllers\Controller;
-use App\Models\Audit;
+use OwenIt\Auditing\Models\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

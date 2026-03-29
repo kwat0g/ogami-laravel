@@ -162,14 +162,14 @@ final class VendorScoringService implements ServiceContract
             ->where('po.vendor_id', $vendor->id)
             ->when($year, fn ($q, $y) => $q->whereYear('po.created_at', $y))
             ->whereNull('po.deleted_at')
-            ->avg('poi.unit_price');
+            ->avg('poi.agreed_unit_cost');
 
         // Get overall average across all vendors for same items
         $overallAvg = DB::table('purchase_order_items as poi')
             ->join('purchase_orders as po', 'po.id', '=', 'poi.purchase_order_id')
             ->when($year, fn ($q, $y) => $q->whereYear('po.created_at', $y))
             ->whereNull('po.deleted_at')
-            ->avg('poi.unit_price');
+            ->avg('poi.agreed_unit_cost');
 
         if (! $vendorAvg || ! $overallAvg || $overallAvg == 0) {
             return ['score' => 75.0]; // neutral score when no data

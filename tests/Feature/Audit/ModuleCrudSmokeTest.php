@@ -31,7 +31,7 @@ function superadmin(): User
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('attendance: time-in / time-out / today / my-logs endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     // GET today's log (should return null data, not 500)
@@ -76,7 +76,7 @@ test('attendance: time-in / time-out / today / my-logs endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('hr: employees CRUD endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     // GET employees list
@@ -93,7 +93,7 @@ test('hr: employees CRUD endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('procurement: PR → PO → GR workflow endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     // GET purchase requests
@@ -118,7 +118,7 @@ test('procurement: PR → PO → GR workflow endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('accounting: journal entries, COA, fiscal periods, bank accounts', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/accounting/journal-entries');
@@ -145,7 +145,7 @@ test('accounting: journal entries, COA, fiscal periods, bank accounts', function
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('ap: vendors, invoices, credit notes endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/accounting/vendors');
@@ -160,7 +160,7 @@ test('ap: vendors, invoices, credit notes endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('ar: customers, invoices, credit notes endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/ar/customers');
@@ -175,7 +175,7 @@ test('ar: customers, invoices, credit notes endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('payroll: runs, periods endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/payroll/runs');
@@ -190,7 +190,7 @@ test('payroll: runs, periods endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('leave: requests, balances endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/leave/requests');
@@ -205,7 +205,7 @@ test('leave: requests, balances endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('loan: list endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/loans');
@@ -217,7 +217,7 @@ test('loan: list endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('inventory: items, locations, MRQ endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/inventory/items');
@@ -235,7 +235,7 @@ test('inventory: items, locations, MRQ endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('production: orders, BOMs, delivery schedules endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/production/orders');
@@ -253,7 +253,7 @@ test('production: orders, BOMs, delivery schedules endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('qc: inspections, templates, NCRs endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/qc/inspections');
@@ -271,7 +271,7 @@ test('qc: inspections, templates, NCRs endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('crm: tickets, leads, client orders endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/crm/tickets');
@@ -286,7 +286,7 @@ test('crm: tickets, leads, client orders endpoints', function () {
 // ═══════════════════════════════════════════════════════════════════════════
 
 test('delivery: receipts and shipments endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/delivery/receipts');
@@ -297,7 +297,7 @@ test('delivery: receipts and shipments endpoints', function () {
 });
 
 test('maintenance: equipment and work orders endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/maintenance/equipment');
@@ -308,7 +308,7 @@ test('maintenance: equipment and work orders endpoints', function () {
 });
 
 test('mold: mold masters endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/mold/molds');
@@ -316,7 +316,7 @@ test('mold: mold masters endpoints', function () {
 });
 
 test('fixed-assets: list and categories endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/fixed-assets');
@@ -324,7 +324,7 @@ test('fixed-assets: list and categories endpoints', function () {
 });
 
 test('budget: cost centers and annual budgets endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/budget/cost-centers');
@@ -335,7 +335,7 @@ test('budget: cost centers and annual budgets endpoints', function () {
 });
 
 test('tax: VAT ledger and BIR filings endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/tax/vat-ledger');
@@ -346,7 +346,7 @@ test('tax: VAT ledger and BIR filings endpoints', function () {
 });
 
 test('sales: quotations and orders endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/sales/quotations');
@@ -357,7 +357,7 @@ test('sales: quotations and orders endpoints', function () {
 });
 
 test('recruitment: requisitions, postings, applications endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/recruitment/requisitions');
@@ -371,7 +371,7 @@ test('recruitment: requisitions, postings, applications endpoints', function () 
 });
 
 test('dashboard: main and executive endpoints', function () {
-    Artisan::call('db:seed');
+
     $user = superadmin();
 
     $r = $this->actingAs($user)->getJson('/api/v1/dashboard');

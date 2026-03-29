@@ -246,6 +246,11 @@ class ManualTestingSeeder extends Seeder
         int $price,
         int $createdById
     ): void {
+        // Guard: skip if vendor doesn't exist (avoids FK violation in test DBs)
+        if (! Vendor::find($vendorId)) {
+            return;
+        }
+
         $existing = DB::table('vendor_items')
             ->where('vendor_id', $vendorId)
             ->where('item_code', $code)

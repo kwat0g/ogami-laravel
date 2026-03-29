@@ -29,13 +29,13 @@ final class YearEndClosingService implements ServiceContract
      * 3. Creates closing JE: debit revenue accounts, credit expense accounts,
      *    net to retained earnings
      *
-     * @return array{journal_entry_id: int, net_income_centavos: int, revenue_total: int, expense_total: int}
+     * @return array{journal_entry_id: int, net_income: float, revenue_total: float, expense_total: float}
      */
     public function close(int $fiscalYear, User $actor): array
     {
         return DB::transaction(function () use ($fiscalYear, $actor): array {
             // 1. Verify all fiscal periods for the year are closed
-            $openPeriods = FiscalPeriod::where('fiscal_year', $fiscalYear)
+            $openPeriods = FiscalPeriod::whereYear('date_from', $fiscalYear)
                 ->where('status', 'open')
                 ->count();
 
@@ -49,8 +49,8 @@ final class YearEndClosingService implements ServiceContract
             }
 
             // 2. Get the last period of the fiscal year for the closing JE
-            $lastPeriod = FiscalPeriod::where('fiscal_year', $fiscalYear)
-                ->orderByDesc('end_date')
+            $lastPeriod = FiscalPeriod::whereYear('date_from', $fiscalYear)
+                ->orderByDesc('date_to')
                 ->first();
 
             if ($lastPeriod === null) {
@@ -96,7 +96,7 @@ final class YearEndClosingService implements ServiceContract
             // 5. Create closing journal entry
             $je = JournalEntry::create([
                 'fiscal_period_id' => $lastPeriod->id,
-                'entry_date' => $lastPeriod->end_date,
+                'entry_date' => $lastPeriod->date_to,
                 'reference_number' => "YEC-{$fiscalYear}",
                 'description' => "Year-end closing entry for fiscal year {$fiscalYear}",
                 'source_type' => 'year_end_closing',
@@ -113,8 +113,8 @@ final class YearEndClosingService implements ServiceContract
                     JournalEntryLine::create([
                         'journal_entry_id' => $je->id,
                         'account_id' => $account->id,
-                        'debit_centavos' => max(0, $balance),
-                        'credit_centavos' => max(0, -$balance),
+                        'debit' => $balance > 0 ? $balance : null,
+                        'credit' => $balance < 0 ? -$balance : null,
                         'description' => "Close revenue: {$account->name}",
                     ]);
                 }
@@ -127,8 +127,8 @@ final class YearEndClosingService implements ServiceContract
                     JournalEntryLine::create([
                         'journal_entry_id' => $je->id,
                         'account_id' => $account->id,
-                        'debit_centavos' => max(0, -$balance),
-                        'credit_centavos' => max(0, $balance),
+                        'debit' => $balance < 0 ? -$balance : null,
+                        'credit' => $balance > 0 ? $balance : null,
                         'description' => "Close expense: {$account->name}",
                     ]);
                 }
@@ -139,8 +139,8 @@ final class YearEndClosingService implements ServiceContract
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
                     'account_id' => $retainedEarnings->id,
-                    'debit_centavos' => $netIncome < 0 ? abs($netIncome) : 0,
-                    'credit_centavos' => $netIncome > 0 ? $netIncome : 0,
+                    'debit' => $netIncome < 0 ? abs($netIncome) : null,
+                    'credit' => $netIncome > 0 ? $netIncome : null,
                     'description' => "Net income to retained earnings for FY{$fiscalYear}",
                 ]);
             }
@@ -150,7 +150,7 @@ final class YearEndClosingService implements ServiceContract
 
             return [
                 'journal_entry_id' => $je->id,
-                'net_income_centavos' => $netIncome,
+                'net_income' => $netIncome,
                 'revenue_total' => $revenueTotal,
                 'expense_total' => $expenseTotal,
             ];
@@ -162,7 +162,7 @@ final class YearEndClosingService implements ServiceContract
      *
      * @param int[] $accountIds
      */
-    private function sumAccountBalances(array $accountIds, int $fiscalYear): int
+    private function sumAccountBalances(array $accountIds, int $fiscalYear): float
     {
         if (empty($accountIds)) {
             return 0;
@@ -173,19 +173,19 @@ final class YearEndClosingService implements ServiceContract
             ->join('fiscal_periods', 'journal_entries.fiscal_period_id', '=', 'fiscal_periods.id')
             ->whereIn('journal_entry_lines.account_id', $accountIds)
             ->where('journal_entries.status', 'posted')
-            ->where('fiscal_periods.fiscal_year', $fiscalYear)
+            ->whereYear('fiscal_periods.date_from', $fiscalYear)
             ->whereNull('journal_entries.deleted_at')
             ->where('journal_entries.source_type', '!=', 'year_end_closing')
-            ->selectRaw('COALESCE(SUM(credit_centavos), 0) - COALESCE(SUM(debit_centavos), 0) as net_balance')
+            ->selectRaw('COALESCE(SUM(credit), 0) - COALESCE(SUM(debit), 0) as net_balance')
             ->value('net_balance');
 
-        return (int) $result;
+        return (float) $result;
     }
 
     /**
      * Get net balance for a single account in a fiscal year.
      */
-    private function accountBalance(int $accountId, int $fiscalYear): int
+    private function accountBalance(int $accountId, int $fiscalYear): float
     {
         return $this->sumAccountBalances([$accountId], $fiscalYear);
     }

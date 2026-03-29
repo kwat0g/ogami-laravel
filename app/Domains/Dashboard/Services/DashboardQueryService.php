@@ -1830,7 +1830,7 @@ final class DashboardQueryService implements ServiceContract
             ->count();
 
         $vendorsActive = DB::table('vendors')
-            ->where('status', 'active')
+            ->where('is_active', true)
             ->count();
 
         $topVendors = DB::table('purchase_orders')

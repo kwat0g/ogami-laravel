@@ -146,8 +146,8 @@ final class SalesAnalyticsService implements ServiceContract
 
         $overdue = Ticket::query()
             ->whereIn('status', ['open', 'in_progress'])
-            ->whereNotNull('sla_deadline')
-            ->where('sla_deadline', '<', now())
+            ->whereNotNull('sla_due_at')
+            ->where('sla_due_at', '<', now())
             ->count();
 
         return [

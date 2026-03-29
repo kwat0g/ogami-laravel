@@ -168,7 +168,7 @@ final class InventoryAnalyticsService implements ServiceContract
             ->keyBy('item_id');
 
         $currentStock = StockBalance::query()
-            ->select('item_id', DB::raw('SUM(CAST(quantity AS numeric)) as total_qty'))
+            ->select('item_id', DB::raw('SUM(CAST(quantity_on_hand AS numeric)) as total_qty'))
             ->groupBy('item_id')
             ->get()
             ->keyBy('item_id');
@@ -215,7 +215,7 @@ final class InventoryAnalyticsService implements ServiceContract
 
         $balances = StockBalance::query()
             ->where('quantity_on_hand', '>', 0)
-            ->select('item_id', DB::raw('SUM(CAST(quantity AS numeric)) as total_qty'))
+            ->select('item_id', DB::raw('SUM(CAST(quantity_on_hand AS numeric)) as total_qty'))
             ->groupBy('item_id')
             ->with('item')
             ->get();

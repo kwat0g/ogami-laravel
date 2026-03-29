@@ -106,9 +106,10 @@ final class MaintenanceAnalyticsService implements ServiceContract
 
         $partsCosts = DB::table('maintenance_work_order_parts')
             ->join('maintenance_work_orders', 'maintenance_work_order_parts.work_order_id', '=', 'maintenance_work_orders.id')
+            ->join('item_masters', 'maintenance_work_order_parts.item_id', '=', 'item_masters.id')
             ->select(
                 'maintenance_work_orders.equipment_id',
-                DB::raw('COALESCE(SUM(maintenance_work_order_parts.quantity_used * maintenance_work_order_parts.unit_cost), 0) as total_parts_cost')
+                DB::raw('COALESCE(SUM(maintenance_work_order_parts.qty_consumed * item_masters.standard_price_centavos), 0) / 100 as total_parts_cost')
             )
             ->where('maintenance_work_orders.status', 'completed')
             ->whereNull('maintenance_work_orders.deleted_at')

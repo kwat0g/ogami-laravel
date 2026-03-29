@@ -26,14 +26,14 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     Route::get('/export', function (Request $request): StreamedResponse {
         abort_unless(auth()->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
         $query = DB::table('shipments')
-            ->leftJoin('delivery_receipts', 'shipments.id', '=', 'delivery_receipts.shipment_id')
+            ->leftJoin('delivery_receipts', 'shipments.delivery_receipt_id', '=', 'delivery_receipts.id')
             ->select(
                 'shipments.tracking_number',
-                'shipments.destination',
+                'shipments.carrier as destination',
                 'shipments.status',
-                'shipments.scheduled_date',
-                'shipments.actual_delivery_date',
-                'delivery_receipts.dr_number',
+                'shipments.estimated_arrival as scheduled_date',
+                'shipments.actual_arrival as actual_delivery_date',
+                'delivery_receipts.dr_reference as dr_number',
                 'shipments.created_at',
             );
 
@@ -41,13 +41,13 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
             $query->where('shipments.status', $request->input('status'));
         }
         if ($request->filled('date_from')) {
-            $query->where('shipments.scheduled_date', '>=', $request->input('date_from'));
+            $query->where('shipments.estimated_arrival', '>=', $request->input('date_from'));
         }
         if ($request->filled('date_to')) {
-            $query->where('shipments.scheduled_date', '<=', $request->input('date_to'));
+            $query->where('shipments.estimated_arrival', '<=', $request->input('date_to'));
         }
 
-        $rows = $query->orderBy('shipments.scheduled_date', 'desc')->get();
+        $rows = $query->orderBy('shipments.estimated_arrival', 'desc')->get();
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
