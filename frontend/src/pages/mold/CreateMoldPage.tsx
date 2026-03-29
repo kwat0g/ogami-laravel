@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useCreateMold } from '@/hooks/useMold';
 import type { MoldStatus } from '@/types/mold';
@@ -57,7 +58,7 @@ export default function CreateMoldPage(): React.ReactElement {
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <h1 className="text-lg font-semibold text-neutral-900">New Mold</h1>
+        <PageHeader title="New Mold" backTo="/mold/masters" />
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">

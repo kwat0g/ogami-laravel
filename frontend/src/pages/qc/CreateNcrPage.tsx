@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateNcr, useInspections } from '@/hooks/useQC'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { NcrSeverity } from '@/types/qc'
@@ -82,7 +83,7 @@ export default function CreateNcrPage(): React.ReactElement {
           <AlertTriangle className="w-5 h-5 text-neutral-600" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-6">Raise Non-Conformance Report</h1>
+          <PageHeader title="Raise Non-Conformance Report" backTo="/qc/ncrs" />
           <p className="text-sm text-neutral-500 mt-0.5">Document a quality non-conformance for CAPA</p>
         </div>
       </div>
