@@ -67,15 +67,15 @@ export default function FixedAssetDetailPage(): React.ReactElement {
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Acquisition Cost</p>
-          <p className="text-xl font-bold text-neutral-900 font-mono mt-1">{fmt(asset.acquisition_cost_centavos)}</p>
+          <p className="text-lg font-semibold text-neutral-900 font-mono mt-1">{fmt(asset.acquisition_cost_centavos)}</p>
         </div>
         <div className="bg-white border border-neutral-200 rounded-xl p-4">
           <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Current Book Value</p>
-          <p className="text-xl font-bold text-neutral-900 font-mono mt-1">{fmt(asset.book_value_centavos)}</p>
+          <p className="text-lg font-semibold text-neutral-900 font-mono mt-1">{fmt(asset.book_value_centavos)}</p>
         </div>
         <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
           <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Accumulated Depreciation</p>
-          <p className="text-xl font-bold text-neutral-700 font-mono mt-1">{fmt(accumulatedDepreciation)}</p>
+          <p className="text-lg font-semibold text-neutral-700 font-mono mt-1">{fmt(accumulatedDepreciation)}</p>
           <p className="text-xs text-neutral-400 mt-1">{depreciationPercent}% depreciated</p>
         </div>
       </div>

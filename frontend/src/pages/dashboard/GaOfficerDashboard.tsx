@@ -42,7 +42,7 @@ function KpiCard({
             <ArrowUpRight className="h-4 w-4 text-neutral-400" />
           </div>
           <div className="mt-3">
-            <p className={`text-2xl font-bold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
+            <p className={`text-lg font-semibold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
             <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
             {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
           </div>
@@ -58,7 +58,7 @@ function ActionItem({ count, label, href }: { count: number; label: string; href
     <Link to={href}>
       <Card className="border-amber-200 bg-amber-50/50 hover:shadow-sm transition-all">
         <div className="p-4 flex items-center gap-4">
-          <div className="text-xl font-bold text-amber-600">{count}</div>
+          <div className="text-lg font-semibold text-amber-600">{count}</div>
           <div className="flex-1">
             <p className="text-sm font-medium text-neutral-800">{label}</p>
             <p className="text-xs text-neutral-500">Click to review</p>
@@ -112,7 +112,7 @@ export default function GaOfficerDashboard(): React.ReactElement {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">General Affairs Dashboard</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">General Affairs Dashboard</h1>
         <p className="text-sm text-neutral-500 mt-0.5">Team management, leave processing, and attendance oversight</p>
       </div>
 

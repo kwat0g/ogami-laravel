@@ -39,7 +39,7 @@ function KpiCard({
             <ArrowUpRight className="h-4 w-4 text-neutral-400" />
           </div>
           <div className="mt-3">
-            <p className={`text-2xl font-bold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
+            <p className={`text-lg font-semibold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
             <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
             {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
           </div>

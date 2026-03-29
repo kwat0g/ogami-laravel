@@ -84,35 +84,35 @@ export default function MyAttendancePage() {
             <Briefcase className="w-4 h-4" />
             <span className="text-xs font-medium">Present</span>
           </div>
-          <p className="text-2xl font-bold text-neutral-900">{stats.present}</p>
+          <p className="text-lg font-semibold text-neutral-900">{stats.present}</p>
         </div>
         <div className="bg-white border border-neutral-200 rounded p-4">
           <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Calendar className="w-4 h-4" />
             <span className="text-xs font-medium">Absent</span>
           </div>
-          <p className="text-2xl font-bold text-neutral-900">{stats.absent}</p>
+          <p className="text-lg font-semibold text-neutral-900">{stats.absent}</p>
         </div>
         <div className="bg-white border border-neutral-200 rounded p-4">
           <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Clock className="w-4 h-4" />
             <span className="text-xs font-medium">Late</span>
           </div>
-          <p className="text-2xl font-bold text-neutral-900">{stats.late}</p>
+          <p className="text-lg font-semibold text-neutral-900">{stats.late}</p>
         </div>
         <div className="bg-white border border-neutral-200 rounded p-4">
           <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Coffee className="w-4 h-4" />
             <span className="text-xs font-medium">Incomplete</span>
           </div>
-          <p className="text-2xl font-bold text-neutral-900">{stats.incomplete}</p>
+          <p className="text-lg font-semibold text-neutral-900">{stats.incomplete}</p>
         </div>
         <div className="bg-white border border-neutral-200 rounded p-4 col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 text-neutral-700 mb-1">
             <Clock className="w-4 h-4" />
             <span className="text-xs font-medium">OT Hours</span>
           </div>
-          <p className="text-2xl font-bold text-neutral-900">{Math.round(stats.totalOvertime / 60 * 10) / 10}h</p>
+          <p className="text-lg font-semibold text-neutral-900">{Math.round(stats.totalOvertime / 60 * 10) / 10}h</p>
         </div>
       </div>
 

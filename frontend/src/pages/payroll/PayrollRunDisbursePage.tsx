@@ -117,7 +117,7 @@ export default function PayrollRunDisbursePage() {
         />
         <div className="bg-green-50 border border-green-200 rounded p-8 text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-          <h2 className="text-xl font-bold text-neutral-900 mb-2">Payroll Run Complete</h2>
+          <h2 className="text-lg font-semibold text-neutral-900 mb-2">Payroll Run Complete</h2>
           <p className="text-sm text-neutral-600">
             Payslips have been published. Reference: <strong>{run.reference_no}</strong>
           </p>

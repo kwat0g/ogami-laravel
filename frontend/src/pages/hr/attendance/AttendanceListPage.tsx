@@ -357,7 +357,7 @@ export default function AttendanceListPage() {
         ].map((stat) => (
           <div key={stat.label} className={`${stat.color} rounded-lg p-4 border border-neutral-200`}>
             <p className="text-xs font-medium uppercase tracking-wide opacity-75">{stat.label}</p>
-            <p className="text-2xl font-bold mt-1">{stat.value}</p>
+            <p className="text-lg font-semibold mt-1">{stat.value}</p>
           </div>
         ))}
       </div>

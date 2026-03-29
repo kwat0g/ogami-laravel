@@ -54,7 +54,7 @@ export default function VicePresidentDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">Vice President Dashboard</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Vice President Dashboard</h1>
         <p className="text-sm text-neutral-500 mt-0.5">
           Approval queue, financial overview, and operational status
         </p>

@@ -139,11 +139,11 @@ export default function AttendanceImportPage() {
           <h2 className="text-base font-semibold text-neutral-900 mb-3">Import Result</h2>
           <div className="flex gap-6 mb-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{result.imported}</p>
+              <p className="text-lg font-semibold text-green-600">{result.imported}</p>
               <p className="text-xs text-neutral-500">Imported</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">{result.failed}</p>
+              <p className="text-lg font-semibold text-red-600">{result.failed}</p>
               <p className="text-xs text-neutral-500">Failed</p>
             </div>
           </div>

@@ -58,28 +58,28 @@ export default function ProcurementAnalyticsPage(): React.ReactElement {
               <Package className="w-4 h-4 text-blue-600" />
               <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total POs</p>
             </div>
-            <p className="text-2xl font-bold text-blue-700 mt-1">{summary.total_pos}</p>
+            <p className="text-lg font-semibold text-blue-700 mt-1">{summary.total_pos}</p>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="w-4 h-4 text-emerald-600" />
               <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Total Spend</p>
             </div>
-            <p className="text-2xl font-bold text-emerald-700 font-mono mt-1">{fmt(summary.total_spend)}</p>
+            <p className="text-lg font-semibold text-emerald-700 font-mono mt-1">{fmt(summary.total_spend)}</p>
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-4 h-4 text-purple-600" />
               <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">Avg PO Value</p>
             </div>
-            <p className="text-2xl font-bold text-purple-700 font-mono mt-1">{fmt(summary.avg_po_value)}</p>
+            <p className="text-lg font-semibold text-purple-700 font-mono mt-1">{fmt(summary.avg_po_value)}</p>
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <Users className="w-4 h-4 text-amber-600" />
               <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">Active Vendors</p>
             </div>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{summary.active_vendors}</p>
+            <p className="text-lg font-semibold text-amber-700 mt-1">{summary.active_vendors}</p>
           </div>
         </div>
       )}

@@ -14,7 +14,7 @@ export default function JobPostingListPage() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Job Postings</h1>
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">Job Postings</h1>
         <Link
           to="/hr/recruitment/postings/new"
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"

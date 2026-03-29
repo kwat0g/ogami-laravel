@@ -177,13 +177,13 @@ export default function MoldDetailPage() {
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardBody className="text-center">
-            <p className="text-2xl font-bold">{mold.cavity_count}</p>
+            <p className="text-lg font-semibold">{mold.cavity_count}</p>
             <p className="text-xs text-neutral-500">Cavities</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="text-center">
-            <p className="text-2xl font-bold">{mold.current_shots.toLocaleString()}</p>
+            <p className="text-lg font-semibold">{mold.current_shots.toLocaleString()}</p>
             <p className="text-xs text-neutral-500">Total Shots</p>
             {shotPct !== null && (
               <div className="mt-2 h-1.5 overflow-hidden rounded bg-neutral-200">
@@ -197,7 +197,7 @@ export default function MoldDetailPage() {
         </Card>
         <Card>
           <CardBody className="text-center">
-            <p className="text-2xl font-bold">{mold.max_shots?.toLocaleString() ?? '∞'}</p>
+            <p className="text-lg font-semibold">{mold.max_shots?.toLocaleString() ?? '∞'}</p>
             <p className="text-xs text-neutral-500">Max Shots</p>
           </CardBody>
         </Card>

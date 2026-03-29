@@ -548,19 +548,19 @@ export default function VendorsPage() {
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Vendors</p>
-            <p className="text-2xl font-bold text-blue-700 mt-1">{vendors.length}</p>
+            <p className="text-lg font-semibold text-blue-700 mt-1">{vendors.length}</p>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Active</p>
-            <p className="text-2xl font-bold text-emerald-700 mt-1">{activeVendors}</p>
+            <p className="text-lg font-semibold text-emerald-700 mt-1">{activeVendors}</p>
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
             <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">Accredited</p>
-            <p className="text-2xl font-bold text-purple-700 mt-1">{accreditedVendors}</p>
+            <p className="text-lg font-semibold text-purple-700 mt-1">{accreditedVendors}</p>
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">EWT Subject</p>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{ewtVendors}</p>
+            <p className="text-lg font-semibold text-amber-700 mt-1">{ewtVendors}</p>
           </div>
         </div>
       )}

@@ -33,7 +33,7 @@ export default function OfferDetailPage() {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-neutral-500">{offer.offer_number}</p>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
+          <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
             Offer for {offer.application?.candidate?.full_name}
           </h1>
           <p className="text-sm text-neutral-500">{offer.offered_position?.title} - {offer.offered_department?.name}</p>
@@ -117,7 +117,7 @@ export default function OfferDetailPage() {
       <div className="grid grid-cols-2 gap-6 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
         <div>
           <p className="text-xs text-neutral-500">Offered Salary</p>
-          <p className="text-xl font-bold text-neutral-900 dark:text-white">
+          <p className="text-lg font-semibold text-neutral-900 dark:text-white">
             {(offer.offered_salary / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
           </p>
         </div>

@@ -54,7 +54,7 @@ export default function ManagerDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">{deptName} Dashboard</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">{deptName} Dashboard</h1>
         <p className="text-sm text-neutral-500 mt-0.5">
           Team performance, pending approvals, and department analytics
         </p>
@@ -124,7 +124,7 @@ export default function ManagerDashboard() {
             <Card key={label} className={color}>
               <div className="p-3 text-center">
                 <Icon className="h-4 w-4 mx-auto mb-2 opacity-70" />
-                <p className="text-xl font-bold">{value}</p>
+                <p className="text-lg font-semibold">{value}</p>
                 <p className="text-[10px] uppercase tracking-wide font-medium mt-0.5">{label}</p>
               </div>
             </Card>
@@ -206,15 +206,15 @@ export default function ManagerDashboard() {
           <SectionHeader title="Department vs Company Average" />
           <div className="grid grid-cols-3 gap-3">
             <Card className="p-4 text-center bg-blue-50 border-blue-100">
-              <p className="text-2xl font-bold text-blue-700">{analytics.comparison.dept_attendance_rate}%</p>
+              <p className="text-lg font-semibold text-blue-700">{analytics.comparison.dept_attendance_rate}%</p>
               <p className="text-xs text-blue-600 mt-1 uppercase tracking-wide font-medium">Your Dept</p>
             </Card>
             <Card className="p-4 text-center">
-              <p className="text-2xl font-bold text-neutral-700">{analytics.comparison.company_avg_attendance}%</p>
+              <p className="text-lg font-semibold text-neutral-700">{analytics.comparison.company_avg_attendance}%</p>
               <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wide font-medium">Company Avg</p>
             </Card>
             <Card className={`p-4 text-center ${analytics.comparison.vs_company_avg >= 0 ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-              <p className={`text-2xl font-bold ${analytics.comparison.vs_company_avg >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              <p className={`text-lg font-semibold ${analytics.comparison.vs_company_avg >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {analytics.comparison.vs_company_avg > 0 ? '+' : ''}{analytics.comparison.vs_company_avg}%
               </p>
               <p className={`text-xs mt-1 uppercase tracking-wide font-medium ${analytics.comparison.vs_company_avg >= 0 ? 'text-green-600' : 'text-red-600'}`}>

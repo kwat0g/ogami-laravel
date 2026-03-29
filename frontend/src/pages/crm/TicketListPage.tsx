@@ -55,21 +55,21 @@ export default function TicketListPage() {
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
             <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total Tickets</p>
-            <p className="text-2xl font-bold text-neutral-900 mt-1">{tickets.length}</p>
+            <p className="text-lg font-semibold text-neutral-900 mt-1">{tickets.length}</p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Open</p>
-            <p className="text-2xl font-bold text-blue-700 mt-1">{openCount}</p>
+            <p className="text-lg font-semibold text-blue-700 mt-1">{openCount}</p>
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">In Progress</p>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{inProgressCount}</p>
+            <p className="text-lg font-semibold text-amber-700 mt-1">{inProgressCount}</p>
           </div>
           <div className={`rounded-xl p-4 border ${criticalCount > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
             <p className={`text-xs font-medium uppercase tracking-wide ${criticalCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
               Critical Priority
             </p>
-            <p className={`text-2xl font-bold mt-1 ${criticalCount > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
+            <p className={`text-lg font-semibold mt-1 ${criticalCount > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
               {criticalCount}
             </p>
           </div>

@@ -35,7 +35,7 @@ function KpiCard({
             <ArrowUpRight className="h-4 w-4 text-neutral-400" />
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-bold tracking-tight text-neutral-900">{value}</p>
+            <p className="text-lg font-semibold tracking-tight text-neutral-900">{value}</p>
             <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
             {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
           </div>
@@ -87,7 +87,7 @@ export default function MoldManagerDashboard(): React.ReactElement {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-neutral-900">Mold Department Dashboard</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Mold Department Dashboard</h1>
         <p className="text-sm text-neutral-500 mt-0.5">Mold lifecycle management, shot tracking, and maintenance</p>
       </div>
 

@@ -45,7 +45,7 @@ function KpiCard({
             <ArrowUpRight className="h-4 w-4 text-neutral-400" />
           </div>
           <div className="mt-3">
-            <p className={`text-2xl font-bold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
+            <p className={`text-lg font-semibold tracking-tight ${alert ? 'text-amber-700' : 'text-neutral-900'}`}>{value}</p>
             <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
             {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
           </div>
@@ -58,7 +58,7 @@ function KpiCard({
 function PipelineStep({ label, count, active }: { label: string; count: number; active?: boolean }) {
   return (
     <div className={`flex-1 text-center p-3 rounded-lg ${active ? 'bg-amber-50 border border-amber-200' : 'bg-neutral-50 border border-neutral-200'}`}>
-      <p className={`text-xl font-bold ${active && count > 0 ? 'text-amber-700' : 'text-neutral-900'}`}>{count}</p>
+      <p className={`text-lg font-semibold ${active && count > 0 ? 'text-amber-700' : 'text-neutral-900'}`}>{count}</p>
       <p className="text-xs text-neutral-500 mt-0.5">{label}</p>
     </div>
   )

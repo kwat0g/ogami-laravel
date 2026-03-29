@@ -77,15 +77,15 @@ export default function AttendanceDashboardPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-lg border border-neutral-200 p-4 bg-white">
             <p className="text-xs text-neutral-500 uppercase tracking-wide">Absences (14 days)</p>
-            <p className="mt-1 text-2xl font-bold text-red-600">{stats.absent_count}</p>
+            <p className="mt-1 text-lg font-semibold text-red-600">{stats.absent_count}</p>
           </div>
           <div className="rounded-lg border border-neutral-200 p-4 bg-white">
             <p className="text-xs text-neutral-500 uppercase tracking-wide">Tardy (14 days)</p>
-            <p className="mt-1 text-2xl font-bold text-amber-600">{stats.tardy_count}</p>
+            <p className="mt-1 text-lg font-semibold text-amber-600">{stats.tardy_count}</p>
           </div>
           <div className="rounded-lg border border-neutral-200 p-4 bg-white">
             <p className="text-xs text-neutral-500 uppercase tracking-wide">Total OT Minutes</p>
-            <p className="mt-1 text-2xl font-bold text-neutral-900">{stats.total_overtime_minutes.toLocaleString()}</p>
+            <p className="mt-1 text-lg font-semibold text-neutral-900">{stats.total_overtime_minutes.toLocaleString()}</p>
           </div>
         </div>
       )}

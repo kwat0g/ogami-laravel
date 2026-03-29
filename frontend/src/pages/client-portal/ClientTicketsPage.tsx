@@ -35,15 +35,15 @@ export default function ClientTicketsPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Open</p>
-            <p className="text-2xl font-bold text-blue-700 mt-1">{openCount}</p>
+            <p className="text-lg font-semibold text-blue-700 mt-1">{openCount}</p>
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">In Progress</p>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{inProgressCount}</p>
+            <p className="text-lg font-semibold text-amber-700 mt-1">{inProgressCount}</p>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Resolved</p>
-            <p className="text-2xl font-bold text-emerald-700 mt-1">{resolvedCount}</p>
+            <p className="text-lg font-semibold text-emerald-700 mt-1">{resolvedCount}</p>
           </div>
         </div>
       )}

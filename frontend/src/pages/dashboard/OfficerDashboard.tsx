@@ -50,7 +50,7 @@ function KpiCard({
           {href && !trend && <ArrowUpRight className="h-4 w-4 text-neutral-400" />}
         </div>
         <div className="mt-3">
-          <p className="text-2xl font-bold text-neutral-900 tracking-tight">{value}</p>
+          <p className="text-lg font-semibold text-neutral-900 tracking-tight">{value}</p>
           <p className="text-sm text-neutral-500 mt-0.5">{label}</p>
           {sub && <p className="text-xs text-neutral-400 mt-1">{sub}</p>}
         </div>
@@ -80,7 +80,7 @@ function ActionItem({ count, label, href, urgent }: { count: number; label: stri
     <Link to={href}>
       <Card className={`${urgent ? 'border-amber-200 bg-amber-50/50' : 'border-neutral-200'} hover:shadow-sm transition-all`}>
         <div className="p-4 flex items-center gap-4">
-          <div className={`text-xl font-bold ${urgent ? 'text-amber-600' : 'text-neutral-800'}`}>{count}</div>
+          <div className={`text-lg font-semibold ${urgent ? 'text-amber-600' : 'text-neutral-800'}`}>{count}</div>
           <div className="flex-1">
             <p className="text-sm font-medium text-neutral-800">{label}</p>
             <p className="text-xs text-neutral-500">Click to review</p>
@@ -130,7 +130,7 @@ export default function OfficerDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900">Accounting Dashboard</h1>
+          <h1 className="text-lg font-semibold text-neutral-900">Accounting Dashboard</h1>
           {fp && (
             <p className="text-sm text-neutral-500 mt-0.5">
               Fiscal Period: <span className="font-medium text-neutral-700">{fp.name}</span>

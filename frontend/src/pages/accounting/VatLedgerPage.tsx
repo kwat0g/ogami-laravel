@@ -18,7 +18,7 @@ function VatCard({ label, amount, highlight: _highlight }: { label: string; amou
   return (
     <div className="rounded border border-neutral-200 bg-neutral-50 p-4">
       <p className="text-xs font-medium opacity-70 text-neutral-600">{label}</p>
-      <p className="text-2xl font-bold mt-1 text-neutral-900">₱{amount.toLocaleString()}</p>
+      <p className="text-lg font-semibold mt-1 text-neutral-900">₱{amount.toLocaleString()}</p>
     </div>
   )
 }

@@ -683,7 +683,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                 <div className="flex justify-end mt-4 pt-4 border-t border-neutral-200">
                   <div className="text-right">
                     <p className="text-xs text-neutral-500">Total Estimated Cost</p>
-                    <p className="text-xl font-bold text-neutral-900 mt-0.5">
+                    <p className="text-lg font-semibold text-neutral-900 mt-0.5">
                       ₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </p>
                   </div>

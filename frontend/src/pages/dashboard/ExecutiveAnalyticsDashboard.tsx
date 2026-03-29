@@ -26,7 +26,7 @@ function KpiCard({ icon: Icon, label, value, sub, color = 'text-blue-600' }: {
         </div>
         <div>
           <p className="text-xs text-neutral-500 uppercase tracking-wide">{label}</p>
-          <p className="text-xl font-bold text-neutral-900">{value}</p>
+          <p className="text-lg font-semibold text-neutral-900">{value}</p>
           {sub && <p className="text-xs text-neutral-400">{sub}</p>}
         </div>
       </div>

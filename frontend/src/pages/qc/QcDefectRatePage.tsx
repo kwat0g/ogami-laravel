@@ -117,7 +117,7 @@ function Card({ label, value, color }: { label: string; value: string; color?: s
   return (
     <div className="bg-white border border-neutral-200 rounded-lg p-4">
       <p className="text-xs font-medium text-neutral-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold tabular-nums ${color ?? 'text-neutral-900'}`}>{value}</p>
+      <p className={`text-lg font-semibold tabular-nums ${color ?? 'text-neutral-900'}`}>{value}</p>
     </div>
   )
 }

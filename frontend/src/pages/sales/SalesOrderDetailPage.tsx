@@ -45,7 +45,7 @@ export default function SalesOrderDetailPage() {
       />
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <Card className="p-4"><span className="text-xs text-neutral-500">Status</span><p className="mt-1"><StatusBadge status={order.status} /></p></Card>
-        <Card className="p-4"><span className="text-xs text-neutral-500">Total</span><p className="mt-1 text-xl font-bold font-mono">{fmt(order.total_centavos)}</p></Card>
+        <Card className="p-4"><span className="text-xs text-neutral-500">Total</span><p className="mt-1 text-lg font-semibold font-mono">{fmt(order.total_centavos)}</p></Card>
         <Card className="p-4"><span className="text-xs text-neutral-500">Customer</span><p className="mt-1 font-medium">{order.customer?.name}</p></Card>
         <Card className="p-4"><span className="text-xs text-neutral-500">Delivery Date</span><p className="mt-1">{order.promised_delivery_date ? new Date(order.promised_delivery_date).toLocaleDateString() : '-'}</p></Card>
       </div>

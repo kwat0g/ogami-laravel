@@ -292,13 +292,13 @@ export default function DepartmentBudgetsPage(): React.ReactElement {
         <Card>
           <CardBody className="text-center">
             <p className="text-xs text-neutral-500 uppercase tracking-wider">Total Departments</p>
-            <p className="text-2xl font-bold text-neutral-900 mt-1">{departments.length}</p>
+            <p className="text-lg font-semibold text-neutral-900 mt-1">{departments.length}</p>
           </CardBody>
         </Card>
         <Card>
           <CardBody className="text-center">
             <p className="text-xs text-neutral-500 uppercase tracking-wider">With Budget Set</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">
+            <p className="text-lg font-semibold text-green-600 mt-1">
               {departments.filter((d) => d.annual_budget_centavos > 0).length}
             </p>
           </CardBody>
@@ -306,7 +306,7 @@ export default function DepartmentBudgetsPage(): React.ReactElement {
         <Card>
           <CardBody className="text-center">
             <p className="text-xs text-neutral-500 uppercase tracking-wider">Total Budget Allocated</p>
-            <p className="text-2xl font-bold text-neutral-900 mt-1">
+            <p className="text-lg font-semibold text-neutral-900 mt-1">
               {formatMoney(departments.reduce((sum, d) => sum + d.annual_budget_centavos, 0))}
             </p>
           </CardBody>

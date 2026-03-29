@@ -415,7 +415,7 @@ export default function MyProfilePage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-neutral-900">{employee.full_name}</h1>
+                <h1 className="text-lg font-semibold text-neutral-900">{employee.full_name}</h1>
                 <StatusBadge
                   label={employee.employment_status}
                   autoVariant

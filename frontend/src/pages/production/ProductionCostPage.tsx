@@ -137,7 +137,7 @@ function SummaryCard({ label, value, icon }: { label: string; value: string; ico
         {icon}
         <span className="text-xs font-medium text-neutral-500">{label}</span>
       </div>
-      <span className="text-xl font-bold text-neutral-900 tabular-nums">{value}</span>
+      <span className="text-lg font-semibold text-neutral-900 tabular-nums">{value}</span>
     </div>
   )
 }
