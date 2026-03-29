@@ -84,9 +84,14 @@ final class Application extends Model implements Auditable
     private static function generateNumber(): string
     {
         $year = now()->format('Y');
-        $last = static::whereYear('created_at', $year)->count();
+        $prefix = "APP-{$year}-";
+        $lastNumber = static::withTrashed()
+            ->where('application_number', 'LIKE', "{$prefix}%")
+            ->lockForUpdate()
+            ->selectRaw("MAX(CAST(SUBSTRING(application_number FROM '.{5}$') AS INTEGER)) as max_num")
+            ->value('max_num') ?? 0;
 
-        return sprintf('APP-%s-%05d', $year, $last + 1);
+        return sprintf('APP-%s-%05d', $year, $lastNumber + 1);
     }
 
     // ── Relationships ─────────────────────────────────────────────────────

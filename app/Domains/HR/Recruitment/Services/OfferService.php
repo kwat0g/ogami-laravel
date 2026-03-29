@@ -9,10 +9,14 @@ use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\JobOffer;
 use App\Domains\HR\Recruitment\StateMachines\OfferStateMachine;
 use App\Models\User;
+use App\Notifications\Recruitment\OfferAcceptedNotification;
+use App\Notifications\Recruitment\OfferRejectedNotification;
+use App\Notifications\Recruitment\OfferSentNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 final class OfferService implements ServiceContract
 {
@@ -94,32 +98,58 @@ final class OfferService implements ServiceContract
 
     public function sendOffer(JobOffer $offer, User $actor): JobOffer
     {
-        return DB::transaction(function () use ($offer, $actor): JobOffer {
+        $result = DB::transaction(function () use ($offer, $actor): JobOffer {
             $this->stateMachine->transition($offer, OfferStatus::Sent);
             $offer->sent_at = now();
             $offer->approved_by = $actor->id;
-            // Default 7-day expiry if not set
             $offer->expires_at = $offer->expires_at ?? now()->addDays(7);
             $offer->save();
 
             return $offer;
         });
+
+        // Notify candidate via on-demand mail
+        $candidate = $result->application?->candidate;
+        if ($candidate?->email) {
+            Notification::route('mail', $candidate->email)
+                ->notify(OfferSentNotification::fromModel($result->load(['application.candidate', 'offeredPosition'])));
+        }
+
+        // Notify HR managers
+        $hrManagers = User::whereHas('roles', fn ($q) => $q->where('name', 'manager'))
+            ->whereHas('departments', fn ($q) => $q->where('code', 'HR'))
+            ->get();
+        foreach ($hrManagers as $mgr) {
+            $mgr->notify(OfferSentNotification::fromModel($result));
+        }
+
+        return $result;
     }
 
     public function acceptOffer(JobOffer $offer): JobOffer
     {
-        return DB::transaction(function () use ($offer): JobOffer {
+        $result = DB::transaction(function () use ($offer): JobOffer {
             $this->stateMachine->transition($offer, OfferStatus::Accepted);
             $offer->responded_at = now();
             $offer->save();
 
             return $offer;
         });
+
+        // Notify HR + requester
+        $hrManagers = User::whereHas('roles', fn ($q) => $q->where('name', 'manager'))
+            ->whereHas('departments', fn ($q) => $q->where('code', 'HR'))
+            ->get();
+        foreach ($hrManagers as $mgr) {
+            $mgr->notify(OfferAcceptedNotification::fromModel($result->load(['application.candidate', 'offeredPosition'])));
+        }
+
+        return $result;
     }
 
     public function rejectOffer(JobOffer $offer, string $reason): JobOffer
     {
-        return DB::transaction(function () use ($offer, $reason): JobOffer {
+        $result = DB::transaction(function () use ($offer, $reason): JobOffer {
             $this->stateMachine->transition($offer, OfferStatus::Rejected);
             $offer->responded_at = now();
             $offer->rejection_reason = $reason;
@@ -127,6 +157,16 @@ final class OfferService implements ServiceContract
 
             return $offer;
         });
+
+        // Notify HR
+        $hrManagers = User::whereHas('roles', fn ($q) => $q->where('name', 'manager'))
+            ->whereHas('departments', fn ($q) => $q->where('code', 'HR'))
+            ->get();
+        foreach ($hrManagers as $mgr) {
+            $mgr->notify(OfferRejectedNotification::fromModel($result->load(['application.candidate', 'offeredPosition'])));
+        }
+
+        return $result;
     }
 
     public function withdrawOffer(JobOffer $offer, User $actor): JobOffer

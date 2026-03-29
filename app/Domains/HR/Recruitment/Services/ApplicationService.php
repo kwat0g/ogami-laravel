@@ -10,10 +10,14 @@ use App\Domains\HR\Recruitment\Models\Candidate;
 use App\Domains\HR\Recruitment\Models\JobPosting;
 use App\Domains\HR\Recruitment\StateMachines\ApplicationStateMachine;
 use App\Models\User;
+use App\Notifications\Recruitment\ApplicationReceivedNotification;
+use App\Notifications\Recruitment\ApplicationRejectedNotification;
+use App\Notifications\Recruitment\ApplicationShortlistedNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 final class ApplicationService implements ServiceContract
 {
@@ -70,7 +74,7 @@ final class ApplicationService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($posting, $candidateData, $appData): Application {
+        $application = DB::transaction(function () use ($posting, $candidateData, $appData): Application {
             // Find or create candidate by email
             $candidate = Candidate::firstOrCreate(
                 ['email' => $candidateData['email']],
@@ -100,6 +104,16 @@ final class ApplicationService implements ServiceContract
                 'status' => ApplicationStatus::New->value,
             ]);
         });
+
+        // Notify HR recruiters about new application
+        $hrUsers = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['manager', 'officer']))
+            ->whereHas('departments', fn ($q) => $q->where('code', 'HR'))
+            ->get();
+        foreach ($hrUsers as $hr) {
+            $hr->notify(ApplicationReceivedNotification::fromModel($application->load(['candidate', 'posting.requisition.position'])));
+        }
+
+        return $application;
     }
 
     public function review(Application $application, User $actor): Application
@@ -116,7 +130,7 @@ final class ApplicationService implements ServiceContract
 
     public function shortlist(Application $application, User $actor): Application
     {
-        return DB::transaction(function () use ($application, $actor): Application {
+        $result = DB::transaction(function () use ($application, $actor): Application {
             // Auto-review first if still new
             if ($application->status === ApplicationStatus::New) {
                 $this->stateMachine->transition($application, ApplicationStatus::UnderReview);
@@ -131,11 +145,20 @@ final class ApplicationService implements ServiceContract
 
             return $application;
         });
+
+        // Notify candidate via on-demand mail (Candidate is not a User)
+        $candidate = $result->candidate;
+        if ($candidate?->email) {
+            Notification::route('mail', $candidate->email)
+                ->notify(ApplicationShortlistedNotification::fromModel($result->load(['posting'])));
+        }
+
+        return $result;
     }
 
     public function reject(Application $application, User $actor, string $reason): Application
     {
-        return DB::transaction(function () use ($application, $actor, $reason): Application {
+        $result = DB::transaction(function () use ($application, $actor, $reason): Application {
             $this->stateMachine->transition($application, ApplicationStatus::Rejected);
             $application->rejection_reason = $reason;
             $application->reviewed_by = $application->reviewed_by ?? $actor->id;
@@ -144,6 +167,15 @@ final class ApplicationService implements ServiceContract
 
             return $application;
         });
+
+        // Notify candidate via on-demand mail
+        $candidate = $result->candidate;
+        if ($candidate?->email) {
+            Notification::route('mail', $candidate->email)
+                ->notify(ApplicationRejectedNotification::fromModel($result->load(['posting'])));
+        }
+
+        return $result;
     }
 
     public function withdraw(Application $application, string $reason): Application
