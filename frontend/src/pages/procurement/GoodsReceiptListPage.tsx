@@ -13,8 +13,10 @@ import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { GoodsReceiptStatus } from '@/types/procurement'
 
-const statusBadge: Record<GoodsReceiptStatus, string> = {
-  draft:     'bg-neutral-100 text-neutral-600',
+const statusBadge: Record<GoodsReceiptStatus | 'pending_qc' | 'rejected', string> = {
+  draft:      'bg-neutral-100 text-neutral-600',
+  pending_qc: 'bg-blue-100 text-blue-600',
+  rejected:   'bg-red-100 text-red-600',
   confirmed: 'bg-neutral-200 text-neutral-800',
 }
 
@@ -66,7 +68,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
           className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Statuses</option>
-          {(['draft', 'confirmed'] as GoodsReceiptStatus[]).map((s) => (
+          {(['draft', 'pending_qc', 'confirmed', 'rejected'] as GoodsReceiptStatus[]).map((s) => (
             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
           ))}
         </select>
