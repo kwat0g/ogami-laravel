@@ -98,9 +98,11 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
   const { data: poData,  isLoading: loadingPO } = usePurchaseOrders({ status: 'draft',     per_page: 1 })
   const { data: sentPO,  isLoading: loadingSent } = usePurchaseOrders({ status: 'sent',   per_page: 1 })
   const { data: grData, isLoading: loadingGR } = useGoodsReceipts({ status: 'draft', per_page: 1 })
+  const { data: qcPendingData, isLoading: loadingQcPending } = useGoodsReceipts({ status: 'pending_qc', per_page: 1 })
+  const { data: qcFailedData, isLoading: loadingQcFailed } = useGoodsReceipts({ status: 'qc_failed', per_page: 1 })
   const { data: reviewPR, isLoading: loadingReview } = usePurchaseRequests({ status: 'pending_review', per_page: 1 })
 
-  const isLoading = loadingPR || loadingPO || loadingSent || loadingGR || loadingReview
+  const isLoading = loadingPR || loadingPO || loadingSent || loadingGR || loadingReview || loadingQcPending || loadingQcFailed
 
   if (isLoading) return <SkeletonLoader rows={8} />
 
@@ -109,7 +111,9 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
   const draftPOs   = (poData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
   const sentPOs    = (sentPO as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
   const pendingGRs = (grData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
-  const totalActionable = pendingPRs + reviewPRs + draftPOs + pendingGRs
+  const pendingQcGRs = (qcPendingData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const qcFailedGRs  = (qcFailedData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const totalActionable = pendingPRs + reviewPRs + draftPOs + pendingGRs + qcFailedGRs
 
   return (
     <div className="space-y-6">
@@ -136,7 +140,7 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <KpiCard
           label="Pending PRs"
           value={pendingPRs}
@@ -175,6 +179,22 @@ export default function PurchasingOfficerDashboard(): React.ReactElement {
           icon={Package}
           href="/procurement/goods-receipts"
           alert={pendingGRs > 0}
+        />
+        <KpiCard
+          label="Pending QC"
+          value={pendingQcGRs}
+          sub="Awaiting inspection"
+          icon={Package}
+          href="/procurement/goods-receipts?status=pending_qc"
+          alert={pendingQcGRs > 0}
+        />
+        <KpiCard
+          label="QC Failed"
+          value={qcFailedGRs}
+          sub="Defects found"
+          icon={AlertCircle}
+          href="/procurement/goods-receipts?status=qc_failed"
+          alert={qcFailedGRs > 0}
         />
         <KpiCard
           label="Action Items"

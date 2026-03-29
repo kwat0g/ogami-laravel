@@ -46,7 +46,11 @@ export type PurchaseOrderStatus =
   | 'closed'
   | 'cancelled'
 
-export type GoodsReceiptStatus = 'draft' | 'confirmed'
+export type GoodsReceiptStatus = 'draft' | 'pending_qc' | 'qc_passed' | 'qc_failed' | 'partial_accept' | 'confirmed' | 'rejected' | 'returned'
+
+export type GoodsReceiptItemQcStatus = 'pending' | 'passed' | 'failed' | 'accepted_with_ncr'
+
+export type DefectType = 'cosmetic' | 'dimensional' | 'functional' | 'material' | 'other'
 
 export type GoodsReceiptCondition = 'good' | 'damaged' | 'partial' | 'rejected'
 
@@ -205,9 +209,46 @@ export interface PurchaseOrder {
 export interface GoodsReceiptItem {
   id: number
   po_item_id: number
+  item_master_id: number | null
   quantity_received: number
   unit_of_measure: string
   condition: GoodsReceiptCondition
+  remarks: string | null
+
+  // QC fields
+  qc_status: GoodsReceiptItemQcStatus | null
+  quantity_accepted: number | null
+  quantity_rejected: number | null
+  defect_type: DefectType | null
+  defect_description: string | null
+  ncr_id: number | null
+  ncr?: {
+    id: number
+    ulid: string
+    ncr_reference: string | null
+    title: string
+    severity: string
+    status: string
+  } | null
+
+  po_item?: {
+    id: number
+    item_description: string
+    quantity_ordered: number
+    quantity_received: number
+    agreed_unit_cost: number | null
+  } | null
+}
+
+export interface GoodsReceiptInspection {
+  id: number
+  ulid: string
+  stage: string
+  status: string
+  qty_inspected: number
+  qty_passed: number
+  qty_failed: number
+  inspection_date: string
   remarks: string | null
 }
 
@@ -225,13 +266,33 @@ export interface GoodsReceipt {
   ap_invoice_id: number | null
   confirmed_at: string | null
 
+  // QC workflow fields
+  submitted_for_qc_at: string | null
+  qc_result: 'passed' | 'failed' | 'partial' | null
+  qc_completed_at: string | null
+  qc_notes: string | null
+
+  // Rejection fields
+  rejection_reason: string | null
+  rejected_at: string | null
+
+  // Return-to-supplier fields
+  returned_at: string | null
+  return_reason: string | null
+
   received_by_id: number
   received_by: { id: number; name: string } | null
   confirmed_by_id: number | null
   confirmed_by: { id: number; name: string } | null
+  submitted_for_qc_by?: { id: number; name: string } | null
+  qc_completed_by?: { id: number; name: string } | null
+  rejected_by?: { id: number; name: string } | null
+  returned_by?: { id: number; name: string } | null
   purchase_order: { id: number; ulid: string; po_reference: string } | null
 
   items: GoodsReceiptItem[]
+  inspections?: GoodsReceiptInspection[]
+  has_unlinked_items?: boolean
 
   created_at: string
   updated_at: string

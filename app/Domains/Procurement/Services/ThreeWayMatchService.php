@@ -52,9 +52,12 @@ final class ThreeWayMatchService implements ServiceContract
 
         DB::transaction(function () use ($gr, $po): void {
             // Update PO item received quantities
+            // Uses effectiveAcceptedQuantity() to account for QC splits:
+            // after partial acceptance, only the QC-approved quantity counts.
             foreach ($gr->items as $grItem) {
                 $poItem = $grItem->poItem;
-                $newReceived = (float) $poItem->quantity_received + (float) $grItem->quantity_received;
+                $acceptedQty = $grItem->effectiveAcceptedQuantity();
+                $newReceived = (float) $poItem->quantity_received + $acceptedQty;
 
                 if ($newReceived > $poItem->effectiveQuantity()) {
                     throw new DomainException(

@@ -22,7 +22,7 @@ final class GoodsReceiptController extends Controller
 
     /**
      * List GRs.
-     *   ?status=draft|confirmed
+     *   ?status=draft|pending_qc|qc_passed|qc_failed|partial_accept|confirmed|rejected|returned
      *   ?purchase_order_id=12
      */
     public function index(Request $request): AnonymousResourceCollection|JsonResponse
@@ -76,7 +76,7 @@ final class GoodsReceiptController extends Controller
      */
     public function update(Request $request, GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
-        $this->authorize('confirm', $goodsReceipt);
+        $this->authorize('submitForQc', $goodsReceipt);
 
         $data = $request->validate([
             'received_date' => ['sometimes', 'date'],
@@ -94,7 +94,7 @@ final class GoodsReceiptController extends Controller
      */
     public function updateItem(Request $request, GoodsReceipt $goodsReceipt, int $itemId): GoodsReceiptResource
     {
-        $this->authorize('confirm', $goodsReceipt);
+        $this->authorize('submitForQc', $goodsReceipt);
 
         $data = $request->validate([
             'quantity_received' => ['sometimes', 'numeric', 'min:0'],
@@ -112,23 +112,37 @@ final class GoodsReceiptController extends Controller
         $this->authorize('view', $goodsReceipt);
 
         return new GoodsReceiptResource(
-            $goodsReceipt->load(['purchaseOrder.vendor', 'receivedBy', 'confirmedBy', 'items.poItem'])
+            $goodsReceipt->load([
+                'purchaseOrder.vendor',
+                'receivedBy',
+                'confirmedBy',
+                'submittedForQcBy',
+                'qcCompletedBy',
+                'returnedBy',
+                'items.poItem',
+                'items.ncr',
+                'inspections',
+            ])
         );
     }
 
     /**
      * Submit a GR for incoming quality control inspection.
-     * Flow: draft -> pending_qc -> confirmed (after QC passes)
+     * Flow: draft -> pending_qc -> qc_passed/qc_failed -> confirmed
      */
     public function submitForQc(GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
-        $this->authorize('confirm', $goodsReceipt);
+        $this->authorize('submitForQc', $goodsReceipt);
 
         $gr = $this->service->submitForQc($goodsReceipt->load('items'), auth()->user());
 
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'receivedBy', 'items']));
     }
 
+    /**
+     * Confirm a GR after QC has passed or defects have been accepted.
+     * Only allowed from qc_passed or partial_accept status.
+     */
     public function confirm(GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
         $this->authorize('confirm', $goodsReceipt);
@@ -138,9 +152,69 @@ final class GoodsReceiptController extends Controller
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'confirmedBy', 'items']));
     }
 
+    /**
+     * Accept a QC-failed GR with defects — partial acceptance.
+     * Requires per-item disposition with quantities and defect details.
+     */
+    public function acceptWithDefects(Request $request, GoodsReceipt $goodsReceipt): GoodsReceiptResource
+    {
+        $this->authorize('acceptWithDefects', $goodsReceipt);
+
+        $validated = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.gr_item_id' => ['required', 'integer', 'exists:goods_receipt_items,id'],
+            'items.*.quantity_accepted' => ['required', 'numeric', 'min:0'],
+            'items.*.quantity_rejected' => ['required', 'numeric', 'min:0'],
+            'items.*.defect_type' => ['nullable', 'string', 'in:cosmetic,dimensional,functional,material,other'],
+            'items.*.defect_description' => ['nullable', 'string', 'max:2000'],
+            'items.*.ncr_id' => ['nullable', 'integer', 'exists:non_conformance_reports,id'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $gr = $this->service->acceptWithDefects(
+            $goodsReceipt->load('items'),
+            $validated,
+            auth()->user(),
+        );
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'items.ncr']));
+    }
+
+    /**
+     * Return confirmed goods to supplier.
+     */
+    public function returnToSupplier(Request $request, GoodsReceipt $goodsReceipt): GoodsReceiptResource
+    {
+        $this->authorize('returnToSupplier', $goodsReceipt);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:2000'],
+            'items' => ['nullable', 'array'],
+            'items.*.gr_item_id' => ['required_with:items', 'integer'],
+            'items.*.quantity_returned' => ['required_with:items', 'numeric', 'min:0.001'],
+        ]);
+
+        $gr = $this->service->returnToSupplier($goodsReceipt, $validated, auth()->user());
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'items']));
+    }
+
+    /**
+     * Re-submit a QC-failed GR for re-inspection.
+     * Voids previous inspections and creates new IQC inspections.
+     */
+    public function resubmitForQc(GoodsReceipt $goodsReceipt): GoodsReceiptResource
+    {
+        $this->authorize('resubmitForQc', $goodsReceipt);
+
+        $gr = $this->service->resubmitForQc($goodsReceipt->load('items'), auth()->user());
+
+        return new GoodsReceiptResource($gr->load(['purchaseOrder', 'items', 'inspections']));
+    }
+
     public function reject(Request $request, GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
-        $this->authorize('confirm', $goodsReceipt);
+        $this->authorize('reject', $goodsReceipt);
 
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:2000'],

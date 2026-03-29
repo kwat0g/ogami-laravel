@@ -255,7 +255,18 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
         $grUlid = $grResp->json('data.ulid');
         expect($grResp->json('data.status'))->toBe('draft');
 
-        // ── Step 10: Confirm GR → triggers 3-way match ───────────────────────
+        // ── Step 10: Submit GR for QC → mark QC passed → Confirm ─────────────
+        $this->actingAs($this->reviewerManager)
+            ->postJson("/api/v1/procurement/goods-receipts/{$grUlid}/submit-for-qc")
+            ->assertOk();
+
+        // Manually transition through QC (since no IQC items, listener auto-passes)
+        $grModel = \App\Domains\Procurement\Models\GoodsReceipt::where('ulid', $grUlid)->firstOrFail();
+        if ($grModel->status === 'pending_qc') {
+            app(\App\Domains\Procurement\Services\GoodsReceiptService::class)
+                ->markQcPassed($grModel, $this->reviewerManager);
+        }
+
         $confirmResp = $this->actingAs($this->reviewerManager)
             ->postJson("/api/v1/procurement/goods-receipts/{$grUlid}/confirm");
         $confirmResp->assertOk();
@@ -883,6 +894,16 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
 
         $grUlid = $grResp->json('data.ulid');
 
+        // QC flow: submit for QC then mark passed before confirming
+        $this->actingAs($this->reviewer)
+            ->postJson("/api/v1/procurement/goods-receipts/{$grUlid}/submit-for-qc")
+            ->assertOk();
+        $grModel = \App\Domains\Procurement\Models\GoodsReceipt::where('ulid', $grUlid)->firstOrFail();
+        if ($grModel->status === 'pending_qc') {
+            app(\App\Domains\Procurement\Services\GoodsReceiptService::class)
+                ->markQcPassed($grModel, $this->reviewer);
+        }
+
         $confirmResp = $this->actingAs($this->reviewer)
             ->postJson("/api/v1/procurement/goods-receipts/{$grUlid}/confirm")
             ->assertOk();
@@ -950,8 +971,18 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
                 ])
                 ->assertStatus(201);
 
+            // QC flow before confirm
+            $grUlidInner = $grResp->json('data.ulid');
             $this->actingAs($this->reviewer)
-                ->postJson("/api/v1/procurement/goods-receipts/{$grResp->json('data.ulid')}/confirm")
+                ->postJson("/api/v1/procurement/goods-receipts/{$grUlidInner}/submit-for-qc")
+                ->assertOk();
+            $grModelInner = \App\Domains\Procurement\Models\GoodsReceipt::where('ulid', $grUlidInner)->firstOrFail();
+            if ($grModelInner->status === 'pending_qc') {
+                app(\App\Domains\Procurement\Services\GoodsReceiptService::class)
+                    ->markQcPassed($grModelInner, $this->reviewer);
+            }
+            $this->actingAs($this->reviewer)
+                ->postJson("/api/v1/procurement/goods-receipts/{$grUlidInner}/confirm")
                 ->assertOk();
         };
 
@@ -1016,9 +1047,18 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
                 ]],
             ])->assertStatus(201);
 
-        // GR still confirms successfully (3-way match passes)
+        // GR still confirms successfully (3-way match passes) — go through QC flow first
+        $lastGrUlid = $grResp->json('data.ulid');
         $this->actingAs($this->reviewer)
-            ->postJson("/api/v1/procurement/goods-receipts/{$grResp->json('data.ulid')}/confirm")
+            ->postJson("/api/v1/procurement/goods-receipts/{$lastGrUlid}/submit-for-qc")
+            ->assertOk();
+        $lastGrModel = \App\Domains\Procurement\Models\GoodsReceipt::where('ulid', $lastGrUlid)->firstOrFail();
+        if ($lastGrModel->status === 'pending_qc') {
+            app(\App\Domains\Procurement\Services\GoodsReceiptService::class)
+                ->markQcPassed($lastGrModel, $this->reviewer);
+        }
+        $this->actingAs($this->reviewer)
+            ->postJson("/api/v1/procurement/goods-receipts/{$lastGrUlid}/confirm")
             ->assertOk();
 
         // But stock is NOT written (no warehouse location)
