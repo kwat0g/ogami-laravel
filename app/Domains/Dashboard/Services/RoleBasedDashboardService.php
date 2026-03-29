@@ -225,7 +225,7 @@ final class RoleBasedDashboardService implements ServiceContract
                 ->count(),
             'total_stock_value' => (float) DB::table('stock_balances')
                 ->join('item_masters', 'stock_balances.item_id', '=', 'item_masters.id')
-                ->selectRaw('COALESCE(SUM(CAST(stock_balances.quantity_on_hand AS numeric) * COALESCE(item_masters.standard_price, 0)), 0) as total')
+                ->selectRaw('COALESCE(SUM(CAST(stock_balances.quantity_on_hand AS numeric) * COALESCE(item_masters.standard_price_centavos, 0) / 100.0), 0) as total')
                 ->value('total'),
             'pending_physical_counts' => (int) DB::table('physical_counts')
                 ->whereIn('status', ['draft', 'in_progress', 'pending_approval'])

@@ -595,14 +595,22 @@ final class PurchaseRequestService implements ServiceContract
                 'material_requisition_id' => $mrq->id,
             ]);
 
-            // Convert MRQ items to PR items
+            // Convert MRQ items to PR items, preserving item_master_id linkage
+            $mrq->loadMissing('items.item');
             foreach ($mrq->items as $mrqItem) {
+                $itemMaster = $mrqItem->item;
+                $outstandingQty = (float) $mrqItem->qty_requested - (float) ($mrqItem->qty_issued ?? 0);
+                if ($outstandingQty <= 0) {
+                    continue;
+                }
+
                 PurchaseRequestItem::create([
                     'purchase_request_id' => $pr->id,
-                    'item_description' => $mrqItem->item_description,
-                    'quantity' => $mrqItem->quantity_requested - $mrqItem->quantity_issued,
-                    'unit_of_measure' => $mrqItem->unit_of_measure,
-                    'estimated_unit_cost' => 0, // Will be filled during vendor selection
+                    'item_master_id' => $mrqItem->item_id,
+                    'item_description' => $itemMaster?->name ?? 'Unknown item',
+                    'quantity' => $outstandingQty,
+                    'unit_of_measure' => $itemMaster?->unit_of_measure ?? 'pcs',
+                    'estimated_unit_cost' => ($itemMaster?->standard_price_centavos ?? 0) / 100,
                 ]);
             }
 

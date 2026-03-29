@@ -32,6 +32,7 @@ final class PurchaseRequestItem extends Model
     protected $fillable = [
         'purchase_request_id',
         'vendor_item_id',
+        'item_master_id',
         'item_description',
         'unit_of_measure',
         'quantity',

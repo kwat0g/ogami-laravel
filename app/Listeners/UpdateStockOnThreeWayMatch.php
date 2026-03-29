@@ -42,6 +42,17 @@ class UpdateStockOnThreeWayMatch
                 continue;
             }
 
+            // Skip rejected items — they should not enter inventory
+            if (in_array($grItem->condition, ['rejected'], true)) {
+                Log::info('Skipping stock receipt for rejected GR item', [
+                    'gr_id' => $gr->id,
+                    'po_item_id' => $poItem->id,
+                    'condition' => $grItem->condition,
+                ]);
+
+                continue;
+            }
+
             DB::transaction(function () use ($poItem, $grItem, $vendor, $locationId, $gr, $actor): void {
                 // Resolve item_master_id if missing
                 if (! $poItem->item_master_id) {

@@ -332,7 +332,7 @@ final class CostingService implements ServiceContract
 
         foreach ($mrqs as $mrq) {
             foreach ($mrq->items as $item) {
-                $unitPrice = (int) (($item->itemMaster?->standard_price ?? 0) * 100);
+                $unitPrice = (int) ($item->itemMaster?->standard_price_centavos ?? 0);
                 $qty = (float) ($item->quantity_issued ?? $item->quantity_requested ?? 0);
                 $materialCost += (int) round($qty * $unitPrice);
             }

@@ -542,12 +542,15 @@ final class VendorInvoiceService implements ServiceContract
         $dueDate = now()->addDays($paymentDays)->toDateString();
 
         // Compute net amount from this GR's actual received quantities × agreed unit cost.
+        // Excludes rejected/damaged items — vendor should not be invoiced for defective goods.
         // Falls back to PO total only if no items are loaded (safety net).
         $gr->loadMissing('items.poItem');
-        $netAmount = $gr->items->reduce(
-            fn (float $carry, GoodsReceiptItem $item): float => $carry + ((float) $item->quantity_received * (float) ($item->poItem->agreed_unit_cost ?? 0)),
-            0.0,
-        );
+        $netAmount = $gr->items
+            ->filter(fn (GoodsReceiptItem $item): bool => ! in_array($item->condition, ['rejected', 'damaged'], true))
+            ->reduce(
+                fn (float $carry, GoodsReceiptItem $item): float => $carry + ((float) $item->quantity_received * (float) ($item->poItem->agreed_unit_cost ?? 0)),
+                0.0,
+            );
         if ($netAmount <= 0) {
             $netAmount = (float) $po->total_po_amount;
         }

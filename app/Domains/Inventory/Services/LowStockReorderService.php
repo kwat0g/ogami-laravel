@@ -244,9 +244,9 @@ final class LowStockReorderService implements ServiceContract
             ->where('purchase_orders.vendor_id', $vendorId)
             ->whereNotIn('purchase_orders.status', ['cancelled'])
             ->orderByDesc('purchase_orders.created_at')
-            ->select('purchase_order_items.unit_price')
+            ->select('purchase_order_items.agreed_unit_cost')
             ->first();
 
-        return (float) ($lastPoItem?->unit_price ?? $item->standard_cost ?? 0);
+        return (float) ($lastPoItem?->agreed_unit_cost ?? (($item->standard_price_centavos ?? 0) / 100));
     }
 }
