@@ -144,6 +144,14 @@ const LoanListPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanListPage')
 const LoanFormPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanFormPage'))
 const LoanDetailPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanDetailPage'))
 
+// HR — Recruitment
+const RecruitmentDashboard = lazyWithRetry(() => import('@/pages/hr/recruitment/RecruitmentDashboard'))
+const RequisitionListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionListPage'))
+const RequisitionFormPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionFormPage'))
+const RequisitionDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionDetailPage'))
+const ApplicationListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/ApplicationListPage'))
+const ApplicationDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/ApplicationDetailPage'))
+
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
 const PositionsPage = lazyWithRetry(() => import('@/pages/hr/PositionsPage'))
@@ -387,6 +395,15 @@ const router = createBrowserRouter([
       // HR — Loans (view/approve only — loan applications filed by employees via self-service)
       { path: '/hr/loans', element: withSuspense(guard('hr.full_access', <LoanListPage />)) },
       { path: '/hr/loans/:ulid', element: withSuspense(guard('hr.full_access', <LoanDetailPage />)) },
+
+      // HR — Recruitment
+      { path: '/hr/recruitment', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RecruitmentDashboard />)) },
+      { path: '/hr/recruitment/requisitions', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RequisitionListPage />)) },
+      { path: '/hr/recruitment/requisitions/new', element: withSuspense(guard('hr.full_access|recruitment.requisitions.create', <RequisitionFormPage />)) },
+      { path: '/hr/recruitment/requisitions/:ulid', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RequisitionDetailPage />)) },
+      { path: '/hr/recruitment/requisitions/:ulid/edit', element: withSuspense(guard('hr.full_access|recruitment.requisitions.edit', <RequisitionFormPage />)) },
+      { path: '/hr/recruitment/applications', element: withSuspense(guard('hr.full_access|recruitment.applications.view', <ApplicationListPage />)) },
+      { path: '/hr/recruitment/applications/:ulid', element: withSuspense(guard('hr.full_access|recruitment.applications.view', <ApplicationDetailPage />)) },
 
       // HR — Reference
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
