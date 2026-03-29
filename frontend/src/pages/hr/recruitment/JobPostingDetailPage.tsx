@@ -24,9 +24,9 @@ export default function JobPostingDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-500">{posting.posting_number}</p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{posting.title}</h1>
-          <p className="text-sm text-gray-500">{posting.requisition?.department} - {posting.requisition?.position}</p>
+          <p className="text-sm text-neutral-500">{posting.posting_number}</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">{posting.title}</h1>
+          <p className="text-sm text-neutral-500">{posting.requisition?.department} - {posting.requisition?.position}</p>
         </div>
         <StatusBadge status={posting.status} label={posting.status_label} />
       </div>
@@ -65,14 +65,14 @@ export default function JobPostingDetailPage() {
         {(posting.status === 'draft' || posting.status === 'published') && (
           <Link
             to={`/hr/recruitment/postings/${ulid}/edit`}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+            className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
           >
             Edit Posting
           </Link>
         )}
         <Link
           to={`/hr/recruitment/applications?posting=${ulid}`}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
         >
           View Applications ({posting.applications_count ?? 0})
         </Link>
@@ -88,47 +88,47 @@ export default function JobPostingDetailPage() {
       </div>
 
       {/* Details */}
-      <div className="grid grid-cols-2 gap-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <div className="grid grid-cols-2 gap-6 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
         <div>
-          <p className="text-xs text-gray-500">Employment Type</p>
+          <p className="text-xs text-neutral-500">Employment Type</p>
           <p className="text-sm font-medium">{posting.employment_type_label}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Location</p>
+          <p className="text-xs text-neutral-500">Location</p>
           <p className="text-sm font-medium">{posting.location ?? 'Not specified'}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Visibility</p>
+          <p className="text-xs text-neutral-500">Visibility</p>
           <p className="text-sm font-medium">
             {[posting.is_internal && 'Internal', posting.is_external && 'External'].filter(Boolean).join(' + ')}
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Views</p>
+          <p className="text-xs text-neutral-500">Views</p>
           <p className="text-sm font-medium">{posting.views_count}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Published</p>
+          <p className="text-xs text-neutral-500">Published</p>
           <p className="text-sm">{posting.published_at ? new Date(posting.published_at).toLocaleDateString() : 'Not yet'}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Closes</p>
+          <p className="text-xs text-neutral-500">Closes</p>
           <p className="text-sm">{posting.closes_at ? new Date(posting.closes_at).toLocaleDateString() : 'Open-ended'}</p>
         </div>
       </div>
 
       {/* Description */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Job Description</h3>
-        <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-line">
+      <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
+        <h3 className="mb-3 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Job Description</h3>
+        <div className="prose prose-sm max-w-none text-neutral-700 dark:text-neutral-300 whitespace-pre-line">
           {posting.description}
         </div>
       </div>
 
       {/* Requirements */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-        <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Requirements</h3>
-        <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-line">
+      <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
+        <h3 className="mb-3 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Requirements</h3>
+        <div className="prose prose-sm max-w-none text-neutral-700 dark:text-neutral-300 whitespace-pre-line">
           {posting.requirements}
         </div>
       </div>

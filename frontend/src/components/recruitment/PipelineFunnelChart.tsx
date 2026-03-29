@@ -25,14 +25,14 @@ export default function PipelineFunnelChart({ data }: FunnelProps) {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Recruitment Pipeline</h3>
+      <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Recruitment Pipeline</h3>
       {stages.map((stage) => {
         const val = data[stage.key]
         const width = Math.max((val / maxVal) * 100, 5)
         return (
           <div key={stage.key} className="flex items-center gap-3">
-            <span className="w-24 text-xs text-gray-500 text-right">{stage.label}</span>
-            <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
+            <span className="w-24 text-xs text-neutral-500 text-right">{stage.label}</span>
+            <div className="flex-1 h-6 bg-neutral-100 dark:bg-neutral-700 rounded overflow-hidden">
               <div
                 className={`h-full ${stage.color} rounded flex items-center justify-end pr-2 transition-all`}
                 style={{ width: `${width}%` }}

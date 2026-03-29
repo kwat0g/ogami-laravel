@@ -19,7 +19,7 @@ export default function RecruitmentKpiCards({ kpis }: KpiCardsProps) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
         <div key={card.key} className={`rounded-lg ${card.bg} p-6`}>
-          <p className="text-sm font-medium text-gray-600">{card.label}</p>
+          <p className="text-sm font-medium text-neutral-600">{card.label}</p>
           <p className={`mt-2 text-3xl font-bold ${card.color}`}>
             {kpis[card.key]}
           </p>

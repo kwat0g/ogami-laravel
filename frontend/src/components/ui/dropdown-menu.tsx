@@ -70,7 +70,7 @@ const DropdownMenuContent = ({
     <div
       ref={ref}
       className={cn(
-        'absolute z-50 min-w-[8rem] max-h-60 overflow-auto rounded-md border border-gray-200 bg-white p-1 shadow-md',
+        'absolute z-50 min-w-[8rem] max-h-60 overflow-auto rounded-md border border-neutral-200 bg-white p-1 shadow-md',
         {
           'left-0': align === 'start',
           'right-0': align === 'end',
@@ -90,7 +90,7 @@ const DropdownMenuItem = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 focus:bg-gray-100',
+      'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-neutral-100 focus:bg-neutral-100',
       inset && 'pl-8',
       className
     )}

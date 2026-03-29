@@ -45,24 +45,24 @@ export default function InterviewScorecardForm({ _interviewId, onSubmit, isPendi
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Submit Evaluation</h3>
-        <span className="text-lg font-bold text-gray-900 dark:text-white">Avg: {avgScore}/5</span>
+        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Submit Evaluation</h3>
+        <span className="text-lg font-bold text-neutral-900 dark:text-white">Avg: {avgScore}/5</span>
       </div>
 
       <div className="space-y-4">
         {scores.map((item, idx) => (
-          <div key={idx} className="rounded-lg border border-gray-100 p-4 dark:border-gray-700">
+          <div key={idx} className="rounded-lg border border-neutral-100 p-4 dark:border-neutral-700">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.criterion}</span>
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{item.criterion}</span>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
                     onClick={() => updateScore(idx, star)}
-                    className={`text-xl transition ${star <= item.score ? 'text-amber-400' : 'text-gray-300 hover:text-amber-200'}`}
+                    className={`text-xl transition ${star <= item.score ? 'text-amber-400' : 'text-neutral-300 hover:text-amber-200'}`}
                   >
                     ★
                   </button>
@@ -74,7 +74,7 @@ export default function InterviewScorecardForm({ _interviewId, onSubmit, isPendi
               placeholder="Comments (optional)..."
               value={item.comments}
               onChange={(e) => updateComments(idx, e.target.value)}
-              className="w-full rounded border border-gray-200 px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700"
+              className="w-full rounded border border-neutral-200 px-3 py-1.5 text-sm dark:border-neutral-600 dark:bg-neutral-700"
             />
           </div>
         ))}
@@ -82,7 +82,7 @@ export default function InterviewScorecardForm({ _interviewId, onSubmit, isPendi
 
       {/* Recommendation */}
       <div className="mt-6">
-        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Recommendation</label>
+        <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">Recommendation</label>
         <div className="flex gap-4">
           {[
             { value: 'endorse', label: 'Endorse', color: 'border-green-500 bg-green-50 text-green-700' },
@@ -94,7 +94,7 @@ export default function InterviewScorecardForm({ _interviewId, onSubmit, isPendi
               type="button"
               onClick={() => setRecommendation(opt.value)}
               className={`rounded-lg border-2 px-6 py-2 text-sm font-semibold transition ${
-                recommendation === opt.value ? opt.color : 'border-gray-200 bg-white text-gray-500 dark:border-gray-600 dark:bg-gray-800'
+                recommendation === opt.value ? opt.color : 'border-neutral-200 bg-white text-neutral-500 dark:border-neutral-600 dark:bg-neutral-800'
               }`}
             >
               {opt.label}
@@ -105,12 +105,12 @@ export default function InterviewScorecardForm({ _interviewId, onSubmit, isPendi
 
       {/* General Remarks */}
       <div className="mt-4">
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">General Remarks</label>
+        <label className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">General Remarks</label>
         <textarea
           value={generalRemarks}
           onChange={(e) => setGeneralRemarks(e.target.value)}
           rows={3}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
           placeholder="Overall assessment..."
         />
       </div>

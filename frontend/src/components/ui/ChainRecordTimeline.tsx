@@ -31,7 +31,7 @@ const TYPE_COLORS: Record<string, string> = {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-700',
+  draft: 'bg-neutral-100 text-neutral-700',
   pending: 'bg-yellow-100 text-yellow-700',
   pending_review: 'bg-yellow-100 text-yellow-700',
   approved: 'bg-green-100 text-green-700',
