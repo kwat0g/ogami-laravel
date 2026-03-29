@@ -19,6 +19,8 @@ export default function RequisitionDetailPage() {
   const canSubmit = req.status === 'draft' || req.status === 'rejected'
   const canApprove = req.status === 'pending_approval'
   const canCreatePosting = req.status === 'approved' || req.status === 'open'
+  const canHold = req.status === 'open'
+  const canResume = req.status === 'on_hold'
 
   const handleAction = async (act: string, payload?: Record<string, unknown>) => {
     try {
@@ -55,6 +57,47 @@ export default function RequisitionDetailPage() {
                 className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
                 Edit & Resubmit
               </Link>
+            )}
+            {/* GAP-11: Hold/Resume buttons */}
+            {canHold && (
+              <button
+                onClick={() => {
+                  if (!remarks.trim()) {
+                    toast.error('Reason required to put on hold')
+                    return
+                  }
+                  handleAction('hold', { reason: remarks })
+                }}
+                disabled={action.isPending}
+                className="px-4 py-2 text-sm font-medium text-amber-700 dark:text-amber-400 bg-white dark:bg-neutral-800 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50 transition-colors"
+              >
+                Put On Hold
+              </button>
+            )}
+            {canResume && (
+              <button
+                onClick={() => handleAction('resume')}
+                disabled={action.isPending}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                Resume Requisition
+              </button>
+            )}
+            {/* GAP-12: Cancel Requisition button */}
+            {req.status !== 'cancelled' && req.status !== 'closed' && (
+              <button
+                onClick={() => {
+                  if (!remarks.trim()) {
+                    toast.error('Reason required to cancel')
+                    return
+                  }
+                  handleAction('cancel', { reason: remarks })
+                }}
+                disabled={action.isPending}
+                className="px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+              >
+                Cancel Requisition
+              </button>
             )}
           </div>
         }

@@ -33,6 +33,8 @@ final class InterviewController extends Controller
 
     public function store(ScheduleInterviewRequest $request): JsonResponse
     {
+        $this->authorize('create', InterviewSchedule::class);
+
         $application = Application::findOrFail($request->validated('application_id'));
         $interview = $this->service->schedule($application, $request->validated(), $request->user());
 
@@ -48,7 +50,7 @@ final class InterviewController extends Controller
 
     public function update(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        $this->authorize('create', InterviewSchedule::class);
+        $this->authorize('update', $interview);
 
         $data = $request->validate([
             'scheduled_at' => ['sometimes', 'date', 'after:now'],
@@ -65,7 +67,7 @@ final class InterviewController extends Controller
 
     public function cancel(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        $this->authorize('create', InterviewSchedule::class);
+        $this->authorize('update', $interview);
 
         $request->validate(['reason' => ['nullable', 'string', 'max:2000']]);
 
@@ -76,14 +78,14 @@ final class InterviewController extends Controller
 
     public function markNoShow(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        $this->authorize('create', InterviewSchedule::class);
+        $this->authorize('update', $interview);
 
         return response()->json($this->service->markNoShow($interview, $request->user()));
     }
 
     public function complete(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        $this->authorize('create', InterviewSchedule::class);
+        $this->authorize('update', $interview);
 
         return response()->json($this->service->complete($interview, $request->user()));
     }

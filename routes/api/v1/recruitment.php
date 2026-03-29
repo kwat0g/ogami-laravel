@@ -44,6 +44,10 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         ->name('requisitions.reject');
     Route::post('requisitions/{requisition}/cancel', [RequisitionController::class, 'cancel'])
         ->name('requisitions.cancel');
+    Route::post('requisitions/{requisition}/hold', [RequisitionController::class, 'hold'])
+        ->name('requisitions.hold');
+    Route::post('requisitions/{requisition}/resume', [RequisitionController::class, 'resume'])
+        ->name('requisitions.resume');
 
     // ── Job Postings ─────────────────────────────────────────────────────
     Route::apiResource('postings', JobPostingController::class)
@@ -52,6 +56,8 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         ->name('postings.publish');
     Route::post('postings/{posting}/close', [JobPostingController::class, 'close'])
         ->name('postings.close');
+    Route::post('postings/{posting}/reopen', [JobPostingController::class, 'reopen'])
+        ->name('postings.reopen');
 
     // ── Applications ─────────────────────────────────────────────────────
     Route::apiResource('applications', ApplicationController::class)
@@ -112,6 +118,8 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     // ── Candidates ───────────────────────────────────────────────────────
     Route::get('candidates', [CandidateController::class, 'index'])
         ->name('candidates.index');
+    Route::post('candidates', [CandidateController::class, 'store'])
+        ->name('candidates.store');
     Route::get('candidates/{candidate}', [CandidateController::class, 'show'])
         ->name('candidates.show');
     Route::patch('candidates/{candidate}', [CandidateController::class, 'update'])

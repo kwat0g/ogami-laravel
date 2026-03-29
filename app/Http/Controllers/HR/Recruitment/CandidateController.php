@@ -35,6 +35,26 @@ final class CandidateController extends Controller
         return new CandidateResource($candidate->load('applications.posting.requisition.position'));
     }
 
+    public function store(Request $request): CandidateResource
+    {
+        abort_unless($request->user()->can('recruitment.candidates.manage'), 403);
+
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'email' => ['required', 'email', 'max:255', 'unique:candidates,email'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'address' => ['nullable', 'string'],
+            'source' => ['sometimes', 'string'],
+            'linkedin_url' => ['nullable', 'url', 'max:500'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $candidate = Candidate::create($data);
+
+        return new CandidateResource($candidate);
+    }
+
     public function update(Request $request, Candidate $candidate): CandidateResource
     {
         abort_unless($request->user()->can('recruitment.candidates.manage'), 403); // Candidate has no policy - keep inline

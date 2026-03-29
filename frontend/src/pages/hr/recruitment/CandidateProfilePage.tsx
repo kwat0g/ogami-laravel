@@ -5,24 +5,38 @@ import StatusBadge from '@/components/recruitment/StatusBadge'
 import { Link } from 'react-router-dom'
 
 export default function CandidateProfilePage() {
-  const { ulid } = useParams<{ ulid: string }>()
+  const { id } = useParams<{ id: string }>()
 
   const { data: candidate, isLoading } = useQuery({
-    queryKey: ['recruitment', 'candidates', ulid],
+    queryKey: ['recruitment', 'candidates', id],
     queryFn: async () => {
-      const { data } = await api.get(`/recruitment/candidates/${ulid}`)
+      const { data } = await api.get(`/recruitment/candidates/${id}`)
       return data.data
     },
-    enabled: !!ulid,
+    enabled: !!id,
   })
 
   if (isLoading || !candidate) return <div className="p-6">Loading...</div>
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.full_name}</h1>
-        <p className="text-sm text-gray-500">{candidate.email}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.full_name}</h1>
+          <p className="text-sm text-gray-500">{candidate.email}</p>
+        </div>
+        <div className="flex gap-2">
+          {candidate.resume_path && (
+            <a
+              href={`/api/v1/recruitment/candidates/${id}/resume`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+            >
+              Download Resume
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">

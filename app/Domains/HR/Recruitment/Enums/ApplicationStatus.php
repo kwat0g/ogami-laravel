@@ -9,6 +9,7 @@ enum ApplicationStatus: string
     case New = 'new';
     case UnderReview = 'under_review';
     case Shortlisted = 'shortlisted';
+    case Hired = 'hired';
     case Rejected = 'rejected';
     case Withdrawn = 'withdrawn';
 
@@ -18,6 +19,7 @@ enum ApplicationStatus: string
             self::New => 'New',
             self::UnderReview => 'Under Review',
             self::Shortlisted => 'Shortlisted',
+            self::Hired => 'Hired',
             self::Rejected => 'Rejected',
             self::Withdrawn => 'Withdrawn',
         };
@@ -29,6 +31,7 @@ enum ApplicationStatus: string
             self::New => 'blue-light',
             self::UnderReview => 'amber',
             self::Shortlisted => 'teal',
+            self::Hired => 'green',
             self::Rejected => 'red',
             self::Withdrawn => 'gray',
         };
@@ -42,7 +45,8 @@ enum ApplicationStatus: string
         return match ($this) {
             self::New => [self::UnderReview, self::Withdrawn],
             self::UnderReview => [self::Shortlisted, self::Rejected, self::Withdrawn],
-            self::Shortlisted => [self::Rejected, self::Withdrawn],
+            self::Shortlisted => [self::Hired, self::Rejected, self::Withdrawn],
+            self::Hired => [],
             self::Rejected => [],
             self::Withdrawn => [],
         };

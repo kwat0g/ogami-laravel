@@ -102,4 +102,24 @@ final class RequisitionController extends Controller
 
         return new RequisitionResource($requisition);
     }
+
+    public function hold(Request $request, JobRequisition $requisition): RequisitionResource
+    {
+        $this->authorize('update', $requisition);
+
+        $request->validate(['reason' => ['required', 'string', 'max:2000']]);
+
+        $requisition = $this->service->hold($requisition, $request->user(), $request->input('reason'));
+
+        return new RequisitionResource($requisition);
+    }
+
+    public function resume(Request $request, JobRequisition $requisition): RequisitionResource
+    {
+        $this->authorize('update', $requisition);
+
+        $requisition = $this->service->resume($requisition, $request->user());
+
+        return new RequisitionResource($requisition);
+    }
 }

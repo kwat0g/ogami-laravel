@@ -186,7 +186,7 @@ export default function RequisitionFormPage() {
               <CardHeader>Salary Range (in centavos)</CardHeader>
               <CardBody className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Minimum" hint="e.g. 2000000 = PHP 20,000">
+                  <FormField label="Minimum" hint="Enter in centavos">
                     <input
                       type="number"
                       min="0"
@@ -195,8 +195,13 @@ export default function RequisitionFormPage() {
                       className="w-full px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                       placeholder="0"
                     />
+                    {form.salary_range_min && (
+                      <p className="mt-1 text-xs text-neutral-500">
+                        = {(Number(form.salary_range_min) / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                      </p>
+                    )}
                   </FormField>
-                  <FormField label="Maximum" hint="e.g. 4000000 = PHP 40,000">
+                  <FormField label="Maximum" hint="Enter in centavos">
                     <input
                       type="number"
                       min="0"
@@ -205,6 +210,11 @@ export default function RequisitionFormPage() {
                       className="w-full px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                       placeholder="0"
                     />
+                    {form.salary_range_max && (
+                      <p className="mt-1 text-xs text-neutral-500">
+                        = {(Number(form.salary_range_max) / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                      </p>
+                    )}
                   </FormField>
                 </div>
               </CardBody>

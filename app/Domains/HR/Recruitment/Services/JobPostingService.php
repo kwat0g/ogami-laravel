@@ -71,9 +71,9 @@ final class JobPostingService implements ServiceContract
 
     public function update(JobPosting $posting, array $data): JobPosting
     {
-        if ($posting->status !== PostingStatus::Draft) {
+        if (! in_array($posting->status, [PostingStatus::Draft, PostingStatus::Published])) {
             throw new DomainException(
-                'Can only edit draft postings.',
+                'Can only edit draft or published postings.',
                 'POSTING_NOT_EDITABLE',
                 422,
                 ['current_status' => $posting->status->value],
@@ -120,6 +120,27 @@ final class JobPostingService implements ServiceContract
 
         return DB::transaction(function () use ($posting): JobPosting {
             $posting->status = PostingStatus::Closed;
+            $posting->save();
+
+            return $posting;
+        });
+    }
+
+    public function reopen(JobPosting $posting, User $actor): JobPosting
+    {
+        if (! $posting->status->canTransitionTo(PostingStatus::Published)) {
+            throw new DomainException(
+                'Cannot reopen this posting.',
+                'INVALID_STATUS_TRANSITION',
+                422,
+                ['current_status' => $posting->status->value],
+            );
+        }
+
+        return DB::transaction(function () use ($posting): JobPosting {
+            $posting->status = PostingStatus::Published;
+            $posting->published_at = now();
+            $posting->closes_at = null; // Reset expiry
             $posting->save();
 
             return $posting;

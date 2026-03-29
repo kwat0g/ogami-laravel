@@ -152,6 +152,7 @@ const LoanDetailPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanDetailPa
 const RecruitmentPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RecruitmentPage'))
 const RequisitionFormPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionFormPage'))
 const RequisitionDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionDetailPage'))
+const ApplicationFormPage = lazyWithRetry(() => import('@/pages/hr/recruitment/ApplicationFormPage'))
 const ApplicationDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/ApplicationDetailPage'))
 const JobPostingFormPage = lazyWithRetry(() => import('@/pages/hr/recruitment/JobPostingFormPage'))
 const JobPostingDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/JobPostingDetailPage'))
@@ -409,9 +410,11 @@ const router = createBrowserRouter([
       { path: '/hr/recruitment/requisitions/new', element: withSuspense(guard('hr.full_access|recruitment.requisitions.create', <RequisitionFormPage />)) },
       { path: '/hr/recruitment/requisitions/:ulid', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RequisitionDetailPage />)) },
       { path: '/hr/recruitment/requisitions/:ulid/edit', element: withSuspense(guard('hr.full_access|recruitment.requisitions.edit', <RequisitionFormPage />)) },
+      { path: '/hr/recruitment/applications/new', element: withSuspense(guard('hr.full_access|recruitment.applications.review', <ApplicationFormPage />)) },
       { path: '/hr/recruitment/applications/:ulid', element: withSuspense(guard('hr.full_access|recruitment.applications.view', <ApplicationDetailPage />)) },
       { path: '/hr/recruitment/postings/new', element: withSuspense(guard('hr.full_access|recruitment.postings.create', <JobPostingFormPage />)) },
       { path: '/hr/recruitment/postings/:ulid', element: withSuspense(guard('hr.full_access|recruitment.postings.view', <JobPostingDetailPage />)) },
+      { path: '/hr/recruitment/postings/:ulid/edit', element: withSuspense(guard('hr.full_access|recruitment.postings.create', <JobPostingFormPage />)) },
       { path: '/hr/recruitment/interviews/:id', element: withSuspense(guard('hr.full_access|recruitment.interviews.view|recruitment.interviews.evaluate', <InterviewDetailPage />)) },
       { path: '/hr/recruitment/offers/:ulid', element: withSuspense(guard('hr.full_access|recruitment.offers.view', <OfferDetailPage />)) },
       { path: '/hr/recruitment/candidates/:id', element: withSuspense(guard('hr.full_access|recruitment.candidates.view', <CandidateProfilePage />)) },

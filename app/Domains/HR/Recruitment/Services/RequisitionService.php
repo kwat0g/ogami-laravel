@@ -187,6 +187,30 @@ final class RequisitionService implements ServiceContract
         });
     }
 
+    public function hold(JobRequisition $requisition, User $actor, string $reason): JobRequisition
+    {
+        return DB::transaction(function () use ($requisition, $actor, $reason): JobRequisition {
+            $this->stateMachine->transition($requisition, RequisitionStatus::OnHold);
+            $requisition->save();
+
+            $requisition->logApproval('on_hold', 'on_hold', $actor, $reason);
+
+            return $requisition;
+        });
+    }
+
+    public function resume(JobRequisition $requisition, User $actor): JobRequisition
+    {
+        return DB::transaction(function () use ($requisition, $actor): JobRequisition {
+            $this->stateMachine->transition($requisition, RequisitionStatus::Open);
+            $requisition->save();
+
+            $requisition->logApproval('resumed', 'resumed', $actor, 'Requisition resumed from on-hold');
+
+            return $requisition;
+        });
+    }
+
     public function open(JobRequisition $requisition, User $actor): JobRequisition
     {
         return DB::transaction(function () use ($requisition, $actor): JobRequisition {

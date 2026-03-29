@@ -80,4 +80,11 @@ final class JobPostingController extends Controller
 
         return new JobPostingResource($this->service->close($posting, $request->user()));
     }
+
+    public function reopen(Request $request, JobPosting $posting): JobPostingResource
+    {
+        $this->authorize('publish', $posting);
+
+        return new JobPostingResource($this->service->reopen($posting, $request->user()));
+    }
 }

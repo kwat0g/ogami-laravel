@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Briefcase, Users, Calendar, FileText, UserCheck, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import api from '@/lib/api'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import Pagination from '@/components/ui/Pagination'
 import RecruitmentKpiCards from '@/components/recruitment/RecruitmentKpiCards'
+import CreateCandidateModal from '@/components/recruitment/CreateCandidateModal'
 import PipelineFunnelChart from '@/components/recruitment/PipelineFunnelChart'
 import {
   useRecruitmentDashboard,
@@ -349,15 +351,56 @@ function ApplicationsTab() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
+  const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState<string[]>([])
   const { data, isLoading } = useApplications({
     ...(search && { search }),
     ...(status && { status }),
+    page: String(page),
   })
+
+  const toggleSelect = (ulid: string) => {
+    setSelected((prev) => prev.includes(ulid) ? prev.filter((s) => s !== ulid) : [...prev, ulid])
+  }
+
+  const toggleAll = () => {
+    if (!data?.data) return
+    const allUlids = data.data.map((a: any) => a.ulid)
+    setSelected((prev) => prev.length === allUlids.length ? [] : allUlids)
+  }
+
+  const handleBulkReject = async () => {
+    if (!confirm(`Reject ${selected.length} application(s)? This cannot be undone.`)) return
+    const reason = prompt('Enter rejection reason:')
+    if (!reason?.trim()) return
+    for (const ulid of selected) {
+      try {
+        await api.post(`/recruitment/applications/${ulid}/reject`, { reason })
+      } catch { /* continue */ }
+    }
+    setSelected([])
+    // Force refetch by changing a dep
+    setPage((p) => p)
+  }
 
   if (isLoading) return <SkeletonLoader rows={6} />
 
   return (
     <Card>
+      {/* GAP-31: Bulk actions bar */}
+      {selected.length > 0 && (
+        <div className="px-5 py-2 bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-3">
+          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{selected.length} selected</span>
+          <button onClick={handleBulkReject}
+            className="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700">
+            Bulk Reject
+          </button>
+          <button onClick={() => setSelected([])}
+            className="px-3 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900">
+            Clear
+          </button>
+        </div>
+      )}
       <CardHeader action={
         <div className="flex items-center gap-3">
           <input type="text" placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)}
@@ -371,6 +414,13 @@ function ApplicationsTab() {
             <option value="rejected">Rejected</option>
             <option value="withdrawn">Withdrawn</option>
           </select>
+          <Link
+            to="/hr/recruitment/applications/new"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Application
+          </Link>
         </div>
       }>
         Applications
@@ -379,6 +429,7 @@ function ApplicationsTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-100 dark:border-neutral-800">
+              <th className="px-3 py-3 w-8"><input type="checkbox" onChange={toggleAll} checked={selected.length > 0 && selected.length === (data?.data?.length ?? 0)} className="rounded border-neutral-300" /></th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">App #</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Candidate</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Position</th>
@@ -391,6 +442,7 @@ function ApplicationsTab() {
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {data?.data?.map((app: any) => (
               <tr key={app.ulid} onClick={() => navigate(`/hr/recruitment/applications/${app.ulid}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
+                <td className="px-3 py-3 w-8" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={selected.includes(app.ulid)} onChange={() => toggleSelect(app.ulid)} className="rounded border-neutral-300" /></td>
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{app.application_number}</td>
                 <td className="px-5 py-3 text-neutral-700 dark:text-neutral-300">{app.candidate?.full_name}</td>
                 <td className="px-5 py-3 text-neutral-500">{app.posting?.position}</td>
@@ -405,6 +457,11 @@ function ApplicationsTab() {
           <div className="px-5 py-12 text-center text-sm text-neutral-400">No applications found.</div>
         )}
       </div>
+      {data?.meta && data.meta.last_page > 1 && (
+        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
+          <Pagination meta={data.meta} onPageChange={setPage} />
+        </div>
+      )}
     </Card>
   )
 }
@@ -481,8 +538,10 @@ function InterviewsTab() {
 function OffersTab() {
   const navigate = useNavigate()
   const [status, setStatus] = useState('')
+  const [page, setPage] = useState(1)
   const { data, isLoading } = useOffers({
     ...(status && { status }),
+    page: String(page),
   })
 
   if (isLoading) return <SkeletonLoader rows={6} />
@@ -535,6 +594,11 @@ function OffersTab() {
           <div className="px-5 py-12 text-center text-sm text-neutral-400">No offers found.</div>
         )}
       </div>
+      {data?.meta && data.meta.last_page > 1 && (
+        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
+          <Pagination meta={data.meta} onPageChange={setPage} />
+        </div>
+      )}
     </Card>
   )
 }
@@ -544,17 +608,30 @@ function OffersTab() {
 function CandidatesTab() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
-  const { data, isLoading } = useCandidates({
+  const [page, setPage] = useState(1)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const { data, isLoading, refetch } = useCandidates({
     ...(search && { search }),
+    page: String(page),
   })
 
   if (isLoading) return <SkeletonLoader rows={6} />
 
   return (
+    <>
     <Card>
       <CardHeader action={
-        <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-1.5 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400 w-64" />
+        <div className="flex items-center gap-3">
+          <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="px-3 py-1.5 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400 w-64" />
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add Candidate
+          </button>
+        </div>
       }>
         Candidate Pool
       </CardHeader>
@@ -586,7 +663,19 @@ function CandidatesTab() {
           <div className="px-5 py-12 text-center text-sm text-neutral-400">No candidates found.</div>
         )}
       </div>
+      {data?.meta && data.meta.last_page > 1 && (
+        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
+          <Pagination meta={data.meta} onPageChange={setPage} />
+        </div>
+      )}
     </Card>
+    {showCreateModal && (
+      <CreateCandidateModal
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => refetch()}
+      />
+    )}
+    </>
   )
 }
 

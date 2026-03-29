@@ -13,6 +13,7 @@ final class RequisitionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'ulid' => $this->ulid,
             'requisition_number' => $this->requisition_number,
             'department' => $this->whenLoaded('department', fn () => [

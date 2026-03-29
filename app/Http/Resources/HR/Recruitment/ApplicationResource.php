@@ -13,6 +13,7 @@ final class ApplicationResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'ulid' => $this->ulid,
             'application_number' => $this->application_number,
             'candidate' => $this->whenLoaded('candidate', fn () => new CandidateResource($this->candidate)),

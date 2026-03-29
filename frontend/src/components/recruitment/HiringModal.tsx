@@ -19,6 +19,8 @@ export default function HiringModal({
     const hire = useHire(applicationUlid)
     const [formData, setFormData] = useState({
         start_date: defaultStartDate || new Date().toISOString().split('T')[0],
+        date_of_birth: '',
+        gender: 'other',
         civil_status: 'SINGLE',
         bir_status: 'M0',
         notes: '',
@@ -54,6 +56,31 @@ export default function HiringModal({
                             onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase">Date of Birth</label>
+                            <input
+                                type="date"
+                                required
+                                value={formData.date_of_birth}
+                                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 uppercase">Gender</label>
+                            <select
+                                value={formData.gender}
+                                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                            >
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
