@@ -20,9 +20,23 @@ export default function CandidateProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.full_name}</h1>
-        <p className="text-sm text-gray-500">{candidate.email}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{candidate.full_name}</h1>
+          <p className="text-sm text-gray-500">{candidate.email}</p>
+        </div>
+        <div className="flex gap-2">
+          {candidate.resume_path && (
+            <a
+              href={`/api/v1/recruitment/candidates/${ulid}/resume`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+            >
+              Download Resume
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
