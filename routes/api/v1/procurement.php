@@ -100,6 +100,7 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
     // ── Budget Pre-Check ─────────────────────────────────────────────────────
     // Check if department has sufficient budget before creating PR
     Route::post('/budget-check', function (Request $request): JsonResponse {
+        abort_unless($request->user()->can('procurement.purchase-request.create') || $request->user()->can('procurement.purchase-request.create-dept'), 403);
         $validated = $request->validate([
             'department_id' => ['required', 'integer', 'exists:departments,id'],
             'items' => ['required', 'array', 'min:1'],
@@ -391,11 +392,13 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
     // ── Payment Batches (Phase 2) ─────────────────────────────────────────
     Route::prefix('payment-batches')->name('payment-batches.')->group(function () {
         Route::get('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            abort_unless($request->user()->can('ap.payment_batches.view'), 403);
             $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
             return response()->json($service->paginate($request->only(['status', 'per_page'])));
         })->name('index');
 
         Route::post('/', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+            abort_unless($request->user()->can('ap.payment_batches.create'), 403);
             $data = $request->validate([
                 'payment_date' => ['required', 'date'],
                 'payment_method' => ['sometimes', 'string'],
@@ -407,17 +410,20 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
             return response()->json(['data' => $service->store($data, $request->user())], 201);
         })->name('store');
 
-        Route::patch('/{paymentBatch:ulid}/submit', function (\App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+        Route::patch('/{paymentBatch:ulid}/submit', function (\Illuminate\Http\Request $request, \App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+            abort_unless($request->user()->can('ap.payment_batches.create'), 403);
             $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
             return response()->json(['data' => $service->submit($paymentBatch)]);
         })->name('submit')->middleware('throttle:api-action');
 
         Route::patch('/{paymentBatch:ulid}/approve', function (\Illuminate\Http\Request $request, \App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+            abort_unless($request->user()->can('ap.payment_batches.approve'), 403);
             $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
             return response()->json(['data' => $service->approve($paymentBatch, $request->user())]);
         })->name('approve')->middleware('throttle:api-action');
 
-        Route::post('/{paymentBatch:ulid}/process', function (\App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+        Route::post('/{paymentBatch:ulid}/process', function (\Illuminate\Http\Request $request, \App\Domains\AP\Models\PaymentBatch $paymentBatch): \Illuminate\Http\JsonResponse {
+            abort_unless($request->user()->can('ap.payment_batches.approve'), 403);
             $service = app(\App\Domains\AP\Services\PaymentBatchService::class);
             return response()->json(['data' => $service->process($paymentBatch)]);
         })->name('process')->middleware('throttle:api-action');
