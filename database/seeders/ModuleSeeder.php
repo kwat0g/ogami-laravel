@@ -68,6 +68,13 @@ class ModuleSeeder extends Seeder
                 'default_permissions' => ['self.*'],
                 'permission_groups' => ['operations'],
             ],
+            [
+                'module_key' => 'executive',
+                'label' => 'Executive & Board',
+                'description' => 'Chairman, President, VP Oversight and Approvals',
+                'default_permissions' => ['self.*', 'hr.view'],
+                'permission_groups' => ['executive', 'reports'],
+            ],
         ];
 
         foreach ($modules as $module) {

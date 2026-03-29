@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\HR\Models;
 
+use Database\Factories\PositionFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,7 +23,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  */
 final class Position extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes;
+    /** @use HasFactory<PositionFactory> */
+    use AuditableTrait, HasFactory, SoftDeletes;
 
     protected $table = 'positions';
 
@@ -38,6 +41,11 @@ final class Position extends Model implements Auditable
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    protected static function newFactory(): PositionFactory
+    {
+        return PositionFactory::new();
     }
 
     public function department(): BelongsTo

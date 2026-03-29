@@ -95,7 +95,7 @@ final class JobOffer extends Model implements Auditable
     private static function generateNumber(): string
     {
         $year = now()->format('Y');
-        $last = static::whereYear('created_at', $year)->lockForUpdate()->count();
+        $last = static::whereYear('created_at', $year)->count();
 
         return sprintf('OFR-%s-%05d', $year, $last + 1);
     }

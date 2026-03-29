@@ -25,7 +25,7 @@ final class RecruitmentApiTest extends TestCase
         $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
 
         $this->hrManager = User::factory()->create();
-        $this->hrManager->assignRole('manager');
+        $this->hrManager->assignRole('admin');
         // Grant recruitment permissions
         $this->hrManager->givePermissionTo([
             'recruitment.requisitions.view',

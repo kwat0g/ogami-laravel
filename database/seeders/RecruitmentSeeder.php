@@ -142,7 +142,7 @@ class RecruitmentSeeder extends Seeder
         $applications = collect();
         $appStatuses = ['new', 'new', 'under_review', 'under_review', 'shortlisted', 'shortlisted', 'shortlisted', 'rejected', 'withdrawn', 'shortlisted'];
 
-        $publishedPostings = $postings->where('status', 'published');
+        $publishedPostings = $postings->where('status', 'published')->values();
 
         foreach ($candidates as $ci => $candidate) {
             // Each candidate applies to 3 different postings
@@ -170,7 +170,7 @@ class RecruitmentSeeder extends Seeder
 
         // ── 5. Interviews ─────────────────────────────────────────────────
         $this->command->info('  Creating 15 interviews with evaluations...');
-        $shortlistedApps = $applications->where('status', 'shortlisted')->take(15);
+        $shortlistedApps = $applications->where('status', 'shortlisted')->take(15)->values();
 
         foreach ($shortlistedApps as $i => $app) {
             $interviewStatus = $i < 10 ? 'completed' : 'scheduled';
@@ -214,7 +214,7 @@ class RecruitmentSeeder extends Seeder
 
         // ── 6. Job Offers ─────────────────────────────────────────────────
         $this->command->info('  Creating 5 offers...');
-        $endorsedApps = $shortlistedApps->take(5);
+        $endorsedApps = $shortlistedApps->take(5)->values();
         $offerStatuses = ['accepted', 'accepted', 'accepted', 'sent', 'draft'];
 
         foreach ($endorsedApps as $i => $app) {
@@ -240,7 +240,7 @@ class RecruitmentSeeder extends Seeder
 
         // ── 7. Pre-Employment + Hirings ───────────────────────────────────
         $this->command->info('  Creating 3 hirings...');
-        $acceptedApps = $endorsedApps->take(3);
+        $acceptedApps = $endorsedApps->take(3)->values();
 
         foreach ($acceptedApps as $i => $app) {
             // Pre-employment checklist

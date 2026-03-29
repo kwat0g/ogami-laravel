@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\HR\Recruitment\Models;
 
 use App\Models\User;
+use Database\Factories\Recruitment\RequisitionApprovalFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class RequisitionApproval extends Model
 {
+    /** @use HasFactory<RequisitionApprovalFactory> */
+    use HasFactory;
     protected $table = 'requisition_approvals';
 
     protected $fillable = [
@@ -38,6 +42,11 @@ final class RequisitionApproval extends Model
             'sequence' => 'integer',
             'acted_at' => 'datetime',
         ];
+    }
+
+    protected static function newFactory(): RequisitionApprovalFactory
+    {
+        return RequisitionApprovalFactory::new();
     }
 
     public function requisition(): BelongsTo

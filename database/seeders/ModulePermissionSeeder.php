@@ -58,6 +58,16 @@ class ModulePermissionSeeder extends Seeder
                 'payroll.view_deduction_trace', 'payroll.download_register', 'payroll.gov_reports',
                 'reports.bir_2316', 'reports.bir_alphalist', 'reports.bir_1601c',
                 'reports.sss_sbr2', 'reports.philhealth_rf1', 'reports.pagibig_mc',
+                // Recruitment (HR Manager: Full Access)
+                'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.edit',
+                'recruitment.requisitions.submit', 'recruitment.requisitions.approve', 'recruitment.requisitions.reject',
+                'recruitment.requisitions.cancel', 'recruitment.postings.view', 'recruitment.postings.create',
+                'recruitment.postings.publish', 'recruitment.postings.close', 'recruitment.applications.view',
+                'recruitment.applications.review', 'recruitment.applications.shortlist', 'recruitment.applications.reject',
+                'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
+                'recruitment.offers.view', 'recruitment.offers.create', 'recruitment.offers.send',
+                'recruitment.preemployment.view', 'recruitment.preemployment.verify', 'recruitment.hiring.execute',
+                'recruitment.reports.view', 'recruitment.candidates.view', 'recruitment.candidates.manage',
             ],
             'officer' => [
                 // Self service
@@ -80,6 +90,12 @@ class ModulePermissionSeeder extends Seeder
                 'payroll.view_runs',
                 // Loan workflow
                 'loans.manager_check', 'loans.officer_review', 'loans.accounting_approve', 'loans.disburse',
+                // Recruitment (HR Officer: Operational only)
+                'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.submit',
+                'recruitment.postings.view', 'recruitment.postings.create', 'recruitment.postings.publish',
+                'recruitment.applications.view', 'recruitment.applications.review', 'recruitment.applications.shortlist',
+                'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
+                'recruitment.candidates.view',
             ],
             'head' => [
                 // Self service
@@ -94,6 +110,21 @@ class ModulePermissionSeeder extends Seeder
                 'leaves.view_team', 'leaves.file_on_behalf',
                 // Approval authority
                 'leaves.head_approve', 'leaves.reject',
+                'overtime.approve', 'overtime.reject',
+                'employees.upload_documents', 'employees.download_documents',
+                'attendance.import_csv', 'attendance.view_anomalies', 'attendance.resolve_anomalies',
+                'attendance.manage_shifts',
+                // Loan workflow (head actions)
+                'loans.head_note', 'loans.view_department',
+                // HR module access (view only for heads)
+                'hr.full_access',
+                'payroll.view_runs',
+                // Recruitment (HR Head: Same as Officer)
+                'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.submit',
+                'recruitment.postings.view', 'recruitment.postings.create', 'recruitment.postings.publish',
+                'recruitment.applications.view', 'recruitment.applications.review', 'recruitment.applications.shortlist',
+                'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
+                'recruitment.candidates.view',
                 'overtime.approve', 'overtime.reject',
                 'employees.upload_documents', 'employees.download_documents',
                 'attendance.import_csv', 'attendance.view_anomalies', 'attendance.resolve_anomalies',
@@ -614,6 +645,10 @@ class ModulePermissionSeeder extends Seeder
                 'crm.tickets.view', 'crm.tickets.create', 'crm.tickets.reply',
                 'iso.view', 'iso.manage', 'iso.audit',
                 'reports.view',
+                'vendors.view',
+                // Recruitment (Dept Manager)
+                'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.submit',
+                'recruitment.requisitions.cancel', 'recruitment.applications.view', 'recruitment.interviews.evaluate',
             ],
             'officer' => [
                 // Self service
@@ -658,6 +693,26 @@ class ModulePermissionSeeder extends Seeder
                 'payslips.view', 'payslips.download',
                 // General operations
                 'crm.tickets.view', 'crm.tickets.create', 'crm.tickets.reply',
+            ],
+        ],
+
+        // =========================================================================
+        // EXECUTIVE MODULE (Chairman, President, VP)
+        // =========================================================================
+        'executive' => [
+            'executive' => [
+                'self.view_profile', 'self.view_attendance',
+                'hr.full_access', 'employees.view', 'reports.view',
+                'recruitment.requisitions.view', 'recruitment.applications.view',
+                'recruitment.reports.view',
+            ],
+            'vice_president' => [
+                'self.view_profile', 'self.view_attendance',
+                'hr.full_access', 'employees.view', 'reports.view',
+                // Recruitment Approval & Final Offers
+                'recruitment.requisitions.view', 'recruitment.requisitions.approve', 'recruitment.requisitions.reject',
+                'recruitment.offers.view', 'recruitment.offers.send',
+                'recruitment.reports.view',
             ],
         ],
     ];

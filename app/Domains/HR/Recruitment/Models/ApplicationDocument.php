@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\HR\Recruitment\Models;
 
 use App\Models\User;
+use Database\Factories\Recruitment\ApplicationDocumentFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,7 +25,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 final class ApplicationDocument extends Model
 {
-    use SoftDeletes;
+    /** @use HasFactory<ApplicationDocumentFactory> */
+    use HasFactory, SoftDeletes;
 
     protected $table = 'application_documents';
 
@@ -41,6 +44,11 @@ final class ApplicationDocument extends Model
         return [
             'file_size' => 'integer',
         ];
+    }
+
+    protected static function newFactory(): ApplicationDocumentFactory
+    {
+        return ApplicationDocumentFactory::new();
     }
 
     public function application(): BelongsTo

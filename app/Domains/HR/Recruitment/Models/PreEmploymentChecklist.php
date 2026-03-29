@@ -6,6 +6,8 @@ namespace App\Domains\HR\Recruitment\Models;
 
 use App\Domains\HR\Recruitment\Enums\PreEmploymentStatus;
 use App\Models\User;
+use Database\Factories\Recruitment\PreEmploymentChecklistFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,6 +24,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class PreEmploymentChecklist extends Model
 {
+    /** @use HasFactory<PreEmploymentChecklistFactory> */
+    use HasFactory;
     protected $table = 'pre_employment_checklists';
 
     protected $fillable = [
@@ -38,6 +42,11 @@ final class PreEmploymentChecklist extends Model
             'status' => PreEmploymentStatus::class,
             'completed_at' => 'datetime',
         ];
+    }
+
+    protected static function newFactory(): PreEmploymentChecklistFactory
+    {
+        return PreEmploymentChecklistFactory::new();
     }
 
     // ── Relationships ─────────────────────────────────────────────────────

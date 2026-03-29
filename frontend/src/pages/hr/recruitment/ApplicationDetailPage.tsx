@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import { useApplication, useApplicationAction } from '@/hooks/useRecruitment'
 import StatusBadge from '@/components/recruitment/StatusBadge'
 import ApplicationTimeline from '@/components/recruitment/ApplicationTimeline'
+import HiringModal from '@/components/recruitment/HiringModal'
 import { useState } from 'react'
 
 export default function ApplicationDetailPage() {
@@ -10,6 +11,7 @@ export default function ApplicationDetailPage() {
   const action = useApplicationAction(ulid ?? '')
   const [tab, setTab] = useState<'profile' | 'interviews' | 'offer' | 'documents' | 'history'>('profile')
   const [rejectReason, setRejectReason] = useState('')
+  const [showHiringModal, setShowHiringModal] = useState(false)
 
   if (isLoading || !app) return <div className="p-6">Loading...</div>
 
@@ -29,7 +31,7 @@ export default function ApplicationDetailPage() {
         <div className="flex items-center gap-3">
           <StatusBadge status={app.status} label={app.status_label} />
           {/* Quick Actions */}
-          {app.status === 'new' && (
+          {(app.status === 'new' || app.status === 'under_review') && (
             <button
               onClick={() => action.mutate({ action: 'shortlist' })}
               disabled={action.isPending}
@@ -38,13 +40,13 @@ export default function ApplicationDetailPage() {
               Shortlist
             </button>
           )}
-          {(app.status === 'new' || app.status === 'under_review') && (
+
+          {app.offer?.status === 'accepted' && app.status !== 'hired' && (
             <button
-              onClick={() => action.mutate({ action: 'shortlist' })}
-              disabled={action.isPending}
-              className="rounded-md bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500"
+              onClick={() => setShowHiringModal(true)}
+              className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500"
             >
-              Shortlist
+              Hire Candidate
             </button>
           )}
         </div>
@@ -65,11 +67,10 @@ export default function ApplicationDetailPage() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-                  tab === t
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition ${tab === t
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                  }`}
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
@@ -263,6 +264,18 @@ export default function ApplicationDetailPage() {
           </div>
         </div>
       </div>
+
+      {showHiringModal && (
+        <HiringModal
+          applicationUlid={ulid!}
+          candidateName={app.candidate?.full_name || ''}
+          defaultStartDate={app.offer?.start_date}
+          onClose={() => setShowHiringModal(false)}
+          onSuccess={() => {
+            // Success handler if needed, useApplication will probably refetch via query invalidation in useHire
+          }}
+        />
+      )}
     </div>
   )
 }

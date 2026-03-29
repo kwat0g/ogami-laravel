@@ -6,6 +6,8 @@ namespace App\Domains\HR\Recruitment\Models;
 
 use App\Domains\HR\Recruitment\Enums\RequirementStatus;
 use App\Domains\HR\Recruitment\Enums\RequirementType;
+use Database\Factories\Recruitment\PreEmploymentRequirementFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class PreEmploymentRequirement extends Model
 {
+    /** @use HasFactory<PreEmploymentRequirementFactory> */
+    use HasFactory;
     protected $table = 'pre_employment_requirements';
 
     protected $fillable = [
@@ -48,6 +52,11 @@ final class PreEmploymentRequirement extends Model
             'submitted_at' => 'datetime',
             'verified_at' => 'datetime',
         ];
+    }
+
+    protected static function newFactory(): PreEmploymentRequirementFactory
+    {
+        return PreEmploymentRequirementFactory::new();
     }
 
     public function checklist(): BelongsTo

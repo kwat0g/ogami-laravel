@@ -23,7 +23,7 @@ return new class extends Migration
             )
         ");
 
-        DB::statement("ALTER TABLE approval_logs ADD CONSTRAINT chk_al_action CHECK (action IN ('approved','rejected','returned','noted','checked','reviewed','processed'))");
+        DB::statement("ALTER TABLE approval_logs ADD CONSTRAINT chk_al_action CHECK (action IN ('created', 'submitted', 'approved', 'rejected', 'returned', 'noted', 'checked', 'reviewed', 'processed', 'cancelled', 'opened', 'closed'))");
         DB::statement("CREATE INDEX idx_approval_logs_morph ON approval_logs (approvable_type, approvable_id)");
         DB::statement("CREATE INDEX idx_approval_logs_user ON approval_logs (user_id)");
         DB::statement("CREATE INDEX idx_approval_logs_created ON approval_logs (created_at)");

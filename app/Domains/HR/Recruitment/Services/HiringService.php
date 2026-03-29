@@ -46,8 +46,16 @@ final class HiringService implements ServiceContract
             $requisition = $application->posting->requisition;
             $candidate = $application->candidate;
 
+            $year = date('Y');
+            $last = Employee::where('employee_code', 'LIKE', "EMP-{$year}-%")
+                ->orderByDesc('employee_code')
+                ->value('employee_code');
+            $next = $last ? (int) substr($last, -6) + 1 : 1;
+            $employeeCode = sprintf('EMP-%s-%06d', $year, $next);
+
             // Create Employee record with draft/pre-onboarding status
             $employee = Employee::create([
+                'employee_code' => $employeeCode,
                 'first_name' => $candidate->first_name,
                 'last_name' => $candidate->last_name,
                 'personal_email' => $candidate->email,
@@ -56,12 +64,14 @@ final class HiringService implements ServiceContract
                 'department_id' => $offer->offered_department_id,
                 'position_id' => $offer->offered_position_id,
                 'employment_type' => $offer->employment_type->value,
-                'employment_status' => 'draft',
+                'employment_status' => 'active',
                 'onboarding_status' => 'documents_pending',
                 'basic_monthly_rate' => $offer->offered_salary,
                 'date_hired' => $data['start_date'],
                 'date_of_birth' => $data['date_of_birth'] ?? '1990-01-01',
                 'gender' => $data['gender'] ?? 'other',
+                'civil_status' => $data['civil_status'] ?? 'SINGLE',
+                'bir_status' => $data['bir_status'] ?? 'S',
                 'pay_basis' => 'monthly',
                 'is_active' => false,
             ]);
@@ -81,7 +91,7 @@ final class HiringService implements ServiceContract
             if ($requisition->isHeadcountFulfilled()) {
                 $requisition->status = RequisitionStatus::Closed;
                 $requisition->save();
-                $requisition->logApproval('closed', 'closed', $actor, 'Headcount fulfilled');
+                $requisition->logApproval('closed', 'processed', $actor, 'Headcount fulfilled');
             }
 
             return $hiring;
