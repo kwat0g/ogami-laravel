@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
+import { PageHeader } from '@/components/ui/PageHeader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -116,19 +117,19 @@ export default function CustomerCreditNotesPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Customer Credit Notes</h1>
-          <p className="text-sm text-neutral-500">AR credit notes issued to customers.</p>
-        </div>
-        {canCreate && (
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800">
-            <Plus className="w-3.5 h-3.5" /> New Credit Note
-          </button>
-        )}
-      </div>
+    <div className="max-w-5xl mx-auto space-y-6">
+      <PageHeader
+        title="Customer Credit Notes"
+        subtitle="AR credit notes issued to customers"
+        actions={
+          canCreate ? (
+            <button onClick={() => setShowForm(true)}
+              className="inline-flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded px-4 py-2 font-medium hover:bg-neutral-800">
+              <Plus className="w-4 h-4" /> New Credit Note
+            </button>
+          ) : undefined
+        }
+      />
 
       {showForm && (
         <form onSubmit={handleCreate} className="bg-white border border-neutral-200 rounded-lg p-5 mb-6">

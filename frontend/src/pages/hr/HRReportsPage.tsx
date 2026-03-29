@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Users, TrendingUp, Cake, ArrowUp, ArrowDown, Minus } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useHeadcountReport, useTurnoverReport, useBirthdayReport, type TurnoverMonth } from '@/hooks/useHRReports'
 
 const fmt = (n: number) => n.toLocaleString()
@@ -8,8 +9,8 @@ export default function HRReportsPage(): React.ReactElement {
   const [activeTab, setActiveTab] = useState<'headcount' | 'turnover' | 'birthdays'>('headcount')
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-neutral-900 mb-6">HR Reports</h1>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader title="HR Reports" />
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-neutral-100 rounded-lg p-1 w-fit">

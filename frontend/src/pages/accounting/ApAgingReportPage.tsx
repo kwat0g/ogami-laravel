@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { BarChart3 } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useApAgingReport, type ApAgingRow } from '@/hooks/useAP'
 
 const BUCKET_LABELS: { key: keyof ApAgingRow; label: string; color: string }[] = [
@@ -33,27 +34,23 @@ export default function ApAgingReportPage(): React.ReactElement {
   }, [rows])
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-rose-600" />
-            AP Aging Report
-          </h1>
-          <p className="text-sm text-neutral-500">
-            Payable balances grouped by vendor and days overdue.
-          </p>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">As of Date</label>
-          <input
-            type="date"
-            value={asOfDate}
-            onChange={(e) => setAsOfDate(e.target.value)}
-            className="border border-neutral-300 rounded px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader
+        title="AP Aging Report"
+        subtitle="Payable balances grouped by vendor and days overdue"
+        icon={<BarChart3 className="w-5 h-5 text-rose-600" />}
+        actions={
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">As of Date</label>
+            <input
+              type="date"
+              value={asOfDate}
+              onChange={(e) => setAsOfDate(e.target.value)}
+              className="border border-neutral-300 rounded px-3 py-2 text-sm"
+            />
+          </div>
+        }
+      />
 
       {/* Summary bar */}
       {rows.length > 0 && totals.total > 0 && (

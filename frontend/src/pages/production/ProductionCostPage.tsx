@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Factory, TrendingUp } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
@@ -55,28 +56,26 @@ export default function ProductionCostPage(): React.ReactElement {
   const summary = data?.summary ?? { total_orders: 0, total_material_cost: 0, total_output: 0, avg_unit_cost: 0 }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
-            <Factory className="w-6 h-6 text-indigo-600" />
-            Production Cost Analysis
-          </h1>
-          <p className="text-sm text-neutral-500">Material cost tracking per production order.</p>
-        </div>
-        <div className="flex gap-3">
-          <div>
-            <label className="block text-xs text-neutral-500 mb-1">From</label>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-              className="border border-neutral-300 rounded px-3 py-2 text-sm" />
+    <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader
+        title="Production Cost Analysis"
+        subtitle="Material cost tracking per production order"
+        icon={<Factory className="w-5 h-5 text-indigo-600" />}
+        actions={
+          <div className="flex gap-3">
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">From</label>
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+                className="border border-neutral-300 rounded px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">To</label>
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+                className="border border-neutral-300 rounded px-3 py-2 text-sm" />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-neutral-500 mb-1">To</label>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-              className="border border-neutral-300 rounded px-3 py-2 text-sm" />
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
