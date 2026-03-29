@@ -133,7 +133,7 @@ export default function ItemCategoriesPage(): React.ReactElement {
       await api.delete(`/inventory/items/categories/${id}`)
       toast.success('Category deleted successfully.')
       refetch()
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     } finally {
       setDeletingId(null)

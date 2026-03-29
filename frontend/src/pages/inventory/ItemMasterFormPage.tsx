@@ -98,7 +98,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
         toast.success('Item created.')
         navigate('/inventory/items')
       }
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   })
@@ -107,7 +107,7 @@ export default function ItemMasterFormPage(): React.ReactElement {
     try {
       await toggleMutation.mutateAsync()
       toast.success(item?.is_active ? 'Item deactivated.' : 'Item activated.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

@@ -79,7 +79,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
       setAdjustedQty('')
       setRemarks('')
       setShowConfirm(false)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

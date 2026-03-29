@@ -80,7 +80,7 @@ export default function StockBalancePage(): React.ReactElement {
       toast.success('Stock balance adjusted.')
       setAdjusting(null)
       setShowConfirm(false)
-    } catch (_err) {
+    } catch (err) {
       if (isHandledApiError(err)) return
       toast.error((err as { message?: string })?.message ?? 'Adjustment failed.')
     }

@@ -69,7 +69,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
         toast.success('Location created.')
       }
       setShowForm(false)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   })
@@ -79,7 +79,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
       await api.delete(`/inventory/locations/${id}`)
       toast.success('Location deleted successfully.')
       refetch()
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     } finally {
       setDeletingId(null)
@@ -91,7 +91,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
       await api.put(`/inventory/locations/${loc.id}`, { is_active: !loc.is_active })
       toast.success(loc.is_active ? 'Location deactivated.' : 'Location activated.')
       refetch()
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

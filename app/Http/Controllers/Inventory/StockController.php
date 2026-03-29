@@ -22,6 +22,8 @@ final class StockController extends Controller
 
     public function balances(Request $request): ResourceCollection
     {
+        $this->authorize('viewAny', ItemMaster::class);
+
         $perPage = min((int) ($request->input('per_page', 25)), 100);
 
         $balances = StockBalance::with(['item.category', 'location'])
@@ -44,6 +46,8 @@ final class StockController extends Controller
 
     public function ledger(Request $request): ResourceCollection
     {
+        $this->authorize('viewAny', ItemMaster::class);
+
         $ledger = StockLedger::with(['item', 'location', 'createdBy'])
             ->when($request->input('item_id'), fn ($q, $v) => $q->where('item_id', $v))
             ->when($request->input('location_id'), fn ($q, $v) => $q->where('location_id', $v))

@@ -16,6 +16,8 @@ final class PhysicalCountController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        abort_unless($request->user()->can('inventory.adjustments.create'), 403);
+
         $page = $this->service->paginate($request->only(['status', 'location_id', 'per_page']));
 
         return response()->json($page);
@@ -23,6 +25,8 @@ final class PhysicalCountController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()->can('inventory.adjustments.create'), 403);
+
         $data = $request->validate([
             'location_id' => ['required', 'integer', 'exists:warehouse_locations,id'],
             'count_date' => ['sometimes', 'date'],
@@ -36,8 +40,10 @@ final class PhysicalCountController extends Controller
         return response()->json(['data' => $count], 201);
     }
 
-    public function show(PhysicalCount $physicalCount): JsonResponse
+    public function show(Request $request, PhysicalCount $physicalCount): JsonResponse
     {
+        abort_unless($request->user()->can('inventory.adjustments.create'), 403);
+
         return response()->json([
             'data' => $physicalCount->load('items.item', 'location', 'createdBy', 'approvedBy'),
         ]);
