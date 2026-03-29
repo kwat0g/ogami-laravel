@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\HR\Recruitment\Services;
 
 use App\Domains\HR\Models\Employee;
+use App\Domains\HR\Recruitment\Enums\ApplicationStatus;
 use App\Domains\HR\Recruitment\Enums\HiringStatus;
 use App\Domains\HR\Recruitment\Enums\OfferStatus;
 use App\Domains\HR\Recruitment\Enums\PreEmploymentStatus;
@@ -69,8 +70,8 @@ final class HiringService implements ServiceContract
                 'onboarding_status' => 'documents_pending',
                 'basic_monthly_rate' => $offer->offered_salary,
                 'date_hired' => $data['start_date'],
-                'date_of_birth' => $data['date_of_birth'] ?? '1990-01-01',
-                'gender' => $data['gender'] ?? 'other',
+                'date_of_birth' => $data['date_of_birth'],
+                'gender' => $data['gender'],
                 'civil_status' => $data['civil_status'] ?? 'SINGLE',
                 'bir_status' => $data['bir_status'] ?? 'S',
                 'pay_basis' => 'monthly',
@@ -87,6 +88,10 @@ final class HiringService implements ServiceContract
                 'hired_by' => $actor->id,
                 'notes' => $data['notes'] ?? null,
             ]);
+
+            // Transition application to hired status
+            $application->status = ApplicationStatus::Hired;
+            $application->save();
 
             // Close requisition if headcount is fulfilled
             if ($requisition->isHeadcountFulfilled()) {

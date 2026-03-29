@@ -18,8 +18,10 @@ final class HireRequest extends FormRequest
     {
         return [
             'start_date' => ['required', 'date', 'after_or_equal:today'],
-            'date_of_birth' => ['nullable', 'date', 'before:today'],
-            'gender' => ['nullable', 'string', 'in:male,female,other'],
+            'date_of_birth' => ['required', 'date', 'before:today'],
+            'gender' => ['required', 'string', 'in:male,female,other'],
+            'civil_status' => ['sometimes', 'string', 'in:SINGLE,MARRIED,WIDOWED,SEPARATED'],
+            'bir_status' => ['sometimes', 'string'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }

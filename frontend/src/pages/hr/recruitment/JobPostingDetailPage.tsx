@@ -47,6 +47,15 @@ export default function JobPostingDetailPage() {
         >
           View Applications ({posting.applications_count ?? 0})
         </Link>
+        {/* GAP-24: Add Application from posting context */}
+        {posting.status === 'published' && (
+          <Link
+            to={`/hr/recruitment/applications/new?posting=${ulid}`}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+          >
+            Add Application
+          </Link>
+        )}
       </div>
 
       {/* Details */}

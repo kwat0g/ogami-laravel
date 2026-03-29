@@ -44,6 +44,10 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         ->name('requisitions.reject');
     Route::post('requisitions/{requisition}/cancel', [RequisitionController::class, 'cancel'])
         ->name('requisitions.cancel');
+    Route::post('requisitions/{requisition}/hold', [RequisitionController::class, 'hold'])
+        ->name('requisitions.hold');
+    Route::post('requisitions/{requisition}/resume', [RequisitionController::class, 'resume'])
+        ->name('requisitions.resume');
 
     // ── Job Postings ─────────────────────────────────────────────────────
     Route::apiResource('postings', JobPostingController::class)
