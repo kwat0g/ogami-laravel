@@ -37,7 +37,7 @@ export default function TimeInOutPage() {
   const timeInMutation = useTimeIn()
   const timeOutMutation = useTimeOut()
 
-  const [overrideReason, setOverrideReason] = useState('')
+
   const [liveDuration, setLiveDuration] = useState('')
 
   // Month filter for history table
@@ -115,10 +115,8 @@ export default function TimeInOutPage() {
         longitude: geo.longitude,
         accuracy_meters: geo.accuracy ?? 0,
         device_info: deviceInfo,
-        override_reason: overrideReason || undefined,
       })
       toast.success('Timed in successfully!')
-      setOverrideReason('')
     } catch (err) {
       const error = err as { response?: { data?: { error?: { code?: string; message?: string } } } }
       const code = error.response?.data?.error?.code
@@ -226,16 +224,6 @@ export default function TimeInOutPage() {
               </div>
             )}
 
-            {/* Override reason (visible before time-in when outside geofence) */}
-            {!hasTimedIn && geo.status === 'granted' && (
-              <input
-                type="text"
-                value={overrideReason}
-                onChange={(e) => setOverrideReason(e.target.value)}
-                className="text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-1.5 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 w-full sm:w-80 focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-500"
-                placeholder="Override reason (if outside geofence)..."
-              />
-            )}
           </div>
 
           {/* Right: Action buttons */}

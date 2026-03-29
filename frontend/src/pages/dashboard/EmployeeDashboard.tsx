@@ -30,7 +30,7 @@ import {
   Timer,
   FileText,
 } from 'lucide-react'
-import TimeClockWidget from '@/components/attendance/TimeClockWidget'
+
 
 const LEAVE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
@@ -99,9 +99,6 @@ export default function EmployeeDashboard() {
           href="/self-service/payslips"
         />
       </div>
-
-      {/* Time Clock Widget */}
-      <TimeClockWidget />
 
       {/* Attendance This Month */}
       <WidgetCard title="Attendance This Month" action={{ label: 'View Details', href: '/me/attendance' }}>

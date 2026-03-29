@@ -9,7 +9,7 @@
  *  - OUTSIDE_GEOFENCE  → toast with distance + prompt for override reason
  *  - NOT_TIMED_IN      → toast "Cannot time out without timing in"
  */
-import { useState, useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { Clock, MapPin, CheckCircle2, AlertTriangle, Loader2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -47,8 +47,6 @@ export default function TimeClockWidget() {
   const timeInMutation = useTimeIn()
   const timeOutMutation = useTimeOut()
 
-  const [overrideReason, setOverrideReason] = useState('')
-  const [showOverride, setShowOverride] = useState(false)
   const [liveDuration, setLiveDuration] = useState('')
 
   const hasTimedIn = !!todayLog?.time_in
@@ -89,28 +87,13 @@ export default function TimeClockWidget() {
         longitude: geo.longitude,
         accuracy_meters: geo.accuracy ?? 0,
         device_info: deviceInfo,
-        override_reason: overrideReason || undefined,
       })
       toast.success('Timed in successfully!')
-      setOverrideReason('')
-      setShowOverride(false)
     } catch (err) {
       const error = err as { response?: { data?: { error?: { code?: string; message?: string } } } }
       const code = error.response?.data?.error?.code ?? ''
       const message = error.response?.data?.error?.message
-
-      if (code === 'OUTSIDE_GEOFENCE') {
-        // Override mode: show reason input
-        setShowOverride(true)
-        toast.error(message || ERROR_MESSAGES[code])
-      } else if (code === 'OUTSIDE_GEOFENCE_BLOCKED') {
-        // Strict mode: completely blocked, no override possible
-        setShowOverride(false)
-        toast.error(message || ERROR_MESSAGES[code])
-      } else {
-        toast.error(ERROR_MESSAGES[code] || message || 'Failed to time in.')
-        setShowOverride(false)
-      }
+      toast.error(ERROR_MESSAGES[code] || message || 'Failed to time in.')
     }
   }
 
@@ -185,17 +168,6 @@ export default function TimeClockWidget() {
             {(geo.status === 'unavailable' || geo.status === 'timeout') && <span className="text-red-500">GPS unavailable</span>}
             {geo.status === 'idle' && <span>Waiting...</span>}
           </div>
-
-          {/* Override reason (only when geofence validation failed) */}
-          {showOverride && !hasTimedIn && (
-            <input
-              type="text"
-              value={overrideReason}
-              onChange={(e) => setOverrideReason(e.target.value)}
-              className="text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-1.5 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 w-full focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-500"
-              placeholder="Reason for working outside geofence..."
-            />
-          )}
 
           {/* Flagged notice */}
           {todayLog?.is_flagged && (

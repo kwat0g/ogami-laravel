@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { getLandingPath } from '@/lib/roleLanding'
+import TimeClockWidget from '@/components/attendance/TimeClockWidget'
 
 // Lazy load dashboard variants
 // RBAC v2: 7 core roles + system roles
@@ -43,90 +44,31 @@ export default function Dashboard() {
     return <Navigate to={landingPath} replace />
   }
 
-  // Priority order: most privileged → least privileged
+  // Resolve which dashboard to render based on role priority
+  const resolveDashboard = () => {
+    if (hasRole('super_admin') || hasRole('admin')) return <AdminDashboard />
+    if (hasRole('executive')) return <ExecutiveDashboard />
+    if (hasRole('vice_president')) return <VicePresidentDashboard />
+    if (hasRole('manager')) return <ManagerDashboard />
 
-  // Super Admin / Admin — System administration
-  if (hasRole('super_admin') || hasRole('admin')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <AdminDashboard />
-      </Suspense>
-    )
-  }
-
-  // Executive — Chairman / President high-level overview
-  if (hasRole('executive')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <ExecutiveDashboard />
-      </Suspense>
-    )
-  }
-
-  // Vice President — Executive approvals & financial KPIs
-  if (hasRole('vice_president')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <VicePresidentDashboard />
-      </Suspense>
-    )
-  }
-
-  // Manager — Full department module access
-  // The specific dashboard content depends on the department module
-  if (hasRole('manager')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <ManagerDashboard />
-      </Suspense>
-    )
-  }
-
-  // Officer — route by department so each officer sees relevant KPIs
-  if (hasRole('officer')) {
-    const dept = user?.primary_department_code ?? ''
-
-    // Purchasing dept officers
-    if (dept === 'PURCH' || hasPermission('procurement.rfq.create')) {
-      return (
-        <Suspense fallback={<SkeletonLoader rows={8} />}>
-          <PurchasingOfficerDashboard />
-        </Suspense>
-      )
+    if (hasRole('officer')) {
+      const dept = user?.primary_department_code ?? ''
+      if (dept === 'PURCH' || hasPermission('procurement.rfq.create')) return <PurchasingOfficerDashboard />
+      if (dept === 'ACCTG' || hasPermission('journal_entries.post')) return <OfficerDashboard />
+      return <ManagerDashboard />
     }
 
-    // Accounting dept officers
-    if (dept === 'ACCTG' || hasPermission('journal_entries.post')) {
-      return (
-        <Suspense fallback={<SkeletonLoader rows={8} />}>
-          <OfficerDashboard />
-        </Suspense>
-      )
-    }
-
-    // HR, Production, QC, Warehouse, Sales, Maint, ISO, etc.
-    // Use ManagerDashboard — it is already department-aware and shows
-    // the correct team/HR metrics based on the user's department.
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <ManagerDashboard />
-      </Suspense>
-    )
+    if (hasRole('head')) return <HeadDashboard />
+    return <EmployeeDashboard />
   }
 
-  // Head — Department head team oversight
-  if (hasRole('head')) {
-    return (
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        <HeadDashboard />
-      </Suspense>
-    )
-  }
-
-  // Staff / Employee — Personal information only (default fallback)
+  // Every dashboard gets the Time Clock widget at the top (if user has an employee record)
   return (
-    <Suspense fallback={<SkeletonLoader rows={8} />}>
-      <EmployeeDashboard />
-    </Suspense>
+    <div className="space-y-6">
+      {user?.employee_id && <TimeClockWidget />}
+      <Suspense fallback={<SkeletonLoader rows={8} />}>
+        {resolveDashboard()}
+      </Suspense>
+    </div>
   )
 }
