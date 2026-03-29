@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { firstErrorMessage, parseApiError } from '@/lib/errorHandler'
 import { ClipboardCheck, AlertTriangle, Search, X, Bell } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useVpPurchaseRequests, useVpLoans, useVpMrqs, useVpPayrollRuns, useVpPendingCounts } from '@/hooks/useVpApprovals'
 import {
@@ -291,15 +292,11 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-neutral-100 rounded flex items-center justify-center">
-          <ClipboardCheck className="w-5 h-5 text-neutral-600" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Pending Approvals</h1>
-          <p className="text-sm text-neutral-500">Items awaiting your sign-off — or browse full record history</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Pending Approvals"
+        subtitle="Items awaiting your sign-off -- or browse full record history"
+        icon={<ClipboardCheck className="w-5 h-5 text-neutral-600" />}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-neutral-100 rounded p-1 w-fit mb-4 flex-wrap">
