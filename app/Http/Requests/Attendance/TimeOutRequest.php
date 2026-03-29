@@ -10,7 +10,7 @@ final class TimeOutRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('attendance.time_clock') ?? false;
+        return $this->user()?->employee_id !== null;
     }
 
     /** @return array<string, mixed> */

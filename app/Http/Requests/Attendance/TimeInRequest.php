@@ -10,7 +10,10 @@ final class TimeInRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('attendance.time_clock') ?? false;
+        // Every authenticated user with a linked employee record can clock in.
+        // The attendance.time_clock permission is not checked here because
+        // clocking in is a universal employee feature, not a role-specific one.
+        return $this->user()?->employee_id !== null;
     }
 
     /** @return array<string, mixed> */
