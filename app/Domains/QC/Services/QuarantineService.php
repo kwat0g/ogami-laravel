@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domains\QC\Services;
 
-use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Services\StockService;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
@@ -25,10 +24,15 @@ use Illuminate\Support\Facades\DB;
  *   4. Fail → return to vendor or scrap (stock leaves quarantine)
  *
  * Quarantine is implemented as a designated warehouse location type.
+ * All stock movements go through StockService for proper audit trail (F-003).
  */
 final class QuarantineService implements ServiceContract
 {
     private const QUARANTINE_LOCATION_CODE = 'QC-HOLD';
+
+    public function __construct(
+        private readonly StockService $stockService,
+    ) {}
 
     /**
      * Place stock into quarantine after receipt of IQC-required items.
@@ -47,20 +51,15 @@ final class QuarantineService implements ServiceContract
         $quarantineLocation = $this->getOrCreateQuarantineLocation();
 
         return DB::transaction(function () use ($itemId, $sourceLocationId, $quantity, $referenceType, $referenceId, $actor, $quarantineLocation, $reason): array {
-            // Move stock from source to quarantine location
-            // Decrease source
-            $sourceBalance = StockBalance::firstOrCreate(
-                ['item_id' => $itemId, 'location_id' => $sourceLocationId],
-                ['quantity_on_hand' => 0],
+            // F-003: Use StockService for proper audit trail via stock_ledger_entries
+            $this->stockService->transfer(
+                itemId: $itemId,
+                fromLocationId: $sourceLocationId,
+                toLocationId: $quarantineLocation->id,
+                quantity: $quantity,
+                actor: $actor,
+                remarks: $reason ?? 'QC quarantine — pending IQC inspection',
             );
-            $sourceBalance->decrement('quantity_on_hand', $quantity);
-
-            // Increase quarantine
-            $quarantineBalance = StockBalance::firstOrCreate(
-                ['item_id' => $itemId, 'location_id' => $quarantineLocation->id],
-                ['quantity_on_hand' => 0],
-            );
-            $quarantineBalance->increment('quantity_on_hand', $quantity);
 
             // Log the quarantine entry
             $entryId = DB::table('stock_quarantine_log')->insertGetId([
@@ -108,20 +107,15 @@ final class QuarantineService implements ServiceContract
         return DB::transaction(function () use ($entry, $targetLocationId, $actor, $quarantineEntryId): array {
             $quantity = (float) $entry->quantity;
 
-            // Move from quarantine to target
-            $quarantineBalance = StockBalance::where('item_id', $entry->item_id)
-                ->where('location_id', $entry->quarantine_location_id)
-                ->first();
-
-            if ($quarantineBalance) {
-                $quarantineBalance->decrement('quantity_on_hand', $quantity);
-            }
-
-            $targetBalance = StockBalance::firstOrCreate(
-                ['item_id' => $entry->item_id, 'location_id' => $targetLocationId],
-                ['quantity_on_hand' => 0],
+            // F-003: Use StockService for proper audit trail via stock_ledger_entries
+            $this->stockService->transfer(
+                itemId: $entry->item_id,
+                fromLocationId: $entry->quarantine_location_id,
+                toLocationId: $targetLocationId,
+                quantity: $quantity,
+                actor: $actor,
+                remarks: "QC release — quarantine entry #{$quarantineEntryId}",
             );
-            $targetBalance->increment('quantity_on_hand', $quantity);
 
             DB::table('stock_quarantine_log')
                 ->where('id', $quarantineEntryId)
@@ -158,10 +152,16 @@ final class QuarantineService implements ServiceContract
         }
 
         return DB::transaction(function () use ($entry, $disposition, $actor, $quarantineEntryId, $remarks): array {
-            // Remove from quarantine balance
-            StockBalance::where('item_id', $entry->item_id)
-                ->where('location_id', $entry->quarantine_location_id)
-                ->decrement('quantity_on_hand', (float) $entry->quantity);
+            // F-003: Use StockService for proper audit trail via stock_ledger_entries
+            $this->stockService->issue(
+                itemId: $entry->item_id,
+                locationId: $entry->quarantine_location_id,
+                quantity: (float) $entry->quantity,
+                referenceType: 'stock_quarantine_log',
+                referenceId: $quarantineEntryId,
+                actor: $actor,
+                remarks: "QC {$disposition} — quarantine entry #{$quarantineEntryId}" . ($remarks ? ": {$remarks}" : ''),
+            );
 
             DB::table('stock_quarantine_log')
                 ->where('id', $quarantineEntryId)
