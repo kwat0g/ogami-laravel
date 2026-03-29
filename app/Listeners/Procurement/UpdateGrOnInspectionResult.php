@@ -77,12 +77,38 @@ class UpdateGrOnInspectionResult
                 return;
             }
 
+            $passedInspections = $allInspections->filter(fn ($i) => $i->status === 'passed');
+
             if ($failedInspections->isEmpty()) {
                 // All inspections passed
                 $this->grService->markQcPassed($gr->fresh(), $actor);
                 Log::info('[GR-QC] All IQC inspections passed — GR moved to qc_passed', ['gr_id' => $gr->id]);
+            } elseif ($passedInspections->isNotEmpty() && $failedInspections->isNotEmpty()) {
+                // Mixed results: some items passed, some failed.
+                // Auto-set accepted quantities for passed items so they are not blocked.
+                // The GR still moves to qc_failed, but passed items already have
+                // quantity_accepted set — the accept-with-defects flow only needs
+                // to handle the failed items.
+                foreach ($gr->fresh()->items as $grItem) {
+                    if ($grItem->qc_status === 'passed' && $grItem->quantity_accepted === null) {
+                        $grItem->update([
+                            'quantity_accepted' => $grItem->quantity_received,
+                            'quantity_rejected' => 0,
+                        ]);
+                    }
+                }
+
+                $failedItems = $failedInspections->map(fn ($i) => $i->itemMaster?->name ?? "Item #{$i->item_master_id}")->implode(', ');
+                $passedItems = $passedInspections->map(fn ($i) => $i->itemMaster?->name ?? "Item #{$i->item_master_id}")->implode(', ');
+                $notes = "Mixed QC result — Passed: {$passedItems}. Failed: {$failedItems}. Use 'Accept with Defects' to disposition failed items while keeping passed items.";
+                $this->grService->markQcFailed($gr->fresh(), $actor, $notes);
+                Log::info('[GR-QC] Mixed IQC results — GR moved to qc_failed with passed items pre-accepted', [
+                    'gr_id' => $gr->id,
+                    'passed_items' => $passedItems,
+                    'failed_items' => $failedItems,
+                ]);
             } else {
-                // At least one inspection failed
+                // All inspections failed
                 $failedItems = $failedInspections->map(fn ($i) => $i->itemMaster?->name ?? "Item #{$i->item_master_id}")->implode(', ');
                 $this->grService->markQcFailed($gr->fresh(), $actor, "IQC failed for: {$failedItems}");
                 Log::info('[GR-QC] IQC inspection failed — GR moved to qc_failed', [

@@ -55,7 +55,9 @@ class PostInventoryRecognitionJeOnGr
             }
 
             $unitCostPesos = (float) ($poItem->agreed_unit_cost ?? 0);
-            $qty = (float) $grItem->quantity_received;
+            // Use QC-accepted quantity for partial acceptance scenarios;
+            // falls back to quantity_received when no QC split occurred.
+            $qty = $grItem->effectiveAcceptedQuantity();
             $totalValuePesos += $unitCostPesos * $qty;
         }
 

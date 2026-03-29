@@ -81,7 +81,7 @@ final class InvoiceAutoDraftService implements ServiceContract
                 continue;
             }
 
-            $qty = (float) $grItem->quantity_received;
+            $qty = $grItem->effectiveAcceptedQuantity();
             $agreedCostPesos = (float) ($poItem->agreed_unit_cost ?? 0);
             $netAmountCentavos += (int) round($qty * $agreedCostPesos * 100);
         }

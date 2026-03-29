@@ -548,7 +548,7 @@ final class VendorInvoiceService implements ServiceContract
         $netAmount = $gr->items
             ->filter(fn (GoodsReceiptItem $item): bool => ! in_array($item->condition, ['rejected', 'damaged'], true))
             ->reduce(
-                fn (float $carry, GoodsReceiptItem $item): float => $carry + ((float) $item->quantity_received * (float) ($item->poItem->agreed_unit_cost ?? 0)),
+                fn (float $carry, GoodsReceiptItem $item): float => $carry + ($item->effectiveAcceptedQuantity() * (float) ($item->poItem->agreed_unit_cost ?? 0)),
                 0.0,
             );
         if ($netAmount <= 0) {

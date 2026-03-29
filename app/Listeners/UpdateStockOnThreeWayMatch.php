@@ -53,6 +53,20 @@ class UpdateStockOnThreeWayMatch
                 continue;
             }
 
+            // Use QC-accepted quantity when available (partial acceptance),
+            // otherwise fall back to full quantity_received.
+            $effectiveQty = $grItem->effectiveAcceptedQuantity();
+            if ($effectiveQty <= 0) {
+                Log::info('Skipping stock receipt for GR item with zero accepted quantity', [
+                    'gr_id' => $gr->id,
+                    'po_item_id' => $poItem->id,
+                    'quantity_received' => (float) $grItem->quantity_received,
+                    'quantity_accepted' => $grItem->quantity_accepted,
+                ]);
+
+                continue;
+            }
+
             DB::transaction(function () use ($poItem, $grItem, $vendor, $locationId, $gr, $actor): void {
                 // Resolve item_master_id if missing
                 if (! $poItem->item_master_id) {
@@ -68,7 +82,7 @@ class UpdateStockOnThreeWayMatch
                     $this->stockService->receive(
                         itemId: $poItem->item_master_id,
                         locationId: $locationId,
-                        quantity: (float) $grItem->quantity_received,
+                        quantity: $effectiveQty,
                         referenceType: 'goods_receipts',
                         referenceId: $gr->id,
                         actor: $actor,
