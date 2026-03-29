@@ -6,7 +6,7 @@
  *
  *   1. POST /payroll/runs                   — create the run (DRAFT)
  *   2. PATCH /payroll/runs/{id}/scope       — save scope + exclusions (SCOPE_SET)
- *   3. POST /payroll/runs/{id}/pre-run-checks — run PR-001…PR-008 checks
+ *   3. POST /payroll/runs/{id}/pre-run-checks — run PR-001…PR-010 checks
  *   4a. Blockers found → cancel then archive the run, show errors, back to idle
  *   4b. Warnings only  → show ack checkboxes, wait for user confirmation
  *   4c. All pass       → proceed directly

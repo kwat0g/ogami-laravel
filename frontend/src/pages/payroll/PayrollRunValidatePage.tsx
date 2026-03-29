@@ -1,6 +1,6 @@
 /**
  * Step 3 — Pre-Run Validation
- * Runs all 8 pre-run checks (PR-001 to PR-008) and displays results.
+ * Runs all pre-run checks (PR-001 to PR-010) and displays results.
  * Auto-refreshes every 10 s so the user can fix issues and see them clear.
  * Blocking checks (BLOCK severity) prevent advancing to computation.
  */
@@ -189,7 +189,7 @@ export default function PayrollRunValidatePage() {
       <WizardStepHeader
         step={3}
         title="Pre-Run Validation"
-        description={`Run #${run.reference_no} — All 8 checks must pass (or warnings acknowledged) before computation begins.`}
+        description={`Run #${run.reference_no} — All checks must pass (or warnings acknowledged) before computation begins.`}
       />
 
       {/* Refresh button + pass/fail summary */}
