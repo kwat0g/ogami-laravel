@@ -257,10 +257,10 @@ final class ProductionOrderService implements ServiceContract
                     .$failedInspections->pluck('id')->implode(', '));
             }
 
-            // ── PROD-001: Deduct BOM component stock from inventory ─────────
-            if ($order->bom_id !== null) {
-                $this->deductBomComponents($order);
-            }
+            // ── PROD-001: Material issuance via MRQ (single path) ────────────
+            // Stock deduction happens ONLY when the MRQ is fulfilled by warehouse
+            // staff, NOT here on release. This prevents double deduction.
+            // The MRQ goes through its own approval workflow before stock is issued.
 
             $order->update(['status' => 'released']);
 
@@ -438,6 +438,27 @@ final class ProductionOrderService implements ServiceContract
             );
         }
 
+        // ── FQC Gate: Check for passed final QC inspection ──────────────
+        // If there are any open or failed inspections linked to this order,
+        // block completion. Only proceed if no inspections exist (no FQC
+        // required) or all inspections have passed.
+        $openOrFailed = Inspection::where('production_order_id', $order->id)
+            ->whereIn('status', ['open', 'failed'])
+            ->exists();
+
+        if ($openOrFailed) {
+            $failedIds = Inspection::where('production_order_id', $order->id)
+                ->whereIn('status', ['open', 'failed'])
+                ->pluck('id')
+                ->implode(', ');
+
+            throw new DomainException(
+                "Cannot complete: QC inspection(s) #{$failedIds} are open or failed. Resolve all inspections before completing the order.",
+                'PROD_FQC_GATE_BLOCKED',
+                422,
+            );
+        }
+
         return DB::transaction(function () use ($order): ProductionOrder {
             $order->update(['status' => 'completed']);
 
@@ -471,6 +492,18 @@ final class ProductionOrderService implements ServiceContract
                     actor: $actor,
                     remarks: "Auto-receive from WO {$order->po_reference}",
                 );
+            }
+
+            // Auto-post production cost variance to GL
+            try {
+                $costPostingService = app(ProductionCostPostingService::class);
+                $actor2 = auth()->user() ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
+                if ($actor2) {
+                    $costPostingService->postCostVariance($order->fresh(), $actor2);
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal: cost posting failure should not block production completion
+                Log::warning("PROD-COST: Auto cost variance posting failed for order #{$order->id}: {$e->getMessage()}");
             }
 
             // PROD-DEL-001: Notify Delivery domain AFTER the transaction commits so the

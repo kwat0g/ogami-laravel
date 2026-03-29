@@ -12,7 +12,6 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Shared\Contracts\ServiceContract;
 
 /**
  * OrderAutomationService
@@ -104,6 +103,10 @@ final class OrderAutomationService implements ServiceContract
                 $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
                 $reference = 'PO-' . now()->format('Y-m') . '-' . $num;
 
+                // Calculate standard cost from BOM (same logic as ProductionOrderService::store)
+                $standardUnitCost = (int) ($bom->standard_cost_centavos ?? 0);
+                $estimatedTotalCost = (int) round($standardUnitCost * $qty);
+
                 $productionOrder = ProductionOrder::create([
                     'po_reference' => $reference,
                     'client_order_id' => $order->id,
@@ -112,6 +115,8 @@ final class OrderAutomationService implements ServiceContract
                     'qty_required' => $qty,
                     'qty_produced' => 0,
                     'qty_rejected' => 0,
+                    'standard_unit_cost_centavos' => $standardUnitCost,
+                    'estimated_total_cost_centavos' => $estimatedTotalCost,
                     'target_start_date' => $targetStart,
                     'target_end_date' => $targetEnd,
                     'status' => 'draft',
