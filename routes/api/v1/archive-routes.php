@@ -27,6 +27,7 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
     })->name('purchase-requests.archived');
 
     Route::post('procurement/purchase-requests/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('procurement.purchase_requests.create'), 403, 'Unauthorized');
         $record = \App\Domains\Procurement\Models\PurchaseRequest::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Purchase request restored.', 'data' => $record]);
@@ -47,6 +48,7 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
     })->name('purchase-orders.archived');
 
     Route::post('procurement/purchase-orders/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('procurement.purchase_orders.create'), 403, 'Unauthorized');
         $record = \App\Domains\Procurement\Models\PurchaseOrder::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Purchase order restored.', 'data' => $record]);
@@ -67,6 +69,7 @@ Route::middleware(['auth:sanctum', 'module_access:procurement'])->group(function
     })->name('goods-receipts.archived');
 
     Route::post('procurement/goods-receipts/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('procurement.goods_receipts.create'), 403, 'Unauthorized');
         $record = \App\Domains\Procurement\Models\GoodsReceipt::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Goods receipt restored.', 'data' => $record]);
@@ -91,6 +94,7 @@ Route::middleware(['auth:sanctum', 'module_access:qc'])->group(function () {
     })->name('inspections.archived');
 
     Route::post('qc/inspections/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('qc.inspections.create'), 403, 'Unauthorized');
         $record = \App\Domains\QC\Models\Inspection::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Inspection restored.', 'data' => $record]);
@@ -110,6 +114,7 @@ Route::middleware(['auth:sanctum', 'module_access:qc'])->group(function () {
     })->name('ncrs.archived');
 
     Route::post('qc/ncrs/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('qc.ncr.create'), 403, 'Unauthorized');
         $record = \App\Domains\QC\Models\NonConformanceReport::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'NCR restored.', 'data' => $record]);
@@ -133,6 +138,7 @@ Route::middleware(['auth:sanctum', 'module_access:maintenance'])->group(function
     })->name('work-orders.archived');
 
     Route::post('maintenance/work-orders/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('maintenance.work_orders.create'), 403, 'Unauthorized');
         $record = \App\Domains\Maintenance\Models\MaintenanceWorkOrder::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Work order restored.', 'data' => $record]);
@@ -155,6 +161,7 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     })->name('delivery-receipts.archived');
 
     Route::post('delivery/receipts/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
         $record = \App\Domains\Delivery\Models\DeliveryReceipt::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Delivery receipt restored.', 'data' => $record]);
@@ -178,6 +185,7 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     })->name('delivery-schedules.archived');
 
     Route::post('production/delivery-schedules/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('production.orders.create'), 403, 'Unauthorized');
         $record = \App\Domains\Production\Models\DeliverySchedule::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Delivery schedule restored.', 'data' => $record]);
@@ -202,6 +210,7 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
     })->name('items.archived');
 
     Route::post('inventory/items/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('inventory.items.create'), 403, 'Unauthorized');
         $record = \App\Domains\Inventory\Models\ItemMaster::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Item restored.', 'data' => $record]);
@@ -221,6 +230,7 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
     })->name('mrqs.archived');
 
     Route::post('inventory/mrqs/{id}/restore', function (Request $request, int $id) {
+        abort_unless($request->user()?->hasPermissionTo('inventory.mrq.create'), 403, 'Unauthorized');
         $record = \App\Domains\Inventory\Models\MaterialRequisition::onlyTrashed()->findOrFail($id);
         $record->restore();
         return response()->json(['message' => 'Material requisition restored.', 'data' => $record]);
