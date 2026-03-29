@@ -11,7 +11,6 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Shared\Contracts\ServiceContract;
 
 /**
  * BudgetEnforcementService
@@ -57,13 +56,16 @@ final class BudgetEnforcementService implements ServiceContract
             // No specific OT budget line -- check overall department budget
             $dept = Department::find($departmentId);
             if (! $dept || $dept->annual_budget_centavos <= 0) {
+                // REC-03: Return within_budget=false when no budget is configured.
+                // Previously returned true, allowing unlimited unbudgeted spending.
                 return [
-                    'within_budget' => true,
+                    'within_budget' => false,
                     'budget_total_centavos' => 0,
                     'used_centavos' => 0,
                     'remaining_centavos' => 0,
                     'utilization_pct' => 0,
-                    'warning' => null,
+                    'warning' => 'No budget line configured for this department in the current fiscal year. Contact the Budget Officer to set up budget allocation.',
+                    'budget_not_configured' => true,
                 ];
             }
 

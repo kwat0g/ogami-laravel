@@ -17,6 +17,7 @@ use App\Domains\Procurement\Services\PurchaseOrderService;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AP\VendorItemResource;
 use App\Http\Resources\Procurement\PurchaseOrderResource;
+use App\Http\Resources\VendorPortal\VendorPurchaseOrderResource;
 use App\Imports\VendorItemImport;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Http\JsonResponse;
@@ -59,7 +60,7 @@ final class VendorPortalController extends Controller
 
         $orders = $query->orderByDesc('created_at')->paginate(20);
 
-        return response()->json($orders);
+        return VendorPurchaseOrderResource::collection($orders)->response();
     }
 
     /**
@@ -79,7 +80,7 @@ final class VendorPortalController extends Controller
             'childPos:id,ulid,po_reference,status,total_po_amount',
         ]);
 
-        return response()->json(['data' => $purchaseOrder]);
+        return new VendorPurchaseOrderResource($purchaseOrder);
     }
 
     /**

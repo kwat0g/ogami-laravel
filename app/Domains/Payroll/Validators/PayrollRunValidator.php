@@ -25,7 +25,12 @@ final class PayrollRunValidator
      */
     public function assertNonOverlapping(string $cutoffStart, string $cutoffEnd, string $runType = 'regular'): void
     {
-        $overlapping = PayrollRun::whereNotIn('status', ['cancelled'])
+        // REC-07: Exclude all terminal/transient states — not just 'cancelled'.
+        // Previously only 'cancelled' was excluded, so a REJECTED or RETURNED run
+        // still blocked creation of a replacement run for the same period.
+        $terminalStatuses = ['cancelled', 'REJECTED', 'RETURNED', 'FAILED', 'PUBLISHED'];
+
+        $overlapping = PayrollRun::whereNotIn('status', $terminalStatuses)
             ->where('run_type', $runType)
             ->where('cutoff_start', '<=', $cutoffEnd)
             ->where('cutoff_end', '>=', $cutoffStart)

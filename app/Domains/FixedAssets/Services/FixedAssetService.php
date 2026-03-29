@@ -72,15 +72,21 @@ final class FixedAssetService implements ServiceContract
     /**
      * Depreciate all eligible active assets for the given fiscal period.
      *
-     * @return int Number of assets processed
+     * REC-02: Returns structured results tracking succeeded, failed, and skipped
+     * assets instead of a bare count. Failures are logged at critical level so
+     * silent GL skips (where category GL accounts are null) are surfaced.
+     *
+     * @return array{succeeded: int, failed: list<array{asset_id: int, asset_code: string, error: string}>, skipped: int, total: int}
      */
-    public function depreciateMonth(FiscalPeriod $period, User $actor): int
+    public function depreciateMonth(FiscalPeriod $period, User $actor): array
     {
         $assets = FixedAsset::where('status', 'active')
             ->with('category')
             ->get();
 
-        $count = 0;
+        $succeeded = 0;
+        $failed = [];
+        $skipped = 0;
 
         foreach ($assets as $asset) {
             // Skip already-processed assets for this period
@@ -89,6 +95,7 @@ final class FixedAssetService implements ServiceContract
                 ->exists();
 
             if ($alreadyRun) {
+                $skipped++;
                 continue;
             }
 
@@ -97,22 +104,44 @@ final class FixedAssetService implements ServiceContract
             if ($depAmount <= 0) {
                 // Mark fully depreciated if no remaining amount
                 $asset->update(['status' => 'fully_depreciated']);
+                $skipped++;
 
                 continue;
             }
 
             try {
                 $this->postDepreciationEntry($asset, $period, $depAmount, $actor);
-                $count++;
+                $succeeded++;
             } catch (\Throwable $e) {
-                Log::error('Fixed asset depreciation failed', [
+                Log::critical('Fixed asset depreciation GL posting failed', [
                     'asset_id' => $asset->id,
+                    'asset_code' => $asset->asset_code,
+                    'category_id' => $asset->category_id,
                     'error' => $e->getMessage(),
                 ]);
+                $failed[] = [
+                    'asset_id' => $asset->id,
+                    'asset_code' => $asset->asset_code ?? '',
+                    'error' => $e->getMessage(),
+                ];
             }
         }
 
-        return $count;
+        if (! empty($failed)) {
+            Log::critical('Fixed asset depreciation completed with failures', [
+                'period_id' => $period->id,
+                'succeeded' => $succeeded,
+                'failed_count' => count($failed),
+                'failed_assets' => $failed,
+            ]);
+        }
+
+        return [
+            'succeeded' => $succeeded,
+            'failed' => $failed,
+            'skipped' => $skipped,
+            'total' => $assets->count(),
+        ];
     }
 
     // ── Disposal ─────────────────────────────────────────────────────────────
