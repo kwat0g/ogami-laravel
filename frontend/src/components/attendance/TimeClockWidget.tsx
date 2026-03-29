@@ -90,7 +90,7 @@ export default function TimeClockWidget() {
         device_info: deviceInfo,
       })
       toast.success('Timed in successfully!')
-    } catch (_err) {
+    } catch (err) {
       const parsed = parseApiError(err)
       const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
       toast.error(mappedMsg || parsed.message || 'Failed to time in.')
@@ -110,7 +110,7 @@ export default function TimeClockWidget() {
         device_info: deviceInfo,
       })
       toast.success('Timed out successfully!')
-    } catch (_err) {
+    } catch (err) {
       const parsed = parseApiError(err)
       const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
       toast.error(mappedMsg || parsed.message || 'Failed to time out.')

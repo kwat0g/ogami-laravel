@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -178,8 +179,7 @@ export default function AttendanceListPage() {
       }
       closeModal()
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || 'Failed to save attendance log')
+      toast.error(firstErrorMessage(error, 'Failed to save attendance log'))
     }
   }
 
