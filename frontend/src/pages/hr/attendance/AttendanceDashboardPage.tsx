@@ -30,7 +30,7 @@ export default function AttendanceDashboardPage() {
     try {
       await approve.mutateAsync({ id: approvingId, approved_minutes: Number(approvedMins) })
       toast.success('Overtime request approved.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to approve overtime request.'))
     }
     setApprovingId(null)
@@ -42,7 +42,7 @@ export default function AttendanceDashboardPage() {
     try {
       await reject.mutateAsync({ id: rejectId, remarks: rejectRemarks })
       toast.success('Overtime request rejected.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to reject overtime request.'))
     }
     setRejectId(null)

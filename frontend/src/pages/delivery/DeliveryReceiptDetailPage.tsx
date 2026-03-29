@@ -49,7 +49,7 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       await confirmMut.mutateAsync(dr.ulid);
       toast.success('Delivery receipt confirmed.');
       setConfirmOpen(false);
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to confirm receipt.'));
     }
   };

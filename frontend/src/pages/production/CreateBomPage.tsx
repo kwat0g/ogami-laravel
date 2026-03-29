@@ -111,7 +111,7 @@ export default function CreateBomPage(): React.ReactElement {
       const costFormatted = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(costCentavos / 100)
       toast.success(`BOM created successfully. Standard cost: ${costFormatted}`)
       navigate('/production/boms')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

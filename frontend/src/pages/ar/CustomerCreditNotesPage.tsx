@@ -95,7 +95,7 @@ export default function CustomerCreditNotesPage(): React.ReactElement {
       setShowForm(false)
       setForm({ customer_id: 0, amount: 0, reason: '' })
       setTouched(new Set())
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -104,7 +104,7 @@ export default function CustomerCreditNotesPage(): React.ReactElement {
     try {
       await post.mutateAsync(ulid)
       toast.success('Credit note posted successfully.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

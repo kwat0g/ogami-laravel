@@ -83,7 +83,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
               try {
                 await submitMutation.mutateAsync()
                 toast.success('Journal entry submitted.')
-              } catch (_err) {
+              } catch (err) {
                 toast.error(firstErrorMessage(err))
               }
             }}
@@ -109,7 +109,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
               try {
                 await postMutation.mutateAsync()
                 toast.success('Journal entry posted.')
-              } catch (_err) {
+              } catch (err) {
                 toast.error(firstErrorMessage(err))
               }
             }}
@@ -138,7 +138,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
                 await reverseMutation.mutateAsync(desc)
                 toast.success('Reversal entry created.')
                 onReversed?.()
-              } catch (_err) {
+              } catch (err) {
                 toast.error(firstErrorMessage(err))
               }
             }}

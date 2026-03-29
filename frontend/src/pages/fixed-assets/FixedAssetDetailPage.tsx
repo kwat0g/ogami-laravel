@@ -40,7 +40,7 @@ export default function FixedAssetDetailPage(): React.ReactElement {
       })
       toast.success('Asset disposed.')
       setShowDispose(false)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Disposal failed.'))
     }
   }

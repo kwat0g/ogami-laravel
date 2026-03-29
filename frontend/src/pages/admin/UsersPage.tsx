@@ -342,7 +342,7 @@ export default function UsersPage() {
       setCopiedCredentials(true)
       setTimeout(() => setCopiedCredentials(false), 2000)
       toast.success('Credentials copied to clipboard.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to copy credentials. Please copy manually.'))
     }
   }

@@ -62,7 +62,7 @@ function ApproveDraftButton({ invoice }: { invoice: CustomerInvoice }) {
     try {
       await approveMut.mutateAsync(invoice.ulid)
       toast.success('Invoice approved successfully.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
       throw err // Re-throw to let dialog know it failed
     }
@@ -87,7 +87,7 @@ function CancelDraftButton({ invoice }: { invoice: CustomerInvoice }) {
     try {
       await cancelMut.mutateAsync(invoice.ulid)
       toast.success('Invoice cancelled successfully.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
       throw err // Re-throw to let dialog know it failed
     }
@@ -162,7 +162,7 @@ export default function CustomerInvoicesPage() {
     try {
       await refetch()
       toast.success('Invoice list refreshed.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

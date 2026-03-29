@@ -141,7 +141,7 @@ export default function WorkLocationsPage() {
       }
       resetForm()
       void refetch()
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err) || 'Failed to save work location.')
     } finally {
       setSaving(false)
@@ -155,7 +155,7 @@ export default function WorkLocationsPage() {
       toast.success('Work location deleted.')
       setDeleteTarget(null)
       void refetch()
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err) || 'Failed to delete work location.')
     }
   }

@@ -269,7 +269,7 @@ export default function JournalEntryFormPage() {
       setLines(newLines)
       toast.success(`Template "${result.template_name}" applied`)
       setSelectedTemplate('')
-    } catch (_err) {
+    } catch (err) {
       toast.error('Failed to apply template')
     }
   }
@@ -301,7 +301,7 @@ export default function JournalEntryFormPage() {
       setShowSaveTemplate(false)
       setTemplateName('')
       setTemplateDescription('')
-    } catch (_err) {
+    } catch (err) {
       toast.error('Failed to save template')
     }
   }

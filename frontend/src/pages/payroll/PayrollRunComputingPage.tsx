@@ -41,7 +41,7 @@ export default function PayrollRunComputingPage() {
     try {
       await beginComputation.mutateAsync()
       toast.success('Computation started successfully.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -51,7 +51,7 @@ export default function PayrollRunComputingPage() {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

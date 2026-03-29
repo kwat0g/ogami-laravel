@@ -43,7 +43,7 @@ export default function CostCentersPage(): React.ReactElement {
       }
       setEditing(false)
       setForm(emptyForm())
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to save cost center.'))
     }
   }
