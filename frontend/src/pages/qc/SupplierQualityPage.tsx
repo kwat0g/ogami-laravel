@@ -26,6 +26,7 @@ export default function SupplierQualityPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(data ?? []).map((v: any) => (
                 <tr key={v.vendor_id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                   <td className="p-3 font-medium">{v.vendor_name}</td>

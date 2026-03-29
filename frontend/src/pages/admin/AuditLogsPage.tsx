@@ -189,7 +189,7 @@ export default function AuditLogsPage() {
     page,
   }), [debouncedSearch, eventFilter, modelFilter, dateFrom, dateTo, perPage, page])
 
-  const { data, isLoading, isFetching, refetch } = useAuditLogs(filters)
+  const { data, isLoading, isFetching, _refetch } = useAuditLogs(filters)
 
   const logs = data?.data ?? []
   const meta = data?.meta

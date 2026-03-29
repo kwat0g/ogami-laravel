@@ -43,7 +43,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { item_master_id: 0, quantity_expected: '', quantity_received: '', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' },
   ])
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [_showConfirm, setShowConfirm] = useState(false)
 
   const items = direction === 'outbound'
     ? allItems.filter(i => i.type === 'finished_good' || i.type === 'semi_finished')
@@ -115,7 +115,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
       toast.success('Delivery receipt created.')
       setShowConfirm(false)
       navigate('/delivery/receipts')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

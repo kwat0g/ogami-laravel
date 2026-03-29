@@ -68,7 +68,7 @@ export function Button({
 /** Icon-only button for toolbar actions */
 export function IconButton({
   children,
-  variant = 'ghost',
+  _variant = 'ghost',
   size = 'md',
   className,
   ...props

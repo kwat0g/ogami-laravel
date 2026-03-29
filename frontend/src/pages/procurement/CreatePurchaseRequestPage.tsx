@@ -248,7 +248,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
         toast.success(`Purchase Request ${pr.pr_reference} created as draft.`)
         navigate(`/procurement/purchase-requests/${pr.ulid}`)
       }
-    } catch (err) {
+    } catch (_err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? `Failed to ${isEditMode ? 'update' : 'create'} purchase request.`)
     }

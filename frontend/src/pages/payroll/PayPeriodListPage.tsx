@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Plus, Lock, Calendar, Loader2 } from 'lucide-react'
 import api from '@/lib/api'
-import { parseApiError, firstErrorMessage } from '@/lib/errorHandler'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { PERMISSIONS } from '@/lib/permissions'
 import PageHeader from '@/components/ui/PageHeader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -134,7 +134,7 @@ export default function PayPeriodListPage() {
       toast.success('Pay period created successfully.')
       setShowCreate(false)
       reset()
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -143,13 +143,13 @@ export default function PayPeriodListPage() {
     try {
       await close.mutateAsync(period.id)
       toast.success(`Pay period "${period.label}" closed successfully.`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
 
   // ── Validation helper for close ───────────────────────────────────────────
-  function validateClose(period: PayPeriod): boolean {
+  function _validateClose(period: PayPeriod): boolean {
     if (period.status === 'closed') {
       toast.error('This pay period is already closed.')
       return false

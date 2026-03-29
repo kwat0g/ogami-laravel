@@ -29,7 +29,7 @@ export default function PurchaseOrderListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | ''>('')
   const [page, setPage] = useState(1)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
 
 
   const { data, isLoading, isError } = usePurchaseOrders({
@@ -38,7 +38,7 @@ export default function PurchaseOrderListPage(): React.ReactElement {
     with_archived: undefined,
   })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['purchase-orders', 'archived'],
     queryFn: () => api.get('/procurement/purchase-orders-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

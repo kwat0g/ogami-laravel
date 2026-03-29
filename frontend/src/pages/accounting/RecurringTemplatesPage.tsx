@@ -19,7 +19,7 @@ export default function RecurringTemplatesPage(): React.ReactElement {
     try {
       const result = await toggle.mutateAsync(id)
       toast.success(`Template ${result.is_active ? 'activated' : 'deactivated'}.`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -28,7 +28,7 @@ export default function RecurringTemplatesPage(): React.ReactElement {
     try {
       await remove.mutateAsync(id)
       toast.success('Template deleted.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

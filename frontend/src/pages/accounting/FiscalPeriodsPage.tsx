@@ -58,7 +58,7 @@ function PeriodActions({ period }: { period: FiscalPeriod }) {
           try {
             await openMutation.mutateAsync()
             toast.success(`Period "${period.name}" reopened.`)
-          } catch (err) {
+          } catch (_err) {
             toast.error(firstErrorMessage(err))
           }
         }}
@@ -83,7 +83,7 @@ function PeriodActions({ period }: { period: FiscalPeriod }) {
         try {
           await closeMutation.mutateAsync()
           toast.success(`Period "${period.name}" closed.`)
-        } catch (err) {
+        } catch (_err) {
           toast.error(firstErrorMessage(err))
         }
       }}
@@ -228,7 +228,7 @@ export default function FiscalPeriodsPage() {
     try {
       await createMutation.mutateAsync(payload)
       toast.success('Fiscal period created.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
     setModalOpen(false)

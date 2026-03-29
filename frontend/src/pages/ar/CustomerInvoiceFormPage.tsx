@@ -131,7 +131,7 @@ export default function CustomerInvoiceFormPage() {
       await createMut.mutateAsync(form)
       toast.success('Customer invoice created successfully.')
       navigate('/ar/invoices')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

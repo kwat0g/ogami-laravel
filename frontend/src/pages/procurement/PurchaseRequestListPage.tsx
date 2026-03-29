@@ -10,8 +10,6 @@ import {
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -198,7 +196,7 @@ export default function PurchaseRequestListPage({ lockedStatus, pageTitle }: Pur
     per_page: 25,
     status: lockedStatus ?? (searchParams.get('status') as PurchaseRequestFilters['status']) ?? undefined,
   })
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [prToConfirm, setPrToConfirm] = useState<PurchaseRequest | null>(null)
 
   // Batch selection state
@@ -210,7 +208,7 @@ export default function PurchaseRequestListPage({ lockedStatus, pageTitle }: Pur
 
   const { data, isLoading, isError } = usePurchaseRequests({ ...filters, with_archived: undefined })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['purchase-requests', 'archived'],
     queryFn: () => api.get('/procurement/purchase-requests-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

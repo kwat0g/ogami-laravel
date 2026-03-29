@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
+  PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts'
 import { ChevronRight, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
 
@@ -186,7 +186,7 @@ interface DonutChartProps {
   centerValue?: string | number
 }
 
-const RADIAN = Math.PI / 180
+const _RADIAN = Math.PI / 180
 
 export function MiniDonutChart({ data, height = 200, centerLabel, centerValue }: DonutChartProps): JSX.Element {
   return (

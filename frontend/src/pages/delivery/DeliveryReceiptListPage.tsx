@@ -8,8 +8,6 @@ import { useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import api from '@/lib/api';
 import { ExportButton } from '@/components/ui/ExportButton';
 import type { DrDirection, DrStatus } from '@/types/delivery';
@@ -28,7 +26,7 @@ const DIRECTION_COLORS: Record<DrDirection, string> = {
 export default function DeliveryReceiptListPage() {
   const [direction, setDirection] = useState('');
   const [status, setStatus] = useState('');
-  const [isArchiveView, setIsArchiveView] = useState(false);
+  const [_isArchiveView, _setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -42,7 +40,7 @@ export default function DeliveryReceiptListPage() {
 
   const { data, isLoading } = useDeliveryReceipts(Object.keys(params).length ? params : undefined);
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['delivery-receipts', 'archived'],
     queryFn: () => api.get('/delivery/receipts-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

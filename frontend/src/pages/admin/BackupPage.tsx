@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { firstErrorMessage } from '@/lib/errorHandler'
 import {
   Archive,
   CheckCircle2,

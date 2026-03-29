@@ -56,7 +56,7 @@ export default function TicketDetailPage() {
       setIsInternal(false)
       setActivePanel(null)
       setTouched(prev => ({ ...prev, reply: false }))
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to send reply.'))
     }
   }
@@ -73,7 +73,7 @@ export default function TicketDetailPage() {
       setAssigneeId('')
       setActivePanel(null)
       setTouched(prev => ({ ...prev, assign: false }))
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to assign ticket.'))
     }
   }
@@ -84,7 +84,7 @@ export default function TicketDetailPage() {
       toast.success('Ticket resolved successfully.')
       setResolutionNote('')
       setActivePanel(null)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to resolve ticket.'))
     }
   }
@@ -93,7 +93,7 @@ export default function TicketDetailPage() {
     try {
       await closeMutation.mutateAsync()
       toast.success('Ticket closed successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to close ticket.'))
     }
   }
@@ -110,7 +110,7 @@ export default function TicketDetailPage() {
       setReopenReason('')
       setActivePanel(null)
       setTouched(prev => ({ ...prev, reopen: false }))
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to reopen ticket.'))
     }
   }

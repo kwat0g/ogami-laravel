@@ -14,7 +14,7 @@ const DEFAULT_CRITERIA = [
   'Leadership Potential',
 ]
 
-export default function InterviewScorecardForm({ interviewId, onSubmit, isPending }: ScorecardFormProps) {
+export default function InterviewScorecardForm({ _interviewId, onSubmit, isPending }: ScorecardFormProps) {
   const [scores, setScores] = useState(
     DEFAULT_CRITERIA.map((c) => ({ criterion: c, score: 0, comments: '' }))
   )

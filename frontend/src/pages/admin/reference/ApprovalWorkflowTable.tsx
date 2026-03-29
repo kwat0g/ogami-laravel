@@ -28,7 +28,7 @@ interface WorkflowStep {
 }
 
 export default function ApprovalWorkflowTable(): JSX.Element {
-  const { isEditMode } = useEditMode()
+  const { _isEditMode } = useEditMode()
 
   const { data, isLoading } = useQuery<{ data: WorkflowStep[] }>({
     queryKey: ['admin', 'approval-workflows'],

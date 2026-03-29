@@ -48,7 +48,7 @@ export default function ClientTicketDetailPage() {
       toast.success('Reply sent successfully.')
       setReplyBody('')
       setReplyTouched(false)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to send reply.'))
     }
   }
@@ -65,7 +65,7 @@ export default function ClientTicketDetailPage() {
       setReopenReason('')
       setReopenTouched(false)
       setShowReopen(false)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to reopen ticket.'))
     }
   }

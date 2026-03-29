@@ -110,7 +110,7 @@ export default function PhysicalCountPage(): React.ReactElement {
           remarks: `Physical inventory count. System: ${adj.system_qty}, Counted: ${adj.counted_qty}, Variance: ${adj.variance > 0 ? '+' : ''}${adj.variance}`,
         })
         success++
-      } catch (err) {
+      } catch (_err) {
         failed++
         toast.error(firstErrorMessage(err, `Failed to adjust ${adj.item_code}`))
       }

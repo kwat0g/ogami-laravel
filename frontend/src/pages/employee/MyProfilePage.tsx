@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { firstErrorMessage } from '@/lib/errorHandler'
 import {
   User,
   Pencil,
@@ -342,7 +341,7 @@ export default function MyProfilePage() {
       await updateProfile.mutateAsync(payload)
       toast.success('Profile updated successfully')
       setIsEditing(false)
-    } catch (err) {
+    } catch (_err) {
       toast.error(parseApiError(err).message)
     }
   }

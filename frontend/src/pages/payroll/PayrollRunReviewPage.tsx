@@ -58,7 +58,7 @@ function BreakdownTab({ runId }: { runId: string | null }) {
     try {
       await flagEmployee.mutateAsync({ detailId: detail.id, flag: newFlag })
       toast.success(newFlag === 'flagged' ? 'Employee flagged for review.' : 'Flag removed.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -361,7 +361,7 @@ export default function PayrollRunReviewPage() {
       await submitForHr.mutateAsync()
       toast.success('Run submitted for HR Manager approval.')
       navigate(`/payroll/runs/${runId}/hr-review`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -371,7 +371,7 @@ export default function PayrollRunReviewPage() {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

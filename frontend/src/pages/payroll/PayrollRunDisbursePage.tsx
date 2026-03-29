@@ -61,7 +61,7 @@ export default function PayrollRunDisbursePage() {
       await disburse.mutateAsync()
       setDisburseDone(true)
       toast.success('Disbursement complete. GL journal entry posted.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -100,7 +100,7 @@ export default function PayrollRunDisbursePage() {
           : 'Payslips published. Employees can now view them.',
       )
       navigate('/payroll/runs')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

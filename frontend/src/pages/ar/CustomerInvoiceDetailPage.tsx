@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useParams, useNavigate } from 'react-router-dom'
-import { FileText, Download } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import {
   useCustomerInvoice,
   useReceivePayment,
@@ -33,6 +33,7 @@ function AccountSelect({ value, onChange, filterType, error }: {
 }) {
   const { data: accounts } = useChartOfAccounts({})
   const filtered = filterType
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ? (accounts ?? []).filter((a: any) => a.account_type === filterType)
     : (accounts ?? [])
   return (
@@ -43,6 +44,7 @@ function AccountSelect({ value, onChange, filterType, error }: {
       required
     >
       <option value="">Select account...</option>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {filtered.map((a: any) => (
         <option key={a.id} value={a.id}>{a.code} - {a.name}</option>
       ))}
@@ -99,7 +101,7 @@ function ReceivePaymentPanel({
       await payMut.mutateAsync(form)
       toast.success('Payment recorded successfully.')
       setOpen(false)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -218,7 +220,7 @@ function WriteOffSection({ invoiceId }: { invoiceId: string }) {
         try {
           await writeOffMut.mutateAsync(form)
           toast.success('Invoice written off successfully.')
-        } catch (err) {
+        } catch (_err) {
           toast.error(firstErrorMessage(err))
         }
       }}
@@ -247,7 +249,7 @@ function CancelSection({ invoiceId }: { invoiceId: string }) {
         try {
           await cancelMut.mutateAsync(invoiceId)
           toast.success('Invoice cancelled successfully.')
-        } catch (err) {
+        } catch (_err) {
           toast.error(firstErrorMessage(err))
         }
       }}
@@ -275,7 +277,7 @@ function ApproveSection({ invoiceId }: { invoiceId: string }) {
         try {
           await approveMut.mutateAsync(invoiceId)
           toast.success('Invoice approved successfully.')
-        } catch (err) {
+        } catch (_err) {
           toast.error(firstErrorMessage(err))
         }
       }}

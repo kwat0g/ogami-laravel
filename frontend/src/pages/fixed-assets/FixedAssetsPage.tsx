@@ -3,7 +3,6 @@ import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { Plus, Eye, Package, Tags, X } from 'lucide-react'
 import SearchInput from '@/components/ui/SearchInput'
-import Pagination from '@/components/ui/Pagination'
 import { useFixedAssets, useFixedAssetCategories, useDepreciatePeriod, useCreateFixedAssetCategory } from '@/hooks/useFixedAssets'
 import { useFiscalPeriods } from '@/hooks/useAccounting'
 import type { FixedAsset, FixedAssetCategory } from '@/types/fixed_assets'
@@ -14,8 +13,6 @@ import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Asset Categories Modal
@@ -25,7 +22,7 @@ function AssetCategoriesModal({ onClose }: { onClose: () => void }) {
   const create = useCreateFixedAssetCategory()
   const canManage = useAuthStore(s => s.hasPermission('fixed_assets.manage'))
   const [showForm, setShowForm] = useState(false)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [form, setForm] = useState({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' as const })
 
   const list: FixedAssetCategory[] = categories ?? []
@@ -38,7 +35,7 @@ function AssetCategoriesModal({ onClose }: { onClose: () => void }) {
       toast.success('Category created.')
       setShowForm(false)
       setForm({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' })
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to create category.'))
     }
   }
@@ -149,7 +146,7 @@ export default function FixedAssetsPage(): React.ReactElement {
       const result = await depreciate.mutateAsync({ fiscal_period_id: depPeriod })
       toast.success(`Depreciation complete: ${result.processed} processed, ${result.skipped} skipped.`)
       setShowDepreciate(false)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Depreciation failed.'))
     }
   }

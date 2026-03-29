@@ -58,7 +58,7 @@ export default function EmployeeDetailPage() {
   const canTransition = hasPermission('employees.suspend') || hasPermission('employees.terminate')
   const employeeId = id ?? null
 
-  const { data: employee, isLoading, isError, refetch } = useEmployee(employeeId)
+  const { data: employee, isLoading, isError, _refetch } = useEmployee(employeeId)
   const transitionMutation = useEmployeeTransition(employeeId!)
   const deleteMutation = useDeleteEmployee()
   const { isBlocked: activateBlocked, reason: activateReason } = useSodCheck(

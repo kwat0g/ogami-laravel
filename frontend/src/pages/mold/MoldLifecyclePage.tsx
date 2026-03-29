@@ -28,6 +28,7 @@ export default function MoldLifecyclePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(data ?? []).map((m: any) => (
                 <tr key={m.mold_id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                   <td className="p-3"><span className="font-medium">{m.mold_code}</span> - {m.mold_name}</td>

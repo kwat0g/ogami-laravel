@@ -5,13 +5,10 @@ import { useNcrs } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import api from '@/lib/api'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
-import Pagination from '@/components/ui/Pagination'
 import type { NcrSeverity, NcrStatus } from '@/types/qc'
 
 const severityBadge: Record<NcrSeverity, string> = {
@@ -33,7 +30,7 @@ export default function NcrListPage(): React.ReactElement {
   const [status, setStatus]     = useState('')
   const [severity, setSeverity] = useState('')
   const [page, setPage]         = useState(1)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -51,7 +48,7 @@ export default function NcrListPage(): React.ReactElement {
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['qc-ncrs', 'archived'],
     queryFn: () => api.get('/qc/ncrs-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

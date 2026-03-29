@@ -1,7 +1,6 @@
-import { useBlanketPOs, useCreateBlanketPO } from '@/hooks/useEnhancements'
+import { useBlanketPOs } from '@/hooks/useEnhancements'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardBody } from '@/components/ui/Card'
-import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 export default function BlanketPurchaseOrdersPage() {
   const { data, isLoading } = useBlanketPOs()
@@ -33,6 +32,7 @@ export default function BlanketPurchaseOrdersPage() {
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-500">Loading...</td></tr>
               ) : blanketPOs.length === 0 ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-500">No blanket purchase orders</td></tr>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ) : blanketPOs.map((bpo: any) => {
                 const utilPct = bpo.committed_amount_centavos > 0
                   ? Math.round((bpo.released_amount_centavos / bpo.committed_amount_centavos) * 100)

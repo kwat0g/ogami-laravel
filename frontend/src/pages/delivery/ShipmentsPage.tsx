@@ -3,8 +3,6 @@ import { Package, AlertTriangle, Plus, ChevronDown, ChevronUp } from 'lucide-rea
 import { useShipments, useCreateShipment, useUpdateShipmentStatus, useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import { PageHeader } from '@/components/ui/PageHeader';
-import SearchInput from '@/components/ui/SearchInput';
-import Pagination from '@/components/ui/Pagination';
 import { toast } from 'sonner';
 import { firstErrorMessage } from '@/lib/errorHandler';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -39,12 +37,12 @@ const NEXT_STATUS_LABEL: Partial<Record<ShipmentStatus, string>> = {
 
 export default function ShipmentsPage() {
   const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
+  const [_search, _setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
 
-  const handleSearch = useCallback((val: string) => {
+  const _handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);
     setPage(1);
   }, []);
@@ -104,7 +102,7 @@ export default function ShipmentsPage() {
       setCreateForm({ carrier: '', tracking_number: '', shipped_at: '', estimated_arrival: '', notes: '' });
       setDeliveryReceiptId(null);
       setShowCreate(false);
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -131,7 +129,7 @@ export default function ShipmentsPage() {
       setExpandedUlid(null);
       setActualArrival('');
       setConfirmStatusUpdate({ open: false, ulid: null, nextStatus: null });
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };

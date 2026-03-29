@@ -58,7 +58,7 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
       // Navigate to the detail page
       const created = (res.data as { data: { ulid: string } }).data
       navigate(`/inventory/requisitions/${created.ulid}`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   })

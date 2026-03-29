@@ -151,7 +151,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabId>('purchase-requests')
   const { user, hasPermission } = useAuthStore()
-  const currentUserId = user?.id ?? null
+  const _currentUserId = user?.id ?? null
 
   const canLeaveApprove   = hasPermission('leaves.executive_approve') || hasPermission('leaves.ga_process') || hasPermission('leaves.vp_note')
   const canOvertimeApprove = hasPermission('overtime.executive_approve')
@@ -254,7 +254,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
       await approveOt.mutateAsync({ id: approvingOtId, approved_minutes: Number(approvedMins), remarks: approveOtRemarks || undefined })
       toast.success('Overtime approved.')
       setApprovingOtId(null); setApprovedMins(''); setApproveOtRemarks('')
-    } catch (err) { toast.error(firstErrorMessage(err, 'Approval failed.')) }
+    } catch (_err) { toast.error(firstErrorMessage(err, 'Approval failed.')) }
   }
 
   const submitRejectOt = async () => {
@@ -266,7 +266,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
       await rejectOt.mutateAsync({ id: rejectOtId, remarks: rejectOtRemarks })
       toast.success('Overtime rejected.')
       setRejectOtId(null); setRejectOtRemarks('')
-    } catch (err) { toast.error(firstErrorMessage(err, 'Rejection failed.')) }
+    } catch (_err) { toast.error(firstErrorMessage(err, 'Rejection failed.')) }
   }
 
   // ── Tab definitions ──────────────────────────────────────────────────────────

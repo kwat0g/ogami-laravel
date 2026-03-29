@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { useEmployees, useTeamEmployees, useDepartments } from '@/hooks/useEmployees'
 import { useAuthStore } from '@/stores/authStore'
@@ -9,8 +9,6 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { DepartmentGuard, ActionButton } from '@/components/ui/guards'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { EmployeeFilters, EmploymentStatus, EmploymentType } from '@/types/hr'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
   'draft',
@@ -39,7 +37,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
   const canEdit = hasPermission('employees.update')
   const [filters, setFilters] = useState<EmployeeFilters>({ per_page: 25 })
   const [searchValue, setSearchValue] = useState('')
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
 
   const isTeamView = view === 'team'
   const employeesQuery = useEmployees(filters)

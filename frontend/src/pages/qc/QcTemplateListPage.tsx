@@ -6,8 +6,6 @@ import { useInspectionTemplates, useDeleteInspectionTemplate } from '@/hooks/use
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import api from '@/lib/api'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -31,7 +29,7 @@ export default function QcTemplateListPage(): React.ReactElement {
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('qc.templates.manage')
   const [stage, setStage] = useState('')
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<InspectionTemplate | null>(null)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -40,21 +38,21 @@ export default function QcTemplateListPage(): React.ReactElement {
     setDebouncedSearch(val)
   }, [])
 
-  const { data, isLoading, isError, refetch } = useInspectionTemplates({
+  const { data, isLoading, isError, _refetch } = useInspectionTemplates({
     stage: stage || undefined,
     per_page: 50,
     with_archived: undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   } as Record<string, unknown>)
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['qc-templates', 'archived', debouncedSearch, stage],
     queryFn: () => api.get('/qc/templates-archived', { params: { search: debouncedSearch || undefined, stage: stage || undefined, per_page: 50 } }),
     enabled: isArchiveView,
   })
 
-  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
-  const currentLoading = isArchiveView ? archivedLoading : isLoading
+  const _currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
+  const _currentLoading = isArchiveView ? archivedLoading : isLoading
 
   const deleteMut = useDeleteInspectionTemplate()
 

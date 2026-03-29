@@ -20,7 +20,6 @@ import {
   Search
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { firstErrorMessage } from '@/lib/errorHandler'
 
 function anomalyStatus(row: AttendanceLog): { label: string; className: string; icon: React.ElementType } {
   if (row.is_absent) return { label: 'Absent', className: 'bg-red-100 text-red-700 border-red-200', icon: XCircle }

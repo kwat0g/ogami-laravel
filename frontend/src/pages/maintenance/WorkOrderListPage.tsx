@@ -8,8 +8,6 @@ import { useWorkOrders } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import api from '@/lib/api';
 import type { WorkOrderStatus, WorkOrderPriority } from '@/types/maintenance';
 
@@ -32,7 +30,7 @@ export default function WorkOrderListPage() {
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [priority, setPriority] = useState('');
-  const [isArchiveView, setIsArchiveView] = useState(false);
+  const [_isArchiveView, _setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -52,7 +50,7 @@ export default function WorkOrderListPage() {
 
   const { data, isLoading } = useWorkOrders(params);
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['work-orders', 'archived'],
     queryFn: () => api.get('/maintenance/work-orders-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

@@ -53,7 +53,7 @@ export default function VendorRfqListPage(): React.ReactElement {
       toast.success('RFQ created.')
       setShowForm(false)
       setForm({ title: '', description: '', deadline: '', vendor_ids: '' })
-    } catch (err) {
+    } catch (_err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Failed to create RFQ.')
     }
@@ -63,7 +63,7 @@ export default function VendorRfqListPage(): React.ReactElement {
     try {
       await send.mutateAsync(ulid)
       toast.success('RFQ sent to vendors.')
-    } catch (err) {
+    } catch (_err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Failed to send RFQ.')
     }

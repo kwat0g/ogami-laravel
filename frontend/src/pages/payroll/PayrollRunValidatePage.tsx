@@ -97,7 +97,7 @@ export default function PayrollRunValidatePage() {
   const navigate = useNavigate()
 
   const { data: run } = usePayrollRun(runId)
-  const { data: result, isFetching, refetch } = usePreRunChecks(runId, true)
+  const { data: result, isFetching, _refetch } = usePreRunChecks(runId, true)
   const acknowledge = useAcknowledgePreRun(runId)
   const cancelRun = useCancelPayrollRun(runId)
 
@@ -155,7 +155,7 @@ export default function PayrollRunValidatePage() {
       await acknowledge.mutateAsync(ackedWarnings)
       toast.success('Pre-run checks acknowledged. Proceeding to computation.')
       navigate(`/payroll/runs/${runId}/compute`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -165,7 +165,7 @@ export default function PayrollRunValidatePage() {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

@@ -71,7 +71,7 @@ final class MaintenanceService implements ServiceContract
     public function startWorkOrder(MaintenanceWorkOrder $mwo): MaintenanceWorkOrder
     {
         if ($mwo->status !== 'open') {
-            throw new DomainException('MAINT_WO_NOT_OPEN');
+            throw new DomainException('Work order must be open to start.', 'MAINT_WO_NOT_OPEN', 422);
         }
         $mwo->update(['status' => 'in_progress']);
 
@@ -82,7 +82,7 @@ final class MaintenanceService implements ServiceContract
     public function completeWorkOrder(MaintenanceWorkOrder $mwo, array $data, User $actor): MaintenanceWorkOrder
     {
         if (! in_array($mwo->status, ['open', 'in_progress'], true)) {
-            throw new DomainException('MAINT_WO_CANNOT_COMPLETE');
+            throw new DomainException('Work order must be open or in progress to complete.', 'MAINT_WO_CANNOT_COMPLETE', 422);
         }
 
         return DB::transaction(function () use ($mwo, $data, $actor): MaintenanceWorkOrder {

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Plus, RefreshCw, Archive, CheckCircle, BadgeCheck, ShieldOff, BarChart2, RotateCcw, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, CheckCircle, BadgeCheck, ShieldOff, BarChart2, RotateCcw, Trash2 } from 'lucide-react'
 import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
@@ -15,7 +15,6 @@ import {
   useSuspendVendor,
   useVendorScorecard,
 } from '@/hooks/useAP'
-import { useRestoreRecord, useForceDeleteRecord } from '@/hooks/useArchiveActions'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -23,7 +22,7 @@ import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import ArchiveEmptyState from '@/components/ui/ArchiveEmptyState'
-import { DepartmentGuard, ActionButton } from '@/components/ui/guards'
+import { DepartmentGuard } from '@/components/ui/guards'
 import api from '@/lib/api'
 import type { Vendor, CreateVendorPayload, VendorAccreditationStatus } from '@/types/ap'
 
@@ -43,7 +42,7 @@ function ArchiveVendorButton({ vendor }: { vendor: Vendor }) {
         try {
           await archiveMut.mutateAsync()
           toast.success('Vendor archived.')
-        } catch (err) {
+        } catch (_err) {
           toast.error(firstErrorMessage(err))
         }
       }}
@@ -205,7 +204,7 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
   const tinError = touched && form.tin && !validators.tin(form.tin)
     ? validationMessages.tin
     : undefined
-  const phoneError = touched && form.phone && !validators.phone(form.phone)
+  const _phoneError = touched && form.phone && !validators.phone(form.phone)
     ? validationMessages.phone
     : undefined
   const isValid = form.name.trim() 
@@ -484,20 +483,20 @@ export default function VendorsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Vendor | null>(null)
   const [scorecardVendorId, setScorecardVendorId] = useState<number | null>(null)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)
   }, [])
 
   // Active list
-  const { data, isLoading, refetch } = useVendors({
+  const { data, isLoading, _refetch } = useVendors({
     search: debouncedSearch || undefined,
     is_active: undefined,
   })
 
   // Archived list
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['vendors', 'archived', debouncedSearch],
     queryFn: () => api.get('/vendors-archived', { params: { search: debouncedSearch || undefined, per_page: 50 } }),
     enabled: isArchiveView,
@@ -692,7 +691,7 @@ export default function VendorsPage() {
                               toast.success(`Vendor "${vendor.name}" restored.`)
                               refetch()
                               refetchArchived()
-                            } catch (err) {
+                            } catch (_err) {
                               toast.error(firstErrorMessage(err))
                             }
                           }}
@@ -712,7 +711,7 @@ export default function VendorsPage() {
                                 await api.delete(`/vendors/${vendor.id}/force`)
                                 toast.success('Vendor permanently deleted.')
                                 refetchArchived()
-                              } catch (err) {
+                              } catch (_err) {
                                 toast.error(firstErrorMessage(err))
                               }
                             }}

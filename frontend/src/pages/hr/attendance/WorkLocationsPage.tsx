@@ -23,10 +23,10 @@ import { useQueryClient } from '@tanstack/react-query'
 export default function WorkLocationsPage() {
   const { hasPermission } = useAuthStore()
   const canManage = hasPermission('attendance.work_locations.manage')
-  const { data: locationsData, isLoading, refetch } = useWorkLocations()
+  const { data: locationsData, isLoading, _refetch } = useWorkLocations()
   const { data: geofenceSettings } = useGeofenceSettings()
   const toggleGeofence = useToggleGeofence()
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<WorkLocation | null>(null)
@@ -141,7 +141,7 @@ export default function WorkLocationsPage() {
       }
       resetForm()
       void refetch()
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err) || 'Failed to save work location.')
     } finally {
       setSaving(false)
@@ -155,7 +155,7 @@ export default function WorkLocationsPage() {
       toast.success('Work location deleted.')
       setDeleteTarget(null)
       void refetch()
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err) || 'Failed to delete work location.')
     }
   }

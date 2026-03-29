@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { RotateCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
@@ -55,7 +54,7 @@ export default function ArchiveRowActions({
             toast.success(`"${recordName}" restored.`)
             invalidateAll()
             onRestore?.()
-          } catch (err) {
+          } catch (_err) {
             toast.error(firstErrorMessage(err))
           }
         }}
@@ -80,7 +79,7 @@ export default function ArchiveRowActions({
               toast.success('Record permanently deleted.')
               invalidateAll()
               onForceDelete?.()
-            } catch (err) {
+            } catch (_err) {
               toast.error(firstErrorMessage(err))
             }
           }}

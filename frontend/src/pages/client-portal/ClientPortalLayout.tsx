@@ -3,9 +3,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { 
   KeyRound, 
   LogOut, 
-  ShoppingBag, 
-  Package, 
-  Ticket, 
   LayoutDashboard,
   User,
   ChevronDown,

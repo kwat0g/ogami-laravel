@@ -123,7 +123,7 @@ export default function JournalEntryDetailPage() {
     try {
       await postMutation.mutateAsync()
       toast.success('Journal entry posted.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -134,17 +134,17 @@ export default function JournalEntryDetailPage() {
       const reversed = await reverseMutation.mutateAsync(desc)
       toast.success('Reversal entry created.')
       navigate(`/accounting/journal-entries/${reversed.ulid}`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
 
-  async function handleDelete() {
+  async function _handleDelete() {
     try {
       await deleteMutation.mutateAsync()
       toast.success('Journal entry deleted.')
       navigate('/accounting/journal-entries')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -165,7 +165,7 @@ export default function JournalEntryDetailPage() {
     </div>
   )
 
-  const canDelete = entry.status === 'draft' && !entry.is_auto_posted
+  const _canDelete = entry.status === 'draft' && !entry.is_auto_posted
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -187,7 +187,7 @@ export default function JournalEntryDetailPage() {
                     try {
                       await submitMutation.mutateAsync()
                       toast.success('Journal entry submitted for approval.')
-                    } catch (err) {
+                    } catch (_err) {
                       toast.error(firstErrorMessage(err))
                     }
                   }}

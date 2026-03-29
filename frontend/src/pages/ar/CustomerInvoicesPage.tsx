@@ -16,8 +16,6 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { CustomerInvoice, CustomerInvoiceStatus } from '@/types/ar'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Status Badge
@@ -64,7 +62,7 @@ function ApproveDraftButton({ invoice }: { invoice: CustomerInvoice }) {
     try {
       await approveMut.mutateAsync(invoice.ulid)
       toast.success('Invoice approved successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
       throw err // Re-throw to let dialog know it failed
     }
@@ -89,7 +87,7 @@ function CancelDraftButton({ invoice }: { invoice: CustomerInvoice }) {
     try {
       await cancelMut.mutateAsync(invoice.ulid)
       toast.success('Invoice cancelled successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
       throw err // Re-throw to let dialog know it failed
     }
@@ -146,7 +144,7 @@ export default function CustomerInvoicesPage() {
   const [activeTab, setActiveTab] = useState<CustomerInvoiceStatus | 'all'>('all')
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const handleSearch = useCallback((val: string) => {
@@ -157,14 +155,14 @@ export default function CustomerInvoicesPage() {
     ...(activeTab === 'all' ? {} : { status: activeTab }),
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   }
-  const { data, isLoading, refetch } = useCustomerInvoices(filters)
+  const { data, isLoading, _refetch } = useCustomerInvoices(filters)
   const invoices = data?.data ?? []
 
   const handleRefresh = async () => {
     try {
       await refetch()
       toast.success('Invoice list refreshed.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

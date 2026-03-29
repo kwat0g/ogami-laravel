@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useForm, UseFormProps, FieldValues, DefaultValues } from 'react-hook-form'
+import { useForm, UseFormProps, FieldValues } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -51,7 +51,7 @@ export function useValidatedForm<T extends FieldValues>({
         if (resetOnSuccess) {
           form.reset()
         }
-      } catch (err) {
+      } catch (_err) {
         const parsed = parseApiError(err)
         
         // Show field-specific errors in form
@@ -116,7 +116,7 @@ export function useDeleteConfirmation({
       await onDelete()
       toast.success(successMessage ?? `${itemDisplayName ?? itemName} deleted successfully`)
       onSuccess?.()
-    } catch (err) {
+    } catch (_err) {
       const message = firstErrorMessage(err)
       toast.error(`Failed to delete ${itemName}: ${message}`)
       throw err
@@ -156,7 +156,7 @@ export function useActionWithToast({
       await action()
       toast.success(successMessage)
       onSuccess?.()
-    } catch (err) {
+    } catch (_err) {
       const message = firstErrorMessage(err)
       toast.error(`${errorMessage}: ${message}`)
       throw err

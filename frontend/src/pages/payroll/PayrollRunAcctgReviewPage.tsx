@@ -191,7 +191,7 @@ export default function PayrollRunAcctgReviewPage() {
       })
       toast.success('Accounting approval recorded. Forwarded to VP for final approval.')
       navigate(`/payroll/runs/${runId}/vp-review`) // After Accounting approval, go to VP review
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -205,7 +205,7 @@ export default function PayrollRunAcctgReviewPage() {
       })
       toast.error('Payroll run rejected. The run must be restarted from Step 1.')
       navigate('/payroll/runs')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

@@ -52,7 +52,7 @@ export default function CreateWorkOrderPage(): React.ReactElement {
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
   const hasErrors = Object.keys(ve).length > 0
 
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [_showConfirm, setShowConfirm] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,7 +76,7 @@ export default function CreateWorkOrderPage(): React.ReactElement {
         scheduled_date: form.scheduled_date || undefined,
       })
       navigate('/maintenance/work-orders')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

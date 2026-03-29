@@ -30,7 +30,7 @@ export interface ParsedApiError {
  *
  * Usage:
  * ```ts
- * try { await api.post(...) } catch (err) {
+ * try { await api.post(...) } catch (_err) {
  *   const { message, fieldErrors } = parseApiError(err)
  *   toast.error(message)
  * }

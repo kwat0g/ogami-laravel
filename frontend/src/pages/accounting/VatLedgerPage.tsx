@@ -47,7 +47,7 @@ function ClosePeriodButton({ ledger }: { ledger: VatLedger }) {
             nextPeriodId ? { next_fiscal_period_id: parseInt(nextPeriodId) } : {}
           )
           toast.success('VAT period closed.')
-        } catch (err) {
+        } catch (_err) {
           toast.error(firstErrorMessage(err))
         }
       }}

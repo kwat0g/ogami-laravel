@@ -119,7 +119,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
         status: form.status,
       });
       setIsEditing(false);
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -128,7 +128,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
     try {
       await updateMut.mutateAsync({ status: 'decommissioned', is_active: false });
       toast.success('Equipment decommissioned.');
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -138,7 +138,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
     try {
       await updateMut.mutateAsync({ is_active: !isActive });
       toast.success(`Equipment ${isActive ? 'deactivated' : 'activated'}.`);
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -147,7 +147,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
     try {
       await deleteMut.mutateAsync(ulid ?? '');
       navigate('/maintenance/equipment');
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -193,7 +193,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
       });
       setPmForm({ task_name: '', frequency_days: '', last_done_on: '' });
       setShowAddPm(false);
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };

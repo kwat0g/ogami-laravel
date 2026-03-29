@@ -121,7 +121,7 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
 // ---------------------------------------------------------------------------
 
 export default function ItemCategoriesPage(): React.ReactElement {
-  const { data: categories, isLoading, refetch } = useItemCategories()
+  const { data: categories, isLoading, _refetch } = useItemCategories()
   const [showForm, setShowForm] = useState(false)
   const [, setDeletingId] = useState<number | null>(null)
   const canCreate = useAuthStore(s => s.hasPermission('inventory.items.create'))
@@ -133,7 +133,7 @@ export default function ItemCategoriesPage(): React.ReactElement {
       await api.delete(`/inventory/items/categories/${id}`)
       toast.success('Category deleted successfully.')
       refetch()
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     } finally {
       setDeletingId(null)

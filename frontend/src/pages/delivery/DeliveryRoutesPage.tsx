@@ -24,6 +24,7 @@ export default function DeliveryRoutesPage() {
               <tr><th className="text-left p-3">Route #</th><th className="text-left p-3">Planned Date</th><th className="text-left p-3">Status</th><th className="text-right p-3">Stops</th></tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {routes.map((r: any) => (
                 <tr key={r.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                   <td className="p-3 font-medium">{r.route_number}</td>

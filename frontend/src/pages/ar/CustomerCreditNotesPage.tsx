@@ -6,7 +6,6 @@ import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
-import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
 interface CustomerCreditNote {
@@ -96,7 +95,7 @@ export default function CustomerCreditNotesPage(): React.ReactElement {
       setShowForm(false)
       setForm({ customer_id: 0, amount: 0, reason: '' })
       setTouched(new Set())
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -105,7 +104,7 @@ export default function CustomerCreditNotesPage(): React.ReactElement {
     try {
       await post.mutateAsync(ulid)
       toast.success('Credit note posted successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

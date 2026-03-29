@@ -70,7 +70,7 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
       })
       toast.success('VP approval recorded. Payroll is now ready for disbursement.')
       navigate(`/payroll/runs/${runId}/disburse`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

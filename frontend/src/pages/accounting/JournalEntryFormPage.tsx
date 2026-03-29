@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Plus, Trash2, CheckCircle, XCircle, Save, FileText } from 'lucide-react'
+import { Plus, Trash2, CheckCircle, XCircle } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useCreateJournalEntry,
@@ -209,7 +209,7 @@ export default function JournalEntryFormPage() {
   const createMutation = useCreateJournalEntry()
   
   // Template hooks
-  const { data: templates = [] } = useJournalEntryTemplates()
+  const { data: _templates = [] } = useJournalEntryTemplates()
   const applyTemplate = useApplyJournalEntryTemplate()
   const createTemplate = useCreateJournalEntryTemplate()
   const [selectedTemplate, setSelectedTemplate] = useState<number | ''>('')
@@ -237,7 +237,7 @@ export default function JournalEntryFormPage() {
   }, [lines])
 
   // Validation
-  const { isValid: isFormValid, errors: validationErrors } = useMemo(
+  const { isValid: _isFormValid, errors: validationErrors } = useMemo(
     () => validateJournalEntry(entryDate, lines, isBalanced),
     [entryDate, lines, isBalanced]
   )
@@ -255,7 +255,7 @@ export default function JournalEntryFormPage() {
   }
   
   // Template handlers
-  async function handleApplyTemplate() {
+  async function _handleApplyTemplate() {
     if (!selectedTemplate) return
     try {
       const result = await applyTemplate.mutateAsync(Number(selectedTemplate))
@@ -269,7 +269,7 @@ export default function JournalEntryFormPage() {
       setLines(newLines)
       toast.success(`Template "${result.template_name}" applied`)
       setSelectedTemplate('')
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to apply template')
     }
   }
@@ -301,7 +301,7 @@ export default function JournalEntryFormPage() {
       setShowSaveTemplate(false)
       setTemplateName('')
       setTemplateDescription('')
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to save template')
     }
   }

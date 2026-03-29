@@ -11,12 +11,9 @@ import {
 } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { Position } from '@/types/hr'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 interface PosFormState {
   id?: number
@@ -37,7 +34,7 @@ export default function PositionsPage() {
   const [deptFilter, setDeptFilter] = useState<number | undefined>()
 
   const { data: depts, isLoading: deptsLoading } = useDepartments()
-  const { data, isLoading, isError, refetch } = usePositions(deptFilter)
+  const { data, isLoading, isError, _refetch } = usePositions(deptFilter)
   const create = useCreatePosition()
   const update = useUpdatePosition()
   const remove = useDeletePosition()

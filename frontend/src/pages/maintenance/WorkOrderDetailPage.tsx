@@ -86,7 +86,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   const handleStart = async () => {
     try {
       await startMut.mutateAsync(wo.ulid);
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -108,7 +108,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
       setLaborHours('');
       setActualDate('');
       setCompletionErrors({});
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -117,7 +117,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
     try {
       await cancelMut.mutateAsync(wo.ulid);
       navigate('/maintenance/work-orders');
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -125,7 +125,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   const isOpen       = wo.status === 'open';
   const isInProgress = wo.status === 'in_progress';
   const isCompleted  = wo.status === 'completed';
-  const isCancelled  = wo.status === 'cancelled';
+  const _isCancelled  = wo.status === 'cancelled';
   const canBeCancelled = isOpen || isInProgress;
 
   const statusBadges = (
@@ -311,7 +311,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
               title="Complete work order?"
               description="This will mark the work order as completed and record the labor hours and notes."
               confirmLabel="Complete"
-              onConfirm={(e?: React.MouseEvent) => {
+              onConfirm={(_e?: React.MouseEvent) => {
                 // Form onSubmit handles the actual submission
               }}
             >

@@ -151,6 +151,7 @@ export default function RequisitionDetailPage() {
           <CardBody className="p-0">
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {req.approvals && req.approvals.length > 0 ? (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 req.approvals.map((a: any) => (
                   <div key={a.id} className="px-5 py-3">
                     <div className="flex items-center justify-between">

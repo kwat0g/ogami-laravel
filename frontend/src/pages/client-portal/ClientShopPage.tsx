@@ -20,7 +20,6 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { useAvailableProducts, useSubmitClientOrder } from '@/hooks/useClientOrders'
-import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { ItemMaster } from '@/types/inventory'
 
 interface OrderLineItem {
@@ -127,7 +126,7 @@ export default function ClientShopPage(): JSX.Element {
       setRequestedDate('')
       setOrderNotes('')
       navigate('/client-portal/orders')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to submit order. Please try again.')
     }
   }

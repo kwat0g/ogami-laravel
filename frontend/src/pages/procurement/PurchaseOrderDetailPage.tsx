@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, Send, XCircle, PackageCheck, Calendar, Download, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Send, XCircle, PackageCheck, Calendar, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react'
 import {
   usePurchaseOrder,
   useSendPurchaseOrder,
@@ -15,13 +15,12 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportPdfButton } from '@/components/ui/ExportPdfButton'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
-import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import StatusTimeline from '@/components/ui/StatusTimeline'
 import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import NegotiationHistoryPanel from '@/components/procurement/NegotiationHistoryPanel'
 import { getPurchaseOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
-import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '@/types/procurement'
+import type { PurchaseOrder, PurchaseOrderStatus } from '@/types/procurement'
 
 const statusLabel: Record<PurchaseOrderStatus, string> = {
   draft:              'Draft',

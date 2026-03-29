@@ -1,7 +1,7 @@
 import React from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Layers, Wrench, Factory } from 'lucide-react'
+import { ArrowLeft, Layers, Wrench } from 'lucide-react'
 import api from '@/lib/api'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'

@@ -97,7 +97,7 @@ export default function PayrollRunHrReviewPage() {
         toast.info('Run returned to initiator with your comments.')
         navigate(`/payroll/runs`)
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

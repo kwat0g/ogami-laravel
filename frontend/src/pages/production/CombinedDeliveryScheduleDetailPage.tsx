@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Truck, Package, Calendar, User, AlertCircle, CheckCircle, Clock, AlertTriangle, Send, Check } from 'lucide-react'
-import { PageHeader } from '@/components/ui/PageHeader'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Truck, Package, Calendar, User, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { 
   useCombinedDeliverySchedule, 
@@ -42,7 +41,7 @@ function DispatchModal({ isOpen, onClose, schedule }: DispatchModalProps): JSX.E
       await dispatchMutation.mutateAsync({ driver_name: driverName, delivery_notes: deliveryNotes })
       toast.success('Delivery dispatched successfully')
       onClose()
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to dispatch delivery')
     }
   }
@@ -133,7 +132,7 @@ function NotifyMissingModal({ isOpen, onClose, schedule }: NotifyModalProps): JS
       })
       toast.success('Customer notified about delayed items')
       onClose()
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to send notification')
     }
   }
@@ -216,7 +215,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
   const { hasPermission } = useAuthStore()
   const [showDispatchModal, setShowDispatchModal] = useState(searchParams.get('action') === 'dispatch')
   const [showNotifyModal, setShowNotifyModal] = useState(searchParams.get('action') === 'notify')
-  const [showMarkDeliveredModal, setShowMarkDeliveredModal] = useState(false)
+  const [_showMarkDeliveredModal, setShowMarkDeliveredModal] = useState(false)
 
   const { data: schedule, isLoading, isError } = useCombinedDeliverySchedule(ulid || null)
   const markDeliveredMutation = useMarkDelivered(ulid || '')
@@ -242,14 +241,14 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
 
   const status = schedule.status
 
-  const handleMarkDelivered = async () => {
+  const _handleMarkDelivered = async () => {
     try {
       await markDeliveredMutation.mutateAsync({
         delivery_date: new Date().toISOString().split('T')[0],
       })
       toast.success('Delivery marked as delivered')
       setShowMarkDeliveredModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to mark as delivered')
     }
   }
@@ -351,6 +350,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <div className="divide-y divide-neutral-100">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {schedule.item_schedules?.map((item: any) => {
                   const summary = schedule.item_status_summary?.find(
                     (s: ItemStatusSummary) => s.delivery_schedule_id === item.id

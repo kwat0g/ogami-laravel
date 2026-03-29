@@ -11,8 +11,6 @@ import { toast } from 'sonner'
 import type { VendorInvoiceStatus } from '@/types/ap'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { PurchaseOrder } from '@/types/procurement'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -44,7 +42,7 @@ const STATUS_LABEL: Record<VendorInvoiceStatus, string> = {
   deleted:          'Deleted',
 }
 
-const ALL_STATUSES: VendorInvoiceStatus[] = [
+const _ALL_STATUSES: VendorInvoiceStatus[] = [
   'draft', 'pending_approval', 'head_noted', 'manager_checked', 'officer_reviewed', 'approved', 'rejected', 'partially_paid', 'paid',
 ]
 
@@ -184,7 +182,7 @@ export default function APInvoicesPage() {
   const canApprove = useAuthStore(s => s.hasPermission('vendor_invoices.approve'))
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -198,7 +196,7 @@ export default function APInvoicesPage() {
   const [batchRejectOpen, setBatchRejectOpen] = useState(false)
   const [batchRejectNote, setBatchRejectNote] = useState('')
 
-  const { data, isLoading, refetch } = useAPInvoices({
+  const { data, isLoading, _refetch } = useAPInvoices({
     status: activeStatus ?? undefined,
     due_soon: dueSoonOnly || undefined,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),

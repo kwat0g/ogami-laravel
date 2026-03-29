@@ -9,8 +9,6 @@ import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 const emptyForm = (): { id?: number; code: string; name: string; is_active: boolean } => ({
   code: '', name: '', is_active: true,
@@ -18,7 +16,7 @@ const emptyForm = (): { id?: number; code: string; name: string; is_active: bool
 
 export default function CostCentersPage(): React.ReactElement {
   const [form, setForm] = useState(emptyForm())
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [editing, setEditing] = useState(false)
   const { data, isLoading } = useCostCenters()
   const create = useCreateCostCenter()
@@ -45,7 +43,7 @@ export default function CostCentersPage(): React.ReactElement {
       }
       setEditing(false)
       setForm(emptyForm())
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to save cost center.'))
     }
   }

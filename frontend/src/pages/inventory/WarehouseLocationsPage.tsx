@@ -33,7 +33,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
   const canManage = useAuthStore(s => s.hasPermission('inventory.locations.manage'))
   const canDelete = useAuthStore(s => s.hasPermission('inventory.locations.delete'))
 
-  const { data: locations, isLoading, isError, refetch } = useWarehouseLocations({
+  const { data: locations, isLoading, isError, _refetch } = useWarehouseLocations({
     is_active: showInactive ? undefined : true,
   })
 
@@ -69,7 +69,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
         toast.success('Location created.')
       }
       setShowForm(false)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   })
@@ -79,7 +79,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
       await api.delete(`/inventory/locations/${id}`)
       toast.success('Location deleted successfully.')
       refetch()
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     } finally {
       setDeletingId(null)
@@ -91,7 +91,7 @@ export default function WarehouseLocationsPage(): React.ReactElement {
       await api.put(`/inventory/locations/${loc.id}`, { is_active: !loc.is_active })
       toast.success(loc.is_active ? 'Location deactivated.' : 'Location activated.')
       refetch()
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

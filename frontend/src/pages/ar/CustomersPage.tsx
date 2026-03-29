@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Plus, Archive, CheckCircle, CreditCard, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
+import { Plus, CheckCircle, CreditCard, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import SearchInput from '@/components/ui/SearchInput'
 import {
@@ -17,7 +17,6 @@ import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import ArchiveEmptyState from '@/components/ui/ArchiveEmptyState'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { useActionConfirmation } from '@/hooks/useActionConfirmation'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { formatTIN, formatPhoneNumber, validators, validationMessages } from '@/lib/inputFormatters'
 import { ExportButton } from '@/components/ui/ExportButton'
@@ -69,7 +68,7 @@ function ArchiveCustomerButton({ customer, onSuccess }: { customer: Customer; on
       await archiveMut.mutateAsync(customer.id)
       toast.success(`Customer "${customer.name}" has been archived successfully`)
       onSuccess?.()
-    } catch (err) {
+    } catch (_err) {
       const message = firstErrorMessage(err)
       toast.error(`Failed to archive customer: ${message}`)
       throw err
@@ -219,7 +218,7 @@ function CustomerFormModal({ initial, onClose, onSuccess }: CustomerFormModalPro
       }
       onSuccess?.()
       onClose()
-    } catch (err) {
+    } catch (_err) {
       const parsed = firstErrorMessage(err)
       toast.error(`${initial ? 'Update' : 'Create'} failed: ${parsed}`)
       // Don't close modal on error so user can fix
@@ -371,15 +370,15 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [modalCustomer, setModalCustomer] = useState<Customer | null | undefined>(undefined)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)
   }, [])
 
-  const { data, isLoading, refetch } = useCustomers({ search: debouncedSearch || undefined, per_page: 50 })
+  const { data, isLoading, _refetch } = useCustomers({ search: debouncedSearch || undefined, per_page: 50 })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['customers', 'archived', debouncedSearch],
     queryFn: () => api.get('/customers-archived', { params: { search: debouncedSearch || undefined, per_page: 50 } }),
     enabled: isArchiveView,
@@ -392,7 +391,7 @@ export default function CustomersPage() {
     try {
       await refetch()
       toast.success('Customer list refreshed')
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to refresh customer list')
     }
   }
@@ -506,7 +505,7 @@ export default function CustomersPage() {
                                 toast.success(`Customer "${c.name}" restored.`)
                                 refetch()
                                 refetchArchived()
-                              } catch (err) {
+                              } catch (_err) {
                                 toast.error(firstErrorMessage(err))
                               }
                             }}
@@ -526,7 +525,7 @@ export default function CustomersPage() {
                                   await api.delete(`/customers/${c.id}/force`)
                                   toast.success('Customer permanently deleted.')
                                   refetchArchived()
-                                } catch (err) {
+                                } catch (_err) {
                                   toast.error(firstErrorMessage(err))
                                 }
                               }}

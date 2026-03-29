@@ -301,7 +301,7 @@ export default function PayrollRunScopePage() {
       setSelectedEmployee(null)
       setExclReason('')
       toast.success('Exclusion added successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -310,7 +310,7 @@ export default function PayrollRunScopePage() {
     try {
       await removeExclusion.mutateAsync(employeeId)
       toast.success('Exclusion removed successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -340,12 +340,12 @@ export default function PayrollRunScopePage() {
       })
       toast.success('Scope confirmed. Proceeding to validation.')
       navigate(`/payroll/runs/${runId}/validate`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
 
-  function handleConfirmClick() {
+  function _handleConfirmClick() {
     if (!validateConfirmScope()) return
     // Warn if any in-scope employees still have no bank account
     if (preview?.missing_bank_employees && preview.missing_bank_employees.length > 0) {
@@ -361,7 +361,7 @@ export default function PayrollRunScopePage() {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

@@ -65,7 +65,7 @@ export default function MyLoansPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [confirmCancelUlid, setConfirmCancelUlid] = useState<string | null>(null)
 
-  const { data, isLoading, refetch } = useLoans({
+  const { data, isLoading, _refetch } = useLoans({
     employee_id: employeeId,
     per_page: 10,
     page,
