@@ -4,6 +4,8 @@ use App\Jobs\Accounting\FlagStaleJournalEntriesJob;
 use App\Jobs\AP\SendApDailyDigestJob;
 use App\Jobs\AP\SendApDueDateAlertJob;
 use App\Jobs\Leave\RunLeaveAccrualJob;
+use App\Jobs\Recruitment\ExpireOffersJob;
+use App\Jobs\Recruitment\ExpirePostingsJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -36,6 +38,14 @@ Schedule::call(function () {
     $now = Carbon::now();
     dispatch(new RunLeaveAccrualJob($now->year, $now->month));
 })->monthlyOn(1, '01:00')->name('leave.accrue-monthly')->withoutOverlapping();
+
+// ── Recruitment: Expire offers (daily at midnight) ────────────────────────────
+// Finds sent offers past their expires_at date and transitions them to expired.
+Schedule::job(new ExpireOffersJob)->dailyAt('00:00')->name('recruitment.expire-offers')->withoutOverlapping();
+
+// ── Recruitment: Expire postings (daily at midnight) ──────────────────────────
+// Finds published postings past their closes_at date and transitions them to expired.
+Schedule::job(new ExpirePostingsJob)->dailyAt('00:05')->name('recruitment.expire-postings')->withoutOverlapping();
 
 // ── Leave: Year-end carry-over (LV-003) ───────────────────────────────────────
 // Runs on January 1st at 02:00 AM.
