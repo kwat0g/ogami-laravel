@@ -522,7 +522,6 @@ function CompactSectionNav({ section, hasPermission, hasRole, userDept }: { sect
 const SELF_SERVICE_LINKS: Array<{ label: string; href: string; icon: typeof UserCircle; permission?: string }> = [
   { label: 'My Profile', href: '/me/profile', icon: UserCircle, permission: 'self.view_profile' },
   { label: 'My Payslips', href: '/self-service/payslips', icon: FileText, permission: 'payroll.view_own_payslip' },
-  { label: 'Time Clock', href: '/me/time-clock', icon: Clock, permission: 'self.view_attendance' },
   { label: 'My Attendance', href: '/me/attendance', icon: Clock, permission: 'self.view_attendance' },
   { label: 'My Leaves', href: '/me/leaves', icon: Calendar, permission: 'leaves.view_own' },
   { label: 'My Overtime', href: '/me/overtime', icon: TrendingUp, permission: 'overtime.view' },

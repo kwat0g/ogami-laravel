@@ -508,8 +508,7 @@ const router = createBrowserRouter([
       { path: '/me/leaves', element: withSuspense(guard('leaves.view_own', <MyLeavesPage />)) },
       { path: '/me/loans', element: withSuspense(guard('loans.view_own', <MyLoansPage />)) },
       { path: '/me/overtime', element: withSuspense(guard('overtime.view', <MyOTPage />)) },
-      { path: '/me/attendance', element: withSuspense(guard('attendance.view_own', <MyAttendancePage />)) },
-      { path: '/me/time-clock', element: withSuspense(guard('attendance.view_own', <TimeInOutPage />)) },
+      { path: '/me/attendance', element: withSuspense(guard('attendance.view_own', <TimeInOutPage />)) },
       { path: '/me/profile', element: withSuspense(guard('self.view_profile', <MyProfilePage />)) },
 
       // ── Account actions ────────────────────────────────────────────────────
