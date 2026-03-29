@@ -51,6 +51,7 @@ final class PayrollPreRunService implements ServiceContract
             $this->checkPR006($run),
             $this->checkPR007($run),
             $this->checkPR008($run),
+            $this->checkPR009($run),
         ];
 
         $hasBlockers = collect($checks)->contains(fn ($c) => $c['status'] === 'block');
@@ -298,6 +299,45 @@ final class PayrollPreRunService implements ServiceContract
         }
 
         return $this->pass('PR-008', "Payroll cutoff day ({$cutoffDay}) matches system setting");
+    }
+
+    /**
+     * PR-009: Government contribution tables must have entries.
+     *
+     * REC-08: Without these tables, Steps 10-14 of the payroll pipeline will
+     * fail or produce zero deductions — a compliance violation.
+     */
+    private function checkPR009(PayrollRun $run): array
+    {
+        $year = (int) date('Y', strtotime($run->cutoff_start));
+        $issues = [];
+
+        if (\App\Domains\Payroll\Models\SssContributionTable::count() === 0) {
+            $issues[] = 'SSS contribution table is empty';
+        }
+
+        if (\App\Domains\Payroll\Models\PhilhealthPremiumTable::count() === 0) {
+            $issues[] = 'PhilHealth premium table is empty';
+        }
+
+        if (\App\Domains\Payroll\Models\PagibigContributionTable::count() === 0) {
+            $issues[] = 'Pag-IBIG contribution table is empty';
+        }
+
+        if (\App\Domains\Payroll\Models\TrainTaxBracket::where('effective_year', '<=', $year)->doesntExist()) {
+            $issues[] = "TRAIN tax brackets have no entries effective for year {$year}";
+        }
+
+        if (! empty($issues)) {
+            return $this->fail(
+                'PR-009',
+                'Government Contribution Tables',
+                'block',
+                'Missing government contribution tables will cause pipeline failure: ' . implode('; ', $issues),
+            );
+        }
+
+        return $this->pass('PR-009', 'Government contribution tables present');
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

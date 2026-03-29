@@ -51,10 +51,14 @@ final class PaymentAllocationService implements ServiceContract
         $customerId = $data['customer_id'];
         $totalAmount = (float) $data['amount'];
 
+        // REC-09: Pessimistic lock to prevent concurrent payment overallocation.
+        // Without this, two concurrent allocations can both read the same
+        // balance_due and both create payments exceeding the invoice total.
         $openInvoices = CustomerInvoice::query()
             ->where('customer_id', $customerId)
             ->whereIn('status', ['approved', 'partially_paid'])
             ->orderBy('due_date')
+            ->lockForUpdate()
             ->get();
 
         return DB::transaction(function () use ($data, $openInvoices, $totalAmount, $userId): array {
