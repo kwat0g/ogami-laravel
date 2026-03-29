@@ -6,7 +6,7 @@
  * The admin drags the pin to set the location; the blue circle
  * shows the geofence boundary in real-time as the radius changes.
  */
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -68,8 +68,71 @@ export default function LocationPickerMap({
 
   const hasPin = latitude !== null && longitude !== null
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<Array<{ display_name: string; lat: string; lon: string }>>([])
+  const [searching, setSearching] = useState(false)
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query)
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    if (query.length < 3) { setSearchResults([]); return }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=ph`
+        )
+        const data = await res.json()
+        setSearchResults(data ?? [])
+      } catch { setSearchResults([]) }
+      finally { setSearching(false) }
+    }, 400) // debounce 400ms
+  }, [])
+
+  const selectSearchResult = useCallback((result: { lat: string; lon: string; display_name: string }) => {
+    const lat = parseFloat(result.lat)
+    const lon = parseFloat(result.lon)
+    onLocationChange(lat, lon)
+    setSearchQuery(result.display_name.substring(0, 60))
+    setSearchResults([])
+  }, [onLocationChange])
+
   return (
-    <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700" style={{ height }}>
+    <div className="space-y-2">
+      {/* Search bar */}
+      <div className="relative">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-400 pr-8"
+          placeholder="Search for a place or address..."
+        />
+        {searching && (
+          <div className="absolute right-2.5 top-2.5">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+        {searchResults.length > 0 && (
+          <div className="absolute z-[1000] mt-1 w-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            {searchResults.map((r, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => selectSearchResult(r)}
+                className="w-full text-left px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-b border-neutral-100 dark:border-neutral-700 last:border-0 truncate"
+              >
+                {r.display_name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Map */}
+      <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700" style={{ height }}>
       <MapContainer
         center={center}
         zoom={hasPin ? 16 : 12}
@@ -110,6 +173,7 @@ export default function LocationPickerMap({
           </>
         )}
       </MapContainer>
+      </div>
     </div>
   )
 }
