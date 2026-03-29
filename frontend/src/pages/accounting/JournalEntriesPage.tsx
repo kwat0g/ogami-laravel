@@ -52,7 +52,7 @@ const SOURCE_TYPE_COLORS: Record<string, string> = {
 }
 
 function SourceTypeBadge({ sourceType }: { sourceType: string }) {
-  const color = SOURCE_TYPE_COLORS[sourceType] ?? 'bg-gray-100 text-gray-600'
+  const color = SOURCE_TYPE_COLORS[sourceType] ?? 'bg-neutral-100 text-neutral-600'
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${color}`}>
       {sourceType}

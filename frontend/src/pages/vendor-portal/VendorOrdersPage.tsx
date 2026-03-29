@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useVendorOrders } from '@/hooks/useVendorPortal'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const STATUS_LABELS: Record<string, string> = {
   sent: 'Awaiting Delivery',
@@ -27,23 +28,23 @@ export default function VendorOrdersPage(): React.ReactElement {
   const orders = data?.data ?? []
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Purchase Orders</h1>
-          <p className="text-sm text-neutral-500">Purchase orders assigned to your vendor account.</p>
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="text-sm border border-neutral-300 rounded-md px-3 py-1.5 bg-white text-neutral-700"
-        >
-          <option value="">All Statuses</option>
-          {Object.entries(STATUS_LABELS).map(([val, label]) => (
-            <option key={val} value={val}>{label}</option>
-          ))}
-        </select>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Purchase Orders"
+        subtitle="Purchase orders assigned to your vendor account"
+        actions={
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="text-sm border border-neutral-300 rounded px-3 py-2 bg-white text-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+          >
+            <option value="">All Statuses</option>
+            {Object.entries(STATUS_LABELS).map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
+          </select>
+        }
+      />
 
       {orders.length === 0 ? (
         <div className="bg-white border border-neutral-200 rounded-lg px-6 py-12 text-center">

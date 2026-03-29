@@ -6,6 +6,7 @@ import { useVendorRfqs, useCreateVendorRfq, useSendVendorRfq, type VendorRfq } f
 import { useAuthStore } from '@/stores/authStore'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import SearchInput from '@/components/ui/SearchInput'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function VendorRfqListPage(): React.ReactElement {
@@ -69,19 +70,19 @@ export default function VendorRfqListPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Vendor RFQs</h1>
-          <p className="text-sm text-neutral-500">Request for Quotation management.</p>
-        </div>
-        {canCreate && (
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800">
-            <Plus className="w-3.5 h-3.5" /> New RFQ
-          </button>
-        )}
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Vendor RFQs"
+        subtitle="Request for Quotation management"
+        actions={
+          canCreate ? (
+            <button onClick={() => setShowForm(true)}
+              className="inline-flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded px-4 py-2 font-medium hover:bg-neutral-800">
+              <Plus className="w-4 h-4" /> New RFQ
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Filter */}
       <div className="mb-4 flex flex-wrap items-center gap-3">

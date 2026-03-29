@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ClipboardCheck } from 'lucide-react'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateInspection, useInspectionTemplates } from '@/hooks/useQC'
 import { useItems } from '@/hooks/useInventory'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
@@ -107,7 +108,7 @@ export default function CreateInspectionPage(): React.ReactElement {
           <ClipboardCheck className="w-5 h-5 text-neutral-600" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 mb-6">New Inspection</h1>
+          <PageHeader title="New Inspection" backTo="/qc/inspections" />
           <p className="text-sm text-neutral-500 mt-0.5">Record an IQC, IPQC, or OQC inspection</p>
         </div>
       </div>

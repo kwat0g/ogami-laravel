@@ -1,4 +1,5 @@
 import { ShieldAlert } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
@@ -32,10 +33,11 @@ export default function QcDefectRatePage(): React.ReactElement {
   const overallRate = totalInspections > 0 ? ((totalFailed / totalInspections) * 100).toFixed(1) : '0.0'
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2 mb-6">
-        <ShieldAlert className="w-6 h-6 text-rose-600" /> QC Defect Rate Analytics
-      </h1>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader
+        title="QC Defect Rate Analytics"
+        icon={<ShieldAlert className="w-5 h-5 text-rose-600" />}
+      />
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">

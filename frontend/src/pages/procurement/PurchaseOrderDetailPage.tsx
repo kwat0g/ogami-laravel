@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ExportPdfButton } from '@/components/ui/ExportPdfButton'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -325,15 +326,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
         </button>
       )}
       {canExportPdf && (
-        <a
-          href={`/api/v1/procurement/purchase-orders/${po.ulid}/pdf`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 text-neutral-700 text-sm font-medium rounded hover:bg-neutral-50"
-        >
-          <Download className="w-4 h-4" />
-          Export PDF
-        </a>
+        <ExportPdfButton href={`/api/v1/procurement/purchase-orders/${po.ulid}/pdf`} />
       )}
     </div>
   )

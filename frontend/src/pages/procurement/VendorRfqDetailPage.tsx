@@ -98,7 +98,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       <div className="bg-white border border-neutral-200 rounded-lg p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-neutral-900">{rfq.rfq_reference} — {rfq.title}</h1>
+            <h1 className="text-lg font-semibold text-neutral-900">{rfq.rfq_reference} — {rfq.title}</h1>
             {rfq.description && <p className="text-sm text-neutral-500 mt-1">{rfq.description}</p>}
           </div>
           <div className="flex items-center gap-2">

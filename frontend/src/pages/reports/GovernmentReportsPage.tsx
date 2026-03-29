@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   FileText,
   Table2,
@@ -94,13 +95,10 @@ export default function GovernmentReportsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-neutral-900 mb-6">Government Reports</h1>
-        <p className="text-sm text-neutral-500">
-          Generate BIR, SSS, PhilHealth, and Pag-IBIG compliance reports.
-          All reports reflect frozen payroll data from completed runs.
-        </p>
-      </div>
+      <PageHeader
+        title="Government Reports"
+        subtitle="Generate BIR, SSS, PhilHealth, and Pag-IBIG compliance reports. All reports reflect frozen payroll data from completed runs."
+      />
 
       {/* Period selector */}
       <div className="bg-white border border-neutral-200 rounded p-4 mb-6 flex flex-wrap items-center gap-4">

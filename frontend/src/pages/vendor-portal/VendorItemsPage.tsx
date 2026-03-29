@@ -8,6 +8,7 @@ import {
   type VendorPortalItem,
 } from '@/hooks/useVendorPortal'
 import { useDebounce } from '@/hooks/useDebounce'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 
@@ -107,12 +108,12 @@ export default function VendorItemsPage(): React.ReactElement {
   }
 
   return (
-    <div>
-      <div className="mb-4 space-y-3">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">My Catalog</h1>
-          <p className="text-sm text-neutral-500">Manage your product and service listings.</p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="My Catalog"
+        subtitle="Manage your product and service listings"
+      />
+      <div className="space-y-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2 w-full md:max-w-md">
             <div className="relative flex-1">

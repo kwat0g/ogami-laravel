@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ClipboardCheck, Save, AlertTriangle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useItems, useWarehouseLocations, useStockBalances, useStockAdjust } from '@/hooks/useInventory'
@@ -130,10 +131,11 @@ export default function PhysicalCountPage(): React.ReactElement {
   const adjustmentsToPost = countItems.filter((c) => c.counted_qty !== '' && c.variance !== 0).length
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2 mb-6">
-        <ClipboardCheck className="w-6 h-6 text-orange-600" /> Physical Inventory Count
-      </h1>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader
+        title="Physical Inventory Count"
+        icon={<ClipboardCheck className="w-5 h-5 text-orange-600" />}
+      />
 
       {/* Setup */}
       {!isInitialized && (

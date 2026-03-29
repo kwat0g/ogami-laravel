@@ -21,6 +21,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import PageHeader from '@/components/ui/PageHeader'
+import { ExportPdfButton } from '@/components/ui/ExportPdfButton'
 import PermissionGuard from '@/components/ui/PermissionGuard'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
@@ -378,15 +379,7 @@ export default function APInvoiceDetailPage() {
             )}
 
             {/* Export invoice as PDF */}
-            <a
-              href={`/api/v1/accounting/ap/invoices/${invoice.ulid ?? invoice.id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded"
-            >
-              <FileText className="h-4 w-4" />
-              Export PDF
-            </a>
+            <ExportPdfButton href={`/api/v1/accounting/ap/invoices/${invoice.ulid ?? invoice.id}/pdf`} />
 
             {/* Download BIR Form 2307 — available when EWT applies and invoice is approved/paid */}
             {(invoice.ewt_amount > 0) && ['approved', 'partially_paid', 'paid'].includes(invoice.status) && (

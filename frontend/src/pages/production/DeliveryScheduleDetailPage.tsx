@@ -267,7 +267,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">{schedule.ds_reference}</h1>
+          <h1 className="text-lg font-semibold text-neutral-900">{schedule.ds_reference}</h1>
           <p className="text-sm text-neutral-500 mt-1">
             Delivery Schedule Details
           </p>

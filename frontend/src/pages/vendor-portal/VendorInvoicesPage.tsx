@@ -8,6 +8,7 @@ import {
   type VendorPortalGoodsReceipt,
 } from '@/hooks/useVendorPortal'
 import { useAuthStore } from '@/stores/authStore'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
@@ -67,24 +68,24 @@ export default function VendorInvoicesPage(): React.ReactElement {
   if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading invoices…</p>
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Invoices</h1>
-          <p className="text-sm text-neutral-500">Submit and track invoices for confirmed deliveries.</p>
-        </div>
-        {canSubmitInvoice && (
-          <button
-            onClick={() => setShowForm(true)}
-            disabled={eligibleGRs.length === 0}
-            className="flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded-md px-3 py-1.5 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            title={eligibleGRs.length === 0 ? 'No confirmed GRs without an invoice' : undefined}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Submit Invoice
-          </button>
-        )}
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Invoices"
+        subtitle="Submit and track invoices for confirmed deliveries"
+        actions={
+          canSubmitInvoice ? (
+            <button
+              onClick={() => setShowForm(true)}
+              disabled={eligibleGRs.length === 0}
+              className="inline-flex items-center gap-1.5 text-sm bg-neutral-900 text-white rounded px-4 py-2 font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={eligibleGRs.length === 0 ? 'No confirmed GRs without an invoice' : undefined}
+            >
+              <Plus className="w-4 h-4" />
+              Submit Invoice
+            </button>
+          ) : undefined
+        }
+      />
 
       {showForm && canSubmitInvoice && (
         <div className="bg-white border border-neutral-200 rounded-lg p-5 mb-6">

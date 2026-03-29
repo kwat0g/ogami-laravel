@@ -18,6 +18,7 @@ import { SodActionButton } from '@/components/ui/SodActionButton'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import PageHeader from '@/components/ui/PageHeader'
+import { ExportPdfButton } from '@/components/ui/ExportPdfButton'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -314,15 +315,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
           <div className="flex items-center gap-2 flex-wrap">
             {/* PDF Export — visible only when approved */}
             {['approved', 'converted_to_po'].includes(pr.status) && (
-              <a
-                href={`/api/v1/procurement/purchase-requests/${pr.ulid}/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 font-medium rounded transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                Export PDF
-              </a>
+              <ExportPdfButton href={`/api/v1/procurement/purchase-requests/${pr.ulid}/pdf`} />
             )}
 
             {canEdit && (
