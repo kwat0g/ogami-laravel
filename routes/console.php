@@ -31,6 +31,11 @@ Schedule::job(new SendApDueDateAlertJob)->dailyAt('08:00');
 // Sends a management-level summary: outstanding balance, pending count, overdue.
 Schedule::job(new SendApDailyDigestJob)->weekdays()->at('08:05');
 
+// ── QC: Flag stale pending_qc Goods Receipts ─────────────────────────────────
+// Runs hourly. Alerts procurement team when GRs sit in pending_qc beyond
+// the configured deadline (system_settings key: qc.pending_deadline_hours, default: 24).
+Schedule::job(new \App\Jobs\FlagStaleQcPendingGoodsReceiptsJob)->hourly();
+
 // ── Leave: Monthly accrual (LV-002) ───────────────────────────────────────────
 // Runs on the 1st of each month at 01:00 AM.
 // Credits leave balances for all active employees.

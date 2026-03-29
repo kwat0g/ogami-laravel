@@ -67,7 +67,14 @@ final class ThreeWayMatchService implements ServiceContract
                     );
                 }
 
-                $poItem->update(['quantity_received' => $newReceived]);
+                // Track rejected quantity on PO item (from QC partial acceptance)
+                $rejectedQty = (float) ($grItem->quantity_rejected ?? 0);
+                $newRejected = (float) ($poItem->quantity_rejected ?? 0) + $rejectedQty;
+
+                $poItem->update([
+                    'quantity_received' => $newReceived,
+                    'quantity_rejected' => $newRejected,
+                ]);
             }
 
             // Refresh PO items to get DB-computed quantity_pending

@@ -48,6 +48,8 @@ final class GoodsReceiptItem extends Model
         'ncr_id',
         'defect_type',
         'defect_description',
+        'reject_disposition',
+        'disposition_completed_at',
     ];
 
     /** @return BelongsTo<GoodsReceipt, GoodsReceiptItem> */
