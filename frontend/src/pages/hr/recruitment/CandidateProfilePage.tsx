@@ -5,15 +5,15 @@ import StatusBadge from '@/components/recruitment/StatusBadge'
 import { Link } from 'react-router-dom'
 
 export default function CandidateProfilePage() {
-  const { ulid } = useParams<{ ulid: string }>()
+  const { id } = useParams<{ id: string }>()
 
   const { data: candidate, isLoading } = useQuery({
-    queryKey: ['recruitment', 'candidates', ulid],
+    queryKey: ['recruitment', 'candidates', id],
     queryFn: async () => {
-      const { data } = await api.get(`/recruitment/candidates/${ulid}`)
+      const { data } = await api.get(`/recruitment/candidates/${id}`)
       return data.data
     },
-    enabled: !!ulid,
+    enabled: !!id,
   })
 
   if (isLoading || !candidate) return <div className="p-6">Loading...</div>
@@ -28,7 +28,7 @@ export default function CandidateProfilePage() {
         <div className="flex gap-2">
           {candidate.resume_path && (
             <a
-              href={`/api/v1/recruitment/candidates/${ulid}/resume`}
+              href={`/api/v1/recruitment/candidates/${id}/resume`}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"

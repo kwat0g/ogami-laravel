@@ -8,16 +8,16 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 export default function InterviewDetailPage() {
-  const { ulid } = useParams<{ ulid: string }>()
+  const { id } = useParams<{ id: string }>()
   const qc = useQueryClient()
 
   const { data: interview, isLoading } = useQuery({
-    queryKey: ['recruitment', 'interviews', ulid],
+    queryKey: ['recruitment', 'interviews', id],
     queryFn: async () => {
-      const { data } = await api.get(`/recruitment/interviews/${ulid}`)
+      const { data } = await api.get(`/recruitment/interviews/${id}`)
       return data
     },
-    enabled: !!ulid,
+    enabled: !!id,
   })
 
   const submitEval = useSubmitEvaluation(interview?.id)
@@ -30,7 +30,7 @@ export default function InterviewDetailPage() {
     try {
       await interviewAction.mutateAsync({ action, payload })
       toast.success(`Interview ${action} successfully`)
-      qc.invalidateQueries({ queryKey: ['recruitment', 'interviews', ulid] })
+      qc.invalidateQueries({ queryKey: ['recruitment', 'interviews', id] })
     } catch {
       toast.error(`Failed to ${action} interview`)
     }
@@ -164,7 +164,7 @@ export default function InterviewDetailPage() {
           interviewId={interview?.id}
           onSubmit={async (data) => {
             await submitEval.mutateAsync(data)
-            qc.invalidateQueries({ queryKey: ['recruitment', 'interviews', ulid] })
+            qc.invalidateQueries({ queryKey: ['recruitment', 'interviews', id] })
           }}
           isPending={submitEval.isPending}
         />

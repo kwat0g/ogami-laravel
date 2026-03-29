@@ -13,6 +13,7 @@ final class JobPostingListResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'ulid' => $this->ulid,
             'posting_number' => $this->posting_number,
             'title' => $this->title,
