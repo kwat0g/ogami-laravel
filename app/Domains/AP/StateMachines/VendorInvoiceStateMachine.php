@@ -23,13 +23,25 @@ use App\Shared\Exceptions\InvalidStateTransitionException;
  */
 final class VendorInvoiceStateMachine
 {
-    /** @var array<string, list<string>> */
+    /**
+     * REC-14: Approval steps now return to the PREVIOUS step instead of draft.
+     * This avoids forcing re-approval through the entire chain for minor corrections.
+     *
+     * Return paths:
+     *   head_noted       → pending_approval (return to submitter)
+     *   manager_checked  → head_noted (return to head for re-review)
+     *   officer_reviewed → manager_checked (return to manager)
+     *
+     * 'draft' is still reachable from pending_approval (the first approval step).
+     *
+     * @var array<string, list<string>>
+     */
     private const TRANSITIONS = [
         'draft' => ['pending_approval', 'deleted'],
         'pending_approval' => ['head_noted', 'draft', 'deleted'],
-        'head_noted' => ['manager_checked', 'draft', 'deleted'],
-        'manager_checked' => ['officer_reviewed', 'draft', 'deleted'],
-        'officer_reviewed' => ['approved', 'draft', 'deleted'],
+        'head_noted' => ['manager_checked', 'pending_approval', 'deleted'],
+        'manager_checked' => ['officer_reviewed', 'head_noted', 'deleted'],
+        'officer_reviewed' => ['approved', 'manager_checked', 'deleted'],
         'approved' => ['partially_paid', 'paid'],
         'partially_paid' => ['paid'],
         'paid' => [],    // terminal

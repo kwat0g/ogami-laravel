@@ -21,13 +21,22 @@ use App\Shared\Exceptions\InvalidStateTransitionException;
  */
 final class ProductionOrderStateMachine
 {
-    /** @var array<string, list<string>> */
+    /**
+     * REC-23: Added 'completed' → 'in_progress' transition for rework scenarios.
+     *
+     * When QC rejects a batch after production completion, the order must be
+     * reopened for rework. Previously, a new production order had to be created
+     * manually, losing traceability. The rework transition requires an NCR
+     * reference (enforced by ProductionOrderService::rework()).
+     *
+     * @var array<string, list<string>>
+     */
     private const TRANSITIONS = [
         'draft'       => ['released', 'cancelled'],
         'released'    => ['in_progress', 'on_hold', 'cancelled'],
         'in_progress' => ['completed', 'on_hold', 'cancelled'],  // cancelled: emergency stop (material defect, etc.)
         'on_hold'     => ['released', 'in_progress', 'cancelled'],
-        'completed'   => ['closed'],
+        'completed'   => ['closed', 'in_progress'],              // in_progress = rework after QC rejection
         'closed'      => [],       // terminal
         'cancelled'   => [],       // terminal
     ];

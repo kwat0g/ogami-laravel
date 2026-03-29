@@ -48,6 +48,15 @@ final class YearEndClosingService implements ServiceContract
                 );
             }
 
+            // REC-22: Warn about open sub-ledger items before closing
+            $warnings = $this->collectYearEndWarnings($fiscalYear);
+            if (! empty($warnings)) {
+                \Illuminate\Support\Facades\Log::warning('Year-end closing proceeding with open sub-ledger items', [
+                    'fiscal_year' => $fiscalYear,
+                    'warnings' => $warnings,
+                ]);
+            }
+
             // 2. Get the last period of the fiscal year for the closing JE
             $lastPeriod = FiscalPeriod::whereYear('date_from', $fiscalYear)
                 ->orderByDesc('date_to')
@@ -188,5 +197,46 @@ final class YearEndClosingService implements ServiceContract
     private function accountBalance(int $accountId, int $fiscalYear): float
     {
         return $this->sumAccountBalances([$accountId], $fiscalYear);
+    }
+
+    /**
+     * REC-22: Collect warnings about open sub-ledger items that will persist
+     * across the year boundary after closing.
+     *
+     * These are informational warnings — year-end closing is not blocked,
+     * but the accountant should be aware of items that may require
+     * prior-period adjustments in the new fiscal year.
+     *
+     * @return list<string>
+     */
+    private function collectYearEndWarnings(int $fiscalYear): array
+    {
+        $warnings = [];
+
+        // Open AP invoices
+        $openApCount = \App\Domains\AP\Models\VendorInvoice::whereYear('invoice_date', $fiscalYear)
+            ->whereIn('status', ['approved', 'partially_paid'])
+            ->count();
+        if ($openApCount > 0) {
+            $warnings[] = "{$openApCount} open AP invoice(s) from {$fiscalYear} will remain unpaid across the year boundary.";
+        }
+
+        // Open AR invoices
+        $openArCount = \App\Domains\AR\Models\CustomerInvoice::whereYear('created_at', $fiscalYear)
+            ->whereIn('status', ['approved', 'partially_paid'])
+            ->count();
+        if ($openArCount > 0) {
+            $warnings[] = "{$openArCount} open AR invoice(s) from {$fiscalYear} still have outstanding balances.";
+        }
+
+        // Completed production orders without cost posting
+        $unpostedProdCount = \App\Domains\Production\Models\ProductionOrder::where('status', 'completed')
+            ->whereYear('updated_at', $fiscalYear)
+            ->count();
+        if ($unpostedProdCount > 0) {
+            $warnings[] = "{$unpostedProdCount} completed production order(s) may have unposted costs — WIP may be overstated.";
+        }
+
+        return $warnings;
     }
 }
