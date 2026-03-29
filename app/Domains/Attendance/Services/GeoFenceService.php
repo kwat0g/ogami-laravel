@@ -126,8 +126,10 @@ final class GeoFenceService implements ServiceContract
     public function setGeofenceEnabled(bool $enabled): void
     {
         DB::table('system_settings')
-            ->where('key', 'attendance.geofence_enabled')
-            ->update(['value' => json_encode($enabled)]);
+            ->updateOrInsert(
+                ['key' => 'attendance.geofence_enabled'],
+                ['value' => json_encode($enabled)],
+            );
     }
 
     /**
@@ -136,8 +138,10 @@ final class GeoFenceService implements ServiceContract
     public function setGeofenceMode(string $mode): void
     {
         DB::table('system_settings')
-            ->where('key', 'attendance.geofence_mode')
-            ->update(['value' => json_encode($mode)]);
+            ->updateOrInsert(
+                ['key' => 'attendance.geofence_mode'],
+                ['value' => json_encode($mode)],
+            );
     }
 
     /**

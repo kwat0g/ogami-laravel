@@ -10,7 +10,9 @@ final class TimeOutRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->employee_id !== null;
+        $user = $this->user();
+
+        return $user !== null && ($user->employee_id !== null || $user->employee !== null);
     }
 
     /** @return array<string, mixed> */
