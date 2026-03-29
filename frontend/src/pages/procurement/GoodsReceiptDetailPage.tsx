@@ -10,6 +10,8 @@ import {
   useRejectGoodsReceipt,
   useSubmitForQc,
   useUpdateGoodsReceiptItem,
+  useAcceptWithDefects,
+  useReturnToSupplier,
 } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -122,8 +124,15 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
 
   const isDraft = gr.status === 'draft'
   const isPendingQc = gr.status === 'pending_qc'
-  const canConfirm = isDraft || isPendingQc
-  const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending
+  const isQcPassed = gr.status === 'qc_passed'
+  const isQcFailed = gr.status === 'qc_failed'
+  const isPartialAccept = gr.status === 'partial_accept'
+  const isConfirmed = gr.status === 'confirmed'
+  const canConfirm = isQcPassed || isPartialAccept
+  const canReject = isDraft || isPendingQc || isQcFailed
+  const acceptWithDefectsMutation = useAcceptWithDefects()
+  const returnToSupplierMutation = useReturnToSupplier()
+  const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending || acceptWithDefectsMutation.isPending || returnToSupplierMutation.isPending
 
   function handleSubmitForQc(): void {
     if (!gr) return
@@ -155,24 +164,29 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
     )
   }
 
-  const headerActions = canConfirm ? (
+  const headerActions = (
     <>
       {canConfirmPermission && (
         <>
-          <ConfirmDialog
-            title="Post Goods Receipt?"
-            description="This will confirm the receipt, update inventory levels, and trigger three-way matching."
-            onConfirm={handleConfirm}
-          >
-            <button
-              type="button"
-              disabled={anyPending}
-              className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* Confirm button: only when QC has passed or defects accepted */}
+          {canConfirm && (
+            <ConfirmDialog
+              title="Post Goods Receipt?"
+              description="This will confirm the receipt, update inventory levels, and trigger three-way matching."
+              onConfirm={handleConfirm}
             >
-              <ClipboardCheck className="w-4 h-4" />
-              {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
-            </button>
-          </ConfirmDialog>
+              <button
+                type="button"
+                disabled={anyPending}
+                className="flex items-center gap-2 px-5 py-2.5 rounded bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ClipboardCheck className="w-4 h-4" />
+                {confirmMutation.isPending ? 'Confirming…' : 'Confirm Receipt & Run 3-Way Match'}
+              </button>
+            </ConfirmDialog>
+          )}
+
+          {/* Submit for QC: only from draft */}
           {isDraft && (
             <button
               type="button"
@@ -184,15 +198,72 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
               {submitForQcMutation.isPending ? 'Submitting…' : 'Submit for QC'}
             </button>
           )}
-          <button
-            type="button"
-            disabled={anyPending}
-            onClick={() => setShowRejectModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-orange-300 text-orange-600 text-sm font-medium hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <XCircle className="w-4 h-4" />
-            Reject GR
-          </button>
+
+          {/* Accept with Defects: only when QC failed */}
+          {isQcFailed && (
+            <button
+              type="button"
+              disabled={anyPending}
+              onClick={() => {
+                if (!gr) return
+                // Simple auto-accept: accept all received quantities (user can refine via API)
+                const items = gr.items.map(item => ({
+                  gr_item_id: item.id,
+                  quantity_accepted: item.quantity_accepted ?? item.quantity_received,
+                  quantity_rejected: item.quantity_rejected ?? 0,
+                  defect_type: item.defect_type ?? undefined,
+                  defect_description: item.defect_description ?? undefined,
+                }))
+                acceptWithDefectsMutation.mutate(
+                  { ulid: gr.ulid, items, notes: gr.qc_notes ?? undefined },
+                  {
+                    onSuccess: () => toast.success('GR accepted with defects. NCRs documented.'),
+                    onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to accept with defects.'),
+                  }
+                )
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-amber-300 text-amber-600 text-sm font-medium hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {acceptWithDefectsMutation.isPending ? 'Accepting…' : 'Accept with Defects'}
+            </button>
+          )}
+
+          {/* Reject: from draft, pending_qc, or qc_failed */}
+          {canReject && (
+            <button
+              type="button"
+              disabled={anyPending}
+              onClick={() => setShowRejectModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-orange-300 text-orange-600 text-sm font-medium hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <XCircle className="w-4 h-4" />
+              Reject GR
+            </button>
+          )}
+
+          {/* Return to Supplier: only when confirmed */}
+          {isConfirmed && (
+            <button
+              type="button"
+              disabled={anyPending}
+              onClick={() => {
+                const reason = prompt('Reason for returning goods to supplier:')
+                if (!reason || !gr) return
+                returnToSupplierMutation.mutate(
+                  { ulid: gr.ulid, reason },
+                  {
+                    onSuccess: () => toast.success('Goods returned to supplier.'),
+                    onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to return goods.'),
+                  }
+                )
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-purple-300 text-purple-600 text-sm font-medium hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-4 h-4" />
+              {returnToSupplierMutation.isPending ? 'Returning…' : 'Return to Supplier'}
+            </button>
+          )}
         </>
       )}
       {isDraft && (
@@ -212,7 +283,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         </ConfirmDialog>
       )}
     </>
-  ) : undefined
+  )
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">

@@ -227,6 +227,12 @@ class AppServiceProvider extends ServiceProvider
         // UpdateStockOnThreeWayMatch is in app/Listeners/ — auto-discovered by Laravel.
         // Do NOT register it here; that would cause it to fire twice per GR confirmation.
 
+        // GR-QC bridge: auto-transition GR when IQC inspection results are recorded.
+        // UpdateGrOnInspectionResult handles both InspectionPassed and InspectionFailed
+        // with a generic `object` handle() — must be registered manually for both events.
+        Event::listen(\App\Events\QC\InspectionPassed::class, \App\Listeners\Procurement\UpdateGrOnInspectionResult::class);
+        Event::listen(\App\Events\QC\InspectionFailed::class, \App\Listeners\Procurement\UpdateGrOnInspectionResult::class);
+
         // ── RBAC v2: Dynamic permission resolution via DepartmentModuleService ──
         // This integrates our module-based permission system with Laravel's Gate.
         // We use Gate::after to override Spatie's permission check for department-assigned users.

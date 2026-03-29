@@ -148,7 +148,7 @@ export function useSubmitForQc() {
   })
 }
 
-// ── Reject (draft only) ─────────────────────────────────────────────────────
+// ── Reject (draft, pending_qc, or qc_failed) ────────────────────────────────
 
 export function useRejectGoodsReceipt() {
   const qc = useQueryClient()
@@ -157,6 +157,64 @@ export function useRejectGoodsReceipt() {
       const res = await api.post<{ data: GoodsReceipt }>(
         `/procurement/goods-receipts/${ulid}/reject`,
         { reason },
+      )
+      return res.data.data
+    },
+    onSuccess: (gr) => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      void qc.invalidateQueries({ queryKey: ['purchase-orders'] })
+      qc.setQueryData(['goods-receipts', gr.ulid], gr)
+    },
+  })
+}
+
+// ── Accept with Defects (qc_failed -> partial_accept) ────────────────────────
+
+export interface AcceptWithDefectsPayload {
+  ulid: string
+  items: Array<{
+    gr_item_id: number
+    quantity_accepted: number
+    quantity_rejected: number
+    defect_type?: string
+    defect_description?: string
+    ncr_id?: number
+  }>
+  notes?: string
+}
+
+export function useAcceptWithDefects() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ulid, ...data }: AcceptWithDefectsPayload) => {
+      const res = await api.post<{ data: GoodsReceipt }>(
+        `/procurement/goods-receipts/${ulid}/accept-with-defects`,
+        data,
+      )
+      return res.data.data
+    },
+    onSuccess: (gr) => {
+      void qc.invalidateQueries({ queryKey: ['goods-receipts'] })
+      qc.setQueryData(['goods-receipts', gr.ulid], gr)
+    },
+  })
+}
+
+// ── Return to Supplier (confirmed -> returned) ───────────────────────────────
+
+export interface ReturnToSupplierPayload {
+  ulid: string
+  reason: string
+  items?: Array<{ gr_item_id: number; quantity_returned: number }>
+}
+
+export function useReturnToSupplier() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ulid, ...data }: ReturnToSupplierPayload) => {
+      const res = await api.post<{ data: GoodsReceipt }>(
+        `/procurement/goods-receipts/${ulid}/return-to-supplier`,
+        data,
       )
       return res.data.data
     },

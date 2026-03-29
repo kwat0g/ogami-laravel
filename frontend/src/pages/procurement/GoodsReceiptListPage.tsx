@@ -13,11 +13,26 @@ import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { GoodsReceiptStatus } from '@/types/procurement'
 
-const statusBadge: Record<GoodsReceiptStatus | 'pending_qc' | 'rejected', string> = {
-  draft:      'bg-neutral-100 text-neutral-600',
-  pending_qc: 'bg-blue-100 text-blue-600',
-  rejected:   'bg-red-100 text-red-600',
-  confirmed: 'bg-neutral-200 text-neutral-800',
+const statusBadge: Record<GoodsReceiptStatus, string> = {
+  draft:          'bg-neutral-100 text-neutral-600',
+  pending_qc:     'bg-blue-100 text-blue-600',
+  qc_passed:      'bg-emerald-100 text-emerald-700',
+  qc_failed:      'bg-orange-100 text-orange-700',
+  partial_accept: 'bg-amber-100 text-amber-700',
+  confirmed:      'bg-green-100 text-green-800',
+  rejected:       'bg-red-100 text-red-600',
+  returned:       'bg-purple-100 text-purple-600',
+}
+
+const statusLabel: Record<GoodsReceiptStatus, string> = {
+  draft:          'Draft',
+  pending_qc:     'Pending QC',
+  qc_passed:      'QC Passed',
+  qc_failed:      'QC Failed',
+  partial_accept: 'Partial Accept',
+  confirmed:      'Confirmed',
+  rejected:       'Rejected',
+  returned:       'Returned',
 }
 
 export default function GoodsReceiptListPage(): React.ReactElement {
@@ -68,8 +83,8 @@ export default function GoodsReceiptListPage(): React.ReactElement {
           className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Statuses</option>
-          {(['draft', 'pending_qc', 'confirmed', 'rejected'] as GoodsReceiptStatus[]).map((s) => (
-            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+          {(['draft', 'pending_qc', 'qc_passed', 'qc_failed', 'partial_accept', 'confirmed', 'rejected', 'returned'] as GoodsReceiptStatus[]).map((s) => (
+            <option key={s} value={s}>{statusLabel[s]}</option>
           ))}
         </select>
         <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />

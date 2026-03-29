@@ -7,6 +7,8 @@ namespace App\Domains\Procurement\Services;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Events\Inventory\ItemPriceChanged;
+use App\Events\Procurement\GoodsReceiptQcCompleted;
+use App\Events\Procurement\GoodsReceiptSubmittedForQc;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\GoodsReceiptItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
@@ -158,7 +160,7 @@ final class GoodsReceiptService implements ServiceContract
         return $gr->refresh()->load('items');
     }
 
-    // ── Confirm ──────────────────────────────────────────────────────────────
+    // ── Submit for QC ────────────────────────────────────────────────────────
 
     /**
      * Submit a GR draft for QC inspection — sets status to pending_qc.
@@ -178,21 +180,177 @@ final class GoodsReceiptService implements ServiceContract
         return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
             $this->resolveItemMasters($gr);
 
+            // Mark all items as pending QC
+            $gr->items()->update(['qc_status' => 'pending']);
+
             $gr->update([
                 'status' => 'pending_qc',
                 'submitted_for_qc_by_id' => $actor->id,
                 'submitted_for_qc_at' => now(),
             ]);
 
+            // Fire event — listener will auto-create IQC inspections and notify QC team
+            DB::afterCommit(fn () => GoodsReceiptSubmittedForQc::dispatch($gr->fresh()));
+
             return $gr->refresh();
         });
     }
 
+    // ── QC Result Transitions ────────────────────────────────────────────────
+
+    /**
+     * Mark a GR as QC passed — transitions pending_qc -> qc_passed.
+     * Called by the UpdateGrOnInspectionResult listener when all IQC inspections pass.
+     */
+    public function markQcPassed(GoodsReceipt $gr, User $actor): GoodsReceipt
+    {
+        if ($gr->status !== 'pending_qc') {
+            throw new DomainException(
+                message: "GR must be in pending_qc status to mark QC passed (current: {$gr->status}).",
+                errorCode: 'GR_NOT_PENDING_QC',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
+            // Mark all items as QC passed, set accepted qty = received qty
+            foreach ($gr->items as $item) {
+                $item->update([
+                    'qc_status' => 'passed',
+                    'quantity_accepted' => $item->quantity_received,
+                    'quantity_rejected' => 0,
+                ]);
+            }
+
+            $gr->update([
+                'status' => 'qc_passed',
+                'qc_result' => 'passed',
+                'qc_completed_at' => now(),
+                'qc_completed_by_id' => $actor->id,
+            ]);
+
+            DB::afterCommit(fn () => GoodsReceiptQcCompleted::dispatch($gr->fresh(), 'passed'));
+
+            return $gr->refresh();
+        });
+    }
+
+    /**
+     * Mark a GR as QC failed — transitions pending_qc -> qc_failed.
+     * Called by the UpdateGrOnInspectionResult listener when any IQC inspection fails.
+     */
+    public function markQcFailed(GoodsReceipt $gr, User $actor, ?string $notes = null): GoodsReceipt
+    {
+        if ($gr->status !== 'pending_qc') {
+            throw new DomainException(
+                message: "GR must be in pending_qc status to mark QC failed (current: {$gr->status}).",
+                errorCode: 'GR_NOT_PENDING_QC',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($gr, $actor, $notes): GoodsReceipt {
+            $gr->update([
+                'status' => 'qc_failed',
+                'qc_result' => 'failed',
+                'qc_completed_at' => now(),
+                'qc_completed_by_id' => $actor->id,
+                'qc_notes' => $notes,
+            ]);
+
+            DB::afterCommit(fn () => GoodsReceiptQcCompleted::dispatch($gr->fresh(), 'failed'));
+
+            return $gr->refresh();
+        });
+    }
+
+    // ── Accept with Defects (partial acceptance) ─────────────────────────────
+
+    /**
+     * Accept a QC-failed GR with defects documented via NCR.
+     * Transitions qc_failed -> partial_accept.
+     *
+     * @param  array{items: list<array{gr_item_id: int, quantity_accepted: float, quantity_rejected: float, defect_type?: string, defect_description?: string, ncr_id?: int}>, notes?: string}  $data
+     */
+    public function acceptWithDefects(GoodsReceipt $gr, array $data, User $actor): GoodsReceipt
+    {
+        if ($gr->status !== 'qc_failed') {
+            throw new DomainException(
+                message: "GR must be in qc_failed status to accept with defects (current: {$gr->status}).",
+                errorCode: 'GR_NOT_QC_FAILED',
+                httpStatus: 422,
+            );
+        }
+
+        if (empty($data['items'])) {
+            throw new DomainException(
+                message: 'At least one item disposition is required for partial acceptance.',
+                errorCode: 'GR_NO_ITEM_DISPOSITIONS',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($gr, $data, $actor): GoodsReceipt {
+            foreach ($data['items'] as $itemData) {
+                $grItem = $gr->items()->findOrFail($itemData['gr_item_id']);
+
+                $qtyAccepted = (float) $itemData['quantity_accepted'];
+                $qtyRejected = (float) $itemData['quantity_rejected'];
+                $totalQty = (float) $grItem->quantity_received;
+
+                // Validate quantities sum up
+                if (abs(($qtyAccepted + $qtyRejected) - $totalQty) > 0.001) {
+                    throw new DomainException(
+                        message: "Accepted ({$qtyAccepted}) + rejected ({$qtyRejected}) must equal received ({$totalQty}) for item #{$grItem->id}.",
+                        errorCode: 'GR_QTY_MISMATCH',
+                        httpStatus: 422,
+                    );
+                }
+
+                // Require defect info for items with rejected quantity
+                if ($qtyRejected > 0 && empty($itemData['defect_type'])) {
+                    throw new DomainException(
+                        message: 'Defect type is required when rejecting any quantity.',
+                        errorCode: 'GR_DEFECT_TYPE_REQUIRED',
+                        httpStatus: 422,
+                    );
+                }
+
+                $grItem->update([
+                    'qc_status' => $qtyRejected > 0 ? 'accepted_with_ncr' : 'passed',
+                    'quantity_accepted' => $qtyAccepted,
+                    'quantity_rejected' => $qtyRejected,
+                    'defect_type' => $itemData['defect_type'] ?? null,
+                    'defect_description' => $itemData['defect_description'] ?? null,
+                    'ncr_id' => $itemData['ncr_id'] ?? null,
+                ]);
+            }
+
+            $gr->update([
+                'status' => 'partial_accept',
+                'qc_result' => 'partial',
+                'qc_notes' => $data['notes'] ?? $gr->qc_notes,
+                'qc_completed_by_id' => $actor->id,
+                'qc_completed_at' => now(),
+            ]);
+
+            DB::afterCommit(fn () => GoodsReceiptQcCompleted::dispatch($gr->fresh(), 'partial'));
+
+            return $gr->refresh()->load('items');
+        });
+    }
+
+    // ── Confirm ──────────────────────────────────────────────────────────────
+
+    /**
+     * Confirm a GR after QC has passed or defects have been accepted.
+     * Only allowed from qc_passed or partial_accept status.
+     */
     public function confirm(GoodsReceipt $gr, User $actor): GoodsReceipt
     {
-        if (! in_array($gr->status, ['draft', 'pending_qc'], true)) {
+        if (! in_array($gr->status, ['qc_passed', 'partial_accept'], true)) {
             throw new DomainException(
-                message: "GR must be in draft or pending_qc status to confirm (current: {$gr->status}).",
+                message: "GR must be in qc_passed or partial_accept status to confirm (current: {$gr->status}). Submit for QC first.",
                 errorCode: 'GR_NOT_CONFIRMABLE',
                 httpStatus: 422,
             );
@@ -212,13 +370,6 @@ final class GoodsReceiptService implements ServiceContract
         return DB::transaction(function () use ($gr, $actor): GoodsReceipt {
             $this->resolveItemMasters($gr);
 
-            // ── IQC Gate Enforcement ───────────────────────────────────────────
-            // QC-GR-001: Items flagged requires_iqc must have a passed IQC
-            // inspection before GR can be confirmed. Provisional receipt is
-            // allowed when system_settings 'qc.allow_provisional_receipt' is true
-            // (stock enters quarantine with 24hr inspection deadline).
-            $this->enforceIqcGate($gr);
-
             $gr->update([
                 'status' => 'confirmed',
                 'confirmed_by_id' => $actor->id,
@@ -226,16 +377,9 @@ final class GoodsReceiptService implements ServiceContract
             ]);
 
             // Auto-update item standard prices from PO agreed costs.
-            // When materials are purchased from vendors, the agreed unit cost
-            // becomes the item's standard price (used in BOM cost calculations).
             $this->updateItemPricesFromPO($gr);
 
             $this->threeWayMatchService->runMatch($gr->refresh());
-
-            // NOTE: AP invoice auto-drafting is handled by the
-            // CreateApInvoiceOnThreeWayMatch event listener triggered from
-            // ThreeWayMatchService. Do NOT call invoiceAutoDraftService here
-            // to avoid creating duplicate invoices.
 
             return $gr->refresh();
         });
@@ -244,13 +388,13 @@ final class GoodsReceiptService implements ServiceContract
     // ── Reject ───────────────────────────────────────────────────────────────
 
     /**
-     * Reject a draft GR (wrong / damaged goods before confirmation).
+     * Reject a GR (wrong / damaged goods before confirmation).
      */
     public function reject(GoodsReceipt $gr, User $actor, string $reason): GoodsReceipt
     {
-        if (! in_array($gr->status, ['draft', 'pending_qc'], true)) {
+        if (! in_array($gr->status, ['draft', 'pending_qc', 'qc_failed'], true)) {
             throw new DomainException(
-                message: "Only draft or pending_qc GRs can be rejected. Current status: '{$gr->status}'.",
+                message: "Only draft, pending_qc, or qc_failed GRs can be rejected. Current status: '{$gr->status}'.",
                 errorCode: 'GR_NOT_REJECTABLE',
                 httpStatus: 422,
             );
@@ -424,113 +568,6 @@ final class GoodsReceiptService implements ServiceContract
     }
 
     /**
-     * IQC Gate Enforcement — QC-GR-001.
-     *
-     * Checks each GR line item against ItemMaster.requires_iqc. If any item
-     * requires incoming quality control, verifies that a passed IQC inspection
-     * exists for this GR before allowing confirmation.
-     *
-     * Flexibility:
-     *   - Items with requires_iqc=false skip the check entirely.
-     *   - system_setting 'qc.allow_provisional_receipt' (default false):
-     *     When true, allows confirmation with a warning instead of blocking,
-     *     creating a 24hr inspection deadline. The stock is placed in quarantine.
-     *   - Vendor-qualified bypass: if vendor score quality >= 95, skip IQC
-     *     (controlled by 'qc.vendor_qualified_threshold', default 95).
-     */
-    private function enforceIqcGate(GoodsReceipt $gr): void
-    {
-        $gr->loadMissing(['items.itemMaster', 'purchaseOrder.vendor']);
-
-        $itemsRequiringIqc = [];
-
-        foreach ($gr->items as $grItem) {
-            $item = $grItem->itemMaster ?? ($grItem->item_master_id ? ItemMaster::find($grItem->item_master_id) : null);
-            if ($item === null || ! $item->requires_iqc) {
-                continue;
-            }
-
-            $itemsRequiringIqc[] = [
-                'gr_item_id' => $grItem->id,
-                'item_id' => $item->id,
-                'item_code' => $item->item_code,
-                'item_name' => $item->name,
-            ];
-        }
-
-        if (empty($itemsRequiringIqc)) {
-            return; // No items require IQC — proceed normally
-        }
-
-        // Check vendor-qualified bypass
-        $vendor = $gr->purchaseOrder?->vendor ?? null;
-        if ($vendor !== null) {
-            $qualityThreshold = (float) (DB::table('system_settings')
-                ->where('key', 'qc.vendor_qualified_threshold')
-                ->value('value') ?? 95);
-
-            // Check vendor quality score — if above threshold, bypass IQC
-            try {
-                $scoringService = app(\App\Domains\Procurement\Services\VendorScoringService::class);
-                $scorecard = $scoringService->scorecard($vendor);
-                if ($scorecard['quality_score'] >= $qualityThreshold) {
-                    return; // Vendor is qualified — skip IQC
-                }
-            } catch (\Throwable) {
-                // If scoring fails, fall through to normal IQC enforcement
-            }
-        }
-
-        // Check if passed IQC inspections exist for each item
-        $failedItems = [];
-        foreach ($itemsRequiringIqc as $iqcItem) {
-            $passedInspection = DB::table('inspections')
-                ->where('goods_receipt_id', $gr->id)
-                ->where('stage', 'iqc')
-                ->where('status', 'passed')
-                ->where(function ($q) use ($iqcItem): void {
-                    $q->where('item_id', $iqcItem['item_id'])
-                        ->orWhereNull('item_id'); // GR-level inspection covers all items
-                })
-                ->exists();
-
-            if (! $passedInspection) {
-                $failedItems[] = $iqcItem;
-            }
-        }
-
-        if (empty($failedItems)) {
-            return; // All IQC items have passed inspections
-        }
-
-        // Check provisional receipt setting
-        $allowProvisional = (bool) (DB::table('system_settings')
-            ->where('key', 'qc.allow_provisional_receipt')
-            ->value('value') ?? false);
-
-        if ($allowProvisional) {
-            // Allow confirmation but log warning — items enter quarantine
-            \Illuminate\Support\Facades\Log::warning('[IQC Gate] Provisional receipt — items confirmed without IQC', [
-                'gr_id' => $gr->id,
-                'items_pending_iqc' => $failedItems,
-                'deadline' => now()->addHours(24)->toIso8601String(),
-            ]);
-
-            return; // Allow through with warning
-        }
-
-        // Hard block — IQC must pass before confirmation
-        $itemNames = collect($failedItems)->pluck('item_name')->implode(', ');
-
-        throw new DomainException(
-            message: "IQC inspection required but not passed for: {$itemNames}. Create and complete an IQC inspection before confirming this Goods Receipt.",
-            errorCode: 'GR_IQC_NOT_PASSED',
-            httpStatus: 422,
-            context: ['items_pending_iqc' => $failedItems],
-        );
-    }
-
-    /**
      * Auto-update item standard prices from the PO's agreed unit costs.
      *
      * When a Goods Receipt is confirmed, the vendor's agreed price (from the
@@ -570,13 +607,16 @@ final class GoodsReceiptService implements ServiceContract
                     continue;
                 }
 
+                // Use effective accepted quantity for weighted average (reflects QC splits)
+                $effectiveQty = $grItem->effectiveAcceptedQuantity();
+
                 // For weighted_average items, use CostingMethodService
                 if (($item->costing_method ?? 'standard') === 'weighted_average') {
                     try {
                         $costingService = app(\App\Domains\Inventory\Services\CostingMethodService::class);
                         $costingService->recalculateOnReceipt(
                             $itemId,
-                            (float) ($grItem->quantity_received ?? 0),
+                            $effectiveQty,
                             $agreedCostCentavos,
                         );
                     } catch (\Throwable $e) {

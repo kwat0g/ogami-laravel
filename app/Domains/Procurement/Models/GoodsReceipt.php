@@ -26,12 +26,21 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $received_date
  * @property string|null $delivery_note_number
  * @property string|null $condition_notes
- * @property string $status draft|confirmed|rejected
+ * @property string $status draft|pending_qc|qc_passed|qc_failed|partial_accept|confirmed|rejected|returned
  * @property int|null $confirmed_by_id
  * @property Carbon|null $confirmed_at
  * @property string|null $rejection_reason
  * @property int|null $rejected_by_id
  * @property Carbon|null $rejected_at
+ * @property int|null $submitted_for_qc_by_id
+ * @property Carbon|null $submitted_for_qc_at
+ * @property string|null $qc_result passed|failed|partial
+ * @property Carbon|null $qc_completed_at
+ * @property int|null $qc_completed_by_id
+ * @property string|null $qc_notes
+ * @property Carbon|null $returned_at
+ * @property int|null $returned_by_id
+ * @property string|null $return_reason
  * @property bool $three_way_match_passed
  * @property bool $ap_invoice_created
  * @property int|null $ap_invoice_id
@@ -58,12 +67,24 @@ final class GoodsReceipt extends Model implements Auditable
         'rejection_reason',
         'rejected_by_id',
         'rejected_at',
+        'submitted_for_qc_by_id',
+        'submitted_for_qc_at',
+        'qc_result',
+        'qc_completed_at',
+        'qc_completed_by_id',
+        'qc_notes',
+        'returned_at',
+        'returned_by_id',
+        'return_reason',
     ];
 
     protected $casts = [
         'received_date' => 'date',
         'confirmed_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'submitted_for_qc_at' => 'datetime',
+        'qc_completed_at' => 'datetime',
+        'returned_at' => 'datetime',
         'three_way_match_passed' => 'boolean',
         'ap_invoice_created' => 'boolean',
     ];
@@ -100,6 +121,36 @@ final class GoodsReceipt extends Model implements Auditable
         return $this->belongsTo(VendorInvoice::class, 'ap_invoice_id');
     }
 
+    /** @return BelongsTo<User, GoodsReceipt> */
+    public function submittedForQcBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_for_qc_by_id');
+    }
+
+    /** @return BelongsTo<User, GoodsReceipt> */
+    public function qcCompletedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'qc_completed_by_id');
+    }
+
+    /** @return BelongsTo<User, GoodsReceipt> */
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by_id');
+    }
+
+    /** @return BelongsTo<User, GoodsReceipt> */
+    public function returnedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'returned_by_id');
+    }
+
+    /** @return HasMany<\App\Domains\QC\Models\Inspection, GoodsReceipt> */
+    public function inspections(): HasMany
+    {
+        return $this->hasMany(\App\Domains\QC\Models\Inspection::class, 'goods_receipt_id');
+    }
+
     /**
      * True when one or more GR line items have no linked item_master_id.
      * These items will be skipped by the auto-receive stock listener and need
@@ -108,5 +159,17 @@ final class GoodsReceipt extends Model implements Auditable
     public function hasUnlinkedItems(): bool
     {
         return $this->items->contains(fn ($item) => $item->item_master_id === null);
+    }
+
+    /**
+     * True when all items that require IQC have passed inspection.
+     */
+    public function allIqcPassed(): bool
+    {
+        return $this->inspections()
+            ->where('stage', 'iqc')
+            ->where('status', '!=', 'passed')
+            ->doesntExist()
+            && $this->inspections()->where('stage', 'iqc')->exists();
     }
 }

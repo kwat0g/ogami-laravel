@@ -47,10 +47,34 @@ final class GoodsReceiptPolicy
         return $user->hasPermissionTo('procurement.goods-receipt.create');
     }
 
-    public function confirm(User $user, GoodsReceipt $gr): bool
+    public function submitForQc(User $user, GoodsReceipt $gr): bool
     {
         return $user->hasPermissionTo('procurement.goods-receipt.confirm')
             && $gr->status === 'draft';
+    }
+
+    public function confirm(User $user, GoodsReceipt $gr): bool
+    {
+        return $user->hasPermissionTo('procurement.goods-receipt.confirm')
+            && in_array($gr->status, ['qc_passed', 'partial_accept'], true);
+    }
+
+    public function reject(User $user, GoodsReceipt $gr): bool
+    {
+        return $user->hasPermissionTo('procurement.goods-receipt.confirm')
+            && in_array($gr->status, ['draft', 'pending_qc', 'qc_failed'], true);
+    }
+
+    public function acceptWithDefects(User $user, GoodsReceipt $gr): bool
+    {
+        return $user->hasPermissionTo('procurement.goods-receipt.confirm')
+            && $gr->status === 'qc_failed';
+    }
+
+    public function returnToSupplier(User $user, GoodsReceipt $gr): bool
+    {
+        return $user->hasPermissionTo('procurement.goods-receipt.confirm')
+            && $gr->status === 'confirmed';
     }
 
     public function delete(User $user, GoodsReceipt $gr): bool
