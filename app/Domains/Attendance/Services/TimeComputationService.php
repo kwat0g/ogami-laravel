@@ -7,7 +7,6 @@ namespace App\Domains\Attendance\Services;
 use App\Domains\Attendance\Enums\AttendanceStatus;
 use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\Attendance\Models\NightShiftConfig;
-use App\Domains\Attendance\Models\ShiftSchedule;
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Carbon;
 
@@ -47,19 +46,17 @@ final class TimeComputationService implements ServiceContract
 
         $totalMinutes = (int) $timeIn->diffInMinutes($timeOut);
 
-        // Resolve shift for computing tardiness/undertime
-        $shift = $log->work_location_id
-            ? ShiftSchedule::find($log->relationLoaded('employee')
-                ? $this->resolveShiftId($log)
-                : null)
-            : null;
+        // Resolve shift from employee's active assignment
+        $shift = null;
+        if ($log->employee_id) {
+            $workDateStr = $log->work_date instanceof \DateTimeInterface
+                ? $log->work_date->format('Y-m-d')
+                : (string) $log->work_date;
 
-        // Try to load shift from the employee's assignment if not directly available
-        if (! $shift && $log->employee_id) {
             $shift = $log->employee?->shiftAssignments()
                 ->with('shiftSchedule')
-                ->where('effective_from', '<=', (string) $log->work_date)
-                ->where(fn ($q) => $q->whereNull('effective_to')->orWhere('effective_to', '>=', (string) $log->work_date))
+                ->where('effective_from', '<=', $workDateStr)
+                ->where(fn ($q) => $q->whereNull('effective_to')->orWhere('effective_to', '>=', $workDateStr))
                 ->latest('effective_from')
                 ->first()
                 ?->shiftSchedule;
@@ -127,6 +124,8 @@ final class TimeComputationService implements ServiceContract
             'is_night_diff' => $nightDiffMinutes > 0,
             'is_present' => true,
             'is_absent' => false,
+            'is_processed' => true,
+            'processed_at' => now(),
             'attendance_status' => $status->value,
         ];
     }
@@ -192,19 +191,5 @@ final class TimeComputationService implements ServiceContract
         return AttendanceStatus::Present;
     }
 
-    /**
-     * Attempt to resolve shift schedule ID from the log's employee assignment.
-     */
-    private function resolveShiftId(AttendanceLog $log): ?int
-    {
-        $workDate = $log->work_date instanceof \DateTimeInterface
-            ? $log->work_date->format('Y-m-d')
-            : (string) $log->work_date;
 
-        return $log->employee?->shiftAssignments()
-            ->where('effective_from', '<=', $workDate)
-            ->where(fn ($q) => $q->whereNull('effective_to')->orWhere('effective_to', '>=', $workDate))
-            ->latest('effective_from')
-            ->value('shift_schedule_id');
-    }
 }

@@ -7,6 +7,7 @@ namespace App\Http\Resources\Attendance;
 use App\Domains\Attendance\Models\AttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Attendance\WorkLocationResource;
 
 /**
  * @mixin AttendanceLog

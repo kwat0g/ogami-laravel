@@ -27,7 +27,8 @@ final class CorrectionRequestStateMachine
 
     public function transition(AttendanceCorrectionRequest $request, string $toState): void
     {
-        $fromState = $request->status->value ?? $request->status;
+        $rawStatus = $request->status;
+        $fromState = $rawStatus instanceof \BackedEnum ? $rawStatus->value : (string) $rawStatus;
 
         if (! $this->isAllowed($fromState, $toState)) {
             throw new DomainException(

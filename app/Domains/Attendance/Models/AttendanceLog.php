@@ -96,6 +96,8 @@ final class AttendanceLog extends Model implements Auditable
         'remarks',
         'import_batch_id',
         'processed_by',
+        'is_processed',
+        'processed_at',
         // Geolocation columns
         'work_location_id',
         'time_in_latitude',
