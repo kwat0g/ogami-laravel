@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -334,7 +335,7 @@ export default function CreatePayrollRunPage() {
           <CalendarRange className="h-5 w-5 text-neutral-900" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">New Payroll Run</h1>
+          <PageHeader title="New Payroll Run" backTo="/payroll/runs" />
           <p className="text-sm text-neutral-500 mt-0.5">
             Step 1 of 7 — Define the run type and pay period.
           </p>
