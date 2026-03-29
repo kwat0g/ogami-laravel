@@ -21,7 +21,7 @@ final class InterviewController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.interviews.view'), 403);
+        $this->authorize('viewAny', InterviewSchedule::class);
 
         $result = $this->service->list(
             $request->only(['application_id', 'interviewer_id', 'status', 'from_date', 'to_date']),
@@ -41,14 +41,14 @@ final class InterviewController extends Controller
 
     public function show(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.interviews.view'), 403);
+        $this->authorize('viewAny', InterviewSchedule::class);
 
         return response()->json($this->service->show($interview));
     }
 
     public function update(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.interviews.schedule'), 403);
+        $this->authorize('create', InterviewSchedule::class);
 
         $data = $request->validate([
             'scheduled_at' => ['sometimes', 'date', 'after:now'],
@@ -65,7 +65,7 @@ final class InterviewController extends Controller
 
     public function cancel(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.interviews.schedule'), 403);
+        $this->authorize('create', InterviewSchedule::class);
 
         $request->validate(['reason' => ['nullable', 'string', 'max:2000']]);
 
@@ -76,14 +76,14 @@ final class InterviewController extends Controller
 
     public function markNoShow(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.interviews.schedule'), 403);
+        $this->authorize('create', InterviewSchedule::class);
 
         return response()->json($this->service->markNoShow($interview, $request->user()));
     }
 
     public function complete(Request $request, InterviewSchedule $interview): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.interviews.schedule'), 403);
+        $this->authorize('create', InterviewSchedule::class);
 
         return response()->json($this->service->complete($interview, $request->user()));
     }

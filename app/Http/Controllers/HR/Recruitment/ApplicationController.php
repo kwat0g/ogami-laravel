@@ -23,7 +23,7 @@ final class ApplicationController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_unless($request->user()->can('recruitment.applications.view'), 403);
+        $this->authorize('viewAny', Application::class);
 
         $result = $this->service->list(
             $request->only(['job_posting_id', 'status', 'candidate_id', 'search']),
@@ -35,12 +35,15 @@ final class ApplicationController extends Controller
 
     public function store(StoreApplicationRequest $request): JsonResponse
     {
+        $this->authorize('create', Application::class);
+
         $posting = JobPosting::findOrFail($request->validated('job_posting_id'));
 
         $application = $this->service->apply(
             $posting,
             $request->validated('candidate'),
             $request->only(['cover_letter', 'source']),
+            $request->file('resume'),
         );
 
         return (new ApplicationResource($application->load('candidate')))
@@ -50,28 +53,28 @@ final class ApplicationController extends Controller
 
     public function show(Request $request, Application $application): ApplicationResource
     {
-        abort_unless($request->user()->can('recruitment.applications.view'), 403);
+        $this->authorize('view', $application);
 
         return new ApplicationResource($this->service->show($application));
     }
 
     public function review(Request $request, Application $application): ApplicationResource
     {
-        abort_unless($request->user()->can('recruitment.applications.review'), 403);
+        $this->authorize('review', $application);
 
         return new ApplicationResource($this->service->review($application, $request->user()));
     }
 
     public function shortlist(Request $request, Application $application): ApplicationResource
     {
-        abort_unless($request->user()->can('recruitment.applications.shortlist'), 403);
+        $this->authorize('shortlist', $application);
 
         return new ApplicationResource($this->service->shortlist($application, $request->user()));
     }
 
     public function reject(Request $request, Application $application): ApplicationResource
     {
-        abort_unless($request->user()->can('recruitment.applications.reject'), 403);
+        $this->authorize('reject', $application);
 
         $request->validate(['reason' => ['required', 'string', 'max:2000']]);
 

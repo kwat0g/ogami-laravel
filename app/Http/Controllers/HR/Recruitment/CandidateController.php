@@ -14,7 +14,7 @@ final class CandidateController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_unless($request->user()->can('recruitment.candidates.view'), 403);
+        abort_unless($request->user()->can('recruitment.candidates.view'), 403); // Candidate has no policy - keep inline
 
         $candidates = Candidate::with([])
             ->when($request->input('search'), fn ($q, $s) => $q->whereRaw(
@@ -30,14 +30,14 @@ final class CandidateController extends Controller
 
     public function show(Request $request, Candidate $candidate): CandidateResource
     {
-        abort_unless($request->user()->can('recruitment.candidates.view'), 403);
+        abort_unless($request->user()->can('recruitment.candidates.view'), 403); // Candidate has no policy - keep inline
 
         return new CandidateResource($candidate->load('applications.posting.requisition.position'));
     }
 
     public function update(Request $request, Candidate $candidate): CandidateResource
     {
-        abort_unless($request->user()->can('recruitment.candidates.manage'), 403);
+        abort_unless($request->user()->can('recruitment.candidates.manage'), 403); // Candidate has no policy - keep inline
 
         $data = $request->validate([
             'first_name' => ['sometimes', 'string', 'max:100'],

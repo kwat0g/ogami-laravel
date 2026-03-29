@@ -23,7 +23,7 @@ final class RequisitionController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_unless($request->user()->can('recruitment.requisitions.view'), 403);
+        $this->authorize('viewAny', JobRequisition::class);
 
         $result = $this->service->list(
             $request->only(['status', 'department_id', 'requested_by', 'search']),
@@ -36,6 +36,8 @@ final class RequisitionController extends Controller
 
     public function store(StoreRequisitionRequest $request): JsonResponse
     {
+        $this->authorize('create', JobRequisition::class);
+
         $requisition = $this->service->create($request->validated(), $request->user());
 
         return (new RequisitionResource($requisition))
@@ -45,13 +47,15 @@ final class RequisitionController extends Controller
 
     public function show(Request $request, JobRequisition $requisition): RequisitionResource
     {
-        abort_unless($request->user()->can('recruitment.requisitions.view'), 403);
+        $this->authorize('view', $requisition);
 
         return new RequisitionResource($this->service->show($requisition));
     }
 
     public function update(UpdateRequisitionRequest $request, JobRequisition $requisition): RequisitionResource
     {
+        $this->authorize('update', $requisition);
+
         $requisition = $this->service->update($requisition, $request->validated(), $request->user());
 
         return new RequisitionResource($requisition);
@@ -59,7 +63,7 @@ final class RequisitionController extends Controller
 
     public function submit(Request $request, JobRequisition $requisition): RequisitionResource
     {
-        abort_unless($request->user()->can('recruitment.requisitions.submit'), 403);
+        $this->authorize('submit', $requisition);
 
         $requisition = $this->service->submit($requisition, $request->user());
 
@@ -68,7 +72,7 @@ final class RequisitionController extends Controller
 
     public function approve(Request $request, JobRequisition $requisition): RequisitionResource
     {
-        abort_unless($request->user()->can('recruitment.requisitions.approve'), 403);
+        $this->authorize('approve', $requisition);
 
         $request->validate(['remarks' => ['nullable', 'string', 'max:2000']]);
 
@@ -79,7 +83,7 @@ final class RequisitionController extends Controller
 
     public function reject(Request $request, JobRequisition $requisition): RequisitionResource
     {
-        abort_unless($request->user()->can('recruitment.requisitions.reject'), 403);
+        $this->authorize('reject', $requisition);
 
         $request->validate(['reason' => ['required', 'string', 'max:2000']]);
 
@@ -90,7 +94,7 @@ final class RequisitionController extends Controller
 
     public function cancel(Request $request, JobRequisition $requisition): RequisitionResource
     {
-        abort_unless($request->user()->can('recruitment.requisitions.cancel'), 403);
+        $this->authorize('cancel', $requisition);
 
         $request->validate(['reason' => ['required', 'string', 'max:2000']]);
 
