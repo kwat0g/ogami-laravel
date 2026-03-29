@@ -146,6 +146,8 @@ final class ProductionOrderController extends Controller
     /** Restore a soft-deleted production order from the archive. */
     public function restore(Request $request, int $productionOrder): ProductionOrderResource
     {
+        $this->authorize('create', ProductionOrder::class);
+
         $order = $this->service->restoreOrder($productionOrder, $request->user());
 
         return new ProductionOrderResource($order->load('productItem', 'bom'));

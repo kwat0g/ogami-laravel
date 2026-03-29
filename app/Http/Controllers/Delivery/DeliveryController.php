@@ -76,7 +76,7 @@ final class DeliveryController extends Controller
 
     public function showShipment(Shipment $shipment): ShipmentResource
     {
-        $this->authorize('view', DeliveryReceipt::class);
+        $this->authorize('viewAny', DeliveryReceipt::class);
 
         return new ShipmentResource(
             $shipment->loadMissing(['deliveryReceipt', 'createdBy', 'impexDocuments'])
@@ -85,7 +85,7 @@ final class DeliveryController extends Controller
 
     public function updateShipmentStatus(Request $request, Shipment $shipment): ShipmentResource
     {
-        $this->authorize('update', DeliveryReceipt::class);
+        $this->authorize('confirm', $shipment->deliveryReceipt ?? DeliveryReceipt::class);
 
         $request->validate([
             'status' => ['required', 'string', 'in:pending,in_transit,delivered,cancelled'],

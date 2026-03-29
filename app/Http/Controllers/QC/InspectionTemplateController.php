@@ -72,6 +72,8 @@ final class InspectionTemplateController extends Controller
     /** Restore a soft-deleted template from the archive. */
     public function restore(Request $request, int $inspectionTemplate): InspectionTemplateResource
     {
+        $this->authorize('create', InspectionTemplate::class);
+
         $template = $this->service->restore($inspectionTemplate, $request->user());
 
         return new InspectionTemplateResource($template->load('items'));

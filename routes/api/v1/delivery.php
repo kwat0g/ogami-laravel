@@ -64,6 +64,7 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
 
     // ── Delivery Routes (Phase 3) ─────────────────────────────────────────
     Route::get('routes', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
         $routes = \App\Domains\Delivery\Models\DeliveryRoute::with('createdBy')
             ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
             ->orderByDesc('planned_date')
@@ -72,6 +73,7 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     })->name('routes.index');
 
     Route::post('routes', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
         $data = $request->validate([
             'planned_date' => ['required', 'date'],
             'vehicle_id' => ['sometimes', 'integer', 'exists:vehicles,id'],
