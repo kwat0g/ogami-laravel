@@ -1,6 +1,6 @@
 # Ogami ERP - Test Account Credentials
 
-Generated: 2026-03-29 23:55:25
+Generated: 2026-03-30 00:12:46
 
 ## Login URL
 http://localhost:5173/login
