@@ -56,6 +56,22 @@ export default function RequisitionDetailPage() {
                 Edit & Resubmit
               </Link>
             )}
+            {/* GAP-12: Cancel Requisition button */}
+            {req.status !== 'cancelled' && req.status !== 'closed' && (
+              <button
+                onClick={() => {
+                  if (!remarks.trim()) {
+                    toast.error('Reason required to cancel')
+                    return
+                  }
+                  handleAction('cancel', { reason: remarks })
+                }}
+                disabled={action.isPending}
+                className="px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+              >
+                Cancel Requisition
+              </button>
+            )}
           </div>
         }
       />

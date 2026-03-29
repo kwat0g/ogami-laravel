@@ -72,11 +72,15 @@ final class OfferController extends Controller
 
     public function accept(Request $request, JobOffer $offer): JobOfferResource
     {
+        $this->authorize('update', $offer);
+
         return new JobOfferResource($this->service->acceptOffer($offer));
     }
 
     public function reject(Request $request, JobOffer $offer): JobOfferResource
     {
+        $this->authorize('update', $offer);
+
         $request->validate(['reason' => ['required', 'string', 'max:2000']]);
 
         return new JobOfferResource($this->service->rejectOffer($offer, $request->input('reason')));

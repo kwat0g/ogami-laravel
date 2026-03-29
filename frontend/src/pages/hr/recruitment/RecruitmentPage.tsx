@@ -371,6 +371,13 @@ function ApplicationsTab() {
             <option value="rejected">Rejected</option>
             <option value="withdrawn">Withdrawn</option>
           </select>
+          <Link
+            to="/hr/recruitment/applications/new"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Application
+          </Link>
         </div>
       }>
         Applications

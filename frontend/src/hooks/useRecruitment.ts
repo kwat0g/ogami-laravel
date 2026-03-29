@@ -274,6 +274,82 @@ export function useHire(applicationUlid: string) {
   })
 }
 
+// ── Pre-Employment ───────────────────────────────────────────────────────────
+
+export function usePreEmployment(applicationUlid: string) {
+  return useQuery({
+    queryKey: ['recruitment', 'pre-employment', applicationUlid],
+    queryFn: async () => {
+      const { data } = await api.get(`/recruitment/pre-employment/${applicationUlid}`)
+      return data.data
+    },
+    enabled: !!applicationUlid,
+  })
+}
+
+export function useInitPreEmployment(applicationUlid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.post(`/recruitment/pre-employment/${applicationUlid}/init`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.application(applicationUlid) })
+      qc.invalidateQueries({ queryKey: ['recruitment', 'pre-employment', applicationUlid] })
+    },
+  })
+}
+
+export function usePreEmploymentAction() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ requirementId, action, payload }: { requirementId: number; action: string; payload?: Record<string, unknown> }) =>
+      api.post(`/recruitment/pre-employment/requirements/${requirementId}/${action}`, payload ?? {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recruitment'] })
+    },
+  })
+}
+
+export function usePreEmploymentUpload() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ requirementId, file }: { requirementId: number; file: File }) => {
+      const formData = new FormData()
+      formData.append('document', file)
+      return api.post(`/recruitment/pre-employment/requirements/${requirementId}/submit-document`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recruitment'] })
+    },
+  })
+}
+
+export function useCompletePreEmployment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (checklistId: number) => api.post(`/recruitment/pre-employment/${checklistId}/complete`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recruitment'] })
+    },
+  })
+}
+
+// ── Interview Actions ────────────────────────────────────────────────────────
+
+export function useInterviewAction(interviewId: number | string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ action, payload }: { action: string; payload?: Record<string, unknown> }) =>
+      api.post(`/recruitment/interviews/${interviewId}/${action}`, payload ?? {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.interviews })
+      qc.invalidateQueries({ queryKey: ['recruitment', 'interviews', String(interviewId)] })
+      qc.invalidateQueries({ queryKey: KEYS.applications })
+    },
+  })
+}
+
 // ── Candidates ───────────────────────────────────────────────────────────────
 
 export function useCandidates(params?: Record<string, string>) {

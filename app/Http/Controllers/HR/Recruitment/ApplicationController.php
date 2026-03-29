@@ -85,6 +85,8 @@ final class ApplicationController extends Controller
 
     public function withdraw(Request $request, Application $application): ApplicationResource
     {
+        $this->authorize('view', $application);
+
         $request->validate(['reason' => ['required', 'string', 'max:2000']]);
 
         return new ApplicationResource(
