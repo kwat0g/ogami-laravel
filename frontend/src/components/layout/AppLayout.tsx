@@ -105,6 +105,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Employees', href: '/hr/employees/all', permission: 'hr.full_access' },
       { label: 'Departments', href: '/hr/departments', permission: 'hr.full_access', activePaths: ['/hr/positions', '/hr/shifts'] },
       { label: 'Attendance', href: '/hr/attendance', permission: 'hr.full_access' },
+      { label: 'Work Locations', href: '/hr/attendance/work-locations', permission: 'hr.full_access' },
       { label: 'Leave', href: '/hr/leave', permission: 'hr.full_access', end: true },
       { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
       { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
