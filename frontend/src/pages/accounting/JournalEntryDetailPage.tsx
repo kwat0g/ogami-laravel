@@ -139,7 +139,7 @@ export default function JournalEntryDetailPage() {
     }
   }
 
-  async function handleDelete() {
+  async function _handleDelete() {
     try {
       await deleteMutation.mutateAsync()
       toast.success('Journal entry deleted.')
@@ -165,7 +165,7 @@ export default function JournalEntryDetailPage() {
     </div>
   )
 
-  const canDelete = entry.status === 'draft' && !entry.is_auto_posted
+  const _canDelete = entry.status === 'draft' && !entry.is_auto_posted
 
   return (
     <div className="max-w-7xl mx-auto">

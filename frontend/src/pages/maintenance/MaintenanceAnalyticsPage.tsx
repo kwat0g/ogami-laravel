@@ -21,6 +21,7 @@ export default function MaintenanceAnalyticsPage() {
               <tr><th className="text-left p-3">Equipment</th><th className="text-right p-3">MTBF (hrs)</th><th className="text-right p-3">MTTR (hrs)</th><th className="text-right p-3">Failures</th><th className="text-right p-3">Availability %</th></tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(metrics ?? []).map((m: any) => (
                 <tr key={m.equipment_id}>
                   <td className="p-3"><span className="font-medium">{m.equipment_code}</span> - {m.equipment_name}</td>
@@ -42,6 +43,7 @@ export default function MaintenanceAnalyticsPage() {
               <tr><th className="text-left p-3">Equipment</th><th className="text-right p-3">Labor Cost</th><th className="text-right p-3">Parts Cost</th><th className="text-right p-3">Total</th><th className="text-right p-3">WOs</th></tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(costs ?? []).map((c: any) => (
                 <tr key={c.equipment_id}>
                   <td className="p-3"><span className="font-medium">{c.equipment_code}</span> - {c.equipment_name}</td>

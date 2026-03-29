@@ -214,7 +214,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
   const fulfillMutation = useFulfillFromStock(ulid || '')
 
   const canCreateWO = hasPermission('production.orders.create')
-  const canManage = hasPermission('production.delivery-schedule.manage')
+  const _canManage = hasPermission('production.delivery-schedule.manage')
   const canFulfill = hasPermission('production.delivery-schedule.manage')
 
   const handleFulfillFromStock = async () => {
@@ -222,7 +222,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
       await fulfillMutation.mutateAsync()
       toast.success('Order fulfilled from stock successfully')
       setShowFulfillConfirm(false)
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Extract specific error message from API response
       const message = error?.response?.data?.message || error?.message || 'Failed to fulfill from stock'
       toast.error(message)
@@ -443,6 +443,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
               </CardHeader>
               <CardBody>
                 <div className="divide-y divide-neutral-100">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {schedule.delivery_receipts?.map((dr: any) => (
                     <div
                       key={dr.ulid}

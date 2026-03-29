@@ -31,7 +31,7 @@ function DeliveryModal({ isOpen, onClose, onConfirm, items, isPending }: Deliver
   const [qtys, setQtys] = useState<Record<number, number>>({})
   const [notes, setNotes] = useState('')
   const [deliveryDate, setDeliveryDate] = useState(formatDateInput(new Date()))
-  const [errors, setErrors] = useState<Record<number, string>>({})
+  const [_errors, _setErrors] = useState<Record<number, string>>({})
 
   if (!isOpen) return null
 

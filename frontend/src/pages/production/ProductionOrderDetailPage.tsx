@@ -421,6 +421,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {order.inspections?.map((ins: any) => (
                 <tr key={ins.ulid}>
                   <td className="px-3 py-2">

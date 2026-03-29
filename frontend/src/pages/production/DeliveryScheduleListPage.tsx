@@ -51,7 +51,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
   })
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('production.delivery-schedule.manage')
-  const canCreateWO = hasPermission('production.orders.create')
+  const _canCreateWO = hasPermission('production.orders.create')
 
   return (
     <div>

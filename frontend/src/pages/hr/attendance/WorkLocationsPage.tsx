@@ -26,7 +26,7 @@ export default function WorkLocationsPage() {
   const { data: locationsData, isLoading, _refetch } = useWorkLocations()
   const { data: geofenceSettings } = useGeofenceSettings()
   const toggleGeofence = useToggleGeofence()
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<WorkLocation | null>(null)

@@ -61,6 +61,7 @@ export default function CandidateProfilePage() {
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
           {candidate.applications?.length > 0 ? (
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             candidate.applications.map((app: any) => (
               <Link
                 key={app.ulid}

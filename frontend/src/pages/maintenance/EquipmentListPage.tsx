@@ -38,8 +38,8 @@ export default function EquipmentListPage() {
     enabled: isArchiveView,
   });
 
-  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
-  const currentLoading = isArchiveView ? archivedLoading : isLoading;
+  const _currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
+  const _currentLoading = isArchiveView ? archivedLoading : isLoading;
   const canManage = useAuthStore(s => s.hasPermission('maintenance.manage'));
 
   const handleSearch = useCallback((val: string) => {

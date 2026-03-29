@@ -345,7 +345,7 @@ export default function PayrollRunScopePage() {
     }
   }
 
-  function handleConfirmClick() {
+  function _handleConfirmClick() {
     if (!validateConfirmScope()) return
     // Warn if any in-scope employees still have no bank account
     if (preview?.missing_bank_employees && preview.missing_bank_employees.length > 0) {

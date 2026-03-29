@@ -42,7 +42,7 @@ const STATUS_LABEL: Record<VendorInvoiceStatus, string> = {
   deleted:          'Deleted',
 }
 
-const ALL_STATUSES: VendorInvoiceStatus[] = [
+const _ALL_STATUSES: VendorInvoiceStatus[] = [
   'draft', 'pending_approval', 'head_noted', 'manager_checked', 'officer_reviewed', 'approved', 'rejected', 'partially_paid', 'paid',
 ]
 

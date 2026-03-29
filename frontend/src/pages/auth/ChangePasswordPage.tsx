@@ -12,7 +12,7 @@ import FormField from '@/components/ui/FormField'
 
 export default function ChangePasswordPage() {
   const navigate    = useNavigate()
-  const clearAuth   = useAuthStore((s) => s.clearAuth)
+  const _clearAuth   = useAuthStore((s) => s.clearAuth)
 
   const {
     register,

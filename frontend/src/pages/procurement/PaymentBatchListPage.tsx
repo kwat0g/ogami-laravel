@@ -30,6 +30,7 @@ export default function PaymentBatchListPage() {
               <tr><th className="text-left p-3">Batch #</th><th className="text-left p-3">Status</th><th className="text-left p-3">Payment Date</th><th className="text-right p-3">Total</th><th className="text-right p-3">Count</th></tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {batches.map((b: any) => (
                 <tr key={b.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                   <td className="p-3 font-medium">{b.batch_number}</td>

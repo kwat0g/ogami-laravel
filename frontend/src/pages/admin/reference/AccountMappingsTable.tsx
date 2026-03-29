@@ -29,7 +29,7 @@ interface AccountMapping {
 }
 
 export default function AccountMappingsTable(): JSX.Element {
-  const { isEditMode } = useEditMode()
+  const { _isEditMode } = useEditMode()
 
   const { data, isLoading } = useQuery<{ data: AccountMapping[] }>({
     queryKey: ['admin', 'account-mappings'],

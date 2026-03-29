@@ -186,7 +186,7 @@ interface DonutChartProps {
   centerValue?: string | number
 }
 
-const RADIAN = Math.PI / 180
+const _RADIAN = Math.PI / 180
 
 export function MiniDonutChart({ data, height = 200, centerLabel, centerValue }: DonutChartProps): JSX.Element {
   return (

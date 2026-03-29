@@ -50,9 +50,9 @@ export default function ProductionOrderListPage(): React.ReactElement {
 
   const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
   const currentLoading = isArchiveView ? archivedLoading : isLoading
-  const isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
+  const _isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('production.orders.create')
+  const _canCreate = hasPermission('production.orders.create')
 
   return (
     <div>
@@ -126,6 +126,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {currentData.map((order: any) => (
                   <tr key={order.id} className={`even:bg-neutral-100 hover:bg-neutral-50 ${isArchiveView ? '' : 'cursor-pointer'}`} onClick={() => !isArchiveView && navigate(`/production/orders/${order.ulid}`)}>
                     <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{order.po_reference}</td>

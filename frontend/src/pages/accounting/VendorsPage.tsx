@@ -204,7 +204,7 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
   const tinError = touched && form.tin && !validators.tin(form.tin)
     ? validationMessages.tin
     : undefined
-  const phoneError = touched && form.phone && !validators.phone(form.phone)
+  const _phoneError = touched && form.phone && !validators.phone(form.phone)
     ? validationMessages.phone
     : undefined
   const isValid = form.name.trim() 

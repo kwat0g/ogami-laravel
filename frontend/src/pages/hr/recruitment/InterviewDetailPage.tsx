@@ -76,6 +76,7 @@ export default function InterviewDetailPage() {
             />
           </div>
           <div className="space-y-2">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {interview.evaluation.scorecard?.map((item: any, idx: number) => (
               <div key={idx} className="flex items-center justify-between rounded bg-gray-50 px-4 py-2 dark:bg-gray-700">
                 <span className="text-sm text-gray-700 dark:text-gray-300">{item.criterion}</span>

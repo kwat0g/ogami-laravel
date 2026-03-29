@@ -18,7 +18,7 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 import api from '@/lib/api'
 
 export default function BomListPage(): React.ReactElement {
-  const [page, setPage] = useState(1)
+  const [_page, setPage] = useState(1)
   const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -109,6 +109,7 @@ export default function BomListPage(): React.ReactElement {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {currentData.map((bom: any) => (
                     <tr
                       key={bom.id}

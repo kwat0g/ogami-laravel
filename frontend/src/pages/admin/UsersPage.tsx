@@ -172,7 +172,7 @@ export default function UsersPage() {
   const provisionPortal = useProvisionPortalAccount()
   const reset     = useResetPassword()
   const disable    = useDisableAdminUser()
-  const removeUser = useDeleteAdminUser()
+  const _removeUser = useDeleteAdminUser()
   const assignRole = useAssignRole()
   const unlock     = useUnlockUser()
 

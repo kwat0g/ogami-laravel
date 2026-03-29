@@ -34,7 +34,7 @@ export default function NcrDetailPage(): React.ReactElement {
   const [capaTouched, setCapaTouched] = useState<Set<string>>(new Set())
 
   // Confirmation dialog states
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [_showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showCapaConfirm, setShowCapaConfirm] = useState(false)
   const [capaToComplete, setCapaToComplete] = useState<string | null>(null)
 
@@ -92,7 +92,7 @@ export default function NcrDetailPage(): React.ReactElement {
     }
   }
 
-  const handleCloseClick = () => {
+  const _handleCloseClick = () => {
     setShowCloseConfirm(true)
   }
 

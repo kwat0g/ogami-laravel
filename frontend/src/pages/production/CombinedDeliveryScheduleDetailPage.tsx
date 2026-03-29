@@ -215,7 +215,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
   const { hasPermission } = useAuthStore()
   const [showDispatchModal, setShowDispatchModal] = useState(searchParams.get('action') === 'dispatch')
   const [showNotifyModal, setShowNotifyModal] = useState(searchParams.get('action') === 'notify')
-  const [showMarkDeliveredModal, setShowMarkDeliveredModal] = useState(false)
+  const [_showMarkDeliveredModal, setShowMarkDeliveredModal] = useState(false)
 
   const { data: schedule, isLoading, isError } = useCombinedDeliverySchedule(ulid || null)
   const markDeliveredMutation = useMarkDelivered(ulid || '')
@@ -241,7 +241,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
 
   const status = schedule.status
 
-  const handleMarkDelivered = async () => {
+  const _handleMarkDelivered = async () => {
     try {
       await markDeliveredMutation.mutateAsync({
         delivery_date: new Date().toISOString().split('T')[0],
@@ -350,6 +350,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
             </CardHeader>
             <CardBody>
               <div className="divide-y divide-neutral-100">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {schedule.item_schedules?.map((item: any) => {
                   const summary = schedule.item_status_summary?.find(
                     (s: ItemStatusSummary) => s.delivery_schedule_id === item.id

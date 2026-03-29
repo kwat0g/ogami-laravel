@@ -120,6 +120,7 @@ export default function RequisitionFormPage() {
                   required
                 >
                   <option value="">Select department...</option>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {departments.map((d: any) => (
                     <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
                   ))}
@@ -135,6 +136,7 @@ export default function RequisitionFormPage() {
                   disabled={!form.department_id}
                 >
                   <option value="">{form.department_id ? 'Select position...' : 'Select department first'}</option>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(Array.isArray(positions) ? positions : []).map((p: any) => (
                     <option key={p.id} value={p.id}>{p.title} ({p.code})</option>
                   ))}

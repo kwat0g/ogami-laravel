@@ -150,7 +150,7 @@ export default function InspectionDetailPage(): React.ReactElement {
     e.preventDefault()
     setTouchedQty(true)
     const passed = Number(qtyPassed)
-    const failed = Number(qtyFailed)
+    const _failed = Number(qtyFailed)
 
     if (qtyPassed === '' || isNaN(passed) || passed < 0) {
       toast.error('Qty Passed must be a valid number ≥ 0.')

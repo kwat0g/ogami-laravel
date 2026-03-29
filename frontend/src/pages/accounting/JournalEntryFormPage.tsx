@@ -209,7 +209,7 @@ export default function JournalEntryFormPage() {
   const createMutation = useCreateJournalEntry()
   
   // Template hooks
-  const { data: templates = [] } = useJournalEntryTemplates()
+  const { data: _templates = [] } = useJournalEntryTemplates()
   const applyTemplate = useApplyJournalEntryTemplate()
   const createTemplate = useCreateJournalEntryTemplate()
   const [selectedTemplate, setSelectedTemplate] = useState<number | ''>('')
@@ -237,7 +237,7 @@ export default function JournalEntryFormPage() {
   }, [lines])
 
   // Validation
-  const { isValid: isFormValid, errors: validationErrors } = useMemo(
+  const { isValid: _isFormValid, errors: validationErrors } = useMemo(
     () => validateJournalEntry(entryDate, lines, isBalanced),
     [entryDate, lines, isBalanced]
   )
@@ -255,7 +255,7 @@ export default function JournalEntryFormPage() {
   }
   
   // Template handlers
-  async function handleApplyTemplate() {
+  async function _handleApplyTemplate() {
     if (!selectedTemplate) return
     try {
       const result = await applyTemplate.mutateAsync(Number(selectedTemplate))

@@ -38,10 +38,10 @@ export default function MoldListPage() {
     enabled: isArchiveView,
   });
 
-  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
-  const currentLoading = isArchiveView ? archivedLoading : isLoading;
+  const _currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
+  const _currentLoading = isArchiveView ? archivedLoading : isLoading;
   const canManage = useAuthStore(s => s.hasPermission('mold.manage'));
-  const isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'));
+  const _isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'));
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);

@@ -37,12 +37,12 @@ const NEXT_STATUS_LABEL: Partial<Record<ShipmentStatus, string>> = {
 
 export default function ShipmentsPage() {
   const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
+  const [_search, _setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
 
-  const handleSearch = useCallback((val: string) => {
+  const _handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);
     setPage(1);
   }, []);

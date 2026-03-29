@@ -33,6 +33,7 @@ function AccountSelect({ value, onChange, filterType, error }: {
 }) {
   const { data: accounts } = useChartOfAccounts({})
   const filtered = filterType
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ? (accounts ?? []).filter((a: any) => a.account_type === filterType)
     : (accounts ?? [])
   return (
@@ -43,6 +44,7 @@ function AccountSelect({ value, onChange, filterType, error }: {
       required
     >
       <option value="">Select account...</option>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {filtered.map((a: any) => (
         <option key={a.id} value={a.id}>{a.code} - {a.name}</option>
       ))}

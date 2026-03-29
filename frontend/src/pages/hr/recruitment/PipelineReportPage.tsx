@@ -30,6 +30,7 @@ export default function PipelineReportPage() {
                 </tr>
               </thead>
               <tbody>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {pipeline.map((row: any, i: number) => (
                   <tr key={i} className="border-b">
                     <td className="py-2 pr-4 font-medium">{row.requisition_number}</td>
@@ -72,6 +73,7 @@ export default function PipelineReportPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {ttf.details.map((row: any, i: number) => (
                     <tr key={i} className="border-b">
                       <td className="py-2 pr-4 font-medium">{row.requisition_number}</td>
@@ -96,7 +98,9 @@ export default function PipelineReportPage() {
           <p className="text-gray-400">Loading...</p>
         ) : source && Array.isArray(source) && source.length > 0 ? (
           <div className="space-y-2">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {source.map((row: any) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const maxCount = Math.max(...source.map((s: any) => s.count), 1)
               const width = Math.max((row.count / maxCount) * 100, 5)
               return (

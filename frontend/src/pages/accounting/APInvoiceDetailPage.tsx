@@ -54,7 +54,7 @@ export default function APInvoiceDetailPage() {
   const [payMethod, setPayMethod]             = useState<'bank_transfer' | 'check' | 'cash' | ''>('')
   const [payRef, setPayRef]                   = useState('')
   const [cancelReason, setCancelReason]       = useState('')
-  const [showCancelForm, setShowCancelForm]   = useState(false)
+  const [_showCancelForm, setShowCancelForm]   = useState(false)
 
   if (isLoading) return <SkeletonLoader rows={8} />
   if (isError || !invoice) {

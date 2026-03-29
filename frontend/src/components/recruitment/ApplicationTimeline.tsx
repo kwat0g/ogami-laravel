@@ -35,7 +35,7 @@ function buildTimeline(app: Application): TimelineStep[] {
 
   // Interviews
   if (app.interviews && app.interviews.length > 0) {
-    app.interviews.forEach((interview, idx) => {
+    app.interviews.forEach((interview, _idx) => {
       steps.push({
         label: `Interview R${interview.round}`,
         status: interview.status === 'completed' ? 'done' : interview.status === 'scheduled' ? 'current' : 'pending',

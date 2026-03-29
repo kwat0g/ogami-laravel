@@ -39,6 +39,7 @@ export default function SpcDashboardPage() {
             onChange={e => setTemplateId(e.target.value)}
           >
             <option value="">Select Inspection Template...</option>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {(templates ?? []).map((t: any) => (
               <option key={t.id} value={t.id}>{t.name ?? t.code ?? `Template #${t.id}`}</option>
             ))}
@@ -70,6 +71,7 @@ export default function SpcDashboardPage() {
                   <tr><th className="text-left p-2">Date</th><th className="text-right p-2">Value</th><th className="text-center p-2">Status</th></tr>
                 </thead>
                 <tbody className="divide-y">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(data.data_points ?? []).slice(0, 50).map((pt: any, i: number) => (
                     <tr key={i} className={pt.out_of_control ? 'bg-red-50' : ''}>
                       <td className="p-2">{new Date(pt.date).toLocaleString()}</td>

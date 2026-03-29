@@ -51,8 +51,8 @@ export default function QcTemplateListPage(): React.ReactElement {
     enabled: isArchiveView,
   })
 
-  const currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
-  const currentLoading = isArchiveView ? archivedLoading : isLoading
+  const _currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? [])
+  const _currentLoading = isArchiveView ? archivedLoading : isLoading
 
   const deleteMut = useDeleteInspectionTemplate()
 

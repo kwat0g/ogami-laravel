@@ -151,7 +151,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabId>('purchase-requests')
   const { user, hasPermission } = useAuthStore()
-  const currentUserId = user?.id ?? null
+  const _currentUserId = user?.id ?? null
 
   const canLeaveApprove   = hasPermission('leaves.executive_approve') || hasPermission('leaves.ga_process') || hasPermission('leaves.vp_note')
   const canOvertimeApprove = hasPermission('overtime.executive_approve')

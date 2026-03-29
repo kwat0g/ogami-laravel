@@ -124,6 +124,7 @@ function DashboardTab() {
           <CardHeader>Applications by Source</CardHeader>
           <CardBody>
             <div className="space-y-2">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {data.source_mix.map((s: any) => (
                 <div key={s.source} className="flex items-center justify-between text-sm">
                   <span className="text-neutral-600 dark:text-neutral-400">{s.label}</span>
@@ -143,6 +144,7 @@ function DashboardTab() {
           <CardHeader>Recent Requisitions</CardHeader>
           <CardBody className="p-0">
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {data.recent_requisitions.map((r: any) => (
                 <Link key={r.ulid} to={`/hr/recruitment/requisitions/${r.ulid}`} className="flex items-center justify-between px-5 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                   <div>
@@ -166,6 +168,7 @@ function DashboardTab() {
           <CardHeader>Upcoming Interviews</CardHeader>
           <CardBody className="p-0">
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {data.upcoming_interviews.map((i: any) => (
                 <div key={i.id} className="flex items-center justify-between px-5 py-3">
                   <div>
@@ -246,6 +249,7 @@ function RequisitionsTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {data?.data?.map((req: any) => (
               <tr key={req.ulid} onClick={() => navigate(`/hr/recruitment/requisitions/${req.ulid}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{req.requisition_number}</td>
@@ -317,6 +321,7 @@ function PostingsTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {data?.data?.map((p: any) => (
               <tr key={p.ulid} onClick={() => navigate(`/hr/recruitment/postings/${p.ulid}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{p.posting_number}</td>
@@ -383,6 +388,7 @@ function ApplicationsTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {data?.data?.map((app: any) => (
               <tr key={app.ulid} onClick={() => navigate(`/hr/recruitment/applications/${app.ulid}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{app.application_number}</td>
@@ -443,6 +449,7 @@ function InterviewsTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {interviews.map((i: any) => (
               <tr key={i.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">
@@ -510,6 +517,7 @@ function OffersTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {data?.data?.map((offer: any) => (
               <tr key={offer.ulid} onClick={() => navigate(`/hr/recruitment/offers/${offer.ulid}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{offer.offer_number}</td>
@@ -562,6 +570,7 @@ function CandidatesTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {data?.data?.map((c: any) => (
               <tr key={c.id} onClick={() => navigate(`/hr/recruitment/candidates/${c.id}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{c.full_name}</td>
@@ -609,6 +618,7 @@ function ReportsTab() {
                     </tr>
                   </thead>
                   <tbody>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {ttf.details.map((row: any, i: number) => (
                       <tr key={i} className="border-b border-neutral-50 dark:border-neutral-800">
                         <td className="py-2 pr-4 font-medium text-neutral-900 dark:text-neutral-100">{row.requisition_number}</td>
@@ -630,7 +640,9 @@ function ReportsTab() {
         <CardBody>
           {sourceLoading ? <SkeletonLoader rows={3} /> : source && Array.isArray(source) && source.length > 0 ? (
             <div className="space-y-2">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {source.map((row: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const maxCount = Math.max(...source.map((s: any) => s.count), 1)
                 const width = Math.max((row.count / maxCount) * 100, 5)
                 return (

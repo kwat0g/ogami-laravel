@@ -140,7 +140,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
     if (!gr) return
     submitForQcMutation.mutate(gr.ulid, {
       onSuccess: () => toast.success('GR submitted for incoming quality control.'),
-      onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to submit for QC.'),
+      onError: (err: unknown) => toast.error(firstErrorMessage(err) ?? 'Failed to submit for QC.'),
     })
   }
 
@@ -150,7 +150,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
       { ulid: gr.ulid, itemId, data: { condition } },
       {
         onSuccess: () => toast.success('Item condition updated.'),
-        onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to update item.'),
+        onError: (err: unknown) => toast.error(firstErrorMessage(err) ?? 'Failed to update item.'),
       },
     )
   }
@@ -161,7 +161,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
       { ulid: gr.ulid, itemId, data: { remarks } },
       {
         onSuccess: () => toast.success('Remarks saved.'),
-        onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to save remarks.'),
+        onError: (err: unknown) => toast.error(firstErrorMessage(err) ?? 'Failed to save remarks.'),
       },
     )
   }
@@ -210,7 +210,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                 if (!gr) return
                 resubmitForQcMutation.mutate(gr.ulid, {
                   onSuccess: () => toast.success('GR resubmitted for QC re-inspection.'),
-                  onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to resubmit for QC.'),
+                  onError: (err: unknown) => toast.error(firstErrorMessage(err) ?? 'Failed to resubmit for QC.'),
                 })
               }}
               className="flex items-center gap-2 px-4 py-2.5 rounded bg-white border border-blue-300 text-blue-600 text-sm font-medium hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -239,7 +239,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                   { ulid: gr.ulid, items, notes: gr.qc_notes ?? undefined },
                   {
                     onSuccess: () => toast.success('GR accepted with defects. NCRs documented.'),
-                    onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to accept with defects.'),
+                    onError: (err: unknown) => toast.error(firstErrorMessage(err) ?? 'Failed to accept with defects.'),
                   }
                 )
               }}
@@ -275,7 +275,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                   { ulid: gr.ulid, reason },
                   {
                     onSuccess: () => toast.success('Goods returned to supplier.'),
-                    onError: (err: any) => toast.error(firstErrorMessage(err) ?? 'Failed to return goods.'),
+                    onError: (err: unknown) => toast.error(firstErrorMessage(err) ?? 'Failed to return goods.'),
                   }
                 )
               }}
@@ -492,6 +492,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {gr.items.map((item: any, idx: number) => (
                   <tr key={item.id} className="even:bg-neutral-50/50 hover:bg-neutral-50">
                     <td className="px-4 py-3 text-neutral-400">{idx + 1}</td>
@@ -564,7 +565,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                             handleItemRemarksChange(item.id, e.target.value)
                             setEditingItemId(null)
                           }}
-                          onKeyDown={(e: any) => {
+                          onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                             if (e.key === 'Enter') {
                               handleItemRemarksChange(item.id, e.target.value)
                               setEditingItemId(null)

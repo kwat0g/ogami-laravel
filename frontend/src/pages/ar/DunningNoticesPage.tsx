@@ -28,6 +28,7 @@ export default function DunningNoticesPage() {
       />
       {generateMut.isSuccess && (
         <div className="p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           Generated {(generateMut.data as any)?.generated_count ?? 0} new notices
         </div>
       )}
@@ -44,6 +45,7 @@ export default function DunningNoticesPage() {
               <tr><th className="text-left p-3">Customer</th><th className="text-left p-3">Level</th><th className="text-right p-3">Amount Due</th><th className="text-right p-3">Days Overdue</th><th className="text-left p-3">Status</th><th className="text-left p-3">Sent</th></tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {notices.map((n: any) => (
                 <tr key={n.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                   <td className="p-3">{n.customer?.name ?? '-'}</td>

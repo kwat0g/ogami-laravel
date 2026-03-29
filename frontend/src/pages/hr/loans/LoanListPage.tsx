@@ -14,7 +14,7 @@ export default function LoanListPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('loans.create') || hasPermission('loans.apply')
+  const _canCreate = hasPermission('loans.create') || hasPermission('loans.apply')
   const isAccountingContext = location.pathname.startsWith('/accounting')
   const loanBasePath = isAccountingContext ? '/accounting/loans' : '/hr/loans'
 

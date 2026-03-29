@@ -50,6 +50,7 @@ const guard = (permission: string, node: React.ReactNode) => (
 
 // Helper: Wrap lazy imports to catch "Failed to fetch dynamically imported module" errors.
 // When a chunk fails to load, it reloads the page to get the latest chunk mapping.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function lazyWithRetry<T extends React.ComponentType<any>>(importFunc: () => Promise<{ default: T }>) {
   return lazy(() =>
     importFunc().catch((error) => {

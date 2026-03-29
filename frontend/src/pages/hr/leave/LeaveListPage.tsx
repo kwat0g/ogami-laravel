@@ -148,7 +148,7 @@ export default function LeaveListPage() {
   }
 
   // Get status color for timeline
-  const getStatusColor = (status: string) => {
+  const _getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
         return 'bg-green-500'

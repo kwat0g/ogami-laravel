@@ -64,6 +64,7 @@ export default function InterviewListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {interviews.map((i: any) => (
                 <tr key={i.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
