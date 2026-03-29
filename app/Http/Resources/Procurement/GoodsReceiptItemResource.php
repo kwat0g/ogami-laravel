@@ -29,6 +29,8 @@ final class GoodsReceiptItemResource extends JsonResource
             'quantity_rejected' => $this->quantity_rejected !== null ? (float) $this->quantity_rejected : null,
             'defect_type' => $this->defect_type,
             'defect_description' => $this->defect_description,
+            'reject_disposition' => $this->reject_disposition,
+            'disposition_completed_at' => $this->disposition_completed_at,
             'ncr_id' => $this->ncr_id,
             'ncr' => $this->whenLoaded('ncr', fn () => $this->ncr ? [
                 'id' => $this->ncr->id,

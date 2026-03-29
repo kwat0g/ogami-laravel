@@ -221,6 +221,8 @@ export interface GoodsReceiptItem {
   quantity_rejected: number | null
   defect_type: DefectType | null
   defect_description: string | null
+  reject_disposition: 'return_to_vendor' | 'scrap' | 'rework' | 'accept_as_is' | null
+  disposition_completed_at: string | null
   ncr_id: number | null
   ncr?: {
     id: number
