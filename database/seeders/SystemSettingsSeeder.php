@@ -91,21 +91,19 @@ class SystemSettingsSeeder extends Seeder
             ],
             [
                 'key' => 'attendance.geofence_mode',
-                'label' => 'Geofence Enforcement Mode',
+                'label' => 'Geofence Enforcement Mode (strict|override|disabled)',
                 'value' => json_encode('strict'),
                 'data_type' => 'string',
                 'group' => 'attendance',
                 'editable_by_role' => 'admin',
-                'description' => 'strict = block clock-in outside geofence | override = allow with reason | disabled = no geofence check',
             ],
             [
                 'key' => 'attendance.geofence_enabled',
-                'label' => 'Geofence Enforcement Enabled',
+                'label' => 'Geofence Enforcement Enabled (master toggle)',
                 'value' => json_encode(true),
                 'data_type' => 'boolean',
                 'group' => 'attendance',
                 'editable_by_role' => 'admin',
-                'description' => 'Master toggle — admin can temporarily disable all geofence checks',
             ],
 
             // ─── Leave ────────────────────────────────────────────────────────
