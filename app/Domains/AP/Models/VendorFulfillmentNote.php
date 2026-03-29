@@ -10,6 +10,7 @@ use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * VendorFulfillmentNote — tracks vendor-side fulfillment updates on a PO.
@@ -26,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class VendorFulfillmentNote extends Model
 {
-    use HasPublicUlid;
+    use HasPublicUlid, SoftDeletes;
 
     protected $table = 'vendor_fulfillment_notes';
 

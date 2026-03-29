@@ -6,19 +6,18 @@ import InterviewScorecardForm from '@/components/recruitment/InterviewScorecardF
 import { useSubmitEvaluation } from '@/hooks/useRecruitment'
 
 export default function InterviewDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const interviewId = Number(id)
+  const { ulid } = useParams<{ ulid: string }>()
 
   const { data: interview, isLoading } = useQuery({
-    queryKey: ['recruitment', 'interviews', id],
+    queryKey: ['recruitment', 'interviews', ulid],
     queryFn: async () => {
-      const { data } = await api.get(`/recruitment/interviews/${id}`)
+      const { data } = await api.get(`/recruitment/interviews/${ulid}`)
       return data
     },
-    enabled: !!id,
+    enabled: !!ulid,
   })
 
-  const submitEval = useSubmitEvaluation(interviewId)
+  const submitEval = useSubmitEvaluation(interview?.id)
 
   if (isLoading || !interview) return <div className="p-6">Loading...</div>
 
@@ -102,7 +101,7 @@ export default function InterviewDetailPage() {
         </div>
       ) : interview.status === 'completed' || interview.status === 'scheduled' ? (
         <InterviewScorecardForm
-          interviewId={interviewId}
+          interviewId={interview?.id}
           onSubmit={async (data) => {
             await submitEval.mutateAsync(data)
           }}

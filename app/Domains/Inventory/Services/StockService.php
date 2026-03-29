@@ -56,7 +56,8 @@ final class StockService implements ServiceContract
                 $lotBatchId = $lot->id;
             }
 
-            $balance = $this->currentBalance($itemId, $locationId);
+            // Pessimistic lock to prevent concurrent balance corruption
+            $balance = $this->currentBalanceLocked($itemId, $locationId);
             $newBalance = $balance + $quantity;
 
             $ledger = StockLedger::create([
@@ -97,7 +98,8 @@ final class StockService implements ServiceContract
         return DB::transaction(function () use (
             $itemId, $locationId, $quantity, $referenceType, $referenceId, $actor, $remarks
         ): StockLedger {
-            $balance = $this->currentBalance($itemId, $locationId);
+            // Pessimistic lock to prevent concurrent balance corruption
+            $balance = $this->currentBalanceLocked($itemId, $locationId);
 
             if ($balance < $quantity) {
                 throw new DomainException(
@@ -223,7 +225,8 @@ final class StockService implements ServiceContract
         }
 
         return DB::transaction(function () use ($itemId, $fromLocationId, $toLocationId, $quantity, $actor, $remarks): array {
-            $fromBalance = $this->currentBalance($itemId, $fromLocationId);
+            // Pessimistic lock to prevent concurrent balance corruption
+            $fromBalance = $this->currentBalanceLocked($itemId, $fromLocationId);
 
             if ($fromBalance < $quantity) {
                 throw new DomainException(
@@ -234,7 +237,7 @@ final class StockService implements ServiceContract
             }
 
             $newFromBalance = $fromBalance - $quantity;
-            $toBalance = $this->currentBalance($itemId, $toLocationId);
+            $toBalance = $this->currentBalanceLocked($itemId, $toLocationId);
             $newToBalance = $toBalance + $quantity;
 
             // Issue from source
@@ -285,6 +288,20 @@ final class StockService implements ServiceContract
     {
         $sb = StockBalance::where('item_id', $itemId)
             ->where('location_id', $locationId)
+            ->first();
+
+        return $sb ? (float) $sb->quantity_on_hand : 0.0;
+    }
+
+    /**
+     * Get current balance with pessimistic lock (FOR UPDATE).
+     * Must be called inside a DB::transaction().
+     */
+    private function currentBalanceLocked(int $itemId, int $locationId): float
+    {
+        $sb = StockBalance::where('item_id', $itemId)
+            ->where('location_id', $locationId)
+            ->lockForUpdate()
             ->first();
 
         return $sb ? (float) $sb->quantity_on_hand : 0.0;

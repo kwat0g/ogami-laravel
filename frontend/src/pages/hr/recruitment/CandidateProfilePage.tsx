@@ -5,15 +5,15 @@ import StatusBadge from '@/components/recruitment/StatusBadge'
 import { Link } from 'react-router-dom'
 
 export default function CandidateProfilePage() {
-  const { id } = useParams<{ id: string }>()
+  const { ulid } = useParams<{ ulid: string }>()
 
   const { data: candidate, isLoading } = useQuery({
-    queryKey: ['recruitment', 'candidates', id],
+    queryKey: ['recruitment', 'candidates', ulid],
     queryFn: async () => {
-      const { data } = await api.get(`/recruitment/candidates/${id}`)
+      const { data } = await api.get(`/recruitment/candidates/${ulid}`)
       return data.data
     },
-    enabled: !!id,
+    enabled: !!ulid,
   })
 
   if (isLoading || !candidate) return <div className="p-6">Loading...</div>

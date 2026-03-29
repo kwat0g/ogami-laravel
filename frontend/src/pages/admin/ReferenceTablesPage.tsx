@@ -34,6 +34,8 @@ import HolidayCalendarTable from './reference/HolidayCalendarTable'
 import SalaryGradesTable from './reference/SalaryGradesTable'
 import LoanTypesTable from './reference/LoanTypesTable'
 import ChartOfAccountsTable from './reference/ChartOfAccountsTable'
+import AccountMappingsTable from './reference/AccountMappingsTable'
+import ApprovalWorkflowTable from './reference/ApprovalWorkflowTable'
 
 // Context for sharing edit mode across table components
 interface EditModeContextType {
@@ -133,6 +135,24 @@ const TABLE_TABS: TableTab[] = [
     component: ChartOfAccountsTable,
     editable: true,
     warning: 'Account codes referenced in System Settings → Accounting must exist here. Changes affect financial statements.',
+  },
+  {
+    id: 'account-mappings',
+    label: 'GL Account Mappings',
+    icon: Database,
+    description: 'Configurable GL account mappings for all auto-posted journal entries (payroll, AP, AR, production, tax, loan)',
+    component: AccountMappingsTable,
+    editable: true,
+    warning: 'Changes affect which GL accounts are debited/credited by automatic journal entry postings.',
+  },
+  {
+    id: 'approval-workflows',
+    label: 'Approval Workflows',
+    icon: CheckCircle2,
+    description: 'Configurable multi-step approval chains for leave, loans, procurement, payroll, budget, and overtime',
+    component: ApprovalWorkflowTable,
+    editable: true,
+    warning: 'Changes to approval chains take effect immediately for all new submissions.',
   },
 ]
 

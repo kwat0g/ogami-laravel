@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Attendance\Services;
 
 use App\Domains\Attendance\Models\OvertimeRequest;
+use App\Domains\Attendance\StateMachines\OvertimeRequestStateMachine;
 use App\Domains\HR\Models\Employee;
 use App\Models\User;
 use App\Notifications\OvertimeCancelledNotification;
@@ -35,6 +36,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class OvertimeRequestService implements ServiceContract
 {
+    public function __construct(
+        private readonly OvertimeRequestStateMachine $stateMachine,
+    ) {}
     /**
      * List overtime requests with optional filters.
      *
@@ -204,7 +208,7 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'supervisor_approved';
+        $this->stateMachine->transition($request, 'supervisor_approved');
         $request->supervisor_id = $supervisorUserId;
         $request->supervisor_remarks = $remarks;
         $request->supervisor_approved_at = now();
@@ -295,7 +299,7 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'manager_checked';
+        $this->stateMachine->transition($request, 'manager_checked');
         $request->approved_by = $approvedByUserId;
         $request->approved_minutes = $minutes;
         $request->approver_remarks = $remarks;
@@ -334,7 +338,7 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'officer_reviewed';
+        $this->stateMachine->transition($request, 'officer_reviewed');
         $request->officer_reviewed_by = $officerUserId;
         $request->officer_reviewed_at = now();
         if ($remarks !== '') {
@@ -382,7 +386,7 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'approved';
+        $this->stateMachine->transition($request, 'approved');
         $request->vp_approved_by = $vpUserId;
         $request->vp_approved_at = now();
         $request->approved_minutes = $minutes;
@@ -456,7 +460,7 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'approved';
+        $this->stateMachine->transition($request, 'approved');
         $request->executive_id = $executiveUserId;
         $request->executive_remarks = $remarks;
         $request->executive_approved_at = now();
@@ -506,7 +510,7 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'rejected';
+        $this->stateMachine->transition($request, 'rejected');
         $request->executive_id = $executiveUserId;
         $request->executive_remarks = $remarks;
         $request->executive_approved_at = now();
@@ -546,7 +550,7 @@ final class OvertimeRequestService implements ServiceContract
             $request->supervisor_approved_at = now();
         }
 
-        $request->status = 'rejected';
+        $this->stateMachine->transition($request, 'rejected');
         $request->approved_by = $reviewedByUserId;
         $request->approver_remarks = $remarks;
         $request->reviewed_at = now();
@@ -581,7 +585,7 @@ final class OvertimeRequestService implements ServiceContract
             );
         }
 
-        $request->status = 'cancelled';
+        $this->stateMachine->transition($request, 'cancelled');
         $request->save();
 
         $this->notifyManagerOfOvertimeCancellation($request);

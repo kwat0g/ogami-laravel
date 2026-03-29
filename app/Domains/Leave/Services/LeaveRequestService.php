@@ -8,6 +8,7 @@ use App\Domains\HR\Models\Employee;
 use App\Domains\Leave\Models\LeaveBalance;
 use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Leave\Models\LeaveType;
+use App\Domains\Leave\StateMachines\LeaveRequestStateMachine;
 use App\Events\Leave\LeaveRequestDecided;
 use App\Events\Leave\LeaveRequestFiled;
 use App\Models\User;
@@ -42,6 +43,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class LeaveRequestService implements ServiceContract
 {
+    public function __construct(
+        private readonly LeaveRequestStateMachine $stateMachine,
+    ) {}
     // ── Step 1 — Employee submits ─────────────────────────────────────────────
 
     /**
@@ -112,7 +116,7 @@ final class LeaveRequestService implements ServiceContract
             throw new DomainException('Only submitted requests can be head-approved.', 'LV_NOT_SUBMITTED', 422);
         }
 
-        $request->status = 'head_approved';
+        $this->stateMachine->transition($request, 'head_approved');
         $request->head_id = $headUserId;
         $request->head_remarks = $remarks;
         $request->head_approved_at = now();
@@ -141,7 +145,7 @@ final class LeaveRequestService implements ServiceContract
             throw new DomainException('Only head-approved requests can be manager-checked.', 'LV_NOT_HEAD_APPROVED', 422);
         }
 
-        $request->status = 'manager_checked';
+        $this->stateMachine->transition($request, 'manager_checked');
         $request->manager_checked_by = $managerUserId;
         $request->manager_check_remarks = $remarks;
         $request->manager_checked_at = now();
@@ -193,7 +197,7 @@ final class LeaveRequestService implements ServiceContract
 
             if ($actionTaken === 'disapproved') {
                 // Immediate rejection — VP step is skipped
-                $request->status = 'rejected';
+                $this->stateMachine->transition($request, 'rejected');
             } else {
                 // Capture balance snapshot — LV-001 check at this step
                 if ($actionTaken === 'approved_with_pay') {
@@ -231,7 +235,7 @@ final class LeaveRequestService implements ServiceContract
                     $request->ending_balance = null;
                 }
 
-                $request->status = 'ga_processed';
+                $this->stateMachine->transition($request, 'ga_processed');
             }
 
             $request->save();
@@ -293,7 +297,7 @@ final class LeaveRequestService implements ServiceContract
                 }
             }
 
-            $request->status = 'approved';
+            $this->stateMachine->transition($request, 'approved');
             $request->vp_id = $vpUserId;
             $request->vp_remarks = $remarks;
             $request->vp_noted_at = now();
@@ -351,7 +355,7 @@ final class LeaveRequestService implements ServiceContract
             default => null,
         };
 
-        $request->status = 'rejected';
+        $this->stateMachine->transition($request, 'rejected');
         $request->save();
 
         $this->notifyEmployeeOfDecision($request, 'rejected', $remarks);
@@ -377,7 +381,7 @@ final class LeaveRequestService implements ServiceContract
         }
 
         DB::transaction(function () use ($request): void {
-            $request->status = 'cancelled';
+            $this->stateMachine->transition($request, 'cancelled');
             $request->save();
         });
 

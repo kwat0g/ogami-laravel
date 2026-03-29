@@ -42,19 +42,18 @@ Route::middleware(['auth:sanctum', 'module_access:fixed_assets'])->group(functio
     // ── Depreciation Schedule Export (CSV) ───────────────────────────────────
     Route::get('depreciation-export', function (): StreamedResponse {
         abort_unless(auth()->user()?->hasPermissionTo('fixed_assets.view'), 403, 'Unauthorized');
-        $rows = DB::table('asset_depreciation_entries')
-            ->join('fixed_assets', 'asset_depreciation_entries.fixed_asset_id', '=', 'fixed_assets.id')
+        $rows = DB::table('fixed_asset_depreciation_entries')
+            ->join('fixed_assets', 'fixed_asset_depreciation_entries.fixed_asset_id', '=', 'fixed_assets.id')
             ->select(
                 'fixed_assets.asset_code',
                 'fixed_assets.name as asset_name',
-                'asset_depreciation_entries.fiscal_period',
-                'asset_depreciation_entries.depreciation_amount',
-                'asset_depreciation_entries.accumulated_depreciation',
-                'asset_depreciation_entries.book_value',
-                'asset_depreciation_entries.created_at',
+                'fixed_asset_depreciation_entries.fiscal_period_id',
+                'fixed_asset_depreciation_entries.depreciation_amount_centavos',
+                'fixed_asset_depreciation_entries.method',
+                'fixed_asset_depreciation_entries.created_at',
             )
             ->orderBy('fixed_assets.asset_code')
-            ->orderBy('asset_depreciation_entries.fiscal_period')
+            ->orderBy('fixed_asset_depreciation_entries.fiscal_period_id')
             ->get();
 
         return response()->streamDownload(function () use ($rows) {

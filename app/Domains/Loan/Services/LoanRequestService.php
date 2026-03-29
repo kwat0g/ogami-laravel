@@ -11,6 +11,7 @@ use App\Domains\Accounting\Services\FiscalPeriodService;
 use App\Domains\HR\Models\Employee;
 use App\Domains\Loan\Models\Loan;
 use App\Domains\Loan\Models\LoanType;
+use App\Domains\Loan\StateMachines\LoanStateMachine;
 use App\Models\User;
 use App\Notifications\LoanAccountingApprovedNotification;
 use App\Notifications\LoanApprovedNotification;
@@ -53,6 +54,7 @@ final class LoanRequestService implements ServiceContract
     public function __construct(
         private readonly LoanAmortizationService $amortizationService,
         private readonly FiscalPeriodService $fiscalPeriodService,
+        private readonly LoanStateMachine $stateMachine,
     ) {}
 
     /**
@@ -210,7 +212,7 @@ final class LoanRequestService implements ServiceContract
             $loan->approver_remarks = $remarks;
             $loan->approved_at = now();
             $loan->first_deduction_date = $firstDue;
-            $loan->status = 'approved';
+            $this->stateMachine->transition($loan, 'approved');
             $loan->save();
 
             // LN-005 + LN-006: Compute amortization and generate schedule
@@ -259,7 +261,7 @@ final class LoanRequestService implements ServiceContract
         $loan->head_noted_by = $headUserId;
         $loan->head_noted_at = now();
         $loan->head_remarks = $remarks ?: null;
-        $loan->status = 'head_noted';
+        $this->stateMachine->transition($loan, 'head_noted');
         $loan->save();
 
         return $loan->fresh();
@@ -302,7 +304,7 @@ final class LoanRequestService implements ServiceContract
         $loan->manager_checked_by = $managerUserId;
         $loan->manager_checked_at = now();
         $loan->manager_remarks = $remarks ?: null;
-        $loan->status = 'manager_checked';
+        $this->stateMachine->transition($loan, 'manager_checked');
         $loan->save();
 
         return $loan->fresh();
@@ -337,7 +339,7 @@ final class LoanRequestService implements ServiceContract
         $loan->officer_reviewed_by = $officerUserId;
         $loan->officer_reviewed_at = now();
         $loan->officer_remarks = $remarks ?: null;
-        $loan->status = 'officer_reviewed';
+        $this->stateMachine->transition($loan, 'officer_reviewed');
         $loan->save();
 
         return $loan->fresh();
@@ -391,7 +393,7 @@ final class LoanRequestService implements ServiceContract
             $loan->vp_approved_at = now();
             $loan->vp_remarks = $remarks ?: null;
             $loan->first_deduction_date = $firstDue;
-            $loan->status = 'ready_for_disbursement';
+            $this->stateMachine->transition($loan, 'ready_for_disbursement');
             $loan->save();
 
             // Generate amortization schedule (same as v1 accountingApprove)
@@ -456,7 +458,7 @@ final class LoanRequestService implements ServiceContract
             $loan->accounting_approved_by = $accountingManagerId;
             $loan->accounting_remarks = $remarks;
             $loan->accounting_approved_at = now();
-            $loan->status = 'ready_for_disbursement';
+            $this->stateMachine->transition($loan, 'ready_for_disbursement');
             $loan->save();
 
             // Create GL entry for loan receivable
@@ -634,7 +636,7 @@ final class LoanRequestService implements ServiceContract
         }
 
         $loan = DB::transaction(function () use ($loan, $disbursedByUserId): Loan {
-            $loan->status = 'active';
+            $this->stateMachine->transition($loan, 'active');
             $loan->disbursed_at = now();
             $loan->disbursed_by = $disbursedByUserId;
             $loan->save();
@@ -675,7 +677,7 @@ final class LoanRequestService implements ServiceContract
             );
         }
 
-        $loan->status = 'rejected';
+        $this->stateMachine->transition($loan, 'rejected');
         $loan->approved_by = $reviewedByUserId;
         $loan->approver_remarks = $remarks;
         $loan->approved_at = now();
@@ -699,7 +701,7 @@ final class LoanRequestService implements ServiceContract
             );
         }
 
-        $loan->status = 'cancelled';
+        $this->stateMachine->transition($loan, 'cancelled');
         $loan->save();
 
         // Notify relevant parties of the cancellation
@@ -727,7 +729,7 @@ final class LoanRequestService implements ServiceContract
         }
 
         // LN-009: outstanding balance is preserved for audit trail
-        $loan->status = 'written_off';
+        $this->stateMachine->transition($loan, 'written_off');
         $loan->save();
 
         // Notify HR and Accounting that the loan was written off and balance needs review (LN-009)
