@@ -195,6 +195,15 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Quotation::class, QuotationPolicy::class);
         Gate::policy(SalesOrder::class, SalesOrderPolicy::class);
 
+        // ── Recruitment policies
+        Gate::policy(\App\Domains\HR\Recruitment\Models\JobRequisition::class, \App\Policies\Recruitment\RequisitionPolicy::class);
+        Gate::policy(\App\Domains\HR\Recruitment\Models\JobPosting::class, \App\Policies\Recruitment\JobPostingPolicy::class);
+        Gate::policy(\App\Domains\HR\Recruitment\Models\Application::class, \App\Policies\Recruitment\ApplicationPolicy::class);
+        Gate::policy(\App\Domains\HR\Recruitment\Models\InterviewSchedule::class, \App\Policies\Recruitment\InterviewPolicy::class);
+        Gate::policy(\App\Domains\HR\Recruitment\Models\JobOffer::class, \App\Policies\Recruitment\OfferPolicy::class);
+        Gate::policy(\App\Domains\HR\Recruitment\Models\PreEmploymentChecklist::class, \App\Policies\Recruitment\PreEmploymentPolicy::class);
+        Gate::policy(\App\Domains\HR\Recruitment\Models\Hiring::class, \App\Policies\Recruitment\HiringPolicy::class);
+
         // ── Observer registrations ───────────────────────────────────────────
         // PayrollRun → GL auto-post when status transitions to 'approved'.
         PayrollRun::observe(PayrollRunObserver::class);

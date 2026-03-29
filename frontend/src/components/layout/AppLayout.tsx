@@ -109,6 +109,17 @@ const SECTIONS: NavSection[] = [
       { label: 'Overtime', href: '/hr/overtime', permission: 'hr.full_access' },
       { label: 'Loans', href: '/hr/loans', permission: 'hr.full_access' },
 
+      // ── Recruitment ───────────────────────────────────────────────────────
+      { divider: true, label: 'Recruitment' },
+      { label: 'Dashboard', href: '/hr/recruitment', permission: 'hr.full_access|recruitment.requisitions.view', end: true },
+      { label: 'Requisitions', href: '/hr/recruitment/requisitions', permission: 'hr.full_access|recruitment.requisitions.view' },
+      { label: 'Job Postings', href: '/hr/recruitment/postings', permission: 'hr.full_access|recruitment.postings.view' },
+      { label: 'Applications', href: '/hr/recruitment/applications', permission: 'hr.full_access|recruitment.applications.view' },
+      { label: 'Interviews', href: '/hr/recruitment/interviews', permission: 'hr.full_access|recruitment.interviews.view' },
+      { label: 'Offers', href: '/hr/recruitment/offers', permission: 'hr.full_access|recruitment.offers.view' },
+      { label: 'Candidates', href: '/hr/recruitment/candidates', permission: 'hr.full_access|recruitment.candidates.view' },
+      { label: 'Reports', href: '/hr/recruitment/reports', permission: 'hr.full_access|recruitment.reports.view' },
+
       // ── Payroll ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Payroll' },
       { label: 'Payroll Runs', href: '/payroll/runs', permission: 'payroll.view_runs' },
