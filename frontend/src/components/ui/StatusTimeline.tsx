@@ -47,11 +47,13 @@ export default function StatusTimeline({ auditableType, auditableId, title = 'Ac
   const { data: audits, isLoading } = useQuery({
     queryKey: ['audit-trail', auditableType, auditableId],
     queryFn: async () => {
+      if (!auditableType || !auditableId) return []
       const res = await api.get<{ data: AuditEntry[] }>(
         `/audit-trail/${auditableType}/${auditableId}`,
       )
-      return res.data.data
+      return res.data.data ?? []
     },
+    enabled: !!auditableType && !!auditableId,
     staleTime: 60_000,
   })
 

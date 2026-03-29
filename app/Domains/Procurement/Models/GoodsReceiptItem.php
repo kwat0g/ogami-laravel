@@ -49,4 +49,10 @@ final class GoodsReceiptItem extends Model
     {
         return $this->belongsTo(PurchaseOrderItem::class, 'po_item_id');
     }
+
+    /** @return BelongsTo<\App\Domains\Inventory\Models\ItemMaster, GoodsReceiptItem> */
+    public function itemMaster(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Inventory\Models\ItemMaster::class, 'item_master_id');
+    }
 }
