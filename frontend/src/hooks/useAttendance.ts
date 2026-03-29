@@ -402,3 +402,126 @@ export async function downloadAttendanceTemplate(): Promise<void> {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+// ── GPS Time Clock ────────────────────────────────────────────────────────────
+
+interface TimeClockPayload {
+  latitude: number
+  longitude: number
+  accuracy_meters: number
+  device_info?: Record<string, unknown>
+  override_reason?: string
+}
+
+export function useAttendanceToday() {
+  return useQuery({
+    queryKey: ['attendance', 'today'],
+    queryFn: async () => {
+      const res = await api.get<{ data: AttendanceLog | null }>('/attendance/today')
+      return res.data.data
+    },
+    refetchInterval: 60_000,
+    staleTime: 15_000,
+  })
+}
+
+export function useTimeIn() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: TimeClockPayload) => {
+      const res = await api.post<{ data: AttendanceLog }>('/attendance/time-in', payload)
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['attendance', 'today'] })
+      void queryClient.invalidateQueries({ queryKey: ['attendance-logs'] })
+    },
+  })
+}
+
+export function useTimeOut() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: TimeClockPayload) => {
+      const res = await api.post<{ data: AttendanceLog }>('/attendance/time-out', payload)
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['attendance', 'today'] })
+      void queryClient.invalidateQueries({ queryKey: ['attendance-logs'] })
+    },
+  })
+}
+
+export function useMyAttendanceLogs(filters: AttendanceFilters = {}) {
+  return useQuery({
+    queryKey: ['attendance', 'my-logs', filters],
+    queryFn: async () => {
+      const res = await api.get<Paginated<AttendanceLog>>('/attendance/my-logs', { params: filters })
+      return res.data
+    },
+    staleTime: 30_000,
+  })
+}
+
+// ── Correction Requests ───────────────────────────────────────────────────────
+
+export function useCorrectionRequests(filters: { status?: string } = {}) {
+  return useQuery({
+    queryKey: ['correction-requests', filters],
+    queryFn: async () => {
+      const res = await api.get<Paginated<unknown>>('/attendance/correction-requests', { params: filters })
+      return res.data
+    },
+    staleTime: 30_000,
+  })
+}
+
+export function useSubmitCorrectionRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: {
+      attendance_log_id: number
+      correction_type: string
+      requested_time_in?: string
+      requested_time_out?: string
+      reason: string
+    }) => {
+      const res = await api.post('/attendance/correction-requests', payload)
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['correction-requests'] })
+    },
+  })
+}
+
+// ── Work Locations ────────────────────────────────────────────────────────────
+
+export interface WorkLocation {
+  id: number
+  ulid: string
+  name: string
+  code: string
+  address: string
+  city: string | null
+  latitude: number
+  longitude: number
+  radius_meters: number
+  allowed_variance_meters: number
+  is_remote_allowed: boolean
+  is_active: boolean
+}
+
+export function useWorkLocations() {
+  return useQuery({
+    queryKey: ['work-locations'],
+    queryFn: async () => {
+      const res = await api.get<Paginated<WorkLocation>>('/attendance/work-locations', {
+        params: { per_page: 100 },
+      })
+      return res.data
+    },
+    staleTime: 60_000,
+  })
+}
