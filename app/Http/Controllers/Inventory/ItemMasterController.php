@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Services\ItemMasterService;
 use App\Http\Controllers\Controller;
@@ -95,5 +96,21 @@ final class ItemMasterController extends Controller
         $this->authorize('update', $item);
 
         return new ItemMasterResource($this->service->toggleActive($item));
+    }
+
+    public function destroyCategory(ItemCategory $category): JsonResponse
+    {
+        $this->authorize('create', ItemMaster::class);
+
+        // Prevent deleting categories that have items
+        if ($category->items()->exists()) {
+            return response()->json([
+                'message' => 'Cannot delete category that has items assigned to it.',
+            ], 422);
+        }
+
+        $category->delete();
+
+        return response()->json(['message' => 'Category deleted.']);
     }
 }

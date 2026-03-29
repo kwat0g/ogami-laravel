@@ -135,7 +135,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
       setComments('')
       setReason('')
       setStockOverrideReason('')
-    } catch (_err) {
+    } catch (err) {
       if (isHandledApiError(err)) return
       const msg = (err as { message?: string })?.message
       toast.error(msg ?? `Failed to ${action} requisition.`)
@@ -444,7 +444,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
                   const pr = await convertToPrMut.mutateAsync({ mrqUlid: mrq.ulid })
                   toast.success('Purchase Request created from MRQ.')
                   navigate(`/procurement/purchase-requests/${pr.ulid}`)
-                } catch (_err) {
+                } catch (err) {
                   if (isHandledApiError(err)) return
                   toast.error((err as { message?: string })?.message ?? 'Failed to convert to PR.')
                 }

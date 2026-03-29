@@ -21,6 +21,7 @@ Route::middleware(['auth:sanctum', 'module_access:inventory'])->group(function (
     Route::get('items/low-stock', [ItemMasterController::class, 'lowStock']);
     Route::get('items/categories', [ItemMasterController::class, 'categories']);
     Route::post('items/categories', [ItemMasterController::class, 'storeCategory']);
+    Route::delete('items/categories/{category}', [ItemMasterController::class, 'destroyCategory']);
     Route::get('items', [ItemMasterController::class, 'index']);
     Route::post('items', [ItemMasterController::class, 'store']);
     Route::get('items/{item}', [ItemMasterController::class, 'show']);

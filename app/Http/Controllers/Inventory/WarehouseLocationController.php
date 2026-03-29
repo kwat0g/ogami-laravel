@@ -14,6 +14,8 @@ final class WarehouseLocationController extends Controller
 {
     public function index(Request $request): ResourceCollection
     {
+        $this->authorize('viewAny', WarehouseLocation::class);
+
         $locations = WarehouseLocation::with('department')
             ->when($request->boolean('active_only', true), fn ($q) => $q->where('is_active', true))
             ->orderBy('code')

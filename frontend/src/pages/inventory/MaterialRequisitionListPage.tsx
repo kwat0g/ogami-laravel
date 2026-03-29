@@ -42,13 +42,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
     status: status || undefined,
     page,
     per_page: 20,
-    with_archived: undefined,
-  })
-
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
-    queryKey: ['mrqs', 'archived'],
-    queryFn: () => api.get('/inventory/mrqs-archived', { params: { per_page: 20 } }),
-    enabled: isArchiveView,
+    with_archived: isArchiveView ? true : undefined,
   })
 
   return (
