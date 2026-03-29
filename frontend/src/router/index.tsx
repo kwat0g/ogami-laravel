@@ -145,22 +145,16 @@ const LoanFormPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanFormPage')
 const LoanDetailPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanDetailPage'))
 
 // HR — Recruitment
-const RecruitmentDashboard = lazyWithRetry(() => import('@/pages/hr/recruitment/RecruitmentDashboard'))
-const RequisitionListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionListPage'))
+// HR — Recruitment (consolidated tabbed page + detail/form pages)
+const RecruitmentPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RecruitmentPage'))
 const RequisitionFormPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionFormPage'))
 const RequisitionDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/RequisitionDetailPage'))
-const ApplicationListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/ApplicationListPage'))
 const ApplicationDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/ApplicationDetailPage'))
-const JobPostingListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/JobPostingListPage'))
 const JobPostingFormPage = lazyWithRetry(() => import('@/pages/hr/recruitment/JobPostingFormPage'))
 const JobPostingDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/JobPostingDetailPage'))
-const InterviewListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/InterviewListPage'))
 const InterviewDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/InterviewDetailPage'))
-const OfferListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/OfferListPage'))
 const OfferDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/OfferDetailPage'))
-const CandidateListPage = lazyWithRetry(() => import('@/pages/hr/recruitment/CandidateListPage'))
 const CandidateProfilePage = lazyWithRetry(() => import('@/pages/hr/recruitment/CandidateProfilePage'))
-const PipelineReportPage = lazyWithRetry(() => import('@/pages/hr/recruitment/PipelineReportPage'))
 
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
@@ -406,24 +400,17 @@ const router = createBrowserRouter([
       { path: '/hr/loans', element: withSuspense(guard('hr.full_access', <LoanListPage />)) },
       { path: '/hr/loans/:ulid', element: withSuspense(guard('hr.full_access', <LoanDetailPage />)) },
 
-      // HR — Recruitment
-      { path: '/hr/recruitment', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RecruitmentDashboard />)) },
-      { path: '/hr/recruitment/requisitions', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RequisitionListPage />)) },
+      // HR — Recruitment (consolidated tabbed page + detail/form pages)
+      { path: '/hr/recruitment', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view|recruitment.requisitions.create|recruitment.interviews.evaluate', <RecruitmentPage />)) },
       { path: '/hr/recruitment/requisitions/new', element: withSuspense(guard('hr.full_access|recruitment.requisitions.create', <RequisitionFormPage />)) },
       { path: '/hr/recruitment/requisitions/:ulid', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RequisitionDetailPage />)) },
       { path: '/hr/recruitment/requisitions/:ulid/edit', element: withSuspense(guard('hr.full_access|recruitment.requisitions.edit', <RequisitionFormPage />)) },
-      { path: '/hr/recruitment/applications', element: withSuspense(guard('hr.full_access|recruitment.applications.view', <ApplicationListPage />)) },
       { path: '/hr/recruitment/applications/:ulid', element: withSuspense(guard('hr.full_access|recruitment.applications.view', <ApplicationDetailPage />)) },
-      { path: '/hr/recruitment/postings', element: withSuspense(guard('hr.full_access|recruitment.postings.view', <JobPostingListPage />)) },
       { path: '/hr/recruitment/postings/new', element: withSuspense(guard('hr.full_access|recruitment.postings.create', <JobPostingFormPage />)) },
       { path: '/hr/recruitment/postings/:ulid', element: withSuspense(guard('hr.full_access|recruitment.postings.view', <JobPostingDetailPage />)) },
-      { path: '/hr/recruitment/interviews', element: withSuspense(guard('hr.full_access|recruitment.interviews.view', <InterviewListPage />)) },
-      { path: '/hr/recruitment/interviews/:id', element: withSuspense(guard('hr.full_access|recruitment.interviews.view', <InterviewDetailPage />)) },
-      { path: '/hr/recruitment/offers', element: withSuspense(guard('hr.full_access|recruitment.offers.view', <OfferListPage />)) },
+      { path: '/hr/recruitment/interviews/:id', element: withSuspense(guard('hr.full_access|recruitment.interviews.view|recruitment.interviews.evaluate', <InterviewDetailPage />)) },
       { path: '/hr/recruitment/offers/:ulid', element: withSuspense(guard('hr.full_access|recruitment.offers.view', <OfferDetailPage />)) },
-      { path: '/hr/recruitment/candidates', element: withSuspense(guard('hr.full_access|recruitment.candidates.view', <CandidateListPage />)) },
       { path: '/hr/recruitment/candidates/:id', element: withSuspense(guard('hr.full_access|recruitment.candidates.view', <CandidateProfilePage />)) },
-      { path: '/hr/recruitment/reports', element: withSuspense(guard('hr.full_access|recruitment.reports.view', <PipelineReportPage />)) },
 
       // HR — Reference
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
