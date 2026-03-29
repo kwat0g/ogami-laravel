@@ -134,7 +134,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const acceptWithDefectsMutation = useAcceptWithDefects()
   const returnToSupplierMutation = useReturnToSupplier()
   const resubmitForQcMutation = useResubmitForQc()
-  const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending || acceptWithDefectsMutation.isPending || returnToSupplierMutation.isPending
+  const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending || acceptWithDefectsMutation.isPending || returnToSupplierMutation.isPending || resubmitForQcMutation.isPending
 
   function handleSubmitForQc(): void {
     if (!gr) return
@@ -375,6 +375,76 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
         </CardBody>
       </Card>
 
+      {/* ── QC Workflow Info ────────────────────────────────────────────────── */}
+      {(gr.submitted_for_qc_at || gr.qc_result || gr.rejection_reason || gr.returned_at) && (
+        <Card>
+          <CardHeader>QC Workflow</CardHeader>
+          <CardBody>
+            <InfoList columns={2}>
+              {gr.submitted_for_qc_at && (
+                <InfoRow
+                  label="Submitted for QC"
+                  value={`${new Date(gr.submitted_for_qc_at).toLocaleString('en-PH')} by ${gr.submitted_for_qc_by?.name ?? '---'}`}
+                />
+              )}
+              {gr.qc_result && (
+                <InfoRow
+                  label="QC Result"
+                  value={
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      gr.qc_result === 'passed' ? 'bg-green-100 text-green-700'
+                      : gr.qc_result === 'failed' ? 'bg-red-100 text-red-600'
+                      : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {gr.qc_result.charAt(0).toUpperCase() + gr.qc_result.slice(1)}
+                    </span>
+                  }
+                />
+              )}
+              {gr.qc_completed_at && (
+                <InfoRow
+                  label="QC Completed"
+                  value={`${new Date(gr.qc_completed_at).toLocaleString('en-PH')} by ${gr.qc_completed_by?.name ?? '---'}`}
+                />
+              )}
+              {gr.qc_notes && (
+                <InfoRow
+                  label="QC Notes"
+                  fullWidth
+                  value={<span className="text-neutral-600 italic whitespace-pre-line">{gr.qc_notes}</span>}
+                />
+              )}
+              {gr.rejection_reason && (
+                <InfoRow
+                  label="Rejection Reason"
+                  fullWidth
+                  value={<span className="text-red-600">{gr.rejection_reason}</span>}
+                />
+              )}
+              {gr.rejected_at && (
+                <InfoRow
+                  label="Rejected At"
+                  value={`${new Date(gr.rejected_at).toLocaleString('en-PH')} by ${gr.rejected_by?.name ?? '---'}`}
+                />
+              )}
+              {gr.returned_at && (
+                <InfoRow
+                  label="Returned At"
+                  value={`${new Date(gr.returned_at).toLocaleString('en-PH')} by ${gr.returned_by?.name ?? '---'}`}
+                />
+              )}
+              {gr.return_reason && (
+                <InfoRow
+                  label="Return Reason"
+                  fullWidth
+                  value={<span className="text-purple-600">{gr.return_reason}</span>}
+                />
+              )}
+            </InfoList>
+          </CardBody>
+        </Card>
+      )}
+
       {/* ── Three-way match status ─────────────────────────────────────────── */}
       {gr.status === 'confirmed' && (
         <Card className={gr.three_way_match_passed ? '' : 'border-amber-200'}>
@@ -413,8 +483,11 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                   <th className="text-left px-4 py-3 font-medium text-neutral-600">#</th>
                   <th className="text-left px-4 py-3 font-medium text-neutral-600">PO Item ID</th>
                   <th className="text-right px-4 py-3 font-medium text-neutral-600">Qty Received</th>
+                  {!isDraft && <th className="text-right px-4 py-3 font-medium text-neutral-600">Qty Accepted</th>}
+                  {!isDraft && <th className="text-right px-4 py-3 font-medium text-neutral-600">Qty Rejected</th>}
                   <th className="text-left px-4 py-3 font-medium text-neutral-600">UOM</th>
                   <th className="text-left px-4 py-3 font-medium text-neutral-600">Condition</th>
+                  {!isDraft && <th className="text-left px-4 py-3 font-medium text-neutral-600">QC Status</th>}
                   <th className="text-left px-4 py-3 font-medium text-neutral-600">Remarks</th>
                 </tr>
               </thead>
@@ -426,6 +499,20 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                     <td className="px-4 py-3 text-right text-neutral-800 font-medium">
                       {item.quantity_received}
                     </td>
+                    {!isDraft && (
+                      <td className="px-4 py-3 text-right text-neutral-700">
+                        {item.quantity_accepted != null ? item.quantity_accepted : '---'}
+                      </td>
+                    )}
+                    {!isDraft && (
+                      <td className="px-4 py-3 text-right">
+                        {item.quantity_rejected != null && item.quantity_rejected > 0 ? (
+                          <span className="text-red-600 font-medium">{item.quantity_rejected}</span>
+                        ) : (
+                          <span className="text-neutral-400">---</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-neutral-600">{item.unit_of_measure}</td>
                     <td className="px-4 py-3">
                       {isDraft ? (
@@ -449,6 +536,22 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                         </span>
                       )}
                     </td>
+                    {!isDraft && (
+                      <td className="px-4 py-3">
+                        {item.qc_status ? (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            item.qc_status === 'passed' ? 'bg-green-100 text-green-700'
+                            : item.qc_status === 'failed' ? 'bg-red-100 text-red-600'
+                            : item.qc_status === 'pending' ? 'bg-blue-100 text-blue-600'
+                            : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {item.qc_status === 'accepted_with_ncr' ? 'NCR' : item.qc_status.charAt(0).toUpperCase() + item.qc_status.slice(1)}
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400">---</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       {isDraft && editingItemId === item.id ? (
                         <input
