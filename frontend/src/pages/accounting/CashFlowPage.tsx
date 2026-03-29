@@ -11,7 +11,7 @@ function CFSectionTable({ title, lines, total }: {
 }) {
   const [open, setOpen] = useState(true)
   return (
-    <div className="border border-neutral-200 rounded overflow-hidden">
+    <div className="border border-neutral-200 rounded-xl overflow-hidden">
       <button
         type="button"
         className="w-full flex justify-between items-center px-4 py-3 bg-neutral-50 text-sm font-semibold text-neutral-800 hover:bg-neutral-100"

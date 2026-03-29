@@ -47,7 +47,7 @@ export default function SkeletonTable({
       </div>
 
       {/* Table */}
-      <div className="border border-neutral-200 rounded overflow-hidden">
+      <div className="border border-neutral-200 rounded-xl overflow-hidden">
         {/* Header row */}
         <div className="bg-neutral-50 border-b border-neutral-200 flex gap-4 px-4 py-3">
           {Array.from({ length: cols }).map((_, i) => (

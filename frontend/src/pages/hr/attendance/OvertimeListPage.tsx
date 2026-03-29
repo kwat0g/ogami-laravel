@@ -236,7 +236,7 @@ export default function OvertimeListPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden relative">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden relative">
         {/* Loading overlay for search/filter */}
         {isFetching && !isLoading && (
           <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">

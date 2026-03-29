@@ -360,7 +360,7 @@ export default function LeaveBalancesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden relative">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden relative">
         {/* Loading overlay - only shows when refetching, not initial load */}
         {isFetching && !isLoading && (
           <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">

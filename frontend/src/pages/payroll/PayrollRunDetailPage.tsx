@@ -858,7 +858,7 @@ export default function PayrollRunDetailPage() {
         )}
 
         {/* Tabs */}
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="border-b border-neutral-200 px-4 flex gap-1">
             {(['payslips', 'exceptions'] as Tab[]).map((tab) => (
               <button

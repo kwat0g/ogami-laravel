@@ -54,7 +54,7 @@ function HeadcountTab(): React.ReactElement {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         {isLoading ? (
           <p className="p-6 text-sm text-neutral-500">Loading…</p>
         ) : (
@@ -111,7 +111,7 @@ function TurnoverTab(): React.ReactElement {
         <p className="text-3xl font-bold text-neutral-900">{turnoverRate}%</p>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         {isLoading ? (
           <p className="p-6 text-sm text-neutral-500">Loading…</p>
         ) : (
@@ -145,7 +145,7 @@ function BirthdaysTab(): React.ReactElement {
   const { data: birthdays, isLoading } = useBirthdayReport(60)
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
       {isLoading ? (
         <p className="p-6 text-sm text-neutral-500">Loading…</p>
       ) : !birthdays?.length ? (

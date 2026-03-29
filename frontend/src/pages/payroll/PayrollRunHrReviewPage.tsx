@@ -192,7 +192,7 @@ export default function PayrollRunHrReviewPage() {
 
       {/* Payroll Breakdown */}
       {detailsData && detailsData.data.length > 0 && (
-        <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-neutral-800">
               Payroll Breakdown

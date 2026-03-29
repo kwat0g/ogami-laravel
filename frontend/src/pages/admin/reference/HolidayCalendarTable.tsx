@@ -205,7 +205,7 @@ export default function HolidayCalendarTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border border-neutral-200 rounded overflow-hidden">
+      <div className="border border-neutral-200 rounded-xl overflow-hidden">
         <div className="max-h-[500px] overflow-auto">
           <Table>
             <TableHeader className="sticky top-0 bg-white">

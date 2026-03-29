@@ -196,7 +196,7 @@ export default function TaxBracketsTable(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div className="border border-neutral-200 rounded overflow-hidden">
+      <div className="border border-neutral-200 rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-neutral-50">

@@ -233,7 +233,7 @@ export default function TeamOvertimePage() {
       )}
 
       {/* Table */}
-      <div className="bg-white border border-neutral-200 rounded overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         <table className="min-w-full text-sm">
           <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>

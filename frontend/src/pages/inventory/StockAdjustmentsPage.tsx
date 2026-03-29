@@ -148,7 +148,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
         </form>
 
         {/* Recent adjustments */}
-        <div className="lg:col-span-3 bg-white border border-neutral-200 rounded-lg overflow-hidden">
+        <div className="lg:col-span-3 bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-neutral-200 bg-neutral-50">
             <h2 className="font-semibold text-neutral-700 text-sm uppercase tracking-wide">Recent Adjustments</h2>
           </div>

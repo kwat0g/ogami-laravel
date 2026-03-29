@@ -78,7 +78,7 @@ export default function ApAgingReportPage(): React.ReactElement {
       )}
 
       {/* Table */}
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
         {isLoading ? (
           <p className="text-sm text-neutral-500 p-6">Loading…</p>
         ) : rows.length === 0 ? (

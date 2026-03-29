@@ -133,7 +133,7 @@ function InfoCard({
 
   return (
     <section
-      className={`bg-white border border-neutral-200 rounded-lg overflow-hidden ${className}`}
+      className={`bg-white border border-neutral-200 rounded-xl overflow-hidden ${className}`}
     >
       <div className="px-5 py-3 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between">
         <div className="flex items-center gap-2">

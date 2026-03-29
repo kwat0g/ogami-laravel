@@ -141,7 +141,7 @@ function DeliveryModal({ isOpen, onClose, onConfirm, items, isPending }: Deliver
           {/* Items Table */}
           <div>
             <h3 className="text-sm font-medium text-neutral-700 mb-3">Enter Delivered Quantities</h3>
-            <table className="w-full text-sm border border-neutral-200 rounded-lg overflow-hidden">
+            <table className="w-full text-sm border border-neutral-200 rounded-xl overflow-hidden">
               <thead className="bg-neutral-50">
                 <tr>
                   <th className="text-left px-4 py-2 font-medium text-neutral-600">Item</th>
@@ -917,7 +917,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
 
       {/* Fulfillment History */}
       {(order.fulfillment_notes?.length ?? 0) > 0 && (
-        <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden mb-6">
           <div className="px-4 py-3 border-b border-neutral-200">
             <h2 className="text-sm font-semibold text-neutral-800">Fulfillment History</h2>
           </div>
