@@ -12,6 +12,7 @@ use App\Domains\HR\Recruitment\Enums\RequisitionStatus;
 use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\Hiring;
 use App\Models\User;
+use App\Notifications\Recruitment\HiredNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,7 @@ final class HiringService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($application, $data, $actor, $offer): Hiring {
+        $hiring = DB::transaction(function () use ($application, $data, $actor, $offer): Hiring {
             $requisition = $application->posting->requisition;
             $candidate = $application->candidate;
 
@@ -96,5 +97,15 @@ final class HiringService implements ServiceContract
 
             return $hiring;
         });
+
+        // Notify HR + dept head about the hire
+        $hrManagers = User::whereHas('roles', fn ($q) => $q->where('name', 'manager'))
+            ->whereHas('departments', fn ($q) => $q->where('code', 'HR'))
+            ->get();
+        foreach ($hrManagers as $mgr) {
+            $mgr->notify(HiredNotification::fromModel($hiring->load(['application.candidate', 'application.offer.offeredPosition', 'application.offer.offeredDepartment'])));
+        }
+
+        return $hiring;
     }
 }

@@ -89,9 +89,14 @@ final class JobPosting extends Model implements Auditable
     private static function generateNumber(): string
     {
         $year = now()->format('Y');
-        $last = static::whereYear('created_at', $year)->count();
+        $prefix = "JP-{$year}-";
+        $lastNumber = static::withTrashed()
+            ->where('posting_number', 'LIKE', "{$prefix}%")
+            ->lockForUpdate()
+            ->selectRaw("MAX(CAST(SUBSTRING(posting_number FROM '.{5}$') AS INTEGER)) as max_num")
+            ->value('max_num') ?? 0;
 
-        return sprintf('JP-%s-%05d', $year, $last + 1);
+        return sprintf('JP-%s-%05d', $year, $lastNumber + 1);
     }
 
     // ── Relationships ─────────────────────────────────────────────────────

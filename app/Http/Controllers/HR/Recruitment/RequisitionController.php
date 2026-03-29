@@ -28,6 +28,7 @@ final class RequisitionController extends Controller
         $result = $this->service->list(
             $request->only(['status', 'department_id', 'requested_by', 'search']),
             (int) $request->query('per_page', '25'),
+            $request->user(),
         );
 
         return RequisitionListResource::collection($result);

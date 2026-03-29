@@ -8,6 +8,8 @@ use App\Domains\HR\Recruitment\Enums\RequisitionStatus;
 use App\Domains\HR\Recruitment\Models\JobRequisition;
 use App\Domains\HR\Recruitment\StateMachines\RequisitionStateMachine;
 use App\Models\User;
+use App\Notifications\Recruitment\RequisitionDecidedNotification;
+use App\Notifications\Recruitment\RequisitionSubmittedNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -23,12 +25,19 @@ final class RequisitionService implements ServiceContract
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<JobRequisition>
      */
-    public function list(array $filters = [], int $perPage = 25): LengthAwarePaginator
+    public function list(array $filters = [], int $perPage = 25, ?User $scopedUser = null): LengthAwarePaginator
     {
         return JobRequisition::with(['department', 'position', 'requester'])
             ->when(isset($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['department_id']), fn ($q) => $q->where('department_id', $filters['department_id']))
             ->when(isset($filters['requested_by']), fn ($q) => $q->where('requested_by', $filters['requested_by']))
+            // Department-scoped: non-HR users only see their department's requisitions
+            ->when($scopedUser && ! $scopedUser->hasPermissionTo('hr.full_access'), function ($q) use ($scopedUser) {
+                $deptIds = $scopedUser->departments->pluck('id')->toArray();
+                if (! empty($deptIds)) {
+                    $q->where(fn ($sub) => $sub->whereIn('department_id', $deptIds)->orWhere('requested_by', $scopedUser->id));
+                }
+            })
             ->when(isset($filters['search']), fn ($q) => $q->where(function ($s) use ($filters) {
                 $s->where('requisition_number', 'ILIKE', "%{$filters['search']}%")
                     ->orWhereHas('position', fn ($p) => $p->where('title', 'ILIKE', "%{$filters['search']}%"));
@@ -80,7 +89,7 @@ final class RequisitionService implements ServiceContract
 
     public function submit(JobRequisition $requisition, User $actor): JobRequisition
     {
-        return DB::transaction(function () use ($requisition, $actor): JobRequisition {
+        $result = DB::transaction(function () use ($requisition, $actor): JobRequisition {
             $this->stateMachine->transition($requisition, RequisitionStatus::PendingApproval);
             $requisition->save();
 
@@ -88,6 +97,16 @@ final class RequisitionService implements ServiceContract
 
             return $requisition;
         });
+
+        // Notify HR managers (outside transaction so notification failure doesn't roll back)
+        $hrManagers = User::whereHas('roles', fn ($q) => $q->where('name', 'manager'))
+            ->whereHas('departments', fn ($q) => $q->where('code', 'HR'))
+            ->get();
+        foreach ($hrManagers as $mgr) {
+            $mgr->notify(RequisitionSubmittedNotification::fromModel($result->load(['requester', 'position', 'department'])));
+        }
+
+        return $result;
     }
 
     public function approve(JobRequisition $requisition, User $actor, ?string $remarks = null): JobRequisition
@@ -102,7 +121,7 @@ final class RequisitionService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($requisition, $actor, $remarks): JobRequisition {
+        $result = DB::transaction(function () use ($requisition, $actor, $remarks): JobRequisition {
             $this->stateMachine->transition($requisition, RequisitionStatus::Approved);
             $requisition->approved_by = $actor->id;
             $requisition->approved_at = now();
@@ -119,11 +138,18 @@ final class RequisitionService implements ServiceContract
 
             return $requisition;
         });
+
+        // Notify requester (outside transaction)
+        $result->requester?->notify(
+            RequisitionDecidedNotification::fromModel($result, 'approved', $actor->name, $remarks)
+        );
+
+        return $result;
     }
 
     public function reject(JobRequisition $requisition, User $actor, string $reason): JobRequisition
     {
-        return DB::transaction(function () use ($requisition, $actor, $reason): JobRequisition {
+        $result = DB::transaction(function () use ($requisition, $actor, $reason): JobRequisition {
             $this->stateMachine->transition($requisition, RequisitionStatus::Rejected);
             $requisition->rejected_at = now();
             $requisition->rejection_reason = $reason;
@@ -140,6 +166,13 @@ final class RequisitionService implements ServiceContract
 
             return $requisition;
         });
+
+        // Notify requester (outside transaction)
+        $result->requester?->notify(
+            RequisitionDecidedNotification::fromModel($result, 'rejected', $actor->name, $reason)
+        );
+
+        return $result;
     }
 
     public function cancel(JobRequisition $requisition, User $actor, string $reason): JobRequisition
