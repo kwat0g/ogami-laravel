@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, XCircle, FileText, Download, Pencil } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, XCircle, FileText, Pencil } from 'lucide-react'
 import {
   usePurchaseRequest,
   useSubmitPurchaseRequest,
@@ -253,7 +253,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
       if (action === 'budget-check') await budgetCheckMutation.mutateAsync(payload)
       if (action === 'vp-approve')   await vpMutation.mutateAsync(payload)
       toast.success('Action completed successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Action failed. Please try again.'))
     } finally {
       setPendingAction(null)
@@ -267,7 +267,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
         payload: { reason },
       })
       toast.success('Purchase Request returned for revision.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Return failed. Please try again.'))
     } finally {
       setPendingAction(null)
@@ -281,7 +281,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
         payload: { reason, stage: pr.status },
       })
       toast.success('Purchase Request rejected.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Rejection failed. Please try again.'))
     } finally {
       setPendingAction(null)
@@ -293,7 +293,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
       await cancelMutation.mutateAsync(pr.ulid)
       toast.success('Purchase Request cancelled.')
       navigate(backTo)
-    } catch (err) {
+    } catch (_err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Cancel failed. Please try again.')
     }
@@ -334,7 +334,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                   try {
                     await submitMutation.mutateAsync(pr.ulid)
                     toast.success('Purchase Request submitted for review.')
-                  } catch (err) {
+                  } catch (_err) {
                     toast.error(firstErrorMessage(err, 'Submit failed. Please try again.'))
                   }
                 }}

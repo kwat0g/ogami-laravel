@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 import { AlertTriangle } from 'lucide-react'
 import { useGoodsReceipts } from '@/hooks/useGoodsReceipts'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -39,7 +38,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<GoodsReceiptStatus | ''>('')
   const [page, setPage] = useState(1)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   // Note: GRs are auto-created by vendors via markDelivered
   // Internal users can only view and confirm GRs, not create them
 
@@ -49,7 +48,7 @@ export default function GoodsReceiptListPage(): React.ReactElement {
     with_archived: undefined,
   })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['goods-receipts', 'archived'],
     queryFn: () => api.get('/procurement/goods-receipts-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

@@ -161,7 +161,7 @@ export default function ClientOrdersPage(): JSX.Element {
       await cancelMutation.mutateAsync(orderToCancel.id)
       toast.success('Order cancelled successfully')
       setOrderToCancel(null)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to cancel order')
     }
   }

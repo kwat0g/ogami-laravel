@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
@@ -111,7 +111,7 @@ export default function CreateBomPage(): React.ReactElement {
       const costFormatted = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(costCentavos / 100)
       toast.success(`BOM created successfully. Standard cost: ${costFormatted}`)
       navigate('/production/boms')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

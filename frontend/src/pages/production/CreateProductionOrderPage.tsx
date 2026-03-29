@@ -142,7 +142,7 @@ export default function CreateProductionOrderPage(): React.ReactElement {
       const ulid: string | undefined = order?.data?.ulid
       if (ulid) navigate(`/production/orders/${ulid}`)
       else navigate('/production/orders')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

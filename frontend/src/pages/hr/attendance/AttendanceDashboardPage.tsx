@@ -14,7 +14,7 @@ export default function AttendanceDashboardPage() {
   const { hasPermission } = useAuthStore()
   const canApproveOT = hasPermission('overtime.approve')
 
-  const { data, isLoading, isError, refetch } = useAttendanceDashboard()
+  const { data, isLoading, isError, _refetch } = useAttendanceDashboard()
 
   // OT approval state
   const [approvingId, setApprovingId]       = useState<number | null>(null)
@@ -30,7 +30,7 @@ export default function AttendanceDashboardPage() {
     try {
       await approve.mutateAsync({ id: approvingId, approved_minutes: Number(approvedMins) })
       toast.success('Overtime request approved.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to approve overtime request.'))
     }
     setApprovingId(null)
@@ -42,7 +42,7 @@ export default function AttendanceDashboardPage() {
     try {
       await reject.mutateAsync({ id: rejectId, remarks: rejectRemarks })
       toast.success('Overtime request rejected.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to reject overtime request.'))
     }
     setRejectId(null)

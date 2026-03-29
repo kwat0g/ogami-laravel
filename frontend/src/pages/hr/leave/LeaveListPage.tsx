@@ -13,8 +13,6 @@ import type { LeaveFilters } from '@/types/hr'
 import { toast } from 'sonner'
 import { ApprovalTimeline, type ApprovalStep } from '@/components/ui/ApprovalTimeline'
 import { Scale, X, ChevronDown, ChevronUp, Search, CheckSquare, XSquare } from 'lucide-react'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
@@ -28,7 +26,7 @@ export default function LeaveListPage() {
   // Batch selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [batchRejectRemarksOpen, setBatchRejectRemarksOpen] = useState(false)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [batchRejectRemarks, setBatchRejectRemarks] = useState('')
   
   // Search with debounce

@@ -7,7 +7,6 @@ import { useStockBalances, useWarehouseLocations, useStockAdjust } from '@/hooks
 import { usePermission } from '@/hooks/usePermission'
 import { isHandledApiError } from '@/lib/api'
 import { toast } from 'sonner'
-import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { ExportButton } from '@/components/ui/ExportButton'
@@ -37,7 +36,7 @@ export default function StockBalancePage(): React.ReactElement {
   const adjustMut = useStockAdjust()
 
   const { data: locations } = useWarehouseLocations({ is_active: true })
-  const { data, isLoading, isError, refetch } = useStockBalances({
+  const { data, isLoading, isError, _refetch } = useStockBalances({
     search: debouncedSearch || undefined,
     location_id: locationId || undefined,
     low_stock: lowStock || undefined,
@@ -81,7 +80,7 @@ export default function StockBalancePage(): React.ReactElement {
       toast.success('Stock balance adjusted.')
       setAdjusting(null)
       setShowConfirm(false)
-    } catch (err) {
+    } catch (_err) {
       if (isHandledApiError(err)) return
       toast.error((err as { message?: string })?.message ?? 'Adjustment failed.')
     }

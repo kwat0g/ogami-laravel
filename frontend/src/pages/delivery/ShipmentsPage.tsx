@@ -3,8 +3,6 @@ import { Package, AlertTriangle, Plus, ChevronDown, ChevronUp } from 'lucide-rea
 import { useShipments, useCreateShipment, useUpdateShipmentStatus, useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import { PageHeader } from '@/components/ui/PageHeader';
-import SearchInput from '@/components/ui/SearchInput';
-import Pagination from '@/components/ui/Pagination';
 import { toast } from 'sonner';
 import { firstErrorMessage } from '@/lib/errorHandler';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -104,7 +102,7 @@ export default function ShipmentsPage() {
       setCreateForm({ carrier: '', tracking_number: '', shipped_at: '', estimated_arrival: '', notes: '' });
       setDeliveryReceiptId(null);
       setShowCreate(false);
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -131,7 +129,7 @@ export default function ShipmentsPage() {
       setExpandedUlid(null);
       setActualArrival('');
       setConfirmStatusUpdate({ open: false, ulid: null, nextStatus: null });
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err));
     }
   };

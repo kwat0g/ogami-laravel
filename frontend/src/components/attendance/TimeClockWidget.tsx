@@ -10,12 +10,12 @@
  *  - NOT_TIMED_IN      → toast "Cannot time out without timing in"
  */
 import { useMemo, useEffect, useState } from 'react'
-import { Clock, MapPin, CheckCircle2, AlertTriangle, Loader2, XCircle } from 'lucide-react'
+import { Clock, MapPin, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import { useAttendanceToday, useTimeIn, useTimeOut, useGeofenceSettings } from '@/hooks/useAttendance'
+import { useAttendanceToday, useTimeIn, useTimeOut } from '@/hooks/useAttendance'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { firstErrorMessage, parseApiError } from '@/lib/errorHandler'
+import { parseApiError } from '@/lib/errorHandler'
 
 function formatTime12hr(time: string | null | undefined): string {
   if (!time) return '\u2014'
@@ -90,7 +90,7 @@ export default function TimeClockWidget() {
         device_info: deviceInfo,
       })
       toast.success('Timed in successfully!')
-    } catch (err) {
+    } catch (_err) {
       const parsed = parseApiError(err)
       const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
       toast.error(mappedMsg || parsed.message || 'Failed to time in.')
@@ -110,7 +110,7 @@ export default function TimeClockWidget() {
         device_info: deviceInfo,
       })
       toast.success('Timed out successfully!')
-    } catch (err) {
+    } catch (_err) {
       const parsed = parseApiError(err)
       const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
       toast.error(mappedMsg || parsed.message || 'Failed to time out.')

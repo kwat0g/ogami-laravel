@@ -43,7 +43,7 @@ export default function ClientOrdersReviewPage(): JSX.Element {
   const navigate = useNavigate()
   // Default to no filter (shows all active orders: pending + negotiating + client_responded)
   const [activeStatus, setActiveStatus] = useState<string | null>(null)
-  const { data, isLoading, refetch } = useClientOrders({
+  const { data, isLoading, _refetch } = useClientOrders({
     status: activeStatus ?? undefined
   })
 

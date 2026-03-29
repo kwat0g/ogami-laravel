@@ -15,7 +15,6 @@ import {
   Trash2,
   AlertTriangle
 } from 'lucide-react'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { useClientOrder, useRespondToNegotiation, useCancelClientOrder } from '@/hooks/useClientOrders'
@@ -90,7 +89,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       await cancelMutation.mutateAsync(orderUlid)
       toast.success('Order cancelled successfully')
       setShowCancelModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to cancel order')
     }
   }
@@ -107,7 +106,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
 
       toast.success('Response submitted successfully')
       setShowResponseModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to submit response')
     }
   }

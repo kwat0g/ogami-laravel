@@ -202,7 +202,7 @@ export default function PayrollRunDraftValidatePage() {
 
       // 4b — Warnings need acknowledgment
       setPhase({ kind: 'ack', runId, checks: checksData.checks, acked: {} })
-    } catch (err) {
+    } catch (_err) {
       // Clean up partially-created run
       if (runId) {
         try {
@@ -237,7 +237,7 @@ export default function PayrollRunDraftValidatePage() {
       setIsNavigating(true)
       clear()
       navigate(`/payroll/runs/${phase.runId}/compute`, { replace: true })
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to start computation.'))
       setPhase({ kind: 'idle' })
     }

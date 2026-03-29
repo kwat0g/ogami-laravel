@@ -50,7 +50,7 @@ export default function BankReconciliationDetailPage() {
     try {
       await certify.mutateAsync()
       toast.success('Bank reconciliation certified successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to certify reconciliation.'))
     }
   }
@@ -59,7 +59,7 @@ export default function BankReconciliationDetailPage() {
     try {
       await unmatch.mutateAsync(txId)
       toast.success('Transaction unmatched successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to unmatch transaction.'))
     }
   }

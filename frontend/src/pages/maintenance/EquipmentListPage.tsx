@@ -9,7 +9,6 @@ import { useEquipment } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton';
 import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions';
 import api from '@/lib/api';
 import type { EquipmentStatus } from '@/types/maintenance';
 
@@ -21,7 +20,7 @@ const STATUS_COLORS: Record<EquipmentStatus, string> = {
 
 export default function EquipmentListPage() {
   const [status, setStatus] = useState('');
-  const [isArchiveView, setIsArchiveView] = useState(false);
+  const [_isArchiveView, _setIsArchiveView] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -33,7 +32,7 @@ export default function EquipmentListPage() {
     per_page: 20,
   });
 
-  const { data: archivedData, isLoading: archivedLoading } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading } = useQuery({
     queryKey: ['equipment', 'archived', debouncedSearch],
     queryFn: () => api.get('/maintenance/equipment-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
     enabled: isArchiveView,

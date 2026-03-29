@@ -10,12 +10,9 @@ import {
 } from '@/hooks/useEmployees'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { Department } from '@/types/hr'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 interface DeptFormState {
   id?: number
@@ -31,7 +28,7 @@ export default function DepartmentsPage() {
   const { hasPermission } = useAuthStore()
   const navigate = useNavigate()
   const canManage = hasPermission('employees.manage_structure')
-  const { data, isLoading, isError, refetch } = useDepartments()
+  const { data, isLoading, isError, _refetch } = useDepartments()
   const create = useCreateDepartment()
   const update = useUpdateDepartment()
   const remove = useDeleteDepartment()

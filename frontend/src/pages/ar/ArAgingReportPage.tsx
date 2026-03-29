@@ -4,7 +4,6 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { FileDown, ChevronDown, ChevronRight } from 'lucide-react'
-import api from '@/lib/api'
 
 function formatPeso(amount: number): string {
   return '₱' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })

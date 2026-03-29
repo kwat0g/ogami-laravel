@@ -10,12 +10,9 @@ import {
 } from '@/hooks/useAttendance'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ShiftSchedule } from '@/types/hr'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 interface ShiftForm {
   id?: number
@@ -67,7 +64,7 @@ export default function ShiftsPage() {
   const { hasPermission } = useAuthStore()
   const navigate = useNavigate()
   const canManage = hasPermission('attendance.manage_shifts')
-  const { data, isLoading, isError, refetch } = useShifts()
+  const { data, isLoading, isError, _refetch } = useShifts()
   const create = useCreateShift()
   const upd = useUpdateShift()
   const remove = useDeleteShift()

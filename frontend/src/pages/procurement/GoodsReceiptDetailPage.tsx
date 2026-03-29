@@ -52,6 +52,9 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const rejectMutation     = useRejectGoodsReceipt()
   const submitForQcMutation = useSubmitForQc()
   const updateItemMutation  = useUpdateGoodsReceiptItem()
+  const acceptWithDefectsMutation = useAcceptWithDefects()
+  const returnToSupplierMutation = useReturnToSupplier()
+  const resubmitForQcMutation = useResubmitForQc()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
@@ -131,9 +134,6 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const isConfirmed = gr.status === 'confirmed'
   const canConfirm = isQcPassed || isPartialAccept
   const canReject = isDraft || isPendingQc || isQcFailed
-  const acceptWithDefectsMutation = useAcceptWithDefects()
-  const returnToSupplierMutation = useReturnToSupplier()
-  const resubmitForQcMutation = useResubmitForQc()
   const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending || acceptWithDefectsMutation.isPending || returnToSupplierMutation.isPending || resubmitForQcMutation.isPending
 
   function handleSubmitForQc(): void {

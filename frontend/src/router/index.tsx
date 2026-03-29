@@ -143,7 +143,7 @@ const LeaveCalendarPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveCale
 
 // HR — Loans
 const LoanListPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanListPage'))
-const LoanFormPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanFormPage'))
+const _LoanFormPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanFormPage'))
 const LoanDetailPage = lazyWithRetry(() => import('@/pages/hr/loans/LoanDetailPage'))
 
 // HR — Recruitment
@@ -176,7 +176,7 @@ const MyPayslipsPage = lazyWithRetry(() => import('@/pages/employee/MyPayslipsPa
 const MyLeavesPage = lazyWithRetry(() => import('@/pages/employee/MyLeavesPage'))
 const MyLoansPage = lazyWithRetry(() => import('@/pages/employee/MyLoansPage'))
 const MyOTPage = lazyWithRetry(() => import('@/pages/employee/MyOTPage'))
-const MyAttendancePage = lazyWithRetry(() => import('@/pages/employee/MyAttendancePage'))
+const _MyAttendancePage = lazyWithRetry(() => import('@/pages/employee/MyAttendancePage'))
 
 // Admin
 const UsersPage = lazyWithRetry(() => import('@/pages/admin/UsersPage'))
@@ -225,7 +225,7 @@ const DeliveryScheduleDetailPage = lazyWithRetry(() => import('@/pages/productio
 const CombinedDeliveryScheduleListPage = lazyWithRetry(() => import('@/pages/production/CombinedDeliveryScheduleListPage'))
 const CombinedDeliveryScheduleDetailPage = lazyWithRetry(() => import('@/pages/production/CombinedDeliveryScheduleDetailPage'))
 const ProductionOrderListPage = lazyWithRetry(() => import('@/pages/production/ProductionOrderListPage'))
-const CreateProductionOrderPage      = lazyWithRetry(() => import('@/pages/production/CreateProductionOrderPage'))
+const _CreateProductionOrderPage      = lazyWithRetry(() => import('@/pages/production/CreateProductionOrderPage'))
 const ProductionOrderDetailPage      = lazyWithRetry(() => import('@/pages/production/ProductionOrderDetailPage'))
 const ProductionCostPage             = lazyWithRetry(() => import('@/pages/production/ProductionCostPage'))
 const BomCostBreakdownPage           = lazyWithRetry(() => import('@/pages/production/BomCostBreakdownPage'))

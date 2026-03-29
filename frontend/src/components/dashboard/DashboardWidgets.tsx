@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
+  PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts'
 import { ChevronRight, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
 

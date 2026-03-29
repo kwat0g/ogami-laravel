@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Plus, RefreshCw, RotateCcw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useJournalEntries,
@@ -19,8 +19,6 @@ import { ActionButton, DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { JournalEntry, JournalEntryStatus, JournalEntryFilters } from '@/types/accounting'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -85,7 +83,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
               try {
                 await submitMutation.mutateAsync()
                 toast.success('Journal entry submitted.')
-              } catch (err) {
+              } catch (_err) {
                 toast.error(firstErrorMessage(err))
               }
             }}
@@ -111,7 +109,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
               try {
                 await postMutation.mutateAsync()
                 toast.success('Journal entry posted.')
-              } catch (err) {
+              } catch (_err) {
                 toast.error(firstErrorMessage(err))
               }
             }}
@@ -140,7 +138,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
                 await reverseMutation.mutateAsync(desc)
                 toast.success('Reversal entry created.')
                 onReversed?.()
-              } catch (err) {
+              } catch (_err) {
                 toast.error(firstErrorMessage(err))
               }
             }}
@@ -172,7 +170,7 @@ export default function JournalEntriesPage() {
   const [fiscalPeriodId, setFiscalPeriodId] = useState<number | undefined>(undefined)
   const [sourceType, setSourceType] = useState<string | undefined>(undefined)
   const [dateFrom, setDateFrom] = useState('')
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [dateTo, setDateTo] = useState('')
 
   const filters: JournalEntryFilters = {

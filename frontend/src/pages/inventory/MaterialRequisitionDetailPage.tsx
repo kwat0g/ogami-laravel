@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, AlertCircle, ShoppingCart } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
-import { firstErrorMessage } from '@/lib/errorHandler'
 import api, { isHandledApiError } from '@/lib/api'
 import StatusTimeline from '@/components/ui/StatusTimeline'
 import { getMaterialRequisitionSteps, isRejectedStatus } from '@/lib/workflowSteps'
@@ -136,7 +135,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
       setComments('')
       setReason('')
       setStockOverrideReason('')
-    } catch (err) {
+    } catch (_err) {
       if (isHandledApiError(err)) return
       const msg = (err as { message?: string })?.message
       toast.error(msg ?? `Failed to ${action} requisition.`)
@@ -445,7 +444,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
                   const pr = await convertToPrMut.mutateAsync({ mrqUlid: mrq.ulid })
                   toast.success('Purchase Request created from MRQ.')
                   navigate(`/procurement/purchase-requests/${pr.ulid}`)
-                } catch (err) {
+                } catch (_err) {
                   if (isHandledApiError(err)) return
                   toast.error((err as { message?: string })?.message ?? 'Failed to convert to PR.')
                 }

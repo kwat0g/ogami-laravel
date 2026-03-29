@@ -9,7 +9,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { useHeadDashboardStats } from '@/hooks/useDashboard'
-import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card } from '@/components/ui/Card'
 import {

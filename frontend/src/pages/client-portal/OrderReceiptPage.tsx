@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Package, CheckCircle, AlertTriangle, Truck, Calendar, User, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Package, CheckCircle, AlertTriangle, Truck, MessageSquare, Send } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { useCombinedDeliverySchedule, useAcknowledgeReceipt } from '@/hooks/useCombinedDeliverySchedules'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
-import type { CombinedDeliverySchedule, ItemStatusSummary } from '@/types/production'
+import type { ItemStatusSummary } from '@/types/production'
 
 interface AcknowledgmentForm {
   received_qty: number
@@ -83,7 +83,7 @@ export default function OrderReceiptPage(): JSX.Element {
       await acknowledgeMutation.mutateAsync(payload)
       toast.success('Receipt acknowledgment submitted successfully')
       navigate('/client-portal/orders')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to submit acknowledgment')
     }
   }

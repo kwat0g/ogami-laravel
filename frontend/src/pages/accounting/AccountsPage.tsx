@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Plus, RefreshCw, ChevronRight, ChevronDown, Archive, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, ChevronRight, ChevronDown, Archive } from 'lucide-react'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useChartOfAccounts,
@@ -330,7 +329,7 @@ export default function AccountsPage() {
       }
       setModalOpen(false)
       setEditing(null)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -340,7 +339,7 @@ export default function AccountsPage() {
     try {
       await archiveMutation.mutateAsync()
       toast.success('Account archived.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
     setArchiveTarget(null)

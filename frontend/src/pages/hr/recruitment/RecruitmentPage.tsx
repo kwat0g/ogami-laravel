@@ -17,7 +17,6 @@ import {
   useInterviews,
   useOffers,
   useCandidates,
-  usePipelineReport,
   useTimeToFillReport,
   useSourceMixReport,
 } from '@/hooks/useRecruitment'

@@ -97,7 +97,7 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
       })
       toast.success('Delivery schedule created successfully.')
       navigate('/production/delivery-schedules')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

@@ -17,7 +17,7 @@ export default function SpcDashboardPage() {
     queryFn: async () => { const { data } = await api.get('/qc/templates', { params: { per_page: 200 } }); return data.data ?? data },
   })
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, _refetch } = useQuery({
     queryKey: ['spc-chart', templateId, parameter, usl, lsl],
     queryFn: async () => {
       const { data } = await api.get('/qc/spc/control-chart', {

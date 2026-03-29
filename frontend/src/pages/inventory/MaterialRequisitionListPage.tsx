@@ -5,8 +5,6 @@ import { useMaterialRequisitions } from '@/hooks/useInventory'
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import api from '@/lib/api'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -36,7 +34,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [status, setStatus] = useState<MaterialRequisitionStatus | ''>('')
   const [page, setPage]     = useState(1)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const { hasPermission } = useAuthStore()
   const canCreate = hasPermission('inventory.mrq.create')
 
@@ -47,7 +45,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
     with_archived: undefined,
   })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['mrqs', 'archived'],
     queryFn: () => api.get('/inventory/mrqs-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,

@@ -5,12 +5,9 @@ import { useItems, useItemCategories, useCreateItemCategory } from '@/hooks/useI
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
-import Pagination from '@/components/ui/Pagination'
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -25,9 +22,9 @@ import type { ItemMaster, ItemCategory } from '@/types/inventory'
 // ---------------------------------------------------------------------------
 
 function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
-  const { data: categories, isLoading, refetch } = useItemCategories()
+  const { data: categories, isLoading, _refetch } = useItemCategories()
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['items', 'archived'],
     queryFn: () => api.get('/inventory/items-archived', { params: { per_page: 20 } }),
     enabled: isArchiveView,
@@ -60,7 +57,7 @@ function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
       await api.delete(`/inventory/items/categories/${id}`)
       toast.success('Category deleted.')
       refetch()
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -180,7 +177,7 @@ export default function ItemMasterListPage(): React.ReactElement {
   const [catFilter,  setCat]      = useState<number | ''>('')
   const [activeOnly, setActive]   = useState(false)
   const [page, setPage]           = useState(1)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)

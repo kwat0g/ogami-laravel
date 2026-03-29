@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { PackagePlus, ShieldAlert } from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useItems,
@@ -79,7 +79,7 @@ export default function StockAdjustmentsPage(): React.ReactElement {
       setAdjustedQty('')
       setRemarks('')
       setShowConfirm(false)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

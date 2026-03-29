@@ -161,7 +161,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       await approveMutation.mutateAsync({ orderUlid, notes: approveNotes })
       toast.success('Order approved successfully')
       setShowApproveModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to approve order')
     }
   }
@@ -175,7 +175,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       await rejectMutation.mutateAsync({ orderUlid, reason: rejectReason, notes: rejectNotes })
       toast.success('Order rejected')
       setShowRejectModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to reject order')
     }
   }
@@ -194,7 +194,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       })
       toast.success('Negotiation proposal sent to client')
       setShowNegotiateModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to send negotiation')
     }
   }
@@ -213,7 +213,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       })
       toast.success(`Response sent: ${salesResponse}`)
       setShowSalesResponseModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to send response')
     }
   }
@@ -241,7 +241,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       await vpApproveMutation.mutateAsync({ orderUlid, notes: vpApproveNotes })
       toast.success('Order VP-approved successfully')
       setShowVpApproveModal(false)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to VP-approve order')
     }
   }

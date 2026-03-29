@@ -76,7 +76,7 @@ export default function CreateWorkOrderPage(): React.ReactElement {
         scheduled_date: form.scheduled_date || undefined,
       })
       navigate('/maintenance/work-orders')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

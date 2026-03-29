@@ -1,5 +1,4 @@
 import { usePipelineReport, useTimeToFillReport, useSourceMixReport } from '@/hooks/useRecruitment'
-import PipelineFunnelChart from '@/components/recruitment/PipelineFunnelChart'
 
 export default function PipelineReportPage() {
   const { data: pipeline, isLoading: pipelineLoading } = usePipelineReport()

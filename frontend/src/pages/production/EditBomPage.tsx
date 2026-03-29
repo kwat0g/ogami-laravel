@@ -120,7 +120,7 @@ export default function EditBomPage(): React.ReactElement {
       })
       toast.success('BOM updated successfully.')
       navigate('/production/boms')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

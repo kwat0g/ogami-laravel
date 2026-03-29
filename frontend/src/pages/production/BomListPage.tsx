@@ -19,7 +19,7 @@ import api from '@/lib/api'
 
 export default function BomListPage(): React.ReactElement {
   const [page, setPage] = useState(1)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -28,8 +28,8 @@ export default function BomListPage(): React.ReactElement {
     setPage(1)
   }, [])
 
-  const { data, isLoading, isError, refetch } = useBoms({ per_page: 20, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data, isLoading, isError, _refetch } = useBoms({ per_page: 20, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['boms', 'archived', debouncedSearch],
     queryFn: () => api.get('/production/boms-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
     enabled: isArchiveView,
@@ -140,7 +140,7 @@ export default function BomListPage(): React.ReactElement {
                                     toast.success('BOM restored.')
                                     refetch()
                                     refetchArchived()
-                                  } catch (err) { toast.error(firstErrorMessage(err)) }
+                                  } catch (_err) { toast.error(firstErrorMessage(err)) }
                                 }}
                               >
                                 <button className="text-xs text-blue-600 hover:underline flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -158,7 +158,7 @@ export default function BomListPage(): React.ReactElement {
                                       await api.delete(`/production/boms/${bom.id}/force`)
                                       toast.success('BOM permanently deleted.')
                                       refetchArchived()
-                                    } catch (err) { toast.error(firstErrorMessage(err)) }
+                                    } catch (_err) { toast.error(firstErrorMessage(err)) }
                                   }}
                                 >
                                   <button className="text-xs text-red-600 hover:underline flex items-center gap-1" onClick={e => e.stopPropagation()}>

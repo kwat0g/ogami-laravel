@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { useSystemSettings, useBulkUpdateSettings, type SystemSetting } from '@/hooks/useSettings'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
-import { firstErrorMessage } from '@/lib/errorHandler'
 import { 
   AlertTriangle, 
   Info, 

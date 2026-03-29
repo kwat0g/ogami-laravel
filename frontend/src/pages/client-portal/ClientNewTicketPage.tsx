@@ -35,7 +35,7 @@ export default function ClientNewTicketPage() {
       const ticket = await createMutation.mutateAsync(form)
       toast.success('Ticket submitted successfully!')
       navigate(`/client-portal/tickets/${ticket.ulid}`)
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to submit ticket.'))
     }
   }

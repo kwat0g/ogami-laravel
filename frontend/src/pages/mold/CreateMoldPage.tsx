@@ -42,7 +42,7 @@ export default function CreateMoldPage(): React.ReactElement {
       });
       toast.success('Mold created.');
       navigate('/mold/masters');
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to create mold.'));
     }
   };

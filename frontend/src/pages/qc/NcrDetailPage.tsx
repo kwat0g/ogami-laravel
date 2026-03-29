@@ -12,7 +12,6 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
-import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import type { CapaStatus } from '@/types/qc'
 
 const _capaStatusBadge: Record<CapaStatus, string> = {

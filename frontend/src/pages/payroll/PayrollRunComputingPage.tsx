@@ -4,7 +4,6 @@
  * Shows per-department progress, final totals once COMPUTED.
  * Navigates to Step 5 (Review) when done.
  */
-import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Loader2, CheckCircle, XCircle, ArrowRight, RefreshCw, PlayCircle, Ban } from 'lucide-react'
@@ -42,7 +41,7 @@ export default function PayrollRunComputingPage() {
     try {
       await beginComputation.mutateAsync()
       toast.success('Computation started successfully.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -52,7 +51,7 @@ export default function PayrollRunComputingPage() {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err))
     }
   }

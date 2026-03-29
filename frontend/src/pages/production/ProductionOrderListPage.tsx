@@ -1,22 +1,16 @@
 import { useState, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AlertTriangle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
-import Pagination from '@/components/ui/Pagination'
 import { useProductionOrders } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
-import { DepartmentGuard } from '@/components/ui/guards'
 import { ExportButton } from '@/components/ui/ExportButton'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
-import ArchiveRowActions from '@/components/ui/ArchiveRowActions'
 import ArchiveEmptyState from '@/components/ui/ArchiveEmptyState'
-import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
-import { firstErrorMessage } from '@/lib/errorHandler'
 import api from '@/lib/api'
 import type { ProductionOrderStatus } from '@/types/production'
 
@@ -32,7 +26,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
   const navigate = useNavigate()
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -41,14 +35,14 @@ export default function ProductionOrderListPage(): React.ReactElement {
     setPage(1)
   }, [])
 
-  const { data, isLoading, isError, refetch } = useProductionOrders({
+  const { data, isLoading, isError, _refetch } = useProductionOrders({
     status: status || undefined,
     page,
     per_page: 20,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: _archivedData, isLoading: _archivedLoading, refetch: _refetchArchived } = useQuery({
     queryKey: ['production-orders', 'archived', debouncedSearch],
     queryFn: () => api.get('/production/orders-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
     enabled: isArchiveView,

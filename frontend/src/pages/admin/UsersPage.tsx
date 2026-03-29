@@ -29,10 +29,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Building2, User, Settings, CheckCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { firstErrorMessage } from '@/lib/errorHandler'
-import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ── Role badge colors ─────────────────────────────────────────────────────────
 const roleBadgeClass: Record<string, string> = {
@@ -153,7 +150,7 @@ export default function UsersPage() {
 
   // Separate local state for search input to prevent focus loss
   const [searchInput, setSearchInput] = useState('')
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [filters, setFilters] = useState({ search: '', role: '', page: 1, per_page: 15 })
   
   // Debounce search to prevent excessive API calls
@@ -345,7 +342,7 @@ export default function UsersPage() {
       setCopiedCredentials(true)
       setTimeout(() => setCopiedCredentials(false), 2000)
       toast.success('Credentials copied to clipboard.')
-    } catch (err) {
+    } catch (_err) {
       toast.error(firstErrorMessage(err, 'Failed to copy credentials. Please copy manually.'))
     }
   }

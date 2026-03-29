@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useLoans } from '@/hooks/useLoans'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -9,8 +9,6 @@ import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { LoanFilters, LoanStatus } from '@/types/hr'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 export default function LoanListPage() {
   const navigate = useNavigate()

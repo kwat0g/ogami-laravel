@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Plus, Trash2, CheckCircle, XCircle, Save, FileText } from 'lucide-react'
+import { Plus, Trash2, CheckCircle, XCircle } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useCreateJournalEntry,
@@ -269,7 +269,7 @@ export default function JournalEntryFormPage() {
       setLines(newLines)
       toast.success(`Template "${result.template_name}" applied`)
       setSelectedTemplate('')
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to apply template')
     }
   }
@@ -301,7 +301,7 @@ export default function JournalEntryFormPage() {
       setShowSaveTemplate(false)
       setTemplateName('')
       setTemplateDescription('')
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to save template')
     }
   }

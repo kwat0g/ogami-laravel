@@ -17,9 +17,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 import {
   LayoutDashboard,
   Users,
-  DollarSign,
   BookOpen,
-  BarChart3,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -34,17 +32,10 @@ import {
   Menu,
   PanelLeft,
   PanelLeftClose,
-  ClipboardList,
-  ShoppingCart,
   Package,
   Factory,
   ClipboardCheck,
-  Wrench,
-  Settings,
   Truck,
-  ShieldCheck,
-  Landmark,
-  Building,
   Search,
 } from 'lucide-react'
 

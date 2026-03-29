@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Package, Calendar, User, Truck, Factory, FileText, AlertTriangle, Plus } from 'lucide-react'
-import { PageHeader } from '@/components/ui/PageHeader'
+import { ArrowLeft, Package, Truck, Factory, FileText, AlertTriangle, Plus } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { useDeliverySchedule, useCreateProductionOrder, useBoms, useFulfillFromStock } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
@@ -84,7 +83,7 @@ function CreateWOModal({ isOpen, onClose, schedule }: CreateWOModalProps): JSX.E
 
       toast.success('Production Order created successfully')
       navigate(`/production/orders/${newOrder.ulid}`)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to create Production Order')
     }
   }

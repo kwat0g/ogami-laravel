@@ -13,8 +13,6 @@ import { DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import type { BankAccount, CreateBankAccountPayload } from '@/types/banking'
-import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 
 // ---------------------------------------------------------------------------
 // Delete button — children-as-trigger pattern for ConfirmDestructiveDialog
@@ -177,7 +175,7 @@ export default function BankAccountsPage() {
   const { data, isLoading } = useBankAccounts()
   const accounts = data ?? []
   const [showForm, setShowForm] = useState(false)
-  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [_isArchiveView, _setIsArchiveView] = useState(false)
   const [editing, setEditing] = useState<BankAccount | undefined>()
 
   const canCreate = hasPermission('bank_accounts.create')
