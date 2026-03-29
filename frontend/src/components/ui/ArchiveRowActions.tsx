@@ -54,7 +54,7 @@ export default function ArchiveRowActions({
             toast.success(`"${recordName}" restored.`)
             invalidateAll()
             onRestore?.()
-          } catch (_err) {
+          } catch (err) {
             toast.error(firstErrorMessage(err))
           }
         }}
@@ -79,7 +79,7 @@ export default function ArchiveRowActions({
               toast.success('Record permanently deleted.')
               invalidateAll()
               onForceDelete?.()
-            } catch (_err) {
+            } catch (err) {
               toast.error(firstErrorMessage(err))
             }
           }}

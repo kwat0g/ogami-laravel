@@ -43,7 +43,7 @@ export default function ChangePasswordPage() {
 
       toast.success('Password changed successfully.')
       navigate('/', { replace: true })
-    } catch (_err) {
+    } catch (err) {
       const { message, fieldErrors } = parseApiError(err)
 
       // Map API field names back to form field names

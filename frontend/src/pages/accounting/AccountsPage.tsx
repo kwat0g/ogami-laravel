@@ -329,7 +329,7 @@ export default function AccountsPage() {
       }
       setModalOpen(false)
       setEditing(null)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -339,7 +339,7 @@ export default function AccountsPage() {
     try {
       await archiveMutation.mutateAsync()
       toast.success('Account archived.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
     setArchiveTarget(null)

@@ -57,7 +57,7 @@ function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
       await api.delete(`/inventory/items/categories/${id}`)
       toast.success('Category deleted.')
       refetch()
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

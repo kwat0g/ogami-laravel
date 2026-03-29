@@ -165,7 +165,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                         confirmAction === 'complete' ? 'completed' : 'cancelled'
       toast.success(`Work order ${actionText} successfully.`)
       setConfirmAction(null)
-    } catch (_err) {
+    } catch (err) {
       setConfirmAction(null)
       // PROD-002: Detect QC gate blocked error
       const apiErr = err as { response?: { data?: { error_code?: string; message?: string } } }
@@ -184,7 +184,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       await completeMut.mutateAsync()
       toast.success('Work order completed successfully.')
       setShowCompleteConfirm(false)
-    } catch (_err) {
+    } catch (err) {
       if (isHandledApiError(err)) return
       toast.error(firstErrorMessage(err))
     }
@@ -195,7 +195,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       await cancelMut.mutateAsync()
       toast.success('Work order cancelled successfully.')
       setShowCancelConfirm(false)
-    } catch (_err) {
+    } catch (err) {
       if (isHandledApiError(err)) return
       toast.error(firstErrorMessage(err))
     }
@@ -206,7 +206,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       await voidMut.mutateAsync()
       toast.success('Work order voided successfully.')
       setShowVoidConfirm(false)
-    } catch (_err) {
+    } catch (err) {
       if (isHandledApiError(err)) return
       toast.error(firstErrorMessage(err))
     }
@@ -218,7 +218,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       await forceRelease.mutateAsync()
       toast.success('Work order released (QC override applied).')
       setShowQcOverrideModal(false)
-    } catch (_err) {
+    } catch (err) {
       if (isHandledApiError(err)) return
       toast.error(firstErrorMessage(err))
     }
@@ -267,7 +267,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         remarks: '',
       })
       setLogErrors({})
-    } catch (_err) {
+    } catch (err) {
       if (isHandledApiError(err)) return
       toast.error(firstErrorMessage(err))
     }

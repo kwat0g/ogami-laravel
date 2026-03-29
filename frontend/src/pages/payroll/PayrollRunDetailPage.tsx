@@ -555,7 +555,7 @@ export default function PayrollRunDetailPage() {
     try {
       const result = await lockMutation.mutateAsync()
       toast.success(`Run locked. ${result.total_jobs} employees queued for computation.`)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -565,7 +565,7 @@ export default function PayrollRunDetailPage() {
       await cancelMutation.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -575,7 +575,7 @@ export default function PayrollRunDetailPage() {
       await archiveMutation.mutateAsync()
       toast.success('Payroll run archived.')
       navigate('/payroll/runs')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

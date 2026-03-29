@@ -68,7 +68,7 @@ function ArchiveCustomerButton({ customer, onSuccess }: { customer: Customer; on
       await archiveMut.mutateAsync(customer.id)
       toast.success(`Customer "${customer.name}" has been archived successfully`)
       onSuccess?.()
-    } catch (_err) {
+    } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(`Failed to archive customer: ${message}`)
       throw err
@@ -218,7 +218,7 @@ function CustomerFormModal({ initial, onClose, onSuccess }: CustomerFormModalPro
       }
       onSuccess?.()
       onClose()
-    } catch (_err) {
+    } catch (err) {
       const parsed = firstErrorMessage(err)
       toast.error(`${initial ? 'Update' : 'Create'} failed: ${parsed}`)
       // Don't close modal on error so user can fix
@@ -391,7 +391,7 @@ export default function CustomersPage() {
     try {
       await refetch()
       toast.success('Customer list refreshed')
-    } catch (_err) {
+    } catch (err) {
       toast.error('Failed to refresh customer list')
     }
   }
@@ -505,7 +505,7 @@ export default function CustomersPage() {
                                 toast.success(`Customer "${c.name}" restored.`)
                                 refetch()
                                 refetchArchived()
-                              } catch (_err) {
+                              } catch (err) {
                                 toast.error(firstErrorMessage(err))
                               }
                             }}
@@ -525,7 +525,7 @@ export default function CustomersPage() {
                                   await api.delete(`/customers/${c.id}/force`)
                                   toast.success('Customer permanently deleted.')
                                   refetchArchived()
-                                } catch (_err) {
+                                } catch (err) {
                                   toast.error(firstErrorMessage(err))
                                 }
                               }}

@@ -64,7 +64,7 @@ export default function CreateEquipmentPage(): React.ReactElement {
         is_active: form.is_active,
       })
       navigate(`/maintenance/equipment/${result.data.ulid}`)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

@@ -565,7 +565,7 @@ function SettingField({ setting, value, onChange, isEdited, isEditMode }: Settin
                   const parsed = JSON.parse(e.target.value)
                   setJsonError(null)
                   onChange(parsed)
-                } catch (_err) {
+                } catch (err) {
                   setJsonError('Invalid JSON format')
                 }
               }}

@@ -86,7 +86,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   const handleStart = async () => {
     try {
       await startMut.mutateAsync(wo.ulid);
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -108,7 +108,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
       setLaborHours('');
       setActualDate('');
       setCompletionErrors({});
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -117,7 +117,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
     try {
       await cancelMut.mutateAsync(wo.ulid);
       navigate('/maintenance/work-orders');
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err));
     }
   };

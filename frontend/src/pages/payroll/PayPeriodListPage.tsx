@@ -134,7 +134,7 @@ export default function PayPeriodListPage() {
       toast.success('Pay period created successfully.')
       setShowCreate(false)
       reset()
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -143,7 +143,7 @@ export default function PayPeriodListPage() {
     try {
       await close.mutateAsync(period.id)
       toast.success(`Pay period "${period.label}" closed successfully.`)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

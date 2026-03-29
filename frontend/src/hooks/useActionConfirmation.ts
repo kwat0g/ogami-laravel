@@ -110,7 +110,7 @@ export function useActionConfirmation({
       toast.success(successMessage ?? config?.title.replace('?', '') ?? 'Action completed')
       onSuccess?.()
       setIsOpen(false)
-    } catch (_err) {
+    } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(`${errorMessage ?? config?.title.replace('?', '') ?? 'Action failed'}: ${message}`)
       throw err
@@ -165,7 +165,7 @@ export function useImmediateAction({
       await action()
       toast.success(successMessage)
       onSuccess?.()
-    } catch (_err) {
+    } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(`${errorMessage}: ${message}`)
       throw err

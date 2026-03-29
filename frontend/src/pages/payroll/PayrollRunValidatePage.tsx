@@ -155,7 +155,7 @@ export default function PayrollRunValidatePage() {
       await acknowledge.mutateAsync(ackedWarnings)
       toast.success('Pre-run checks acknowledged. Proceeding to computation.')
       navigate(`/payroll/runs/${runId}/compute`)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -165,7 +165,7 @@ export default function PayrollRunValidatePage() {
       await cancelRun.mutateAsync()
       toast.success('Payroll run cancelled.')
       navigate('/payroll/runs')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

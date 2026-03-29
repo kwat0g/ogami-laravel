@@ -70,7 +70,7 @@ export default function APInvoiceDetailPage() {
     try {
       await submit.mutateAsync()
       toast.success('Invoice submitted for approval.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -79,7 +79,7 @@ export default function APInvoiceDetailPage() {
     try {
       await approve.mutateAsync()
       toast.success('Invoice approved. An official invoice number has been generated.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -94,7 +94,7 @@ export default function APInvoiceDetailPage() {
       toast.success('Invoice rejected.')
       setShowRejectForm(false)
       setRejectNote('')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -103,7 +103,7 @@ export default function APInvoiceDetailPage() {
     try {
       await headNote.mutateAsync()
       toast.success('Head note recorded.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -112,7 +112,7 @@ export default function APInvoiceDetailPage() {
     try {
       await managerCheck.mutateAsync()
       toast.success('Manager check recorded.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -121,7 +121,7 @@ export default function APInvoiceDetailPage() {
     try {
       await officerReview.mutateAsync()
       toast.success('Officer review recorded.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -153,7 +153,7 @@ export default function APInvoiceDetailPage() {
       setPayAmountError('')
       setPayRef('')
       setPayMethod('')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -164,7 +164,7 @@ export default function APInvoiceDetailPage() {
       toast.success('Invoice cancelled.')
       setShowCancelForm(false)
       setCancelReason('')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -174,7 +174,7 @@ export default function APInvoiceDetailPage() {
       await deleteInvoice.mutateAsync()
       toast.success('Invoice deleted.')
       navigate('/accounting/ap/invoices')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

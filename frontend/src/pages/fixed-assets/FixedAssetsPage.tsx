@@ -35,7 +35,7 @@ function AssetCategoriesModal({ onClose }: { onClose: () => void }) {
       toast.success('Category created.')
       setShowForm(false)
       setForm({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' })
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to create category.'))
     }
   }
@@ -146,7 +146,7 @@ export default function FixedAssetsPage(): React.ReactElement {
       const result = await depreciate.mutateAsync({ fiscal_period_id: depPeriod })
       toast.success(`Depreciation complete: ${result.processed} processed, ${result.skipped} skipped.`)
       setShowDepreciate(false)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Depreciation failed.'))
     }
   }

@@ -111,7 +111,7 @@ export default function DepartmentBudgetsPage(): React.ReactElement {
       })
       toast.success('Department budget updated successfully')
       setEditingId(null)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to update budget'))
     }
   }

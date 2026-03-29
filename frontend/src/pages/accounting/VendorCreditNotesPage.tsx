@@ -91,7 +91,7 @@ export default function VendorCreditNotesPage(): React.ReactElement {
       setShowForm(false)
       setForm({ vendor_id: 0, amount: 0, reason: '' })
       setErrors({})
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -100,7 +100,7 @@ export default function VendorCreditNotesPage(): React.ReactElement {
     try {
       await post.mutateAsync(ulid)
       toast.success('Credit note posted.')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

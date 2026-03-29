@@ -101,7 +101,7 @@ function ReceivePaymentPanel({
       await payMut.mutateAsync(form)
       toast.success('Payment recorded successfully.')
       setOpen(false)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }
@@ -220,7 +220,7 @@ function WriteOffSection({ invoiceId }: { invoiceId: string }) {
         try {
           await writeOffMut.mutateAsync(form)
           toast.success('Invoice written off successfully.')
-        } catch (_err) {
+        } catch (err) {
           toast.error(firstErrorMessage(err))
         }
       }}
@@ -249,7 +249,7 @@ function CancelSection({ invoiceId }: { invoiceId: string }) {
         try {
           await cancelMut.mutateAsync(invoiceId)
           toast.success('Invoice cancelled successfully.')
-        } catch (_err) {
+        } catch (err) {
           toast.error(firstErrorMessage(err))
         }
       }}
@@ -277,7 +277,7 @@ function ApproveSection({ invoiceId }: { invoiceId: string }) {
         try {
           await approveMut.mutateAsync(invoiceId)
           toast.success('Invoice approved successfully.')
-        } catch (_err) {
+        } catch (err) {
           toast.error(firstErrorMessage(err))
         }
       }}

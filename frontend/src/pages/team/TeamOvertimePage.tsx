@@ -80,7 +80,7 @@ export default function TeamOvertimePage() {
       })
       toast.success('Overtime request approved successfully.')
       setApprovingId(null)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to approve overtime request.'))
     }
   }
@@ -97,7 +97,7 @@ export default function TeamOvertimePage() {
       setRejectId(null)
       setRejectRemarks('')
       setTouched(prev => ({ ...prev, reject: false }))
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to reject overtime request.'))
     }
   }

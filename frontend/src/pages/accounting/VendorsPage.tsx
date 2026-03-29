@@ -42,7 +42,7 @@ function ArchiveVendorButton({ vendor }: { vendor: Vendor }) {
         try {
           await archiveMut.mutateAsync()
           toast.success('Vendor archived.')
-        } catch (_err) {
+        } catch (err) {
           toast.error(firstErrorMessage(err))
         }
       }}
@@ -691,7 +691,7 @@ export default function VendorsPage() {
                               toast.success(`Vendor "${vendor.name}" restored.`)
                               refetch()
                               refetchArchived()
-                            } catch (_err) {
+                            } catch (err) {
                               toast.error(firstErrorMessage(err))
                             }
                           }}
@@ -711,7 +711,7 @@ export default function VendorsPage() {
                                 await api.delete(`/vendors/${vendor.id}/force`)
                                 toast.success('Vendor permanently deleted.')
                                 refetchArchived()
-                              } catch (_err) {
+                              } catch (err) {
                                 toast.error(firstErrorMessage(err))
                               }
                             }}

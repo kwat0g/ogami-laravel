@@ -28,7 +28,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
     try {
       await closeRfq.mutateAsync(rfq!.ulid)
       toast.success('RFQ closed.')
-    } catch (_err) {
+    } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Failed to close RFQ.')
     }
@@ -39,7 +39,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       await cancelRfq.mutateAsync(rfq!.ulid)
       toast.success('RFQ cancelled.')
       navigate('/procurement/rfqs')
-    } catch (_err) {
+    } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Failed to cancel RFQ.')
     }
@@ -63,7 +63,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       setQuoteVendor(null)
       setQuoteAmount('')
       setQuoteNotes('')
-    } catch (_err) {
+    } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Failed to record quote.')
     }
@@ -73,7 +73,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
     try {
       await recordDecline.mutateAsync({ ulid: rfq!.ulid, vendorId })
       toast.success('Decline recorded.')
-    } catch (_err) {
+    } catch (err) {
       const message = firstErrorMessage(err)
       toast.error(message ?? 'Failed to record decline.')
     }
@@ -84,7 +84,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       const po = await awardRfq.mutateAsync({ rfqUlid: rfq!.ulid, vendorId })
       toast.success(`RFQ awarded. Draft PO ${po.po_reference} created.`)
       navigate(`/procurement/purchase-orders/${po.ulid}`)
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err) ?? 'Failed to award RFQ.')
     }
   }

@@ -77,7 +77,7 @@ export default function MoldDetailPage() {
       });
       toast.success('Mold updated.');
       setIsEditing(false);
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to update mold.'));
     }
   };
@@ -90,7 +90,7 @@ export default function MoldDetailPage() {
       toast.success('Shot log recorded.');
       reset({ log_date: new Date().toISOString().split('T')[0] });
       setShowForm(false);
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err, 'Failed to log shots.'));
     }
   };

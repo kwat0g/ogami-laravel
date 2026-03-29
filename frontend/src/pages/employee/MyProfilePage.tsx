@@ -341,7 +341,7 @@ export default function MyProfilePage() {
       await updateProfile.mutateAsync(payload)
       toast.success('Profile updated successfully')
       setIsEditing(false)
-    } catch (_err) {
+    } catch (err) {
       toast.error(parseApiError(err).message)
     }
   }
