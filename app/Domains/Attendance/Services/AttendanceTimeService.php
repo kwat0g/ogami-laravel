@@ -76,18 +76,34 @@ final class AttendanceTimeService implements ServiceContract
                 );
             }
 
-            // Validate geofence
+            // Validate geofence — enforcement depends on system_settings
+            $geofenceMode = $this->geoFence->getGeofenceMode();
             $geo = $this->geoFence->validateLocation($employee, $latitude, $longitude, now());
 
-            if (! $geo['within'] && ! $overrideReason) {
-                throw new DomainException(
-                    "You are {$geo['distance_meters']}m from your assigned work location" .
-                    ($geo['location'] ? " ({$geo['location']->name})" : '') .
-                    '. Please move closer or provide a reason for working from this location.',
-                    'OUTSIDE_GEOFENCE',
-                    422,
-                    ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']?->name],
-                );
+            if (! $geo['within'] && $geofenceMode !== 'disabled') {
+                if ($geofenceMode === 'strict') {
+                    // Strict mode: block entirely — no override possible
+                    throw new DomainException(
+                        "You are {$geo['distance_meters']}m from your assigned work location" .
+                        ($geo['location'] ? " ({$geo['location']->name})" : '') .
+                        '. Clock-in is only allowed within the geofence. Contact HR if this is an error.',
+                        'OUTSIDE_GEOFENCE_BLOCKED',
+                        422,
+                        ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']?->name],
+                    );
+                }
+
+                // Override mode: allow with reason, but flag for HR review
+                if (! $overrideReason) {
+                    throw new DomainException(
+                        "You are {$geo['distance_meters']}m from your assigned work location" .
+                        ($geo['location'] ? " ({$geo['location']->name})" : '') .
+                        '. Please provide a reason for working from this location.',
+                        'OUTSIDE_GEOFENCE',
+                        422,
+                        ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']?->name],
+                    );
+                }
             }
 
             $log = AttendanceLog::updateOrCreate(

@@ -513,6 +513,37 @@ export interface WorkLocation {
   is_active: boolean
 }
 
+// ── Geofence Settings ─────────────────────────────────────────────────────
+
+export interface GeofenceSettings {
+  enabled: boolean
+  mode: 'strict' | 'override' | 'disabled'
+}
+
+export function useGeofenceSettings() {
+  return useQuery({
+    queryKey: ['geofence-settings'],
+    queryFn: async () => {
+      const res = await api.get<{ data: GeofenceSettings }>('/attendance/geofence-settings')
+      return res.data.data
+    },
+    staleTime: 30_000,
+  })
+}
+
+export function useToggleGeofence() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const res = await api.post<{ data: GeofenceSettings }>('/attendance/geofence-toggle', { enabled })
+      return res.data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['geofence-settings'] })
+    },
+  })
+}
+
 export function useWorkLocations() {
   return useQuery({
     queryKey: ['work-locations'],

@@ -268,6 +268,16 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
         ]);
     })->name('dtr-export');
 
+    // ── Geofence Settings ─────────────────────────────────────────────────
+    Route::get('geofence-settings', [AttendanceTimeController::class, 'geofenceSettings'])
+        ->name('geofence-settings');
+    Route::post('geofence-toggle', [AttendanceTimeController::class, 'toggleGeofence'])
+        ->middleware(['permission:attendance.work_locations.manage', 'throttle:api-action'])
+        ->name('geofence-toggle');
+    Route::post('geofence-mode', [AttendanceTimeController::class, 'updateGeofenceMode'])
+        ->middleware(['permission:attendance.work_locations.manage', 'throttle:api-action'])
+        ->name('geofence-mode');
+
     // ── GPS Time Clock (Employee Self-Service) ─────────────────────────────
     Route::post('time-in', [AttendanceTimeController::class, 'timeIn'])
         ->middleware('throttle:api-action')

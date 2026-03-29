@@ -6,12 +6,14 @@ namespace App\Http\Controllers\Attendance;
 
 use App\Domains\Attendance\Models\AttendanceLog;
 use App\Domains\Attendance\Services\AttendanceTimeService;
+use App\Domains\Attendance\Services\GeoFenceService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\TimeInRequest;
 use App\Http\Requests\Attendance\TimeOutRequest;
 use App\Http\Resources\Attendance\AttendanceLogResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 final class AttendanceTimeController extends Controller
 {
@@ -103,5 +105,70 @@ final class AttendanceTimeController extends Controller
             ->paginate((int) $request->query('per_page', '15'));
 
         return AttendanceLogResource::collection($logs)->response();
+    }
+
+    /**
+     * Get current geofence settings (for frontend to know enforcement mode).
+     */
+    public function geofenceSettings(): JsonResponse
+    {
+        $geoFence = app(GeoFenceService::class);
+
+        return response()->json([
+            'data' => [
+                'enabled' => $geoFence->isGeofenceEnabled(),
+                'mode' => $geoFence->getGeofenceMode(),
+            ],
+        ]);
+    }
+
+    /**
+     * Admin: Toggle geofence enforcement on/off.
+     */
+    public function toggleGeofence(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('attendance.work_locations.manage'), 403);
+
+        $validated = $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        DB::table('system_settings')
+            ->where('key', 'attendance.geofence_enabled')
+            ->update(['value' => json_encode((bool) $validated['enabled'])]);
+
+        return response()->json([
+            'data' => [
+                'enabled' => (bool) $validated['enabled'],
+                'mode' => app(GeoFenceService::class)->getGeofenceMode(),
+            ],
+            'message' => $validated['enabled']
+                ? 'Geofence enforcement enabled.'
+                : 'Geofence enforcement temporarily disabled.',
+        ]);
+    }
+
+    /**
+     * Admin: Update geofence mode (strict/override/disabled).
+     */
+    public function updateGeofenceMode(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('attendance.work_locations.manage'), 403);
+
+        $validated = $request->validate([
+            'mode' => 'required|in:strict,override,disabled',
+        ]);
+
+        DB::table('system_settings')
+            ->where('key', 'attendance.geofence_mode')
+            ->update(['value' => json_encode($validated['mode'])]);
+
+        return response()->json([
+            'data' => [
+                'enabled' => app(GeoFenceService::class)->isGeofenceEnabled(),
+                'mode' => $validated['mode'],
+            ],
+            'message' => "Geofence mode set to '{$validated['mode']}'.",
+        ]);
     }
 }

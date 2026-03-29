@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Clock, MapPin, CheckCircle2, AlertTriangle, Loader2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import { useAttendanceToday, useTimeIn, useTimeOut } from '@/hooks/useAttendance'
+import { useAttendanceToday, useTimeIn, useTimeOut, useGeofenceSettings } from '@/hooks/useAttendance'
 import StatusBadge from '@/components/ui/StatusBadge'
 
 function formatTime12hr(time: string | null | undefined): string {
@@ -37,7 +37,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   ALREADY_TIMED_IN: 'You have already timed in today.',
   ALREADY_TIMED_OUT: 'You have already timed out today.',
   NOT_TIMED_IN: 'Cannot time out without timing in first.',
-  OUTSIDE_GEOFENCE: 'You are outside your work location geofence.',
+  OUTSIDE_GEOFENCE: 'You are outside your work location geofence. Provide a reason to continue.',
+  OUTSIDE_GEOFENCE_BLOCKED: 'Clock-in blocked: you are outside the allowed geofence area. Contact HR.',
 }
 
 export default function TimeClockWidget() {
@@ -99,7 +100,12 @@ export default function TimeClockWidget() {
       const message = error.response?.data?.error?.message
 
       if (code === 'OUTSIDE_GEOFENCE') {
+        // Override mode: show reason input
         setShowOverride(true)
+        toast.error(message || ERROR_MESSAGES[code])
+      } else if (code === 'OUTSIDE_GEOFENCE_BLOCKED') {
+        // Strict mode: completely blocked, no override possible
+        setShowOverride(false)
         toast.error(message || ERROR_MESSAGES[code])
       } else {
         toast.error(ERROR_MESSAGES[code] || message || 'Failed to time in.')

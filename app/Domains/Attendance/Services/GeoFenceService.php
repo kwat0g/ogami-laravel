@@ -9,6 +9,7 @@ use App\Domains\Attendance\Models\WorkLocation;
 use App\Domains\HR\Models\Employee;
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Geofence validation service.
@@ -81,6 +82,42 @@ final class GeoFenceService implements ServiceContract
             'distance_meters' => round($distance, 2),
             'location' => $workLocation,
         ];
+    }
+
+    /**
+     * Is geofence enforcement enabled globally?
+     * Admin can temporarily disable via system_settings.
+     */
+    public function isGeofenceEnabled(): bool
+    {
+        $raw = DB::table('system_settings')
+            ->where('key', 'attendance.geofence_enabled')
+            ->value('value');
+
+        return $raw !== null ? (bool) json_decode($raw) : true;
+    }
+
+    /**
+     * Get the geofence enforcement mode.
+     *
+     * @return string 'strict' | 'override' | 'disabled'
+     *   strict   = block clock-in outside geofence (no override allowed)
+     *   override = allow clock-in with a reason (flagged for HR review)
+     *   disabled = no geofence check at all
+     */
+    public function getGeofenceMode(): string
+    {
+        if (! $this->isGeofenceEnabled()) {
+            return 'disabled';
+        }
+
+        $raw = DB::table('system_settings')
+            ->where('key', 'attendance.geofence_mode')
+            ->value('value');
+
+        $mode = $raw !== null ? (string) json_decode($raw) : 'strict';
+
+        return in_array($mode, ['strict', 'override', 'disabled'], true) ? $mode : 'strict';
     }
 
     /**
