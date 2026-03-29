@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 vendor/
+storage/
+bootstrap/cache/
+public/build/
 
 # Build outputs
 dist/

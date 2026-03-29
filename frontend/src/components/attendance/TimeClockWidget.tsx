@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useAttendanceToday, useTimeIn, useTimeOut, useGeofenceSettings } from '@/hooks/useAttendance'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { firstErrorMessage } from '@/lib/errorHandler'
+import { firstErrorMessage, parseApiError } from '@/lib/errorHandler'
 
 function formatTime12hr(time: string | null | undefined): string {
   if (!time) return '\u2014'
@@ -91,9 +91,9 @@ export default function TimeClockWidget() {
       })
       toast.success('Timed in successfully!')
     } catch (err) {
-      // api.ts interceptor unwraps 4xx responses to raw data objects
-      const msg = (err as { message?: string })?.message
-      toast.error(msg || firstErrorMessage(err, 'Failed to time in.'))
+      const parsed = parseApiError(err)
+      const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
+      toast.error(mappedMsg || parsed.message || 'Failed to time in.')
     }
   }
 
@@ -111,8 +111,9 @@ export default function TimeClockWidget() {
       })
       toast.success('Timed out successfully!')
     } catch (err) {
-      const msg = (err as { message?: string })?.message
-      toast.error(msg || firstErrorMessage(err, 'Failed to time out.'))
+      const parsed = parseApiError(err)
+      const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
+      toast.error(mappedMsg || parsed.message || 'Failed to time out.')
     }
   }
 

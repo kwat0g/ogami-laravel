@@ -39,13 +39,24 @@ export interface ParsedApiError {
 export function parseApiError(err: unknown): ParsedApiError {
   // Axios error with a response
   if (isAxiosError(err) && err.response) {
-    const { status, data }  = err.response
-    const body              = data as Record<string, unknown>
-    const message           = typeof body?.message === 'string'
+    const { status, data } = err.response
+    const body = data as Record<string, unknown>
+    const message = typeof body?.message === 'string'
       ? body.message
       : httpMessage(status)
-    const fieldErrors       = extractFieldErrors(body?.errors)
-    const errorCode         = typeof body?.error_code === 'string' ? body.error_code : null
+    const fieldErrors = extractFieldErrors(body?.errors)
+    const errorCode = typeof body?.error_code === 'string' ? body.error_code : null
+
+    return { message, fieldErrors, status, errorCode }
+  }
+
+  // Unwrapped data object (already processed by interceptor)
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    const body = err as Record<string, unknown>
+    const message = typeof body.message === 'string' ? body.message : 'An unexpected error occurred.'
+    const fieldErrors = extractFieldErrors(body.errors)
+    const errorCode = typeof body.error_code === 'string' ? body.error_code : null
+    const status = typeof body.status === 'number' ? body.status : null
 
     return { message, fieldErrors, status, errorCode }
   }
@@ -53,10 +64,10 @@ export function parseApiError(err: unknown): ParsedApiError {
   // Axios network error (no response — timeout, DNS, CORS, etc.)
   if (isAxiosError(err)) {
     return {
-      message:    'Network error — please check your connection and try again.',
+      message: 'Network error — please check your connection and try again.',
       fieldErrors: {},
-      status:     null,
-      errorCode:  null,
+      status: null,
+      errorCode: null,
     }
   }
 
@@ -67,10 +78,10 @@ export function parseApiError(err: unknown): ParsedApiError {
 
   // Unknown
   return {
-    message:    'An unexpected error occurred.',
+    message: 'An unexpected error occurred.',
     fieldErrors: {},
-    status:     null,
-    errorCode:  null,
+    status: null,
+    errorCode: null,
   }
 }
 
