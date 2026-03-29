@@ -27,9 +27,13 @@ final class ClientOrderStateMachine
         'negotiating' => ['client_responded', 'approved', 'rejected', 'cancelled'],
         'client_responded' => ['negotiating', 'vp_pending', 'approved', 'rejected', 'cancelled'],
         'vp_pending' => ['approved', 'rejected', 'cancelled'],
-        'approved' => [],   // terminal
-        'rejected' => [],   // terminal
-        'cancelled' => [],  // terminal
+        'approved' => ['in_production', 'cancelled'],
+        'in_production' => ['ready_for_delivery', 'cancelled'],
+        'ready_for_delivery' => ['delivered', 'cancelled'],
+        'delivered' => ['fulfilled'],
+        'fulfilled' => [],   // terminal
+        'rejected' => [],    // terminal
+        'cancelled' => [],   // terminal
     ];
 
     /**
