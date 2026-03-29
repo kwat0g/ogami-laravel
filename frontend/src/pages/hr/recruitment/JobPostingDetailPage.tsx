@@ -51,6 +51,25 @@ export default function JobPostingDetailPage() {
             {action.isPending ? 'Closing...' : 'Close Posting'}
           </button>
         )}
+        {/* GAP-30: Reopen closed/expired postings */}
+        {(posting.status === 'closed' || posting.status === 'expired') && (
+          <button
+            onClick={() => { if (confirm('Reopen this posting? It will be published again.')) handleAction('reopen') }}
+            disabled={action.isPending}
+            className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+          >
+            {action.isPending ? 'Reopening...' : 'Reopen Posting'}
+          </button>
+        )}
+        {/* GAP-23: Edit button for draft/published postings */}
+        {(posting.status === 'draft' || posting.status === 'published') && (
+          <Link
+            to={`/hr/recruitment/postings/${ulid}/edit`}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+          >
+            Edit Posting
+          </Link>
+        )}
         <Link
           to={`/hr/recruitment/applications?posting=${ulid}`}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"

@@ -13,7 +13,7 @@ export type RequisitionStatus =
 export type PostingStatus = 'draft' | 'published' | 'closed' | 'expired'
 
 export type ApplicationStatus =
-  | 'new' | 'under_review' | 'shortlisted' | 'rejected' | 'withdrawn'
+  | 'new' | 'under_review' | 'shortlisted' | 'hired' | 'rejected' | 'withdrawn'
 
 export type InterviewStatus =
   | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'

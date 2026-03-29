@@ -39,8 +39,8 @@ enum PostingStatus: string
         return match ($this) {
             self::Draft => [self::Published],
             self::Published => [self::Closed, self::Expired],
-            self::Closed => [],
-            self::Expired => [],
+            self::Closed => [self::Published],
+            self::Expired => [self::Published],
         };
     }
 

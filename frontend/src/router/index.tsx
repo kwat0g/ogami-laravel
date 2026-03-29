@@ -414,6 +414,7 @@ const router = createBrowserRouter([
       { path: '/hr/recruitment/applications/:ulid', element: withSuspense(guard('hr.full_access|recruitment.applications.view', <ApplicationDetailPage />)) },
       { path: '/hr/recruitment/postings/new', element: withSuspense(guard('hr.full_access|recruitment.postings.create', <JobPostingFormPage />)) },
       { path: '/hr/recruitment/postings/:ulid', element: withSuspense(guard('hr.full_access|recruitment.postings.view', <JobPostingDetailPage />)) },
+      { path: '/hr/recruitment/postings/:ulid/edit', element: withSuspense(guard('hr.full_access|recruitment.postings.create', <JobPostingFormPage />)) },
       { path: '/hr/recruitment/interviews/:id', element: withSuspense(guard('hr.full_access|recruitment.interviews.view|recruitment.interviews.evaluate', <InterviewDetailPage />)) },
       { path: '/hr/recruitment/offers/:ulid', element: withSuspense(guard('hr.full_access|recruitment.offers.view', <OfferDetailPage />)) },
       { path: '/hr/recruitment/candidates/:id', element: withSuspense(guard('hr.full_access|recruitment.candidates.view', <CandidateProfilePage />)) },

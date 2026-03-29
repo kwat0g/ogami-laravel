@@ -362,6 +362,14 @@ export function useCandidates(params?: Record<string, string>) {
   })
 }
 
+export function useCreateCandidate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => api.post('/recruitment/candidates', payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.candidates }),
+  })
+}
+
 // ── Reports ──────────────────────────────────────────────────────────────────
 
 export function usePipelineReport(params?: Record<string, string>) {
