@@ -73,6 +73,7 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
 
     // ── Production Cost Auto-Posting to GL (Phase 2) ──────────────────────
     Route::post('orders/{productionOrder}/post-cost', function (\Illuminate\Http\Request $request, \App\Domains\Production\Models\ProductionOrder $productionOrder): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->can('production.orders.update'), 403, 'Unauthorized to post production costs.');
         $service = app(\App\Domains\Production\Services\ProductionCostPostingService::class);
         return response()->json(['data' => $service->postCostVariance($productionOrder, $request->user())]);
     })->middleware('throttle:api-action');

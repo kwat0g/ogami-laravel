@@ -82,6 +82,8 @@ final class BomController extends Controller
     /** Restore a soft-deleted BOM from the archive. */
     public function restore(Request $request, int $bom): BomResource
     {
+        $this->authorize('create', BillOfMaterials::class);
+
         $restored = $this->service->restore($bom, $request->user());
 
         return new BomResource($restored->load('productItem', 'components.componentItem'));

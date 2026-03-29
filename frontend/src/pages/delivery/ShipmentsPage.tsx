@@ -102,7 +102,7 @@ export default function ShipmentsPage() {
       setCreateForm({ carrier: '', tracking_number: '', shipped_at: '', estimated_arrival: '', notes: '' });
       setDeliveryReceiptId(null);
       setShowCreate(false);
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err));
     }
   };
@@ -129,7 +129,7 @@ export default function ShipmentsPage() {
       setExpandedUlid(null);
       setActualArrival('');
       setConfirmStatusUpdate({ open: false, ulid: null, nextStatus: null });
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err));
     }
   };

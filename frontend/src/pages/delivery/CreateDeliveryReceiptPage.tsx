@@ -115,7 +115,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
       toast.success('Delivery receipt created.')
       setShowConfirm(false)
       navigate('/delivery/receipts')
-    } catch (_err) {
+    } catch (err) {
       toast.error(firstErrorMessage(err))
     }
   }

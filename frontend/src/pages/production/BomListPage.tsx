@@ -141,7 +141,7 @@ export default function BomListPage(): React.ReactElement {
                                     toast.success('BOM restored.')
                                     refetch()
                                     refetchArchived()
-                                  } catch (_err) { toast.error(firstErrorMessage(err)) }
+                                  } catch (err) { toast.error(firstErrorMessage(err)) }
                                 }}
                               >
                                 <button className="text-xs text-blue-600 hover:underline flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -159,7 +159,7 @@ export default function BomListPage(): React.ReactElement {
                                       await api.delete(`/production/boms/${bom.id}/force`)
                                       toast.success('BOM permanently deleted.')
                                       refetchArchived()
-                                    } catch (_err) { toast.error(firstErrorMessage(err)) }
+                                    } catch (err) { toast.error(firstErrorMessage(err)) }
                                   }}
                                 >
                                   <button className="text-xs text-red-600 hover:underline flex items-center gap-1" onClick={e => e.stopPropagation()}>
