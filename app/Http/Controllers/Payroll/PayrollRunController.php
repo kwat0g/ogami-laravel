@@ -192,6 +192,12 @@ final class PayrollRunController extends Controller
     /** POST /api/v1/payroll/runs/{payrollRun}/restore */
     public function restore(Request $request, int $payrollRun): JsonResponse
     {
+        abort_unless(
+            $request->user()->hasAnyPermission(['payroll.initiate', 'payroll.compute']),
+            403,
+            'You do not have permission to restore payroll runs.',
+        );
+
         $run = $this->service->restoreRun($payrollRun, $request->user());
 
         return response()->json([

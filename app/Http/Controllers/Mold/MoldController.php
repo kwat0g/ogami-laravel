@@ -86,6 +86,8 @@ final class MoldController extends Controller
     /** Restore a soft-deleted mold from the archive. */
     public function restore(Request $request, int $moldMaster): MoldMasterResource
     {
+        $this->authorize('create', MoldMaster::class);
+
         $mold = $this->service->restoreMold($moldMaster, $request->user());
 
         return new MoldMasterResource($mold);

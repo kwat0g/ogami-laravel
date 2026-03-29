@@ -87,6 +87,8 @@ final class SalesOrderController extends Controller
     /** Restore a soft-deleted sales order. */
     public function restore(Request $request, int $salesOrder): SalesOrderResource
     {
+        $this->authorize('create', SalesOrder::class);
+
         $order = $this->service->restore($salesOrder, $request->user());
 
         return new SalesOrderResource($order);

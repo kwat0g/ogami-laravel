@@ -18,6 +18,12 @@ final class HiringController extends Controller
 
     public function hire(HireRequest $request, Application $application): JsonResponse
     {
+        abort_unless(
+            $request->user()?->can('recruitment.applications.manage'),
+            403,
+            'You do not have permission to hire candidates.',
+        );
+
         $hiring = $this->service->hire($application, $request->validated(), $request->user());
 
         return response()->json([

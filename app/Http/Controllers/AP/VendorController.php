@@ -106,6 +106,8 @@ final class VendorController extends Controller
     /** Restore a soft-deleted vendor from the archive. */
     public function restore(Request $request, int $id): VendorResource
     {
+        $this->authorize('create', Vendor::class);
+
         $vendor = $this->service->restore($id, $request->user());
 
         return new VendorResource($vendor->load('ewtRate'));
