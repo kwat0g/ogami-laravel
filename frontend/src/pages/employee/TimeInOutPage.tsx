@@ -119,7 +119,8 @@ export default function TimeInOutPage() {
       })
       toast.success('Timed in successfully!')
     } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to time in.'))
+      const msg = (err as { message?: string })?.message
+      toast.error(msg || firstErrorMessage(err, 'Failed to time in.'))
     }
   }
 
@@ -137,7 +138,8 @@ export default function TimeInOutPage() {
       })
       toast.success('Timed out successfully!')
     } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to time out.'))
+      const msg = (err as { message?: string })?.message
+      toast.error(msg || firstErrorMessage(err, 'Failed to time out.'))
     }
   }
 

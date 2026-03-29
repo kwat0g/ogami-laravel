@@ -91,7 +91,9 @@ export default function TimeClockWidget() {
       })
       toast.success('Timed in successfully!')
     } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to time in.'))
+      // api.ts interceptor unwraps 4xx responses to raw data objects
+      const msg = (err as { message?: string })?.message
+      toast.error(msg || firstErrorMessage(err, 'Failed to time in.'))
     }
   }
 
@@ -109,7 +111,8 @@ export default function TimeClockWidget() {
       })
       toast.success('Timed out successfully!')
     } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to time out.'))
+      const msg = (err as { message?: string })?.message
+      toast.error(msg || firstErrorMessage(err, 'Failed to time out.'))
     }
   }
 
