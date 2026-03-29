@@ -111,14 +111,7 @@ const SECTIONS: NavSection[] = [
 
       // ── Recruitment ───────────────────────────────────────────────────────
       { divider: true, label: 'Recruitment' },
-      { label: 'Dashboard', href: '/hr/recruitment', permission: 'hr.full_access|recruitment.requisitions.view', end: true },
-      { label: 'Requisitions', href: '/hr/recruitment/requisitions', permission: 'hr.full_access|recruitment.requisitions.view' },
-      { label: 'Job Postings', href: '/hr/recruitment/postings', permission: 'hr.full_access|recruitment.postings.view' },
-      { label: 'Applications', href: '/hr/recruitment/applications', permission: 'hr.full_access|recruitment.applications.view' },
-      { label: 'Interviews', href: '/hr/recruitment/interviews', permission: 'hr.full_access|recruitment.interviews.view' },
-      { label: 'Offers', href: '/hr/recruitment/offers', permission: 'hr.full_access|recruitment.offers.view' },
-      { label: 'Candidates', href: '/hr/recruitment/candidates', permission: 'hr.full_access|recruitment.candidates.view' },
-      { label: 'Reports', href: '/hr/recruitment/reports', permission: 'hr.full_access|recruitment.reports.view' },
+      { label: 'Recruitment Hub', href: '/hr/recruitment', permission: 'hr.full_access|recruitment.requisitions.view', end: true },
 
       // ── Payroll ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Payroll' },
@@ -141,6 +134,9 @@ const SECTIONS: NavSection[] = [
       { label: 'Team Leave', href: '/team/leave', permission: 'leaves.view_team' },
       { label: 'Team Overtime', href: '/team/overtime', permission: 'overtime.view' },
       { label: 'Team Loans', href: '/team/loans', permission: 'loans.view_department' },
+      { divider: true, label: 'Hiring' },
+      { label: 'Requisitions', href: '/hr/recruitment?tab=requisitions', permission: 'recruitment.requisitions.view|recruitment.requisitions.create' },
+      { label: 'My Interviews', href: '/hr/recruitment?tab=interviews', permission: 'recruitment.interviews.evaluate' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
