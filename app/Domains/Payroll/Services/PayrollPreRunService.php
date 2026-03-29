@@ -52,6 +52,7 @@ final class PayrollPreRunService implements ServiceContract
             $this->checkPR007($run),
             $this->checkPR008($run),
             $this->checkPR009($run),
+            $this->checkPR010($run),
         ];
 
         $hasBlockers = collect($checks)->contains(fn ($c) => $c['status'] === 'block');
@@ -299,6 +300,33 @@ final class PayrollPreRunService implements ServiceContract
         }
 
         return $this->pass('PR-008', "Payroll cutoff day ({$cutoffDay}) matches system setting");
+    }
+
+    /**
+     * PR-010: Minimum wage rates must be configured.
+     *
+     * REC-13: Without minimum wage rates, the system cannot validate
+     * compliance with DOLE minimum wage requirements. This is a warning
+     * (not a block) because some employees may be exempt.
+     */
+    private function checkPR010(PayrollRun $run): array
+    {
+        $cutoffStart = $run->cutoff_start;
+
+        $hasRates = \App\Domains\Payroll\Models\MinimumWageRate::where('effective_date', '<=', $cutoffStart)
+            ->exists();
+
+        if (! $hasRates) {
+            return $this->fail(
+                'PR-010',
+                'Minimum Wage Rates',
+                'warn',
+                'No minimum wage rates configured. The system cannot validate DOLE compliance. '
+                . 'Seed minimum wage rates via the admin panel or MinimumWageRateSeeder.',
+            );
+        }
+
+        return $this->pass('PR-010', 'Minimum wage rates present');
     }
 
     /**

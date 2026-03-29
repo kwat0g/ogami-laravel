@@ -6,6 +6,7 @@ namespace App\Domains\Inventory\Services;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\LotBatch;
+use App\Domains\Inventory\Models\PhysicalCount;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\StockLedger;
 use App\Events\Inventory\LowStockDetected;
@@ -36,6 +37,9 @@ final class StockService implements ServiceContract
         if ($quantity <= 0) {
             throw new DomainException('Receive quantity must be positive.', 'INV_INVALID_QTY', 422);
         }
+
+        // REC-12: Block stock movements when a physical count is in progress
+        $this->assertNoActivePhysicalCount($locationId);
 
         return DB::transaction(function () use (
             $itemId, $locationId, $quantity, $referenceType, $referenceId,
@@ -94,6 +98,9 @@ final class StockService implements ServiceContract
         if ($quantity <= 0) {
             throw new DomainException('Issue quantity must be positive.', 'INV_INVALID_QTY', 422);
         }
+
+        // REC-12: Block stock movements when a physical count is in progress
+        $this->assertNoActivePhysicalCount($locationId);
 
         return DB::transaction(function () use (
             $itemId, $locationId, $quantity, $referenceType, $referenceId, $actor, $remarks
@@ -315,5 +322,31 @@ final class StockService implements ServiceContract
                 ['item_id', 'location_id'],
                 ['quantity_on_hand'],
             );
+    }
+
+    /**
+     * REC-12: Block stock movements when a physical count is actively in progress.
+     *
+     * A physical count snapshot becomes stale if stock movements occur during
+     * counting, leading to incorrect variance calculations. This guard prevents
+     * any receive/issue operations on locations under active count.
+     *
+     * @throws DomainException
+     */
+    private function assertNoActivePhysicalCount(int $locationId): void
+    {
+        $activeCount = PhysicalCount::where('location_id', $locationId)
+            ->whereIn('status', ['in_progress', 'pending_approval'])
+            ->first();
+
+        if ($activeCount) {
+            throw new DomainException(
+                "Cannot modify stock: physical count #{$activeCount->reference_number} is in progress for this warehouse location. "
+                . 'Complete or cancel the count before receiving or issuing stock.',
+                'INV_LOCATION_LOCKED_FOR_COUNT',
+                423,
+                ['physical_count_id' => $activeCount->id, 'location_id' => $locationId],
+            );
+        }
     }
 }

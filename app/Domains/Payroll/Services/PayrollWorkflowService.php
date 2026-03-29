@@ -56,6 +56,11 @@ final class PayrollWorkflowService implements ServiceContract
             $this->stateMachine->transition($run, 'REVIEW');
         }
 
+        // REC-11: Detect salary changes since computation snapshot.
+        // PayrollDetail.basic_monthly_rate_centavos is set during Step01 Snapshots.
+        // If an employee's salary changed after computation, the payroll data is stale.
+        $this->detectAndLogSalaryChanges($run);
+
         $this->stateMachine->transition($run, 'SUBMITTED');
 
         // Notify only Accounting Officers who can actually approve (SoD check)
@@ -566,6 +571,66 @@ final class PayrollWorkflowService implements ServiceContract
      *
      * Must be called inside a DB::transaction.
      */
+    /**
+     * REC-11: Detect employees whose salary changed after payroll computation.
+     *
+     * Compares PayrollDetail.basic_monthly_rate_centavos (snapshot from Step01)
+     * against the employee's current monthly salary. Logs a warning if any
+     * changes are found and stores the diff on the run for the reviewer.
+     */
+    private function detectAndLogSalaryChanges(PayrollRun $run): void
+    {
+        try {
+            $details = \App\Domains\Payroll\Models\PayrollDetail::where('payroll_run_id', $run->id)
+                ->with('employee')
+                ->get();
+
+            $changes = [];
+
+            foreach ($details as $detail) {
+                $employee = $detail->employee;
+                if (! $employee) {
+                    continue;
+                }
+
+                $snapshotSalary = (int) $detail->basic_monthly_rate_centavos;
+                $currentSalary = (int) ($employee->monthly_salary_centavos ?? $employee->basic_salary_centavos ?? 0);
+
+                if ($currentSalary > 0 && $snapshotSalary > 0 && $currentSalary !== $snapshotSalary) {
+                    $changes[] = [
+                        'employee_id' => $employee->id,
+                        'employee_code' => $employee->employee_code ?? '',
+                        'name' => $employee->full_name ?? $employee->first_name.' '.$employee->last_name,
+                        'snapshot_salary_centavos' => $snapshotSalary,
+                        'current_salary_centavos' => $currentSalary,
+                    ];
+                }
+            }
+
+            if (! empty($changes)) {
+                \Illuminate\Support\Facades\Log::warning('Payroll salary changes detected after computation', [
+                    'payroll_run_id' => $run->id,
+                    'reference_no' => $run->reference_no,
+                    'changed_count' => count($changes),
+                    'changes' => $changes,
+                ]);
+
+                // Store on run for reviewer visibility (uses notes field to avoid migration)
+                $existingNotes = $run->notes ?? '';
+                $changesSummary = count($changes).' employee(s) had salary changes since computation: '
+                    .implode(', ', array_map(fn ($c) => $c['employee_code'], $changes));
+                $run->notes = trim($existingNotes."\n[SALARY CHANGES DETECTED] ".$changesSummary);
+                $run->save();
+            }
+        } catch (\Throwable $e) {
+            // Non-fatal — salary detection failure should not block submission
+            \Illuminate\Support\Facades\Log::warning('Salary change detection failed', [
+                'payroll_run_id' => $run->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     private function resetScope(PayrollRun $run): void
     {
         PayrollRunExclusion::where('payroll_run_id', $run->id)->delete();
