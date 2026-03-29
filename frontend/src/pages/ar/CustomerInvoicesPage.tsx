@@ -182,7 +182,7 @@ export default function CustomerInvoicesPage() {
   const clearSelection = () => setSelectedInvoices(new Set())
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       <PageHeader
         title="Customer Invoices"
         actions={

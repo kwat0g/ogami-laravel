@@ -31,7 +31,7 @@ export default function BankReconciliationDetailPage() {
   const certify  = useCertifyReconciliation(reconciliationId ?? '')
 
   if (isLoading) return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       <div className="h-6 w-48 bg-neutral-200 animate-pulse rounded" />
       <SkeletonTable rows={8} cols={5} />
     </div>

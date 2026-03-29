@@ -11,7 +11,7 @@ export default function TaxPeriodSummaryPage() {
   const ledgers = data?.data ?? []
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       <PageHeader title="Tax Period Summary" />
       <div>
         <p className="text-sm text-neutral-500">VAT ledger across all fiscal periods</p>

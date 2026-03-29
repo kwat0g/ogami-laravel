@@ -95,7 +95,7 @@ export default function LeaveCalendarPage() {
   const grid = buildCalendarGrid(year, month)
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       <ExecutiveReadOnlyBanner />
       <PageHeader title="Leave Calendar" />
 
