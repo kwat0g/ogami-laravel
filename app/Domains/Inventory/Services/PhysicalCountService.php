@@ -187,7 +187,77 @@ final class PhysicalCountService implements ServiceContract
             $count->approved_at = now();
             $count->save();
 
+            // REC-19: Post variance to GL after approval
+            $this->postVarianceToGl($count, $approver);
+
             return $count->fresh(['items.item', 'location']) ?? $count;
         });
+    }
+
+    /**
+     * REC-19: Post physical count variance as a journal entry.
+     *
+     * Calculates the net variance (counted vs system) in centavos and posts
+     * a JE debiting/crediting inventory and variance accounts. Skips silently
+     * if GL accounts are not configured (logged as warning).
+     */
+    private function postVarianceToGl(PhysicalCount $count, User $actor): void
+    {
+        try {
+            $varianceCentavos = 0;
+
+            foreach ($count->items as $item) {
+                $diff = ((float) $item->counted_quantity - (float) $item->system_quantity);
+                $unitCost = (int) ($item->unit_cost_centavos ?? $item->item?->unit_cost_centavos ?? 0);
+                $varianceCentavos += (int) round($diff * $unitCost);
+            }
+
+            if ($varianceCentavos === 0) {
+                return;
+            }
+
+            // Look up GL accounts for inventory variance posting
+            $inventoryAccount = \App\Domains\Accounting\Models\ChartOfAccount::where('account_code', 'LIKE', '%inventory%')
+                ->where('account_type', 'asset')
+                ->first();
+
+            $varianceAccount = \App\Domains\Accounting\Models\ChartOfAccount::where('account_code', 'LIKE', '%variance%')
+                ->first();
+
+            if (! $inventoryAccount || ! $varianceAccount) {
+                \Illuminate\Support\Facades\Log::warning('Physical count variance GL posting skipped: inventory or variance GL account not configured', [
+                    'physical_count_id' => $count->id,
+                    'variance_centavos' => $varianceCentavos,
+                ]);
+
+                return;
+            }
+
+            $absVariance = abs($varianceCentavos) / 100;
+
+            $lines = $varianceCentavos > 0
+                ? [
+                    ['account_id' => $inventoryAccount->id, 'debit' => $absVariance, 'credit' => null],
+                    ['account_id' => $varianceAccount->id, 'debit' => null, 'credit' => $absVariance],
+                ]
+                : [
+                    ['account_id' => $varianceAccount->id, 'debit' => $absVariance, 'credit' => null],
+                    ['account_id' => $inventoryAccount->id, 'debit' => null, 'credit' => $absVariance],
+                ];
+
+            app(\App\Domains\Accounting\Services\JournalEntryService::class)->create([
+                'date' => $count->count_date ?? now()->toDateString(),
+                'description' => "Inventory variance adjustment - Physical Count #{$count->reference_number}",
+                'source_type' => 'physical_counts',
+                'source_id' => $count->id,
+                'lines' => $lines,
+            ]);
+        } catch (\Throwable $e) {
+            // Non-fatal — count approval must not fail due to GL posting error
+            \Illuminate\Support\Facades\Log::error('Physical count variance GL posting failed', [
+                'physical_count_id' => $count->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

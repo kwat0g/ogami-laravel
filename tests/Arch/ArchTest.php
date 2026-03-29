@@ -56,3 +56,25 @@ arch('no debug helpers in app/')
 arch('shared contracts are interfaces')
     ->expect('App\Shared\Contracts')
     ->toBeInterfaces();
+
+// ARCH-007 (REC-17): Vendor portal controllers must use Resource transformers
+// Prevents raw Eloquent model data exposure to vendor users.
+arch('vendor portal uses resource transformers')
+    ->expect('App\Http\Controllers\VendorPortal')
+    ->toUse('App\Http\Resources\VendorPortal')
+    ->ignoring('App\Http\Controllers\Controller');
+
+// ARCH-008 (REC-17): StockBalance model should only be used by StockService
+// Direct model calls bypass stock_ledger_entries audit trail.
+arch('stock balance only accessed through StockService')
+    ->expect('App\Domains\Inventory\Models\StockBalance')
+    ->toOnlyBeUsedIn([
+        'App\Domains\Inventory\Services\StockService',
+        'App\Domains\Inventory\Services\InventoryAnalyticsService',
+        'App\Domains\Inventory\Services\InventoryReportService',
+        'App\Domains\Inventory\Services\PhysicalCountService',
+        'App\Domains\Inventory\Services\LowStockReorderService',
+        'App\Domains\Inventory\Services\CostingMethodService',
+        'App\Http\Resources',    // Resources may format stock data
+        'App\Http\Controllers',  // Controllers may query for display
+    ]);

@@ -70,9 +70,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Cooldown-aborted duplicate call — drop silently, no toast
+    // REC-18: Cooldown-aborted duplicate call — show user feedback instead of silent drop
     if (axios.isCancel(error)) {
-      return Promise.reject({ __cooldown: true })
+      // Log at debug level for troubleshooting
+      console.debug('[api] Duplicate write request blocked by cooldown')
+      return Promise.reject({ __cooldown: true, message: 'Request already in progress. Please wait.' })
     }
 
     if (!error.response) {
