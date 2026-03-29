@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -286,7 +287,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save account')
+      toast.error(firstErrorMessage(_error, 'Failed to save account'))
     }
   }
 
@@ -300,7 +301,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
       await deleteMutation.mutateAsync(account.id)
       toast.success('Account deleted successfully')
     } catch (_error) {
-      toast.error('Failed to delete account')
+      toast.error(firstErrorMessage(_error, 'Failed to delete account'))
     }
   }
 
@@ -314,7 +315,7 @@ export default function ChartOfAccountsTable(): JSX.Element {
       await archiveMutation.mutateAsync(account.id)
       toast.success('Account archived successfully')
     } catch (_error) {
-      toast.error('Failed to archive account')
+      toast.error(firstErrorMessage(_error, 'Failed to archive account'))
     }
   }
 

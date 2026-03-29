@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
@@ -90,7 +91,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       toast.success('Order cancelled successfully')
       setShowCancelModal(false)
     } catch (_error) {
-      toast.error('Failed to cancel order')
+      toast.error(firstErrorMessage(_error, 'Failed to cancel order'))
     }
   }
   const [responseType, setResponseType] = useState<'accept' | 'counter' | 'cancel'>('accept')
@@ -107,7 +108,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       toast.success('Response submitted successfully')
       setShowResponseModal(false)
     } catch (_error) {
-      toast.error('Failed to submit response')
+      toast.error(firstErrorMessage(_error, 'Failed to submit response'))
     }
   }
 

@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -114,7 +115,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save PhilHealth premium rate')
+      toast.error(firstErrorMessage(_error, 'Failed to save PhilHealth premium rate'))
     }
   }
 
@@ -134,7 +135,7 @@ export default function PhilhealthContributionsTable(): JSX.Element {
       toast.success('PhilHealth premium rate deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete PhilHealth premium rate')
+      toast.error(firstErrorMessage(_error, 'Failed to delete PhilHealth premium rate'))
     }
   }
 

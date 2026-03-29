@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Package, Truck, Factory, FileText, AlertTriangle, Plus } from 'lucide-react'
@@ -84,7 +85,7 @@ function CreateWOModal({ isOpen, onClose, schedule }: CreateWOModalProps): JSX.E
       toast.success('Production Order created successfully')
       navigate(`/production/orders/${newOrder.ulid}`)
     } catch (_error) {
-      toast.error('Failed to create Production Order')
+      toast.error(firstErrorMessage(_error, 'Failed to create Production Order'))
     }
   }
 

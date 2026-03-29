@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -102,7 +103,7 @@ export default function MinimumWageRatesTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save minimum wage rate')
+      toast.error(firstErrorMessage(_error, 'Failed to save minimum wage rate'))
     }
   }
 
@@ -122,7 +123,7 @@ export default function MinimumWageRatesTable(): JSX.Element {
       toast.success('Minimum wage rate deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete minimum wage rate')
+      toast.error(firstErrorMessage(_error, 'Failed to delete minimum wage rate'))
     }
   }
 

@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
@@ -127,7 +128,7 @@ export default function ClientShopPage(): JSX.Element {
       setOrderNotes('')
       navigate('/client-portal/orders')
     } catch (_error) {
-      toast.error('Failed to submit order. Please try again.')
+      toast.error(firstErrorMessage(_error, 'Failed to submit order. Please try again.'))
     }
   }
 

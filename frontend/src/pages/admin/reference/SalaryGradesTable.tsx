@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -120,7 +121,7 @@ export default function SalaryGradesTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save salary grade')
+      toast.error(firstErrorMessage(_error, 'Failed to save salary grade'))
     }
   }
 
@@ -140,7 +141,7 @@ export default function SalaryGradesTable(): JSX.Element {
       toast.success('Salary grade deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete salary grade')
+      toast.error(firstErrorMessage(_error, 'Failed to delete salary grade'))
     }
   }
 

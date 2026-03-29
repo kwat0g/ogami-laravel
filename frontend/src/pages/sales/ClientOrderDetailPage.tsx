@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, XCircle, MessageCircle, Calendar, Package, AlertCircle, RotateCcw, ShieldCheck } from 'lucide-react'
@@ -162,7 +163,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       toast.success('Order approved successfully')
       setShowApproveModal(false)
     } catch (_error) {
-      toast.error('Failed to approve order')
+      toast.error(firstErrorMessage(_error, 'Failed to approve order'))
     }
   }
 
@@ -176,7 +177,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       toast.success('Order rejected')
       setShowRejectModal(false)
     } catch (_error) {
-      toast.error('Failed to reject order')
+      toast.error(firstErrorMessage(_error, 'Failed to reject order'))
     }
   }
 
@@ -195,7 +196,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       toast.success('Negotiation proposal sent to client')
       setShowNegotiateModal(false)
     } catch (_error) {
-      toast.error('Failed to send negotiation')
+      toast.error(firstErrorMessage(_error, 'Failed to send negotiation'))
     }
   }
 
@@ -214,7 +215,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       toast.success(`Response sent: ${salesResponse}`)
       setShowSalesResponseModal(false)
     } catch (_error) {
-      toast.error('Failed to send response')
+      toast.error(firstErrorMessage(_error, 'Failed to send response'))
     }
   }
 
@@ -242,7 +243,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       toast.success('Order VP-approved successfully')
       setShowVpApproveModal(false)
     } catch (_error) {
-      toast.error('Failed to VP-approve order')
+      toast.error(firstErrorMessage(_error, 'Failed to VP-approve order'))
     }
   }
 

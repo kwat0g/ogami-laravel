@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Package, CheckCircle, AlertTriangle, Truck, MessageSquare, Send } from 'lucide-react'
@@ -87,7 +88,7 @@ export default function OrderReceiptPage(): JSX.Element {
       toast.success('Receipt acknowledgment submitted successfully')
       navigate('/client-portal/orders')
     } catch (_error) {
-      toast.error('Failed to submit acknowledgment')
+      toast.error(firstErrorMessage(_error, 'Failed to submit acknowledgment'))
     }
   }
 

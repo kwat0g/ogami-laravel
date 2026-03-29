@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Truck, Package, Calendar, User, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react'
@@ -42,7 +43,7 @@ function DispatchModal({ isOpen, onClose, schedule }: DispatchModalProps): JSX.E
       toast.success('Delivery dispatched successfully')
       onClose()
     } catch (_error) {
-      toast.error('Failed to dispatch delivery')
+      toast.error(firstErrorMessage(_error, 'Failed to dispatch delivery'))
     }
   }
 
@@ -133,7 +134,7 @@ function NotifyMissingModal({ isOpen, onClose, schedule }: NotifyModalProps): JS
       toast.success('Customer notified about delayed items')
       onClose()
     } catch (_error) {
-      toast.error('Failed to send notification')
+      toast.error(firstErrorMessage(_error, 'Failed to send notification'))
     }
   }
 
@@ -249,7 +250,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
       toast.success('Delivery marked as delivered')
       setShowMarkDeliveredModal(false)
     } catch (_error) {
-      toast.error('Failed to mark as delivered')
+      toast.error(firstErrorMessage(_error, 'Failed to mark as delivered'))
     }
   }
 

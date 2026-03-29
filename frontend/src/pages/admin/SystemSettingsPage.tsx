@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState, useMemo } from 'react'
 import { useSystemSettings, useBulkUpdateSettings, type SystemSetting } from '@/hooks/useSettings'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -202,7 +203,7 @@ export default function SystemSettingsPage() {
         })
       }
     } catch (_error) {
-      toast.error('Failed to save settings')
+      toast.error(firstErrorMessage(_error, 'Failed to save settings'))
     } finally {
       setShowSaveConfirm(false)
     }

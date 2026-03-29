@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -115,7 +116,7 @@ export default function SssContributionsTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save SSS contribution row')
+      toast.error(firstErrorMessage(_error, 'Failed to save SSS contribution row'))
     }
   }
 
@@ -135,7 +136,7 @@ export default function SssContributionsTable(): JSX.Element {
       toast.success('SSS contribution row deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete SSS contribution row')
+      toast.error(firstErrorMessage(_error, 'Failed to delete SSS contribution row'))
     }
   }
 

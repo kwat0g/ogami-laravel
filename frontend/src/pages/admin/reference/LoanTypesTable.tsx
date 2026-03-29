@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -126,7 +127,7 @@ export default function LoanTypesTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save loan type')
+      toast.error(firstErrorMessage(_error, 'Failed to save loan type'))
     }
   }
 
@@ -146,7 +147,7 @@ export default function LoanTypesTable(): JSX.Element {
       toast.success('Loan type deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete loan type')
+      toast.error(firstErrorMessage(_error, 'Failed to delete loan type'))
     }
   }
 

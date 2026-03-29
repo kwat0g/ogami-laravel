@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import {
   useBankAccounts,
@@ -82,12 +83,12 @@ function BankAccountFormModal({
     if (initial) {
       update(form, {
         onSuccess: () => { toast.success('Bank account updated.'); onClose() },
-        onError: () => toast.error('Failed to update bank account.'),
+        onError: (err: unknown) => toast.error(firstErrorMessage(err, 'Failed to update bank account.')),
       })
     } else {
       create(form, {
         onSuccess: () => { toast.success('Bank account created.'); onClose() },
-        onError: () => toast.error('Failed to create bank account.'),
+        onError: (err: unknown) => toast.error(firstErrorMessage(err, 'Failed to create bank account.')),
       })
     }
   }

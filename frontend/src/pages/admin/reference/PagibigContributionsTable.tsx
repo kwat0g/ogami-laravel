@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -114,7 +115,7 @@ export default function PagibigContributionsTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save Pag-IBIG contribution rate')
+      toast.error(firstErrorMessage(_error, 'Failed to save Pag-IBIG contribution rate'))
     }
   }
 
@@ -134,7 +135,7 @@ export default function PagibigContributionsTable(): JSX.Element {
       toast.success('Pag-IBIG contribution rate deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete Pag-IBIG contribution rate')
+      toast.error(firstErrorMessage(_error, 'Failed to delete Pag-IBIG contribution rate'))
     }
   }
 

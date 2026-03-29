@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -115,7 +116,7 @@ export default function HolidayCalendarTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save holiday')
+      toast.error(firstErrorMessage(_error, 'Failed to save holiday'))
     }
   }
 
@@ -135,7 +136,7 @@ export default function HolidayCalendarTable(): JSX.Element {
       toast.success('Holiday deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete holiday')
+      toast.error(firstErrorMessage(_error, 'Failed to delete holiday'))
     }
   }
 

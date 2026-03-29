@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useEditMode } from '../ReferenceTablesPage'
 import { 
@@ -112,7 +113,7 @@ export default function TaxBracketsTable(): JSX.Element {
       }
       setIsDialogOpen(false)
     } catch (_error) {
-      toast.error('Failed to save tax bracket')
+      toast.error(firstErrorMessage(_error, 'Failed to save tax bracket'))
     }
   }
 
@@ -132,7 +133,7 @@ export default function TaxBracketsTable(): JSX.Element {
       toast.success('Tax bracket deleted successfully')
       setShowDeleteConfirm(null)
     } catch (_error) {
-      toast.error('Failed to delete tax bracket')
+      toast.error(firstErrorMessage(_error, 'Failed to delete tax bracket'))
     }
   }
 

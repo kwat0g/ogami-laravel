@@ -1,3 +1,4 @@
+import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState, useMemo } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useNavigate } from 'react-router-dom'
@@ -162,7 +163,7 @@ export default function ClientOrdersPage(): JSX.Element {
       toast.success('Order cancelled successfully')
       setOrderToCancel(null)
     } catch (_error) {
-      toast.error('Failed to cancel order')
+      toast.error(firstErrorMessage(_error, 'Failed to cancel order'))
     }
   }
 
