@@ -39,7 +39,7 @@ const STATUS_CONFIG: Record<string, {
     icon: <AlertCircle className="h-4 w-4" />
   },
   cancelled: { 
-    color: 'text-gray-600 bg-gray-50',
+    color: 'text-neutral-600 bg-neutral-50',
     icon: <AlertCircle className="h-4 w-4" />
   },
 }
