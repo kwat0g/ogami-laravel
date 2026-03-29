@@ -64,11 +64,12 @@ final class GoodsReceiptService implements ServiceContract
             ]);
 
             foreach ($items as $item) {
-                // Validate quantity against PO pending amount
+                // Validate quantity against effective pending (accounts for negotiated quantities)
                 $poItem = $po->items()->findOrFail($item['po_item_id']);
-                if ((float) $item['quantity_received'] > (float) $poItem->quantity_pending) {
+                $effectivePending = $poItem->effectiveQuantity() - (float) $poItem->quantity_received;
+                if ((float) $item['quantity_received'] > $effectivePending) {
                     throw new DomainException(
-                        message: "Received quantity ({$item['quantity_received']}) exceeds pending quantity ({$poItem->quantity_pending}) for PO item #{$poItem->id}.",
+                        message: "Received quantity ({$item['quantity_received']}) exceeds effective pending ({$effectivePending}) for PO item #{$poItem->id}.",
                         errorCode: 'GR_QTY_EXCEEDS_PENDING',
                         httpStatus: 422,
                     );

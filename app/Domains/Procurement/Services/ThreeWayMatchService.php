@@ -6,9 +6,12 @@ namespace App\Domains\Procurement\Services;
 
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Events\Procurement\ThreeWayMatchPassed;
+use App\Models\User;
+use App\Notifications\Procurement\PartialReceiptDiscrepancyNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Three-Way Match Service.
@@ -80,7 +83,31 @@ final class ThreeWayMatchService implements ServiceContract
 
         // Fire event — listener will auto-create the AP invoice draft
         // Removed DB::afterCommit to ensure it fires in tests (sync queue handles it fine)
-        event(new ThreeWayMatchPassed($gr->fresh()));
+        $freshGr = $gr->fresh();
+        event(new ThreeWayMatchPassed($freshGr));
+
+        // Notify purchasing officers when delivery is partial (items still pending)
+        $po->refresh()->load('items');
+        if ($po->status === 'partially_received') {
+            $pendingItems = $po->items
+                ->filter(fn ($item) => (float) $item->quantity_pending > 0)
+                ->map(fn ($item) => [
+                    'description' => $item->item_description,
+                    'ordered_qty' => (float) $item->quantity_ordered,
+                    'received_qty' => (float) $item->quantity_received,
+                    'pending_qty' => (float) $item->quantity_pending,
+                ])
+                ->values()
+                ->all();
+
+            if (! empty($pendingItems)) {
+                $notification = PartialReceiptDiscrepancyNotification::fromModels($freshGr, $po, $pendingItems);
+
+                // Notify all users with procurement view permission
+                User::permission('procurement.purchase-order.view')
+                    ->each(fn (User $u) => $u->notify($notification));
+            }
+        }
 
         return true;
     }
