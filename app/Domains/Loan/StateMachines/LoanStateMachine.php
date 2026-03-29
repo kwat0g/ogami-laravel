@@ -27,16 +27,17 @@ final class LoanStateMachine
 {
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
-        'pending' => ['head_noted', 'cancelled'],
-        'head_noted' => ['manager_checked', 'pending', 'cancelled'],
-        'manager_checked' => ['officer_reviewed', 'pending', 'cancelled'],
-        'officer_reviewed' => ['supervisor_approved', 'pending', 'cancelled'],
-        'supervisor_approved' => ['approved', 'pending', 'cancelled'],
-        'approved' => ['ready_for_disbursement', 'cancelled'],
+        'pending' => ['head_noted', 'rejected', 'cancelled'],
+        'head_noted' => ['manager_checked', 'pending', 'rejected', 'cancelled'],
+        'manager_checked' => ['officer_reviewed', 'pending', 'rejected', 'cancelled'],
+        'officer_reviewed' => ['supervisor_approved', 'ready_for_disbursement', 'pending', 'rejected', 'cancelled'],
+        'supervisor_approved' => ['approved', 'pending', 'rejected', 'cancelled'],
+        'approved' => ['ready_for_disbursement', 'rejected', 'cancelled'],
         'ready_for_disbursement' => ['active', 'cancelled'],
         'active' => ['fully_paid', 'written_off'],
         'fully_paid' => [],   // terminal
         'cancelled' => [],    // terminal
+        'rejected' => [],     // terminal
         'written_off' => [],  // terminal
     ];
 

@@ -6,6 +6,7 @@ namespace App\Domains\Loan\Services;
 
 use App\Domains\Loan\Models\Loan;
 use App\Domains\Loan\Models\LoanAmortizationSchedule;
+use App\Domains\Loan\StateMachines\LoanStateMachine;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Carbon;
@@ -98,11 +99,12 @@ final class LoanAmortizationService implements ServiceContract
                 ->whereNotIn('status', ['paid'])
                 ->count();
 
+            $sm = app(LoanStateMachine::class);
             if ($unpaidCount === 0) {
-                $loan->status = 'fully_paid';
+                $sm->transition($loan, 'fully_paid');
                 $loan->save();
             } elseif ($loan->status === 'approved') {
-                $loan->status = 'active';
+                $sm->transition($loan, 'active');
                 $loan->save();
             }
         });

@@ -134,12 +134,20 @@ final class FixedAssetService implements ServiceContract
             $je = null;
             $category = $asset->category;
 
-            // Post disposal JE only if GL accounts are configured on the category
-            if ($category !== null &&
-                $category->gl_asset_account_id !== null &&
-                $category->gl_accumulated_depreciation_account_id !== null) {
-                $je = $this->postDisposalJe($asset, $category, $proceeds, $gainLoss, $data['disposal_date'], $actor);
+            // FA-GL-001: GL accounts MUST be configured — throw instead of silently skipping
+            if ($category === null ||
+                $category->gl_asset_account_id === null ||
+                $category->gl_accumulated_depreciation_account_id === null) {
+                throw new DomainException(
+                    'Cannot post disposal journal entry: GL accounts (asset, accumulated depreciation) are not configured on the asset category. '
+                    .'Configure GL accounts on the category before disposing this asset.',
+                    'FA_GL_NOT_CONFIGURED',
+                    422,
+                    ['fixed_asset_id' => $asset->id, 'category_id' => $category?->id],
+                );
             }
+
+            $je = $this->postDisposalJe($asset, $category, $proceeds, $gainLoss, $data['disposal_date'], $actor);
 
             $disposal = AssetDisposal::create([
                 'fixed_asset_id' => $asset->id,
@@ -147,7 +155,7 @@ final class FixedAssetService implements ServiceContract
                 'proceeds_centavos' => $proceeds,
                 'disposal_method' => $data['disposal_method'] ?? 'write_off',
                 'gain_loss_centavos' => $gainLoss,
-                'journal_entry_id' => $je?->id,
+                'journal_entry_id' => $je->id,
                 'notes' => $data['notes'] ?? null,
                 'created_by_id' => $actor->id,
             ]);
@@ -217,32 +225,40 @@ final class FixedAssetService implements ServiceContract
         User $actor,
     ): AssetDepreciationEntry {
         return DB::transaction(function () use ($asset, $period, $depAmountCentavos, $actor): AssetDepreciationEntry {
-            $je = null;
             $category = $asset->category;
 
-            if ($category !== null &&
-                $category->gl_depreciation_expense_account_id !== null &&
-                $category->gl_accumulated_depreciation_account_id !== null) {
-                $depFloat = $depAmountCentavos / 100;
-
-                $je = $this->jeService->create([
-                    'date' => $period->date_to,
-                    'description' => "Depreciation — {$asset->name} ({$asset->asset_code})",
-                    'source_type' => 'fixed_assets',
-                    'source_id' => $asset->id,
-                    'lines' => [
-                        ['account_id' => $category->gl_depreciation_expense_account_id, 'debit' => $depFloat, 'credit' => null],
-                        ['account_id' => $category->gl_accumulated_depreciation_account_id, 'debit' => null, 'credit' => $depFloat],
-                    ],
-                ]);
+            // FA-GL-001: GL accounts MUST be configured — throw instead of silently skipping
+            if ($category === null ||
+                $category->gl_depreciation_expense_account_id === null ||
+                $category->gl_accumulated_depreciation_account_id === null) {
+                throw new DomainException(
+                    'Cannot post depreciation journal entry: GL accounts (depreciation expense, accumulated depreciation) are not configured on the asset category. '
+                    .'Configure GL accounts on the category before running depreciation.',
+                    'FA_GL_NOT_CONFIGURED',
+                    422,
+                    ['fixed_asset_id' => $asset->id, 'category_id' => $category?->id],
+                );
             }
+
+            $depFloat = $depAmountCentavos / 100;
+
+            $je = $this->jeService->create([
+                'date' => $period->date_to,
+                'description' => "Depreciation — {$asset->name} ({$asset->asset_code})",
+                'source_type' => 'fixed_assets',
+                'source_id' => $asset->id,
+                'lines' => [
+                    ['account_id' => $category->gl_depreciation_expense_account_id, 'debit' => $depFloat, 'credit' => null],
+                    ['account_id' => $category->gl_accumulated_depreciation_account_id, 'debit' => null, 'credit' => $depFloat],
+                ],
+            ]);
 
             $entry = AssetDepreciationEntry::create([
                 'fixed_asset_id' => $asset->id,
                 'fiscal_period_id' => $period->id,
                 'depreciation_amount_centavos' => $depAmountCentavos,
                 'method' => $asset->depreciation_method,
-                'journal_entry_id' => $je?->id,
+                'journal_entry_id' => $je->id,
                 'computed_by_id' => $actor->id,
             ]);
 

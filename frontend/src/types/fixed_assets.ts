@@ -20,7 +20,7 @@ export interface FixedAsset {
   description: string | null
   serial_number: string | null
   location: string | null
-  status: 'active' | 'disposed' | 'under_maintenance'
+  status: 'active' | 'disposed' | 'impaired' | 'fully_depreciated'
   acquisition_date: string
   acquisition_cost_centavos: number
   residual_value_centavos: number
