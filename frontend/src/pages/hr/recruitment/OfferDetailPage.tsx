@@ -3,6 +3,7 @@ import { useOffer, useOfferAction } from '@/hooks/useRecruitment'
 import StatusBadge from '@/components/recruitment/StatusBadge'
 import OfferLetterPreview from '@/components/recruitment/OfferLetterPreview'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function OfferDetailPage() {
   const { ulid } = useParams<{ ulid: string }>()
@@ -12,6 +13,15 @@ export default function OfferDetailPage() {
   const [rejectReason, setRejectReason] = useState('')
 
   if (isLoading || !offer) return <div className="p-6">Loading...</div>
+
+  const handleAction = async (act: string, payload?: Record<string, unknown>) => {
+    try {
+      await action.mutateAsync({ action: act, payload })
+      toast.success(`Offer ${act} successfully`)
+    } catch {
+      toast.error(`Failed to ${act} offer`)
+    }
+  }
 
   const daysUntilExpiry = offer.expires_at
     ? Math.ceil((new Date(offer.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -53,40 +63,40 @@ export default function OfferDetailPage() {
               Preview Offer Letter
             </button>
             <button
-              onClick={() => action.mutate({ action: 'send' })}
+              onClick={() => { if (confirm('Send this offer to the candidate?')) handleAction('send') }}
               disabled={action.isPending}
               className="rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-50"
             >
-              Send Offer
+              {action.isPending ? 'Sending...' : 'Send Offer'}
             </button>
           </>
         )}
         {offer.status === 'sent' && (
           <>
             <button
-              onClick={() => action.mutate({ action: 'accept' })}
+              onClick={() => { if (confirm('Mark this offer as accepted?')) handleAction('accept') }}
               disabled={action.isPending}
               className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
             >
-              Mark as Accepted
+              {action.isPending ? 'Processing...' : 'Mark as Accepted'}
             </button>
             <button
               onClick={() => {
-                if (rejectReason.trim()) {
-                  action.mutate({ action: 'reject', payload: { reason: rejectReason } })
+                if (rejectReason.trim() && confirm('Reject this offer?')) {
+                  handleAction('reject', { reason: rejectReason })
                 }
               }}
               disabled={action.isPending || !rejectReason.trim()}
               className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
             >
-              Mark as Rejected
+              {action.isPending ? 'Processing...' : 'Mark as Rejected'}
             </button>
             <button
-              onClick={() => action.mutate({ action: 'withdraw' })}
+              onClick={() => { if (confirm('Withdraw this offer? This cannot be undone.')) handleAction('withdraw') }}
               disabled={action.isPending}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
-              Withdraw Offer
+              {action.isPending ? 'Processing...' : 'Withdraw Offer'}
             </button>
           </>
         )}

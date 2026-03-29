@@ -349,9 +349,11 @@ function ApplicationsTab() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
+  const [page, setPage] = useState(1)
   const { data, isLoading } = useApplications({
     ...(search && { search }),
     ...(status && { status }),
+    page: String(page),
   })
 
   if (isLoading) return <SkeletonLoader rows={6} />
@@ -412,6 +414,11 @@ function ApplicationsTab() {
           <div className="px-5 py-12 text-center text-sm text-neutral-400">No applications found.</div>
         )}
       </div>
+      {data?.meta && data.meta.last_page > 1 && (
+        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
+          <Pagination meta={data.meta} onPageChange={setPage} />
+        </div>
+      )}
     </Card>
   )
 }
@@ -488,8 +495,10 @@ function InterviewsTab() {
 function OffersTab() {
   const navigate = useNavigate()
   const [status, setStatus] = useState('')
+  const [page, setPage] = useState(1)
   const { data, isLoading } = useOffers({
     ...(status && { status }),
+    page: String(page),
   })
 
   if (isLoading) return <SkeletonLoader rows={6} />
@@ -542,6 +551,11 @@ function OffersTab() {
           <div className="px-5 py-12 text-center text-sm text-neutral-400">No offers found.</div>
         )}
       </div>
+      {data?.meta && data.meta.last_page > 1 && (
+        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
+          <Pagination meta={data.meta} onPageChange={setPage} />
+        </div>
+      )}
     </Card>
   )
 }
@@ -551,8 +565,10 @@ function OffersTab() {
 function CandidatesTab() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const { data, isLoading } = useCandidates({
     ...(search && { search }),
+    page: String(page),
   })
 
   if (isLoading) return <SkeletonLoader rows={6} />
@@ -593,6 +609,11 @@ function CandidatesTab() {
           <div className="px-5 py-12 text-center text-sm text-neutral-400">No candidates found.</div>
         )}
       </div>
+      {data?.meta && data.meta.last_page > 1 && (
+        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
+          <Pagination meta={data.meta} onPageChange={setPage} />
+        </div>
+      )}
     </Card>
   )
 }
