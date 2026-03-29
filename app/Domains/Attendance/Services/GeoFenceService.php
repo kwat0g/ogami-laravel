@@ -121,6 +121,26 @@ final class GeoFenceService implements ServiceContract
     }
 
     /**
+     * Admin: Toggle geofence enforcement on/off.
+     */
+    public function setGeofenceEnabled(bool $enabled): void
+    {
+        DB::table('system_settings')
+            ->where('key', 'attendance.geofence_enabled')
+            ->update(['value' => json_encode($enabled)]);
+    }
+
+    /**
+     * Admin: Update geofence mode (strict/override/disabled).
+     */
+    public function setGeofenceMode(string $mode): void
+    {
+        DB::table('system_settings')
+            ->where('key', 'attendance.geofence_mode')
+            ->update(['value' => json_encode($mode)]);
+    }
+
+    /**
      * Resolve the primary active work location for an employee on a given date.
      */
     public function resolveWorkLocation(Employee $employee, Carbon $at): ?WorkLocation

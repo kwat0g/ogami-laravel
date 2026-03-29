@@ -13,7 +13,6 @@ use App\Http\Requests\Attendance\TimeOutRequest;
 use App\Http\Resources\Attendance\AttendanceLogResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 final class AttendanceTimeController extends Controller
 {
@@ -133,14 +132,13 @@ final class AttendanceTimeController extends Controller
             'enabled' => 'required|boolean',
         ]);
 
-        DB::table('system_settings')
-            ->where('key', 'attendance.geofence_enabled')
-            ->update(['value' => json_encode((bool) $validated['enabled'])]);
+        $geoFence = app(GeoFenceService::class);
+        $geoFence->setGeofenceEnabled((bool) $validated['enabled']);
 
         return response()->json([
             'data' => [
                 'enabled' => (bool) $validated['enabled'],
-                'mode' => app(GeoFenceService::class)->getGeofenceMode(),
+                'mode' => $geoFence->getGeofenceMode(),
             ],
             'message' => $validated['enabled']
                 ? 'Geofence enforcement enabled.'
@@ -159,13 +157,12 @@ final class AttendanceTimeController extends Controller
             'mode' => 'required|in:strict,override,disabled',
         ]);
 
-        DB::table('system_settings')
-            ->where('key', 'attendance.geofence_mode')
-            ->update(['value' => json_encode($validated['mode'])]);
+        $geoFence = app(GeoFenceService::class);
+        $geoFence->setGeofenceMode($validated['mode']);
 
         return response()->json([
             'data' => [
-                'enabled' => app(GeoFenceService::class)->isGeofenceEnabled(),
+                'enabled' => $geoFence->isGeofenceEnabled(),
                 'mode' => $validated['mode'],
             ],
             'message' => "Geofence mode set to '{$validated['mode']}'.",
