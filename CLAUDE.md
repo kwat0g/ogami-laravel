@@ -101,7 +101,7 @@ routes/api/v1/        One file per domain (28 files)
 
 **The flow:** Route → Controller → `$this->authorize()` → Service → DB::transaction → Resource.
 
-Controllers must have **zero** business logic and **zero** DB calls (ARCH-001). All writes are wrapped in `DB::transaction()` inside services (ARCH-002).
+Controllers must have **zero** business logic and **zero** DB calls (ARCH-001). All writes are wrapped in `DB::transaction()` inside services (ARCH-002). Multi-step workflow actions use **named controller methods** (`headApprove`, `hrCheck`, `vpApprove`) — never a generic `action()` method.
 
 ### Frontend Structure
 
@@ -149,7 +149,7 @@ Each step: `public function __invoke(PayrollComputationContext $ctx, Closure $ne
 ### Database Migrations
 
 - Every domain table needs: `$table->ulid('ulid')->unique()` — frontend uses ULIDs in URLs, never integer IDs
-- Money columns: `unsignedBigInteger` (centavos) — never `decimal` or `float`
+- Money columns: `unsignedBigInteger` (centavos) — never `decimal` or `float`; also add `CHECK (amount >= 0)` explicitly, don't rely on unsigned alone
 - Enums: `string` + PostgreSQL CHECK constraint — never `$table->enum()`
 - Generated columns (`daily_rate`, `hourly_rate`): defined via `DB::statement()` after `Schema::create()`, never in `$fillable` or factories
 - Government IDs: store encrypted text + separate `_hash` (SHA-256) column for uniqueness
@@ -220,6 +220,8 @@ Each step: `public function __invoke(PayrollComputationContext $ctx, Closure $ne
 - **Fixed Assets:** `asset_code` is set by a PostgreSQL trigger — never set it in PHP or factories
 - **Fixed Assets:** Frontend TS type uses `under_maintenance`; DB CHECK uses `impaired` — DB is authoritative
 - **Fixed Assets CSV export:** inline route closure queries wrong table name (`asset_depreciation_entries` instead of `fixed_asset_depreciation_entries`) — do not copy this bug
+- **Fixed Assets GL posting:** depreciation and disposal silently skip journal entry posting if any of the 3 required GL accounts is null — no error is thrown, posting is simply omitted
+- **Fixed Assets depreciation idempotency:** unique constraint on `(fixed_asset_id, fiscal_period_id)` prevents double-processing; the Artisan command is safe to re-run
 - **`api.ts` write cooldown:** duplicate POST/PUT/PATCH/DELETE to the same URL within 1500 ms are silently aborted
 - **`HasPublicUlid` trait** requires `SoftDeletes` on the same model
 - **Payroll golden suite** (`tests/Unit/Payroll/GoldenSuiteTest.php`): 24 canonical scenarios — do not change expected values without documented justification
