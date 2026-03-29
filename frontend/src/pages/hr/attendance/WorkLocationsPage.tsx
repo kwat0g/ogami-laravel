@@ -41,13 +41,20 @@ export default function WorkLocationsPage() {
     setGettingLocation(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setForm((prev) => ({
-          ...prev,
-          latitude: pos.coords.latitude.toFixed(7),
-          longitude: pos.coords.longitude.toFixed(7),
-        }))
+        const lat = pos.coords.latitude.toFixed(7)
+        const lon = pos.coords.longitude.toFixed(7)
+        setForm((prev) => ({ ...prev, latitude: lat, longitude: lon }))
         setGettingLocation(false)
-        toast.success('Location captured! Coordinates filled in.')
+        toast.success('Location captured!')
+        // Auto-fetch address via free OpenStreetMap reverse geocoding
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data?.display_name) {
+              setForm((prev) => ({ ...prev, address: data.display_name.substring(0, 200) }))
+            }
+          })
+          .catch(() => { /* silently ignore geocoding failures */ })
       },
       () => {
         setGettingLocation(false)
@@ -102,17 +109,20 @@ export default function WorkLocationsPage() {
   }
 
   const handleSave = async () => {
-    if (!form.name || !form.code || !form.latitude || !form.longitude) {
-      toast.error('Name, code, latitude, and longitude are required.')
+    if (!form.name || !form.latitude || !form.longitude) {
+      toast.error('Please enter a name and pin a location.')
       return
     }
+
+    // Auto-generate code from name if empty
+    const autoCode = form.code || form.name.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 20) || 'LOC'
 
     setSaving(true)
     try {
       const payload = {
         name: form.name,
-        code: form.code,
-        address: form.address,
+        code: autoCode,
+        address: form.address || 'Not specified',
         city: form.city || null,
         latitude: parseFloat(form.latitude),
         longitude: parseFloat(form.longitude),
@@ -210,94 +220,83 @@ export default function WorkLocationsPage() {
               {editing ? 'Edit Work Location' : 'New Work Location'}
             </h3>
 
-            {/* Row 1: Basic info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Location Name *</label>
-                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                  placeholder="e.g. Main Office" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Code *</label>
-                <input type="text" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                  className="w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                  placeholder="e.g. MAIN" maxLength={20} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Address</label>
-                <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className="w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                  placeholder="123 Street, City" />
-              </div>
+            {/* Step 1: Location name */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Location Name *</label>
+              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full max-w-md text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-2.5 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                placeholder="e.g. Main Office, Factory Building A, Warehouse" />
             </div>
 
-            {/* Row 2: GPS coordinates with "Use My Location" button */}
-            <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-4 space-y-3">
+            {/* Step 2: Pin the location */}
+            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide flex items-center gap-1.5">
-                  <Navigation className="w-3.5 h-3.5" /> GPS Coordinates
-                </label>
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                    <Navigation className="w-4 h-4" /> Pin Your Location
+                  </h4>
+                  <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">Go to the location and click the button, or paste coordinates from Google Maps</p>
+                </div>
                 <button
                   type="button"
                   onClick={useMyLocation}
                   disabled={gettingLocation}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg transition-colors shadow-sm"
                 >
-                  {gettingLocation ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crosshair className="w-3.5 h-3.5" />}
+                  {gettingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}
                   Use My Current Location
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">Latitude</label>
+              {form.latitude && form.longitude && (
+                <div className="flex items-center gap-3 pt-2 border-t border-blue-200 dark:border-blue-800">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-mono text-blue-800 dark:text-blue-300">
+                    {parseFloat(form.latitude).toFixed(6)}, {parseFloat(form.longitude).toFixed(6)}
+                  </span>
+                  {form.address && <span className="text-xs text-blue-600 dark:text-blue-400">({form.address})</span>}
+                </div>
+              )}
+              {!form.latitude && !form.longitude && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 italic">No location pinned yet. Click the button above or enter coordinates below.</p>
+              )}
+              <details className="text-xs">
+                <summary className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline">Enter coordinates manually</summary>
+                <div className="grid grid-cols-2 gap-3 mt-2">
                   <input type="number" step="0.0000001" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                    className="w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
-                    placeholder="14.5547000" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">Longitude</label>
+                    className="text-sm border border-blue-200 dark:border-blue-700 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-mono focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    placeholder="Latitude (e.g. 14.5547)" />
                   <input type="number" step="0.0000001" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                    className="w-full text-sm border border-neutral-300 dark:border-neutral-600 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono"
-                    placeholder="121.0244000" />
+                    className="text-sm border border-blue-200 dark:border-blue-700 rounded px-3 py-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-mono focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    placeholder="Longitude (e.g. 121.0244)" />
                 </div>
-              </div>
-              <p className="text-[10px] text-neutral-400">Tip: Go to the physical location and click "Use My Current Location", or right-click on Google Maps to copy coordinates.</p>
+              </details>
             </div>
 
-            {/* Row 3: Radius slider + settings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">
-                  Geofence Radius: <span className="font-bold text-neutral-900 dark:text-neutral-100">{form.radius_meters}m</span>
-                </label>
-                <input type="range" min={10} max={1000} step={10} value={form.radius_meters}
+            {/* Step 3: How far can employees be? */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                How far can employees be from this location to clock in?
+              </label>
+              <div className="flex items-center gap-4">
+                <input type="range" min={25} max={500} step={25} value={form.radius_meters}
                   onChange={(e) => setForm({ ...form, radius_meters: e.target.value })}
-                  className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-blue-600" />
-                <div className="flex justify-between text-[10px] text-neutral-400 mt-1">
-                  <span>10m</span>
-                  <span>250m</span>
-                  <span>500m</span>
-                  <span>1000m</span>
-                </div>
+                  className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100 min-w-[60px] text-right">{form.radius_meters}m</span>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">GPS Drift Tolerance</label>
-                  <div className="flex items-center gap-2">
-                    <input type="number" value={form.allowed_variance_meters} onChange={(e) => setForm({ ...form, allowed_variance_meters: e.target.value })}
-                      className="w-20 text-sm border border-neutral-300 dark:border-neutral-600 rounded px-2 py-1.5 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                      min={0} max={200} />
-                    <span className="text-xs text-neutral-500">meters (added to radius for GPS accuracy)</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="remote-allowed" checked={form.is_remote_allowed}
-                    onChange={(e) => setForm({ ...form, is_remote_allowed: e.target.checked })}
-                    className="rounded border-neutral-300 dark:border-neutral-600" />
-                  <label htmlFor="remote-allowed" className="text-sm text-neutral-700 dark:text-neutral-300">Allow remote work (skip geofence for this location)</label>
-                </div>
+              <div className="flex justify-between text-[10px] text-neutral-400 mt-1 px-0.5">
+                <span>25m (office)</span>
+                <span>100m (building)</span>
+                <span>250m (campus)</span>
+                <span>500m (factory)</span>
               </div>
+            </div>
+
+            {/* Optional: Remote work */}
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="remote-allowed" checked={form.is_remote_allowed}
+                onChange={(e) => setForm({ ...form, is_remote_allowed: e.target.checked })}
+                className="rounded border-neutral-300 dark:border-neutral-600" />
+              <label htmlFor="remote-allowed" className="text-sm text-neutral-700 dark:text-neutral-300">This is a remote/flexible location (employees can clock in from anywhere)</label>
             </div>
 
             {/* Actions */}
