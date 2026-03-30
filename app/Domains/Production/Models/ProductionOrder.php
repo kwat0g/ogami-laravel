@@ -67,6 +67,7 @@ final class ProductionOrder extends Model implements Auditable
         'status',
         'notes',
         'hold_reason',
+        'held_from_state',
         'created_by_id',
     ];
 

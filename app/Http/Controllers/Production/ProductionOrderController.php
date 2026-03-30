@@ -37,6 +37,29 @@ final class ProductionOrderController extends Controller
         );
     }
 
+    public function update(Request $request, ProductionOrder $productionOrder): ProductionOrderResource
+    {
+        $this->authorize('update', $productionOrder);
+
+        $validated = $request->validate([
+            'product_item_id' => ['sometimes', 'integer', 'exists:item_masters,id'],
+            'bom_id' => ['sometimes', 'integer', 'exists:bill_of_materials,id'],
+            'qty_required' => ['sometimes', 'numeric', 'min:0.0001'],
+            'target_start_date' => ['sometimes', 'date', 'date_format:Y-m-d'],
+            'target_end_date' => ['sometimes', 'date', 'date_format:Y-m-d', 'after_or_equal:target_start_date'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
+        ]);
+
+        return new ProductionOrderResource($this->service->update($productionOrder, $validated));
+    }
+
+    public function close(ProductionOrder $productionOrder): ProductionOrderResource
+    {
+        $this->authorize('complete', $productionOrder);
+
+        return new ProductionOrderResource($this->service->close($productionOrder));
+    }
+
     public function show(ProductionOrder $productionOrder): ProductionOrderResource
     {
         $this->authorize('view', $productionOrder);

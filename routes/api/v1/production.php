@@ -59,10 +59,13 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     Route::post('orders/{productionOrder}/restore', [ProductionOrderController::class, 'restore'])->middleware('throttle:api-action');
     Route::delete('orders/{productionOrder}/force', [ProductionOrderController::class, 'forceDelete'])->middleware('throttle:api-action');
 
+    Route::put('orders/{productionOrder}', [ProductionOrderController::class, 'update'])->middleware('throttle:api-action');
+
     Route::middleware('throttle:api-action')->group(function (): void {
         Route::patch('orders/{productionOrder}/release', [ProductionOrderController::class, 'release']);
         Route::patch('orders/{productionOrder}/start', [ProductionOrderController::class, 'start']);
         Route::patch('orders/{productionOrder}/complete', [ProductionOrderController::class, 'complete']);
+        Route::patch('orders/{productionOrder}/close', [ProductionOrderController::class, 'close']);
         Route::patch('orders/{productionOrder}/cancel', [ProductionOrderController::class, 'cancel']);
         Route::patch('orders/{productionOrder}/void', [ProductionOrderController::class, 'void']);
         Route::post('orders/{productionOrder}/output', [ProductionOrderController::class, 'logOutput']);
