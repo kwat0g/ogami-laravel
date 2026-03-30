@@ -6,6 +6,7 @@ namespace App\Domains\HR\Recruitment\Models;
 
 use App\Domains\HR\Recruitment\Enums\ApplicationStatus;
 use App\Domains\HR\Recruitment\Enums\CandidateSource;
+use App\Infrastructure\DocumentNumberService;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Database\Factories\Recruitment\ApplicationFactory;
@@ -83,15 +84,7 @@ final class Application extends Model implements Auditable
 
     private static function generateNumber(): string
     {
-        $year = now()->format('Y');
-        $prefix = "APP-{$year}-";
-        $lastNumber = static::withTrashed()
-            ->where('application_number', 'LIKE', "{$prefix}%")
-            ->lockForUpdate()
-            ->selectRaw("MAX(CAST(SUBSTRING(application_number FROM '.{5}$') AS INTEGER)) as max_num")
-            ->value('max_num') ?? 0;
-
-        return sprintf('APP-%s-%05d', $year, $lastNumber + 1);
+        return app(DocumentNumberService::class)->generate('job_application', 'APP');
     }
 
     // ── Relationships ─────────────────────────────────────────────────────

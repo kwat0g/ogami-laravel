@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ExportButton } from './ExportButton'
 
 // Mock URL.createObjectURL and revokeObjectURL
@@ -7,6 +7,10 @@ const mockCreateObjectURL = vi.fn(() => 'blob:mock-url')
 const mockRevokeObjectURL = vi.fn()
 Object.defineProperty(URL, 'createObjectURL', { value: mockCreateObjectURL })
 Object.defineProperty(URL, 'revokeObjectURL', { value: mockRevokeObjectURL })
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('ExportButton', () => {
   const mockData = [
@@ -44,18 +48,25 @@ describe('ExportButton', () => {
 
   it('generates CSV on click', async () => {
     // Mock document.createElement for the download link
+    const originalCreateElement = document.createElement.bind(document)
+    const mockLink = originalCreateElement('a')
     const mockClick = vi.fn()
-    const mockLink = { href: '', download: '', click: mockClick } as unknown as HTMLAnchorElement
-    vi.spyOn(document, 'createElement').mockReturnValue(mockLink as unknown as HTMLElement)
-    vi.spyOn(document.body, 'appendChild').mockReturnValue(mockLink as unknown as Node)
-    vi.spyOn(document.body, 'removeChild').mockReturnValue(mockLink as unknown as Node)
+    mockLink.click = mockClick
+
+    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string, options?: ElementCreationOptions) => {
+      if (tagName === 'a') {
+        return mockLink
+      }
+
+      return originalCreateElement(tagName, options)
+    }) as typeof document.createElement)
 
     render(<ExportButton data={mockData} columns={columns} filename="test" />)
     const button = screen.getByRole('button')
     fireEvent.click(button)
 
     // Wait for async export
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(mockCreateObjectURL).toHaveBeenCalled()
     })
   })

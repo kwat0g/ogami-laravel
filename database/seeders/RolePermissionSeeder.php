@@ -528,6 +528,8 @@ class RolePermissionSeeder extends Seeder
             'fixed_assets.view',
             // Loans VP approval
             'loans.view_department', 'loans.vp_approve',
+            // Recruitment VP
+            'recruitment.requisitions.approve',
             // Inventory view (executive-level read access)
             'inventory.items.view', 'inventory.stock.view',
             // Procurement full view (includes goods receipts)
@@ -582,6 +584,16 @@ class RolePermissionSeeder extends Seeder
             'loans.view_own', 'loans.view_department', 'loans.apply',
             'loans.hr_approve', 'loans.accounting_approve', 'loans.view_ln007_log', 'loans.configure_types',
             'loans.manager_check', 'loans.officer_review',
+            // Recruitment
+            'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.edit',
+            'recruitment.requisitions.submit', 'recruitment.requisitions.reject', 'recruitment.requisitions.cancel',
+            'recruitment.requisitions.approve',
+            'recruitment.postings.view', 'recruitment.postings.create', 'recruitment.postings.publish', 'recruitment.postings.close',
+            'recruitment.applications.view', 'recruitment.applications.review', 'recruitment.applications.shortlist', 'recruitment.applications.reject',
+            'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
+            'recruitment.offers.view', 'recruitment.offers.create', 'recruitment.offers.send',
+            'recruitment.preemployment.view', 'recruitment.preemployment.verify',
+            'recruitment.reports.view', 'recruitment.candidates.view', 'recruitment.candidates.manage',
             // NOTE: loans.vp_approve is EXCLUSIVE to vice_president role (SoD-014)
             // Budget (view-only)
             'budget.view', 'budget.manage', 'budget.approve',
@@ -763,6 +775,10 @@ class RolePermissionSeeder extends Seeder
             'delivery.routes.view',
             'fixed_assets.transfer',
             'budget.forecast',
+            // Recruitment
+            'recruitment.requisitions.view', 'recruitment.applications.view', 'recruitment.applications.review', 'recruitment.applications.shortlist',
+            'recruitment.interviews.view',
+            'recruitment.candidates.view',
         ]);
 
         // ── Head (Department Supervisor) ─────────────────────────────────────
@@ -862,6 +878,10 @@ class RolePermissionSeeder extends Seeder
             'maintenance.view',
             // Mold (Staff: view for navigation + log shots)
             'mold.view', 'mold.log_shots',
+            // Recruitment
+            'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.edit',
+            'recruitment.requisitions.submit', 'recruitment.requisitions.reject',
+            'recruitment.applications.view', 'recruitment.candidates.view',
             // Delivery (Staff: view for warehouse staff)
             'delivery.view',
             // New module permissions (Phase 1-4) — Staff: view only
@@ -874,6 +894,8 @@ class RolePermissionSeeder extends Seeder
             // Legacy
             'payslips.view', 'payslips.download', 'leaves.view', 'leaves.create',
             'leave_balances.view', 'loans.view', 'attendance.view',
+            // Recruitment
+            'recruitment.postings.view', 'recruitment.candidates.view',
         ]);
 
         // ── Super Admin — ALL permissions (for full-system testing) ──────────

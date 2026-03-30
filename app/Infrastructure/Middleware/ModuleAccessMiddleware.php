@@ -83,10 +83,10 @@ class ModuleAccessMiddleware
         'purchase_orders' => ['PURCH'],
         'goods_receipts' => ['PURCH', 'WH'],
 
-        'inventory' => ['WH', 'PURCH', 'PROD', 'PLANT', 'SALES'],
+        'inventory' => ['WH', 'PURCH', 'PROD', 'PLANT', 'PPC', 'SALES'],
         'items' => ['WH', 'PURCH', 'PROD', 'SALES'],
         'stock' => ['WH', 'PURCH', 'PROD', 'SALES'],
-        'requisitions' => ['WH', 'PURCH', 'PROD'],
+        'requisitions' => ['WH', 'PURCH', 'PROD', 'PPC'],
         'adjustments' => ['WH'],
         'locations' => ['WH'],
 

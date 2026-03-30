@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\Payroll\Services\PagibigContributionService;
 use App\Domains\Payroll\Services\PhilHealthContributionService;
 use App\Domains\Payroll\Services\SssContributionService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,8 @@ use App\Domains\Payroll\Services\SssContributionService;
 |                  pagibig_contribution_tables
 --------------------------------------------------------------------------
 */
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'SssContributionTableSeeder'])->assertExitCode(0);

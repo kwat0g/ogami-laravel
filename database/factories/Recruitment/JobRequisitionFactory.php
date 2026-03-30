@@ -6,6 +6,7 @@ namespace Database\Factories\Recruitment;
 
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Position;
+use App\Domains\HR\Models\SalaryGrade;
 use App\Domains\HR\Recruitment\Models\JobRequisition;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,8 +26,7 @@ final class JobRequisitionFactory extends Factory
             'headcount' => fake()->numberBetween(1, 5),
             'reason' => fake()->paragraph(),
             'justification' => fake()->optional()->paragraph(),
-            'salary_range_min' => fake()->numberBetween(2000000, 3000000),
-            'salary_range_max' => fake()->numberBetween(3000000, 5000000),
+            'salary_grade_id' => \App\Domains\HR\Models\SalaryGrade::query()->inRandomOrder()->value('id') ?? 1,
             'target_start_date' => fake()->dateTimeBetween('+1 month', '+3 months')->format('Y-m-d'),
             'status' => 'draft',
         ];

@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 use App\Domains\HR\Models\Department;
 use App\Models\User;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +27,14 @@ use Illuminate\Support\Facades\Hash;
 */
 
 beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
-    $this->artisan('db:seed', ['--class' => 'ModuleSeeder'])->assertExitCode(0);
-    $this->artisan('db:seed', ['--class' => 'ModulePermissionSeeder'])->assertExitCode(0);
-    $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder'])->assertExitCode(0);
-    $this->artisan('db:seed', ['--class' => 'DepartmentModuleAssignmentSeeder'])->assertExitCode(0);
+    foreach (['super_admin', 'admin', 'executive', 'vice_president', 'manager', 'officer', 'head', 'staff'] as $role) {
+        Role::findOrCreate($role, 'web');
+    }
+
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
 });
 
 /**

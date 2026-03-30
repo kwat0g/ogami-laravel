@@ -10,6 +10,7 @@ use App\Models\User;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\DepartmentModuleAssignmentSeeder;
 use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\FiscalPeriodSeeder;
 use Database\Seeders\ModulePermissionSeeder;
 use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -25,6 +26,7 @@ beforeEach(function () {
     $this->seed(DepartmentPositionSeeder::class);
     $this->seed(DepartmentModuleAssignmentSeeder::class);
     $this->seed(ChartOfAccountsSeeder::class);
+    $this->seed(FiscalPeriodSeeder::class);
 
     // Get accounting department for RBAC v2
     $acctgDept = Department::where('code', 'ACCTG')->first();
@@ -85,7 +87,7 @@ it('lists vendor invoices', function () {
 it('creates a vendor invoice', function () {
     $apco = ChartOfAccount::where('account_type', 'LIABILITY')->first();
     $exp = ChartOfAccount::where('account_type', 'OPEX')->first();
-    $period = FiscalPeriod::create(['name' => 'Test 2026', 'code' => 'TEST-AP', 'date_from' => '2026-01-01', 'date_to' => '2026-12-31', 'status' => 'open']);
+    $period = FiscalPeriod::query()->where('status', 'open')->orderBy('date_from')->firstOrFail();
 
     $this->actingAs($this->manager)
         ->postJson('/api/v1/accounting/ap/invoices', [

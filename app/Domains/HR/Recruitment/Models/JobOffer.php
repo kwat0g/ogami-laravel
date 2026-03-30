@@ -8,6 +8,7 @@ use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Position;
 use App\Domains\HR\Recruitment\Enums\EmploymentType;
 use App\Domains\HR\Recruitment\Enums\OfferStatus;
+use App\Infrastructure\DocumentNumberService;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Database\Factories\Recruitment\JobOfferFactory;
@@ -94,15 +95,7 @@ final class JobOffer extends Model implements Auditable
 
     private static function generateNumber(): string
     {
-        $year = now()->format('Y');
-        $prefix = "OFR-{$year}-";
-        $lastNumber = static::withTrashed()
-            ->where('offer_number', 'LIKE', "{$prefix}%")
-            ->lockForUpdate()
-            ->selectRaw("MAX(CAST(SUBSTRING(offer_number FROM '.{5}$') AS INTEGER)) as max_num")
-            ->value('max_num') ?? 0;
-
-        return sprintf('OFR-%s-%05d', $year, $lastNumber + 1);
+        return app(DocumentNumberService::class)->generate('job_offer', 'OFR');
     }
 
     // ── Relationships ─────────────────────────────────────────────────────

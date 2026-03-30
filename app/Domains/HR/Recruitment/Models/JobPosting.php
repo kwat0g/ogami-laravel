@@ -6,6 +6,7 @@ namespace App\Domains\HR\Recruitment\Models;
 
 use App\Domains\HR\Recruitment\Enums\EmploymentType;
 use App\Domains\HR\Recruitment\Enums\PostingStatus;
+use App\Infrastructure\DocumentNumberService;
 use App\Shared\Traits\HasPublicUlid;
 use Database\Factories\Recruitment\JobPostingFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -88,15 +89,7 @@ final class JobPosting extends Model implements Auditable
 
     private static function generateNumber(): string
     {
-        $year = now()->format('Y');
-        $prefix = "JP-{$year}-";
-        $lastNumber = static::withTrashed()
-            ->where('posting_number', 'LIKE', "{$prefix}%")
-            ->lockForUpdate()
-            ->selectRaw("MAX(CAST(SUBSTRING(posting_number FROM '.{5}$') AS INTEGER)) as max_num")
-            ->value('max_num') ?? 0;
-
-        return sprintf('JP-%s-%05d', $year, $lastNumber + 1);
+        return app(DocumentNumberService::class)->generate('job_posting', 'JP');
     }
 
     // ── Relationships ─────────────────────────────────────────────────────

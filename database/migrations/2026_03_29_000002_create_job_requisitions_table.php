@@ -23,8 +23,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('headcount')->default(1);
             $table->text('reason');
             $table->text('justification')->nullable();
-            $table->unsignedBigInteger('salary_range_min')->nullable();
-            $table->unsignedBigInteger('salary_range_max')->nullable();
+            $table->foreignId('salary_grade_id')->nullable()->constrained('salary_grades')->nullOnDelete();
             $table->date('target_start_date')->nullable();
             $table->string('status', 30)->default('draft');
             $table->timestamp('approved_at')->nullable();
@@ -41,7 +40,6 @@ return new class extends Migration
 
         DB::statement("ALTER TABLE job_requisitions ADD CONSTRAINT chk_jr_status CHECK (status IN ('draft','pending_approval','approved','rejected','open','on_hold','closed','cancelled'))");
         DB::statement("ALTER TABLE job_requisitions ADD CONSTRAINT chk_jr_employment_type CHECK (employment_type IN ('regular','contractual','project_based','part_time'))");
-        DB::statement("ALTER TABLE job_requisitions ADD CONSTRAINT chk_jr_salary_range CHECK (salary_range_max IS NULL OR salary_range_min IS NULL OR salary_range_max >= salary_range_min)");
         DB::statement("ALTER TABLE job_requisitions ADD CONSTRAINT chk_jr_headcount CHECK (headcount >= 1)");
     }
 

@@ -83,7 +83,7 @@ final class HiringServiceTest extends TestCase
         $app = $this->createHireableApplication();
 
         $hiring = $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(),
+            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'Z',
         ], $user);
 
         $this->assertEquals(HiringStatus::Hired, $hiring->status);
@@ -97,7 +97,7 @@ final class HiringServiceTest extends TestCase
         $app = $this->createHireableApplication();
 
         $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(),
+            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'Z',
         ], $user);
 
         $requisition = $app->posting->requisition->fresh();
@@ -113,7 +113,7 @@ final class HiringServiceTest extends TestCase
         $this->expectException(DomainException::class);
 
         $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(),
+            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'Z',
         ], $user);
     }
 
@@ -134,7 +134,7 @@ final class HiringServiceTest extends TestCase
         $this->expectException(DomainException::class);
 
         $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(),
+            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'Z',
         ], $user);
     }
 
@@ -160,7 +160,7 @@ final class HiringServiceTest extends TestCase
         $this->expectException(DomainException::class);
 
         $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(),
+            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'Z',
         ], $user);
     }
 }

@@ -26,7 +26,7 @@ uses()->group('feature', 'procurement', 'workflow');
 /**
  * Seed RBAC v2 infrastructure.
  */
-function seedRbac(): void
+function seedProcurementWorkflowRbac(): void
 {
     Artisan::call('db:seed', ['--class' => 'RolePermissionSeeder', '--force' => true]);
     Artisan::call('db:seed', ['--class' => 'ModuleSeeder', '--force' => true]);
@@ -40,7 +40,7 @@ function seedRbac(): void
  * Create a vendor + one vendor item for PR creation.
  * Returns [$vendor, $vendorItemId].
  */
-function makeVendorFixture(): array
+function makeProcurementWorkflowVendorFixture(): array
 {
     $admin = User::where('email', 'admin@ogamierp.local')->first()
         ?? User::factory()->create(['password_changed_at' => now()]);
@@ -73,7 +73,7 @@ function makeVendorFixture(): array
  * Bypasses RBAC v2 module checks by using direct permission grants
  * for cross-department operations.
  */
-function makeUser(string $role, string $deptCode): User
+function makeProcurementWorkflowUser(string $role, string $deptCode): User
 {
     $dept = Department::where('code', $deptCode)->firstOrFail();
     $user = User::factory()->create(['password_changed_at' => now()]);
@@ -88,7 +88,7 @@ function makeUser(string $role, string $deptCode): User
 /**
  * Build a standard PR payload for the HTTP API.
  */
-function prPayload(int $deptId, int $vendorId, int $vendorItemId, float $unitCost = 1500.00): array
+function procurementWorkflowPayload(int $deptId, int $vendorId, int $vendorItemId, float $unitCost = 1500.00): array
 {
     return [
         'department_id' => $deptId,
@@ -122,21 +122,21 @@ function prPayload(int $deptId, int $vendorId, int $vendorItemId, float $unitCos
 describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget check → VP → PO → GR)', function () {
 
     beforeEach(function () {
-        seedRbac();
+        seedProcurementWorkflowRbac();
 
         $this->purchDept = Department::where('code', 'PURCH')->firstOrFail();
         $this->purchDept->update(['annual_budget_centavos' => 10_000_000_00]); // ₱10 million
 
-        [$this->vendor, $this->vendorItemId] = makeVendorFixture();
+        [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
         // Purchasing Officer — can create & submit PRs
-        $this->purchasingOfficer = makeUser('officer', 'PURCH');
+        $this->purchasingOfficer = makeProcurementWorkflowUser('officer', 'PURCH');
 
         // Purchasing Manager A — will review PR (SoD: cannot also be budget verifier)
-        $this->reviewerManager = makeUser('manager', 'PURCH');
+        $this->reviewerManager = makeProcurementWorkflowUser('manager', 'PURCH');
 
         // Purchasing Manager B — will do budget check (SoD: different from reviewer)
-        $this->budgetManager = makeUser('manager', 'PURCH');
+        $this->budgetManager = makeProcurementWorkflowUser('manager', 'PURCH');
 
         // VP — no department; Spatie role has 'approvals.vp.approve'
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
@@ -146,7 +146,7 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
 
     it('creates a PR draft as Purchasing Officer', function () {
         $response = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -160,7 +160,7 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
     it('runs the full normal PR workflow end-to-end', function () {
         // ── Step 1: Officer creates PR draft ────────────────────────────────
         $createResp = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -286,15 +286,15 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
 describe('Scenario 2: Purchasing Manager creates PR (auto-skips review → directly reviewed)', function () {
 
     beforeEach(function () {
-        seedRbac();
+        seedProcurementWorkflowRbac();
 
         $this->purchDept = Department::where('code', 'PURCH')->firstOrFail();
         $this->purchDept->update(['annual_budget_centavos' => 10_000_000_00]);
 
-        [$this->vendor, $this->vendorItemId] = makeVendorFixture();
+        [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
-        $this->purchasingManager = makeUser('manager', 'PURCH');
-        $this->budgetManager = makeUser('manager', 'PURCH'); // different from creator for SoD
+        $this->purchasingManager = makeProcurementWorkflowUser('manager', 'PURCH');
+        $this->budgetManager = makeProcurementWorkflowUser('manager', 'PURCH'); // different from creator for SoD
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
@@ -304,7 +304,7 @@ describe('Scenario 2: Purchasing Manager creates PR (auto-skips review → direc
     it('auto-advances to reviewed when Purchasing Manager submits their own PR', function () {
         // Manager creates PR
         $createResp = $this->actingAs($this->purchasingManager)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -353,16 +353,16 @@ describe('Scenario 2: Purchasing Manager creates PR (auto-skips review → direc
 describe('Scenario 3: PR returned by manager → officer re-edits → resubmits → continues', function () {
 
     beforeEach(function () {
-        seedRbac();
+        seedProcurementWorkflowRbac();
 
         $this->purchDept = Department::where('code', 'PURCH')->firstOrFail();
         $this->purchDept->update(['annual_budget_centavos' => 10_000_000_00]);
 
-        [$this->vendor, $this->vendorItemId] = makeVendorFixture();
+        [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
-        $this->purchasingOfficer = makeUser('officer', 'PURCH');
-        $this->reviewerManager = makeUser('manager', 'PURCH');
-        $this->budgetManager = makeUser('manager', 'PURCH');
+        $this->purchasingOfficer = makeProcurementWorkflowUser('officer', 'PURCH');
+        $this->reviewerManager = makeProcurementWorkflowUser('manager', 'PURCH');
+        $this->budgetManager = makeProcurementWorkflowUser('manager', 'PURCH');
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
@@ -372,7 +372,7 @@ describe('Scenario 3: PR returned by manager → officer re-edits → resubmits 
     it('handles the return → re-edit → resubmit cycle correctly', function () {
         // Step 1: Officer creates and submits PR
         $createResp = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -444,7 +444,7 @@ describe('Scenario 3: PR returned by manager → officer re-edits → resubmits 
     it('prevents editing a PR that is in pending_review status', function () {
         // Create and submit to pending_review
         $createResp = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -482,11 +482,11 @@ describe('Scenario 3: PR returned by manager → officer re-edits → resubmits 
 describe('Scenario 4: Budget exceeded — PR creation rejected when dept budget insufficient', function () {
 
     beforeEach(function () {
-        seedRbac();
+        seedProcurementWorkflowRbac();
 
         $this->purchDept = Department::where('code', 'PURCH')->firstOrFail();
-        [$this->vendor, $this->vendorItemId] = makeVendorFixture();
-        $this->purchasingOfficer = makeUser('officer', 'PURCH');
+        [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
+        $this->purchasingOfficer = makeProcurementWorkflowUser('officer', 'PURCH');
     });
 
     it('rejects PR creation when department budget is exceeded', function () {
@@ -495,7 +495,7 @@ describe('Scenario 4: Budget exceeded — PR creation rejected when dept budget 
 
         // Try to create a PR for ₱150,000 (100 KG × ₱1,500) — exceeds ₱1,000 budget
         $response = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -515,7 +515,7 @@ describe('Scenario 4: Budget exceeded — PR creation rejected when dept budget 
         $this->purchDept->update(['annual_budget_centavos' => 0]);
 
         $response = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -533,7 +533,7 @@ describe('Scenario 4: Budget exceeded — PR creation rejected when dept budget 
 
         // First PR: ₱150,000 (100 KG × ₱1,500 × 100 centavos/peso = 15,000,000 centavos)
         $resp1 = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -547,7 +547,7 @@ describe('Scenario 4: Budget exceeded — PR creation rejected when dept budget 
 
         // Second PR: also ₱150,000 — budget now exhausted (0 remaining)
         $resp2 = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -570,15 +570,15 @@ describe('Scenario 4: Budget exceeded — PR creation rejected when dept budget 
 describe('Scenario 5: SoD rules enforced via HTTP API', function () {
 
     beforeEach(function () {
-        seedRbac();
+        seedProcurementWorkflowRbac();
 
         $this->purchDept = Department::where('code', 'PURCH')->firstOrFail();
         $this->purchDept->update(['annual_budget_centavos' => 10_000_000_00]);
-        [$this->vendor, $this->vendorItemId] = makeVendorFixture();
+        [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
-        $this->purchasingOfficer = makeUser('officer', 'PURCH');
-        $this->reviewerManager = makeUser('manager', 'PURCH');
-        $this->budgetManager = makeUser('manager', 'PURCH');
+        $this->purchasingOfficer = makeProcurementWorkflowUser('officer', 'PURCH');
+        $this->reviewerManager = makeProcurementWorkflowUser('manager', 'PURCH');
+        $this->budgetManager = makeProcurementWorkflowUser('manager', 'PURCH');
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
@@ -588,7 +588,7 @@ describe('Scenario 5: SoD rules enforced via HTTP API', function () {
     it('blocks the creator from reviewing their own PR (SoD: reviewer ≠ creator)', function () {
         // Officer creates and submits PR
         $createResp = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -614,7 +614,7 @@ describe('Scenario 5: SoD rules enforced via HTTP API', function () {
     it('blocks reviewer from also doing budget check (SoD: budget verifier ≠ reviewer)', function () {
         // Officer submits a PR
         $createResp = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -700,14 +700,14 @@ describe('Scenario 5: SoD rules enforced via HTTP API', function () {
 describe('Scenario 6: PR listing, filtering, and status transitions visible via API', function () {
 
     beforeEach(function () {
-        seedRbac();
+        seedProcurementWorkflowRbac();
 
         $this->purchDept = Department::where('code', 'PURCH')->firstOrFail();
         $this->purchDept->update(['annual_budget_centavos' => 10_000_000_00]);
-        [$this->vendor, $this->vendorItemId] = makeVendorFixture();
+        [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
-        $this->purchasingOfficer = makeUser('officer', 'PURCH');
-        $this->purchasingManager = makeUser('manager', 'PURCH');
+        $this->purchasingOfficer = makeProcurementWorkflowUser('officer', 'PURCH');
+        $this->purchasingManager = makeProcurementWorkflowUser('manager', 'PURCH');
     });
 
     it('lists purchase requests with correct API response pagination structure', function () {
@@ -724,7 +724,7 @@ describe('Scenario 6: PR listing, filtering, and status transitions visible via 
     it('filters purchase requests by status=draft', function () {
         // Create a draft PR
         $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -744,7 +744,7 @@ describe('Scenario 6: PR listing, filtering, and status transitions visible via 
 
     it('shows full PR detail via GET by ULID', function () {
         $createResp = $this->actingAs($this->purchasingOfficer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $this->purchDept->id,
                 $this->vendor->id,
                 $this->vendorItemId,
@@ -799,12 +799,12 @@ describe('Scenario 6: PR listing, filtering, and status transitions visible via 
 describe('Scenario 7: Procurement → Inventory stock update', function () {
 
     beforeEach(function () {
-        seedRbac();
+        seedProcurementWorkflowRbac();
 
         $this->purchDept = Department::where('code', 'PURCH')->firstOrFail();
         $this->purchDept->update(['annual_budget_centavos' => 50_000_000_00]); // ₱5M
 
-        [$this->vendor, $this->vendorItemId] = makeVendorFixture();
+        [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
         // Warehouse receiving location — required for listener to write stock
         $this->location = WarehouseLocation::create([
@@ -815,9 +815,9 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
             'is_active' => true,
         ]);
 
-        $this->officer = makeUser('officer', 'PURCH');
-        $this->reviewer = makeUser('manager', 'PURCH');
-        $this->budgetMgr = makeUser('manager', 'PURCH');
+        $this->officer = makeProcurementWorkflowUser('officer', 'PURCH');
+        $this->reviewer = makeProcurementWorkflowUser('manager', 'PURCH');
+        $this->budgetMgr = makeProcurementWorkflowUser('manager', 'PURCH');
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
@@ -832,7 +832,7 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
 
         // Step 1 — Officer creates + submits PR
         $pr = $this->actingAs($this->officer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $purchDeptId, $this->vendor->id, $this->vendorItemId,
             ));
         $pr->assertStatus(201);
@@ -930,7 +930,7 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
         // Helper: run a full PR → GR confirmation cycle and return the GR
         $runCycle = function (float $qty) use ($purchDeptId): void {
             $pr = $this->actingAs($this->officer)
-                ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+                ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                     $purchDeptId, $this->vendor->id, $this->vendorItemId, 1500.00,
                 ))
                 ->assertStatus(201);
@@ -1008,7 +1008,7 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
         $purchDeptId = $this->purchDept->id;
 
         $pr = $this->actingAs($this->officer)
-            ->postJson('/api/v1/procurement/purchase-requests', prPayload(
+            ->postJson('/api/v1/procurement/purchase-requests', procurementWorkflowPayload(
                 $purchDeptId, $this->vendor->id, $this->vendorItemId,
             ))->assertStatus(201);
         $prUlid = $pr->json('data.ulid');

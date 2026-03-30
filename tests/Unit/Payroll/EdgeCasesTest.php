@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Payroll\Services\PayrollComputationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\PayrollTestHelper;
 
 /*
@@ -13,6 +14,8 @@ use Tests\Support\PayrollTestHelper;
 | full LWOP period, multiple holidays, SSS max-MSC, and more.
 --------------------------------------------------------------------------
 */
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     PayrollTestHelper::seedRateTables();

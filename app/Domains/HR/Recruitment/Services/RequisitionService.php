@@ -49,7 +49,7 @@ final class RequisitionService implements ServiceContract
     public function show(JobRequisition $requisition): JobRequisition
     {
         return $requisition->load([
-            'department', 'position', 'requester', 'approver',
+            'department', 'position', 'salaryGrade', 'requester', 'approver',
             'postings', 'hirings', 'approvals.user', 'approvalLogs',
         ]);
     }

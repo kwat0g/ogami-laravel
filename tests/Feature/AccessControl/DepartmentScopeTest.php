@@ -8,6 +8,10 @@ use App\Domains\HR\Models\Position;
 use App\Infrastructure\Middleware\DepartmentScopeMiddleware;
 use App\Infrastructure\Scopes\DepartmentScope;
 use App\Models\User;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -84,6 +88,7 @@ function makeUserInDept(Department $dept, string $role = 'staff'): User
         'department_id' => $dept->id,
     ]);
     $user->assignRole($role);
+    $user->departments()->attach($dept->id, ['is_primary' => true]);
 
     return $user;
 }
@@ -204,7 +209,14 @@ describe('DepartmentScope — inactive (scope bypassed)', function () {
 
 describe('DepartmentScopeMiddleware — HTTP integration', function () {
     beforeEach(function () {
-        $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+        foreach (['admin', 'executive', 'manager', 'officer', 'head', 'staff'] as $role) {
+            Role::findOrCreate($role, 'web');
+        }
+
+        $this->seed(ModuleSeeder::class);
+        $this->seed(ModulePermissionSeeder::class);
+        $this->seed(DepartmentPositionSeeder::class);
+        $this->seed(DepartmentModuleAssignmentSeeder::class);
     });
 
     it('activates dept scope on request using authenticated user department', function () {
@@ -271,21 +283,17 @@ describe('DepartmentScopeMiddleware — HTTP integration', function () {
         });
     });
 
-    it('HTTP endpoint returns 200 and only dept-scoped employees for manager', function () {
-        $deptX = makeTestDept('E');
-        $deptY = makeTestDept('F');
+    it('team endpoint returns 200 and only dept-scoped employees for manager', function () {
+        $deptX = Department::where('code', 'HR')->firstOrFail();
+        $deptY = Department::where('code', 'ACCTG')->firstOrFail();
 
         $empX = makeEmployeeInDept($deptX, 'Xavier');
         $empY = makeEmployeeInDept($deptY, 'Yolanda');
 
         $user = makeUserInDept($deptX, 'manager');
-        $perm = Permission::firstOrCreate(
-            ['name' => 'employees.view', 'guard_name' => 'web']
-        );
-        $user->givePermissionTo($perm);
 
         $response = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/v1/hr/employees');
+            ->getJson('/api/v1/hr/employees/team');
 
         $response->assertStatus(200);
 

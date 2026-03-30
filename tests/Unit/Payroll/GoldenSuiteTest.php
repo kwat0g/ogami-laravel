@@ -6,6 +6,7 @@ use App\Domains\Loan\Models\Loan;
 use App\Domains\Loan\Models\LoanAmortizationSchedule;
 use App\Domains\Payroll\Models\PayrollAdjustment;
 use App\Domains\Payroll\Services\PayrollComputationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\PayrollTestHelper;
 
@@ -21,6 +22,8 @@ use Tests\Support\PayrollTestHelper;
 | Naming: GS-01 … GS-24.
 --------------------------------------------------------------------------
 */
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     PayrollTestHelper::seedRateTables();
@@ -132,7 +135,7 @@ it('GS-05 — night diff adds to gross pay', function () {
 });
 
 // ---------------------------------------------------------------------------
-// GS-06: 1st cutoff — SSS/PHL/PAG NOT deducted in 1st cutoff
+// GS-06: 1st cutoff — SSS deferred to 2nd cutoff; PhilHealth/Pag-IBIG split every cutoff
 // ---------------------------------------------------------------------------
 
 it('GS-06 — mandatory contributions are zero on 1st cutoff', function () {
@@ -143,9 +146,8 @@ it('GS-06 — mandatory contributions are zero on 1st cutoff', function () {
     $d = $this->svc->computeForEmployee($employee, $run);
 
     expect($d->sss_ee_centavos)->toBe(0);
-    // PhilHealth and PagIBIG also deducted only on 2nd cutoff by default config
-    expect($d->philhealth_ee_centavos)->toBe(0);
-    expect($d->pagibig_ee_centavos)->toBe(0);
+    expect($d->philhealth_ee_centavos)->toBe(31_250);
+    expect($d->pagibig_ee_centavos)->toBe(5_000);
 });
 
 // ---------------------------------------------------------------------------

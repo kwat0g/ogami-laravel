@@ -25,8 +25,7 @@ final class StoreRequisitionRequest extends FormRequest
             'headcount' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'max:2000'],
             'justification' => ['nullable', 'string', 'max:2000'],
-            'salary_range_min' => ['nullable', 'integer', 'min:0'],
-            'salary_range_max' => ['nullable', 'integer', 'min:0', 'gte:salary_range_min'],
+            'salary_grade_id' => ['required', 'integer', 'exists:salary_grades,id'],
             'target_start_date' => ['nullable', 'date', 'after:today'],
         ];
     }

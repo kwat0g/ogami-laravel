@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Payroll\Services\PayrollComputationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\PayrollTestHelper;
 
 /*
@@ -16,6 +17,8 @@ use Tests\Support\PayrollTestHelper;
 | collected in these periods.
 --------------------------------------------------------------------------
 */
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     PayrollTestHelper::seedRateTables();

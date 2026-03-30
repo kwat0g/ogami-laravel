@@ -77,7 +77,7 @@ final class ApplicationService implements ServiceContract
             );
         }
 
-        $application = DB::transaction(function () use ($posting, $candidateData, $appData): Application {
+        $application = DB::transaction(function () use ($posting, $candidateData, $appData, $resume): Application {
             // Handle resume upload before creating candidate
             $resumePath = null;
             if ($resume) {

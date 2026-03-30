@@ -25,8 +25,7 @@ final class UpdateRequisitionRequest extends FormRequest
             'headcount' => ['sometimes', 'integer', 'min:1'],
             'reason' => ['sometimes', 'string', 'max:2000'],
             'justification' => ['nullable', 'string', 'max:2000'],
-            'salary_range_min' => ['nullable', 'integer', 'min:0'],
-            'salary_range_max' => ['nullable', 'integer', 'min:0', 'gte:salary_range_min'],
+            'salary_grade_id' => ['sometimes', 'integer', 'exists:salary_grades,id'],
             'target_start_date' => ['nullable', 'date', 'after:today'],
         ];
     }

@@ -76,6 +76,7 @@ final class RecruitmentApiTest extends TestCase
             ->postJson('/api/v1/recruitment/requisitions', [
                 'department_id' => $dept->id,
                 'position_id' => $pos->id,
+                'salary_grade_id' => \App\Domains\HR\Models\SalaryGrade::query()->inRandomOrder()->value('id') ?? 1,
                 'employment_type' => 'regular',
                 'headcount' => 2,
                 'reason' => 'Need more staff for expanding operations in the department.',

@@ -89,6 +89,10 @@ final class DocumentNumberService implements ServiceContract
     private function defaultPrefix(string $documentType): string
     {
         return match ($documentType) {
+            'job_requisition' => 'REQ',
+            'job_posting' => 'JP',
+            'job_application' => 'APP',
+            'job_offer' => 'OFR',
             'purchase_request' => 'PR',
             'purchase_order' => 'PO',
             'goods_receipt' => 'GR',

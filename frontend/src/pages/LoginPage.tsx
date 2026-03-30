@@ -44,12 +44,13 @@ export default function LoginPage() {
       const result = res.data.data
 
       if (result.user) {
-        // Cancel any in-flight /auth/me probe (old session → 401) so it cannot
-        // race with the new session and trigger a spurious clearAuth().
-        await queryClient.cancelQueries({ queryKey: ['auth', 'me'] })
+        // Ensure stale in-flight requests from a prior session cannot affect
+        // the newly authenticated user context.
+        await queryClient.cancelQueries()
+        queryClient.clear()
+        bumpAuthEpoch()
         queryClient.setQueryData(['auth', 'me'], result.user)
         setAuth(result.user)
-        bumpAuthEpoch()
         navigate(getLandingPath(result.user))
       }
     } catch (err: unknown) {

@@ -14,10 +14,10 @@ export function useAuth() {
 
   const query = useQuery({
     queryKey: ['auth', 'me'],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const res = await api.get<ApiSuccess<AuthUser>>(
         '/auth/me',
-        { __skipAuthRedirect: true } as AxiosRequestConfig,
+        { signal, __skipAuthRedirect: true } as AxiosRequestConfig,
       )
       return res.data.data
     },

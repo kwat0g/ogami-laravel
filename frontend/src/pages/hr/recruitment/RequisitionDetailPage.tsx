@@ -153,10 +153,10 @@ export default function RequisitionDetailPage() {
                 <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{req.headcount} ({req.hired_count} hired)</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500">Salary Range</p>
+                <p className="text-xs text-neutral-500">Salary Grade</p>
                 <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  {req.salary_range_min != null
-                    ? `${(req.salary_range_min / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })} - ${(req.salary_range_max! / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}`
+                  {req.salary_grade
+                    ? `SG ${req.salary_grade.level ?? '*'} - ${req.salary_grade.name ?? 'Unspecified'}`
                     : 'Not specified'}
                 </p>
               </div>

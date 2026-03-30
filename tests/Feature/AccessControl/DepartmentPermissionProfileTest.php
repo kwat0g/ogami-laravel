@@ -6,9 +6,12 @@ use App\Domains\HR\Models\Department;
 use App\Models\DepartmentPermissionProfile;
 use App\Models\User;
 use App\Services\DepartmentPermissionServiceV3 as DepartmentPermissionService;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -16,8 +19,6 @@ use Spatie\Permission\PermissionRegistrar;
 |--------------------------------------------------------------------------
 | Department Permission Profile Tests — v2
 |--------------------------------------------------------------------------
-
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 | Verifies the DB-backed department permission profile system:
 |
 |   1. HRD Manager    — gets full HR module, NOT accounting
@@ -162,7 +163,21 @@ function selfServicePerms(): array
 beforeEach(function () {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
     Cache::flush();
-    $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+
+    foreach (['super_admin', 'admin', 'executive', 'vice_president', 'manager', 'officer', 'head', 'staff'] as $role) {
+        Role::findOrCreate($role, 'web');
+    }
+
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+
+    Permission::findOrCreate('system.assign_roles', 'web');
+
+    Role::findByName('admin', 'web')->givePermissionTo('system.assign_roles');
+    Role::findByName('executive', 'web')->givePermissionTo([
+        Permission::findOrCreate('employees.view', 'web'),
+        Permission::findOrCreate('journal_entries.view', 'web'),
+    ]);
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -201,14 +216,14 @@ describe('HRD Manager — profile permissions', function () {
     });
 
     it('DPP profile restricts permissions even when Spatie role grants more than the profile allows', function () {
-        // Assign an officer (who has journal_entries.post) to an HRD dept
+        // Assign a manager (who has journal_entries.post via accounting module perms) to an HRD dept
         // with an HRD-only profile — DPP must block the accounting permission.
         $dept = dppDept('DPP-HRD-CROSS');
-        dppProfile($dept, 'officer', hrdManagerPerms()); // profile excludes accounting perms
-        $user = dppUser('officer', $dept);
+        dppProfile($dept, 'manager', hrdManagerPerms()); // profile excludes accounting perms
+        $user = dppUser('manager', $dept);
 
-        // Verify the officer Spatie ROLE genuinely has the permission
-        $acctgRole = Role::findByName('officer');
+        // Verify the manager Spatie ROLE genuinely has the permission
+        $acctgRole = Role::findByName('manager');
         expect($acctgRole->hasPermissionTo('journal_entries.post'))->toBeTrue();
 
         // But User::hasPermissionTo() (our override) returns false — HRD profile lacks it
@@ -596,7 +611,7 @@ describe('Department isolation', function () {
         expect($user->hasPermissionTo('employees.view_salary'))->toBeFalse();
     });
 
-    it('is_active=false profile disables all module permissions', function () {
+    it('is_active=false profile falls back to safe defaults instead of full module permissions', function () {
         $dept = dppDept('DPP-INACTIVE');
         $profile = dppProfile($dept, 'manager', hrdManagerPerms());
 
@@ -608,13 +623,10 @@ describe('Department isolation', function () {
         $user->clearDepartmentCache();
         $user = $user->fresh();
 
-        // Profile is inactive — no matching active profile found → returns [] → falls through
-        // isRoleDepartmentScoped checks active profiles only; no active profiles = not scoped
-        // Per service logic: empty result → isRoleDepartmentScoped returns false → allow all
-        // (This is the edge case: dept with inactive profile behaves like no dept profile)
-        // The user's effective permissions become unscoped (full role permissions)
+        // Inactive profiles do not re-enable the full manager permission matrix.
+        // The resolver stays in the department-scoped path and falls back to safe defaults.
         $result = $user->hasPermissionTo('payroll.initiate');
-        expect($result)->toBeTrue(); // falls back to full manager role perms
+        expect($result)->toBeFalse();
     });
 });
 
@@ -674,14 +686,13 @@ describe('getEffectivePermissions — frontend permission list', function () {
         expect($perms)->toContain('system.assign_roles');
     });
 
-    it('bypasses department scoping for staff', function () {
+    it('returns safe default scoped perms for staff without a department profile', function () {
         $dept = dppDept('DPP-EFF-STAFF');
         $user = dppUser('staff', $dept);
 
         $perms = $user->getEffectivePermissions()->all();
 
-        // Staff gets all their (minimal) Spatie permissions unfiltered
-        expect($perms)->toContain('payroll.view_own_payslip');
+        expect($perms)->toContain('self.*');
         expect($perms)->not->toContain('employees.view');
     });
 });

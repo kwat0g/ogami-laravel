@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCreateRequisition, useRequisition, useUpdateRequisition } from '@/hooks/useRecruitment'
-import { useDepartments, usePositions } from '@/hooks/useEmployees'
+import { useDepartments, usePositions, useSalaryGrades } from '@/hooks/useEmployees'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import FormField from '@/components/ui/FormField'
@@ -24,6 +24,8 @@ export default function RequisitionFormPage() {
   const { data: positionsData } = usePositions(departmentId ? Number(departmentId) : undefined)
   const positions = positionsData?.data ?? positionsData ?? []
 
+  const { data: salaryGrades = [] } = useSalaryGrades()
+
   const [form, setForm] = useState({
     department_id: '',
     position_id: '',
@@ -31,8 +33,7 @@ export default function RequisitionFormPage() {
     headcount: '1',
     reason: '',
     justification: '',
-    salary_range_min: '',
-    salary_range_max: '',
+    salary_grade_id: '',
     target_start_date: '',
   })
 
@@ -46,8 +47,7 @@ export default function RequisitionFormPage() {
         headcount: String(existing.headcount ?? 1),
         reason: existing.reason ?? '',
         justification: existing.justification ?? '',
-        salary_range_min: existing.salary_range_min ? String(existing.salary_range_min) : '',
-        salary_range_max: existing.salary_range_max ? String(existing.salary_range_max) : '',
+        salary_grade_id: existing.salary_grade_id ? String(existing.salary_grade_id) : '',
         target_start_date: existing.target_start_date ?? '',
       })
       setDepartmentId(String(existing.department?.id ?? ''))
@@ -74,8 +74,7 @@ export default function RequisitionFormPage() {
       headcount: Number(form.headcount),
       reason: form.reason,
       justification: form.justification || null,
-      salary_range_min: form.salary_range_min ? Number(form.salary_range_min) : null,
-      salary_range_max: form.salary_range_max ? Number(form.salary_range_max) : null,
+      salary_grade_id: form.salary_grade_id ? Number(form.salary_grade_id) : null,
       target_start_date: form.target_start_date || null,
     }
 
@@ -183,40 +182,22 @@ export default function RequisitionFormPage() {
           {/* Right column - Justification & salary */}
           <div className="space-y-6">
             <Card>
-              <CardHeader>Salary Range (in centavos)</CardHeader>
+              <CardHeader>Salary Grade</CardHeader>
               <CardBody className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Minimum" hint="Enter in centavos">
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.salary_range_min}
-                      onChange={(e) => setForm({ ...form, salary_range_min: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                      placeholder="0"
-                    />
-                    {form.salary_range_min && (
-                      <p className="mt-1 text-xs text-neutral-500">
-                        = {(Number(form.salary_range_min) / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
-                      </p>
-                    )}
-                  </FormField>
-                  <FormField label="Maximum" hint="Enter in centavos">
-                    <input
-                      type="number"
-                      min="0"
-                      value={form.salary_range_max}
-                      onChange={(e) => setForm({ ...form, salary_range_max: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                      placeholder="0"
-                    />
-                    {form.salary_range_max && (
-                      <p className="mt-1 text-xs text-neutral-500">
-                        = {(Number(form.salary_range_max) / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
-                      </p>
-                    )}
-                  </FormField>
-                </div>
+                <FormField label="Salary Grade">
+                  <select
+                    value={form.salary_grade_id}
+                    onChange={(e) => setForm({ ...form, salary_grade_id: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  >
+                    <option value="">-- Select Grade --</option>
+                    {salaryGrades.map((sg: any) => (
+                      <option key={sg.id} value={sg.id}>
+                        SG {sg.level}: {sg.name} ({(sg.min_monthly_rate / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })} - {(sg.max_monthly_rate / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })})
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
               </CardBody>
             </Card>
 

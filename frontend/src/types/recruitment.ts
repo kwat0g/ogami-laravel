@@ -99,8 +99,8 @@ export interface JobRequisition {
   headcount: number
   reason: string
   justification: string | null
-  salary_range_min: number | null
-  salary_range_max: number | null
+  salary_grade_id: number | null
+  salary_grade?: { id: number; grade?: number; name?: string; level?: number; min_monthly_rate?: number; max_monthly_rate?: number; amount?: number }
   target_start_date: string | null
   status: RequisitionStatus
   status_label: string

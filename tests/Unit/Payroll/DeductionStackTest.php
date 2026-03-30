@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\Loan\Models\Loan;
 use App\Domains\Loan\Models\LoanAmortizationSchedule;
 use App\Domains\Payroll\Services\PayrollComputationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\PayrollTestHelper;
 
 /*
@@ -16,6 +17,8 @@ use Tests\Support\PayrollTestHelper;
 | applicable regional minimum wage.
 --------------------------------------------------------------------------
 */
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     PayrollTestHelper::seedRateTables();

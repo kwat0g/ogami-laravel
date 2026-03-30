@@ -25,14 +25,20 @@ const lastWriteCallAt = new Map<string, number>()
 const AUTH_RECHECK_WINDOW_MS = 5000
 let authRecheckPromise: Promise<boolean> | null = null
 let lastAuthRecheckAt = 0
+let authRecheckEpoch = 0
 
-function recheckAuth(): Promise<boolean> {
+function recheckAuth(epoch: number): Promise<boolean> {
   const now = Date.now()
-  if (authRecheckPromise && now - lastAuthRecheckAt < AUTH_RECHECK_WINDOW_MS) {
+  if (
+    authRecheckPromise &&
+    authRecheckEpoch === epoch &&
+    now - lastAuthRecheckAt < AUTH_RECHECK_WINDOW_MS
+  ) {
     return authRecheckPromise
   }
 
   lastAuthRecheckAt = now
+  authRecheckEpoch = epoch
   authRecheckPromise = api
     .get('/auth/me', { __skipAuthRedirect: true, __authRecheck: true } as AxiosRequestConfig)
     .then(() => true)
@@ -113,7 +119,14 @@ api.interceptors.response.use(
         })
       }
 
-      return recheckAuth().then((sessionStillValid) => {
+      const epochAtStart = requestEpoch ?? getAuthEpoch()
+
+      return recheckAuth(epochAtStart).then((sessionStillValid) => {
+        // Ignore stale 401 handlers that resolve after a login/logout transition.
+        if (epochAtStart !== getAuthEpoch()) {
+          return Promise.reject({ __handled: true })
+        }
+
         if (sessionStillValid) {
           return Promise.reject(data ?? { success: false, message: 'Unauthenticated.', error_code: 'UNAUTHENTICATED' })
         }
@@ -122,6 +135,9 @@ api.interceptors.response.use(
           import('@/stores/authStore'),
           import('@/stores/uiStore'),
         ]).then(([{ useAuthStore }, { useUiStore }]) => {
+          if (epochAtStart !== getAuthEpoch()) {
+            return
+          }
           if (useUiStore.getState().systemRestoreInProgress) {
             // Overlay is handling the redirect — suppress the hard page reload.
             return

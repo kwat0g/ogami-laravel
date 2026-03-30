@@ -2,9 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Domains\HR\Models\Department;
 use App\Domains\Payroll\Models\PayrollRun;
 use App\Models\User;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /*
@@ -30,21 +36,35 @@ use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
-    $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
+    foreach (['super_admin', 'admin', 'executive', 'vice_president', 'manager', 'officer', 'head', 'staff'] as $role) {
+        Role::findOrCreate($role, 'web');
+    }
+
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
 });
 
 /**
  * Create an authenticated user with the given role.
  */
-function rbacUser(string $role, array $extraPermissions = []): User
+function rbacUser(string $role, ?string $deptCode = null, array $extraPermissions = []): User
 {
     $user = User::factory()->create(['password' => Hash::make('RbacPass!789')]);
     $user->assignRole($role);
+
+    if ($deptCode !== null) {
+        $dept = Department::where('code', $deptCode)->firstOrFail();
+        $user->departments()->attach($dept->id, ['is_primary' => true]);
+        $user->update(['department_id' => $dept->id]);
+    }
+
     foreach ($extraPermissions as $perm) {
         $user->givePermissionTo($perm);
     }
 
-    return $user;
+    return $user->fresh();
 }
 
 // ---------------------------------------------------------------------------
@@ -76,14 +96,14 @@ describe('Admin unrestricted access', function () {
 
 describe('Manager authorised access', function () {
     it('can list employees', function () {
-        $user = rbacUser('manager');
+        $user = rbacUser('manager', 'HR');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/hr/employees')
             ->assertStatus(200);
     });
 
     it('can create an employee', function () {
-        $user = rbacUser('manager');
+        $user = rbacUser('manager', 'HR');
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/v1/hr/employees', [
                 'employee_code' => 'RBAC-001',
@@ -102,14 +122,14 @@ describe('Manager authorised access', function () {
     });
 
     it('can list journal entries', function () {
-        $user = rbacUser('officer');
+        $user = rbacUser('officer', 'ACCTG');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/accounting/journal-entries')
             ->assertStatus(200);
     });
 
     it('can access payroll runs', function () {
-        $user = rbacUser('manager');
+        $user = rbacUser('manager', 'HR');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/payroll/runs')
             ->assertStatus(200);
@@ -122,7 +142,7 @@ describe('Manager authorised access', function () {
 
 describe('Supervisor restricted access', function () {
     it('can list employees', function () {
-        $user = rbacUser('head');
+        $user = rbacUser('head', 'HR');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/hr/employees')
             ->assertStatus(200);
@@ -198,7 +218,7 @@ describe('Staff self-service restrictions', function () {
     });
 
     it('can view their own leave requests (self-service)', function () {
-        $user = rbacUser('staff');
+        $user = rbacUser('staff', 'HR');
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/v1/leave/requests')
             ->assertStatus(200);
@@ -211,38 +231,44 @@ describe('Staff self-service restrictions', function () {
 // ---------------------------------------------------------------------------
 
 describe('Payroll SoD enforcement', function () {
-    it('manager cannot approve a payroll run they created — SOD-006', function () {
-        $creator = rbacUser('manager');
+    it('manager cannot HR-approve a payroll run they created — SOD-006', function () {
+        $creator = rbacUser('manager', 'HR');
         $run = PayrollRun::create([
             'reference_no' => 'PR-RBAC-SOD001',
             'pay_period_label' => 'RBAC SoD Test',
             'cutoff_start' => '2025-10-01',
             'cutoff_end' => '2025-10-15',
             'pay_date' => '2025-10-31',
-            'status' => 'processing',
+            'status' => 'SUBMITTED',
             'run_type' => 'regular',
             'created_by' => $creator->id,
         ]);
         $this->actingAs($creator, 'sanctum')
-            ->patchJson("/api/v1/payroll/runs/{$run->ulid}/approve")
+            ->postJson("/api/v1/payroll/runs/{$run->ulid}/hr-approve", [
+                'action' => 'APPROVED',
+                'checkboxes_checked' => ['totals_verified', 'exceptions_reviewed', 'attachments_checked'],
+            ])
             ->assertStatus(403);
     });
 
-    it('a different manager can approve a run created by another — SOD passes', function () {
-        $creator = rbacUser('manager');
-        $approver = rbacUser('manager');
+    it('a different accounting manager can approve a run created by HR — SOD passes', function () {
+        $creator = rbacUser('manager', 'HR');
+        $approver = rbacUser('manager', 'ACCTG');
         $run = PayrollRun::create([
             'reference_no' => 'PR-RBAC-SOD002',
             'pay_period_label' => 'RBAC SoD Pass Test',
             'cutoff_start' => '2025-10-16',
             'cutoff_end' => '2025-10-31',
             'pay_date' => '2025-11-15',
-            'status' => 'processing',
+            'status' => 'HR_APPROVED',
             'run_type' => 'regular',
             'created_by' => $creator->id,
         ]);
         $this->actingAs($approver, 'sanctum')
-            ->patchJson("/api/v1/payroll/runs/{$run->ulid}/approve")
+            ->postJson("/api/v1/payroll/runs/{$run->ulid}/acctg-approve", [
+                'action' => 'APPROVED',
+                'checkboxes_checked' => ['totals_verified', 'gl_preview_checked', 'bank_file_reviewed'],
+            ])
             ->assertStatus(200);
     });
 });

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Payroll\Services\TaxWithholdingService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,8 @@ use App\Domains\Payroll\Services\TaxWithholdingService;
 | Tables required: train_tax_brackets, minimum_wage_rates
 --------------------------------------------------------------------------
 */
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'TrainTaxBracketSeeder'])->assertExitCode(0);

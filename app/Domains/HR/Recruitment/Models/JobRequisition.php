@@ -6,8 +6,10 @@ namespace App\Domains\HR\Recruitment\Models;
 
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Position;
+use App\Domains\HR\Models\SalaryGrade;
 use App\Domains\HR\Recruitment\Enums\EmploymentType;
 use App\Domains\HR\Recruitment\Enums\RequisitionStatus;
+use App\Infrastructure\DocumentNumberService;
 use App\Models\User;
 use App\Shared\Concerns\HasApprovalWorkflow;
 use App\Shared\Traits\HasPublicUlid;
@@ -33,8 +35,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $headcount
  * @property string $reason
  * @property string|null $justification
- * @property int|null $salary_range_min
- * @property int|null $salary_range_max
+ * @property int|null $salary_grade_id
  * @property string|null $target_start_date
  * @property string $status
  * @property \Illuminate\Support\Carbon|null $approved_at
@@ -60,8 +61,7 @@ final class JobRequisition extends Model implements Auditable
         'headcount',
         'reason',
         'justification',
-        'salary_range_min',
-        'salary_range_max',
+        'salary_grade_id',
         'target_start_date',
         'status',
         'approved_at',
@@ -75,8 +75,6 @@ final class JobRequisition extends Model implements Auditable
             'status' => RequisitionStatus::class,
             'employment_type' => EmploymentType::class,
             'headcount' => 'integer',
-            'salary_range_min' => 'integer',
-            'salary_range_max' => 'integer',
             'target_start_date' => 'date',
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
@@ -99,15 +97,7 @@ final class JobRequisition extends Model implements Auditable
 
     private static function generateNumber(): string
     {
-        $year = now()->format('Y');
-        $prefix = "REQ-{$year}-";
-        $lastNumber = static::withTrashed()
-            ->where('requisition_number', 'LIKE', "{$prefix}%")
-            ->lockForUpdate()
-            ->selectRaw("MAX(CAST(SUBSTRING(requisition_number FROM '.{5}$') AS INTEGER)) as max_num")
-            ->value('max_num') ?? 0;
-
-        return sprintf('REQ-%s-%05d', $year, $lastNumber + 1);
+        return app(DocumentNumberService::class)->generate('job_requisition', 'REQ');
     }
 
     // ── Relationships ─────────────────────────────────────────────────────
@@ -120,6 +110,11 @@ final class JobRequisition extends Model implements Auditable
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class);
+    }
+
+    public function salaryGrade(): BelongsTo
+    {
+        return $this->belongsTo(SalaryGrade::class);
     }
 
     public function requester(): BelongsTo

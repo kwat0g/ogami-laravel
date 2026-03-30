@@ -6,7 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\RBAC\ModulePermission;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -771,6 +771,21 @@ class ModulePermissionSeeder extends Seeder
         }
 
         // Now sync the merged permissions to each role
+        $now = now();
+        $permissionRows = collect($rolePermissions)
+            ->flatten()
+            ->unique()
+            ->values()
+            ->map(fn (string $permissionName): array => [
+                'name' => $permissionName,
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->all();
+
+        DB::table('permissions')->insertOrIgnore($permissionRows);
+
         $totalSynced = 0;
         foreach ($rolePermissions as $roleName => $permissions) {
             $role = Role::findByName($roleName, 'web');
@@ -778,14 +793,6 @@ class ModulePermissionSeeder extends Seeder
                 $this->command->warn("  Role '{$roleName}' not found, skipping.");
 
                 continue;
-            }
-
-            // Create permissions if they don't exist
-            foreach ($permissions as $permissionName) {
-                Permission::firstOrCreate([
-                    'name' => $permissionName,
-                    'guard_name' => 'web',
-                ]);
             }
 
             // Sync permissions to role
