@@ -96,40 +96,59 @@ final class ProductionCostPostingService implements ServiceContract
                 'created_by_id' => $actor->id,
             ]);
 
-            $totalActualCost = $actual['total_cost_centavos'];
+            // ── Balanced JE Structure ──────────────────────────────────────
+            // Debit: Finished Goods / WIP   = material + labor + overhead (total actual)
+            // Credit: Raw Material Inventory = material consumed
+            // Credit: Accrued Labor          = labor cost (or WIP if no labor account)
+            // Credit: Manufacturing Overhead = overhead cost (or WIP if no overhead account)
+            // Variance line: debit or credit to balance standard vs actual
+            //
+            // The key invariant: total debits MUST equal total credits.
 
-            // Debit Finished Goods / WIP for actual cost
-            if ($wipAccount) {
+            $materialCost = $actual['material_cost_centavos'];
+            $laborCost = $actual['labor_cost_centavos'] ?? 0;
+            $overheadCost = ($actual['total_cost_centavos'] ?? 0) - $materialCost - $laborCost;
+            $totalActualCost = $materialCost + $laborCost + max(0, $overheadCost);
+
+            $totalDebits = 0;
+            $totalCredits = 0;
+
+            // Debit Finished Goods / WIP for total actual cost
+            if ($totalActualCost > 0 && $wipAccount) {
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
                     'account_id' => $wipAccount->id,
-                    'debit' => $totalActualCost > 0 ? $totalActualCost / 100 : null,
+                    'debit' => $totalActualCost / 100,
                     'credit' => null,
                     'description' => "Production output: Order #{$order->id}",
                 ]);
+                $totalDebits += $totalActualCost;
             }
 
             // Credit Raw Material Inventory for material consumed
-            if ($inventoryAccount) {
+            if ($materialCost > 0 && $inventoryAccount) {
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
                     'account_id' => $inventoryAccount->id,
                     'debit' => null,
-                    'credit' => $actual['material_cost_centavos'] > 0 ? $actual['material_cost_centavos'] / 100 : null,
+                    'credit' => $materialCost / 100,
                     'description' => "Material consumed: Order #{$order->id}",
                 ]);
+                $totalCredits += $materialCost;
             }
 
-            // Post labor cost
-            $laborCost = $actual['labor_cost_centavos'];
-            if ($laborCost > 0 && $wipAccount) {
+            // Credit labor and overhead to the inventory account (simplified:
+            // real implementations would use separate labor/overhead accounts)
+            $conversionCost = $laborCost + max(0, $overheadCost);
+            if ($conversionCost > 0 && $inventoryAccount) {
                 JournalEntryLine::create([
                     'journal_entry_id' => $je->id,
-                    'account_id' => $wipAccount->id,
+                    'account_id' => $inventoryAccount->id,
                     'debit' => null,
-                    'credit' => $laborCost > 0 ? $laborCost / 100 : null,
-                    'description' => "Labor cost applied: Order #{$order->id}",
+                    'credit' => $conversionCost / 100,
+                    'description' => "Conversion cost (labor + overhead): Order #{$order->id}",
                 ]);
+                $totalCredits += $conversionCost;
             }
 
             // Post variance if any
@@ -142,12 +161,31 @@ final class ProductionCostPostingService implements ServiceContract
                     'credit' => $varianceAmount > 0 ? $varianceAmount / 100 : null,
                     'description' => ($variance['favorable'] ? 'Favorable' : 'Unfavorable') . " variance: Order #{$order->id}",
                 ]);
+
+                if ($varianceAmount < 0) {
+                    $totalDebits += abs($varianceAmount);
+                } else {
+                    $totalCredits += $varianceAmount;
+                }
+            }
+
+            // ── Balance validation ───────────────────────────────────────
+            $imbalance = abs($totalDebits - $totalCredits);
+            if ($imbalance > 1) { // Allow 1 centavo rounding tolerance
+                throw new \App\Shared\Exceptions\UnbalancedJournalEntryException(
+                    $totalDebits / 100,
+                    $totalCredits / 100,
+                );
             }
 
             return [
                 'journal_entry_id' => $je->id,
                 'variance' => $variance,
                 'actual_cost' => $actual,
+                'je_totals' => [
+                    'total_debits_centavos' => $totalDebits,
+                    'total_credits_centavos' => $totalCredits,
+                ],
             ];
         });
     }
