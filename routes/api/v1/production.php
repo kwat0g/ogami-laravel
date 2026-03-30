@@ -8,6 +8,8 @@ use App\Http\Controllers\Production\BomController;
 use App\Http\Controllers\Production\CombinedDeliveryScheduleController;
 use App\Http\Controllers\Production\DeliveryScheduleController;
 use App\Http\Controllers\Production\ProductionOrderController;
+use App\Http\Controllers\Production\RoutingController;
+use App\Http\Controllers\Production\WorkCenterController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -88,14 +90,26 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
         return response()->json($service->costAnalysis($request->only(['date_from', 'date_to'])));
     })->name('reports.cost-analysis')->middleware('permission:production.orders.view');
 
-    // ── Capacity Planning (Enhancement) ──────────────────────────────────
-    // TODO: Phase 2 — CapacityPlanningService not yet implemented
-    // Route::get('capacity', function (Request $request): JsonResponse { ... });
-    // Route::get('capacity/check/{productionOrder}', function (...): JsonResponse { ... });
+    // ── Work Centers ─────────────────────────────────────────────────────
+    Route::get('work-centers', [WorkCenterController::class, 'index']);
+    Route::post('work-centers', [WorkCenterController::class, 'store'])->middleware('throttle:api-action');
+    Route::get('work-centers/{workCenter}', [WorkCenterController::class, 'show']);
+    Route::put('work-centers/{workCenter}', [WorkCenterController::class, 'update'])->middleware('throttle:api-action');
+    Route::delete('work-centers/{workCenter}', [WorkCenterController::class, 'destroy'])->middleware('throttle:api-action');
 
-    // ── Time-Phased MRP (Enhancement) ───────────────────────────────────
-    // TODO: Phase 2 — MrpService not yet implemented
-    // Route::get('mrp/time-phased', function (): JsonResponse { ... });
+    // ── Routings ──────────────────────────────────────────────────────────
+    Route::get('routings', [RoutingController::class, 'index']);
+    Route::get('routings/bom/{bomId}', [RoutingController::class, 'forBom']);
+    Route::post('routings', [RoutingController::class, 'store'])->middleware('throttle:api-action');
+    Route::put('routings/{routing}', [RoutingController::class, 'update'])->middleware('throttle:api-action');
+    Route::delete('routings/{routing}', [RoutingController::class, 'destroy'])->middleware('throttle:api-action');
+    Route::post('routings/bom/{bomId}/reorder', [RoutingController::class, 'reorder'])->middleware('throttle:api-action');
+
+    // ── MRP (Enhancement) ────────────────────────────────────────────────
+    Route::get('mrp/summary', function (): JsonResponse {
+        $service = app(\App\Domains\Production\Services\MrpService::class);
+        return response()->json(['data' => $service->summary()]);
+    })->middleware('permission:production.orders.view');
 
     // ── BOM Where-Used (Enhancement) ────────────────────────────────────
     Route::get('bom/where-used/{itemId}', function (int $itemId): JsonResponse {
