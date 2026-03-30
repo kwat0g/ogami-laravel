@@ -560,8 +560,9 @@ const router = createBrowserRouter([
     { path: '/production/delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
     { path: '/production/delivery-schedules/new', element: withSuspense(guard('production.delivery-schedule.manage', <CreateDeliverySchedulePage />)) },
     { path: '/production/delivery-schedules/:ulid', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleDetailPage />)) },
-    { path: '/production/combined-delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleListPage />)) },
-    { path: '/production/combined-delivery-schedules/:ulid', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleDetailPage />)) },
+    // Combined delivery schedules deprecated — now part of multi-item delivery schedules
+    { path: '/production/combined-delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
+    { path: '/production/combined-delivery-schedules/:ulid', element: withSuspense(guard('production.delivery-schedule.view', <DeliveryScheduleListPage />)) },
     { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
       { path: '/production/orders/new', element: withSuspense(guard('production.orders.create', <CreateProductionOrderPage />)) },
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },

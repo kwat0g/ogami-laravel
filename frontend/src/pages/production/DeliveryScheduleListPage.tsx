@@ -61,9 +61,6 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
         title="Delivery Schedules"
         actions={
           <div className="flex items-center gap-2">
-            <Link to="/production/combined-delivery-schedules" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
-              Combined Schedules
-            </Link>
             {canCreate && (
               <Link
                 to="/production/delivery-schedules/new"
