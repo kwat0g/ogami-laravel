@@ -80,7 +80,7 @@ final class VendorPortalController extends Controller
             'childPos:id,ulid,po_reference,status,total_po_amount',
         ]);
 
-        return new VendorPurchaseOrderResource($purchaseOrder);
+        return (new VendorPurchaseOrderResource($purchaseOrder))->response();
     }
 
     /**
