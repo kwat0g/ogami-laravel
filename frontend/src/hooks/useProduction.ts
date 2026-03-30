@@ -283,6 +283,186 @@ export function useForceRelease(ulid: string) {
   })
 }
 
+// ── Work Centers ─────────────────────────────────────────────────────────────
+
+export interface WorkCenter {
+  id: number
+  ulid: string
+  name: string
+  code: string
+  description?: string
+  hourly_labor_rate?: number
+  hourly_overhead_rate?: number
+  capacity_hours_per_day?: number
+  is_active: boolean
+}
+
+export function useWorkCenters() {
+  return useQuery({
+    queryKey: ['work-centers'],
+    queryFn: async () => {
+      const res = await api.get<{ data: WorkCenter[] }>('/production/work-centers')
+      return res.data.data
+    },
+    staleTime: 30_000,
+  })
+}
+
+export function useCreateWorkCenter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Partial<WorkCenter>) =>
+      api.post('/production/work-centers', payload),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['work-centers'] }) },
+  })
+}
+
+export function useUpdateWorkCenter(id: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Partial<WorkCenter>) =>
+      api.put(`/production/work-centers/${id}`, payload),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['work-centers'] }) },
+  })
+}
+
+export function useDeleteWorkCenter() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/production/work-centers/${id}`),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['work-centers'] }) },
+  })
+}
+
+// ── Routings ─────────────────────────────────────────────────────────────────
+
+export interface Routing {
+  id: number
+  bom_id: number
+  work_center_id: number
+  step_number: number
+  operation_name: string
+  setup_time_minutes?: number
+  run_time_minutes?: number
+  description?: string
+  work_center?: WorkCenter
+}
+
+export function useRoutings(bomId?: number) {
+  return useQuery({
+    queryKey: ['routings', bomId],
+    queryFn: async () => {
+      const url = bomId ? `/production/routings/bom/${bomId}` : '/production/routings'
+      const res = await api.get<{ data: Routing[] }>(url)
+      return res.data.data
+    },
+    staleTime: 30_000,
+  })
+}
+
+export function useCreateRouting() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Partial<Routing>) =>
+      api.post('/production/routings', payload),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['routings'] }) },
+  })
+}
+
+export function useUpdateRouting(id: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Partial<Routing>) =>
+      api.put(`/production/routings/${id}`, payload),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['routings'] }) },
+  })
+}
+
+export function useDeleteRouting() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/production/routings/${id}`),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['routings'] }) },
+  })
+}
+
+// ── MRP (Material Requirements Planning) ─────────────────────────────────────
+
+export interface MrpSummaryItem {
+  item_id: number
+  item_code: string
+  item_name: string
+  gross_requirement: number
+  on_hand: number
+  on_order: number
+  net_requirement: number
+  suggested_action: string
+  lead_time_days?: number
+}
+
+export function useMrpSummary() {
+  return useQuery({
+    queryKey: ['mrp-summary'],
+    queryFn: async () => {
+      const res = await api.get<{ data: MrpSummaryItem[] }>('/production/mrp/summary')
+      return res.data.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+export function useMrpExplode(productItemId: number | null, qty: number) {
+  return useQuery({
+    queryKey: ['mrp-explode', productItemId, qty],
+    queryFn: async () => {
+      const res = await api.get<{ data: MrpSummaryItem[] }>('/production/mrp/explode', {
+        params: { product_item_id: productItemId, qty },
+      })
+      return res.data.data
+    },
+    enabled: productItemId !== null && qty > 0,
+    staleTime: 30_000,
+  })
+}
+
+export function useMrpTimePhased() {
+  return useQuery({
+    queryKey: ['mrp-time-phased'],
+    queryFn: async () => {
+      const res = await api.get<{ data: unknown[] }>('/production/mrp/time-phased')
+      return res.data.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+// ── Production Reports ───────────────────────────────────────────────────────
+
+export function useProductionCostAnalysis(filters?: { date_from?: string; date_to?: string }) {
+  return useQuery({
+    queryKey: ['production-cost-analysis', filters],
+    queryFn: async () => {
+      const res = await api.get('/production/reports/cost-analysis', { params: filters })
+      return res.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+// ── Where-Used Report ────────────────────────────────────────────────────────
+
+export function useWhereUsed(itemId: number | null) {
+  return useQuery({
+    queryKey: ['bom-where-used', itemId],
+    queryFn: async () => {
+      const res = await api.get<{ data: unknown[] }>(`/production/bom/where-used/${itemId}`)
+      return res.data.data
+    },
+    enabled: itemId !== null,
+    staleTime: 60_000,
+  })
+}
+
 // ── Smart Defaults ───────────────────────────────────────────────────────────
 
 export function useProductionSmartDefaults(productItemId: number | null, targetStartDate?: string) {

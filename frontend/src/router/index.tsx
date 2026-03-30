@@ -161,6 +161,10 @@ const InterviewDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/I
 const OfferDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/OfferDetailPage'))
 const CandidateProfilePage = lazyWithRetry(() => import('@/pages/hr/recruitment/CandidateProfilePage'))
 
+// HR — Org Chart + Performance Appraisals (Gap Fix)
+const OrgChartPage = lazyWithRetry(() => import('@/pages/hr/OrgChartPage'))
+const PerformanceAppraisalListPage = lazyWithRetry(() => import('@/pages/hr/PerformanceAppraisalListPage'))
+
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
 const PositionsPage = lazyWithRetry(() => import('@/pages/hr/PositionsPage'))
@@ -234,6 +238,11 @@ const ProductionCostPage             = lazyWithRetry(() => import('@/pages/produ
 const BomCostBreakdownPage           = lazyWithRetry(() => import('@/pages/production/BomCostBreakdownPage'))
 const BomDetailPage                  = lazyWithRetry(() => import('@/pages/production/BomDetailPage'))
 
+// Production — Work Centers, Routing, MRP (Gap Fix)
+const WorkCenterListPage             = lazyWithRetry(() => import('@/pages/production/WorkCenterListPage'))
+const RoutingListPage                = lazyWithRetry(() => import('@/pages/production/RoutingListPage'))
+const MrpResultsPage                 = lazyWithRetry(() => import('@/pages/production/MrpResultsPage'))
+
 // Delivery
 const DeliveryReceiptListPage         = lazyWithRetry(() => import('@/pages/delivery/DeliveryReceiptListPage'))
 const CreateDeliveryReceiptPage       = lazyWithRetry(() => import('@/pages/delivery/CreateDeliveryReceiptPage'))
@@ -273,8 +282,9 @@ const VpApprovalsDashboardPage = lazyWithRetry(() => import('@/pages/approvals/V
 // Additional AP
 const APInvoiceDetailPage = lazyWithRetry(() => import('@/pages/accounting/APInvoiceDetailPage'))
 
-// Pay periods
+// Pay periods + Final Pay
 const PayPeriodListPage = lazyWithRetry(() => import('@/pages/payroll/PayPeriodListPage'))
+const FinalPayPage = lazyWithRetry(() => import('@/pages/payroll/FinalPayPage'))
 
 // (ExecutiveLeaveApprovalPage and ExecutiveOvertimeApprovalPage consolidated into VpApprovalsDashboardPage)
 
@@ -314,6 +324,7 @@ const MoldLifecyclePage = lazyWithRetry(() => import('@/pages/mold/MoldLifecycle
 const SpcDashboardPage = lazyWithRetry(() => import('@/pages/qc/SpcDashboardPage'))
 const SupplierQualityPage = lazyWithRetry(() => import('@/pages/qc/SupplierQualityPage'))
 const BirFormGeneratorPage = lazyWithRetry(() => import('@/pages/tax/BirFormGeneratorPage'))
+const BirFilingListPage = lazyWithRetry(() => import('@/pages/tax/BirFilingListPage'))
 const DeliveryRoutesPage = lazyWithRetry(() => import('@/pages/delivery/DeliveryRoutesPage'))
 
 // Budget domain (reduced)
@@ -423,6 +434,8 @@ const router = createBrowserRouter([
       { path: '/hr/recruitment/candidates/:id', element: withSuspense(guard('hr.full_access|recruitment.candidates.view', <CandidateProfilePage />)) },
 
       // HR — Reference
+      { path: '/hr/org-chart', element: withSuspense(guard('hr.full_access', <OrgChartPage />)) },
+      { path: '/hr/appraisals', element: withSuspense(guard('hr.full_access', <PerformanceAppraisalListPage />)) },
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
@@ -463,6 +476,7 @@ const router = createBrowserRouter([
       { path: '/payroll/runs/:ulid/vp-review', element: withSuspense(guard('payroll.vp_approve', <PayrollRunVpReviewPage />)) },
       { path: '/payroll/runs/:ulid/disburse', element: withSuspense(guard('payroll.view_runs', <PayrollRunDisbursePage />)) },
       { path: '/payroll/periods', element: withSuspense(guard('payroll.manage_pay_periods', <PayPeriodListPage />)) },
+      { path: '/payroll/final-pay', element: withSuspense(guard('payroll.view_runs', <FinalPayPage />)) },
 
       // ── Accounting domain ─────────────────────────────────────────────────
       { path: '/accounting/accounts', element: withSuspense(guard('chart_of_accounts.view', <AccountsPage />)) },
@@ -495,6 +509,7 @@ const router = createBrowserRouter([
       { path: '/accounting/vat-ledger', element: withSuspense(guard('reports.vat', <VatLedgerPage />)) },
       { path: '/accounting/tax-summary', element: withSuspense(guard('reports.vat', <TaxPeriodSummaryPage />)) },
       { path: '/tax/bir-forms', element: withSuspense(guard('reports.vat', <BirFormGeneratorPage />)) },
+      { path: '/tax/bir-filings', element: withSuspense(guard('reports.vat', <BirFilingListPage />)) },
 
       // ── Reports ───────────────────────────────────────────────────────────
       { path: '/reports/government', element: withSuspense(guard('payroll.gov_reports', <GovernmentReportsPage />)) },
@@ -571,6 +586,11 @@ const router = createBrowserRouter([
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
       { path: '/production/cost-analysis', element: withSuspense(guard('production.orders.view', <ProductionCostPage />)) },
       { path: '/production/boms/:ulid/cost-breakdown', element: withSuspense(guard('production.bom.view', <BomCostBreakdownPage />)) },
+
+      // Production — Work Centers, Routing, MRP (Gap Fix)
+      { path: '/production/work-centers', element: withSuspense(guard('production.orders.view', <WorkCenterListPage />)) },
+      { path: '/production/routings', element: withSuspense(guard('production.orders.view', <RoutingListPage />)) },
+      { path: '/production/mrp', element: withSuspense(guard('production.orders.view', <MrpResultsPage />)) },
 
       // ── QC / QA ────────────────────────────────────────────────────
       { path: '/qc/inspections', element: withSuspense(guard('qc.inspections.view', <InspectionListPage />)) },
