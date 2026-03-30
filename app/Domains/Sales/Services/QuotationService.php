@@ -117,10 +117,13 @@ final class QuotationService implements ServiceContract
                         ]);
                     }
                 } catch (\Throwable $e) {
-                    // Don't fail quotation acceptance if SO creation fails
+                    // FS-031 FIX: Non-fatal but surfaced via model attribute so API response includes warning.
                     \Illuminate\Support\Facades\Log::warning('[Sales] Auto SO creation from quotation failed', [
                         'quotation_id' => $quotation->id,
                         'error' => $e->getMessage(),
+                    ]);
+                    $quotation->setAttribute('_acceptance_warnings', [
+                        'Quotation accepted but automatic Sales Order creation failed: ' . $e->getMessage() . '. Please create the Sales Order manually from the quotation detail page.',
                     ]);
                 }
             }

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Wrench, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 import { useWorkOrderDetail, useStartWorkOrder, useCompleteWorkOrder, useCancelWorkOrder } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -326,6 +328,108 @@ export default function WorkOrderDetailPage(): React.ReactElement {
           </div>
         </form>
       )}
+
+      {/* ── Work Order Parts (FS-026) ──────────────────────────────────────── */}
+      <WorkOrderPartsSection workOrderId={wo.id} ulid={wo.ulid} canManage={canManage && !isCompleted} />
     </div>
   );
+}
+
+/* ── Work Order Parts sub-component ───────────────────────────────────────── */
+function WorkOrderPartsSection({ workOrderId, ulid, canManage }: { workOrderId: number; ulid: string; canManage: boolean }) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [itemId, setItemId] = useState('');
+  const [qty, setQty] = useState('');
+
+  const { data: partsData, isLoading } = useQuery({
+    queryKey: ['work-order-parts', ulid],
+    queryFn: async () => {
+      const res = await api.get<{ data: WorkOrderPart[] }>(`/maintenance/work-orders/${workOrderId}/parts`);
+      return res.data.data;
+    },
+  });
+
+  const addPartMut = useMutation({
+    mutationFn: async (payload: { item_master_id: number; quantity: number }) => {
+      const res = await api.post(`/maintenance/work-orders/${workOrderId}/parts`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-order-parts', ulid] });
+      setShowAddForm(false);
+      setItemId('');
+      setQty('');
+      toast.success('Part added to work order');
+    },
+    onError: (err: unknown) => {
+      toast.error(firstErrorMessage(err));
+    },
+  });
+
+  const queryClient = useQueryClient();
+  const parts = partsData ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">Parts Used</h3>
+          {canManage && (
+            <button onClick={() => setShowAddForm(true)} className="px-3 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800">
+              + Add Part
+            </button>
+          )}
+        </div>
+      </CardHeader>
+      <CardBody>
+        {isLoading ? (
+          <SkeletonLoader rows={3} />
+        ) : parts.length === 0 ? (
+          <p className="text-sm text-neutral-500">No parts recorded for this work order.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-neutral-500 border-b"><th className="pb-2">Item</th><th className="pb-2 text-right">Qty</th></tr></thead>
+            <tbody>
+              {parts.map((part: WorkOrderPart) => (
+                <tr key={part.id} className="border-b border-neutral-100 last:border-0">
+                  <td className="py-2">{part.item_master?.name ?? `Item #${part.item_master_id}`}</td>
+                  <td className="py-2 text-right font-mono">{part.quantity}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {showAddForm && (
+          <div className="mt-3 flex gap-2 items-end">
+            <div>
+              <label className="block text-xs text-neutral-500">Item ID</label>
+              <input type="number" value={itemId} onChange={(e) => setItemId(e.target.value)} className={`${INPUT} w-28`} placeholder="Item ID" />
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-500">Quantity</label>
+              <input type="number" value={qty} onChange={(e) => setQty(e.target.value)} className={`${INPUT} w-20`} placeholder="Qty" />
+            </div>
+            <button
+              onClick={() => addPartMut.mutate({ item_master_id: Number(itemId), quantity: Number(qty) })}
+              disabled={addPartMut.isPending || !itemId || !qty}
+              className="px-3 py-2 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50"
+            >
+              {addPartMut.isPending ? 'Adding...' : 'Add'}
+            </button>
+            <button onClick={() => setShowAddForm(false)} className="px-3 py-2 text-xs border border-neutral-300 rounded hover:bg-neutral-50">
+              Cancel
+            </button>
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
+interface WorkOrderPart {
+  id: number;
+  item_master_id: number;
+  quantity: number;
+  item_master?: { id: number; name: string; item_code: string };
 }
