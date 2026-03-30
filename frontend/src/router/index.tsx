@@ -161,6 +161,9 @@ const InterviewDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/I
 const OfferDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/OfferDetailPage'))
 const CandidateProfilePage = lazyWithRetry(() => import('@/pages/hr/recruitment/CandidateProfilePage'))
 
+// HR — Org Chart (Gap Fix)
+const OrgChartPage = lazyWithRetry(() => import('@/pages/hr/OrgChartPage'))
+
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
 const PositionsPage = lazyWithRetry(() => import('@/pages/hr/PositionsPage'))
@@ -233,6 +236,11 @@ const ProductionOrderDetailPage      = lazyWithRetry(() => import('@/pages/produ
 const ProductionCostPage             = lazyWithRetry(() => import('@/pages/production/ProductionCostPage'))
 const BomCostBreakdownPage           = lazyWithRetry(() => import('@/pages/production/BomCostBreakdownPage'))
 const BomDetailPage                  = lazyWithRetry(() => import('@/pages/production/BomDetailPage'))
+
+// Production — Work Centers, Routing, MRP (Gap Fix)
+const WorkCenterListPage             = lazyWithRetry(() => import('@/pages/production/WorkCenterListPage'))
+const RoutingListPage                = lazyWithRetry(() => import('@/pages/production/RoutingListPage'))
+const MrpResultsPage                 = lazyWithRetry(() => import('@/pages/production/MrpResultsPage'))
 
 // Delivery
 const DeliveryReceiptListPage         = lazyWithRetry(() => import('@/pages/delivery/DeliveryReceiptListPage'))
@@ -423,6 +431,7 @@ const router = createBrowserRouter([
       { path: '/hr/recruitment/candidates/:id', element: withSuspense(guard('hr.full_access|recruitment.candidates.view', <CandidateProfilePage />)) },
 
       // HR — Reference
+      { path: '/hr/org-chart', element: withSuspense(guard('hr.full_access', <OrgChartPage />)) },
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
@@ -571,6 +580,11 @@ const router = createBrowserRouter([
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
       { path: '/production/cost-analysis', element: withSuspense(guard('production.orders.view', <ProductionCostPage />)) },
       { path: '/production/boms/:ulid/cost-breakdown', element: withSuspense(guard('production.bom.view', <BomCostBreakdownPage />)) },
+
+      // Production — Work Centers, Routing, MRP (Gap Fix)
+      { path: '/production/work-centers', element: withSuspense(guard('production.orders.view', <WorkCenterListPage />)) },
+      { path: '/production/routings', element: withSuspense(guard('production.orders.view', <RoutingListPage />)) },
+      { path: '/production/mrp', element: withSuspense(guard('production.orders.view', <MrpResultsPage />)) },
 
       // ── QC / QA ────────────────────────────────────────────────────
       { path: '/qc/inspections', element: withSuspense(guard('qc.inspections.view', <InspectionListPage />)) },
