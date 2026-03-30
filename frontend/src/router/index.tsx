@@ -161,8 +161,9 @@ const InterviewDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/I
 const OfferDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/OfferDetailPage'))
 const CandidateProfilePage = lazyWithRetry(() => import('@/pages/hr/recruitment/CandidateProfilePage'))
 
-// HR — Org Chart (Gap Fix)
+// HR — Org Chart + Performance Appraisals (Gap Fix)
 const OrgChartPage = lazyWithRetry(() => import('@/pages/hr/OrgChartPage'))
+const PerformanceAppraisalListPage = lazyWithRetry(() => import('@/pages/hr/PerformanceAppraisalListPage'))
 
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
@@ -322,6 +323,7 @@ const MoldLifecyclePage = lazyWithRetry(() => import('@/pages/mold/MoldLifecycle
 const SpcDashboardPage = lazyWithRetry(() => import('@/pages/qc/SpcDashboardPage'))
 const SupplierQualityPage = lazyWithRetry(() => import('@/pages/qc/SupplierQualityPage'))
 const BirFormGeneratorPage = lazyWithRetry(() => import('@/pages/tax/BirFormGeneratorPage'))
+const BirFilingListPage = lazyWithRetry(() => import('@/pages/tax/BirFilingListPage'))
 const DeliveryRoutesPage = lazyWithRetry(() => import('@/pages/delivery/DeliveryRoutesPage'))
 
 // Budget domain (reduced)
@@ -432,6 +434,7 @@ const router = createBrowserRouter([
 
       // HR — Reference
       { path: '/hr/org-chart', element: withSuspense(guard('hr.full_access', <OrgChartPage />)) },
+      { path: '/hr/appraisals', element: withSuspense(guard('hr.full_access', <PerformanceAppraisalListPage />)) },
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
@@ -504,6 +507,7 @@ const router = createBrowserRouter([
       { path: '/accounting/vat-ledger', element: withSuspense(guard('reports.vat', <VatLedgerPage />)) },
       { path: '/accounting/tax-summary', element: withSuspense(guard('reports.vat', <TaxPeriodSummaryPage />)) },
       { path: '/tax/bir-forms', element: withSuspense(guard('reports.vat', <BirFormGeneratorPage />)) },
+      { path: '/tax/bir-filings', element: withSuspense(guard('reports.vat', <BirFilingListPage />)) },
 
       // ── Reports ───────────────────────────────────────────────────────────
       { path: '/reports/government', element: withSuspense(guard('payroll.gov_reports', <GovernmentReportsPage />)) },
