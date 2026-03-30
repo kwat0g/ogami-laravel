@@ -50,11 +50,11 @@ export default function CombinedDeliveryScheduleListPage(): JSX.Element {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Combined Delivery Schedules" icon={Truck}>
-        <p className="text-sm text-neutral-500">
-          Manage multi-item deliveries grouped by customer order
-        </p>
-      </PageHeader>
+      <PageHeader
+        title="Combined Delivery Schedules"
+        subtitle="Manage multi-item deliveries grouped by customer order"
+        icon={<Truck className="w-5 h-5 text-neutral-500" />}
+      />
 
       {/* Filters */}
       <Card>
