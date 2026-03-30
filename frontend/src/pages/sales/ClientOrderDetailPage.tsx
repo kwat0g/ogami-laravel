@@ -12,6 +12,8 @@ import {
   useSalesRespondToCounter,
   useVpApproveClientOrder
 } from '@/hooks/useClientOrders'
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusTimeline from '@/components/ui/StatusTimeline'
 import { getClientOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
@@ -138,6 +140,26 @@ export default function ClientOrderDetailPage(): JSX.Element {
   const negotiateMutation = useNegotiateClientOrder()
   const salesRespondMutation = useSalesRespondToCounter()
   const vpApproveMutation = useVpApproveClientOrder()
+
+  // Stock preview: fetch stock balances for all items in this order
+  const itemIds = order?.items?.map((i: { item_master_id: number }) => i.item_master_id).filter(Boolean) ?? []
+  const { data: stockData } = useQuery({
+    queryKey: ['stock-balances-preview', itemIds],
+    queryFn: async () => {
+      if (itemIds.length === 0) return {}
+      const res = await api.get('/inventory/stock-balances', { params: { item_ids: itemIds.join(','), per_page: 100 } })
+      const balances: Record<number, number> = {}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const b of (res.data?.data ?? [])) {
+        const itemId = b.item_id ?? b.item_master_id
+        if (itemId) balances[itemId] = (balances[itemId] ?? 0) + parseFloat(b.quantity_on_hand ?? b.balance ?? '0')
+      }
+      return balances
+    },
+    enabled: itemIds.length > 0,
+    staleTime: 30_000,
+  })
+  const stockMap: Record<number, number> = stockData ?? {}
 
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false)
@@ -409,6 +431,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
             <tr>
               <th className="text-left px-3 py-2.5 font-medium text-neutral-600">Item</th>
               <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Quantity</th>
+              <th className="text-right px-3 py-2.5 font-medium text-neutral-600">In Stock</th>
               <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Unit Price</th>
               <th className="text-right px-3 py-2.5 font-medium text-neutral-600">Total</th>
             </tr>
@@ -430,6 +453,26 @@ export default function ClientOrderDetailPage(): JSX.Element {
                 </td>
                 <td className="px-3 py-3 text-right text-neutral-700">
                   {item.quantity} {item.unit_of_measure}
+                </td>
+                <td className="px-3 py-3 text-right">
+                  {item.item_master_id && stockMap[item.item_master_id] !== undefined ? (
+                    <span className={`font-mono text-sm ${
+                      stockMap[item.item_master_id] >= parseFloat(item.quantity)
+                        ? 'text-green-700'
+                        : stockMap[item.item_master_id] > 0
+                          ? 'text-amber-600'
+                          : 'text-red-600'
+                    }`}>
+                      {stockMap[item.item_master_id].toLocaleString('en-PH', { maximumFractionDigits: 2 })}
+                      {stockMap[item.item_master_id] >= parseFloat(item.quantity)
+                        ? ' (sufficient)'
+                        : stockMap[item.item_master_id] > 0
+                          ? ' (partial)'
+                          : ' (none)'}
+                    </span>
+                  ) : (
+                    <span className="text-neutral-400 text-xs">--</span>
+                  )}
                 </td>
                 <td className="px-3 py-3 text-right font-mono text-neutral-700">
                   {formatCurrency(item.unit_price_centavos)}

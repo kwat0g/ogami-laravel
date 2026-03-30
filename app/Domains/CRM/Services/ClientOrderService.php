@@ -381,26 +381,9 @@ final class ClientOrderService implements ServiceContract
                 ],
             ]);
 
-            // Update line items if negotiated quantities/prices provided
-            if (! empty($proposedChanges['items'])) {
-                foreach ($proposedChanges['items'] as $itemChange) {
-                    $item = ClientOrderItem::where('client_order_id', $order->id)
-                        ->where('id', $itemChange['item_id'])
-                        ->first();
-
-                    if ($item) {
-                        $item->update([
-                            'negotiated_quantity' => $itemChange['quantity'] ?? null,
-                            'negotiated_price_centavos' => isset($itemChange['price'])
-                                ? (int) ($itemChange['price'] * 100)
-                                : null,
-                        ]);
-                    }
-                }
-
-                // Recalculate order total after item negotiations
-                $this->recalculateOrderTotal($order);
-            }
+            // Negotiation is restricted to delivery date only.
+            // Item quantities and prices are fixed once the order is submitted
+            // to ensure production planning integrity.
 
             // Update delivery date if proposed
             if (! empty($proposedChanges['delivery_date'])) {
@@ -588,31 +571,7 @@ final class ClientOrderService implements ServiceContract
                     if (! empty($counterProposals['delivery_date'])) {
                         $updateData['agreed_delivery_date'] = $counterProposals['delivery_date'];
                     }
-                    if (! empty($counterProposals['items'])) {
-                        foreach ($counterProposals['items'] as $itemChange) {
-                            $item = ClientOrderItem::where('client_order_id', $order->id)
-                                ->where('id', $itemChange['item_id'])
-                                ->first();
-
-                            if (! $item) {
-                                throw new DomainException(
-                                    "Item {$itemChange['item_id']} not found in this order",
-                                    'INVALID_ITEM',
-                                    422
-                                );
-                            }
-
-                            $item->update([
-                                'negotiated_quantity' => $itemChange['quantity'] ?? null,
-                                'negotiated_price_centavos' => isset($itemChange['price'])
-                                    ? (int) ($itemChange['price'] * 100)
-                                    : null,
-                            ]);
-                        }
-
-                        // Recalculate order total after item negotiations
-                        $this->recalculateOrderTotal($order);
-                    }
+                    // Item qty/price negotiation disabled — only delivery date can be negotiated.
 
                     $order->update($updateData);
                     $newStatus = ClientOrder::STATUS_NEGOTIATING;
@@ -770,9 +729,15 @@ final class ClientOrderService implements ServiceContract
         }
 
         // Create ONE delivery schedule for the entire order (multi-item)
+        // Legacy compat: product_item_id and qty_ordered set from first item
+        // for backward compat with old code that reads these directly.
+        $firstItem = $items->first();
+
         $schedule = DeliverySchedule::create([
             'customer_id' => $order->customer_id,
             'client_order_id' => $order->id,
+            'product_item_id' => $firstItem->item_master_id,
+            'qty_ordered' => $firstItem->negotiated_quantity ?? $firstItem->quantity,
             'target_delivery_date' => $order->agreed_delivery_date ?? $order->requested_delivery_date ?? now()->addDays(7),
             'type' => 'local',
             'status' => 'open',
