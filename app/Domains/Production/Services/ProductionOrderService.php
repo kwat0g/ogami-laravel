@@ -242,6 +242,15 @@ final class ProductionOrderService implements ServiceContract
             'created_by_id' => $user->id,
         ]);
 
+        // CHAIN-DS-001: Auto-update delivery schedule status to in_production
+        // when a production order is created from it.
+        if (! empty($data['delivery_schedule_id'])) {
+            $ds = \App\Domains\Production\Models\DeliverySchedule::find($data['delivery_schedule_id']);
+            if ($ds !== null && $ds->status === 'open') {
+                $ds->update(['status' => 'in_production']);
+            }
+        }
+
         return $order->load('productItem', 'bom', 'createdBy');
     }
 
