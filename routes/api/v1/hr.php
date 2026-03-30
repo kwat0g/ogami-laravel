@@ -336,4 +336,37 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         })->middleware('throttle:api-action')->name('block');
     });
 
+    // ── Employee Onboarding Checklist (FS-028) ────────────────────────────────
+    Route::prefix('onboarding')->name('onboarding.')->group(function () {
+        Route::get('/{employee}', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            return response()->json([
+                'checklist' => $service->getChecklist($employee),
+                'progress' => $service->getProgress($employee),
+            ]);
+        })->name('show');
+
+        Route::post('/{employee}/initialize', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            $count = $service->initializeChecklist($employee);
+            return response()->json(['message' => "Initialized {$count} checklist items.", 'count' => $count], 201);
+        })->middleware('throttle:api-action')->name('initialize');
+
+        Route::patch('/items/{itemId}/check', function (Request $request, int $itemId) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            $item = $service->checkItem($itemId, $request->user()->id, $request->input('notes'));
+            return response()->json(['data' => $item]);
+        })->middleware('throttle:api-action')->name('check');
+
+        Route::patch('/items/{itemId}/uncheck', function (Request $request, int $itemId) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            $item = $service->uncheckItem($itemId);
+            return response()->json(['data' => $item]);
+        })->middleware('throttle:api-action')->name('uncheck');
+    });
+
 });

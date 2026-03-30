@@ -227,9 +227,13 @@ final class SalesOrderService implements ServiceContract
      *   2. If sufficient: reserve stock, mark line as ready for delivery
      *   3. If insufficient: create a Production Order for the deficit
      *      (requires active BOM for the item)
+     *
+     * FS-030 FIX: Collects warnings on the order model attribute so the API
+     * response can surface non-fatal failures to the user.
      */
     private function triggerFulfillment(SalesOrder $order): void
     {
+        $warnings = [];
         $order->loadMissing('items.item');
         $hasProduction = false;
 
@@ -262,6 +266,7 @@ final class SalesOrderService implements ServiceContract
                         'item_id' => $item->id,
                         'error' => $e->getMessage(),
                     ]);
+                    $warnings[] = "Stock reservation failed for {$item->name}: {$e->getMessage()}";
                 }
             } else {
                 // Make-to-order: create production order for deficit
@@ -285,6 +290,7 @@ final class SalesOrderService implements ServiceContract
                             'item_id' => $item->id,
                             'error' => $e->getMessage(),
                         ]);
+                        $warnings[] = "Partial stock reservation failed for {$item->name}: {$e->getMessage()}";
                     }
                 }
 
@@ -317,6 +323,7 @@ final class SalesOrderService implements ServiceContract
                             'item_id' => $item->id,
                             'error' => $e->getMessage(),
                         ]);
+                        $warnings[] = "Auto production order creation failed for {$item->name}: {$e->getMessage()}. Create manually.";
                     }
                 } else {
                     \Illuminate\Support\Facades\Log::warning('[Sales] No active BOM for item, cannot auto-create production order', [
@@ -324,6 +331,7 @@ final class SalesOrderService implements ServiceContract
                         'item_id' => $item->id,
                         'item_name' => $item->name,
                     ]);
+                    $warnings[] = "No active BOM found for {$item->name} — cannot auto-create production order. Set up a BOM or create the production order manually.";
                 }
             }
         }
@@ -331,6 +339,11 @@ final class SalesOrderService implements ServiceContract
         // Update SO status based on fulfillment path
         if ($hasProduction) {
             $order->update(['status' => 'in_production']);
+        }
+
+        // FS-030 FIX: Attach warnings to order so API response surfaces them
+        if (! empty($warnings)) {
+            $order->setAttribute('_confirm_warnings', $warnings);
         }
     }
 

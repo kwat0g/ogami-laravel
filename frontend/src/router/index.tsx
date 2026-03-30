@@ -165,6 +165,7 @@ const CandidateProfilePage = lazyWithRetry(() => import('@/pages/hr/recruitment/
 const OrgChartPage = lazyWithRetry(() => import('@/pages/hr/OrgChartPage'))
 const PerformanceAppraisalListPage = lazyWithRetry(() => import('@/pages/hr/PerformanceAppraisalListPage'))
 const EmployeeClearancePage = lazyWithRetry(() => import('@/pages/hr/EmployeeClearancePage'))
+const OnboardingChecklistPage = lazyWithRetry(() => import('@/pages/hr/OnboardingChecklistPage'))
 
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
@@ -444,6 +445,7 @@ const router = createBrowserRouter([
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
       { path: '/hr/employees/:ulid/clearance', element: withSuspense(guard('hr.full_access', <EmployeeClearancePage />)) },
+      { path: '/hr/employees/:ulid/onboarding', element: withSuspense(guard('hr.full_access', <OnboardingChecklistPage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },
