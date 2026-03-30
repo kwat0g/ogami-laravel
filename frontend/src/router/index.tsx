@@ -227,7 +227,7 @@ const DeliveryScheduleDetailPage = lazyWithRetry(() => import('@/pages/productio
 const CombinedDeliveryScheduleListPage = lazyWithRetry(() => import('@/pages/production/CombinedDeliveryScheduleListPage'))
 const CombinedDeliveryScheduleDetailPage = lazyWithRetry(() => import('@/pages/production/CombinedDeliveryScheduleDetailPage'))
 const ProductionOrderListPage = lazyWithRetry(() => import('@/pages/production/ProductionOrderListPage'))
-const _CreateProductionOrderPage      = lazyWithRetry(() => import('@/pages/production/CreateProductionOrderPage'))
+const CreateProductionOrderPage       = lazyWithRetry(() => import('@/pages/production/CreateProductionOrderPage'))
 const ProductionOrderDetailPage      = lazyWithRetry(() => import('@/pages/production/ProductionOrderDetailPage'))
 const ProductionCostPage             = lazyWithRetry(() => import('@/pages/production/ProductionCostPage'))
 const BomCostBreakdownPage           = lazyWithRetry(() => import('@/pages/production/BomCostBreakdownPage'))
@@ -563,7 +563,7 @@ const router = createBrowserRouter([
     { path: '/production/combined-delivery-schedules', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleListPage />)) },
     { path: '/production/combined-delivery-schedules/:ulid', element: withSuspense(guard('production.delivery-schedule.view', <CombinedDeliveryScheduleDetailPage />)) },
     { path: '/production/orders', element: withSuspense(guard('production.orders.view', <ProductionOrderListPage />)) },
-      // Note: No /production/orders/new route — production orders are created from delivery schedules
+      { path: '/production/orders/new', element: withSuspense(guard('production.orders.create', <CreateProductionOrderPage />)) },
       { path: '/production/orders/:ulid', element: withSuspense(guard('production.orders.view', <ProductionOrderDetailPage />)) },
       { path: '/production/cost-analysis', element: withSuspense(guard('production.orders.view', <ProductionCostPage />)) },
       { path: '/production/boms/:ulid/cost-breakdown', element: withSuspense(guard('production.bom.view', <BomCostBreakdownPage />)) },

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AlertTriangle } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { AlertTriangle, Plus } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
@@ -18,7 +18,9 @@ const statusBadge: Record<ProductionOrderStatus, string> = {
   draft:       'bg-neutral-100 text-neutral-600',
   released:    'bg-neutral-200 text-neutral-800',
   in_progress: 'bg-neutral-100 text-neutral-700',
+  on_hold:     'bg-amber-100 text-amber-700',
   completed:   'bg-neutral-200 text-neutral-800',
+  closed:      'bg-green-100 text-green-800',
   cancelled:   'bg-neutral-100 text-neutral-400',
 }
 
@@ -73,7 +75,15 @@ export default function ProductionOrderListPage(): React.ReactElement {
               ]}
               filename="production-orders"
             />
-            {/* Production orders are created from delivery schedules */}
+            {_canCreate && (
+              <Link
+                to="/production/orders/new"
+                className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New WO
+              </Link>
+            )}
           </div>
         }
       />
@@ -92,7 +102,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
           className="text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
         >
           <option value="">All Statuses</option>
-          {(['draft', 'released', 'in_progress', 'completed', 'cancelled'] as ProductionOrderStatus[]).map((s) => (
+          {(['draft', 'released', 'in_progress', 'on_hold', 'completed', 'closed', 'cancelled'] as ProductionOrderStatus[]).map((s) => (
             <option key={s} value={s}>{s.replace('_', ' ')}</option>
           ))}
         </select>

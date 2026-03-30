@@ -203,6 +203,38 @@ export function useLogOutput(ulid: string) {
   })
 }
 
+export function useCloseOrder(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: orderAction(ulid, 'close', qc) })
+}
+
+export function useHoldOrder(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload?: { hold_reason?: string }) =>
+      api.patch(`/production/orders/${ulid}/hold`, payload ?? {}).then(() => {
+        qc.invalidateQueries({ queryKey: ['production-orders'] })
+      }),
+  })
+}
+
+export function useResumeOrder(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: orderAction(ulid, 'resume', qc) })
+}
+
+export function useUpdateProductionOrder(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { notes?: string; target_start_date?: string; target_end_date?: string }) =>
+      api.put(`/production/orders/${ulid}`, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['production-orders'] })
+      qc.invalidateQueries({ queryKey: ['production-orders', ulid] })
+    },
+  })
+}
+
 export function useDeleteBom() {
   const qc = useQueryClient()
   return useMutation({

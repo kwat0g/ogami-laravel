@@ -248,12 +248,36 @@ final class ProductionOrderService implements ServiceContract
     /** @param array<string,mixed> $data */
     public function update(ProductionOrder $order, array $data): ProductionOrder
     {
-        if ($order->status !== 'draft') {
+        $editableStatuses = ['draft', 'released', 'in_progress', 'on_hold'];
+
+        if (! in_array($order->status, $editableStatuses, true)) {
             throw new DomainException(
-                'Only draft production orders can be edited.',
-                'PROD_ORDER_NOT_DRAFT',
+                'Production orders in terminal states cannot be edited.',
+                'PROD_ORDER_NOT_EDITABLE',
                 422,
             );
+        }
+
+        // Non-draft orders can only edit notes and target dates
+        if ($order->status !== 'draft') {
+            $restrictedFields = ['product_item_id', 'bom_id', 'qty_required'];
+            foreach ($restrictedFields as $field) {
+                if (isset($data[$field])) {
+                    throw new DomainException(
+                        "Cannot change {$field} after order has been released. Only notes and target dates can be edited.",
+                        'PROD_ORDER_FIELD_LOCKED',
+                        422,
+                    );
+                }
+            }
+
+            $order->update(array_filter([
+                'target_start_date' => $data['target_start_date'] ?? null,
+                'target_end_date' => $data['target_end_date'] ?? null,
+                'notes' => $data['notes'] ?? null,
+            ], fn ($v) => $v !== null));
+
+            return $order->refresh()->load('productItem', 'bom', 'createdBy');
         }
 
         // Recalculate end date if start date or BOM changed

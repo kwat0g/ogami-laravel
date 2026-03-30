@@ -9,9 +9,13 @@ import {
   useCompleteOrder,
   useCancelOrder,
   useVoidOrder,
+  useCloseOrder,
+  useHoldOrder,
+  useResumeOrder,
   useLogOutput,
   useStockCheck,
   useForceRelease,
+  useUpdateProductionOrder,
   type StockCheckItem,
 } from '@/hooks/useProduction'
 import { usePermission } from '@/hooks/usePermission'
@@ -33,7 +37,9 @@ const statusBadge: Record<ProductionOrderStatus, string> = {
   draft:       'bg-neutral-100 text-neutral-600',
   released:    'bg-neutral-200 text-neutral-800',
   in_progress: 'bg-neutral-100 text-neutral-700',
+  on_hold:     'bg-amber-100 text-amber-700',
   completed:   'bg-neutral-200 text-neutral-800',
+  closed:      'bg-green-100 text-green-800',
   cancelled:   'bg-neutral-100 text-neutral-400',
 }
 
@@ -100,7 +106,17 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     onError: (err: unknown) => toast.error(firstErrorMessage(err, 'Failed to post cost to GL.')),
   })
 
-  const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending
+  const closeMut     = useCloseOrder(ulid ?? '')
+  const holdMut      = useHoldOrder(ulid ?? '')
+  const resumeMut    = useResumeOrder(ulid ?? '')
+  const updateMut    = useUpdateProductionOrder(ulid ?? '')
+
+  const [showHoldModal, setShowHoldModal] = useState(false)
+  const [holdReason, setHoldReason] = useState('')
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [editData, setEditData] = useState({ notes: '', target_start_date: '', target_end_date: '' })
+
+  const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending || closeMut.isPending || holdMut.isPending || resumeMut.isPending
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false)
@@ -472,6 +488,85 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         </div>
       )}
 
+      {/* On Hold Banner */}
+      {order.status === 'on_hold' && (
+        <div className="bg-amber-50 border border-amber-200 rounded p-4 mb-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-amber-800">Order On Hold</h3>
+              {order.hold_reason && <p className="text-xs text-amber-600 mt-1">{order.hold_reason}</p>}
+            </div>
+            {canRelease && (
+              <button
+                onClick={async () => {
+                  try {
+                    await resumeMut.mutateAsync()
+                    toast.success('Work order resumed successfully.')
+                  } catch (err) {
+                    if (isHandledApiError(err)) return
+                    toast.error(firstErrorMessage(err))
+                  }
+                }}
+                disabled={resumeMut.isPending}
+                className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+              >
+                {resumeMut.isPending ? 'Resuming...' : 'Resume Production'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Form (for editable statuses) */}
+      {showEditForm && ['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && (
+        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
+          <h2 className="text-sm font-medium text-neutral-700 mb-3">Edit Work Order</h2>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            {order.status === 'draft' && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Target Start Date</label>
+                  <input type="date" value={editData.target_start_date} onChange={e => setEditData(d => ({ ...d, target_start_date: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Target End Date</label>
+                  <input type="date" value={editData.target_end_date} min={editData.target_start_date || undefined} onChange={e => setEditData(d => ({ ...d, target_end_date: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2" />
+                </div>
+              </>
+            )}
+            <div className={order.status === 'draft' ? 'col-span-2' : 'col-span-2'}>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+              <textarea rows={2} value={editData.notes} onChange={e => setEditData(d => ({ ...d, notes: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2 resize-none" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                try {
+                  const payload: Record<string, string> = {}
+                  if (editData.notes) payload.notes = editData.notes
+                  if (editData.target_start_date) payload.target_start_date = editData.target_start_date
+                  if (editData.target_end_date) payload.target_end_date = editData.target_end_date
+                  await updateMut.mutateAsync(payload)
+                  toast.success('Work order updated.')
+                  setShowEditForm(false)
+                } catch (err) {
+                  if (isHandledApiError(err)) return
+                  toast.error(firstErrorMessage(err))
+                }
+              }}
+              disabled={updateMut.isPending}
+              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
+            >
+              Save Changes
+            </button>
+            <button onClick={() => setShowEditForm(false)} className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="bg-white border border-neutral-200 rounded p-6">
         <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>
@@ -579,62 +674,106 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         )}
 
         <div className="flex flex-wrap gap-2">
+          {/* Edit button — available for editable statuses */}
+          {['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && canCreate && !showEditForm && !showLogForm && (
+            <button
+              onClick={() => {
+                setEditData({
+                  notes: order.notes || '',
+                  target_start_date: order.target_start_date || '',
+                  target_end_date: order.target_end_date || '',
+                })
+                setShowEditForm(true)
+              }}
+              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded"
+            >
+              Edit
+            </button>
+          )}
+          {/* Release — draft only */}
           {order.status === 'draft' && canRelease && (
-            <ConfirmDialog
-              title="Release Work Order?"
-              description="This will release the work order to production and deduct BOM materials from inventory."
-              confirmLabel="Release"
-              onConfirm={async () => {
-                await handleAction('release')
-              }}
+            <button
+              onClick={() => handleAction('release')}
+              disabled={anyPending || stockCheckQ.isFetching}
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <button disabled={anyPending || stockCheckQ.isFetching} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                {stockCheckQ.isFetching ? 'Checking stock…' : 'Release'}
-              </button>
-            </ConfirmDialog>
+              {stockCheckQ.isFetching ? 'Checking stock...' : 'Release'}
+            </button>
           )}
+          {/* Start — released only (fixed race condition: use handleAction) */}
           {order.status === 'released' && canRelease && (
-            <ConfirmDialog
-              title="Start Production?"
-              description="This will mark the work order as in progress."
-              confirmLabel="Start"
-              onConfirm={async () => {
-                setConfirmAction('start')
-                await executeAction()
-              }}
+            <button
+              onClick={() => handleAction('start')}
+              disabled={anyPending}
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <button disabled={anyPending} className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                Start Production
-              </button>
-            </ConfirmDialog>
+              Start Production
+            </button>
           )}
+          {/* Complete — in_progress only */}
           {order.status === 'in_progress' && canComplete && !showLogForm && (
+            <button
+              onClick={() => handleAction('complete')}
+              disabled={anyPending || parseFloat(order.qty_produced) <= 0}
+              title={parseFloat(order.qty_produced) <= 0 ? 'Log production output before completing' : undefined}
+              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Mark Complete
+            </button>
+          )}
+          {/* Close — completed only */}
+          {order.status === 'completed' && canComplete && (
             <ConfirmDialog
-              title="Complete Work Order?"
-              description={`This will mark the work order as completed. Current progress: ${completionPercentage}%`}
-              confirmLabel="Complete"
+              title="Close Work Order?"
+              description="This will close the work order. Closed orders are terminal and cannot be reopened."
+              confirmLabel="Close"
               onConfirm={async () => {
-                await handleAction('complete')
+                try {
+                  await closeMut.mutateAsync()
+                  toast.success('Work order closed successfully.')
+                } catch (err) {
+                  if (isHandledApiError(err)) return
+                  toast.error(firstErrorMessage(err))
+                }
               }}
             >
-              <button
-                disabled={anyPending || parseFloat(order.qty_produced) <= 0}
-                title={parseFloat(order.qty_produced) <= 0 ? 'Log production output before completing' : undefined}
-                className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Mark Complete
+              <button disabled={closeMut.isPending} className="px-4 py-2 text-sm font-medium bg-green-700 hover:bg-green-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
+                Close Order
               </button>
             </ConfirmDialog>
           )}
+          {/* Log Output — in_progress only */}
           {order.status === 'in_progress' && canLogOutput && !showLogForm && (
             <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded">
               Log Output
             </button>
           )}
-          {['draft', 'released'].includes(order.status) && canCreate && (
+          {/* Create QC Inspection — in_progress or completed */}
+          {['in_progress', 'completed'].includes(order.status) && (
+            <Link
+              to={`/qc/inspections/new?production_order_id=${order.id}&item_master_id=${order.product_item?.id ?? ''}&stage=${order.status === 'completed' ? 'oqc' : 'ipqc'}`}
+              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded inline-flex items-center gap-1.5"
+            >
+              Create QC Inspection
+            </Link>
+          )}
+          {/* Hold — released or in_progress */}
+          {['released', 'in_progress'].includes(order.status) && canRelease && !showLogForm && (
+            <button
+              onClick={() => setShowHoldModal(true)}
+              disabled={anyPending}
+              className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded"
+            >
+              Hold
+            </button>
+          )}
+          {/* Cancel — draft, released, or in_progress */}
+          {['draft', 'released', 'in_progress'].includes(order.status) && canCreate && (
             <ConfirmDialog
               title="Cancel Work Order?"
-              description="This will cancel the work order. This action cannot be undone."
+              description={order.status === 'in_progress'
+                ? 'This will cancel the work order and reverse any issued materials. This action cannot be undone.'
+                : 'This will cancel the work order. This action cannot be undone.'}
               confirmLabel="Cancel WO"
               variant="danger"
               onConfirm={async () => {
@@ -646,6 +785,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
               </button>
             </ConfirmDialog>
           )}
+          {/* Void — in_progress with no output */}
           {order.status === 'in_progress' && parseFloat(order.qty_produced) === 0 && !showLogForm && canCreate && (
             <ConfirmDestructiveDialog
               title="Void Work Order?"
@@ -664,6 +804,50 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           )}
         </div>
       </div>
+
+      {/* ── Hold Modal ──────────────────────────────────────────────────────── */}
+      {showHoldModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-neutral-200">
+              <h3 className="text-base font-semibold text-neutral-900">Hold Work Order</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-neutral-600 mb-3">This will pause the work order. You can resume it later.</p>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Reason (optional)</label>
+              <textarea
+                rows={2}
+                value={holdReason}
+                onChange={e => setHoldReason(e.target.value)}
+                placeholder="e.g., Machine breakdown, material shortage..."
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              />
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-lg">
+              <button onClick={() => { setShowHoldModal(false); setHoldReason('') }} className="px-4 py-2 text-sm text-neutral-600 border border-neutral-300 rounded hover:bg-neutral-100">
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await holdMut.mutateAsync({ hold_reason: holdReason || undefined })
+                    toast.success('Work order placed on hold.')
+                    setShowHoldModal(false)
+                    setHoldReason('')
+                  } catch (err) {
+                    if (isHandledApiError(err)) return
+                    toast.error(firstErrorMessage(err))
+                  }
+                }}
+                disabled={holdMut.isPending}
+                className="px-4 py-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white rounded disabled:opacity-50"
+              >
+                {holdMut.isPending ? 'Holding...' : 'Hold Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── PROD-001: Stock Check Modal ──────────────────────────────────────── */}
       {showStockModal && (
