@@ -161,9 +161,10 @@ const InterviewDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/I
 const OfferDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/OfferDetailPage'))
 const CandidateProfilePage = lazyWithRetry(() => import('@/pages/hr/recruitment/CandidateProfilePage'))
 
-// HR — Org Chart + Performance Appraisals (Gap Fix)
+// HR — Org Chart + Performance Appraisals + Clearance (Gap Fix)
 const OrgChartPage = lazyWithRetry(() => import('@/pages/hr/OrgChartPage'))
 const PerformanceAppraisalListPage = lazyWithRetry(() => import('@/pages/hr/PerformanceAppraisalListPage'))
+const EmployeeClearancePage = lazyWithRetry(() => import('@/pages/hr/EmployeeClearancePage'))
 
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
@@ -442,6 +443,7 @@ const router = createBrowserRouter([
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
+      { path: '/hr/employees/:ulid/clearance', element: withSuspense(guard('hr.full_access', <EmployeeClearancePage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },

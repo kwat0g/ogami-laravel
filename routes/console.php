@@ -48,6 +48,19 @@ Schedule::call(function () {
 // Finds sent offers past their expires_at date and transitions them to expired.
 Schedule::job(new ExpireOffersJob)->dailyAt('00:00')->name('recruitment.expire-offers')->withoutOverlapping();
 
+// ── Accounting: Recurring Journal Entry auto-generation (FS-012) ──────────────
+// Runs daily at 03:00 AM. Generates journal entries from active recurring templates
+// whose next_run_date has arrived or passed.
+Schedule::call(function () {
+    try {
+        $service = app(\App\Domains\Accounting\Services\RecurringJournalTemplateService::class);
+        $result = $service->generateDueEntries();
+        Log::info('[RecurringJE] Auto-generated entries', ['count' => $result->count()]);
+    } catch (\Throwable $e) {
+        Log::error('[RecurringJE] Auto-generation failed: ' . $e->getMessage());
+    }
+})->dailyAt('03:00')->name('accounting.recurring-je-generate')->withoutOverlapping();
+
 // ── Recruitment: Expire postings (daily at midnight) ──────────────────────────
 // Finds published postings past their closes_at date and transitions them to expired.
 Schedule::job(new ExpirePostingsJob)->dailyAt('00:05')->name('recruitment.expire-postings')->withoutOverlapping();

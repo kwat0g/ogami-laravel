@@ -306,5 +306,34 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         })->name('reports.birthdays');
     });
 
+    // ── Employee Clearance (FS-027) ──────────────────────────────────────────
+    Route::prefix('clearance')->name('clearance.')->group(function () {
+        Route::get('/{employee}', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            return response()->json(['data' => $service->getClearanceSummary($employee->id)]);
+        })->name('summary');
+
+        Route::post('/{employee}/generate', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            $items = $service->generateClearanceChecklist($employee, $request->user());
+            return response()->json(['data' => $items, 'count' => $items->count()], 201);
+        })->middleware('throttle:api-action')->name('generate');
+
+        Route::patch('/items/{clearance}/clear', function (Request $request, \App\Domains\HR\Models\EmployeeClearance $clearance) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $data = $request->validate(['notes' => 'nullable|string']);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            return response()->json(['data' => $service->clearItem($clearance, $request->user(), $data['notes'] ?? null)]);
+        })->middleware('throttle:api-action')->name('clear');
+
+        Route::patch('/items/{clearance}/block', function (Request $request, \App\Domains\HR\Models\EmployeeClearance $clearance) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $data = $request->validate(['reason' => 'required|string']);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            return response()->json(['data' => $service->blockItem($clearance, $data['reason'])]);
+        })->middleware('throttle:api-action')->name('block');
+    });
 
 });

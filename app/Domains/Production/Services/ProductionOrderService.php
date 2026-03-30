@@ -403,9 +403,17 @@ final class ProductionOrderService implements ServiceContract
                 if ($systemUser !== null) {
                     try {
                         $this->mrqService->createFromBom($order, $systemUser);
-                    } catch (\Throwable) {
-                        // Non-fatal: MRQ auto-creation failure should not block production release
-                        Log::warning('PROD-002: Auto MRQ creation failed for order '.$order->id);
+                    } catch (\Throwable $e) {
+                        // FS-030 FIX: Non-fatal but surfaced — attach warning to order for API response.
+                        // MRQ auto-creation failure should not block production release, but the user
+                        // must be informed so they can create the MRQ manually.
+                        Log::warning('PROD-002: Auto MRQ creation failed for order '.$order->id, [
+                            'error' => $e->getMessage(),
+                        ]);
+                        $order->setAttribute('_release_warnings', array_merge(
+                            $order->getAttribute('_release_warnings') ?? [],
+                            ['Auto material requisition creation failed: '.$e->getMessage().'. Please create MRQ manually.']
+                        ));
                     }
                 }
             }
