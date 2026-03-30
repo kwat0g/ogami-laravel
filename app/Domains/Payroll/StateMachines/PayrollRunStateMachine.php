@@ -66,7 +66,12 @@ final class PayrollRunStateMachine
         'RETURNED' => ['DRAFT', 'cancelled'],
         'REJECTED' => ['DRAFT', 'cancelled'],
 
-        // ── Legacy lowercase values (backward compatibility) ────────────────
+        // ── M1 FIX: Legacy lowercase values (DEPRECATED — scheduled for removal) ──
+        // These legacy statuses exist for backward compatibility with runs
+        // created before the v1.0 workflow migration. New runs should ONLY use
+        // the UPPERCASE status values above. Migration path:
+        //   1. Run a one-time data fix: UPDATE payroll_runs SET status = UPPER(status)
+        //   2. Remove these entries after all legacy runs are migrated
         'draft' => ['locked', 'cancelled', 'SCOPE_SET'],
         'locked' => ['processing', 'draft', 'cancelled'],
         'processing' => ['completed', 'failed', 'cancelled', 'COMPUTED', 'FAILED'],

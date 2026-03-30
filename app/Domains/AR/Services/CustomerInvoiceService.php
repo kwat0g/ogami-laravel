@@ -151,19 +151,47 @@ final class CustomerInvoiceService implements ServiceContract
         ]);
     }
 
-    // ── Approve ───────────────────────────────────────────────────────────────
+    // ── H1 FIX: Submit for approval ─────────────────────────────────────────
 
     /**
-     * Approves a draft invoice:
-     * AR-003: generates invoice_number INV-YYYY-MM-NNNNNN.
-     * Auto-posts JE: DR AR / CR Revenue (and CR VAT Payable if vat > 0).
-     * VAT accumulation delegated to VatLedgerService.
+     * Submit a draft invoice for manager review.
+     * H1 FIX: Adds an intermediate approval step for revenue recognition control.
      */
-    public function approve(CustomerInvoice $invoice, User $actor): CustomerInvoice
+    public function submit(CustomerInvoice $invoice, User $actor): CustomerInvoice
     {
         if ($invoice->status !== 'draft') {
             throw new DomainException(
-                "Only draft invoices can be approved. Current status: '{$invoice->status}'.",
+                "Only draft invoices can be submitted. Current status: '{$invoice->status}'.",
+                'AR_INVALID_STATUS_FOR_SUBMIT',
+                409
+            );
+        }
+
+        $invoice->update([
+            'status' => 'submitted',
+            'submitted_by' => $actor->id,
+            'submitted_at' => now(),
+        ]);
+
+        return $invoice->fresh();
+    }
+
+    // ── Approve ───────────────────────────────────────────────────────────────
+
+    /**
+     * Approves a draft or submitted invoice:
+     * AR-003: generates invoice_number INV-YYYY-MM-NNNNNN.
+     * Auto-posts JE: DR AR / CR Revenue (and CR VAT Payable if vat > 0).
+     * VAT accumulation delegated to VatLedgerService.
+     *
+     * H1 FIX: Now accepts both 'draft' (backward compat) and 'submitted' invoices.
+     * For submitted invoices, SoD enforces approver != submitter.
+     */
+    public function approve(CustomerInvoice $invoice, User $actor): CustomerInvoice
+    {
+        if (! in_array($invoice->status, ['draft', 'submitted'], true)) {
+            throw new DomainException(
+                "Only draft or submitted invoices can be approved. Current status: '{$invoice->status}'.",
                 'AR_INVALID_STATUS_FOR_APPROVE',
                 409
             );
@@ -174,6 +202,15 @@ final class CustomerInvoiceService implements ServiceContract
             throw new SodViolationException(
                 processName: 'AR Invoice',
                 conflictingAction: 'approve',
+            );
+        }
+
+        // H1 FIX: SoD for submitted invoices — approver must not be the submitter
+        if ($invoice->status === 'submitted' && ! $actor->hasRole('super_admin')
+            && isset($invoice->submitted_by) && $invoice->submitted_by === $actor->id) {
+            throw new SodViolationException(
+                processName: 'AR Invoice',
+                conflictingAction: 'approve (submitted)',
             );
         }
 

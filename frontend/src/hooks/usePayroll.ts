@@ -97,10 +97,20 @@ export function usePayrollRun(id: string | null) {
       if (status === 404 || status === 403) return false
       return failureCount < 2
     },
-    // Poll every 3 s while the run is being processed
+    // M13 FIX: Poll every 3 s while processing, but stop after 5 minutes
+    // to prevent infinite polling if the job stalls.
     refetchInterval: (query) => {
       const data = query.state.data
-      return (data?.status === 'processing' || data?.status === 'PROCESSING') ? 3_000 : false
+      if (data?.status === 'processing' || data?.status === 'PROCESSING') {
+        // Stop polling if computation_started_at is >5 min ago
+        const startedAt = data?.computation_started_at
+        if (startedAt) {
+          const elapsed = Date.now() - new Date(startedAt).getTime()
+          if (elapsed > 5 * 60 * 1000) return false // 5 min timeout
+        }
+        return 3_000
+      }
+      return false
     },
   })
 }
@@ -239,6 +249,9 @@ export function useLockPayrollRun(runId: string) {
     onSuccess: (data) => {
       queryClient.setQueryData(['payroll-runs', runId], data.run)
       void queryClient.invalidateQueries({ queryKey: ['payroll-runs'] })
+      // H11 FIX: Invalidate breakdown/details so accountants see fresh data
+      void queryClient.invalidateQueries({ queryKey: ['payroll-details', runId] })
+      void queryClient.invalidateQueries({ queryKey: ['payroll-breakdown', runId] })
     },
   })
 }
@@ -263,6 +276,9 @@ export function useApprovePayrollRun(runId: string) {
     onSuccess: (data) => {
       queryClient.setQueryData(['payroll-runs', runId], data.run)
       void queryClient.invalidateQueries({ queryKey: ['payroll-runs'] })
+      // H11 FIX: Invalidate breakdown/details so accountants see fresh data
+      void queryClient.invalidateQueries({ queryKey: ['payroll-details', runId] })
+      void queryClient.invalidateQueries({ queryKey: ['payroll-breakdown', runId] })
     },
   })
 }
@@ -740,6 +756,9 @@ export function useHrApprove(runId: string) {
       queryClient.setQueryData(['payroll-runs', runId], data.run)
       void queryClient.invalidateQueries({ queryKey: ['payroll-runs'] })
       void queryClient.invalidateQueries({ queryKey: ['payroll-approvals', runId] })
+      // H11 FIX: Invalidate breakdown/details so reviewers see fresh data
+      void queryClient.invalidateQueries({ queryKey: ['payroll-details', runId] })
+      void queryClient.invalidateQueries({ queryKey: ['payroll-breakdown', runId] })
     },
   })
 }
@@ -772,6 +791,9 @@ export function useAcctgApprove(runId: string) {
       queryClient.setQueryData(['payroll-runs', runId], data.run)
       void queryClient.invalidateQueries({ queryKey: ['payroll-runs'] })
       void queryClient.invalidateQueries({ queryKey: ['payroll-approvals', runId] })
+      // H11 FIX: Invalidate breakdown/details so reviewers see fresh data
+      void queryClient.invalidateQueries({ queryKey: ['payroll-details', runId] })
+      void queryClient.invalidateQueries({ queryKey: ['payroll-breakdown', runId] })
     },
   })
 }
@@ -797,6 +819,9 @@ export function useVpApprovePayroll(runId: string) {
       queryClient.setQueryData(['payroll-runs', runId], data.run)
       void queryClient.invalidateQueries({ queryKey: ['payroll-runs'] })
       void queryClient.invalidateQueries({ queryKey: ['payroll-approvals', runId] })
+      // H11 FIX: Invalidate breakdown/details so reviewers see fresh data
+      void queryClient.invalidateQueries({ queryKey: ['payroll-details', runId] })
+      void queryClient.invalidateQueries({ queryKey: ['payroll-breakdown', runId] })
     },
   })
 }

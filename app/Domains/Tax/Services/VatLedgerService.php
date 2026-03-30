@@ -74,6 +74,47 @@ final class VatLedgerService implements ServiceContract
         });
     }
 
+    // ── H8 FIX: VAT Reversal ──────────────────────────────────────────────────
+
+    /**
+     * Reverse previously accumulated input VAT when an AP invoice is
+     * rejected after approval or cancelled. Without this, overstated
+     * input VAT leads to understated VAT payable — a tax compliance risk.
+     */
+    public function reverseInputVat(int $fiscalPeriodId, float $amount): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $this->assertPeriodOpen($fiscalPeriodId);
+
+        DB::transaction(function () use ($fiscalPeriodId, $amount) {
+            $ledger = $this->getOrCreateForPeriod($fiscalPeriodId);
+            $newInputVat = max(0, (float) $ledger->input_vat - $amount);
+            $ledger->update(['input_vat' => round($newInputVat, 2)]);
+        });
+    }
+
+    /**
+     * Reverse previously accumulated output VAT when an AR invoice is
+     * cancelled after approval.
+     */
+    public function reverseOutputVat(int $fiscalPeriodId, float $amount): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        $this->assertPeriodOpen($fiscalPeriodId);
+
+        DB::transaction(function () use ($fiscalPeriodId, $amount) {
+            $ledger = $this->getOrCreateForPeriod($fiscalPeriodId);
+            $newOutputVat = max(0, (float) $ledger->output_vat - $amount);
+            $ledger->update(['output_vat' => round($newOutputVat, 2)]);
+        });
+    }
+
     // ── Close Period ──────────────────────────────────────────────────────────
 
     /**

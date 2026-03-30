@@ -27,24 +27,31 @@ let authRecheckPromise: Promise<boolean> | null = null
 let lastAuthRecheckAt = 0
 let authRecheckEpoch = 0
 
+/**
+ * C9 FIX: Singleton recheck promise.
+ *
+ * Multiple concurrent 401 responses must share the SAME recheck promise.
+ * Previously, the epoch + window guard had a narrow race where two requests
+ * could both start a recheck. Now we always return the in-flight promise
+ * if one exists, regardless of epoch/timing.
+ */
 function recheckAuth(epoch: number): Promise<boolean> {
-  const now = Date.now()
-  if (
-    authRecheckPromise &&
-    authRecheckEpoch === epoch &&
-    now - lastAuthRecheckAt < AUTH_RECHECK_WINDOW_MS
-  ) {
+  // If a recheck is already in-flight, always return it (true singleton)
+  if (authRecheckPromise) {
     return authRecheckPromise
   }
 
-  lastAuthRecheckAt = now
+  lastAuthRecheckAt = Date.now()
   authRecheckEpoch = epoch
   authRecheckPromise = api
     .get('/auth/me', { __skipAuthRedirect: true, __authRecheck: true } as AxiosRequestConfig)
     .then(() => true)
     .catch(() => false)
     .finally(() => {
-      authRecheckPromise = null
+      // Clear the singleton after a small delay to prevent immediate re-trigger
+      setTimeout(() => {
+        authRecheckPromise = null
+      }, 1000)
     })
 
   return authRecheckPromise
@@ -134,7 +141,8 @@ api.interceptors.response.use(
         void Promise.all([
           import('@/stores/authStore'),
           import('@/stores/uiStore'),
-        ]).then(([{ useAuthStore }, { useUiStore }]) => {
+          import('sonner'),
+        ]).then(([{ useAuthStore }, { useUiStore }, { toast }]) => {
           if (epochAtStart !== getAuthEpoch()) {
             return
           }
@@ -144,6 +152,8 @@ api.interceptors.response.use(
           }
           useAuthStore.getState().clearAuth()
           bumpAuthEpoch()
+          // C9 FIX: Show visible "Session expired" toast before redirect
+          toast.error('Session expired. Please log in again.', { id: 'session-expired', duration: 4000 })
           if (!window.location.pathname.startsWith('/login')) {
             window.location.replace('/login')
           }

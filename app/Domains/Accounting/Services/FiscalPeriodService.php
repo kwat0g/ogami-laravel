@@ -73,6 +73,38 @@ final class FiscalPeriodService implements ServiceContract
             );
         }
 
+        // H10 FIX: Validate that total debits = total credits for the period before closing.
+        // This prevents closing a period with unbalanced journal entries which would corrupt
+        // the balance sheet.
+        $balanceCheck = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.fiscal_period_id', $period->id)
+            ->where('journal_entries.status', 'posted')
+            ->whereNull('journal_entries.deleted_at')
+            ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
+            ->first();
+
+        if ($balanceCheck !== null) {
+            $debitTotal = (float) $balanceCheck->total_debit;
+            $creditTotal = (float) $balanceCheck->total_credit;
+            $diff = round(abs($debitTotal - $creditTotal), 4);
+
+            if ($diff > 0.01) { // Allow 1 centavo tolerance for rounding
+                throw new DomainException(
+                    message: "Cannot close fiscal period '{$period->name}': posted entries are unbalanced. "
+                        ."Total debits: {$debitTotal}, Total credits: {$creditTotal}, Difference: {$diff}.",
+                    errorCode: 'FISCAL_PERIOD_UNBALANCED',
+                    httpStatus: 422,
+                    context: [
+                        'period' => $period->name,
+                        'total_debit' => $debitTotal,
+                        'total_credit' => $creditTotal,
+                        'difference' => $diff,
+                    ],
+                );
+            }
+        }
+
         $period->update([
             'status' => 'closed',
             'closed_at' => now(),

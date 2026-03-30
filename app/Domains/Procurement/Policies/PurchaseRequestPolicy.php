@@ -27,11 +27,24 @@ final class PurchaseRequestPolicy
 {
     use HandlesAuthorization;
 
-    /** Admin/SuperAdmin bypass. */
+    /**
+     * Admin/super_admin bypass for view-only abilities.
+     *
+     * C6 FIX: Admins can view procurement data for system administration, but
+     * CANNOT bypass SoD-gated approval actions (review, budgetCheck, approve).
+     * This prevents a single admin from creating AND approving their own PR.
+     */
     public function before(User $user, string $ability): ?bool
     {
         if ($user->hasAnyRole(['admin', 'super_admin'])) {
-            return true;
+            $viewAbilities = ['viewAny', 'view', 'create', 'createForDepartment', 'update'];
+            if (in_array($ability, $viewAbilities, true)) {
+                return true;
+            }
+
+            // For approval abilities, fall through to normal policy checks
+            // so SoD rules are enforced even for admins
+            return null;
         }
 
         return null;

@@ -54,8 +54,11 @@ export default function LoginPage() {
         navigate(getLandingPath(result.user))
       }
     } catch (err: unknown) {
-      const apiErr = err as { message?: string }
-      toast.error(apiErr?.message ?? 'Login failed. Please try again.')
+      // M12 FIX: Properly type the error response from the API interceptor.
+      // The interceptor returns the full ApiError shape, not just { message }.
+      const apiErr = err as { message?: string; error_code?: string; errors?: Record<string, string[]> }
+      const message = apiErr?.message ?? 'Login failed. Please try again.'
+      toast.error(message)
     } finally {
       setLoading(false)
     }

@@ -31,11 +31,38 @@ use Illuminate\Support\Facades\DB;
 final class PayrollPostingService implements ServiceContract
 {
     /**
+     * Allowed statuses for GL posting.
+     * H5 FIX: Only approved runs can be posted to GL.
+     */
+    private const POSTABLE_STATUSES = [
+        'ACCTG_APPROVED',
+        'VP_APPROVED',
+        'DISBURSED',   // idempotent re-post on retry
+        'approved',    // legacy status
+        'posted',      // legacy status (idempotent)
+    ];
+
+    /**
      * Post the given payroll run to the GL.
      * Safe to call multiple times — returns the same JE on repeated calls.
+     *
+     * C3 FIX: All precondition checks AND GL writes wrapped in a single
+     * DB::transaction() to prevent partial writes. Status is validated
+     * before any database mutation occurs.
      */
     public function postPayrollRun(PayrollRun $run): JournalEntry
     {
+        // ── H5 FIX: Status guard — only approved runs can be posted ───────
+        if (! in_array($run->status, self::POSTABLE_STATUSES, true)) {
+            throw new DomainException(
+                "Cannot post payroll run {$run->reference_no} to GL: status is '{$run->status}'. "
+                .'Only ACCTG_APPROVED or VP_APPROVED runs can be posted.',
+                'GL_INVALID_RUN_STATUS',
+                422,
+                ['current_status' => $run->status, 'allowed' => self::POSTABLE_STATUSES],
+            );
+        }
+
         // ── Idempotency guard ────────────────────────────────────────────────
         $existing = JournalEntry::where('source_type', 'payroll')
             ->where('source_id', $run->id)
@@ -45,6 +72,17 @@ final class PayrollPostingService implements ServiceContract
             return $existing;
         }
 
+        // ── C3 FIX: Wrap ALL preconditions + writes in a single transaction ──
+        return DB::transaction(function () use ($run) {
+            return $this->buildAndPostJournalEntry($run);
+        });
+    }
+
+    /**
+     * Internal: build and persist the journal entry inside a transaction.
+     */
+    private function buildAndPostJournalEntry(PayrollRun $run): JournalEntry
+    {
         // ── Aggregate payroll_details totals ─────────────────────────────────
         $totals = DB::table('payroll_details')
             ->where('payroll_run_id', $run->id)
@@ -252,31 +290,29 @@ final class PayrollPostingService implements ServiceContract
             );
         }
 
-        // ── Persist ───────────────────────────────────────────────────────────
-        return DB::transaction(function () use ($run, $lines, $fiscalPeriod, $systemUserId, $date) {
-            $je = JournalEntry::create([
-                'date' => $date,
-                'description' => "Payroll Run {$run->reference_no} — auto-posted",
-                'source_type' => 'payroll',
-                'source_id' => $run->id,
-                'status' => 'draft',
-                'fiscal_period_id' => $fiscalPeriod->id,
-                'created_by' => $systemUserId,
-                'je_number' => null,
-            ]);
+        // ── Persist (already inside DB::transaction from caller) ─────────────
+        $je = JournalEntry::create([
+            'date' => $date,
+            'description' => "Payroll Run {$run->reference_no} — auto-posted",
+            'source_type' => 'payroll',
+            'source_id' => $run->id,
+            'status' => 'draft',
+            'fiscal_period_id' => $fiscalPeriod->id,
+            'created_by' => $systemUserId,
+            'je_number' => null,
+        ]);
 
-            foreach ($lines as $line) {
-                $je->lines()->create($line);
-            }
+        foreach ($lines as $line) {
+            $je->lines()->create($line);
+        }
 
-            $je->update([
-                'status' => 'posted',
-                'je_number' => "JE-{$run->reference_no}",
-                'posted_by' => null, // auto-post: no SoD enforced, nullable per constraint
-                'posted_at' => now(),
-            ]);
+        $je->update([
+            'status' => 'posted',
+            'je_number' => "JE-{$run->reference_no}",
+            'posted_by' => null, // auto-post: no SoD enforced, nullable per constraint
+            'posted_at' => now(),
+        ]);
 
-            return $je->fresh(['lines']);
-        });
+        return $je->fresh(['lines']);
     }
 }

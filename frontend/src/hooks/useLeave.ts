@@ -187,6 +187,8 @@ export function useHeadApproveLeaveRequest() {
       void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+      // H12 FIX: Invalidate leave balances so team calendar shows correct availability
+      void queryClient.invalidateQueries({ queryKey: ['leave-balances'] })
     },
   })
 }
@@ -207,6 +209,8 @@ export function useManagerCheckLeaveRequest() {
       void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
+      // H12 FIX: Invalidate leave balances so team calendar shows correct availability
+      void queryClient.invalidateQueries({ queryKey: ['leave-balances'] })
     },
   })
 }

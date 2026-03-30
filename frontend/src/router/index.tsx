@@ -139,6 +139,7 @@ const WorkLocationsPage = lazyWithRetry(() => import('@/pages/hr/attendance/Work
 // HR — Leave
 const LeaveListPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveListPage'))
 const LeaveFormPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveFormPage'))
+const LeaveDetailPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveDetailPage'))
 const LeaveBalancesPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveBalancesPage'))
 const LeaveCalendarPage = lazyWithRetry(() => import('@/pages/hr/leave/LeaveCalendarPage'))
 
@@ -398,6 +399,8 @@ const router = createBrowserRouter([
       // HR — Leave
       { path: '/hr/leave', element: withSuspense(guard('hr.full_access', <LeaveListPage />)) },
       { path: '/hr/leave/new', element: withSuspense(guard('hr.full_access', <LeaveFormPage />)) },
+      // M14 FIX: Add leave detail page route for supervisors to view before approving
+      { path: '/hr/leave/:id', element: withSuspense(guard('hr.full_access', <LeaveDetailPage />)) },
       { path: '/hr/leave/balances', element: withSuspense(guard('hr.full_access', <LeaveBalancesPage />)) },
       { path: '/hr/leave/calendar', element: withSuspense(guard('hr.full_access', <LeaveCalendarPage />)) },
 

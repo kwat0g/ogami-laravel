@@ -162,10 +162,16 @@ export function useCreateProductionOrder() {
 
 // ── Production Order Workflow ─────────────────────────────────────────────────
 
+/**
+ * M11 FIX: Added order detail invalidation to orderAction so the detail
+ * page reflects the new status immediately after a state transition.
+ * Previously only the list was invalidated, leaving the detail page stale.
+ */
 function orderAction(ulid: string, action: string, qc: ReturnType<typeof useQueryClient>) {
   return () =>
     api.patch(`/production/orders/${ulid}/${action}`).then(() => {
-      qc.invalidateQueries({ queryKey: ['production-orders'] })
+      void qc.invalidateQueries({ queryKey: ['production-orders'] })
+      void qc.invalidateQueries({ queryKey: ['production-order', ulid] })
     })
 }
 
