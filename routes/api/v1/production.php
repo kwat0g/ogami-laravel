@@ -70,6 +70,8 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
         Route::patch('orders/{productionOrder}/close', [ProductionOrderController::class, 'close']);
         Route::patch('orders/{productionOrder}/cancel', [ProductionOrderController::class, 'cancel']);
         Route::patch('orders/{productionOrder}/void', [ProductionOrderController::class, 'void']);
+        Route::patch('orders/{productionOrder}/hold', [ProductionOrderController::class, 'hold']);
+        Route::patch('orders/{productionOrder}/resume', [ProductionOrderController::class, 'resume']);
         Route::post('orders/{productionOrder}/output', [ProductionOrderController::class, 'logOutput']);
     });
 

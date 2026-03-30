@@ -124,6 +124,26 @@ final class ProductionOrderController extends Controller
         return new ProductionOrderResource($this->service->void($productionOrder));
     }
 
+    public function hold(Request $request, ProductionOrder $productionOrder): ProductionOrderResource
+    {
+        $this->authorize('update', $productionOrder);
+
+        $validated = $request->validate([
+            'hold_reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        return new ProductionOrderResource(
+            $this->service->hold($productionOrder, $validated['hold_reason'] ?? null)
+        );
+    }
+
+    public function resume(ProductionOrder $productionOrder): ProductionOrderResource
+    {
+        $this->authorize('update', $productionOrder);
+
+        return new ProductionOrderResource($this->service->resume($productionOrder));
+    }
+
     public function logOutput(LogProductionOutputRequest $request, ProductionOrder $productionOrder): ProductionOutputLogResource
     {
         $this->authorize('logOutput', $productionOrder);

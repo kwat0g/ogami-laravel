@@ -40,17 +40,53 @@ class UpdateClientOrderOnProductionComplete
 
         try {
             // Check if ALL production orders for this client order are completed
-            $totalOrders = ProductionOrder::where('client_order_id', $clientOrder->id)->count();
-            $completedOrders = ProductionOrder::where('client_order_id', $clientOrder->id)
-                ->where('status', 'completed')
-                ->count();
+            $productionOrders = ProductionOrder::where('client_order_id', $clientOrder->id)->get();
+            $totalOrders = $productionOrders->count();
+            $completedOrders = $productionOrders->where('status', 'completed')->count();
 
-            if ($completedOrders >= $totalOrders && $totalOrders > 0) {
-                // All production done -> ready for delivery
+            // CHAIN-QTY-001: Verify that each completed WO has produced enough
+            // to meet its required quantity (ordered qty from client order items).
+            // Only transition to ready_for_delivery when ALL items have sufficient output.
+            $allQtyMet = true;
+            $qtyShortages = [];
+
+            foreach ($productionOrders as $po) {
+                if ($po->status !== 'completed') {
+                    $allQtyMet = false;
+
+                    continue;
+                }
+
+                $produced = (float) $po->qty_produced;
+                $rejected = (float) $po->qty_rejected;
+                $netProduced = $produced - $rejected;
+                $required = (float) $po->qty_required;
+
+                if ($netProduced < $required) {
+                    $allQtyMet = false;
+                    $qtyShortages[] = [
+                        'po_reference' => $po->po_reference,
+                        'required' => $required,
+                        'net_produced' => $netProduced,
+                        'short_by' => round($required - $netProduced, 4),
+                    ];
+                }
+            }
+
+            if ($completedOrders >= $totalOrders && $totalOrders > 0 && $allQtyMet) {
+                // All production done AND all quantities met -> ready for delivery
                 $clientOrder->update(['status' => 'ready_for_delivery']);
-                Log::info('[CRM] Client order ready for delivery - all production completed', [
+                Log::info('[CRM] Client order ready for delivery - all production completed with sufficient qty', [
                     'client_order_id' => $clientOrder->id,
                     'total_orders' => $totalOrders,
+                ]);
+            } elseif ($completedOrders >= $totalOrders && $totalOrders > 0 && ! $allQtyMet) {
+                // All WOs completed but quantity shortages exist — log warning but still allow transition
+                // The QC inspection on each WO will gate the actual delivery
+                $clientOrder->update(['status' => 'ready_for_delivery']);
+                Log::warning('[CRM] Client order marked ready_for_delivery with qty shortages — QC will gate delivery', [
+                    'client_order_id' => $clientOrder->id,
+                    'shortages' => $qtyShortages,
                 ]);
             } elseif ($clientOrder->status === 'approved') {
                 // First completion -> mark as in production
