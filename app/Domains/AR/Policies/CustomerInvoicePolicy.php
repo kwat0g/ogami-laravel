@@ -23,11 +23,20 @@ final class CustomerInvoicePolicy
 {
     use HandlesAuthorization;
 
-    /** Admin bypass — admin role has unconditional access to all resources. */
+    /**
+     * Admin/super_admin bypass for view-only abilities.
+     *
+     * H1 FIX: Admins can view AR data but cannot bypass SoD-gated approval.
+     * This mirrors the C6 fix applied to PayrollRunPolicy and PurchaseRequestPolicy.
+     */
     public function before(User $user, string $ability): ?bool
     {
         if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
-            return true;
+            $viewAbilities = ['viewAny', 'view', 'create', 'update', 'cancel', 'overrideCredit'];
+            if (in_array($ability, $viewAbilities, true)) {
+                return true;
+            }
+            return null;
         }
 
         return null;
@@ -68,16 +77,34 @@ final class CustomerInvoicePolicy
     }
 
     /**
-     * SoD: approver must not be the same person who created the invoice.
+     * H1 FIX: Submit for approval — any user with create permission can submit.
      */
-    public function approve(User $user, CustomerInvoice $invoice): bool
+    public function submit(User $user, CustomerInvoice $invoice): bool
     {
         if ($invoice->status !== 'draft') {
             return false;
         }
 
+        return $user->hasPermissionTo('customer_invoices.create');
+    }
+
+    /**
+     * SoD: approver must not be the same person who created or submitted the invoice.
+     * H1 FIX: Now accepts both 'draft' and 'submitted' invoices.
+     */
+    public function approve(User $user, CustomerInvoice $invoice): bool
+    {
+        if (! in_array($invoice->status, ['draft', 'submitted'], true)) {
+            return false;
+        }
+
         if ($invoice->created_by === $user->id) {
-            return false; // SoD
+            return false; // SoD: approver != creator
+        }
+
+        // H1 FIX: SoD for submitted invoices — approver != submitter
+        if ($invoice->status === 'submitted' && isset($invoice->submitted_by) && $invoice->submitted_by === $user->id) {
+            return false;
         }
 
         return $user->hasPermissionTo('customer_invoices.approve');

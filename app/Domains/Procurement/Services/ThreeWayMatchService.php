@@ -59,6 +59,20 @@ final class ThreeWayMatchService implements ServiceContract
                 $acceptedQty = $grItem->effectiveAcceptedQuantity();
                 $newReceived = (float) $poItem->quantity_received + $acceptedQty;
 
+                // H6 FIX: Validate item-level correlation — ensure the GR line item
+                // corresponds to the same ItemMaster as the PO line item. Without
+                // this, a vendor could invoice for different items as long as quantities match.
+                if ($grItem->item_master_id !== null && $poItem->item_master_id !== null
+                    && $grItem->item_master_id !== $poItem->item_master_id) {
+                    throw new DomainException(
+                        message: "Three-way match: GR item (ItemMaster #{$grItem->item_master_id}) does not match "
+                            ."PO item (ItemMaster #{$poItem->item_master_id}) for '{$poItem->item_description}'. "
+                            .'Item identity must match between PO and GR.',
+                        errorCode: 'TWM_ITEM_MISMATCH',
+                        httpStatus: 422,
+                    );
+                }
+
                 if ($newReceived > $poItem->effectiveQuantity()) {
                     throw new DomainException(
                         message: "Three-way match: received quantity ({$newReceived}) would exceed agreed quantity ({$poItem->effectiveQuantity()}) for item '{$poItem->item_description}'.",
