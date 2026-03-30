@@ -19,28 +19,33 @@ return new class extends Migration
     {
         // Purchase requests: status is used in approval queue queries
         if (Schema::hasTable('purchase_requests') && Schema::hasColumn('purchase_requests', 'status')) {
-            Schema::table('purchase_requests', function (Blueprint $table) {
-                $table->index('status', 'idx_pr_status');
-            });
+            if (! $this->indexNameExists('purchase_requests', 'idx_pr_status')) {
+                Schema::table('purchase_requests', function (Blueprint $table) {
+                    $table->index('status', 'idx_pr_status');
+                });
+            }
         }
 
         // Vendor invoices: status is used in AP approval dashboard
         if (Schema::hasTable('vendor_invoices') && Schema::hasColumn('vendor_invoices', 'status')) {
-            Schema::table('vendor_invoices', function (Blueprint $table) {
-                $table->index('status', 'idx_vi_status');
-            });
+            if (! $this->indexNameExists('vendor_invoices', 'idx_vi_status')) {
+                Schema::table('vendor_invoices', function (Blueprint $table) {
+                    $table->index('status', 'idx_vi_status');
+                });
+            }
         }
 
         // Material requisitions: status is used in warehouse fulfillment queue
         if (Schema::hasTable('material_requisitions') && Schema::hasColumn('material_requisitions', 'status')) {
-            Schema::table('material_requisitions', function (Blueprint $table) {
-                $table->index('status', 'idx_mrq_status');
-            });
+            if (! $this->indexNameExists('material_requisitions', 'idx_mrq_status')) {
+                Schema::table('material_requisitions', function (Blueprint $table) {
+                    $table->index('status', 'idx_mrq_status');
+                });
+            }
         }
 
         // Payroll details: payroll_run_id is used in aggregation queries (GL posting, breakdown)
         if (Schema::hasTable('payroll_details') && Schema::hasColumn('payroll_details', 'payroll_run_id')) {
-            // Check if index already exists
             if (! $this->indexExists('payroll_details', 'payroll_run_id')) {
                 Schema::table('payroll_details', function (Blueprint $table) {
                     $table->index('payroll_run_id', 'idx_pd_run_id');
@@ -50,35 +55,60 @@ return new class extends Migration
 
         // Journal entries: fiscal_period_id + status for period-close validation
         if (Schema::hasTable('journal_entries') && Schema::hasColumn('journal_entries', 'fiscal_period_id')) {
-            Schema::table('journal_entries', function (Blueprint $table) {
-                $table->index(['fiscal_period_id', 'status'], 'idx_je_period_status');
-            });
+            if (! $this->indexNameExists('journal_entries', 'idx_je_period_status')) {
+                Schema::table('journal_entries', function (Blueprint $table) {
+                    $table->index(['fiscal_period_id', 'status'], 'idx_je_period_status');
+                });
+            }
         }
     }
 
     public function down(): void
     {
-        Schema::table('purchase_requests', function (Blueprint $table) {
-            $table->dropIndex('idx_pr_status');
-        });
+        if ($this->indexNameExists('purchase_requests', 'idx_pr_status')) {
+            Schema::table('purchase_requests', function (Blueprint $table) {
+                $table->dropIndex('idx_pr_status');
+            });
+        }
 
-        Schema::table('vendor_invoices', function (Blueprint $table) {
-            $table->dropIndex('idx_vi_status');
-        });
+        if ($this->indexNameExists('vendor_invoices', 'idx_vi_status')) {
+            Schema::table('vendor_invoices', function (Blueprint $table) {
+                $table->dropIndex('idx_vi_status');
+            });
+        }
 
-        Schema::table('material_requisitions', function (Blueprint $table) {
-            $table->dropIndex('idx_mrq_status');
-        });
+        if ($this->indexNameExists('material_requisitions', 'idx_mrq_status')) {
+            Schema::table('material_requisitions', function (Blueprint $table) {
+                $table->dropIndex('idx_mrq_status');
+            });
+        }
 
-        if ($this->indexExists('payroll_details', 'idx_pd_run_id')) {
+        if ($this->indexNameExists('payroll_details', 'idx_pd_run_id')) {
             Schema::table('payroll_details', function (Blueprint $table) {
                 $table->dropIndex('idx_pd_run_id');
             });
         }
 
-        Schema::table('journal_entries', function (Blueprint $table) {
-            $table->dropIndex('idx_je_period_status');
-        });
+        if ($this->indexNameExists('journal_entries', 'idx_je_period_status')) {
+            Schema::table('journal_entries', function (Blueprint $table) {
+                $table->dropIndex('idx_je_period_status');
+            });
+        }
+    }
+
+    /**
+     * Check if an index with the given name already exists on a table.
+     */
+    private function indexNameExists(string $table, string $indexName): bool
+    {
+        $indexes = Schema::getIndexes($table);
+        foreach ($indexes as $index) {
+            if ($index['name'] === $indexName) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function indexExists(string $table, string $column): bool
