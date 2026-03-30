@@ -14,7 +14,8 @@ import {
   History,
   AlertCircle,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Truck
 } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -57,7 +58,13 @@ const STATUS_CONFIG: Record<string, {
     status: 'approved',
     icon: <CheckCircle className="h-4 w-4" />,
     label: 'Order Approved',
-    description: 'Your order has been approved and is being processed.'
+    description: 'Your order has been approved and is being processed for delivery.'
+  },
+  completed: {
+    status: 'approved',
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: 'Order Completed',
+    description: 'Your order has been delivered successfully.'
   },
   rejected: {
     status: 'rejected',
@@ -402,6 +409,65 @@ export default function ClientOrderDetailPage(): JSX.Element {
               >
                 Respond to Proposal
               </button>
+            </div>
+          )}
+
+          {/* Delivery Tracking — shown after approval */}
+          {(order.status === 'approved' || order.status === 'completed') && order.deliverySchedules && order.deliverySchedules.length > 0 && (
+            <Card>
+              <CardHeader>
+                <span className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-neutral-500" />
+                  Delivery Tracking
+                </span>
+              </CardHeader>
+              <CardBody className="space-y-3">
+                <p className="text-xs text-neutral-500">
+                  Your order is being prepared for delivery. Track the status of each item below.
+                </p>
+                {order.deliverySchedules.map((ds) => {
+                  const sched = ds.deliverySchedule
+                  if (!sched) return null
+                  const schedStatusColors: Record<string, string> = {
+                    open: 'bg-amber-100 text-amber-700',
+                    ready: 'bg-emerald-100 text-emerald-700',
+                    dispatched: 'bg-blue-100 text-blue-700',
+                    delivered: 'bg-teal-100 text-teal-700',
+                    closed: 'bg-neutral-100 text-neutral-500',
+                  }
+                  return (
+                    <div key={ds.id} className="p-3 bg-neutral-50 border border-neutral-100 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-mono text-neutral-600">{sched.ds_reference}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${schedStatusColors[sched.status] ?? 'bg-neutral-100 text-neutral-600'}`}>
+                          {sched.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-500">
+                        Target: {sched.target_delivery_date
+                          ? new Date(sched.target_delivery_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+                          : 'TBD'}
+                      </p>
+                    </div>
+                  )
+                })}
+                <p className="text-xs text-neutral-400 pt-1">
+                  You will be notified when your delivery is dispatched.
+                </p>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Post-approval next steps when no delivery schedules visible yet */}
+          {order.status === 'approved' && (!order.deliverySchedules || order.deliverySchedules.length === 0) && (
+            <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-4">
+              <h3 className="font-medium text-emerald-900 mb-1 flex items-center gap-2 text-sm">
+                <CheckCircle className="h-4 w-4" />
+                Order Approved
+              </h3>
+              <p className="text-xs text-emerald-700">
+                Your order has been approved and is now being processed. Delivery schedules are being created and you will be notified once items are ready for dispatch.
+              </p>
             </div>
           )}
         </div>

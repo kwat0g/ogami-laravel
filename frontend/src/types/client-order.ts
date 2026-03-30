@@ -24,7 +24,7 @@ export interface ClientOrder {
   ulid: string
   customer_id: number
   order_reference: string
-  status: 'pending' | 'negotiating' | 'client_responded' | 'vp_pending' | 'approved' | 'rejected' | 'cancelled'
+  status: 'pending' | 'negotiating' | 'client_responded' | 'vp_pending' | 'approved' | 'completed' | 'rejected' | 'cancelled'
   requested_delivery_date: string | null
   agreed_delivery_date: string | null
   total_amount_centavos: number

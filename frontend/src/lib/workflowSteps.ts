@@ -192,6 +192,7 @@ export function getClientOrderSteps(_order: {
     { label: 'Client Responded', status: 'client_responded' },
     { label: 'VP Approval', status: 'vp_pending' },
     { label: 'Approved', status: 'approved' },
+    { label: 'Completed', status: 'completed' },
   ]
 }
 

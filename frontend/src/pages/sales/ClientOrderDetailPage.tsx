@@ -1,7 +1,7 @@
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, XCircle, MessageCircle, Calendar, Package, AlertCircle, RotateCcw, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, MessageCircle, Calendar, Package, AlertCircle, RotateCcw, ShieldCheck, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ActionGuard } from '@/components/ui/ActionGuard'
 import {
@@ -25,6 +25,7 @@ const STATUS_LABEL: Record<string, string> = {
   client_responded: 'Client Counter-Proposal',
   vp_pending: 'Awaiting VP Approval',
   approved: 'Approved',
+  completed: 'Completed',
   rejected: 'Rejected',
   cancelled: 'Cancelled',
 }
@@ -35,6 +36,7 @@ const STATUS_COLORS: Record<string, string> = {
   client_responded: 'bg-purple-100 text-purple-700',
   vp_pending: 'bg-orange-100 text-orange-700',
   approved: 'bg-emerald-100 text-emerald-700',
+  completed: 'bg-teal-100 text-teal-700',
   rejected: 'bg-red-100 text-red-700',
   cancelled: 'bg-neutral-100 text-neutral-500',
 }
@@ -44,7 +46,8 @@ const STATUS_DESCRIPTION: Record<string, string> = {
   negotiating: 'Sales proposed changes, waiting for client response',
   client_responded: 'Client made a counter-proposal, awaiting sales decision',
   vp_pending: 'High-value order escalated — awaiting VP approval',
-  approved: 'Order has been approved',
+  approved: 'Order has been approved — delivery schedules and production orders created',
+  completed: 'Order has been delivered and completed',
   rejected: 'Order was rejected',
   cancelled: 'Order was cancelled',
 }
@@ -482,6 +485,71 @@ export default function ClientOrderDetailPage(): JSX.Element {
           </div>
         )}
       </div>
+
+      {/* Delivery Schedules — shown after approval */}
+      {(order.status === 'approved' || order.status === 'completed') && order.deliverySchedules && order.deliverySchedules.length > 0 && (
+        <div className="bg-white rounded border border-neutral-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-neutral-200 bg-neutral-50">
+            <h2 className="font-medium text-neutral-900 flex items-center gap-2">
+              <Truck className="h-4 w-4 text-neutral-500" />
+              Delivery Schedules
+            </h2>
+          </div>
+          <div className="p-4 space-y-3">
+            <p className="text-sm text-neutral-500">
+              {order.deliverySchedules.length} delivery schedule{order.deliverySchedules.length !== 1 ? 's' : ''} created for this order.
+              View details in <a href="/production/combined-delivery-schedules" className="underline text-neutral-700 hover:text-neutral-900">Combined Delivery Schedules</a> or <a href="/production/orders" className="underline text-neutral-700 hover:text-neutral-900">Production Orders</a>.
+            </p>
+            <div className="grid gap-2">
+              {order.deliverySchedules.map((ds) => {
+                const sched = ds.deliverySchedule
+                if (!sched) return null
+                const schedStatusColors: Record<string, string> = {
+                  open: 'bg-amber-100 text-amber-700',
+                  ready: 'bg-emerald-100 text-emerald-700',
+                  dispatched: 'bg-blue-100 text-blue-700',
+                  delivered: 'bg-teal-100 text-teal-700',
+                  closed: 'bg-neutral-100 text-neutral-500',
+                }
+                return (
+                  <a
+                    key={ds.id}
+                    href={`/production/delivery-schedules/${sched.ulid}`}
+                    className="flex items-center justify-between p-3 bg-neutral-50 border border-neutral-100 rounded-lg hover:bg-neutral-100 transition-colors"
+                  >
+                    <div>
+                      <span className="text-sm font-mono text-neutral-700">{sched.ds_reference}</span>
+                      <p className="text-xs text-neutral-500">
+                        Target: {sched.target_delivery_date
+                          ? new Date(sched.target_delivery_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+                          : 'TBD'}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${schedStatusColors[sched.status] ?? 'bg-neutral-100 text-neutral-600'}`}>
+                      {sched.status}
+                    </span>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-approval next steps when no delivery schedules yet */}
+      {order.status === 'approved' && (!order.deliverySchedules || order.deliverySchedules.length === 0) && (
+        <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-emerald-900">Order approved</p>
+            <p className="text-sm text-emerald-700 mt-1">
+              Delivery schedules and production orders have been created. View them in{' '}
+              <a href="/production/combined-delivery-schedules" className="underline font-medium">Combined Delivery Schedules</a>{' '}
+              or <a href="/production/orders" className="underline font-medium">Production Orders</a>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Approve Modal */}
       {showApproveModal && (
