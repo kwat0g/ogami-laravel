@@ -11,7 +11,9 @@ const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending',
   negotiating: 'Awaiting Client',
   client_responded: 'Client Counter',
+  vp_pending: 'VP Approval',
   approved: 'Approved',
+  completed: 'Completed',
   rejected: 'Rejected',
   cancelled: 'Cancelled',
 }
@@ -20,12 +22,14 @@ const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-700',
   negotiating: 'bg-blue-100 text-blue-700',
   client_responded: 'bg-purple-100 text-purple-700',
+  vp_pending: 'bg-orange-100 text-orange-700',
   approved: 'bg-emerald-100 text-emerald-700',
+  completed: 'bg-teal-100 text-teal-700',
   rejected: 'bg-red-100 text-red-700',
   cancelled: 'bg-neutral-100 text-neutral-500',
 }
 
-const ALL_STATUSES = ['pending', 'negotiating', 'client_responded', 'approved', 'rejected', 'cancelled'] as const
+const ALL_STATUSES = ['pending', 'negotiating', 'client_responded', 'vp_pending', 'approved', 'completed', 'rejected', 'cancelled'] as const
 
 function StatusBadge({ status }: { status: string }) {
   return (
