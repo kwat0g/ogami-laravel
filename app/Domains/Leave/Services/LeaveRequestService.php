@@ -72,10 +72,21 @@ final class LeaveRequestService implements ServiceContract
             } elseif (isset($data['total_days']) && $data['total_days'] > 0) {
                 $totalDays = (float) $data['total_days'];
             } else {
-                // Compute inclusive calendar days from date range
+                // FS-021 FIX: Compute working days (exclude weekends) from date range
                 $from = new Carbon($data['date_from']);
                 $to = new Carbon($data['date_to']);
-                $totalDays = (float) ($from->diffInDays($to) + 1);
+                $totalDays = 0.0;
+                $current = $from->copy();
+                while ($current->lte($to)) {
+                    if (! $current->isWeekend()) {
+                        $totalDays += 1.0;
+                    }
+                    $current->addDay();
+                }
+                // Fallback: at least 1 day if dates are the same and it's a weekday
+                if ($totalDays === 0.0 && $from->equalTo($to) && ! $from->isWeekend()) {
+                    $totalDays = 1.0;
+                }
             }
 
             return LeaveRequest::create([

@@ -54,6 +54,27 @@ final class SalesOrderController extends Controller
         );
     }
 
+    public function markPartiallyDelivered(SalesOrder $salesOrder): SalesOrderResource
+    {
+        $this->authorize('confirm', $salesOrder);
+
+        return new SalesOrderResource($this->service->markPartiallyDelivered($salesOrder));
+    }
+
+    public function markDelivered(SalesOrder $salesOrder): SalesOrderResource
+    {
+        $this->authorize('confirm', $salesOrder);
+
+        return new SalesOrderResource($this->service->markDelivered($salesOrder));
+    }
+
+    public function markInvoiced(SalesOrder $salesOrder): SalesOrderResource
+    {
+        $this->authorize('confirm', $salesOrder);
+
+        return new SalesOrderResource($this->service->markInvoiced($salesOrder));
+    }
+
     public function cancel(SalesOrder $salesOrder): SalesOrderResource
     {
         $this->authorize('cancel', $salesOrder);

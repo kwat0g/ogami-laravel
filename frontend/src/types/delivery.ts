@@ -1,5 +1,5 @@
 export type DrDirection = 'inbound' | 'outbound';
-export type DrStatus = 'draft' | 'confirmed' | 'cancelled';
+export type DrStatus = 'draft' | 'confirmed' | 'partially_delivered' | 'delivered' | 'cancelled';
 export type ShipmentStatus = 'pending' | 'in_transit' | 'delivered' | 'returned';
 
 export interface DeliveryReceiptItem {

@@ -159,6 +159,49 @@ export function useConfirmSalesOrder(ulid: string) {
   })
 }
 
+// FS-013 FIX: SO lifecycle transition hooks
+export function useMarkSalesOrderPartiallyDelivered(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch<{ data: SalesOrder }>(`/sales/orders/${ulid}/partial-deliver`)
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sales-order', ulid] })
+      qc.invalidateQueries({ queryKey: ['sales-orders'] })
+    },
+  })
+}
+
+export function useMarkSalesOrderDelivered(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch<{ data: SalesOrder }>(`/sales/orders/${ulid}/deliver`)
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sales-order', ulid] })
+      qc.invalidateQueries({ queryKey: ['sales-orders'] })
+    },
+  })
+}
+
+export function useMarkSalesOrderInvoiced(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch<{ data: SalesOrder }>(`/sales/orders/${ulid}/invoiced`)
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sales-order', ulid] })
+      qc.invalidateQueries({ queryKey: ['sales-orders'] })
+    },
+  })
+}
+
 // ── Pricing ──────────────────────────────────────────────────────────────────
 
 export function useResolvePrice(itemId: number, quantity?: number, customerId?: number) {

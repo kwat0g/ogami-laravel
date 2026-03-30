@@ -36,6 +36,24 @@ export function useConfirmDeliveryReceipt() {
   });
 }
 
+export function useMarkPartiallyDelivered() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid: string) =>
+      api.patch(`/delivery/receipts/${ulid}/partial-deliver`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+  });
+}
+
+export function useMarkDelivered() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid: string) =>
+      api.patch(`/delivery/receipts/${ulid}/deliver`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+  });
+}
+
 export function useShipments(params?: Record<string, string | boolean>) {
   return useQuery<{ data: Shipment[]; meta: unknown }>({
     queryKey: ['shipments', params],

@@ -46,6 +46,12 @@ Route::middleware(['auth:sanctum', 'module_access:sales'])->group(function () {
         })->name('margin');
         Route::patch('/{salesOrder:ulid}/confirm', [SalesOrderController::class, 'confirm'])->name('confirm')
             ->middleware('throttle:api-action');
+        Route::patch('/{salesOrder:ulid}/partial-deliver', [SalesOrderController::class, 'markPartiallyDelivered'])->name('partial-deliver')
+            ->middleware('throttle:api-action');
+        Route::patch('/{salesOrder:ulid}/deliver', [SalesOrderController::class, 'markDelivered'])->name('deliver')
+            ->middleware('throttle:api-action');
+        Route::patch('/{salesOrder:ulid}/invoiced', [SalesOrderController::class, 'markInvoiced'])->name('invoiced')
+            ->middleware('throttle:api-action');
         Route::patch('/{salesOrder:ulid}/cancel', [SalesOrderController::class, 'cancel'])->name('cancel')
             ->middleware('throttle:api-action');
         Route::delete('/{salesOrder:ulid}', [SalesOrderController::class, 'destroy'])->name('destroy')

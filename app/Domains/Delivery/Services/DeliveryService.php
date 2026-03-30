@@ -74,12 +74,23 @@ final class DeliveryService implements ServiceContract
         return DB::transaction(function () use ($receipt, $actor): DeliveryReceipt {
             $receipt->update(['status' => 'confirmed']);
 
-            // DEL-001: For outbound deliveries, issue stock for each confirmed item.
-            if ($receipt->direction === 'outbound') {
-                $receipt->loadMissing('items');
+            // FS-029 FIX: Require active warehouse — never silently skip stock movement.
+            $receipt->loadMissing('items');
+            $hasStockItems = $receipt->items->contains(fn ($item) => $item->item_master_id !== null && $item->quantity_received > 0);
+
+            if ($hasStockItems) {
                 $location = WarehouseLocation::where('is_active', true)->first();
 
-                if ($location !== null) {
+                if ($location === null) {
+                    throw new DomainException(
+                        'Cannot confirm delivery receipt: no active warehouse location configured. Create at least one active warehouse location before confirming deliveries.',
+                        'DELIVERY_NO_WAREHOUSE',
+                        422,
+                    );
+                }
+
+                // DEL-001: For outbound deliveries, issue stock for each confirmed item.
+                if ($receipt->direction === 'outbound') {
                     foreach ($receipt->items as $item) {
                         if ($item->item_master_id === null || $item->quantity_received <= 0) {
                             continue;
@@ -96,15 +107,10 @@ final class DeliveryService implements ServiceContract
                         );
                     }
                 }
-            }
 
-            // DEL-002: For inbound deliveries (returned goods / supplier returns),
-            // receive stock back into inventory for each confirmed item.
-            elseif ($receipt->direction === 'inbound') {
-                $receipt->loadMissing('items');
-                $location = WarehouseLocation::where('is_active', true)->first();
-
-                if ($location !== null) {
+                // DEL-002: For inbound deliveries (returned goods / supplier returns),
+                // receive stock back into inventory for each confirmed item.
+                elseif ($receipt->direction === 'inbound') {
                     foreach ($receipt->items as $item) {
                         if ($item->item_master_id === null || $item->quantity_received <= 0) {
                             continue;
@@ -125,6 +131,44 @@ final class DeliveryService implements ServiceContract
 
             return $receipt->refresh();
         });
+    }
+
+    /**
+     * Transition a confirmed delivery receipt to partially_delivered.
+     * Used when some items are delivered but others are still pending.
+     */
+    public function markPartiallyDelivered(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
+    {
+        if (! in_array($receipt->status, ['confirmed'], true)) {
+            throw new DomainException(
+                "Cannot mark as partially delivered — receipt is in status '{$receipt->status}'.",
+                'DELIVERY_INVALID_STATUS',
+                422,
+            );
+        }
+
+        $receipt->update(['status' => 'partially_delivered']);
+
+        return $receipt->refresh();
+    }
+
+    /**
+     * Transition a confirmed or partially_delivered delivery receipt to delivered.
+     * Marks the delivery as fully completed.
+     */
+    public function markDelivered(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
+    {
+        if (! in_array($receipt->status, ['confirmed', 'partially_delivered'], true)) {
+            throw new DomainException(
+                "Cannot mark as delivered — receipt is in status '{$receipt->status}'.",
+                'DELIVERY_INVALID_STATUS',
+                422,
+            );
+        }
+
+        $receipt->update(['status' => 'delivered']);
+
+        return $receipt->refresh();
     }
 
     // ── Shipments ─────────────────────────────────────────────────────────

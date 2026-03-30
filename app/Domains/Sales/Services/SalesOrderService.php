@@ -334,6 +334,60 @@ final class SalesOrderService implements ServiceContract
         }
     }
 
+    /**
+     * FS-013 FIX: Mark a confirmed/in_production SO as partially delivered.
+     */
+    public function markPartiallyDelivered(SalesOrder $order): SalesOrder
+    {
+        if (! in_array($order->status, ['confirmed', 'in_production'], true)) {
+            throw new DomainException(
+                "Cannot mark as partially delivered from status '{$order->status}'.",
+                'SALES_INVALID_ORDER_STATUS',
+                422,
+            );
+        }
+
+        $order->update(['status' => 'partially_delivered']);
+
+        return $order->fresh() ?? $order;
+    }
+
+    /**
+     * FS-013 FIX: Mark a SO as fully delivered.
+     */
+    public function markDelivered(SalesOrder $order): SalesOrder
+    {
+        if (! in_array($order->status, ['confirmed', 'in_production', 'partially_delivered'], true)) {
+            throw new DomainException(
+                "Cannot mark as delivered from status '{$order->status}'.",
+                'SALES_INVALID_ORDER_STATUS',
+                422,
+            );
+        }
+
+        $order->update(['status' => 'delivered']);
+
+        return $order->fresh() ?? $order;
+    }
+
+    /**
+     * FS-013 FIX: Mark a delivered SO as invoiced (after AR invoice creation).
+     */
+    public function markInvoiced(SalesOrder $order): SalesOrder
+    {
+        if ($order->status !== 'delivered') {
+            throw new DomainException(
+                "Cannot mark as invoiced from status '{$order->status}'. Order must be delivered first.",
+                'SALES_INVALID_ORDER_STATUS',
+                422,
+            );
+        }
+
+        $order->update(['status' => 'invoiced']);
+
+        return $order->fresh() ?? $order;
+    }
+
     public function cancel(SalesOrder $order): SalesOrder
     {
         if (in_array($order->status, ['delivered', 'invoiced', 'cancelled'], true)) {
