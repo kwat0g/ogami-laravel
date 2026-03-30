@@ -497,7 +497,8 @@ final class GoodsReceiptService implements ServiceContract
             // C4 FIX: Re-check inside transaction with pessimistic lock to prevent
             // race condition where two concurrent return requests both pass the
             // pre-transaction guard.
-            $gr = GoodsReceipt::lockForUpdate()->find($gr->id);
+            /** @var GoodsReceipt $gr */
+            $gr = GoodsReceipt::lockForUpdate()->findOrFail($gr->id);
             if ($gr->status === 'returned' || $gr->returned_at !== null) {
                 throw new DomainException(
                     message: 'This Goods Receipt has already been returned (concurrent request detected).',
