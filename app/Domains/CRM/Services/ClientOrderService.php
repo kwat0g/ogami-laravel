@@ -27,6 +27,7 @@ use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Client Order Service - Manages client portal ordering workflow
@@ -728,41 +729,56 @@ final class ClientOrderService implements ServiceContract
             );
         }
 
-        // Create ONE delivery schedule for the entire order (multi-item)
-        // Legacy compat: product_item_id and qty_ordered set from first item
-        // for backward compat with old code that reads these directly.
-        $firstItem = $items->first();
+        // Check if multi-item delivery schedule tables exist (migration may not have run yet)
+        $hasMultiItemSupport = Schema::hasTable('delivery_schedule_items');
 
-        $schedule = DeliverySchedule::create([
+        $firstItem = $items->first();
+        $targetDate = $order->agreed_delivery_date ?? $order->requested_delivery_date ?? now()->addDays(7);
+
+        // Create ONE delivery schedule for the entire order
+        $dsData = [
             'customer_id' => $order->customer_id,
-            'client_order_id' => $order->id,
             'product_item_id' => $firstItem->item_master_id,
             'qty_ordered' => $firstItem->negotiated_quantity ?? $firstItem->quantity,
-            'target_delivery_date' => $order->agreed_delivery_date ?? $order->requested_delivery_date ?? now()->addDays(7),
+            'target_delivery_date' => $targetDate,
             'type' => 'local',
             'status' => 'open',
             'notes' => "Created from Client Order {$order->order_reference}",
-            'delivery_address' => $order->customer->address ?? null,
-            'total_items' => $items->count(),
-            'ready_items' => 0,
-            'missing_items' => $items->count(),
-            'created_by_id' => $userId,
-        ]);
+        ];
 
-        // Create delivery schedule items (one per order line)
+        // Add multi-item fields only if migration has been applied
+        if ($hasMultiItemSupport) {
+            $dsData['client_order_id'] = $order->id;
+            $dsData['delivery_address'] = $order->customer->address ?? null;
+            $dsData['total_items'] = $items->count();
+            $dsData['ready_items'] = 0;
+            $dsData['missing_items'] = $items->count();
+            $dsData['created_by_id'] = $userId;
+        }
+
+        $schedule = DeliverySchedule::create($dsData);
+
+        // Create delivery schedule items if multi-item support is available
+        if ($hasMultiItemSupport) {
+            foreach ($items as $item) {
+                \App\Domains\Production\Models\DeliveryScheduleItem::create([
+                    'delivery_schedule_id' => $schedule->id,
+                    'product_item_id' => $item->item_master_id,
+                    'qty_ordered' => $item->negotiated_quantity ?? $item->quantity,
+                    'unit_price' => $item->negotiated_price_centavos
+                        ? ($item->negotiated_price_centavos / 100)
+                        : ($item->unit_price_centavos ? $item->unit_price_centavos / 100 : null),
+                    'status' => 'pending',
+                    'notes' => $item->item_description,
+                ]);
+            }
+
+            // Update item status summary
+            $schedule->updateItemStatusSummary();
+        }
+
+        // Link schedule to client order items via pivot
         foreach ($items as $item) {
-            $dsItem = \App\Domains\Production\Models\DeliveryScheduleItem::create([
-                'delivery_schedule_id' => $schedule->id,
-                'product_item_id' => $item->item_master_id,
-                'qty_ordered' => $item->negotiated_quantity ?? $item->quantity,
-                'unit_price' => $item->negotiated_price_centavos
-                    ? ($item->negotiated_price_centavos / 100)
-                    : ($item->unit_price_centavos ? $item->unit_price_centavos / 100 : null),
-                'status' => 'pending',
-                'notes' => $item->item_description,
-            ]);
-
-            // Link schedule item to client order item via pivot
             ClientOrderDeliverySchedule::create([
                 'client_order_id' => $order->id,
                 'client_order_item_id' => $item->id,
@@ -770,16 +786,13 @@ final class ClientOrderService implements ServiceContract
             ]);
         }
 
-        // Update item status summary
-        $schedule->updateItemStatusSummary();
-
-        // Also create a CombinedDeliverySchedule for backward compat during transition
+        // Create CombinedDeliverySchedule for backward compat
         $combinedSchedule = CombinedDeliverySchedule::create([
             'client_order_id' => $order->id,
             'customer_id' => $order->customer_id,
             'cds_reference' => $this->generateCombinedDeliveryReference(),
             'status' => CombinedDeliverySchedule::STATUS_PLANNING,
-            'target_delivery_date' => $order->agreed_delivery_date ?? $order->requested_delivery_date ?? now()->addDays(7),
+            'target_delivery_date' => $targetDate,
             'delivery_address' => $order->customer->address ?? null,
             'total_items' => $items->count(),
             'ready_items' => 0,
@@ -787,7 +800,6 @@ final class ClientOrderService implements ServiceContract
             'created_by_id' => $userId,
         ]);
 
-        // Link the DS to the CDS for backward compat
         $schedule->update(['combined_delivery_schedule_id' => $combinedSchedule->id]);
 
         return [$schedule];
