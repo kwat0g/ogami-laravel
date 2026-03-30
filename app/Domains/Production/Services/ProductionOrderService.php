@@ -223,8 +223,12 @@ final class ProductionOrderService implements ServiceContract
 
         /** @var ProductionOrder $order */
         $order = ProductionOrder::create([
-            'po_reference' => $this->generateReference(),
+            'po_reference' => $data['po_reference'] ?? $this->generateReference(),
             'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,
+            'client_order_id' => $data['client_order_id'] ?? null,
+            'sales_order_id' => $data['sales_order_id'] ?? null,
+            'source_type' => $data['source_type'] ?? 'manual',
+            'source_id' => $data['source_id'] ?? null,
             'product_item_id' => $data['product_item_id'],
             'bom_id' => $data['bom_id'],
             'bom_snapshot' => $bomSnapshot,

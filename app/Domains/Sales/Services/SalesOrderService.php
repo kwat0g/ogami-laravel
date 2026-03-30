@@ -295,16 +295,21 @@ final class SalesOrderService implements ServiceContract
 
                 if ($bom !== null) {
                     try {
-                        \App\Domains\Production\Models\ProductionOrder::create([
-                            'product_item_id' => $item->id,
-                            'bom_id' => $bom->id,
-                            'qty_required' => $deficit,
-                            'target_start_date' => now()->toDateString(),
-                            'target_end_date' => $order->promised_delivery_date ?? now()->addDays(14)->toDateString(),
-                            'status' => 'draft',
-                            'notes' => "Auto-created from Sales Order {$order->order_number} (deficit: {$deficit} units)",
-                            'created_by_id' => $order->approved_by_id ?? $order->created_by_id,
-                        ]);
+                        $poService = app(\App\Domains\Production\Services\ProductionOrderService::class);
+                        $actor = \App\Models\User::find($order->approved_by_id ?? $order->created_by_id);
+                        if ($actor !== null) {
+                            $poService->store([
+                                'product_item_id' => $item->id,
+                                'bom_id' => $bom->id,
+                                'qty_required' => $deficit,
+                                'target_start_date' => now()->toDateString(),
+                                'target_end_date' => $order->promised_delivery_date ?? now()->addDays(14)->toDateString(),
+                                'sales_order_id' => $order->id,
+                                'source_type' => 'sales_order',
+                                'source_id' => $order->id,
+                                'notes' => "Auto-created from Sales Order {$order->order_number} (deficit: {$deficit} units)",
+                            ], $actor);
+                        }
                         $hasProduction = true;
                     } catch (\Throwable $e) {
                         \Illuminate\Support\Facades\Log::warning('[Sales] Auto production order creation failed', [
