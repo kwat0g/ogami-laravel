@@ -374,19 +374,78 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
             </CardBody>
           </Card>
 
-          {/* Production Orders */}
+          {/* Items & Production Orders */}
           <Card>
             <CardHeader>
               <span className="flex items-center gap-2">
-                <Factory className="h-4 w-4 text-neutral-500" />
-                Production Orders
+                <Package className="h-4 w-4 text-neutral-500" />
+                Order Items ({schedule.total_items || schedule.items?.length || 0})
               </span>
             </CardHeader>
             <CardBody>
-              {schedule.production_orders?.length === 0 ? (
+              {(schedule.items ?? []).length > 0 ? (
+                <div className="divide-y divide-neutral-100">
+                  {schedule.items?.map((item) => (
+                    <div key={item.id} className="py-4 first:pt-0 last:pb-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="font-mono text-xs text-neutral-400">{item.product_item?.item_code}</span>
+                          <p className="font-medium text-neutral-900">{item.product_item?.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-semibold tabular-nums">
+                            {parseFloat(item.qty_ordered).toLocaleString('en-PH')} {item.product_item?.unit_of_measure ?? 'pcs'}
+                          </span>
+                          <div>
+                            <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                              item.status === 'ready' ? 'bg-green-100 text-green-700' :
+                              item.status === 'in_production' ? 'bg-blue-100 text-blue-700' :
+                              item.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                              item.status === 'cancelled' ? 'bg-neutral-100 text-neutral-400' :
+                              'bg-neutral-100 text-neutral-600'
+                            }`}>
+                              {item.status?.replace('_', ' ')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Per-item production orders */}
+                      {(item.production_orders ?? []).length > 0 && (
+                        <div className="ml-4 border-l-2 border-neutral-200 pl-3">
+                          {item.production_orders?.map((po) => (
+                            <Link
+                              key={po.id}
+                              to={`/production/orders/${po.ulid}`}
+                              className="flex items-center justify-between py-1.5 hover:bg-neutral-50 rounded px-2 -mx-2"
+                            >
+                              <span className="font-mono text-sm text-neutral-700">{po.po_reference}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-neutral-500">
+                                  {parseFloat(po.qty_produced).toLocaleString('en-PH')} / {parseFloat(po.qty_required).toLocaleString('en-PH')}
+                                </span>
+                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium capitalize ${
+                                  po.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                  po.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                  po.status === 'cancelled' ? 'bg-neutral-100 text-neutral-500' :
+                                  'bg-neutral-100 text-neutral-700'
+                                }`}>
+                                  {po.status?.replace('_', ' ')}
+                                </span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                      {(item.production_orders ?? []).length === 0 && item.status !== 'ready' && item.status !== 'cancelled' && (
+                        <p className="text-xs text-neutral-400 ml-4">No production order yet</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : schedule.production_orders?.length === 0 ? (
                 <div className="text-center py-8 text-neutral-400">
                   <Factory className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">No production orders created yet</p>
+                  <p className="text-sm">No items or production orders created yet</p>
                   {canCreateWO && schedule.status === 'open' && (
                     <button
                       onClick={() => setShowCreateModal(true)}

@@ -39,7 +39,7 @@ final class CreateDeliveryReceiptOnOqcPass implements ShouldQueue
         }
 
         $order = ProductionOrder::find($inspection->production_order_id);
-        if ($order === null || $order->delivery_schedule_id === null) {
+        if ($order === null || ($order->delivery_schedule_id === null && $order->delivery_schedule_item_id === null)) {
             return;
         }
 
@@ -79,9 +79,17 @@ final class CreateDeliveryReceiptOnOqcPass implements ShouldQueue
                 userId: $systemUser->id,
             );
 
-            // Update delivery schedule status if applicable
+            // Update delivery schedule item status to ready
+            $dsItem = $order->deliveryScheduleItem;
+            if ($dsItem !== null) {
+                $dsItem->update(['status' => 'ready']);
+            }
+
+            // Update parent delivery schedule summary
             if ($schedule !== null) {
-                $schedule->update(['status' => 'ready']);
+                $schedule->updateItemStatusSummary();
+
+                // Legacy: also update CDS if present
                 if ($schedule->combined_delivery_schedule_id) {
                     $schedule->combinedDeliverySchedule?->updateItemStatusSummary();
                 }

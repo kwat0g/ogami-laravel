@@ -225,6 +225,7 @@ final class ProductionOrderService implements ServiceContract
         $order = ProductionOrder::create([
             'po_reference' => $data['po_reference'] ?? $this->generateReference(),
             'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,
+            'delivery_schedule_item_id' => $data['delivery_schedule_item_id'] ?? null,
             'client_order_id' => $data['client_order_id'] ?? null,
             'sales_order_id' => $data['sales_order_id'] ?? null,
             'source_type' => $data['source_type'] ?? 'manual',
@@ -246,8 +247,16 @@ final class ProductionOrderService implements ServiceContract
         // when a production order is created from it.
         if (! empty($data['delivery_schedule_id'])) {
             $ds = \App\Domains\Production\Models\DeliverySchedule::find($data['delivery_schedule_id']);
-            if ($ds !== null && $ds->status === 'open') {
+            if ($ds !== null && in_array($ds->status, ['open', 'planning'], true)) {
                 $ds->update(['status' => 'in_production']);
+            }
+        }
+
+        // CHAIN-DSI-001: Auto-update delivery schedule item status
+        if (! empty($data['delivery_schedule_item_id'])) {
+            $dsi = \App\Domains\Production\Models\DeliveryScheduleItem::find($data['delivery_schedule_item_id']);
+            if ($dsi !== null && $dsi->status === 'pending') {
+                $dsi->update(['status' => 'in_production']);
             }
         }
 
