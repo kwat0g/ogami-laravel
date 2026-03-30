@@ -56,6 +56,21 @@ class UpdateStockOnThreeWayMatch
             // Use QC-accepted quantity when available (partial acceptance),
             // otherwise fall back to full quantity_received.
             $effectiveQty = $grItem->effectiveAcceptedQuantity();
+
+            // M4 FIX: Guard against quantity_accepted > quantity_received.
+            // QC data corruption could create inventory from thin air if accepted
+            // quantity exceeds what was physically received.
+            $receivedQty = (float) $grItem->quantity_received;
+            if ($receivedQty > 0 && $effectiveQty > $receivedQty) {
+                Log::warning('M4-GUARD: quantity_accepted exceeds quantity_received, clamping to received', [
+                    'gr_id' => $gr->id,
+                    'po_item_id' => $poItem->id,
+                    'quantity_received' => $receivedQty,
+                    'quantity_accepted' => $effectiveQty,
+                ]);
+                $effectiveQty = $receivedQty;
+            }
+
             if ($effectiveQty <= 0) {
                 Log::info('Skipping stock receipt for GR item with zero accepted quantity', [
                     'gr_id' => $gr->id,
