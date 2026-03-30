@@ -900,13 +900,30 @@ final class ClientOrderService implements ServiceContract
      */
     private function checkAndCreateDraftProductionOrders(array $schedules, ClientOrder $order, int $userId): void
     {
+        $hasMultiItemSupport = Schema::hasTable('delivery_schedule_items');
+
         foreach ($schedules as $schedule) {
-            // Iterate over DS items (each item = one product line)
-            $dsItems = $schedule->items()->with('productItem')->get();
+            // Build item list: use DSI table if available, otherwise use order items directly
+            if ($hasMultiItemSupport) {
+                $dsItems = $schedule->items()->with('productItem')->get();
+            } else {
+                // Fallback: build pseudo-items from client order items
+                $dsItems = $order->items->map(fn ($item) => (object) [
+                    'id' => null,
+                    'product_item_id' => $item->item_master_id,
+                    'qty_ordered' => $item->negotiated_quantity ?? $item->quantity,
+                    'productItem' => $item->itemMaster,
+                    'status' => 'pending',
+                ]);
+            }
 
             foreach ($dsItems as $dsItem) {
                 $availableStock = $this->stockReservationService->getTotalAvailableStock($dsItem->product_item_id);
                 $qtyRequired = (float) $dsItem->qty_ordered;
+
+                $dsiId = $dsItem->id ?? null;
+                $refType = $hasMultiItemSupport ? 'delivery_schedule_items' : 'delivery_schedules';
+                $refId = $dsiId ?? $schedule->id;
 
                 // ── Gap #1: Auto-fulfill from stock when fully available ─────────
                 if ($availableStock >= $qtyRequired) {
@@ -915,15 +932,22 @@ final class ClientOrderService implements ServiceContract
                             itemId: $dsItem->product_item_id,
                             quantity: $qtyRequired,
                             reservationType: 'delivery_schedule',
-                            referenceId: $dsItem->id,
-                            referenceType: 'delivery_schedule_items',
+                            referenceId: $refId,
+                            referenceType: $refType,
                             notes: "Auto-reserved for Client Order {$order->order_reference}",
                         );
 
-                        $dsItem->update(['status' => 'ready']);
-                        $schedule->updateItemStatusSummary();
+                        if ($hasMultiItemSupport && $dsiId) {
+                            $dsItem->update(['status' => 'ready']);
+                            $schedule->updateItemStatusSummary();
+                        } else {
+                            $schedule->update(['status' => 'ready']);
+                            if ($schedule->combined_delivery_schedule_id) {
+                                $schedule->combinedDeliverySchedule?->updateItemStatusSummary();
+                            }
+                        }
                     } catch (\Throwable $e) {
-                        Log::warning("Auto-fulfill reservation failed for DSI #{$dsItem->id}: {$e->getMessage()}");
+                        Log::warning("Auto-fulfill reservation failed for item #{$refId}: {$e->getMessage()}");
                     }
 
                     continue;
@@ -937,13 +961,13 @@ final class ClientOrderService implements ServiceContract
                             itemId: $dsItem->product_item_id,
                             quantity: $availableStock,
                             reservationType: 'delivery_schedule',
-                            referenceId: $dsItem->id,
-                            referenceType: 'delivery_schedule_items',
+                            referenceId: $refId,
+                            referenceType: $refType,
                             notes: "Partial reservation for Client Order {$order->order_reference} ({$availableStock} of {$qtyRequired})",
                         );
                         $deficit = $qtyRequired - $availableStock;
                     } catch (\Throwable $e) {
-                        Log::warning("Partial stock reservation failed for DSI #{$dsItem->id}: {$e->getMessage()}");
+                        Log::warning("Partial stock reservation failed for item #{$refId}: {$e->getMessage()}");
                     }
                 }
 
@@ -957,7 +981,6 @@ final class ClientOrderService implements ServiceContract
                     $this->logActivity($order, 'bom_missing', $userId, 'system', [
                         'item_id' => $dsItem->product_item_id,
                         'item_name' => $itemName,
-                        'delivery_schedule_item_id' => $dsItem->id,
                         'message' => "No active BOM found for {$itemName} — manual production planning required.",
                     ]);
 
@@ -970,22 +993,20 @@ final class ClientOrderService implements ServiceContract
                     : now()->addDays(14);
                 $productionDays = max(1, $bom->standard_production_days ?? 7);
 
-                // Work backwards: end 1 day before delivery, start = end - production days
                 $targetEndDate = $deliveryDate->copy()->subDay();
                 $targetStartDate = $targetEndDate->copy()->subDays($productionDays - 1);
 
-                // Ensure start date isn't in the past
                 if ($targetStartDate->lt(now())) {
                     $targetStartDate = now()->addDay();
                     $targetEndDate = $targetStartDate->copy()->addDays($productionDays - 1);
                 }
 
-                // ── Create Production Order via unified gateway ──────────────────
+                // ── Create Production Order ──────────────────────────────────────
                 $actor = User::findOrFail($userId);
                 $poService = app(\App\Domains\Production\Services\ProductionOrderService::class);
                 $productionOrder = $poService->store([
                     'delivery_schedule_id' => $schedule->id,
-                    'delivery_schedule_item_id' => $dsItem->id,
+                    'delivery_schedule_item_id' => $dsiId,
                     'client_order_id' => $order->id,
                     'source_type' => 'client_order',
                     'source_id' => $order->id,
@@ -998,15 +1019,19 @@ final class ClientOrderService implements ServiceContract
                         .($availableStock > 0 ? " (partial stock: {$availableStock} reserved, producing deficit: {$deficit})" : ''),
                 ], $actor);
 
-                // Update DSI status to in_production
-                $dsItem->update(['status' => 'in_production']);
+                // Update DSI or DS status to in_production
+                if ($hasMultiItemSupport && $dsiId) {
+                    $dsItem->update(['status' => 'in_production']);
+                }
 
                 // ── Gap #5: Notify production team ───────────────────────────────
                 DB::afterCommit(fn () => ProductionOrderAutoCreated::dispatch($productionOrder->fresh(), $order->fresh()));
             }
 
             // Update parent DS item summary after processing all items
-            $schedule->updateItemStatusSummary();
+            if ($hasMultiItemSupport) {
+                $schedule->updateItemStatusSummary();
+            }
         }
     }
 }
