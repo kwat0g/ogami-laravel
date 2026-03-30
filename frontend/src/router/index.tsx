@@ -282,8 +282,9 @@ const VpApprovalsDashboardPage = lazyWithRetry(() => import('@/pages/approvals/V
 // Additional AP
 const APInvoiceDetailPage = lazyWithRetry(() => import('@/pages/accounting/APInvoiceDetailPage'))
 
-// Pay periods
+// Pay periods + Final Pay
 const PayPeriodListPage = lazyWithRetry(() => import('@/pages/payroll/PayPeriodListPage'))
+const FinalPayPage = lazyWithRetry(() => import('@/pages/payroll/FinalPayPage'))
 
 // (ExecutiveLeaveApprovalPage and ExecutiveOvertimeApprovalPage consolidated into VpApprovalsDashboardPage)
 
@@ -475,6 +476,7 @@ const router = createBrowserRouter([
       { path: '/payroll/runs/:ulid/vp-review', element: withSuspense(guard('payroll.vp_approve', <PayrollRunVpReviewPage />)) },
       { path: '/payroll/runs/:ulid/disburse', element: withSuspense(guard('payroll.view_runs', <PayrollRunDisbursePage />)) },
       { path: '/payroll/periods', element: withSuspense(guard('payroll.manage_pay_periods', <PayPeriodListPage />)) },
+      { path: '/payroll/final-pay', element: withSuspense(guard('payroll.view_runs', <FinalPayPage />)) },
 
       // ── Accounting domain ─────────────────────────────────────────────────
       { path: '/accounting/accounts', element: withSuspense(guard('chart_of_accounts.view', <AccountsPage />)) },
