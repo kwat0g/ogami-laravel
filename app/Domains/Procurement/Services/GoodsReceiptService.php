@@ -483,7 +483,9 @@ final class GoodsReceiptService implements ServiceContract
             );
         }
 
-        if ($gr->returned_at !== null) {
+        // C4 FIX: Idempotency guard — prevent double-return which would
+        // double-reverse stock and permanently desync inventory.
+        if ($gr->returned_at !== null || $gr->status === 'returned') {
             throw new DomainException(
                 message: 'This Goods Receipt has already been returned.',
                 errorCode: 'GR_ALREADY_RETURNED',
@@ -492,6 +494,18 @@ final class GoodsReceiptService implements ServiceContract
         }
 
         return DB::transaction(function () use ($gr, $data, $actor): GoodsReceipt {
+            // C4 FIX: Re-check inside transaction with pessimistic lock to prevent
+            // race condition where two concurrent return requests both pass the
+            // pre-transaction guard.
+            $gr = GoodsReceipt::lockForUpdate()->find($gr->id);
+            if ($gr->status === 'returned' || $gr->returned_at !== null) {
+                throw new DomainException(
+                    message: 'This Goods Receipt has already been returned (concurrent request detected).',
+                    errorCode: 'GR_ALREADY_RETURNED',
+                    httpStatus: 409,
+                );
+            }
+
             $gr->load(['items.poItem', 'purchaseOrder']);
 
             // Determine which items to return (all if not specified)
@@ -592,7 +606,12 @@ final class GoodsReceiptService implements ServiceContract
 
             $name = trim($poItem->item_description);
 
-            $existing = ItemMaster::whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first();
+            // M3 FIX: Normalize item name before matching to prevent duplicate
+            // ItemMasters caused by extra spaces or case variants.
+            // Collapse multiple spaces, trim, and lowercase for comparison.
+            $normalizedName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $name)));
+
+            $existing = ItemMaster::whereRaw('LOWER(TRIM(REGEXP_REPLACE(name, \'\\s+\', \' \', \'g\'))) = ?', [$normalizedName])->first();
 
             if ($existing) {
                 $grItem->update(['item_master_id' => $existing->id]);
