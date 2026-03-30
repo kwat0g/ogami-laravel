@@ -290,6 +290,11 @@ final class PurchaseRequestService implements ServiceContract
         // SoD: Budget verifier cannot be the reviewer
         $this->assertSod($actor, $pr->reviewed_by_id ?? 0, 'SOD-BC-01', 'Budget verifier cannot be the same person who reviewed the PR.');
 
+        // H9 FIX: Enforce budget check — verify that the department has sufficient
+        // annual budget allocation before allowing the PR to proceed. Without this,
+        // budget controls are decorative, not enforced.
+        $this->enforceBudgetLimit($pr);
+
         $pr->update([
             'status' => 'budget_verified',
             'budget_checked_by_id' => $actor->id,
@@ -492,6 +497,75 @@ final class PurchaseRequestService implements ServiceContract
         $number = $last ? (int) substr($last->pr_reference, -5) + 1 : 1;
 
         return $prefix.str_pad((string) $number, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * H9 FIX: Enforce budget limit before PR budget verification.
+     *
+     * Checks that the department's annual budget has sufficient remaining
+     * allocation for this PR's estimated total. If the budget would be exceeded,
+     * the PR is hard-blocked (not just a warning).
+     */
+    private function enforceBudgetLimit(PurchaseRequest $pr): void
+    {
+        if (! $pr->department_id) {
+            return; // System-generated PRs without department skip budget check
+        }
+
+        // Calculate PR estimated total from items
+        $prTotal = (float) DB::table('purchase_request_items')
+            ->where('purchase_request_id', $pr->id)
+            ->selectRaw('COALESCE(SUM(estimated_total), 0) as total')
+            ->value('total');
+
+        if ($prTotal <= 0) {
+            return; // No cost items to check
+        }
+
+        // Look up the department's approved annual budget for the current fiscal year
+        $currentYear = (int) date('Y');
+        $budget = DB::table('annual_budgets')
+            ->where('department_id', $pr->department_id)
+            ->where('fiscal_year', $currentYear)
+            ->where('status', 'approved')
+            ->first();
+
+        if (! $budget) {
+            // No approved budget found — allow PR to proceed with a warning log
+            \Illuminate\Support\Facades\Log::warning("H9-BUDGET: No approved annual budget for department {$pr->department_id} in FY{$currentYear}. PR {$pr->pr_reference} proceeding without budget check.");
+            return;
+        }
+
+        // Calculate already consumed budget (approved + converted PRs in this FY)
+        $consumed = (float) DB::table('purchase_requests')
+            ->where('department_id', $pr->department_id)
+            ->whereIn('status', ['budget_verified', 'approved', 'converted_to_po'])
+            ->where('id', '!=', $pr->id) // Exclude current PR
+            ->whereYear('created_at', $currentYear)
+            ->join('purchase_request_items', 'purchase_requests.id', '=', 'purchase_request_items.purchase_request_id')
+            ->sum('purchase_request_items.estimated_total');
+
+        $budgetAmount = (float) ($budget->total_amount ?? $budget->amount ?? 0);
+        $remaining = $budgetAmount - $consumed;
+
+        if ($prTotal > $remaining && $remaining >= 0) {
+            $deptName = DB::table('departments')->where('id', $pr->department_id)->value('name') ?? "#{$pr->department_id}";
+            throw new DomainException(
+                "Budget exceeded: PR {$pr->pr_reference} requires "
+                .number_format($prTotal, 2)." but department '{$deptName}' only has "
+                .number_format(max(0, $remaining), 2)." remaining in the FY{$currentYear} budget "
+                ."(total: ".number_format($budgetAmount, 2).", consumed: ".number_format($consumed, 2).").",
+                'PR_BUDGET_EXCEEDED',
+                422,
+                [
+                    'pr_total' => $prTotal,
+                    'budget_total' => $budgetAmount,
+                    'budget_consumed' => $consumed,
+                    'budget_remaining' => $remaining,
+                    'department_id' => $pr->department_id,
+                ],
+            );
+        }
     }
 
     private function assertStatus(PurchaseRequest $pr, string $expected, string $errorCode): void
