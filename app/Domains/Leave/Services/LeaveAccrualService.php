@@ -68,6 +68,11 @@ final class LeaveAccrualService implements ServiceContract
 
     /**
      * Accrue leave for a single employee + leave type for a given year.
+     *
+     * M5 FIX: Prorates the first accrual for mid-year hires. An employee
+     * hired on June 15 should not receive the full annual allocation --
+     * they should only accrue from their hire month onward. Without this,
+     * the company overpays leave liability for new hires.
      */
     public function accrueForEmployee(Employee $employee, LeaveType $leaveType, int $year): void
     {
@@ -81,7 +86,47 @@ final class LeaveAccrualService implements ServiceContract
                 ['opening_balance' => 0.0, 'accrued' => 0.0, 'adjusted' => 0.0, 'used' => 0.0, 'monetized' => 0.0],
             );
 
-            $balance->accrued += $leaveType->monthly_accrual_days;
+            // M5 FIX: Prorate accrual for mid-year hires.
+            // If the employee was hired in the accrual year and this is their
+            // first accrual, only credit from hire month onward.
+            $accrualAmount = (float) $leaveType->monthly_accrual_days;
+
+            if ($employee->date_hired && $balance->accrued == 0.0) {
+                $hireDate = \Carbon\Carbon::parse((string) $employee->date_hired);
+                $hireYear = (int) $hireDate->year;
+
+                if ($hireYear === $year) {
+                    // Employee hired mid-year: calculate remaining months in the year
+                    $hireMonth = (int) $hireDate->month;
+                    $currentMonth = (int) now()->month;
+
+                    // Only accrue if hire month is in the current year
+                    // Skip accrual for months before hire
+                    if ($currentMonth < $hireMonth) {
+                        return; // Don't accrue before hire date
+                    }
+
+                    // For the first accrual after hire, prorate based on remaining months
+                    $remainingMonths = 12 - $hireMonth + 1; // months from hire through December
+                    $proratedTotal = $accrualAmount * $remainingMonths;
+
+                    // Only credit the prorated portion on first accrual
+                    $balance->accrued = $proratedTotal;
+                    $balance->save();
+
+                    Log::info('M5-PRORATE: Leave accrual prorated for mid-year hire', [
+                        'employee_id' => $employee->id,
+                        'leave_type_id' => $leaveType->id,
+                        'hire_month' => $hireMonth,
+                        'remaining_months' => $remainingMonths,
+                        'prorated_total' => $proratedTotal,
+                    ]);
+
+                    return;
+                }
+            }
+
+            $balance->accrued += $accrualAmount;
             $balance->save();
         });
     }
