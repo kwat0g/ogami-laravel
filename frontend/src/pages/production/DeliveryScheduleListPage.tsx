@@ -12,13 +12,15 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { DeliveryScheduleStatus } from '@/types/production'
 import type { DeliverySchedule } from '@/types/production'
 
-const statusBadge: Record<DeliveryScheduleStatus, string> = {
-  open:          'bg-neutral-100 text-neutral-700',
-  in_production: 'bg-neutral-100 text-neutral-700',
-  ready:         'bg-neutral-200 text-neutral-800',
-  dispatched:    'bg-neutral-100 text-neutral-700',
-  delivered:     'bg-neutral-200 text-neutral-800',
-  cancelled:     'bg-neutral-100 text-neutral-400',
+const statusBadge: Record<string, string> = {
+  open:             'bg-neutral-100 text-neutral-700',
+  planning:         'bg-neutral-100 text-neutral-600',
+  in_production:    'bg-blue-100 text-blue-700',
+  partially_ready:  'bg-amber-100 text-amber-700',
+  ready:            'bg-green-100 text-green-700',
+  dispatched:       'bg-purple-100 text-purple-700',
+  delivered:        'bg-emerald-100 text-emerald-700',
+  cancelled:        'bg-neutral-100 text-neutral-400',
 }
 
 export default function DeliveryScheduleListPage(): React.ReactElement {
@@ -118,7 +120,7 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
             <table className="min-w-full text-sm">
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  {['DS Reference', 'Customer', 'Product', 'Qty', 'Target Date', 'Type', 'Status'].map((h) => (
+                  {['DS Reference', 'Customer', 'Items', 'Target Date', 'Type', 'Progress', 'Status'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-600">{h}</th>
                   ))}
                 </tr>
@@ -138,11 +140,16 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
               <td className="px-4 py-3 font-mono text-neutral-900 font-medium">{ds.ds_reference}</td>
               <td className="px-4 py-3 text-neutral-600">{ds.customer?.name ?? '—'}</td>
               <td className="px-4 py-3">
-                <div className="text-xs font-mono text-neutral-400">{ds.product_item?.item_code}</div>
-                <div className="text-sm text-neutral-800">{ds.product_item?.name}</div>
-              </td>
-              <td className="px-4 py-3 tabular-nums font-semibold text-neutral-700">
-                {parseFloat(String(ds.qty_ordered)).toLocaleString('en-PH', { maximumFractionDigits: 2 })}
+                {ds.total_items > 0 ? (
+                  <span className="text-sm text-neutral-700 font-medium">{ds.total_items} item{ds.total_items !== 1 ? 's' : ''}</span>
+                ) : ds.product_item ? (
+                  <div>
+                    <div className="text-xs font-mono text-neutral-400">{ds.product_item?.item_code}</div>
+                    <div className="text-sm text-neutral-800">{ds.product_item?.name}</div>
+                  </div>
+                ) : (
+                  <span className="text-neutral-400">—</span>
+                )}
               </td>
               <td className="px-4 py-3 text-neutral-500">
                 {new Date(ds.target_delivery_date).toLocaleDateString('en-PH')}
@@ -151,6 +158,11 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
                 <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${ds.type === 'export' ? 'bg-neutral-100 text-neutral-700' : 'bg-neutral-100 text-neutral-600'}`}>
                   {ds.type}
                 </span>
+              </td>
+              <td className="px-4 py-3">
+                {ds.total_items > 0 ? (
+                  <span className="text-xs text-neutral-500">{ds.ready_items}/{ds.total_items} ready</span>
+                ) : '—'}
               </td>
           <td className="px-4 py-3">
             <div className="flex items-center gap-2">

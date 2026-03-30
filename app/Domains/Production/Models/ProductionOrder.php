@@ -24,6 +24,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $ulid
  * @property string $po_reference
  * @property int|null $delivery_schedule_id
+ * @property int|null $delivery_schedule_item_id
  * @property int|null $client_order_id
  * @property string|null $source_type
  * @property int|null $source_id
@@ -52,6 +53,7 @@ final class ProductionOrder extends Model implements Auditable
     protected $fillable = [
         'ulid',
         'delivery_schedule_id',
+        'delivery_schedule_item_id',
         'client_order_id',
         'source_type',
         'source_id',
@@ -85,6 +87,11 @@ final class ProductionOrder extends Model implements Auditable
     public function deliverySchedule(): BelongsTo
     {
         return $this->belongsTo(DeliverySchedule::class, 'delivery_schedule_id');
+    }
+
+    public function deliveryScheduleItem(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryScheduleItem::class, 'delivery_schedule_item_id');
     }
 
     public function clientOrder(): BelongsTo

@@ -30,18 +30,43 @@ export interface Bom {
 export type DeliveryScheduleStatus = 'open' | 'in_production' | 'ready' | 'dispatched' | 'delivered' | 'cancelled'
 export type DeliveryScheduleType   = 'local' | 'export'
 
+export interface DeliveryScheduleItem {
+  id: number
+  ulid: string
+  product_item_id: number
+  product_item: { id: number; item_code: string; name: string; unit_of_measure?: string } | null
+  qty_ordered: string
+  unit_price: string | null
+  status: string
+  notes: string | null
+  production_orders?: { id: number; ulid: string; po_reference: string; status: string; qty_required: string; qty_produced: string; target_start_date: string; target_end_date: string }[] | null
+}
+
 export interface DeliverySchedule {
   id: number
   ulid: string
   ds_reference: string
   customer: { id: number; name: string; email?: string } | null
+  client_order_id: number | null
+  client_order?: { id: number; order_reference: string; status: string } | null
   product_item: { id: number; item_code: string; name: string; unit_of_measure?: string } | null
-  qty_ordered: string
+  product_item_id: number | null
+  qty_ordered: string | null
   unit_price: string | null
+  items?: DeliveryScheduleItem[]
   target_delivery_date: string
+  actual_delivery_date?: string | null
   type: DeliveryScheduleType
   status: DeliveryScheduleStatus
   notes: string | null
+  delivery_address?: string | null
+  delivery_instructions?: string | null
+  total_items: number
+  ready_items: number
+  missing_items: number
+  has_dispute?: boolean
+  item_status_summary?: Record<string, unknown>[] | null
+  dispatched_at?: string | null
   production_orders?: ProductionOrder[]
   delivery_receipts?: Record<string, unknown>[]
   created_at: string | null
