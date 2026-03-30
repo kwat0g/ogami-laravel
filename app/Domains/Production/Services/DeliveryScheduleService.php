@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Production\Services;
 
+use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\DeliverySchedule;

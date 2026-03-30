@@ -48,7 +48,7 @@ export interface DeliverySchedule {
   deleted_at?: string | null
 }
 
-export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'completed' | 'cancelled'
+export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'on_hold' | 'completed' | 'closed' | 'cancelled'
 
 export interface ProductionOrder {
   id: number
