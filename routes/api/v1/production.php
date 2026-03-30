@@ -105,11 +105,30 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     Route::delete('routings/{routing}', [RoutingController::class, 'destroy'])->middleware('throttle:api-action');
     Route::post('routings/bom/{bomId}/reorder', [RoutingController::class, 'reorder'])->middleware('throttle:api-action');
 
-    // ── MRP (Enhancement) ────────────────────────────────────────────────
-    Route::get('mrp/summary', function (): JsonResponse {
-        $service = app(\App\Domains\Production\Services\MrpService::class);
-        return response()->json(['data' => $service->summary()]);
-    })->middleware('permission:production.orders.view');
+    // ── MRP (Material Requirements Planning) ─────────────────────────────
+    Route::prefix('mrp')->middleware('permission:production.orders.view')->group(function (): void {
+        Route::get('/summary', function (): JsonResponse {
+            $service = app(\App\Domains\Production\Services\MrpService::class);
+            return response()->json(['data' => $service->summary()]);
+        });
+
+        Route::get('/explode', function (Request $request): JsonResponse {
+            $validated = $request->validate([
+                'product_item_id' => ['required', 'integer', 'exists:item_masters,id'],
+                'qty' => ['required', 'numeric', 'min:0.0001'],
+            ]);
+            $service = app(\App\Domains\Production\Services\MrpService::class);
+            return response()->json(['data' => $service->explodeRequirements(
+                (int) $validated['product_item_id'],
+                (float) $validated['qty']
+            )]);
+        });
+
+        Route::get('/time-phased', function (): JsonResponse {
+            $service = app(\App\Domains\Production\Services\MrpService::class);
+            return response()->json(['data' => $service->timePhased()]);
+        });
+    });
 
     // ── BOM Where-Used (Enhancement) ────────────────────────────────────
     Route::get('bom/where-used/{itemId}', function (int $itemId): JsonResponse {
