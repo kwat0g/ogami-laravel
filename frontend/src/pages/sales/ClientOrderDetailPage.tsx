@@ -313,8 +313,8 @@ export default function ClientOrderDetailPage(): JSX.Element {
                 onClick={() => setShowNegotiateModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-neutral-100 text-neutral-800 text-sm rounded hover:bg-neutral-200 border border-neutral-300"
               >
-                <MessageCircle className="h-4 w-4" />
-                Negotiate
+                <Calendar className="h-4 w-4" />
+                Negotiate Date
               </button>
             </ActionGuard>
           )}
@@ -444,12 +444,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
                   {item.line_notes && (
                     <p className="text-xs text-neutral-500 mt-0.5">Note: {item.line_notes}</p>
                   )}
-                  {(item.negotiated_quantity || item.negotiated_price_centavos) && (
-                    <p className="text-xs text-purple-600 mt-0.5">
-                      Negotiated: {item.negotiated_quantity ? `Qty: ${item.negotiated_quantity}` : ''}
-                      {item.negotiated_price_centavos ? ` Price: ${formatCurrency(item.negotiated_price_centavos)}` : ''}
-                    </p>
-                  )}
+                  {/* Item qty/price negotiation disabled — only delivery date can be negotiated */}
                 </td>
                 <td className="px-3 py-3 text-right text-neutral-700">
                   {item.quantity} {item.unit_of_measure}
@@ -678,9 +673,9 @@ export default function ClientOrderDetailPage(): JSX.Element {
       {showNegotiateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded border border-neutral-200 w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold text-neutral-900">Negotiate Order</h2>
+            <h2 className="text-lg font-semibold text-neutral-900">Negotiate Delivery Date</h2>
             <p className="text-sm text-neutral-500 mt-2">
-              Propose changes to the client.
+              Propose a new delivery date to the client. Item quantities and prices cannot be changed.
             </p>
             <div className="space-y-4 mt-4">
               <div>
