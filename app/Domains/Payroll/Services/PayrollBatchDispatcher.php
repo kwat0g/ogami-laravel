@@ -83,12 +83,37 @@ final class PayrollBatchDispatcher implements ServiceContract
             ->name("payroll-run-{$run->id}")
             ->allowFailures()
             ->onQueue('payroll')
-            ->then(function (Batch $batch) use ($runId): void {
-                // All jobs done — aggregate totals and mark COMPUTED.
+            ->then(function (Batch $batch) use ($runId, $totalEmployees): void {
+                // All jobs done — aggregate totals and validate success rate.
                 $processed = (int) DB::table('payroll_details')->where('payroll_run_id', $runId)->count();
                 $gross = (int) DB::table('payroll_details')->where('payroll_run_id', $runId)->sum('gross_pay_centavos');
                 $net = (int) DB::table('payroll_details')->where('payroll_run_id', $runId)->sum('net_pay_centavos');
                 $deductions = (int) DB::table('payroll_details')->where('payroll_run_id', $runId)->sum('total_deductions_centavos');
+
+                // H4 FIX: Validate that a minimum percentage of employees were actually
+                // computed before transitioning to COMPUTED. If <50% succeeded, mark as
+                // FAILED to prevent an empty/near-empty payroll from being approved.
+                $minSuccessRate = 0.50; // 50% threshold
+                $successRate = $totalEmployees > 0 ? ($processed / $totalEmployees) : 0;
+
+                if ($processed === 0 || $successRate < $minSuccessRate) {
+                    $pct = round($successRate * 100, 1);
+                    DB::table('payroll_runs')->where('id', $runId)->update([
+                        'status' => 'FAILED',
+                        'failure_reason' => "Only {$processed} of {$totalEmployees} employees computed ({$pct}%). "
+                            ."Minimum success rate is ".($minSuccessRate * 100).'%. '
+                            .'Check attendance data and employee records, then retry.',
+                        'computation_completed_at' => now(),
+                        'progress_json' => json_encode([
+                            'total_employees' => $totalEmployees,
+                            'employees_processed' => $processed,
+                            'percent_complete' => $pct,
+                            'failed' => true,
+                        ]),
+                    ]);
+
+                    return;
+                }
 
                 DB::table('payroll_runs')->where('id', $runId)->update([
                     'status' => 'COMPUTED',

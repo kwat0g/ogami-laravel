@@ -28,12 +28,26 @@ final class PayrollRunPolicy
 {
     use HandlesAuthorization;
 
-    /** Admin bypasses; admin has NO payroll business data access per matrix,
-     *  but `before` returning true is needed for test infra admin users. */
+    /**
+     * Admin/super_admin bypass for view-only abilities.
+     *
+     * C6 FIX: Admins can view payroll data for system administration, but
+     * CANNOT bypass SoD-gated approval actions (hr_approve, acctg_approve,
+     * vp_approve, disburse, publish). This prevents a single admin from
+     * initiating AND approving their own payroll run.
+     */
     public function before(User $user, string $ability): ?bool
     {
         if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
-            return true;
+            // Allow view/read abilities for admin
+            $viewAbilities = ['viewAny', 'view', 'viewPayslip', 'viewBreakdown', 'viewGlPreview'];
+            if (in_array($ability, $viewAbilities, true)) {
+                return true;
+            }
+
+            // For mutation abilities, fall through to normal policy checks
+            // so SoD rules are enforced even for admins
+            return null;
         }
 
         return null;

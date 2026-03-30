@@ -45,6 +45,24 @@ const queryClient = new QueryClient({
     mutations: {
       // Surface mutation errors above — mutations never auto-retry
       retry: false,
+      // C10 FIX: Global mutation error handler — shows toast for ALL mutations
+      // that don't have a specific onError. Individual hooks can still override.
+      onError: (error: unknown) => {
+        // Skip errors already handled by the API interceptor (429, 5xx, cooldown)
+        const err = error as Record<string, unknown>
+        if (err?.__handled === true || err?.__cooldown === true) return
+
+        // Extract meaningful message from the error
+        const message =
+          (err?.message as string) ??
+          (err?.error_code as string) ??
+          'Operation failed. Please try again.'
+
+        // Dynamic import to avoid circular deps
+        void import('sonner').then(({ toast }) => {
+          toast.error(message, { duration: 5000 })
+        })
+      },
     },
   },
 })

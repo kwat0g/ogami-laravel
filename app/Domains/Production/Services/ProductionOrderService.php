@@ -646,6 +646,56 @@ final class ProductionOrderService implements ServiceContract
         });
     }
 
+    /**
+     * C5 FIX: Rework a completed production order — requires NCR reference.
+     *
+     * When QC rejects a batch after production completion, the order must be
+     * reopened for rework. This method validates that a valid NCR exists and
+     * links it to the order for traceability. Without an NCR, rework is blocked.
+     *
+     * @param  string  $ncrUlid  The ULID of the Non-Conformance Report triggering rework
+     * @param  string|null  $reason  Optional rework reason/notes
+     */
+    public function rework(ProductionOrder $order, string $ncrUlid, ?string $reason = null): ProductionOrder
+    {
+        // Validate the state transition: completed -> in_progress
+        $stateMachine = new ProductionOrderStateMachine();
+        $stateMachine->transition($order, 'in_progress');
+
+        // Validate NCR exists and is active
+        $ncr = \App\Domains\QC\Models\NonConformanceReport::where('ulid', $ncrUlid)->first();
+
+        if ($ncr === null) {
+            throw new DomainException(
+                'Rework requires a valid Non-Conformance Report (NCR). The provided NCR reference was not found.',
+                'PROD_REWORK_NCR_NOT_FOUND',
+                422,
+                ['ncr_ulid' => $ncrUlid],
+            );
+        }
+
+        // Ensure NCR is not already closed
+        if ($ncr->status === 'closed') {
+            throw new DomainException(
+                "NCR #{$ncr->ncr_number} is already closed. Reopen it or create a new NCR before initiating rework.",
+                'PROD_REWORK_NCR_CLOSED',
+                422,
+                ['ncr_ulid' => $ncrUlid, 'ncr_status' => $ncr->status],
+            );
+        }
+
+        $order->update([
+            'status' => 'in_progress',
+            'rework_ncr_id' => $ncr->id,
+            'rework_reason' => $reason,
+            'rework_started_at' => now(),
+        ]);
+
+        Log::info("PROD-REWORK: Order #{$order->po_reference} reopened for rework. NCR: {$ncr->ncr_number}");
+
+        return $order->refresh();
+    }
+
     public function cancel(ProductionOrder $order): ProductionOrder
     {
         $stateMachine = new ProductionOrderStateMachine();
