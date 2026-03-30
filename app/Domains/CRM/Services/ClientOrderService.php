@@ -777,14 +777,16 @@ final class ClientOrderService implements ServiceContract
             $schedule->updateItemStatusSummary();
         }
 
-        // Link schedule to client order items via pivot
-        foreach ($items as $item) {
-            ClientOrderDeliverySchedule::create([
+        // Link order to this schedule once (unique_order_schedule enforces 1 row per pair)
+        ClientOrderDeliverySchedule::firstOrCreate(
+            [
                 'client_order_id' => $order->id,
-                'client_order_item_id' => $item->id,
                 'delivery_schedule_id' => $schedule->id,
-            ]);
-        }
+            ],
+            [
+                'client_order_item_id' => $firstItem?->id,
+            ]
+        );
 
         // Create CombinedDeliverySchedule for backward compat
         $combinedSchedule = CombinedDeliverySchedule::create([
