@@ -58,6 +58,10 @@ final class MaterialRequisitionService implements ServiceContract
      * PROD-002: Auto-generate a draft MRQ from a BOM when a production order is released.
      *
      * mr_reference is auto-populated by the PostgreSQL trigger trg_mrq_reference.
+     *
+     * Flexibility: Controlled by system_settings:
+     *   - mrq.auto_submit_system_generated (default: true) — auto-submit after creation
+     *   - mrq.auto_approve_system_generated (default: false) — skip 5-step approval
      */
     public function createFromBom(ProductionOrder $order, User $actor): MaterialRequisition
     {
@@ -91,6 +95,32 @@ final class MaterialRequisitionService implements ServiceContract
             ]);
 
             $this->syncItems($mrq, $items);
+
+            // ── Fast-track for system-generated MRQs ─────────────────────
+            $autoSubmit = (bool) (DB::table('system_settings')
+                ->where('key', 'mrq.auto_submit_system_generated')
+                ->value('value') ?? true);
+
+            if ($autoSubmit) {
+                $mrq->update([
+                    'status' => 'submitted',
+                    'submitted_by_id' => $actor->id,
+                    'submitted_at' => now(),
+                ]);
+            }
+
+            $autoApprove = (bool) (DB::table('system_settings')
+                ->where('key', 'mrq.auto_approve_system_generated')
+                ->value('value') ?? false);
+
+            if ($autoSubmit && $autoApprove) {
+                $mrq->update([
+                    'status' => 'approved',
+                    'vp_approved_by_id' => $actor->id,
+                    'vp_approved_at' => now(),
+                    'vp_comments' => 'Auto-approved: system-generated MRQ for production order',
+                ]);
+            }
 
             return $mrq->refresh();
         });

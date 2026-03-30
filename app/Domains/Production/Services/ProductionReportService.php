@@ -25,7 +25,7 @@ final class ProductionReportService implements ServiceContract
      */
     public function costAnalysis(array $filters = []): array
     {
-        $query = ProductionOrder::with(['product', 'bom:id,name'])
+        $query = ProductionOrder::with(['productItem', 'bom:id,version'])
             ->whereIn('status', ['completed', 'released', 'in_progress']);
 
         if (! empty($filters['date_from'])) {
@@ -52,8 +52,8 @@ final class ProductionReportService implements ServiceContract
                 'order_id' => $order->id,
                 'ulid' => $order->ulid,
                 'po_reference' => $order->po_reference ?? "PO-{$order->id}",
-                'product_name' => $order->product?->name ?? "\u{2014}",
-                'bom_name' => $order->bom?->name ?? "\u{2014}",
+                'product_name' => $order->productItem?->name ?? "\u{2014}",
+                'bom_name' => $order->bom?->version ?? "\u{2014}",
                 'status' => $order->status,
                 'qty_required' => $order->qty_required,
                 'qty_produced' => $outputQty,

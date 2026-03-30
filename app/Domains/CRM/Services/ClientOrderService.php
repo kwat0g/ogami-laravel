@@ -989,20 +989,24 @@ final class ClientOrderService implements ServiceContract
                 $targetEndDate = $targetStartDate->copy()->addDays($productionDays - 1);
             }
 
-            // ── Create Production Order with all enhancements ────────────────
-            $productionOrder = ProductionOrder::create([
+            // ── Create Production Order via unified gateway ──────────────────
+            // Delegates to ProductionOrderService::store() for consistent
+            // po_reference generation, BOM snapshot, and cost estimation.
+            $actor = User::findOrFail($userId);
+            $poService = app(\App\Domains\Production\Services\ProductionOrderService::class);
+            $productionOrder = $poService->store([
                 'delivery_schedule_id' => $schedule->id,
+                'client_order_id' => $order->id,
+                'source_type' => 'client_order',
+                'source_id' => $order->id,
                 'product_item_id' => $schedule->product_item_id,
                 'bom_id' => $bom->id,
                 'qty_required' => $deficit,
                 'target_start_date' => $targetStartDate->toDateString(),
                 'target_end_date' => $targetEndDate->toDateString(),
-                'status' => 'draft',
                 'notes' => "Auto-created from Client Order {$order->order_reference}"
                     .($availableStock > 0 ? " (partial stock: {$availableStock} reserved, producing deficit: {$deficit})" : ''),
-                'created_by_id' => $userId,
-                'client_order_id' => $order->id,
-            ]);
+            ], $actor);
 
             // ── Gap #5: Notify production team ───────────────────────────────
             DB::afterCommit(fn () => ProductionOrderAutoCreated::dispatch($productionOrder->fresh(), $order->fresh()));

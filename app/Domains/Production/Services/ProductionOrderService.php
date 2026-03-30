@@ -223,8 +223,12 @@ final class ProductionOrderService implements ServiceContract
 
         /** @var ProductionOrder $order */
         $order = ProductionOrder::create([
-            'po_reference' => $this->generateReference(),
+            'po_reference' => $data['po_reference'] ?? $this->generateReference(),
             'delivery_schedule_id' => $data['delivery_schedule_id'] ?? null,
+            'client_order_id' => $data['client_order_id'] ?? null,
+            'sales_order_id' => $data['sales_order_id'] ?? null,
+            'source_type' => $data['source_type'] ?? 'manual',
+            'source_id' => $data['source_id'] ?? null,
             'product_item_id' => $data['product_item_id'],
             'bom_id' => $data['bom_id'],
             'bom_snapshot' => $bomSnapshot,
@@ -239,6 +243,72 @@ final class ProductionOrderService implements ServiceContract
         ]);
 
         return $order->load('productItem', 'bom', 'createdBy');
+    }
+
+    /** @param array<string,mixed> $data */
+    public function update(ProductionOrder $order, array $data): ProductionOrder
+    {
+        if ($order->status !== 'draft') {
+            throw new DomainException(
+                'Only draft production orders can be edited.',
+                'PROD_ORDER_NOT_DRAFT',
+                422,
+            );
+        }
+
+        // Recalculate end date if start date or BOM changed
+        if (! empty($data['target_start_date']) && ! empty($data['bom_id'])) {
+            $data['target_end_date'] = $data['target_end_date']
+                ?? $this->calculateEndDate($data['target_start_date'], $data['bom_id']);
+        }
+
+        // Recalculate cost if BOM or qty changed
+        if (isset($data['bom_id']) || isset($data['qty_required'])) {
+            $bomId = $data['bom_id'] ?? $order->bom_id;
+            $qty = (float) ($data['qty_required'] ?? $order->qty_required);
+            $bom = BillOfMaterials::with('components.componentItem')->find($bomId);
+
+            if ($bom !== null) {
+                $standardUnitCost = (int) ($bom->standard_cost_centavos ?? 0);
+                if ($standardUnitCost === 0) {
+                    try {
+                        $costingService = app(CostingService::class);
+                        $costResult = $costingService->standardCost($bom, 'material_labor_overhead');
+                        $standardUnitCost = $costResult['total_standard_cost_centavos'];
+                    } catch (\Throwable) {
+                        // Proceed with zero cost if calculation fails
+                    }
+                }
+                $data['standard_unit_cost_centavos'] = $standardUnitCost;
+                $data['estimated_total_cost_centavos'] = (int) round($standardUnitCost * $qty);
+            }
+        }
+
+        $order->update(array_filter([
+            'product_item_id' => $data['product_item_id'] ?? null,
+            'bom_id' => $data['bom_id'] ?? null,
+            'qty_required' => $data['qty_required'] ?? null,
+            'standard_unit_cost_centavos' => $data['standard_unit_cost_centavos'] ?? null,
+            'estimated_total_cost_centavos' => $data['estimated_total_cost_centavos'] ?? null,
+            'target_start_date' => $data['target_start_date'] ?? null,
+            'target_end_date' => $data['target_end_date'] ?? null,
+            'notes' => $data['notes'] ?? null,
+        ], fn ($v) => $v !== null));
+
+        return $order->refresh()->load('productItem', 'bom', 'createdBy');
+    }
+
+    /**
+     * Close a completed production order (terminal state — costs posted).
+     */
+    public function close(ProductionOrder $order): ProductionOrder
+    {
+        $stateMachine = new ProductionOrderStateMachine();
+        $stateMachine->transition($order, 'closed');
+
+        $order->update(['status' => 'closed']);
+
+        return $order->refresh();
     }
 
     /**
@@ -632,6 +702,7 @@ final class ProductionOrderService implements ServiceContract
     /**
      * Place an in-progress or released work order on hold (e.g. after a QC failure).
      * QC-001: Failed inspection blocks further production until resolved.
+     * Tracks held_from_state so resume() returns to the correct state.
      */
     public function hold(ProductionOrder $order, ?string $reason = null): ProductionOrder
     {
@@ -639,16 +710,20 @@ final class ProductionOrderService implements ServiceContract
             throw new DomainException('Only released or in-progress orders can be placed on hold.', 'PROD_ORDER_NOT_HOLDABLE', 422);
         }
 
+        $heldFromState = $order->status;
+
         $order->update([
             'status' => 'on_hold',
             'hold_reason' => $reason,
+            'held_from_state' => $heldFromState,
         ]);
 
         return $order->refresh();
     }
 
     /**
-     * Resume a held work order, returning it to in_progress.
+     * Resume a held work order, returning it to the state it was in before being held.
+     * If held_from_state is not set (legacy), defaults to in_progress.
      */
     public function resume(ProductionOrder $order): ProductionOrder
     {
@@ -656,9 +731,12 @@ final class ProductionOrderService implements ServiceContract
             throw new DomainException('Only on-hold orders can be resumed.', 'PROD_ORDER_NOT_ON_HOLD', 422);
         }
 
+        $resumeToState = $order->held_from_state ?? 'in_progress';
+
         $order->update([
-            'status' => 'in_progress',
+            'status' => $resumeToState,
             'hold_reason' => null,
+            'held_from_state' => null,
         ]);
 
         return $order->refresh();

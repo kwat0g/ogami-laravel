@@ -37,17 +37,20 @@ final class CreateDeliveryReceiptOnProductionComplete implements ShouldBeUnique,
     {
         $order = $event->order;
 
-        // Only auto-create DR if this WO is linked to a delivery schedule
-        if ($order->delivery_schedule_id === null) {
-            return;
+        // ── QC Gate (BUG-3 fix): Two distinct paths:
+        //
+        // 1. WO WITH delivery_schedule_id → defer DR creation to
+        //    CreateDeliveryReceiptOnOqcPass (runs after OQC inspection passes).
+        //    This ensures finished goods are QC-approved before shipping.
+        //
+        // 2. WO WITHOUT delivery_schedule_id → create DR immediately here
+        //    (manual/internal production not linked to client orders).
+        if ($order->delivery_schedule_id !== null) {
+            return; // Path 1: handled by OQC pass listener
         }
 
-        // ── QC Gate: If this WO has a delivery schedule, defer DR creation
-        //    to CreateDeliveryReceiptOnOqcPass (runs after QC inspection passes).
-        //    This ensures finished goods are QC-approved before shipping.
-        //    Only create DR immediately for WOs WITHOUT a delivery schedule
-        //    (i.e. manual / internal production not linked to client orders).
-        if ($order->delivery_schedule_id !== null) {
+        $netQty = max(0.0, (float) $order->qty_produced - (float) $order->qty_rejected);
+        if ($netQty <= 0) {
             return;
         }
 
@@ -58,19 +61,12 @@ final class CreateDeliveryReceiptOnProductionComplete implements ShouldBeUnique,
             return;
         }
 
-        // Load delivery schedule to get customer
-        $schedule = $order->deliverySchedule()->first();
-        $customerId = $schedule?->customer_id;
-
-        $netQty = max(0.0, (float) $order->qty_produced - (float) $order->qty_rejected);
-
-        $receipt = $this->deliveryService->storeReceipt(
+        $this->deliveryService->storeReceipt(
             data: [
                 'direction' => 'outbound',
-                'customer_id' => $customerId,
-                'delivery_schedule_id' => $order->delivery_schedule_id,
+                'customer_id' => null,
                 'receipt_date' => now()->toDateString(),
-                'remarks' => "Auto-created from Production WO #{$order->id} ({$order->po_reference}) — pending warehouse confirmation.",
+                'remarks' => "Auto-created from Production WO #{$order->id} ({$order->po_reference}) — internal production, pending warehouse confirmation.",
                 'received_by_id' => $systemUser->id,
                 'items' => [
                     [

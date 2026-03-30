@@ -48,23 +48,31 @@ export interface DeliverySchedule {
   deleted_at?: string | null
 }
 
-export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'completed' | 'cancelled'
+export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'on_hold' | 'completed' | 'closed' | 'cancelled'
+
+export type ProductionOrderSourceType = 'client_order' | 'sales_order' | 'delivery_schedule' | 'manual' | 'rework'
 
 export interface ProductionOrder {
   id: number
   ulid: string
   po_reference: string
   delivery_schedule?: { id: number; ulid: string; ds_reference: string } | null
+  client_order_id?: number | null
+  sales_order_id?: number | null
+  source_type?: ProductionOrderSourceType | null
+  source_id?: number | null
   product_item?: { id: number; item_code: string; name: string } | null
   bom?: Bom | null
   qty_required: string
   qty_produced: string
+  qty_rejected?: string
   progress_pct: number
   standard_unit_cost_centavos: number
   estimated_total_cost_centavos: number
   target_start_date: string
   target_end_date: string
   status: ProductionOrderStatus
+  hold_reason?: string | null
   mrq_pending?: boolean
   notes: string | null
   created_by?: { id: number; name: string } | null

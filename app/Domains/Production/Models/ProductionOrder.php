@@ -8,6 +8,7 @@ use App\Domains\CRM\Models\ClientOrder;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\QC\Models\Inspection;
+use App\Domains\Sales\Models\SalesOrder;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -24,6 +25,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $po_reference
  * @property int|null $delivery_schedule_id
  * @property int|null $client_order_id
+ * @property string|null $source_type
+ * @property int|null $source_id
+ * @property int|null $sales_order_id
  * @property int $product_item_id
  * @property int $bom_id
  * @property string $qty_required
@@ -49,6 +53,9 @@ final class ProductionOrder extends Model implements Auditable
         'ulid',
         'delivery_schedule_id',
         'client_order_id',
+        'source_type',
+        'source_id',
+        'sales_order_id',
         'product_item_id',
         'bom_id',
         'bom_snapshot',
@@ -60,6 +67,7 @@ final class ProductionOrder extends Model implements Auditable
         'status',
         'notes',
         'hold_reason',
+        'held_from_state',
         'created_by_id',
     ];
 
@@ -82,6 +90,11 @@ final class ProductionOrder extends Model implements Auditable
     public function clientOrder(): BelongsTo
     {
         return $this->belongsTo(ClientOrder::class, 'client_order_id');
+    }
+
+    public function salesOrder(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class, 'sales_order_id');
     }
 
     public function productItem(): BelongsTo

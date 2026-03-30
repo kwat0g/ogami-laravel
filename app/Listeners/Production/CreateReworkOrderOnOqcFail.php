@@ -6,8 +6,9 @@ namespace App\Listeners\Production;
 
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\ProductionOrder;
-use App\Domains\QC\Models\Inspection;
+use App\Domains\Production\Services\ProductionOrderService;
 use App\Events\QC\InspectionFailed;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
@@ -71,19 +72,30 @@ final class CreateReworkOrderOnOqcFail implements ShouldQueue
         $targetStartDate = now()->addDay();
         $targetEndDate = $targetStartDate->copy()->addDays($productionDays - 1);
 
-        $reworkOrder = ProductionOrder::create([
+        // Delegate to ProductionOrderService::store() for consistent
+        // po_reference generation, BOM snapshot, and cost estimation.
+        $actor = User::find($order->created_by_id)
+            ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
+
+        if ($actor === null) {
+            Log::warning("QC-REWORK-001: No user found to create rework order for WO #{$order->id}");
+            return;
+        }
+
+        $poService = app(ProductionOrderService::class);
+        $reworkOrder = $poService->store([
             'delivery_schedule_id' => $order->delivery_schedule_id,
             'client_order_id' => $order->client_order_id,
+            'source_type' => 'rework',
+            'source_id' => $order->id,
             'product_item_id' => $order->product_item_id,
             'bom_id' => $bom?->id ?? $order->bom_id,
             'qty_required' => $deficit,
             'target_start_date' => $targetStartDate->toDateString(),
             'target_end_date' => $targetEndDate->toDateString(),
-            'status' => 'draft',
             'notes' => "Rework order — rework from OQC #{$inspection->id} (WO {$order->po_reference}). "
                 ."{$inspection->qty_failed} units failed inspection; producing {$deficit} to meet required qty of {$qtyRequired}.",
-            'created_by_id' => $order->created_by_id,
-        ]);
+        ], $actor);
 
         Log::info("QC-REWORK-001: Created rework WO #{$reworkOrder->id} for {$deficit} units (OQC #{$inspection->id}, original WO #{$order->id}).");
     }

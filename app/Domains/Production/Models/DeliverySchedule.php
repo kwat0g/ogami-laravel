@@ -76,4 +76,9 @@ final class DeliverySchedule extends Model implements Auditable
     {
         return $this->hasMany(DeliveryReceipt::class, 'delivery_schedule_id');
     }
+
+    public function combinedDeliverySchedule(): BelongsTo
+    {
+        return $this->belongsTo(CombinedDeliverySchedule::class, 'combined_delivery_schedule_id');
+    }
 }

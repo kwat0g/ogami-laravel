@@ -22,7 +22,7 @@ class UpdateClientOrderOnProductionComplete
 {
     public function handle(ProductionOrderCompleted $event): void
     {
-        $order = $event->productionOrder;
+        $order = $event->order;
 
         if ($order->client_order_id === null) {
             return; // Not linked to a client order

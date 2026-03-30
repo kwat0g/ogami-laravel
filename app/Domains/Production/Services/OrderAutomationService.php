@@ -9,7 +9,6 @@ use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
-use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -99,30 +98,19 @@ final class OrderAutomationService implements ServiceContract
                     : now()->addDays(14)->toDateString();
                 $targetStart = now()->addDays(3)->toDateString();
 
-                $seq = DB::selectOne("SELECT NEXTVAL('production_order_seq') AS val");
-                $num = str_pad((string) $seq->val, 5, '0', STR_PAD_LEFT);
-                $reference = 'PO-' . now()->format('Y-m') . '-' . $num;
-
-                // Calculate standard cost from BOM (same logic as ProductionOrderService::store)
-                $standardUnitCost = (int) ($bom->standard_cost_centavos ?? 0);
-                $estimatedTotalCost = (int) round($standardUnitCost * $qty);
-
-                $productionOrder = ProductionOrder::create([
-                    'po_reference' => $reference,
+                // Delegate to ProductionOrderService::store() for consistent
+                // po_reference generation, BOM snapshot, and cost estimation.
+                $productionOrder = $this->productionOrderService->store([
                     'client_order_id' => $order->id,
+                    'source_type' => 'client_order',
+                    'source_id' => $order->id,
                     'product_item_id' => $productItemId,
                     'bom_id' => $bom->id,
                     'qty_required' => $qty,
-                    'qty_produced' => 0,
-                    'qty_rejected' => 0,
-                    'standard_unit_cost_centavos' => $standardUnitCost,
-                    'estimated_total_cost_centavos' => $estimatedTotalCost,
                     'target_start_date' => $targetStart,
                     'target_end_date' => $targetEnd,
-                    'status' => 'draft',
                     'notes' => "Auto-created from Client Order {$order->order_reference}",
-                    'created_by_id' => $actor->id,
-                ]);
+                ], $actor);
 
                 $createdOrders[] = $productionOrder;
 
