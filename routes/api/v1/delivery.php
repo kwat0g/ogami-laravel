@@ -15,15 +15,44 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     Route::get('/receipts/{deliveryReceipt}', [DeliveryController::class, 'showReceipt']);
     Route::patch('/receipts/{deliveryReceipt}/confirm', [DeliveryController::class, 'confirmReceipt'])
         ->middleware('throttle:30,1');
-    // Vehicles list for shipment preparation dropdown
+    // ── Fleet / Vehicles CRUD ──────────────────────────────────────────────
     Route::get('/vehicles', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
         abort_unless($request->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
         $vehicles = \App\Domains\Delivery\Models\Vehicle::query()
-            ->where('status', 'active')
+            ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
             ->orderBy('name')
-            ->get(['id', 'ulid', 'code', 'name', 'type', 'make_model', 'plate_number', 'status']);
+            ->get();
         return response()->json(['data' => $vehicles]);
     })->name('vehicles.index');
+
+    Route::post('/vehicles', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:20'],
+            'name' => ['required', 'string', 'max:100'],
+            'type' => ['required', 'string', 'max:50'],
+            'make_model' => ['nullable', 'string', 'max:100'],
+            'plate_number' => ['required', 'string', 'max:20'],
+            'status' => ['sometimes', 'string', 'in:active,maintenance,decommissioned'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+        $vehicle = \App\Domains\Delivery\Models\Vehicle::create(array_merge($data, ['status' => $data['status'] ?? 'active']));
+        return response()->json(['data' => $vehicle], 201);
+    })->middleware('throttle:api-action')->name('vehicles.store');
+
+    Route::patch('/vehicles/{vehicle}', function (\Illuminate\Http\Request $request, \App\Domains\Delivery\Models\Vehicle $vehicle): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:100'],
+            'type' => ['sometimes', 'string', 'max:50'],
+            'make_model' => ['nullable', 'string', 'max:100'],
+            'plate_number' => ['sometimes', 'string', 'max:20'],
+            'status' => ['sometimes', 'string', 'in:active,maintenance,decommissioned'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+        $vehicle->update($data);
+        return response()->json(['data' => $vehicle->fresh()]);
+    })->middleware('throttle:api-action')->name('vehicles.update');
 
     Route::post('/receipts/{deliveryReceipt}/prepare-shipment', [DeliveryController::class, 'prepareShipment'])
         ->middleware('throttle:30,1');
