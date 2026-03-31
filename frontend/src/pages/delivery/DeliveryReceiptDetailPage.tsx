@@ -37,6 +37,7 @@ function PrepareShipmentModal({
   onClose,
   onSubmit,
   isLoading,
+  defaultEstimatedDelivery,
 }: {
   open: boolean
   onClose: () => void
@@ -49,11 +50,12 @@ function PrepareShipmentModal({
     notes?: string
   }) => void
   isLoading: boolean
+  defaultEstimatedDelivery?: string
 }) {
   const [vehicleId, setVehicleId] = useState<number>(0)
   const [driverName, setDriverName] = useState('')
   const [carrier, setCarrier] = useState('Company Fleet')
-  const [estimatedArrival, setEstimatedArrival] = useState('')
+  const [estimatedArrival, setEstimatedArrival] = useState(defaultEstimatedDelivery ?? '')
   const [notes, setNotes] = useState('')
   const [dispatchPhoto, setDispatchPhoto] = useState<string | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
@@ -185,13 +187,18 @@ function PrepareShipmentModal({
               {dispatchPhoto ? 'Photo captured -- click to replace' : 'Take photo of loaded goods (optional)'}
             </button>
             {dispatchPhoto && (
-              <div className="mt-2 relative">
-                <img src={dispatchPhoto} alt="Dispatch" className="w-full h-24 object-cover rounded-lg" />
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.open(dispatchPhoto, '_blank')}
+                  className="text-xs text-blue-600 hover:text-blue-700 underline"
+                >View Photo</button>
+                <span className="text-xs text-green-600">Photo attached</span>
                 <button
                   type="button"
                   onClick={() => setDispatchPhoto(null)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                >x</button>
+                  className="text-xs text-red-500 hover:text-red-600"
+                >Remove</button>
               </div>
             )}
           </div>
@@ -725,6 +732,7 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
         onClose={() => setShipmentOpen(false)}
         onSubmit={handlePrepareShipment}
         isLoading={prepareShipmentMut.isPending}
+        defaultEstimatedDelivery={drAny.delivery_schedule?.target_delivery_date || drAny.receipt_date || ''}
       />
 
       <ConfirmDialog
