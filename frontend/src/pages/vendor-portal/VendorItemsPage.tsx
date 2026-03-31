@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Plus, Pencil, Search, Upload } from 'lucide-react'
+import { Plus, Pencil, Search, Upload, Package } from 'lucide-react'
 import {
   useVendorPortalItems,
   useCreateVendorPortalItem,
@@ -9,8 +9,11 @@ import {
 } from '@/hooks/useVendorPortal'
 import { useDebounce } from '@/hooks/useDebounce'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Card } from '@/components/ui/Card'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
+import { statusBadges } from '@/styles/design-system'
 
 const UOM_OPTIONS = [
   { value: 'pc', label: 'Piece (pc)' },
@@ -108,10 +111,11 @@ export default function VendorItemsPage(): React.ReactElement {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="My Catalog"
         subtitle="Manage your product and service listings"
+        icon={<Package className="h-5 w-5 text-neutral-600" />}
       />
       <div className="space-y-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -285,39 +289,43 @@ export default function VendorItemsPage(): React.ReactElement {
       )}
 
       {isInitialLoading ? (
-        <div className="bg-white border border-neutral-200 rounded-lg px-6 py-12 text-center">
-          <p className="text-neutral-500 text-sm">Loading catalog…</p>
-        </div>
+        <SkeletonLoader rows={5} />
       ) : listItems.length === 0 ? (
-        <div className="bg-white border border-neutral-200 rounded-lg px-6 py-12 text-center">
-          <p className="text-neutral-500 text-sm">
-            {hasSearch ? 'No items match your search.' : 'No items in your catalog yet.'}
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Package className="h-8 w-8 text-neutral-400" />
+          </div>
+          <h3 className="text-base font-medium text-neutral-900 mb-1">
+            {hasSearch ? 'No items match your search' : 'No items in your catalog yet'}
+          </h3>
+          <p className="text-sm text-neutral-500 max-w-sm mx-auto">
+            {hasSearch ? 'Try adjusting your search terms.' : 'Add your first item to start building your catalog.'}
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+        <Card className="overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="text-left px-4 py-2 font-medium text-neutral-600 text-xs uppercase">Code</th>
-                <th className="text-left px-4 py-2 font-medium text-neutral-600 text-xs uppercase">Name</th>
-                <th className="text-left px-4 py-2 font-medium text-neutral-600 text-xs uppercase">UOM</th>
-                <th className="text-right px-4 py-2 font-medium text-neutral-600 text-xs uppercase">Unit Price</th>
-                <th className="text-left px-4 py-2 font-medium text-neutral-600 text-xs uppercase">Status</th>
-                <th className="px-4 py-2"></th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Code</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">UOM</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Unit Price</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 w-10"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-neutral-100">
               {listItems.map((item) => (
-                <tr key={item.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                  <td className="px-4 py-3 font-mono text-xs text-neutral-700">{item.item_code}</td>
+                <tr key={item.id} className="hover:bg-neutral-50 transition-colors">
+                  <td className="px-4 py-3 font-mono text-xs font-medium text-neutral-700">{item.item_code}</td>
                   <td className="px-4 py-3 text-neutral-800">{item.item_name}</td>
                   <td className="px-4 py-3 text-neutral-600">{item.unit_of_measure}</td>
                   <td className="px-4 py-3 text-right font-medium text-neutral-800">
-                    ₱{(item.unit_price / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    &#8369;{(item.unit_price / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.is_active ? 'bg-neutral-200 text-neutral-700' : 'bg-neutral-100 text-neutral-400'}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.is_active ? statusBadges.active : statusBadges.inactive}`}>
                       {item.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -325,7 +333,7 @@ export default function VendorItemsPage(): React.ReactElement {
                     {canManage && (
                       <button
                         onClick={() => openEdit(item)}
-                        className="text-neutral-400 hover:text-neutral-700"
+                        className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -335,7 +343,7 @@ export default function VendorItemsPage(): React.ReactElement {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
     </div>
   )

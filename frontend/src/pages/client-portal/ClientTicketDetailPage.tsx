@@ -6,10 +6,10 @@ import { useTicket, useReplyToTicket, useReopenTicket } from '@/hooks/useCRM'
 import { useAuthStore } from '@/stores/authStore'
 
 const statusBadge: Record<string, string> = {
-  open: 'bg-neutral-100 text-neutral-700',
-  in_progress: 'bg-yellow-100 text-yellow-800',
-  resolved: 'bg-neutral-200 text-neutral-800',
-  closed: 'bg-neutral-100 text-neutral-600',
+  open: 'bg-blue-50 text-blue-700 border border-blue-200',
+  in_progress: 'bg-amber-50 text-amber-700 border border-amber-200',
+  resolved: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  closed: 'bg-neutral-100 text-neutral-500 border border-neutral-200',
 }
 
 export default function ClientTicketDetailPage() {
@@ -74,13 +74,13 @@ export default function ClientTicketDetailPage() {
   const publicMessages = ticket.messages?.filter(m => !m.is_internal) ?? []
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <button onClick={() => navigate('/client-portal/tickets')} className="text-sm text-neutral-500 hover:text-neutral-700 mb-4">
+    <div className="max-w-3xl mx-auto space-y-5">
+      <button onClick={() => navigate('/client-portal/tickets')} className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 font-medium">
         &larr; Back to my tickets
       </button>
 
       {/* Header */}
-      <div className="bg-white rounded border border-neutral-200 p-6 mb-4">
+      <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-mono text-neutral-400 mb-1">{ticket.ticket_number}</div>
@@ -117,7 +117,7 @@ export default function ClientTicketDetailPage() {
               Reopen Ticket
             </button>
           ) : (
-            <div className="bg-white rounded border border-neutral-200 p-4">
+            <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
               <h3 className="font-semibold text-sm mb-2">Reopen Ticket</h3>
               <input 
                 type="text" 
@@ -154,10 +154,10 @@ export default function ClientTicketDetailPage() {
       <div className="space-y-3 mb-4">
         <h2 className="font-semibold text-sm text-neutral-700 uppercase tracking-wide">Messages</h2>
         {publicMessages.length === 0 && (
-          <div className="bg-white rounded border border-neutral-200 p-6 text-center text-sm text-neutral-400">No messages yet.</div>
+          <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-6 text-center text-sm text-neutral-400">No messages yet.</div>
         )}
         {publicMessages.map(msg => (
-          <div key={msg.id} className="bg-white rounded border border-neutral-200 p-4">
+          <div key={msg.id} className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="font-medium text-sm">{msg.author?.name ?? 'Support'}</span>
               <span className="text-xs text-neutral-400">{new Date(msg.created_at).toLocaleString()}</span>
@@ -169,7 +169,7 @@ export default function ClientTicketDetailPage() {
 
       {/* Reply form */}
       {canReply && (
-        <div className="bg-white rounded border border-neutral-200 p-4">
+        <div className="bg-white rounded-lg border border-neutral-200 shadow-sm p-4">
           <h3 className="font-semibold text-sm mb-2">Add a Reply</h3>
           <textarea 
             value={replyBody} 
