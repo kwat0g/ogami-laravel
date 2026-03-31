@@ -19,6 +19,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { InfoRow, InfoList } from '@/components/ui/InfoRow';
 import StatusTimeline from '@/components/ui/StatusTimeline';
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline';
 import { getDeliveryReceiptSteps, isRejectedStatus } from '@/lib/workflowSteps';
 import type { DrDirection } from '@/types/delivery';
 
@@ -612,6 +613,14 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
               )}
             </tbody>
           </table>
+        </CardBody>
+      </Card>
+
+      {/* Document Chain */}
+      <Card className="mt-5">
+        <CardHeader>Document Chain</CardHeader>
+        <CardBody>
+          <ChainRecordTimeline documentType="delivery_receipt" documentId={dr.id} />
         </CardBody>
       </Card>
 

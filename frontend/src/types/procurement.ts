@@ -41,12 +41,13 @@ export type PurchaseOrderStatus =
   | 'negotiating'
   | 'acknowledged'
   | 'in_transit'
+  | 'delivered'
   | 'partially_received'
   | 'fully_received'
   | 'closed'
   | 'cancelled'
 
-export type GoodsReceiptStatus = 'draft' | 'pending_qc' | 'qc_passed' | 'qc_failed' | 'partial_accept' | 'confirmed' | 'rejected' | 'returned'
+export type GoodsReceiptStatus = 'draft' | 'submitted' | 'pending_qc' | 'qc_passed' | 'qc_failed' | 'confirmed' | 'returned' | 'cancelled'
 
 export type GoodsReceiptItemQcStatus = 'pending' | 'passed' | 'failed' | 'accepted_with_ncr'
 

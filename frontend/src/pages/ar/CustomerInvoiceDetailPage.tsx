@@ -19,6 +19,7 @@ import { ExportPdfButton } from '@/components/ui/ExportPdfButton'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow } from '@/components/ui/InfoRow'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ReceivePaymentPayload, WriteOffPayload } from '@/types/ar'
 
@@ -435,6 +436,14 @@ export default function CustomerInvoiceDetailPage() {
           </CardBody>
         </Card>
       )}
+
+      {/* Document Chain */}
+      <Card>
+        <CardHeader>Document Chain</CardHeader>
+        <CardBody>
+          <ChainRecordTimeline documentType="customer_invoice" documentId={invoice.id} />
+        </CardBody>
+      </Card>
     </div>
   )
 }

@@ -27,6 +27,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import { PERMISSIONS } from '@/lib/permissions'
 import StatusTimeline from '@/components/ui/StatusTimeline'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { getVendorInvoiceSteps, isRejectedStatus } from '@/lib/workflowSteps'
 
 export default function APInvoiceDetailPage() {
@@ -643,6 +644,14 @@ export default function APInvoiceDetailPage() {
             This invoice is <span className="font-semibold">overdue</span>.
           </div>
         )}
+
+        {/* Document Chain */}
+        <Card>
+          <CardHeader>Document Chain</CardHeader>
+          <CardBody>
+            <ChainRecordTimeline documentType="vendor_invoice" documentId={invoice.id} />
+          </CardBody>
+        </Card>
       </div>
     </div>
   )

@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusTimeline from '@/components/ui/StatusTimeline'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { getClientOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import { toast } from 'sonner'
 import { NEGOTIATION_REASONS, REJECTION_REASONS } from '@/types/client-order'
@@ -898,6 +899,16 @@ export default function ClientOrderDetailPage(): JSX.Element {
           </div>
         </div>
       )}
+
+      {/* Document Chain */}
+      <div className="bg-white rounded border border-neutral-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-neutral-100">
+          <h2 className="text-sm font-semibold text-neutral-900">Document Chain</h2>
+        </div>
+        <div className="p-4">
+          <ChainRecordTimeline documentType="client_order" documentId={order.id} />
+        </div>
+      </div>
     </div>
   )
 }
