@@ -251,7 +251,6 @@ const DeliveryReceiptListPage         = lazyWithRetry(() => import('@/pages/deli
 const CreateDeliveryReceiptPage       = lazyWithRetry(() => import('@/pages/delivery/CreateDeliveryReceiptPage'))
 const DeliveryVehiclesPage             = lazyWithRetry(() => import('@/pages/delivery/DeliveryVehiclesPage'))
 const DeliveryReceiptDetailPage       = lazyWithRetry(() => import('@/pages/delivery/DeliveryReceiptDetailPage'))
-const ShipmentsPage                   = lazyWithRetry(() => import('@/pages/delivery/ShipmentsPage'))
 
 // Maintenance
 const EquipmentListPage              = lazyWithRetry(() => import('@/pages/maintenance/EquipmentListPage'))
@@ -637,7 +636,6 @@ const router = createBrowserRouter([
       { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.manage', <CreateDeliveryReceiptPage />)) },
       { path: '/delivery/receipts/:ulid', element: withSuspense(guard('delivery.view', <DeliveryReceiptDetailPage />)) },
       { path: '/delivery/vehicles', element: withSuspense(guard('delivery.view', <DeliveryVehiclesPage />)) },
-      { path: '/delivery/shipments', element: withSuspense(guard('delivery.view', <ShipmentsPage />)) },
       { path: '/delivery/routes', element: withSuspense(guard('delivery.routes.view', <DeliveryRoutesPage />)) },
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────

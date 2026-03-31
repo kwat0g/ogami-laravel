@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { useDeliveryReceipts, useShipments } from '@/hooks/useDelivery'
+import { useDeliveryReceipts } from '@/hooks/useDelivery'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import {
@@ -83,14 +83,14 @@ function ModuleLink({
 export default function ImpexOfficerDashboard(): React.ReactElement {
   useAuth()
   const { data: receiptsData,  isLoading: loadingReceipts }  = useDeliveryReceipts({ status: 'pending',   per_page: '1' })
-  const { data: shipmentsData, isLoading: loadingShipments } = useShipments({ status: 'in_transit', per_page: '1' })
+  const { data: dispatchedData, isLoading: loadingDispatched } = useDeliveryReceipts({ status: 'dispatched', per_page: '1' })
 
-  const isLoading = loadingReceipts || loadingShipments
+  const isLoading = loadingReceipts || loadingDispatched
 
   if (isLoading) return <SkeletonLoader rows={8} />
 
   const pendingReceipts = (receiptsData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
-  const activeShipments = (shipmentsData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
+  const activeDeliveries = (dispatchedData as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0
 
   return (
     <div className="space-y-6">
@@ -127,11 +127,11 @@ export default function ImpexOfficerDashboard(): React.ReactElement {
           alert={pendingReceipts > 0}
         />
         <KpiCard
-          label="In-Transit Shipments"
-          value={activeShipments}
-          sub="Currently in transit"
+          label="Active Deliveries"
+          value={activeDeliveries}
+          sub="Dispatched / in transit"
           icon={Ship}
-          href="/delivery/shipments"
+          href="/delivery/receipts"
         />
         <KpiCard
           label="Delivery Operations"
@@ -154,7 +154,7 @@ export default function ImpexOfficerDashboard(): React.ReactElement {
           <CardBody>
             <div className="space-y-2">
               <ModuleLink href="/delivery/receipts" label="Inbound Receipts" icon={Archive} desc="Confirm received goods and materials" />
-              <ModuleLink href="/delivery/shipments" label="Outbound Shipments" icon={Ship} desc="Track shipments to customers" />
+              <ModuleLink href="/delivery/vehicles" label="Delivery Vehicles" icon={Truck} desc="Vehicle availability and delivery tracking" />
               <ModuleLink href="/procurement/goods-receipts" label="Goods Receipts" icon={Package} desc="Match received goods to POs" />
             </div>
           </CardBody>

@@ -189,7 +189,7 @@ export default function PlantManagerDashboard(): React.ReactElement {
               <ModuleLink href="/maintenance/work-orders" label="Maintenance Work Orders" icon={Wrench} desc="Schedule and track repairs" />
               <ModuleLink href="/maintenance/equipment" label="Equipment Registry" icon={Settings} desc="All plant equipment records" />
               <ModuleLink href="/mold/masters" label="Mold Masters" icon={Settings} desc="Mold lifecycle and shot tracking" />
-              <ModuleLink href="/delivery/shipments" label="Shipments" icon={Truck} desc="Outbound shipment tracking" />
+              <ModuleLink href="/delivery/vehicles" label="Delivery Vehicles" icon={Truck} desc="Vehicle fleet and availability tracking" />
               <ModuleLink href="/iso/documents" label="ISO Documents" icon={ShieldCheck} desc="Controlled documents and revisions" />
               <ModuleLink href="/iso/audits" label="ISO Audits" icon={ShieldCheck} desc="Internal audit schedule and findings" />
             </div>
