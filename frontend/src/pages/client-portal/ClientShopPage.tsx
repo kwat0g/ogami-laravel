@@ -72,7 +72,9 @@ export default function ClientShopPage(): JSX.Element {
           notes: item.line_notes || '',
         }))
       )
-      setRequestedDate(existingOrder.requested_delivery_date || '')
+      // Extract yyyy-MM-dd from ISO datetime (e.g. "2026-04-03T16:00:00.000000Z" -> "2026-04-03")
+      const rawDate = existingOrder.requested_delivery_date || ''
+      setRequestedDate(rawDate ? rawDate.substring(0, 10) : '')
       setOrderNotes(existingOrder.client_notes || '')
       setInitialized(true)
     }
@@ -135,6 +137,27 @@ export default function ClientShopPage(): JSX.Element {
   }, 0)
 
   const itemCount = orderItems.reduce((sum, line) => sum + line.quantity, 0)
+
+  // Detect changes in edit mode (compare current state to original order)
+  const hasChanges = useMemo(() => {
+    if (!isEditMode || !existingOrder) return true // new order always "has changes"
+    
+    // Compare notes
+    if ((orderNotes || '') !== (existingOrder.client_notes || '')) return true
+    // Compare delivery date
+    const originalDate = (existingOrder.requested_delivery_date || '').substring(0, 10)
+    if (requestedDate !== originalDate) return true
+    // Compare items count
+    if (orderItems.length !== existingOrder.items.length) return true
+    // Compare each item's id, quantity, notes
+    for (const line of orderItems) {
+      const orig = existingOrder.items.find((i: any) => (i.item_master_id ?? i.itemMaster?.id) === line.item.id)
+      if (!orig) return true // new item added
+      if (line.quantity !== parseFloat(orig.quantity)) return true
+      if ((line.notes || '') !== (orig.line_notes || '')) return true
+    }
+    return false
+  }, [isEditMode, existingOrder, orderItems, requestedDate, orderNotes])
 
   const handleSubmitOrder = async () => {
     if (orderItems.length === 0) {
@@ -463,7 +486,7 @@ export default function ClientShopPage(): JSX.Element {
 
               <button
                 onClick={handleSubmitOrder}
-                disabled={isSaving || orderItems.length === 0}
+                disabled={isSaving || orderItems.length === 0 || (isEditMode && !hasChanges)}
                 className="w-full py-2.5 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm"
               >
                 {isSaving ? (
