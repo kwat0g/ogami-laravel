@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\Delivery\Services;
 
+use App\Domains\CRM\Models\ClientOrder;
+use App\Domains\CRM\Models\ClientOrderActivity;
+use App\Domains\CRM\StateMachines\ClientOrderStateMachine;
 use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Delivery\Models\Shipment;
 use App\Domains\Inventory\Models\StockBalance;
@@ -17,6 +20,7 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 final class DeliveryService implements ServiceContract
 {
@@ -350,6 +354,110 @@ final class DeliveryService implements ServiceContract
 
             $schedule->update(['status' => $pending ? 'dispatched' : 'delivered']);
         }
+
+        // Propagate DS status change up to parent ClientOrder
+        $this->syncClientOrderStatus($schedule->fresh());
+    }
+
+    /**
+     * Aggregate all DeliverySchedule statuses for a ClientOrder and advance
+     * the order through its state machine (approved -> ... -> delivered).
+     */
+    private function syncClientOrderStatus(DeliverySchedule $schedule): void
+    {
+        $clientOrder = $schedule->clientOrder;
+        if ($clientOrder === null) {
+            return;
+        }
+
+        // Only propagate if CO is in a state that allows forward delivery transitions
+        if (! in_array($clientOrder->status, ['approved', 'in_production', 'ready_for_delivery'], true)) {
+            return;
+        }
+
+        // Query ALL delivery schedules linked to this client order
+        $allSchedules = DeliverySchedule::where('client_order_id', $clientOrder->id)->get();
+
+        if ($allSchedules->isEmpty()) {
+            return;
+        }
+
+        $statuses = $allSchedules->pluck('status')->toArray();
+        $total = count($statuses);
+        $deliveredCount = count(array_filter($statuses, fn (string $s): bool => $s === 'delivered'));
+        $cancelledCount = count(array_filter($statuses, fn (string $s): bool => $s === 'cancelled'));
+        $dispatchedOrLater = count(array_filter($statuses, fn (string $s): bool => in_array($s, ['dispatched', 'delivered'], true)));
+
+        $activeTotal = $total - $cancelledCount;
+
+        // All active DSs delivered -> CO delivered
+        if ($activeTotal > 0 && $deliveredCount >= $activeTotal) {
+            $this->transitionClientOrder($clientOrder, 'delivered');
+
+            return;
+        }
+
+        // At least one DS dispatched/delivered -> CO ready_for_delivery
+        if ($dispatchedOrLater > 0 && in_array($clientOrder->status, ['approved', 'in_production'], true)) {
+            $this->transitionClientOrder($clientOrder, 'ready_for_delivery');
+        }
+    }
+
+    /**
+     * Walk the ClientOrder through intermediate states to reach the target.
+     * Logs an activity entry for each transition.
+     */
+    private function transitionClientOrder(ClientOrder $clientOrder, string $targetStatus): void
+    {
+        $stateMachine = new ClientOrderStateMachine();
+        $path = $this->resolveTransitionPath($clientOrder->status, $targetStatus);
+
+        foreach ($path as $nextStatus) {
+            if (! $stateMachine->isAllowed($clientOrder->status, $nextStatus)) {
+                Log::warning('[DeliveryService] Cannot transition ClientOrder', [
+                    'order_id' => $clientOrder->id,
+                    'from' => $clientOrder->status,
+                    'to' => $nextStatus,
+                ]);
+
+                return;
+            }
+
+            $previousStatus = $clientOrder->status;
+            $stateMachine->transition($clientOrder, $nextStatus);
+            $clientOrder->save();
+
+            // Record activity for the client portal timeline
+            ClientOrderActivity::create([
+                'client_order_id' => $clientOrder->id,
+                'user_id' => null, // system-generated transition
+                'user_type' => 'system',
+                'action' => 'status_changed',
+                'from_status' => $previousStatus,
+                'to_status' => $nextStatus,
+                'comment' => 'Status updated automatically based on delivery progress.',
+                'metadata' => ['triggered_by' => 'delivery_sync'],
+            ]);
+        }
+    }
+
+    /**
+     * Compute the intermediate states needed to walk from $from to $to
+     * along the forward delivery chain.
+     *
+     * @return list<string>
+     */
+    private function resolveTransitionPath(string $from, string $to): array
+    {
+        $chain = ['approved', 'in_production', 'ready_for_delivery', 'delivered', 'fulfilled'];
+        $fromIdx = array_search($from, $chain, true);
+        $toIdx = array_search($to, $chain, true);
+
+        if ($fromIdx === false || $toIdx === false || $toIdx <= $fromIdx) {
+            return [];
+        }
+
+        return array_slice($chain, $fromIdx + 1, $toIdx - $fromIdx);
     }
 
     // ── Shipments ─────────────────────────────────────────────────────────

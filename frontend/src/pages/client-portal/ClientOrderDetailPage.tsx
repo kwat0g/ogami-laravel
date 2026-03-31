@@ -60,6 +60,30 @@ const STATUS_CONFIG: Record<string, {
     label: 'Order Approved',
     description: 'Your order has been approved and is being processed for delivery.'
   },
+  in_production: {
+    status: 'in_progress',
+    icon: <Package className="h-4 w-4" />,
+    label: 'In Production',
+    description: 'Your order items are being manufactured.'
+  },
+  ready_for_delivery: {
+    status: 'in_progress',
+    icon: <Truck className="h-4 w-4" />,
+    label: 'Ready for Delivery',
+    description: 'Your order is ready and being prepared for dispatch.'
+  },
+  delivered: {
+    status: 'approved',
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: 'Delivered',
+    description: 'Your order has been delivered. Please verify receipt of all items.'
+  },
+  fulfilled: {
+    status: 'approved',
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: 'Order Complete',
+    description: 'Your order has been fully delivered and acknowledged.'
+  },
   completed: {
     status: 'approved',
     icon: <CheckCircle className="h-4 w-4" />,
@@ -413,7 +437,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
           )}
 
           {/* Delivery Tracking — shown after approval */}
-          {(order.status === 'approved' || order.status === 'completed') && order.deliverySchedules && order.deliverySchedules.length > 0 && (
+          {['approved', 'in_production', 'ready_for_delivery', 'delivered', 'fulfilled', 'completed'].includes(order.status) && order.deliverySchedules && order.deliverySchedules.length > 0 && (
             <Card>
               <CardHeader>
                 <span className="flex items-center gap-2">
@@ -459,7 +483,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
           )}
 
           {/* Post-approval next steps when no delivery schedules visible yet */}
-          {order.status === 'approved' && (!order.deliverySchedules || order.deliverySchedules.length === 0) && (
+          {['approved', 'in_production', 'ready_for_delivery'].includes(order.status) && (!order.deliverySchedules || order.deliverySchedules.length === 0) && (
             <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-4">
               <h3 className="font-medium text-emerald-900 mb-1 flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4" />

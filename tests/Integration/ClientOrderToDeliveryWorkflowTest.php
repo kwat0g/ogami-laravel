@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Domains\AR\Models\Customer;
 use App\Domains\CRM\Services\ClientOrderService;
+use App\Domains\CRM\Models\ClientOrderActivity;
 use App\Domains\Delivery\Models\DeliveryReceipt;
+use App\Domains\Delivery\Services\DeliveryService;
 use App\Domains\HR\Models\Employee;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
@@ -315,4 +317,154 @@ it('executes partial stock flow: Client Order -> PO (deficit) -> QC Pass', funct
     $dr = DeliveryReceipt::where('delivery_schedule_id', $schedule->id)->first();
     expect($dr)->not->toBeNull()
         ->and((float) $dr->items()->first()->quantity_expected)->toBe(70.0);
+});
+
+// ── Scenario D: DR delivery propagates status to ClientOrder ──────────────────
+it('propagates DR delivered status to ClientOrder via DeliverySchedule', function () {
+    // 1. Create and approve order
+    $order = $this->clientOrderService->submitOrder(
+        $this->customer->id,
+        [
+            ['item_master_id' => $this->product->id, 'quantity' => 100, 'unit_price_centavos' => 5000_00],
+        ],
+        now()->addDays(14)->toDateString(),
+        null,
+        $this->salesUser->id
+    );
+    $this->clientOrderService->approveOrder($order, $this->vpUser->id);
+
+    $schedule = DeliverySchedule::where('product_item_id', $this->product->id)
+        ->where('customer_id', $this->customer->id)
+        ->first();
+
+    // 2. Complete production and QC
+    $po = ProductionOrder::where('client_order_id', $order->id)->first();
+    completeProductionOrder($po, 100.0);
+    $oqc = Inspection::where('production_order_id', $po->id)->first();
+    $oqc->update([
+        'status' => 'passed', 'qty_passed' => 100, 'qty_failed' => 0,
+        'inspector_id' => $this->employee->id,
+    ]);
+    $passEvent = new InspectionPassed($oqc);
+    event($passEvent);
+    app(CreateDeliveryReceiptOnOqcPass::class)->handle($passEvent);
+
+    // 3. Stock the warehouse so confirmation can issue stock
+    StockBalance::updateOrCreate(
+        ['item_id' => $this->product->id, 'location_id' => $this->warehouse->id],
+        ['quantity_on_hand' => 200],
+    );
+
+    // 4. Confirm, dispatch, and deliver the DR
+    $dr = DeliveryReceipt::where('delivery_schedule_id', $schedule->id)->first();
+    $deliveryService = app(DeliveryService::class);
+
+    $deliveryService->confirmReceipt($dr, $this->systemUser);
+    $dr->refresh();
+    expect($dr->status)->toBe('confirmed');
+
+    $deliveryService->markDispatched($dr, $this->systemUser);
+    $dr->refresh();
+    expect($dr->status)->toBe('dispatched');
+
+    // After dispatch, DS should be dispatched and CO should move toward ready_for_delivery
+    $schedule->refresh();
+    expect($schedule->status)->toBe('dispatched');
+    $order->refresh();
+    expect($order->status)->toBe('ready_for_delivery');
+
+    $deliveryService->markDelivered($dr, $this->systemUser);
+    $dr->refresh();
+    expect($dr->status)->toBe('delivered');
+
+    // 5. Verify DS and CO status propagation
+    $schedule->refresh();
+    expect($schedule->status)->toBe('delivered');
+
+    $order->refresh();
+    expect($order->status)->toBe('delivered');
+
+    // 6. Verify activity log entries were created for the CO transitions
+    $activities = ClientOrderActivity::where('client_order_id', $order->id)
+        ->where('action', 'status_changed')
+        ->orderBy('id')
+        ->get();
+    expect($activities)->toHaveCount(3); // approved->in_production, in_production->ready_for_delivery, ready_for_delivery->delivered
+    expect($activities->last()->to_status)->toBe('delivered');
+    expect($activities->last()->metadata)->toMatchArray(['triggered_by' => 'delivery_sync']);
+});
+
+// ── Scenario E: Multi-DS partial delivery keeps CO at ready_for_delivery ──────
+it('keeps ClientOrder at ready_for_delivery when only some DSs are delivered', function () {
+    // 1. Create order with 2 items -> 2 delivery schedules
+    $fgCat = ItemCategory::where('code', 'FG')->first();
+    $product2 = ItemMaster::create([
+        'item_code' => 'FG-002',
+        'name' => 'Standard Gadget',
+        'unit_of_measure' => 'pcs',
+        'category_id' => $fgCat->id,
+        'item_type' => 'finished_good',
+        'type' => 'finished_goods',
+        'is_active' => true,
+        'standard_price_centavos' => 3000_00,
+    ]);
+    BillOfMaterials::create([
+        'product_item_id' => $product2->id,
+        'version' => '1.0',
+        'is_active' => true,
+        'standard_production_days' => 3,
+    ]);
+
+    $order = $this->clientOrderService->submitOrder(
+        $this->customer->id,
+        [
+            ['item_master_id' => $this->product->id, 'quantity' => 50, 'unit_price_centavos' => 5000_00],
+            ['item_master_id' => $product2->id, 'quantity' => 30, 'unit_price_centavos' => 3000_00],
+        ],
+        now()->addDays(14)->toDateString(),
+        null,
+        $this->salesUser->id
+    );
+    $this->clientOrderService->approveOrder($order, $this->vpUser->id);
+
+    $schedules = DeliverySchedule::where('client_order_id', $order->id)->get();
+    expect($schedules)->toHaveCount(2);
+
+    $ds1 = $schedules->firstWhere('product_item_id', $this->product->id);
+    $ds2 = $schedules->firstWhere('product_item_id', $product2->id);
+
+    // 2. Complete production for FIRST item only
+    $po1 = ProductionOrder::where('delivery_schedule_id', $ds1->id)->first();
+    completeProductionOrder($po1, 50.0);
+    $oqc1 = Inspection::where('production_order_id', $po1->id)->first();
+    $oqc1->update([
+        'status' => 'passed', 'qty_passed' => 50, 'qty_failed' => 0,
+        'inspector_id' => $this->employee->id,
+    ]);
+    $passEvent1 = new InspectionPassed($oqc1);
+    event($passEvent1);
+    app(CreateDeliveryReceiptOnOqcPass::class)->handle($passEvent1);
+
+    StockBalance::updateOrCreate(
+        ['item_id' => $this->product->id, 'location_id' => $this->warehouse->id],
+        ['quantity_on_hand' => 200],
+    );
+
+    // 3. Confirm, dispatch, deliver first DR
+    $dr1 = DeliveryReceipt::where('delivery_schedule_id', $ds1->id)->first();
+    $deliveryService = app(DeliveryService::class);
+    $deliveryService->confirmReceipt($dr1, $this->systemUser);
+    $deliveryService->markDispatched($dr1, $this->systemUser);
+    $deliveryService->markDelivered($dr1, $this->systemUser);
+
+    // 4. First DS delivered but second DS is still open
+    $ds1->refresh();
+    expect($ds1->status)->toBe('delivered');
+
+    $ds2->refresh();
+    expect($ds2->status)->not->toBe('delivered');
+
+    // 5. CO should be ready_for_delivery (not delivered yet -- second DS still pending)
+    $order->refresh();
+    expect($order->status)->toBe('ready_for_delivery');
 });

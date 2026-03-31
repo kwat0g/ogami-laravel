@@ -34,6 +34,22 @@ const STATUS_CONFIG: Record<string, {
     color: 'text-green-600 bg-green-50',
     icon: <CheckCircle className="h-4 w-4" />
   },
+  in_production: { 
+    color: 'text-blue-600 bg-blue-50',
+    icon: <Package className="h-4 w-4" />
+  },
+  ready_for_delivery: { 
+    color: 'text-indigo-600 bg-indigo-50',
+    icon: <Package className="h-4 w-4" />
+  },
+  delivered: { 
+    color: 'text-emerald-600 bg-emerald-50',
+    icon: <CheckCircle className="h-4 w-4" />
+  },
+  fulfilled: { 
+    color: 'text-green-600 bg-green-50',
+    icon: <CheckCircle className="h-4 w-4" />
+  },
   rejected: { 
     color: 'text-red-600 bg-red-50',
     icon: <AlertCircle className="h-4 w-4" />
