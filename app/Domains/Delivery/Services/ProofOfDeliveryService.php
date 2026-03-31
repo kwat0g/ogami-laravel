@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Delivery\Services;
 
 use App\Domains\Delivery\Models\DeliveryReceipt;
+use App\Domains\Delivery\Services\DeliveryService;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
@@ -26,6 +27,10 @@ use Illuminate\Support\Facades\Storage;
  */
 final class ProofOfDeliveryService implements ServiceContract
 {
+    public function __construct(
+        private readonly DeliveryService $deliveryService,
+    ) {}
+
     /**
      * Record proof of delivery for a delivery receipt.
      *
@@ -41,9 +46,9 @@ final class ProofOfDeliveryService implements ServiceContract
      */
     public function recordPod(DeliveryReceipt $dr, array $podData, User $actor): DeliveryReceipt
     {
-        if (! in_array($dr->status, ['in_transit', 'ready_for_pickup'], true)) {
+        if (! in_array($dr->status, ['dispatched', 'in_transit', 'ready_for_pickup'], true)) {
             throw new DomainException(
-                "Cannot record POD for delivery in status '{$dr->status}'. Must be in_transit or ready_for_pickup.",
+                "Cannot record POD for delivery in status '{$dr->status}'. Must be dispatched, in_transit, or ready_for_pickup.",
                 'DEL_INVALID_POD_STATUS',
                 422,
             );
@@ -69,8 +74,8 @@ final class ProofOfDeliveryService implements ServiceContract
                 );
             }
 
+            // Save POD evidence fields (but NOT status -- that's handled by markDelivered)
             $dr->update([
-                'status' => 'delivered',
                 'pod_receiver_name' => $podData['receiver_name'],
                 'pod_receiver_designation' => $podData['receiver_designation'] ?? null,
                 'pod_signature_path' => $signaturePath,
@@ -83,6 +88,9 @@ final class ProofOfDeliveryService implements ServiceContract
                 'receipt_date' => now()->toDateString(),
                 'received_by_id' => $actor->id,
             ]);
+
+            // Transition DR to delivered and trigger DS -> CO status propagation
+            $this->deliveryService->markDelivered($dr->fresh(), $actor);
 
             return $dr->fresh() ?? $dr;
         });

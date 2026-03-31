@@ -7,10 +7,15 @@ namespace App\Domains\Production\Services;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\AR\Models\Customer;
 use App\Domains\AR\Models\CustomerInvoice;
+use App\Domains\CRM\Models\ClientOrderActivity;
+use App\Domains\CRM\StateMachines\ClientOrderStateMachine;
 use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Production\Models\CombinedDeliverySchedule;
 use App\Domains\Production\Models\DeliverySchedule;
 use App\Models\User;
+use App\Notifications\CRM\ClientOrderDeliveredNotification;
+use App\Notifications\CRM\ClientOrderFulfilledNotification;
+use App\Notifications\CRM\ClientOrderReadyForDeliveryNotification;
 use App\Notifications\Delivery\DeliveryDisputeNotification;
 use App\Notifications\Delivery\DeliveryScheduleDelayedNotification;
 use App\Notifications\Delivery\DeliveryScheduleDispatchedNotification;
@@ -18,6 +23,7 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 final class CombinedDeliveryScheduleService implements ServiceContract
 {
@@ -362,10 +368,97 @@ final class CombinedDeliveryScheduleService implements ServiceContract
             // Create invoice after client acknowledgment
             $this->createCustomerInvoice($schedule, $userId);
 
-            // Update client order status to completed
-            $schedule->clientOrder->update(['status' => 'completed']);
+            // Transition client order to fulfilled via state machine
+            $this->transitionClientOrderToFulfilled($schedule, $userId);
 
             return $schedule->fresh();
         });
+    }
+
+    /**
+     * Transition the parent ClientOrder to 'fulfilled' using the state machine.
+     * Walks through intermediate states if the CO is not yet at 'delivered'.
+     */
+    private function transitionClientOrderToFulfilled(CombinedDeliverySchedule $schedule, int $userId): void
+    {
+        $clientOrder = $schedule->clientOrder;
+        if ($clientOrder === null) {
+            return;
+        }
+
+        $stateMachine = new ClientOrderStateMachine();
+
+        // Define the forward chain to fulfilled
+        $chain = ['approved', 'in_production', 'ready_for_delivery', 'delivered', 'fulfilled'];
+        $fromIdx = array_search($clientOrder->status, $chain, true);
+        $toIdx = array_search('fulfilled', $chain, true);
+
+        if ($fromIdx === false || $toIdx === false || $toIdx <= $fromIdx) {
+            // Already fulfilled or in a terminal state -- nothing to do
+            Log::info('[CombinedDeliveryScheduleService] CO already at or past fulfilled', [
+                'order_id' => $clientOrder->id,
+                'status' => $clientOrder->status,
+            ]);
+
+            return;
+        }
+
+        $path = array_slice($chain, $fromIdx + 1, $toIdx - $fromIdx);
+
+        foreach ($path as $nextStatus) {
+            if (! $stateMachine->isAllowed($clientOrder->status, $nextStatus)) {
+                Log::warning('[CombinedDeliveryScheduleService] Cannot transition CO', [
+                    'order_id' => $clientOrder->id,
+                    'from' => $clientOrder->status,
+                    'to' => $nextStatus,
+                ]);
+
+                return;
+            }
+
+            $previousStatus = $clientOrder->status;
+            $stateMachine->transition($clientOrder, $nextStatus);
+            $clientOrder->save();
+
+            ClientOrderActivity::create([
+                'client_order_id' => $clientOrder->id,
+                'user_id' => $userId,
+                'user_type' => $nextStatus === 'fulfilled' ? 'client' : 'system',
+                'action' => 'status_changed',
+                'from_status' => $previousStatus,
+                'to_status' => $nextStatus,
+                'comment' => $nextStatus === 'fulfilled'
+                    ? 'Order fulfilled after client acknowledged delivery receipt.'
+                    : 'Status updated automatically based on delivery progress.',
+                'metadata' => ['triggered_by' => 'client_acknowledgment'],
+            ]);
+
+            // Notify client user of status change (queued, after commit)
+            $this->dispatchClientOrderNotification($clientOrder, $nextStatus);
+        }
+    }
+
+    /**
+     * Dispatch a notification to the client's submitting user when CO status changes.
+     */
+    private function dispatchClientOrderNotification(
+        \App\Domains\CRM\Models\ClientOrder $clientOrder,
+        string $newStatus
+    ): void {
+        $notifiable = $clientOrder->submittedBy;
+        if ($notifiable === null) {
+            return;
+        }
+
+        $notification = match ($newStatus) {
+            'ready_for_delivery' => ClientOrderReadyForDeliveryNotification::fromModel($clientOrder),
+            'delivered' => ClientOrderDeliveredNotification::fromModel($clientOrder),
+            'fulfilled' => ClientOrderFulfilledNotification::fromModel($clientOrder),
+            default => null,
+        };
+
+        if ($notification !== null) {
+            DB::afterCommit(fn () => $notifiable->notify($notification));
+        }
     }
 }
