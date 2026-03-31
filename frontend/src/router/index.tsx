@@ -709,6 +709,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: withSuspense(guard('client_portal.view_dashboard', <ClientDashboardPage />)) },
       { path: 'shop',            element: withSuspense(guard('client_portal.view_shop', <ClientShopPage />)) },
+      { path: 'orders/:ulid/edit', element: withSuspense(guard('client_portal.view_shop', <ClientShopPage />)) },
       { path: 'orders', element: withSuspense(guard('client_portal.view_orders', <ClientOrdersPage />)) },
       { path: 'orders/:ulid', element: withSuspense(guard('client_portal.view_orders', <ClientOrderDetailPage />)) },
       { path: 'deliveries/:ulid', element: withSuspense(guard('client_portal.view_orders', <OrderReceiptPage />)) },

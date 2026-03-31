@@ -99,6 +99,37 @@ final class ClientOrderController extends Controller
     }
 
     /**
+     * Update a pending order (client can edit items, notes, delivery date)
+     */
+    public function update(Request $request, ClientOrder $order): JsonResponse
+    {
+        $this->authorize('update', $order);
+
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.item_master_id' => 'required|integer|exists:item_masters,id',
+            'items.*.quantity' => 'required|numeric|min:0.0001',
+            'items.*.unit_price_centavos' => 'required|integer|min:1',
+            'items.*.notes' => 'nullable|string',
+            'requested_delivery_date' => 'nullable|date|after_or_equal:today',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $order = $this->service->updateOrder(
+            order: $order,
+            items: $validated['items'],
+            requestedDate: $validated['requested_delivery_date'] ?? null,
+            notes: $validated['notes'] ?? null,
+            userId: $user->id
+        );
+
+        return response()->json($order);
+    }
+
+    /**
      * Approve order (sales)
      */
     public function approve(Request $request, ClientOrder $order): JsonResponse

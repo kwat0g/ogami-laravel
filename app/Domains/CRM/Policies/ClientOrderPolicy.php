@@ -92,6 +92,16 @@ final class ClientOrderPolicy
     }
 
     /**
+     * Update: client can edit their own pending orders only.
+     */
+    public function update(User $user, ClientOrder $order): bool
+    {
+        return $user->hasRole('client')
+            && $user->client_id === $order->customer_id
+            && $order->status === ClientOrder::STATUS_PENDING;
+    }
+
+    /**
      * Cancel: client can cancel their own pending/negotiating orders.
      * Sales staff with reject permission can cancel pre-approval orders.
      */

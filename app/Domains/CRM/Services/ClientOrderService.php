@@ -144,6 +144,68 @@ final class ClientOrderService implements ServiceContract
     }
 
     /**
+     * Update a pending client order (items, notes, delivery date).
+     * Only allowed when status is 'pending'.
+     */
+    public function updateOrder(
+        ClientOrder $order,
+        array $items,
+        ?string $requestedDate,
+        ?string $notes,
+        int $userId
+    ): ClientOrder {
+        if ($order->status !== ClientOrder::STATUS_PENDING) {
+            throw new DomainException(
+                'Only pending orders can be edited.',
+                'CLIENT_ORDER_NOT_EDITABLE',
+                422,
+            );
+        }
+
+        // Calculate new total
+        $totalCentavos = 0;
+        foreach ($items as $item) {
+            $totalCentavos += (int) ($item['quantity'] * $item['unit_price_centavos']);
+        }
+
+        return DB::transaction(function () use ($order, $items, $requestedDate, $notes, $userId, $totalCentavos): ClientOrder {
+            // Update order fields
+            $order->update([
+                'requested_delivery_date' => $requestedDate,
+                'total_amount_centavos' => $totalCentavos,
+                'client_notes' => $notes,
+            ]);
+
+            // Delete old items and recreate
+            $order->items()->delete();
+
+            foreach ($items as $index => $item) {
+                $itemMaster = ItemMaster::findOrFail($item['item_master_id']);
+
+                ClientOrderItem::create([
+                    'client_order_id' => $order->id,
+                    'item_master_id' => $item['item_master_id'],
+                    'item_description' => $itemMaster->description ?? $itemMaster->name,
+                    'quantity' => $item['quantity'],
+                    'unit_of_measure' => $itemMaster->unit_of_measure,
+                    'unit_price_centavos' => $item['unit_price_centavos'],
+                    'line_total_centavos' => (int) ($item['quantity'] * $item['unit_price_centavos']),
+                    'line_notes' => $item['notes'] ?? null,
+                    'line_order' => $index + 1,
+                ]);
+            }
+
+            // Log activity
+            $this->logActivity($order, 'order_updated', $userId, 'client', [
+                'item_count' => count($items),
+                'total_amount' => $totalCentavos,
+            ]);
+
+            return $order->fresh(['items.itemMaster', 'customer']) ?? $order;
+        });
+    }
+
+    /**
      * Approve a client order and create delivery schedule
      */
     public function approveOrder(ClientOrder $order, int $reviewerId, ?string $notes = null): ClientOrder

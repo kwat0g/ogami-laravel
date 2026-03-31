@@ -227,6 +227,17 @@ export default function ClientOrderDetailPage(): JSX.Element {
                 {status.label}
               </StatusBadge>
               
+          {/* Edit button for pending orders */}
+          {order.status === 'pending' && (
+            <button
+              onClick={() => navigate(`/client-portal/orders/${order.ulid}/edit`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors border border-neutral-300 hover:border-neutral-400"
+            >
+              <FileText className="h-4 w-4" />
+              Edit
+            </button>
+          )}
+
           {/* Cancel button for pending/negotiating/client_responded orders */}
           {(order.status === 'pending' || order.status === 'negotiating' || order.status === 'client_responded') && (
             <button
