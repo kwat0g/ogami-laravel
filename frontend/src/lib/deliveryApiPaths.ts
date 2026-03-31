@@ -8,6 +8,7 @@ export const deliveryApiPaths = {
   deliverReceipt: (ulid: string) => `/delivery/receipts/${ulid}/deliver`,
   recordPod: (ulid: string) => `/enhancements/delivery/receipts/${ulid}/pod`,
   vehicles: '/delivery/vehicles',
+  vehicleHistory: (vehicleId: number) => `/delivery/vehicles/${vehicleId}/history`,
   shipments: '/delivery/shipments',
   shipmentStatus: (ulid: string) => `/delivery/shipments/${ulid}/status`,
   routes: '/delivery/routes',
