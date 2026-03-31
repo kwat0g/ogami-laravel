@@ -362,6 +362,40 @@ final class CombinedDeliveryScheduleService implements ServiceContract
                     'dispute_summary' => $disputeItems,
                 ]);
 
+                // Auto-create a formal DeliveryDispute record
+                try {
+                    $reporter = User::find($userId);
+                    if ($reporter) {
+                        $disputeService = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+
+                        // Map dispute items to the format expected by DeliveryDisputeService
+                        $formattedItems = [];
+                        foreach ($itemAcknowledgments as $ack) {
+                            $itemSchedule = DeliverySchedule::find($ack['item_id']);
+                            $formattedItems[] = [
+                                'item_master_id' => $itemSchedule?->product_item_id ?? 0,
+                                'expected_qty' => (float) ($itemSchedule?->qty_ordered ?? 0),
+                                'received_qty' => (float) $ack['received_qty'],
+                                'condition' => $ack['condition'],
+                                'notes' => $ack['notes'] ?? null,
+                                'photo_url' => $ack['photo_url'] ?? null,
+                            ];
+                        }
+
+                        $disputeService->createFromAcknowledgment(
+                            $schedule->deliverySchedules()->first() ?? DeliverySchedule::make(['customer_id' => $schedule->customer_id, 'client_order_id' => $schedule->client_order_id]),
+                            $formattedItems,
+                            $reporter,
+                            $generalNotes,
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('[CDS] Failed to auto-create delivery dispute', [
+                        'schedule_id' => $schedule->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 // Notify sales team after commit
                 DB::afterCommit(function () use ($schedule): void {
                     User::permission('sales.order_review')
@@ -369,13 +403,19 @@ final class CombinedDeliveryScheduleService implements ServiceContract
                 });
             }
 
-            // Create invoice after client acknowledgment
-            $this->createCustomerInvoice($schedule, $userId);
+            // Create invoice after client acknowledgment (only if no disputes)
+            if (! $hasIssues) {
+                $this->createCustomerInvoice($schedule, $userId);
+            }
 
-            // Update client order status to fulfilled (via state machine path: delivered -> fulfilled)
+            // Update client order status to fulfilled ONLY if no disputes
+            // When disputes exist, order stays at "delivered" until dispute is resolved
             $clientOrder = $schedule->clientOrder;
             if ($clientOrder && in_array($clientOrder->status, ['delivered', 'dispatched', 'ready_for_delivery'], true)) {
-                $clientOrder->update(['status' => 'fulfilled']);
+                if (! $hasIssues) {
+                    $clientOrder->update(['status' => 'fulfilled']);
+                }
+                // If has issues: order stays at current status, dispute must be resolved first
             }
 
             return $schedule->fresh();

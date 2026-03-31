@@ -79,6 +79,7 @@ final class DeliveryDisputeService implements ServiceContract
                     'received_qty' => $item['received_qty'],
                     'condition' => $item['condition'],
                     'notes' => $item['notes'] ?? null,
+                    'photo_url' => $item['photo_url'] ?? null,
                 ]);
             }
 

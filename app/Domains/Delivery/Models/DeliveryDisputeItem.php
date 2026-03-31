@@ -32,6 +32,7 @@ final class DeliveryDisputeItem extends Model
         'received_qty',
         'condition',
         'notes',
+        'photo_url',
         'resolution_action',
         'resolution_qty',
     ];
