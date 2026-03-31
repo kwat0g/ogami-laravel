@@ -10,6 +10,7 @@ import {
   useMarkDelivered,
   usePrepareShipment,
   useRecordPod,
+  useVehicles,
 } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -47,28 +48,65 @@ function PrepareShipmentModal({
   }) => void
   isLoading: boolean
 }) {
+  const [vehicleId, setVehicleId] = useState<number>(0)
   const [driverName, setDriverName] = useState('')
   const [carrier, setCarrier] = useState('Company Fleet')
-  const [trackingNumber, setTrackingNumber] = useState('')
   const [estimatedArrival, setEstimatedArrival] = useState('')
   const [notes, setNotes] = useState('')
+  const [dispatchPhoto, setDispatchPhoto] = useState<string | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  const { data: vehiclesData } = useVehicles()
+  const vehicles = vehiclesData?.data ?? []
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setDispatchPhoto(reader.result as string)
+    reader.readAsDataURL(file)
+  }
 
   if (!open) return null
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-lg shadow-xl border border-neutral-200">
+      <div className="bg-white rounded-xl w-full max-w-lg shadow-xl border border-neutral-200 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-neutral-100">
           <h2 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
             <Truck className="h-5 w-5 text-blue-600" />
             Prepare Shipment
           </h2>
           <p className="text-sm text-neutral-500 mt-1">
-            Assign vehicle, driver, and tracking details before dispatching.
+            Assign vehicle, driver, and delivery details before dispatching.
           </p>
         </div>
 
         <div className="p-6 space-y-4">
+          {/* Vehicle Selection */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <Truck className="h-3.5 w-3.5 inline mr-1" />
+              Vehicle
+            </label>
+            <select
+              value={vehicleId || ''}
+              onChange={e => setVehicleId(Number(e.target.value))}
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            >
+              <option value="">-- Select Vehicle --</option>
+              {vehicles.map(v => (
+                <option key={v.id} value={v.id}>
+                  {v.name} ({v.plate_number}) -- {v.type}
+                </option>
+              ))}
+            </select>
+            {vehicles.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">No active vehicles found. Add vehicles in Fleet Management.</p>
+            )}
+          </div>
+
+          {/* Driver Name */}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Driver Name</label>
             <input
@@ -81,6 +119,7 @@ function PrepareShipmentModal({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            {/* Carrier */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Carrier</label>
               <input
@@ -91,28 +130,54 @@ function PrepareShipmentModal({
                 className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+
+            {/* Estimated Delivery Date */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Tracking Number</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Estimated Delivery</label>
               <input
-                type="text"
-                value={trackingNumber}
-                onChange={e => setTrackingNumber(e.target.value)}
-                placeholder="Auto-generated if empty"
+                type="date"
+                value={estimatedArrival}
+                onChange={e => setEstimatedArrival(e.target.value)}
                 className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
 
+          {/* Dispatch Photo */}
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Estimated Delivery Date</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <Camera className="h-3.5 w-3.5 inline mr-1" />
+              Dispatch Photo
+            </label>
             <input
-              type="date"
-              value={estimatedArrival}
-              onChange={e => setEstimatedArrival(e.target.value)}
-              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoUpload}
+              className="hidden"
             />
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="w-full border border-dashed border-neutral-300 rounded-lg px-3 py-3 text-sm text-neutral-600 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <Camera className="h-4 w-4" />
+              {dispatchPhoto ? 'Photo captured -- click to replace' : 'Take photo of loaded goods (optional)'}
+            </button>
+            {dispatchPhoto && (
+              <div className="mt-2 relative">
+                <img src={dispatchPhoto} alt="Dispatch" className="w-full h-24 object-cover rounded-lg" />
+                <button
+                  type="button"
+                  onClick={() => setDispatchPhoto(null)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                >x</button>
+              </div>
+            )}
           </div>
 
+          {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">Notes</label>
             <textarea
@@ -135,13 +200,13 @@ function PrepareShipmentModal({
           </button>
           <button
             onClick={() => onSubmit({
+              vehicle_id: vehicleId || undefined,
               driver_name: driverName || undefined,
               carrier: carrier || undefined,
-              tracking_number: trackingNumber || undefined,
               estimated_arrival: estimatedArrival || undefined,
               notes: notes || undefined,
             })}
-            disabled={isLoading}
+            disabled={isLoading || !vehicleId}
             className="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
           >
             {isLoading ? 'Creating...' : 'Create Shipment'}

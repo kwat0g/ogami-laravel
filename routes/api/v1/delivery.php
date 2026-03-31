@@ -15,6 +15,16 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     Route::get('/receipts/{deliveryReceipt}', [DeliveryController::class, 'showReceipt']);
     Route::patch('/receipts/{deliveryReceipt}/confirm', [DeliveryController::class, 'confirmReceipt'])
         ->middleware('throttle:30,1');
+    // Vehicles list for shipment preparation dropdown
+    Route::get('/vehicles', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
+        $vehicles = \App\Domains\Delivery\Models\Vehicle::query()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'ulid', 'code', 'name', 'type', 'make_model', 'plate_number', 'status']);
+        return response()->json(['data' => $vehicles]);
+    })->name('vehicles.index');
+
     Route::post('/receipts/{deliveryReceipt}/prepare-shipment', [DeliveryController::class, 'prepareShipment'])
         ->middleware('throttle:30,1');
     Route::patch('/receipts/{deliveryReceipt}/dispatch', [DeliveryController::class, 'markDispatched'])

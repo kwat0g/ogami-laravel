@@ -100,6 +100,13 @@ export function useRecordPod() {
   });
 }
 
+export function useVehicles() {
+  return useQuery<{ data: Array<{ id: number; code: string; name: string; type: string; make_model: string; plate_number: string; status: string }> }>({
+    queryKey: ['vehicles'],
+    queryFn: () => api.get(deliveryApiPaths.vehicles).then(r => r.data),
+  });
+}
+
 export function useShipments(params?: Record<string, string | boolean>) {
   return useQuery<{ data: Shipment[]; meta: unknown }>({
     queryKey: ['shipments', params],
