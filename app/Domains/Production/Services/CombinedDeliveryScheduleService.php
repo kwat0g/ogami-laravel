@@ -382,8 +382,16 @@ final class CombinedDeliveryScheduleService implements ServiceContract
                             ];
                         }
 
+                        // Use first item schedule as the delivery schedule reference
+                        $firstItemSchedule = $schedule->itemSchedules()->first();
                         $disputeService->createFromAcknowledgment(
-                            $schedule->deliverySchedules()->first() ?? DeliverySchedule::make(['customer_id' => $schedule->customer_id, 'client_order_id' => $schedule->client_order_id]),
+                            $firstItemSchedule ?? DeliverySchedule::create([
+                                'ulid' => (string) \Illuminate\Support\Str::ulid(),
+                                'cds_reference' => 'DSP-' . $schedule->cds_reference,
+                                'customer_id' => $schedule->customer_id,
+                                'client_order_id' => $schedule->client_order_id,
+                                'status' => 'delivered',
+                            ]),
                             $formattedItems,
                             $reporter,
                             $generalNotes,

@@ -398,9 +398,9 @@ function VehicleHistoryRow({ vehicleId, colSpan }: { vehicleId: number; colSpan:
                           {h.client_order.reference}
                         </Link>
                       ) : h.sales_order ? (
-                        <Link to={`/sales/orders/${h.sales_order.ulid}`} className="text-neutral-600 hover:underline">
+                        <span className="text-neutral-600" title="Sales Order">
                           {h.sales_order.reference}
-                        </Link>
+                        </span>
                       ) : (
                         <span className="text-neutral-300">-</span>
                       )}
