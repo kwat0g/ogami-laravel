@@ -92,15 +92,19 @@ final class CombinedDeliveryScheduleService implements ServiceContract
                 }
             }
 
-            // Create delivery receipt
+            // Create delivery receipt with valid state machine status
             $deliveryReceipt = DeliveryReceipt::create([
                 'customer_id' => $schedule->customer_id,
+                'delivery_schedule_id' => $schedule->itemSchedules->first()?->id,
                 'direction' => 'outbound',
-                'status' => 'pending_delivery',
+                'status' => 'draft',
                 'receipt_date' => null,
                 'remarks' => $deliveryNotes,
                 'created_by_id' => $userId,
             ]);
+
+            // Auto-confirm since items are ready for dispatch
+            $deliveryReceipt->update(['status' => 'confirmed']);
 
             // Notify customer
             $schedule->customer->notify(DeliveryScheduleDispatchedNotification::fromModel($schedule, $deliveryReceipt));
@@ -140,6 +144,12 @@ final class CombinedDeliveryScheduleService implements ServiceContract
                 $itemSchedule->update([
                     'status' => 'delivered',
                 ]);
+            }
+
+            // Sync ClientOrder to delivered status
+            $clientOrder = $schedule->clientOrder;
+            if ($clientOrder && in_array($clientOrder->status, ['approved', 'in_production', 'ready_for_delivery', 'dispatched'], true)) {
+                $clientOrder->update(['status' => 'delivered']);
             }
 
             // Note: Invoice is NOT created here - waits for client acknowledgment
@@ -362,8 +372,11 @@ final class CombinedDeliveryScheduleService implements ServiceContract
             // Create invoice after client acknowledgment
             $this->createCustomerInvoice($schedule, $userId);
 
-            // Update client order status to completed
-            $schedule->clientOrder->update(['status' => 'completed']);
+            // Update client order status to fulfilled (via state machine path: delivered -> fulfilled)
+            $clientOrder = $schedule->clientOrder;
+            if ($clientOrder && in_array($clientOrder->status, ['delivered', 'dispatched', 'ready_for_delivery'], true)) {
+                $clientOrder->update(['status' => 'fulfilled']);
+            }
 
             return $schedule->fresh();
         });

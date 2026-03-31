@@ -42,12 +42,12 @@ class UpdateClientOrderOnShipmentDelivered
         }
 
         // Only update orders in delivery-related statuses
-        if (! in_array($clientOrder->status, ['ready_for_delivery', 'delivered'], true)) {
+        if (! in_array($clientOrder->status, ['approved', 'in_production', 'ready_for_delivery', 'dispatched', 'delivered'], true)) {
             return;
         }
 
         try {
-            if ($clientOrder->status === 'ready_for_delivery') {
+            if (in_array($clientOrder->status, ['approved', 'in_production', 'ready_for_delivery', 'dispatched'], true)) {
                 $clientOrder->update(['status' => 'delivered']);
                 Log::info('[CRM] Client order marked as delivered', [
                     'client_order_id' => $clientOrder->id,

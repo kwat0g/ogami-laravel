@@ -55,6 +55,27 @@ final class DeliveryController extends Controller
         return new DeliveryReceiptResource($this->service->confirmReceipt($deliveryReceipt, $request->user()));
     }
 
+    /**
+     * Prepare a shipment for a confirmed DR: assign vehicle, driver, carrier, tracking.
+     */
+    public function prepareShipment(Request $request, DeliveryReceipt $deliveryReceipt): JsonResponse
+    {
+        $this->authorize('confirm', $deliveryReceipt);
+
+        $validated = $request->validate([
+            'vehicle_id' => 'nullable|integer|exists:vehicles,id',
+            'driver_name' => 'nullable|string|max:200',
+            'carrier' => 'nullable|string|max:200',
+            'tracking_number' => 'nullable|string|max:100',
+            'estimated_arrival' => 'nullable|date',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $shipment = $this->service->prepareShipment($deliveryReceipt, $validated, $request->user());
+
+        return (new ShipmentResource($shipment))->response()->setStatusCode(201);
+    }
+
     public function markDispatched(Request $request, DeliveryReceipt $deliveryReceipt): DeliveryReceiptResource
     {
         $this->authorize('confirm', $deliveryReceipt);

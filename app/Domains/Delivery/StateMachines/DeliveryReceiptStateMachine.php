@@ -16,9 +16,10 @@ use App\Shared\Exceptions\InvalidStateTransitionException;
  * States:
  *   draft               → DR created but not confirmed
  *   confirmed           → DR confirmed and ready for dispatch
- *   dispatched          → DR left warehouse
+ *   dispatched          → DR left warehouse (shipment prepared, goods picked)
+ *   in_transit          → Goods physically en route to customer
  *   partially_delivered  → Some items delivered, others pending
- *   delivered            → All goods delivered to customer
+ *   delivered            → All goods delivered to customer (POD recorded)
  *   cancelled            → DR cancelled — terminal
  */
 final class DeliveryReceiptStateMachine
@@ -27,7 +28,8 @@ final class DeliveryReceiptStateMachine
     private const TRANSITIONS = [
         'draft' => ['confirmed', 'cancelled'],
         'confirmed' => ['dispatched', 'cancelled'],
-        'dispatched' => ['partially_delivered', 'delivered', 'cancelled'],
+        'dispatched' => ['in_transit', 'partially_delivered', 'delivered', 'cancelled'],
+        'in_transit' => ['partially_delivered', 'delivered', 'cancelled'],
         'partially_delivered' => ['delivered', 'cancelled'],
         'delivered' => [],   // terminal
         'cancelled' => [],   // terminal

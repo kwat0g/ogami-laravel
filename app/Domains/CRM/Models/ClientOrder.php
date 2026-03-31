@@ -83,6 +83,16 @@ class ClientOrder extends Model
 
     public const STATUS_VP_PENDING = 'vp_pending'; // Awaiting VP approval (high-value orders)
 
+    public const STATUS_IN_PRODUCTION = 'in_production';
+
+    public const STATUS_READY_FOR_DELIVERY = 'ready_for_delivery';
+
+    public const STATUS_DISPATCHED = 'dispatched';
+
+    public const STATUS_DELIVERED = 'delivered';
+
+    public const STATUS_FULFILLED = 'fulfilled';
+
     // Turn constants for negotiation
     public const TURN_SALES = 'sales';
 

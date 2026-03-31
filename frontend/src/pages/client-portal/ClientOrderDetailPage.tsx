@@ -58,13 +58,43 @@ const STATUS_CONFIG: Record<string, {
     status: 'approved',
     icon: <CheckCircle className="h-4 w-4" />,
     label: 'Order Approved',
-    description: 'Your order has been approved and is being processed for delivery.'
+    description: 'Your order has been approved and is being prepared for production.'
+  },
+  in_production: {
+    status: 'in_progress',
+    icon: <Package className="h-4 w-4" />,
+    label: 'In Production',
+    description: 'Your order is currently being manufactured.'
+  },
+  ready_for_delivery: {
+    status: 'in_progress',
+    icon: <Package className="h-4 w-4" />,
+    label: 'Ready for Delivery',
+    description: 'Production is complete. Your order is being prepared for shipment.'
+  },
+  dispatched: {
+    status: 'in_progress',
+    icon: <Truck className="h-4 w-4" />,
+    label: 'Dispatched',
+    description: 'Your order has been dispatched and is on its way to you.'
+  },
+  delivered: {
+    status: 'approved',
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: 'Delivered',
+    description: 'Your order has been delivered. Please acknowledge receipt below.'
+  },
+  fulfilled: {
+    status: 'approved',
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: 'Order Fulfilled',
+    description: 'Your order has been delivered and acknowledged. Thank you!'
   },
   completed: {
     status: 'approved',
     icon: <CheckCircle className="h-4 w-4" />,
-    label: 'Order Completed',
-    description: 'Your order has been delivered successfully.'
+    label: 'Order Fulfilled',
+    description: 'Your order has been delivered and acknowledged. Thank you!'
   },
   rejected: {
     status: 'rejected',

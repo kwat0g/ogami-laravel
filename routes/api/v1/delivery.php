@@ -15,6 +15,8 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     Route::get('/receipts/{deliveryReceipt}', [DeliveryController::class, 'showReceipt']);
     Route::patch('/receipts/{deliveryReceipt}/confirm', [DeliveryController::class, 'confirmReceipt'])
         ->middleware('throttle:30,1');
+    Route::post('/receipts/{deliveryReceipt}/prepare-shipment', [DeliveryController::class, 'prepareShipment'])
+        ->middleware('throttle:30,1');
     Route::patch('/receipts/{deliveryReceipt}/dispatch', [DeliveryController::class, 'markDispatched'])
         ->middleware('throttle:30,1');
     Route::patch('/receipts/{deliveryReceipt}/partial-deliver', [DeliveryController::class, 'markPartiallyDelivered'])

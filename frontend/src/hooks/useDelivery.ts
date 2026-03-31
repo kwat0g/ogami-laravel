@@ -64,6 +64,42 @@ export function useMarkDelivered() {
   });
 }
 
+export function usePrepareShipment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ulid, payload }: { ulid: string; payload: {
+      vehicle_id?: number;
+      driver_name?: string;
+      carrier?: string;
+      tracking_number?: string;
+      estimated_arrival?: string;
+      notes?: string;
+    }}) =>
+      api.post(deliveryApiPaths.prepareShipment(ulid), payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      qc.invalidateQueries({ queryKey: ['shipments'] });
+    },
+  });
+}
+
+export function useRecordPod() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ulid, payload }: { ulid: string; payload: {
+      receiver_name: string;
+      receiver_designation?: string;
+      signature_base64?: string;
+      photo_base64?: string;
+      latitude?: number;
+      longitude?: number;
+      delivery_notes?: string;
+    }}) =>
+      api.post(deliveryApiPaths.recordPod(ulid), payload).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+  });
+}
+
 export function useShipments(params?: Record<string, string | boolean>) {
   return useQuery<{ data: Shipment[]; meta: unknown }>({
     queryKey: ['shipments', params],

@@ -145,6 +145,64 @@ final class DeliveryService implements ServiceContract
         });
     }
 
+    /**
+     * Prepare a shipment for a confirmed delivery receipt.
+     * Creates a Shipment record, assigns vehicle/driver, but does NOT dispatch yet.
+     *
+     * @param array{
+     *     vehicle_id?: int,
+     *     driver_name?: string,
+     *     carrier?: string,
+     *     tracking_number?: string,
+     *     estimated_arrival?: string,
+     *     notes?: string,
+     * } $data
+     */
+    public function prepareShipment(DeliveryReceipt $receipt, array $data, User $actor): Shipment
+    {
+        if ($receipt->status !== 'confirmed') {
+            throw new DomainException(
+                "Cannot prepare shipment — receipt is in status '{$receipt->status}'. Must be confirmed.",
+                'DELIVERY_INVALID_STATUS',
+                422,
+            );
+        }
+
+        // Check if shipment already exists
+        $existing = Shipment::where('delivery_receipt_id', $receipt->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->first();
+
+        if ($existing) {
+            throw new DomainException(
+                'A shipment already exists for this delivery receipt.',
+                'DELIVERY_SHIPMENT_EXISTS',
+                422,
+            );
+        }
+
+        return DB::transaction(function () use ($receipt, $data, $actor): Shipment {
+            // Update DR with vehicle and driver info
+            $receipt->update([
+                'vehicle_id' => $data['vehicle_id'] ?? null,
+                'driver_name' => $data['driver_name'] ?? null,
+            ]);
+
+            // Create the shipment record
+            $trackingNumber = $data['tracking_number'] ?? $receipt->dr_reference.'-SHP';
+
+            return Shipment::create([
+                'delivery_receipt_id' => $receipt->id,
+                'carrier' => $data['carrier'] ?? 'Company Fleet',
+                'tracking_number' => $trackingNumber,
+                'estimated_arrival' => $data['estimated_arrival'] ?? null,
+                'status' => 'pending',
+                'notes' => $data['notes'] ?? null,
+                'created_by_id' => $actor->id,
+            ]);
+        });
+    }
+
     public function markDispatched(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
     {
         if (! in_array($receipt->status, ['confirmed', 'partially_delivered'], true)) {
@@ -155,10 +213,27 @@ final class DeliveryService implements ServiceContract
             );
         }
 
-        $receipt->update(['status' => 'dispatched']);
-        $this->syncLinkedDeliveryScheduleStatus($receipt, 'dispatched');
+        return DB::transaction(function () use ($receipt): DeliveryReceipt {
+            $receipt->update(['status' => 'dispatched']);
+            $this->syncLinkedDeliveryScheduleStatus($receipt, 'dispatched');
 
-        return $receipt->refresh();
+            // Auto-transition linked shipment to in_transit
+            $shipment = Shipment::where('delivery_receipt_id', $receipt->id)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($shipment) {
+                $shipment->update([
+                    'status' => 'in_transit',
+                    'shipped_at' => now(),
+                ]);
+            }
+
+            // Sync linked ClientOrder to dispatched
+            $this->syncClientOrderStatus($receipt, 'dispatched');
+
+            return $receipt->refresh();
+        });
     }
 
     public function confirmReceipt(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
@@ -292,7 +367,7 @@ final class DeliveryService implements ServiceContract
      */
     public function markPartiallyDelivered(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
     {
-        if (! in_array($receipt->status, ['confirmed', 'dispatched'], true)) {
+        if (! in_array($receipt->status, ['confirmed', 'dispatched', 'in_transit'], true)) {
             throw new DomainException(
                 "Cannot mark as partially delivered — receipt is in status '{$receipt->status}'.",
                 'DELIVERY_INVALID_STATUS',
@@ -307,12 +382,14 @@ final class DeliveryService implements ServiceContract
     }
 
     /**
-     * Transition a confirmed or partially_delivered delivery receipt to delivered.
-     * Marks the delivery as fully completed.
+     * Transition delivery receipt to delivered.
+     *
+     * POD guard: if system setting `require_pod_for_delivery` is true,
+     * proof of delivery must be recorded before marking as delivered.
      */
     public function markDelivered(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
     {
-        if (! in_array($receipt->status, ['confirmed', 'dispatched', 'partially_delivered'], true)) {
+        if (! in_array($receipt->status, ['confirmed', 'dispatched', 'in_transit', 'partially_delivered'], true)) {
             throw new DomainException(
                 "Cannot mark as delivered — receipt is in status '{$receipt->status}'.",
                 'DELIVERY_INVALID_STATUS',
@@ -320,10 +397,78 @@ final class DeliveryService implements ServiceContract
             );
         }
 
-        $receipt->update(['status' => 'delivered']);
-        $this->syncLinkedDeliveryScheduleStatus($receipt, 'delivered');
+        // POD guard: check if proof of delivery is required
+        $requirePod = json_decode(
+            DB::table('system_settings')->where('key', 'require_pod_for_delivery')->value('value') ?? 'false'
+        );
 
-        return $receipt->refresh();
+        if ($requirePod && $receipt->pod_receiver_name === null) {
+            throw new DomainException(
+                'Proof of Delivery must be recorded before marking as delivered. Please record the receiver name, signature, and photo first.',
+                'DELIVERY_POD_REQUIRED',
+                422,
+            );
+        }
+
+        return DB::transaction(function () use ($receipt): DeliveryReceipt {
+            $receipt->update([
+                'status' => 'delivered',
+                'receipt_date' => $receipt->receipt_date ?? now()->toDateString(),
+            ]);
+
+            $this->syncLinkedDeliveryScheduleStatus($receipt, 'delivered');
+
+            // Transition linked shipment to delivered
+            $shipment = Shipment::where('delivery_receipt_id', $receipt->id)
+                ->whereIn('status', ['pending', 'in_transit'])
+                ->first();
+
+            if ($shipment) {
+                $shipment->update([
+                    'status' => 'delivered',
+                    'actual_arrival' => now(),
+                ]);
+
+                // Fire ShipmentDelivered event (triggers AR invoice auto-draft + ClientOrder sync)
+                event(new ShipmentDelivered($shipment->refresh()));
+            }
+
+            // Also sync ClientOrder directly (in case no shipment exists)
+            $this->syncClientOrderStatus($receipt, 'delivered');
+
+            return $receipt->refresh();
+        });
+    }
+
+    /**
+     * Sync status changes back to the linked ClientOrder.
+     * Traces DR -> DeliverySchedule -> ClientOrder.
+     */
+    private function syncClientOrderStatus(DeliveryReceipt $receipt, string $targetStatus): void
+    {
+        if ($receipt->delivery_schedule_id === null) {
+            return;
+        }
+
+        $schedule = DeliverySchedule::find($receipt->delivery_schedule_id);
+        if ($schedule === null || $schedule->client_order_id === null) {
+            return;
+        }
+
+        $clientOrder = \App\Domains\CRM\Models\ClientOrder::find($schedule->client_order_id);
+        if ($clientOrder === null) {
+            return;
+        }
+
+        $deliveryStatuses = ['approved', 'in_production', 'ready_for_delivery', 'dispatched'];
+
+        if ($targetStatus === 'dispatched' && in_array($clientOrder->status, ['ready_for_delivery'], true)) {
+            $clientOrder->update(['status' => 'dispatched']);
+        }
+
+        if ($targetStatus === 'delivered' && in_array($clientOrder->status, $deliveryStatuses, true)) {
+            $clientOrder->update(['status' => 'delivered']);
+        }
     }
 
     private function syncLinkedDeliveryScheduleStatus(DeliveryReceipt $receipt, string $targetStatus): void
