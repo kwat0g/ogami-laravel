@@ -228,4 +228,46 @@ export function isHandledApiError(err: unknown): boolean {
   return e?.__handled === true || e?.__cooldown === true
 }
 
+/**
+ * Download a file from the API using authenticated request.
+ * Use this instead of window.open() or <a href> for protected endpoints.
+ *
+ * @param url - API path (with or without /api/v1 prefix)
+ * @param filename - Optional filename for the downloaded file
+ * @param mimeType - MIME type (default: application/pdf)
+ */
+export async function downloadFile(
+  url: string,
+  filename?: string,
+  mimeType: string = 'application/pdf'
+): Promise<void> {
+  const path = url.replace(/^\/api\/v1/, '')
+
+  const response = await api.get(path, {
+    responseType: 'blob',
+    headers: { Accept: mimeType },
+  })
+
+  const blob = new Blob([response.data], { type: mimeType })
+  const blobUrl = window.URL.createObjectURL(blob)
+
+  // Try to get filename from Content-Disposition header
+  let downloadFilename = filename || 'download'
+  const disposition = response.headers['content-disposition']
+  if (disposition) {
+    const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+    if (match?.[1]) {
+      downloadFilename = match[1].replace(/['"]/g, '')
+    }
+  }
+
+  const link = document.createElement('a')
+  link.href = blobUrl
+  link.download = downloadFilename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(blobUrl)
+}
+
 export default api
