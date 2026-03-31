@@ -285,7 +285,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
               </Link>
             ) : (
               <Link
-                to={`/delivery/receipts/new?delivery_schedule_id=${schedule.id}&delivery_schedule_ulid=${schedule.ulid}&customer_id=${schedule.customer?.id ?? ''}&product_item_id=${schedule.product_item_id ?? schedule.product_item?.id ?? ''}&qty_ordered=${schedule.qty_ordered ?? ''}&unit_of_measure=${schedule.product_item?.unit_of_measure ?? 'pcs'}`}
+                to={`/delivery/receipts/new?ds=${schedule.ulid}`}
                 className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
                 title="Delivery receipt will be auto-created when schedule is dispatched. Use this only for manual overrides."
               >

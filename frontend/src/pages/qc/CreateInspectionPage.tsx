@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ClipboardCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useCreateInspection, useInspectionTemplates } from '@/hooks/useQC'
+import { useProductionOrder } from '@/hooks/useProduction'
 import { useItems } from '@/hooks/useInventory'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -17,7 +18,15 @@ const STAGE_LABELS: Record<InspectionStage, string> = {
 
 export default function CreateInspectionPage(): React.ReactElement {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const createMut = useCreateInspection()
+
+  // Read ULID + stage from URL (no numeric IDs exposed)
+  const poUlid = searchParams.get('po')
+  const stageFromUrl = searchParams.get('stage') as InspectionStage | null
+
+  // Fetch production order data by ULID when pre-filling
+  const { data: poData } = useProductionOrder(poUlid)
 
   const { data: itemsData } = useItems({ per_page: 500 })
   const items = itemsData?.data ?? []
@@ -36,7 +45,7 @@ export default function CreateInspectionPage(): React.ReactElement {
   const employees = employeesData?.data ?? []
 
   const [form, setForm] = useState({
-    stage: 'iqc' as InspectionStage,
+    stage: (stageFromUrl ?? 'iqc') as InspectionStage,
     inspection_date: (() => {
       const d = new Date()
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -47,6 +56,17 @@ export default function CreateInspectionPage(): React.ReactElement {
     inspector_id: '' as number | '',
     remarks: '',
   })
+
+  // Pre-fill item from production order when data loads
+  useEffect(() => {
+    if (!poData) return
+    if (poData.product_item?.id) {
+      set('item_master_id', poData.product_item.id)
+    }
+    if (stageFromUrl) {
+      set('stage', stageFromUrl)
+    }
+  }, [poData, stageFromUrl])
 
   const set = (k: keyof typeof form, v: unknown) =>
     setForm(prev => ({ ...prev, [k]: v }))

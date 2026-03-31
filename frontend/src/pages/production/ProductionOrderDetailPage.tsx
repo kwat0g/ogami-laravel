@@ -751,7 +751,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           {/* Create QC Inspection — in_progress or completed */}
           {['in_progress', 'completed'].includes(order.status) && (
             <Link
-              to={`/qc/inspections/new?production_order_id=${order.id}&item_master_id=${order.product_item?.id ?? ''}&stage=${order.status === 'completed' ? 'oqc' : 'ipqc'}`}
+              to={`/qc/inspections/new?po=${order.ulid}&stage=${order.status === 'completed' ? 'oqc' : 'ipqc'}`}
               className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded inline-flex items-center gap-1.5"
             >
               Create QC Inspection
