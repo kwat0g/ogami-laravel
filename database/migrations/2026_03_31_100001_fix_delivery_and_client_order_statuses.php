@@ -35,7 +35,6 @@ return new class extends Migration
             DB::table('system_settings')->insert([
                 'key' => 'require_pod_for_delivery',
                 'value' => json_encode(false),
-                'description' => 'When true, Proof of Delivery (receiver name, signature, photo) must be recorded before a Delivery Receipt can be marked as delivered.',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
