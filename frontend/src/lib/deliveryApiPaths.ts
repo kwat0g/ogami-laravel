@@ -9,6 +9,12 @@ export const deliveryApiPaths = {
   recordPod: (ulid: string) => `/enhancements/delivery/receipts/${ulid}/pod`,
   vehicles: '/delivery/vehicles',
   vehicleHistory: (vehicleId: number) => `/delivery/vehicles/${vehicleId}/history`,
+  disputes: '/delivery/disputes',
+  disputeByUlid: (ulid: string) => `/delivery/disputes/${ulid}`,
+  disputeAssign: (ulid: string) => `/delivery/disputes/${ulid}/assign`,
+  disputeResolve: (ulid: string) => `/delivery/disputes/${ulid}/resolve`,
+  disputeClose: (ulid: string) => `/delivery/disputes/${ulid}/close`,
+  disputeCheck: (clientOrderId: number) => `/delivery/disputes/check/${clientOrderId}`,
   shipments: '/delivery/shipments',
   shipmentStatus: (ulid: string) => `/delivery/shipments/${ulid}/status`,
 } as const;

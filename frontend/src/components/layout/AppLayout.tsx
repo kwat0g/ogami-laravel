@@ -242,6 +242,7 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Delivery' },
       { label: 'Delivery Receipts', href: '/delivery/receipts', permission: 'delivery.view' },
       { label: 'Delivery Vehicles', href: '/delivery/vehicles', permission: 'delivery.view' },
+      { label: 'Delivery Disputes', href: '/delivery/disputes', permission: 'delivery.view' },
     ],
   },
   // Note: Executive users have a separate default dashboard at /approvals/pending

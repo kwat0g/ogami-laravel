@@ -214,4 +214,77 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
         ]);
         return response()->json(['data' => $route], 201);
     })->name('routes.store');
+
+    // ── Delivery Disputes ──────────────────────────────────────────────────
+    Route::get('/disputes', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
+        $service = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+        return response()->json($service->index($request->all()));
+    })->name('disputes.index');
+
+    Route::get('/disputes/{dispute}', function (\App\Domains\Delivery\Models\DeliveryDispute $dispute): \Illuminate\Http\JsonResponse {
+        abort_unless(request()->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
+        $dispute->load([
+            'items.itemMaster',
+            'customer',
+            'clientOrder',
+            'deliverySchedule',
+            'deliveryReceipt',
+            'reportedBy',
+            'assignedTo',
+            'resolvedBy',
+            'creditNote',
+            'replacementSchedule',
+        ]);
+        return response()->json(['data' => $dispute]);
+    })->name('disputes.show');
+
+    Route::patch('/disputes/{dispute}/assign', function (\Illuminate\Http\Request $request, \App\Domains\Delivery\Models\DeliveryDispute $dispute): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
+        $data = $request->validate(['assigned_to_id' => ['required', 'integer', 'exists:users,id']]);
+        $service = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+        $dispute = $service->assign($dispute, (int) $data['assigned_to_id']);
+        return response()->json(['data' => $dispute]);
+    })->middleware('throttle:api-action')->name('disputes.assign');
+
+    Route::post('/disputes/{dispute}/resolve', function (\Illuminate\Http\Request $request, \App\Domains\Delivery\Models\DeliveryDispute $dispute): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
+        $data = $request->validate([
+            'resolution_type' => ['required', 'string', 'in:replace_items,credit_note,partial_accept,full_replacement'],
+            'resolution_notes' => ['nullable', 'string', 'max:2000'],
+            'resolutions' => ['required', 'array', 'min:1'],
+            'resolutions.*.item_id' => ['required', 'integer', 'exists:delivery_dispute_items,id'],
+            'resolutions.*.action' => ['required', 'string', 'in:replace,credit,accept'],
+            'resolutions.*.qty' => ['required', 'numeric', 'min:0'],
+        ]);
+        $service = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+        $dispute = $service->resolve(
+            $dispute,
+            $data['resolution_type'],
+            $data['resolutions'],
+            $request->user(),
+            $data['resolution_notes'] ?? null,
+        );
+        return response()->json(['data' => $dispute]);
+    })->middleware('throttle:api-action')->name('disputes.resolve');
+
+    Route::patch('/disputes/{dispute}/close', function (\App\Domains\Delivery\Models\DeliveryDispute $dispute): \Illuminate\Http\JsonResponse {
+        abort_unless(request()->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
+        $service = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+        $dispute = $service->close($dispute);
+        return response()->json(['data' => $dispute]);
+    })->middleware('throttle:api-action')->name('disputes.close');
+
+    // Check if a client order has open disputes
+    Route::get('/disputes/check/{clientOrderId}', function (int $clientOrderId): \Illuminate\Http\JsonResponse {
+        abort_unless(request()->user()?->hasAnyPermission(['delivery.view', 'sales.order_review']), 403, 'Unauthorized');
+        $service = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+        return response()->json([
+            'has_open_disputes' => $service->hasOpenDisputes($clientOrderId),
+            'disputes' => \App\Domains\Delivery\Models\DeliveryDispute::where('client_order_id', $clientOrderId)
+                ->whereIn('status', ['open', 'investigating', 'pending_resolution'])
+                ->select('id', 'ulid', 'dispute_reference', 'status', 'resolution_type', 'created_at')
+                ->get(),
+        ]);
+    })->name('disputes.check');
 });
