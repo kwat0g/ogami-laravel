@@ -196,6 +196,8 @@ export default function ClientDashboardPage(): JSX.Element {
   const recentTickets = tickets?.data?.slice(0, 5) || []
   
   const pendingOrders = orders?.data?.filter((o: ClientOrder) => ['pending', 'negotiating'].includes(o.status)) || []
+  const deliveredOrders = orders?.data?.filter((o: ClientOrder) => o.status === 'delivered') || []
+  const inTransitOrders = orders?.data?.filter((o: ClientOrder) => ['dispatched', 'in_production', 'ready_for_delivery'].includes(o.status)) || []
   const activeTickets = tickets?.data?.filter((t: Ticket) => ['open', 'in_progress'].includes(t.status)) || []
 
   return (
@@ -230,6 +232,52 @@ export default function ClientDashboardPage(): JSX.Element {
           color="green"
         />
       </div>
+
+      {/* Pending Deliveries Alert */}
+      {deliveredOrders.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Package className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="font-medium text-green-900">
+                {deliveredOrders.length} delivery{deliveredOrders.length !== 1 ? 's' : ''} awaiting your acknowledgment
+              </p>
+              <p className="text-sm text-green-700">Please confirm receipt and report any issues.</p>
+            </div>
+          </div>
+          <Link
+            to="/client-portal/orders?status=delivered"
+            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Review Deliveries
+          </Link>
+        </div>
+      )}
+
+      {/* In-Transit Orders Alert */}
+      {inTransitOrders.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Package className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="font-medium text-blue-900">
+                {inTransitOrders.length} order{inTransitOrders.length !== 1 ? 's' : ''} in progress
+              </p>
+              <p className="text-sm text-blue-700">Your orders are being manufactured or shipped.</p>
+            </div>
+          </div>
+          <Link
+            to="/client-portal/orders"
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Track Orders
+          </Link>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
