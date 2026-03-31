@@ -11,5 +11,4 @@ export const deliveryApiPaths = {
   vehicleHistory: (vehicleId: number) => `/delivery/vehicles/${vehicleId}/history`,
   shipments: '/delivery/shipments',
   shipmentStatus: (ulid: string) => `/delivery/shipments/${ulid}/status`,
-  routes: '/delivery/routes',
 } as const;
