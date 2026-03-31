@@ -222,6 +222,19 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
         return response()->json($service->index($request->all()));
     })->name('disputes.index');
 
+    // Check for open disputes -- must be BEFORE {dispute} route to avoid conflict
+    Route::get('/disputes/check/{clientOrderId}', function (int $clientOrderId): \Illuminate\Http\JsonResponse {
+        abort_unless(request()->user()?->hasAnyPermission(['delivery.view', 'sales.order_review']), 403, 'Unauthorized');
+        $service = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+        return response()->json([
+            'has_open_disputes' => $service->hasOpenDisputes($clientOrderId),
+            'disputes' => \App\Domains\Delivery\Models\DeliveryDispute::where('client_order_id', $clientOrderId)
+                ->whereIn('status', ['open', 'investigating', 'pending_resolution'])
+                ->select('id', 'ulid', 'dispute_reference', 'status', 'resolution_type', 'created_at')
+                ->get(),
+        ]);
+    })->name('disputes.check');
+
     Route::get('/disputes/{dispute}', function (\App\Domains\Delivery\Models\DeliveryDispute $dispute): \Illuminate\Http\JsonResponse {
         abort_unless(request()->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
         $dispute->load([
@@ -275,16 +288,4 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
         return response()->json(['data' => $dispute]);
     })->middleware('throttle:api-action')->name('disputes.close');
 
-    // Check if a client order has open disputes
-    Route::get('/disputes/check/{clientOrderId}', function (int $clientOrderId): \Illuminate\Http\JsonResponse {
-        abort_unless(request()->user()?->hasAnyPermission(['delivery.view', 'sales.order_review']), 403, 'Unauthorized');
-        $service = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
-        return response()->json([
-            'has_open_disputes' => $service->hasOpenDisputes($clientOrderId),
-            'disputes' => \App\Domains\Delivery\Models\DeliveryDispute::where('client_order_id', $clientOrderId)
-                ->whereIn('status', ['open', 'investigating', 'pending_resolution'])
-                ->select('id', 'ulid', 'dispute_reference', 'status', 'resolution_type', 'created_at')
-                ->get(),
-        ]);
-    })->name('disputes.check');
 });
