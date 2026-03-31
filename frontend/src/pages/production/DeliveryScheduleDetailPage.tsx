@@ -4,10 +4,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Package, Truck, Factory, FileText, AlertTriangle, Plus } from 'lucide-react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { useDeliverySchedule, useCreateProductionOrder, useBoms, useFulfillFromStock } from '@/hooks/useProduction'
+import { useCreateDeliveryReceipt } from '@/hooks/useDelivery'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { toast } from 'sonner'
+import type { CreateDeliveryReceiptPayload } from '@/types/delivery'
 
 interface CreateWOModalProps {
   isOpen: boolean
@@ -196,6 +198,181 @@ function CreateWOModal({ isOpen, onClose, schedule }: CreateWOModalProps): JSX.E
   )
 }
 
+// ── Create Delivery Receipt Modal ────────────────────────────────────────────
+function CreateDRModal({
+  isOpen,
+  onClose,
+  schedule,
+  onCreated,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  schedule: {
+    id: number
+    ulid: string
+    ds_reference: string
+    customer?: { id: number; name: string } | null
+    product_item?: { id: number; name: string; item_code?: string; unit_of_measure?: string } | null
+    product_item_id?: number | null
+    qty_ordered?: string | null
+    items?: { product_item_id: number; product_item?: { id: number; name: string; unit_of_measure?: string } | null; qty_ordered: string }[]
+    client_order?: { id: number; order_reference: string } | null
+  }
+  onCreated: (drUlid: string) => void
+}): JSX.Element | null {
+  const createDR = useCreateDeliveryReceipt()
+  const [receiptDate, setReceiptDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
+  const [remarks, setRemarks] = useState('')
+
+  if (!isOpen) return null
+
+  // Build items from either multi-item schedule or single-item legacy
+  const dsItems = schedule.items ?? []
+  const previewItems = dsItems.length > 0
+    ? dsItems.map((item) => ({
+        name: item.product_item?.name ?? `Item #${item.product_item_id}`,
+        qty: parseFloat(item.qty_ordered ?? '0'),
+        uom: item.product_item?.unit_of_measure ?? 'pcs',
+        item_master_id: item.product_item?.id ?? item.product_item_id,
+      }))
+    : schedule.product_item
+      ? [{
+          name: schedule.product_item.name,
+          qty: parseFloat(schedule.qty_ordered ?? '0'),
+          uom: schedule.product_item.unit_of_measure ?? 'pcs',
+          item_master_id: schedule.product_item.id,
+        }]
+      : []
+
+  const handleSubmit = async () => {
+    const payload: CreateDeliveryReceiptPayload = {
+      direction: 'outbound',
+      receipt_date: receiptDate,
+      remarks: remarks || undefined,
+      customer_id: schedule.customer?.id ?? undefined,
+      delivery_schedule_id: schedule.id,
+      items: previewItems.map((item) => ({
+        item_master_id: item.item_master_id,
+        quantity_expected: item.qty,
+        quantity_received: item.qty,
+        unit_of_measure: item.uom,
+      })),
+    }
+
+    try {
+      const result = await createDR.mutateAsync(payload)
+      toast.success('Delivery receipt created successfully.')
+      onClose()
+      const drUlid = result?.data?.ulid ?? result?.ulid
+      if (drUlid) onCreated(drUlid)
+    } catch (err) {
+      toast.error(firstErrorMessage(err) ?? 'Failed to create delivery receipt.')
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg shadow-xl border border-neutral-200 max-h-[90vh] overflow-y-auto">
+        <div className="p-5 border-b border-neutral-100">
+          <h2 className="text-base font-semibold text-neutral-900 flex items-center gap-2">
+            <Truck className="w-4 h-4 text-blue-600" />
+            Create Delivery Receipt
+          </h2>
+          <p className="text-sm text-neutral-500 mt-0.5">
+            From {schedule.ds_reference}
+            {schedule.customer && <> &middot; {schedule.customer.name}</>}
+          </p>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Client Order reference */}
+          {schedule.client_order && (
+            <div className="text-xs text-neutral-500 bg-neutral-50 rounded px-3 py-2">
+              Client Order: <span className="font-medium text-neutral-700">{schedule.client_order.order_reference}</span>
+            </div>
+          )}
+
+          {/* Items preview (read-only) */}
+          <div>
+            <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Items to Deliver</p>
+            <div className="border border-neutral-200 rounded overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-neutral-50 text-xs text-neutral-600">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Item</th>
+                    <th className="px-3 py-2 text-right">Qty</th>
+                    <th className="px-3 py-2 text-left">UOM</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {previewItems.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="px-3 py-2 font-medium text-neutral-900">{item.name}</td>
+                      <td className="px-3 py-2 text-right text-neutral-700">
+                        {item.qty.toLocaleString('en-PH', { maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-3 py-2 text-neutral-500">{item.uom}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Receipt date */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Receipt Date <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              value={receiptDate}
+              onChange={(e) => setReceiptDate(e.target.value)}
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+            />
+          </div>
+
+          {/* Remarks */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Remarks <span className="text-neutral-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              rows={2}
+              className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
+              placeholder="Optional delivery notes..."
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 justify-end p-5 border-t border-neutral-100">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={createDR.isPending}
+            className="px-4 py-2.5 text-sm border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={createDR.isPending || previewItems.length === 0}
+            className="px-5 py-2.5 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+          >
+            {createDR.isPending ? 'Creating...' : 'Create Delivery Receipt'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const STATUS_COLORS: Record<string, string> = {
   open: 'bg-neutral-100 text-neutral-700',
   in_production: 'bg-blue-100 text-blue-700',
@@ -210,6 +387,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showCreateDRModal, setShowCreateDRModal] = useState(false)
   const [showFulfillConfirm, setShowFulfillConfirm] = useState(false)
 
   const { data: schedule, isLoading, isError } = useDeliverySchedule(ulid || null)
@@ -284,14 +462,14 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
                 Open Delivery Receipt
               </Link>
             ) : (
-              <Link
-                to={`/delivery/receipts/new?ds=${schedule.ulid}`}
+              <button
+                onClick={() => setShowCreateDRModal(true)}
                 className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-                title="Delivery receipt will be auto-created when schedule is dispatched. Use this only for manual overrides."
+                title="Create a delivery receipt for this schedule"
               >
                 <Truck className="w-4 h-4" />
                 Create Delivery Receipt
-              </Link>
+              </button>
             )
           )}
 
@@ -668,6 +846,14 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
           <ChainRecordTimeline documentType="delivery_schedule" documentId={schedule.id} />
         </div>
       </div>
+
+      {/* Create Delivery Receipt Modal */}
+      <CreateDRModal
+        isOpen={showCreateDRModal}
+        onClose={() => setShowCreateDRModal(false)}
+        schedule={schedule}
+        onCreated={(drUlid) => navigate(`/delivery/receipts/${drUlid}`)}
+      />
     </div>
   )
 }
