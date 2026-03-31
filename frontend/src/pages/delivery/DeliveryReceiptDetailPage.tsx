@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Truck, MapPin, Camera, PenTool, User, Package, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import MultiPhotoUpload from '@/components/ui/MultiPhotoUpload';
 
 import {
   useDeliveryReceipt,
@@ -57,20 +58,10 @@ function PrepareShipmentModal({
   const [carrier, setCarrier] = useState('Company Fleet')
   const [estimatedArrival, setEstimatedArrival] = useState(defaultEstimatedDelivery ?? '')
   const [notes, setNotes] = useState('')
-  const [dispatchPhoto, setDispatchPhoto] = useState<string | null>(null)
-  const [showPhotoPreview, setShowPhotoPreview] = useState(false)
-  const photoInputRef = useRef<HTMLInputElement>(null)
+  const [dispatchPhotos, setDispatchPhotos] = useState<string[]>([])
 
   const { data: vehiclesData } = useVehicles()
   const vehicles = vehiclesData?.data ?? []
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setDispatchPhoto(reader.result as string)
-    reader.readAsDataURL(file)
-  }
 
   if (!open) return null
 
@@ -168,58 +159,13 @@ function PrepareShipmentModal({
             </div>
           </div>
 
-          {/* Dispatch Photo */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">
-              <Camera className="h-3.5 w-3.5 inline mr-1" />
-              Dispatch Photo
-            </label>
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => photoInputRef.current?.click()}
-              className="w-full border border-dashed border-neutral-300 rounded-lg px-3 py-3 text-sm text-neutral-600 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <Camera className="h-4 w-4" />
-              {dispatchPhoto ? 'Photo captured -- click to replace' : 'Take photo of loaded goods (optional)'}
-            </button>
-            {dispatchPhoto && (
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPhotoPreview(true)}
-                  className="text-xs text-blue-600 hover:text-blue-700 underline"
-                >View Photo</button>
-                <span className="text-xs text-green-600">Photo attached</span>
-                <button
-                  type="button"
-                  onClick={() => setDispatchPhoto(null)}
-                  className="text-xs text-red-500 hover:text-red-600"
-                >Remove</button>
-              </div>
-            )}
-
-            {/* Photo lightbox */}
-            {showPhotoPreview && dispatchPhoto && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4" onClick={() => setShowPhotoPreview(false)}>
-                <div className="relative max-w-2xl max-h-[80vh]">
-                  <img src={dispatchPhoto} alt="Dispatch photo" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={() => setShowPhotoPreview(false)}
-                    className="absolute top-2 right-2 bg-white/90 text-neutral-800 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold hover:bg-white"
-                  >x</button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Dispatch Photos (max 3) */}
+          <MultiPhotoUpload
+            photos={dispatchPhotos}
+            onChange={setDispatchPhotos}
+            maxPhotos={3}
+            label="Dispatch Photos"
+          />
 
           {/* Notes */}
           <div>
@@ -284,7 +230,7 @@ function PodCaptureSection({
   const [deliveryNotes, setDeliveryNotes] = useState('')
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [capturingGps, setCapturingGps] = useState(false)
-  const [photoBase64, setPhotoBase64] = useState<string | null>(null)
+  const [podPhotos, setPodPhotos] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const captureGps = () => {
@@ -307,14 +253,6 @@ function PodCaptureSection({
     )
   }
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setPhotoBase64(reader.result as string)
-    reader.readAsDataURL(file)
-  }
-
   const handleSubmitPod = async () => {
     if (!receiverName.trim()) {
       toast.error('Receiver name is required')
@@ -327,7 +265,7 @@ function PodCaptureSection({
         payload: {
           receiver_name: receiverName,
           receiver_designation: receiverDesignation || undefined,
-          photo_base64: photoBase64 || undefined,
+          photos_base64: podPhotos.length > 0 ? podPhotos : undefined,
           latitude: gpsCoords?.lat,
           longitude: gpsCoords?.lng,
           delivery_notes: deliveryNotes || undefined,
@@ -403,31 +341,12 @@ function PodCaptureSection({
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
-                <Camera className="h-3.5 w-3.5 inline mr-1" />
-                Photo of Delivered Goods
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handlePhotoUpload}
-                className="hidden"
+              <MultiPhotoUpload
+                photos={podPhotos}
+                onChange={setPodPhotos}
+                maxPhotos={3}
+                label="Delivery Photos"
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border border-dashed border-neutral-300 rounded-lg px-3 py-3 text-sm text-neutral-600 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <Camera className="h-4 w-4" />
-                {photoBase64 ? 'Photo captured' : 'Take Photo / Upload'}
-              </button>
-              {photoBase64 && (
-                <div className="mt-2 relative">
-                  <img src={photoBase64} alt="Delivery" className="w-full h-24 object-cover rounded-lg" />
-                  <button onClick={() => setPhotoBase64(null)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">x</button>
-                </div>
-              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">

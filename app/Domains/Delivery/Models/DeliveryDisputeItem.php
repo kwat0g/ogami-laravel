@@ -32,9 +32,13 @@ final class DeliveryDisputeItem extends Model
         'received_qty',
         'condition',
         'notes',
-        'photo_url',
+        'photo_urls',
         'resolution_action',
         'resolution_qty',
+    ];
+
+    protected $casts = [
+        'photo_urls' => 'array',
     ];
 
     public function dispute(): BelongsTo
