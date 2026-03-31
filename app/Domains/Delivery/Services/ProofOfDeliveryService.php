@@ -34,6 +34,7 @@ final class ProofOfDeliveryService implements ServiceContract
      *     receiver_designation?: string,
      *     signature_base64?: string,
      *     photo_base64?: string,
+     *     photos_base64?: string[],
      *     latitude?: float,
      *     longitude?: float,
      *     delivery_notes?: string,
@@ -51,7 +52,7 @@ final class ProofOfDeliveryService implements ServiceContract
 
         return DB::transaction(function () use ($dr, $podData, $actor): DeliveryReceipt {
             $signaturePath = null;
-            $photoPath = null;
+            $photoPaths = [];
 
             // Store signature image if provided
             if (! empty($podData['signature_base64'])) {
@@ -61,12 +62,19 @@ final class ProofOfDeliveryService implements ServiceContract
                 );
             }
 
-            // Store photo if provided
-            if (! empty($podData['photo_base64'])) {
-                $photoPath = $this->storeBase64File(
-                    $podData['photo_base64'],
-                    "pod/photos/dr-{$dr->id}-photo.jpg",
-                );
+            // Store multiple photos (max 3) -- new format
+            $photosBase64 = $podData['photos_base64'] ?? [];
+            // Backward compat: if single photo_base64 is provided, treat as first photo
+            if (empty($photosBase64) && ! empty($podData['photo_base64'])) {
+                $photosBase64 = [$podData['photo_base64']];
+            }
+            foreach (array_slice($photosBase64, 0, 3) as $index => $base64) {
+                if (! empty($base64)) {
+                    $photoPaths[] = $this->storeBase64File(
+                        $base64,
+                        "pod/photos/dr-{$dr->id}-photo-{$index}.jpg",
+                    );
+                }
             }
 
             $dr->update([
@@ -74,7 +82,7 @@ final class ProofOfDeliveryService implements ServiceContract
                 'pod_receiver_name' => $podData['receiver_name'],
                 'pod_receiver_designation' => $podData['receiver_designation'] ?? null,
                 'pod_signature_path' => $signaturePath,
-                'pod_photo_path' => $photoPath,
+                'pod_photo_paths' => $photoPaths,
                 'pod_latitude' => $podData['latitude'] ?? null,
                 'pod_longitude' => $podData['longitude'] ?? null,
                 'pod_notes' => $podData['delivery_notes'] ?? null,
@@ -100,7 +108,8 @@ final class ProofOfDeliveryService implements ServiceContract
             'receiver_name' => $dr->pod_receiver_name,
             'receiver_designation' => $dr->pod_receiver_designation ?? null,
             'has_signature' => $dr->pod_signature_path !== null,
-            'has_photo' => $dr->pod_photo_path !== null,
+            'has_photo' => ! empty($dr->pod_photo_paths),
+            'photo_count' => is_array($dr->pod_photo_paths) ? count($dr->pod_photo_paths) : 0,
             'has_gps' => $dr->pod_latitude !== null && $dr->pod_longitude !== null,
             'recorded_at' => $dr->pod_recorded_at?->toIso8601String(),
         ];

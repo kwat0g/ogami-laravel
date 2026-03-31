@@ -6,6 +6,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { useCombinedDeliverySchedule, useAcknowledgeReceipt } from '@/hooks/useDeliveryScheduleWorkflow'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import MultiPhotoUpload from '@/components/ui/MultiPhotoUpload'
 import { toast } from 'sonner'
 import type { ItemStatusSummary } from '@/types/production'
 
@@ -13,7 +14,7 @@ interface AcknowledgmentForm {
   received_qty: number
   condition: 'good' | 'damaged' | 'missing'
   notes: string
-  photo_url: string | null
+  photo_urls: string[]
 }
 
 export default function OrderReceiptPage(): JSX.Element {
@@ -58,7 +59,7 @@ export default function OrderReceiptPage(): JSX.Element {
         received_qty: prev[itemId]?.received_qty ?? parseFloat(schedule.item_schedules?.find((i: any) => i.id === itemId)?.qty_ordered || '0'),
         condition: prev[itemId]?.condition ?? 'good',
         notes: prev[itemId]?.notes ?? '',
-        photo_url: prev[itemId]?.photo_url ?? null,
+        photo_urls: prev[itemId]?.photo_urls ?? [],
         [field]: value,
       }
     }))
@@ -81,7 +82,7 @@ export default function OrderReceiptPage(): JSX.Element {
         received_qty: (ack as AcknowledgmentForm).received_qty,
         condition: (ack as AcknowledgmentForm).condition,
         notes: (ack as AcknowledgmentForm).notes,
-        photo_url: (ack as AcknowledgmentForm).photo_url || null,
+        photo_urls: (ack as AcknowledgmentForm).photo_urls || [],
       })),
       general_notes: generalNotes,
     }
@@ -220,33 +221,12 @@ export default function OrderReceiptPage(): JSX.Element {
                       {/* Photo upload -- shown for damaged/missing items */}
                       {ack?.condition && ack.condition !== 'good' && (
                         <div className="mt-3">
-                          <label className="block text-xs text-neutral-500 mb-1">
-                            <Camera className="h-3 w-3 inline mr-1" />
-                            Attach Photo Evidence (optional)
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (!file) return
-                              const reader = new FileReader()
-                              reader.onload = () => handleAcknowledgmentChange(item.id, 'photo_url', reader.result as string)
-                              reader.readAsDataURL(file)
-                            }}
-                            className="w-full text-sm text-neutral-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-neutral-200 file:text-sm file:bg-white file:text-neutral-700 file:cursor-pointer hover:file:bg-neutral-50"
+                          <MultiPhotoUpload
+                            photos={ack.photo_urls || []}
+                            onChange={(photos) => handleAcknowledgmentChange(item.id, 'photo_urls', photos)}
+                            maxPhotos={3}
+                            label="Photo Evidence (optional)"
                           />
-                          {ack.photo_url && (
-                            <div className="mt-2 relative">
-                              <img src={ack.photo_url} alt="Evidence" className="w-full h-32 object-cover rounded-lg border border-neutral-200" />
-                              <button
-                                type="button"
-                                onClick={() => handleAcknowledgmentChange(item.id, 'photo_url', null)}
-                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
-                              >x</button>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
