@@ -258,6 +258,31 @@ export interface VendorPortalGoodsReceipt {
   purchase_order?: { po_reference: string }
 }
 
+export interface VendorPortalGoodsReceiptDetail extends VendorPortalGoodsReceipt {
+  confirmed_at: string | null
+  items: Array<{
+    id: number
+    item_description: string
+    quantity_ordered: number | null
+    quantity_received: number
+    quantity_accepted: number | null
+    quantity_rejected: number | null
+    condition: string | null
+    qc_status: string
+    qc_notes: string | null
+    unit_of_measure: string | null
+  }>
+}
+
+export function useVendorGoodsReceiptDetail(id: number | null) {
+  return useQuery({
+    queryKey: ['vendor-portal', 'goods-receipts', id],
+    queryFn: () =>
+      api.get<{ data: VendorPortalGoodsReceiptDetail }>(`/vendor-portal/goods-receipts/${id}`).then((r) => r.data),
+    enabled: !!id,
+  })
+}
+
 export function useVendorGoodsReceipts(status?: string) {
   return useQuery({
     queryKey: ['vendor-portal', 'goods-receipts', { status }],
@@ -284,6 +309,31 @@ export interface VendorPortalInvoice {
   description: string | null
   or_number: string | null
   created_at: string
+}
+
+export interface VendorPortalInvoiceDetail extends VendorPortalInvoice {
+  invoice_number: string | null
+  total_amount: number
+  total_paid: number
+  balance_due: number
+  source: string | null
+  approved_at: string | null
+  submitted_at: string | null
+  payments: Array<{
+    id: number
+    amount: number
+    payment_date: string
+    reference: string | null
+  }>
+}
+
+export function useVendorInvoiceDetail(id: number | null) {
+  return useQuery({
+    queryKey: ['vendor-portal', 'invoices', id],
+    queryFn: () =>
+      api.get<{ data: VendorPortalInvoiceDetail }>(`/vendor-portal/invoices/${id}`).then((r) => r.data),
+    enabled: !!id,
+  })
 }
 
 export function useVendorInvoices(status?: string) {

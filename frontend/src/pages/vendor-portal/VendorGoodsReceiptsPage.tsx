@@ -1,7 +1,9 @@
+import { useNavigate } from 'react-router-dom'
 import { useVendorGoodsReceipts, type VendorPortalGoodsReceipt } from '@/hooks/useVendorPortal'
 import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function VendorGoodsReceiptsPage(): React.ReactElement {
+  const navigate = useNavigate()
   const { data, isLoading } = useVendorGoodsReceipts()
 
   if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading receipts…</p>
@@ -34,7 +36,7 @@ export default function VendorGoodsReceiptsPage(): React.ReactElement {
             </thead>
             <tbody>
               {receipts.map((gr) => (
-                <tr key={gr.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
+                <tr key={gr.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer" onClick={() => navigate(`/vendor-portal/goods-receipts/${gr.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs text-neutral-700">{gr.gr_reference}</td>
                   <td className="px-4 py-3 text-neutral-700">{gr.purchase_order?.po_reference ?? '—'}</td>
                   <td className="px-4 py-3 text-neutral-600">{gr.received_date}</td>

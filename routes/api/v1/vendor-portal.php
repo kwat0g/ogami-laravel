@@ -63,12 +63,16 @@ Route::middleware(['auth:sanctum', 'vendor_scope'])->group(function () {
     Route::prefix('goods-receipts')->name('goods-receipts.')->group(function () {
         Route::get('/', [VendorPortalController::class, 'goodsReceipts'])
             ->name('index');
+        Route::get('/{goodsReceipt}', [VendorPortalController::class, 'goodsReceiptDetail'])
+            ->name('show');
     });
 
     // ── Invoices ────────────────────────────────────────────────────────────
     Route::prefix('invoices')->name('invoices.')->group(function () {
         Route::get('/', [VendorPortalController::class, 'invoices'])
             ->name('index');
+        Route::get('/{vendorInvoice}', [VendorPortalController::class, 'invoiceDetail'])
+            ->name('show');
 
         Route::post('/', [VendorPortalController::class, 'storeInvoice'])
             ->middleware('throttle:api-action')

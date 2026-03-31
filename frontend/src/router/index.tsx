@@ -301,7 +301,9 @@ const VendorOrdersPage           = lazyWithRetry(() => import('@/pages/vendor-po
 const VendorOrderDetailPage      = lazyWithRetry(() => import('@/pages/vendor-portal/VendorOrderDetailPage'))
 const VendorItemsPage            = lazyWithRetry(() => import('@/pages/vendor-portal/VendorItemsPage'))
 const VendorGoodsReceiptsPage    = lazyWithRetry(() => import('@/pages/vendor-portal/VendorGoodsReceiptsPage'))
+const VendorGoodsReceiptDetailPage = lazyWithRetry(() => import('@/pages/vendor-portal/VendorGoodsReceiptDetailPage'))
 const VendorInvoicesPage         = lazyWithRetry(() => import('@/pages/vendor-portal/VendorInvoicesPage'))
+const VendorInvoiceDetailPage    = lazyWithRetry(() => import('@/pages/vendor-portal/VendorInvoiceDetailPage'))
 
 // CRM — Staff pages
 const TicketListPage      = lazyWithRetry(() => import('@/pages/crm/TicketListPage'))
@@ -699,7 +701,9 @@ const router = createBrowserRouter([
       { path: 'orders/:ulid', element: withSuspense(guard('vendor_portal.view_orders', <VendorOrderDetailPage />)) },
       { path: 'items',     element: withSuspense(guard('vendor_portal.manage_items', <VendorItemsPage />)) },
       { path: 'goods-receipts', element: withSuspense(guard('vendor_portal.view_receipts', <VendorGoodsReceiptsPage />)) },
+      { path: 'goods-receipts/:id', element: withSuspense(guard('vendor_portal.view_receipts', <VendorGoodsReceiptDetailPage />)) },
       { path: 'invoices', element: withSuspense(guard('vendor_portal.view_receipts', <VendorInvoicesPage />)) },
+      { path: 'invoices/:id', element: withSuspense(guard('vendor_portal.view_receipts', <VendorInvoiceDetailPage />)) },
     ],
   },
 

@@ -352,6 +352,57 @@ final class VendorPortalController extends Controller
         return response()->json($receipts);
     }
 
+    /**
+     * GET /vendor-portal/goods-receipts/{goodsReceipt}
+     * Show GR detail with item-level QC results for vendor visibility.
+     */
+    public function goodsReceiptDetail(GoodsReceipt $goodsReceipt): JsonResponse
+    {
+        $vendorId = app('vendor_scope.vendor_id');
+
+        if ((int) $goodsReceipt->purchaseOrder?->vendor_id !== $vendorId) {
+            abort(403, 'This Goods Receipt does not belong to your vendor account.');
+        }
+
+        $goodsReceipt->load([
+            'items.poItem',
+            'purchaseOrder:id,ulid,po_reference,status',
+        ]);
+
+        // Build item-level response with QC info
+        $items = $goodsReceipt->items->map(fn ($item) => [
+            'id' => $item->id,
+            'item_description' => $item->poItem?->item_description ?? "Item #{$item->id}",
+            'quantity_ordered' => $item->poItem?->quantity_ordered,
+            'quantity_received' => $item->quantity_received,
+            'quantity_accepted' => $item->quantity_accepted,
+            'quantity_rejected' => $item->quantity_rejected,
+            'condition' => $item->condition,
+            'qc_status' => $item->qc_status ?? 'pending',
+            'qc_notes' => $item->qc_notes ?? null,
+            'unit_of_measure' => $item->poItem?->unit_of_measure,
+        ]);
+
+        return response()->json([
+            'data' => [
+                'id' => $goodsReceipt->id,
+                'gr_reference' => $goodsReceipt->gr_reference,
+                'status' => $goodsReceipt->status,
+                'received_date' => $goodsReceipt->received_date,
+                'three_way_match_passed' => $goodsReceipt->three_way_match_passed,
+                'ap_invoice_created' => $goodsReceipt->ap_invoice_created,
+                'confirmed_at' => $goodsReceipt->confirmed_at,
+                'purchase_order' => $goodsReceipt->purchaseOrder ? [
+                    'ulid' => $goodsReceipt->purchaseOrder->ulid,
+                    'po_reference' => $goodsReceipt->purchaseOrder->po_reference,
+                    'status' => $goodsReceipt->purchaseOrder->status,
+                ] : null,
+                'items' => $items,
+                'created_at' => $goodsReceipt->created_at,
+            ],
+        ]);
+    }
+
     // ── Invoices ─────────────────────────────────────────────────────────────
 
     /**
@@ -368,6 +419,50 @@ final class VendorPortalController extends Controller
             ->paginate(20);
 
         return response()->json($invoices);
+    }
+
+    /**
+     * GET /vendor-portal/invoices/{vendorInvoice}
+     * Show invoice detail with approval/payment status for vendor visibility.
+     */
+    public function invoiceDetail(VendorInvoice $vendorInvoice): JsonResponse
+    {
+        $vendorId = app('vendor_scope.vendor_id');
+
+        if ((int) $vendorInvoice->vendor_id !== $vendorId) {
+            abort(403, 'This invoice does not belong to your vendor account.');
+        }
+
+        $vendorInvoice->load(['payments']);
+
+        return response()->json([
+            'data' => [
+                'id' => $vendorInvoice->id,
+                'ulid' => $vendorInvoice->ulid,
+                'invoice_number' => $vendorInvoice->invoice_number,
+                'status' => $vendorInvoice->status,
+                'invoice_date' => $vendorInvoice->invoice_date,
+                'due_date' => $vendorInvoice->due_date,
+                'net_amount' => $vendorInvoice->net_amount,
+                'vat_amount' => $vendorInvoice->vat_amount,
+                'ewt_amount' => $vendorInvoice->ewt_amount,
+                'total_amount' => ($vendorInvoice->net_amount ?? 0) + ($vendorInvoice->vat_amount ?? 0) - ($vendorInvoice->ewt_amount ?? 0),
+                'total_paid' => $vendorInvoice->total_paid ?? 0,
+                'balance_due' => ($vendorInvoice->net_amount ?? 0) + ($vendorInvoice->vat_amount ?? 0) - ($vendorInvoice->ewt_amount ?? 0) - ($vendorInvoice->total_paid ?? 0),
+                'or_number' => $vendorInvoice->or_number,
+                'description' => $vendorInvoice->description,
+                'source' => $vendorInvoice->source,
+                'approved_at' => $vendorInvoice->approved_at,
+                'submitted_at' => $vendorInvoice->submitted_at,
+                'payments' => ($vendorInvoice->payments ?? collect())->map(fn ($p) => [
+                    'id' => $p->id,
+                    'amount' => $p->amount,
+                    'payment_date' => $p->payment_date,
+                    'reference' => $p->reference ?? null,
+                ]),
+                'created_at' => $vendorInvoice->created_at,
+            ],
+        ]);
     }
 
     /**
