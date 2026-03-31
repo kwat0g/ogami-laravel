@@ -72,7 +72,7 @@ export default function ClientShopPage(): JSX.Element {
           notes: item.line_notes || '',
         }))
       )
-      setRequestedDate(existingOrder.requested_delivery_date || '')
+      setRequestedDate(existingOrder.requested_delivery_date.substring(0, 10) || '')
       setOrderNotes(existingOrder.client_notes || '')
       setInitialized(true)
     }
