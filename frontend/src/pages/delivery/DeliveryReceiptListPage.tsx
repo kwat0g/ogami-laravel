@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Truck } from 'lucide-react';
+import { Truck } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
@@ -64,14 +64,7 @@ export default function DeliveryReceiptListPage() {
               ]}
               filename="delivery-receipts"
             />
-            {canManage && (
-              <Link
-                to="/delivery/receipts/new"
-                className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-              >
-                <Plus size={16} /> New Receipt
-              </Link>
-            )}
+            {/* Delivery receipts are auto-created from delivery schedules -- no manual creation */}
           </div>
         }
       />

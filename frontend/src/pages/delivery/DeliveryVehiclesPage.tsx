@@ -93,7 +93,6 @@ function VehicleFormModal({
   const qc = useQueryClient()
   const isEdit = !!vehicle
 
-  const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [type, setType] = useState('truck')
   const [makeModel, setMakeModel] = useState('')
@@ -104,7 +103,6 @@ function VehicleFormModal({
   // Reset form state when vehicle prop changes (fixes stale data bug)
   useEffect(() => {
     if (open) {
-      setCode(vehicle?.code ?? '')
       setName(vehicle?.name ?? '')
       setType(vehicle?.type ?? 'truck')
       setMakeModel(vehicle?.make_model ?? '')
@@ -128,12 +126,11 @@ function VehicleFormModal({
   })
 
   const handleSubmit = () => {
-    if (!code.trim() || !name.trim() || !plateNumber.trim()) {
-      toast.error('Code, name, and plate number are required')
+    if (!name.trim() || !plateNumber.trim()) {
+      toast.error('Name and plate number are required')
       return
     }
     mutation.mutate({
-      code: code.trim(),
       name: name.trim(),
       type,
       make_model: makeModel.trim() || null,
@@ -156,28 +153,15 @@ function VehicleFormModal({
         </div>
 
         <div className="p-5 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Code *</label>
-              <input
-                type="text"
-                value={code}
-                onChange={e => setCode(e.target.value)}
-                placeholder="e.g. TRK-001"
-                disabled={isEdit}
-                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm disabled:bg-neutral-50"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Plate Number *</label>
-              <input
-                type="text"
-                value={plateNumber}
-                onChange={e => setPlateNumber(e.target.value)}
-                placeholder="e.g. ABC 1234"
-                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Plate Number *</label>
+            <input
+              type="text"
+              value={plateNumber}
+              onChange={e => setPlateNumber(e.target.value)}
+              placeholder="e.g. ABC 1234"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+            />
           </div>
 
           <div>
