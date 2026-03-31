@@ -63,7 +63,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
           lot_batch_number: '',
           remarks: '',
         }]
-      : [{ item_master_id: 0, quantity_expected: '', quantity_received: '', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' }],
+      : [{ item_master_id: 0, quantity_expected: '', quantity_received: '0', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' }],
   )
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -302,9 +302,13 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     ))}
                   </select>
                 </div>
-                {/* Expected Qty */}
-                <div className="col-span-1">
-                  {idx === 0 && <p className="text-xs text-neutral-500 mb-1">Expected</p>}
+                {/* Qty column -- context-aware label */}
+                <div className={direction === 'outbound' ? 'col-span-2' : 'col-span-1'}>
+                  {idx === 0 && (
+                    <p className="text-xs text-neutral-500 mb-1">
+                      {direction === 'outbound' ? 'Qty to Dispatch' : 'Qty Expected'}
+                    </p>
+                  )}
                   <input
                     type="number"
                     step="0.001"
@@ -315,21 +319,27 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     disabled={isLinkedOutboundFlow}
                     required
                   />
+                  {direction === 'outbound' && isLinkedOutboundFlow && (
+                    <p className="text-xs text-neutral-400 mt-0.5">From delivery schedule</p>
+                  )}
                 </div>
-                {/* Received Qty */}
+                {/* Received Qty -- only shown for inbound (receiving goods) */}
+                {direction === 'inbound' && (
                 <div className="col-span-1">
-                  {idx === 0 && <p className="text-xs text-neutral-500 mb-1">Received</p>}
+                  {idx === 0 && <p className="text-xs text-neutral-500 mb-1">Qty Received</p>}
                   <input
                     type="number"
                     step="0.001"
                     min="0"
+                    placeholder="Actual qty"
                     className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={row.quantity_received}
                     onChange={e => updateRow(idx, 'quantity_received', e.target.value)}
-                    disabled={isLinkedOutboundFlow}
                     required
                   />
+                  {idx === 0 && <p className="text-xs text-neutral-400 mt-0.5">Enter actual count</p>}
                 </div>
+                )}
                 {/* UoM */}
                 <div className="col-span-2">
                   {idx === 0 && <p className="text-xs text-neutral-500 mb-1">UoM</p>}
