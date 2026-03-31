@@ -769,8 +769,8 @@ export default function EmployeeProfileView({
             <Link
               to={
                 isHR
-                  ? `/hr/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}`
-                  : `/team/attendance?employee_id=${employee.id}&employee_name=${encodeURIComponent(employee.full_name)}`
+                  ? `/hr/attendance?employee=${employee.ulid}`
+                  : `/team/attendance?employee=${employee.ulid}`
               }
               className="text-xs text-neutral-600 hover:underline"
             >

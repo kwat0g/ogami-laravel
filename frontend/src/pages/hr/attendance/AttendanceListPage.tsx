@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAttendanceLogs, useCreateAttendanceLog, useUpdateAttendanceLog, useEmployeeShiftAssignments } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
-import { useEmployeeSearch } from '@/hooks/useEmployees'
+import { useEmployeeSearch, useEmployee } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { ExportButton } from '@/components/ui/ExportButton'
@@ -69,8 +69,13 @@ export default function AttendanceListPage() {
   const [userModifiedSearch, setUserModifiedSearch] = useState(false) // Track if user manually typed
   
   // Read query params for auto-filter
+  // Prefer ULID-based param (?employee=ULID) over legacy numeric (?employee_id=N)
+  const queryEmployeeUlid = searchParams.get('employee')
   const queryEmployeeId = searchParams.get('employee_id')
   const queryEmployeeName = searchParams.get('employee_name')
+
+  // Resolve employee ULID to full employee object (only when ULID param is present)
+  const { data: resolvedEmployee } = useEmployee(queryEmployeeUlid)
   
   // Get first and last day of current month
   const now = new Date()
@@ -86,6 +91,14 @@ export default function AttendanceListPage() {
     employee_id: queryEmployeeId ? Number(queryEmployeeId) : undefined,
   })
   const [searchValue, setSearchValue] = useState(queryEmployeeName || '')
+
+  // When employee ULID resolves, update filters with the resolved numeric ID
+  useEffect(() => {
+    if (resolvedEmployee?.id) {
+      setFilters(f => ({ ...f, employee_id: resolvedEmployee.id, page: 1 }))
+      setSearchValue(resolvedEmployee.full_name ?? '')
+    }
+  }, [resolvedEmployee])
   const debouncedSearch = useDebounce(searchValue, 600) // 600ms delay to reduce API calls
   
   const [showModal, setShowModal] = useState(false)

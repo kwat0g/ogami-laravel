@@ -670,7 +670,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
           <Card>
             <CardBody>
               <Link
-                to={`/procurement/goods-receipts?purchase_order_id=${po.id}`}
+                to={`/procurement/goods-receipts?po=${po.ulid}`}
                 className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 font-medium underline underline-offset-2"
               >
                 <PackageCheck className="w-4 h-4" />
