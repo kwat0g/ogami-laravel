@@ -16,6 +16,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ApprovalStepForm from '@/components/ui/ApprovalStepForm'
 import type { JournalEntryLine } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
@@ -179,11 +180,11 @@ export default function JournalEntryDetailPage() {
           !entry.is_auto_posted && (
             <div className="flex items-center gap-2">
               {entry.status === 'draft' && (
-                <ConfirmDialog
-                  title="Submit for Approval?"
-                  description="This will submit the journal entry for review and approval. Continue?"
+                <ApprovalStepForm
+                  title="Submit for Approval"
+                  description="This will submit the journal entry for review. The reviewer will verify debits equal credits and GL codes are correct."
                   confirmLabel="Submit"
-                  onConfirm={async () => {
+                  onConfirm={async (_comments) => {
                     try {
                       await submitMutation.mutateAsync()
                       toast.success('Journal entry submitted for approval.')
@@ -191,6 +192,7 @@ export default function JournalEntryDetailPage() {
                       toast.error(firstErrorMessage(err))
                     }
                   }}
+                  isLoading={submitMutation.isPending}
                 >
                   <button
                     disabled={busy}
@@ -198,24 +200,26 @@ export default function JournalEntryDetailPage() {
                   >
                     {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
                   </button>
-                </ConfirmDialog>
+                </ApprovalStepForm>
               )}
               {entry.status === 'submitted' && (
-                <ConfirmDialog
-                  title="Post Journal Entry?"
-                  description="Posted entries cannot be edited. This will finalize the journal entry in the general ledger. Continue?"
+                <ApprovalStepForm
+                  title="Post Journal Entry"
+                  description="Posted entries cannot be edited. This will finalize the journal entry in the general ledger."
                   confirmLabel="Post Entry"
-                  onConfirm={handlePost}
+                  onConfirm={(_comments) => handlePost()}
+                  isLoading={postMutation.isPending}
+                  checklist={['Total debits equal total credits', 'GL account codes verified', 'Fiscal period is correct']}
                 >
                   <SodActionButton
                     initiatedById={entry.created_by}
                     label="Post"
-                    onClick={() => {}} // Handled by ConfirmDialog
+                    onClick={() => {}}
                     isLoading={postMutation.isPending}
                     disabled={submitMutation.isPending || reverseMutation.isPending}
                     variant="primary"
                   />
-                </ConfirmDialog>
+                </ApprovalStepForm>
               )}
               {entry.status === 'posted' && entry.reversal_of == null && (
                 <ConfirmDestructiveDialog
