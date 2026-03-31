@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Truck, MapPin, Camera, PenTool, User, Package, Clock, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { firstErrorMessage } from '@/lib/errorHandler'
+
 import {
   useDeliveryReceipt,
   useConfirmDeliveryReceipt,
@@ -334,8 +334,8 @@ function PodCaptureSection({
         },
       })
       toast.success('Proof of Delivery recorded successfully')
-    } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to record POD'))
+    } catch {
+      // Global mutation onError handler shows toast
     }
   }
 
@@ -510,8 +510,8 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       await confirmMut.mutateAsync(dr.ulid);
       toast.success('Delivery receipt confirmed.');
       setConfirmOpen(false);
-    } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to confirm receipt.'));
+    } catch {
+      // Global mutation onError handler shows toast
     }
   };
 
@@ -527,8 +527,9 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       await prepareShipmentMut.mutateAsync({ ulid: dr.ulid, payload: shipmentData });
       toast.success('Shipment prepared successfully. Ready to dispatch.');
       setShipmentOpen(false);
-    } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to prepare shipment.'));
+    } catch {
+      // Error toast is handled by the global mutation onError handler in main.tsx.
+      // No manual toast.error here to avoid duplicate notifications.
     }
   };
 
@@ -537,8 +538,8 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       await dispatchMut.mutateAsync(dr.ulid);
       toast.success('Delivery dispatched. Shipment is now in transit.');
       setDispatchOpen(false);
-    } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to dispatch.'));
+    } catch {
+      // Global mutation onError handler shows toast
     }
   };
 
@@ -547,8 +548,8 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       await deliverMut.mutateAsync(dr.ulid);
       toast.success('Delivery marked as delivered.');
       setDeliverOpen(false);
-    } catch (err) {
-      toast.error(firstErrorMessage(err, 'Failed to mark as delivered.'));
+    } catch {
+      // Global mutation onError handler shows toast
     }
   };
 
