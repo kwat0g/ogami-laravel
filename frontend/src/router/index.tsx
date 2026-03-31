@@ -330,7 +330,7 @@ const SpcDashboardPage = lazyWithRetry(() => import('@/pages/qc/SpcDashboardPage
 const SupplierQualityPage = lazyWithRetry(() => import('@/pages/qc/SupplierQualityPage'))
 const BirFormGeneratorPage = lazyWithRetry(() => import('@/pages/tax/BirFormGeneratorPage'))
 const BirFilingListPage = lazyWithRetry(() => import('@/pages/tax/BirFilingListPage'))
-const DeliveryRoutesPage = lazyWithRetry(() => import('@/pages/delivery/DeliveryRoutesPage'))
+
 
 // Budget domain
 const CostCentersPage = lazyWithRetry(() => import('@/pages/budget/CostCentersPage'))
@@ -636,7 +636,7 @@ const router = createBrowserRouter([
       { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.manage', <CreateDeliveryReceiptPage />)) },
       { path: '/delivery/receipts/:ulid', element: withSuspense(guard('delivery.view', <DeliveryReceiptDetailPage />)) },
       { path: '/delivery/vehicles', element: withSuspense(guard('delivery.view', <DeliveryVehiclesPage />)) },
-      { path: '/delivery/routes', element: withSuspense(guard('delivery.routes.view', <DeliveryRoutesPage />)) },
+
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────
       { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve|procurement.purchase-request.view|inventory.mrq.vp_approve|payroll.vp_approve|leaves.vp_note', <VpApprovalsDashboardPage />)) },
