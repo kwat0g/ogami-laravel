@@ -6,6 +6,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { useDeliverySchedule, useCreateProductionOrder, useBoms, useFulfillFromStock } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { toast } from 'sonner'
 
 interface CreateWOModalProps {
@@ -286,6 +287,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
               <Link
                 to={`/delivery/receipts/new?delivery_schedule_id=${schedule.id}&delivery_schedule_ulid=${schedule.ulid}&customer_id=${schedule.customer?.id ?? ''}&product_item_id=${schedule.product_item_id ?? schedule.product_item?.id ?? ''}&qty_ordered=${schedule.qty_ordered ?? ''}&unit_of_measure=${schedule.product_item?.unit_of_measure ?? 'pcs'}`}
                 className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+                title="Delivery receipt will be auto-created when schedule is dispatched. Use this only for manual overrides."
               >
                 <Truck className="w-4 h-4" />
                 Create Delivery Receipt
@@ -656,6 +658,16 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
           </div>
         </div>
       )}
+
+      {/* Document Chain */}
+      <div className="bg-white rounded border border-neutral-200 overflow-hidden mt-5">
+        <div className="px-4 py-3 border-b border-neutral-100">
+          <h2 className="text-sm font-semibold text-neutral-900">Document Chain</h2>
+        </div>
+        <div className="p-4">
+          <ChainRecordTimeline documentType="delivery_schedule" documentId={schedule.id} />
+        </div>
+      </div>
     </div>
   )
 }

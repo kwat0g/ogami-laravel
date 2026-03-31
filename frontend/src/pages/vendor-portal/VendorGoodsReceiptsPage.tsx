@@ -1,7 +1,9 @@
+import { useNavigate } from 'react-router-dom'
 import { useVendorGoodsReceipts, type VendorPortalGoodsReceipt } from '@/hooks/useVendorPortal'
 import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function VendorGoodsReceiptsPage(): React.ReactElement {
+  const navigate = useNavigate()
   const { data, isLoading } = useVendorGoodsReceipts()
 
   if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading receipts…</p>
@@ -34,7 +36,7 @@ export default function VendorGoodsReceiptsPage(): React.ReactElement {
             </thead>
             <tbody>
               {receipts.map((gr) => (
-                <tr key={gr.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
+                <tr key={gr.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 cursor-pointer" onClick={() => navigate(`/vendor-portal/goods-receipts/${gr.id}`)}>
                   <td className="px-4 py-3 font-mono text-xs text-neutral-700">{gr.gr_reference}</td>
                   <td className="px-4 py-3 text-neutral-700">{gr.purchase_order?.po_reference ?? '—'}</td>
                   <td className="px-4 py-3 text-neutral-600">{gr.received_date}</td>
@@ -64,11 +66,27 @@ export default function VendorGoodsReceiptsPage(): React.ReactElement {
 function StatusBadge({ status }: { status: string }): React.ReactElement {
   const colors: Record<string, string> = {
     draft: 'bg-neutral-100 text-neutral-600',
+    submitted: 'bg-blue-100 text-blue-700',
+    pending_qc: 'bg-amber-100 text-amber-700',
+    qc_passed: 'bg-green-100 text-green-700',
+    qc_failed: 'bg-red-100 text-red-700',
     confirmed: 'bg-emerald-100 text-emerald-700',
+    returned: 'bg-red-100 text-red-600',
+    cancelled: 'bg-neutral-100 text-neutral-400',
+  }
+  const labels: Record<string, string> = {
+    draft: 'Draft',
+    submitted: 'Submitted',
+    pending_qc: 'QC Pending',
+    qc_passed: 'QC Passed',
+    qc_failed: 'QC Failed',
+    confirmed: 'Confirmed',
+    returned: 'Returned',
+    cancelled: 'Cancelled',
   }
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] ?? 'bg-neutral-100 text-neutral-600'}`}>
-      {status}
+      {labels[status] ?? status}
     </span>
   )
 }

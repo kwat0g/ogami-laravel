@@ -41,9 +41,9 @@ final class ProofOfDeliveryService implements ServiceContract
      */
     public function recordPod(DeliveryReceipt $dr, array $podData, User $actor): DeliveryReceipt
     {
-        if (! in_array($dr->status, ['in_transit', 'ready_for_pickup'], true)) {
+        if (! in_array($dr->status, ['dispatched', 'in_transit', 'ready_for_pickup'], true)) {
             throw new DomainException(
-                "Cannot record POD for delivery in status '{$dr->status}'. Must be in_transit or ready_for_pickup.",
+                "Cannot record POD for delivery in status '{$dr->status}'. Must be dispatched, in_transit or ready_for_pickup.",
                 'DEL_INVALID_POD_STATUS',
                 422,
             );

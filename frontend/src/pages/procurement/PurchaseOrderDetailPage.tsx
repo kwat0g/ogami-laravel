@@ -28,6 +28,7 @@ const statusLabel: Record<PurchaseOrderStatus, string> = {
   negotiating:        'Under Negotiation',
   acknowledged:       'Acknowledged',
   in_transit:         'In Transit',
+  delivered:          'Delivered',
   partially_received: 'Partially Received',
   fully_received:     'Fully Received',
   closed:             'Closed',

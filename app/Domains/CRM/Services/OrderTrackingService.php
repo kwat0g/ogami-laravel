@@ -61,7 +61,8 @@ final class OrderTrackingService implements ServiceContract
         }
 
         // Stage 3: Approved
-        if (in_array($order->status, ['approved', 'rejected', 'cancelled'])) {
+        $postApprovalStatuses = ['approved', 'in_production', 'ready_for_delivery', 'dispatched', 'delivered', 'fulfilled', 'completed', 'rejected', 'cancelled'];
+        if (in_array($order->status, $postApprovalStatuses)) {
             $timeline->push([
                 'stage' => 'approved',
                 'label' => $order->status === 'approved' ? 'Order Approved' : 'Order ' . ucfirst($order->status),

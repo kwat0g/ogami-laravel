@@ -38,6 +38,16 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     Route::post('delivery-schedules/{deliverySchedule}/fulfill', [DeliveryScheduleController::class, 'fulfillFromStock'])
         ->middleware('throttle:api-action');
 
+    // ── Delivery Schedule Workflow Actions ─────────────────────────────────
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/dispatch', [DeliveryScheduleController::class, 'dispatch'])
+        ->middleware('throttle:api-action');
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/delivered', [DeliveryScheduleController::class, 'markDelivered'])
+        ->middleware('throttle:api-action');
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/acknowledge', [DeliveryScheduleController::class, 'acknowledgeReceipt'])
+        ->middleware('throttle:api-action');
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/notify-missing', [DeliveryScheduleController::class, 'notifyMissingItems'])
+        ->middleware('throttle:api-action');
+
     // ── Combined Delivery Schedules (Multi-item delivery grouping) ────────────
     Route::get('combined-delivery-schedules', [CombinedDeliveryScheduleController::class, 'index'])
         ->middleware('can:viewAny,'.CombinedDeliverySchedule::class);

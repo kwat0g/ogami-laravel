@@ -27,6 +27,8 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import { PERMISSIONS } from '@/lib/permissions'
 import StatusTimeline from '@/components/ui/StatusTimeline'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
+import ApprovalStepForm from '@/components/ui/ApprovalStepForm'
 import { getVendorInvoiceSteps, isRejectedStatus } from '@/lib/workflowSteps'
 
 export default function APInvoiceDetailPage() {
@@ -208,11 +210,12 @@ export default function APInvoiceDetailPage() {
             {/* Submit for approval */}
             {isDraft && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.update}>
-                <ConfirmDialog
-                  title="Submit for Approval?"
-                  description="This will submit the invoice for the approval workflow. Once submitted, it cannot be edited."
+                <ApprovalStepForm
+                  title="Submit for Approval"
+                  description="This will submit the invoice for the multi-step approval workflow. Once submitted, it cannot be edited."
                   confirmLabel="Submit"
-                  onConfirm={handleSubmit}
+                  onConfirm={(_comments) => handleSubmit()}
+                  isLoading={submit.isPending}
                 >
                   <button
                     type="button"
@@ -222,18 +225,20 @@ export default function APInvoiceDetailPage() {
                     <FileText className="h-4 w-4" />
                     {submit.isPending ? 'Submitting…' : 'Submit for Approval'}
                   </button>
-                </ConfirmDialog>
+                </ApprovalStepForm>
               </PermissionGuard>
             )}
 
             {/* Head Note (step 2) */}
             {isPendingApproval && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <ConfirmDialog
-                  title="Record Head Note?"
-                  description="This will record your review as Head and move the invoice to Manager Check."
-                  confirmLabel="Confirm"
-                  onConfirm={handleHeadNote}
+                <ApprovalStepForm
+                  title="Head Note Review"
+                  description="Review the invoice details, verify the vendor and amounts are correct, then record your review."
+                  confirmLabel="Record Head Note"
+                  onConfirm={(_comments) => handleHeadNote()}
+                  isLoading={headNote.isPending}
+                  checklist={['Vendor details verified', 'Invoice amounts match delivery']}
                 >
                   <SodActionButton
                     initiatedById={invoice.created_by}
@@ -242,18 +247,20 @@ export default function APInvoiceDetailPage() {
                     isLoading={headNote.isPending}
                     variant="primary"
                   />
-                </ConfirmDialog>
+                </ApprovalStepForm>
               </PermissionGuard>
             )}
 
             {/* Manager Check (step 3) */}
             {isHeadNoted && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <ConfirmDialog
-                  title="Manager Check?"
-                  description="This will record Manager approval and move the invoice to Officer Review."
-                  confirmLabel="Confirm"
-                  onConfirm={handleManagerCheck}
+                <ApprovalStepForm
+                  title="Manager Check"
+                  description="Verify the invoice has been properly reviewed and amounts are within budget allocation."
+                  confirmLabel="Confirm Manager Check"
+                  onConfirm={(_comments) => handleManagerCheck()}
+                  isLoading={managerCheck.isPending}
+                  checklist={['Budget allocation verified', 'Head Note review acknowledged']}
                 >
                   <SodActionButton
                     initiatedById={invoice.created_by}
@@ -262,18 +269,20 @@ export default function APInvoiceDetailPage() {
                     isLoading={managerCheck.isPending}
                     variant="primary"
                   />
-                </ConfirmDialog>
+                </ApprovalStepForm>
               </PermissionGuard>
             )}
 
             {/* Officer Review (step 4) */}
             {isManagerChecked && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <ConfirmDialog
-                  title="Officer Review?"
-                  description="This will record Officer review and make the invoice ready for final approval."
-                  confirmLabel="Confirm"
-                  onConfirm={handleOfficerReview}
+                <ApprovalStepForm
+                  title="Officer Review"
+                  description="Accounting review -- verify GL account codes, tax calculations, and EWT withholding are correct."
+                  confirmLabel="Record Officer Review"
+                  onConfirm={(_comments) => handleOfficerReview()}
+                  isLoading={officerReview.isPending}
+                  checklist={['GL account codes correct', 'VAT computation verified', 'EWT withholding correct (if applicable)']}
                 >
                   <SodActionButton
                     initiatedById={invoice.created_by}
@@ -282,18 +291,20 @@ export default function APInvoiceDetailPage() {
                     isLoading={officerReview.isPending}
                     variant="primary"
                   />
-                </ConfirmDialog>
+                </ApprovalStepForm>
               </PermissionGuard>
             )}
 
             {/* Approve (step 5 — only available after officer review) */}
             {isOfficerReviewed && (
               <PermissionGuard permission={PERMISSIONS.vendor_invoices.approve}>
-                <ConfirmDialog
-                  title="Approve Invoice?"
-                  description="This will approve the invoice and generate an official invoice number (INV-XXXX). This action cannot be undone."
-                  confirmLabel="Approve"
-                  onConfirm={handleApprove}
+                <ApprovalStepForm
+                  title="Final Approval"
+                  description="This will approve the invoice and generate an official invoice number. This action cannot be undone."
+                  confirmLabel="Approve Invoice"
+                  onConfirm={(_comments) => handleApprove()}
+                  isLoading={approve.isPending}
+                  checklist={['All previous review steps completed', 'Invoice amount matches PO and GR']}
                 >
                   <SodActionButton
                     initiatedById={invoice.created_by}
@@ -302,7 +313,7 @@ export default function APInvoiceDetailPage() {
                     isLoading={approve.isPending}
                     variant="primary"
                   />
-                </ConfirmDialog>
+                </ApprovalStepForm>
               </PermissionGuard>
             )}
 
@@ -643,6 +654,14 @@ export default function APInvoiceDetailPage() {
             This invoice is <span className="font-semibold">overdue</span>.
           </div>
         )}
+
+        {/* Document Chain */}
+        <Card>
+          <CardHeader>Document Chain</CardHeader>
+          <CardBody>
+            <ChainRecordTimeline documentType="vendor_invoice" documentId={invoice.id} />
+          </CardBody>
+        </Card>
       </div>
     </div>
   )

@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ApprovalStepForm from '@/components/ui/ApprovalStepForm'
 import StatusTimeline from '@/components/ui/StatusTimeline'
 import { getLoanSteps, isRejectedStatus } from '@/lib/workflowSteps'
 
@@ -588,70 +589,74 @@ export default function LoanDetailPage() {
             <>
               {/* v2 Stage 1: Dept Head Note */}
               {canHeadNote && loan.status === 'pending' && (
-                <ConfirmDialog
-                  title="Head Note — Loan Application"
-                  description="Add your endorsement note before forwarding to HR Manager review."
+                <ApprovalStepForm
+                  title="Head Note -- Loan Application"
+                  description="Review the employee's loan request and add your endorsement before forwarding to Manager."
                   confirmLabel="Confirm Head Note"
-                  onConfirm={handleHeadNote}
+                  onConfirm={(_comments) => handleHeadNote()}
+                  isLoading={headNote.isPending}
+                  checklist={['Employee eligibility verified', 'Loan amount is reasonable for salary grade']}
                 >
                   <button
-                    onClick={() => { setHeadNoteRemarks(''); setShowHeadNoteModal(true) }}
                     disabled={headNote.isPending}
                     className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <span>📋</span> Head Note
+                    Head Note
                   </button>
-                </ConfirmDialog>
+                </ApprovalStepForm>
               )}
 
               {/* v2 Stage 2: Manager Check */}
               {canManagerCheck && loan.status === 'head_noted' && (
-                <ConfirmDialog
-                  title="Manager Check — Loan Application"
-                  description="Review the loan application and add your endorsement before forwarding to Accounting for review."
-                  confirmLabel="Confirm Check"
-                  onConfirm={handleManagerCheck}
+                <ApprovalStepForm
+                  title="Manager Check -- Loan Application"
+                  description="Review the loan application and department head's endorsement before forwarding to Accounting."
+                  confirmLabel="Confirm Manager Check"
+                  onConfirm={(_comments) => handleManagerCheck()}
+                  isLoading={managerCheck.isPending}
+                  checklist={['Head Note endorsement reviewed', 'No existing loan defaults']}
                 >
                   <button
-                    onClick={() => { setManagerCheckRemarks(''); setShowManagerCheckModal(true) }}
                     disabled={managerCheck.isPending}
                     className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <span>✓</span> Manager Check
+                    Manager Check
                   </button>
-                </ConfirmDialog>
+                </ApprovalStepForm>
               )}
 
               {/* v2 Stage 3: Officer Review */}
               {canOfficerReview && loan.status === 'manager_checked' && (
-                <ConfirmDialog
-                  title="Accounting Review — Loan Application"
-                  description="Review the loan terms and verify financial eligibility before forwarding to VP for final approval."
-                  confirmLabel="Confirm Review"
-                  onConfirm={handleOfficerReview}
+                <ApprovalStepForm
+                  title="Accounting Review -- Loan Application"
+                  description="Review the loan terms, interest rate, and verify financial eligibility before VP approval."
+                  confirmLabel="Confirm Accounting Review"
+                  onConfirm={(_comments) => handleOfficerReview()}
+                  isLoading={officerReview.isPending}
+                  checklist={['Loan terms and interest rate verified', 'Monthly amortization within salary deduction limits', 'No outstanding balance on previous loans']}
                 >
                   <button
-                    onClick={() => { setOfficerReviewRemarks(''); setShowOfficerReviewModal(true) }}
                     disabled={officerReview.isPending}
                     className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-900 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <span>✓</span> Accounting Review
+                    Accounting Review
                   </button>
-                </ConfirmDialog>
+                </ApprovalStepForm>
               )}
 
               {/* v2 Stage 4: VP Approve */}
               {canVpApprove && loan.status === 'officer_reviewed' && (
-                <ConfirmDialog
-                  title="VP Final Approval — Loan Application"
-                  description="This is the final approval step. Approving will generate the amortization schedule and mark the loan as ready for disbursement."
-                  confirmLabel="Confirm VP Approval"
-                  onConfirm={handleVpApprove}
+                <ApprovalStepForm
+                  title="VP Final Approval -- Loan Application"
+                  description="Final approval step. This will generate the amortization schedule and mark the loan as ready for disbursement."
+                  confirmLabel="Approve Loan"
+                  onConfirm={(_comments) => handleVpApprove()}
+                  isLoading={vpApprove.isPending}
+                  checklist={['All previous review steps completed', 'Amortization schedule reviewed']}
                 >
                   <button
-                    onClick={() => { setVpApproveRemarks(''); setShowVpApproveModal(true) }}
                     disabled={vpApprove.isPending}
                     className="px-4 py-2 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <span>✓</span> VP Approve
+                    VP Approve
                   </button>
-                </ConfirmDialog>
+                </ApprovalStepForm>
               )}
 
               {/* Reject (any pending v2 step) */}

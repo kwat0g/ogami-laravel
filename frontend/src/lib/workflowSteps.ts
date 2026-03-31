@@ -164,7 +164,8 @@ export function getDeliveryReceiptSteps(_dr: {
 }): TimelineStep[] {
   return [
     { label: 'Draft', status: 'draft' },
-    { label: 'Ready for Pickup', status: 'ready_for_pickup' },
+    { label: 'Confirmed', status: 'confirmed' },
+    { label: 'Dispatched', status: 'dispatched' },
     { label: 'In Transit', status: 'in_transit' },
     { label: 'Delivered', status: 'delivered' },
   ]
@@ -188,11 +189,12 @@ export function getClientOrderSteps(_order: {
 }): TimelineStep[] {
   return [
     { label: 'Pending Review', status: 'pending' },
-    { label: 'Negotiating', status: 'negotiating' },
-    { label: 'Client Responded', status: 'client_responded' },
-    { label: 'VP Approval', status: 'vp_pending' },
     { label: 'Approved', status: 'approved' },
-    { label: 'Completed', status: 'completed' },
+    { label: 'In Production', status: 'in_production' },
+    { label: 'Ready for Delivery', status: 'ready_for_delivery' },
+    { label: 'Dispatched', status: 'dispatched' },
+    { label: 'Delivered', status: 'delivered' },
+    { label: 'Fulfilled', status: 'fulfilled' },
   ]
 }
 

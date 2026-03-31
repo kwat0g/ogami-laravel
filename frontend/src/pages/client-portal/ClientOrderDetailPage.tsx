@@ -58,13 +58,43 @@ const STATUS_CONFIG: Record<string, {
     status: 'approved',
     icon: <CheckCircle className="h-4 w-4" />,
     label: 'Order Approved',
-    description: 'Your order has been approved and is being processed for delivery.'
+    description: 'Your order has been approved and is being prepared for production.'
+  },
+  in_production: {
+    status: 'in_progress',
+    icon: <Package className="h-4 w-4" />,
+    label: 'In Production',
+    description: 'Your order is currently being manufactured.'
+  },
+  ready_for_delivery: {
+    status: 'in_progress',
+    icon: <Package className="h-4 w-4" />,
+    label: 'Ready for Delivery',
+    description: 'Production is complete. Your order is being prepared for shipment.'
+  },
+  dispatched: {
+    status: 'in_progress',
+    icon: <Truck className="h-4 w-4" />,
+    label: 'Dispatched',
+    description: 'Your order has been dispatched and is on its way to you.'
+  },
+  delivered: {
+    status: 'approved',
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: 'Delivered',
+    description: 'Your order has been delivered. Please acknowledge receipt below.'
+  },
+  fulfilled: {
+    status: 'approved',
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: 'Order Fulfilled',
+    description: 'Your order has been delivered and acknowledged. Thank you!'
   },
   completed: {
     status: 'approved',
     icon: <CheckCircle className="h-4 w-4" />,
-    label: 'Order Completed',
-    description: 'Your order has been delivered successfully.'
+    label: 'Order Fulfilled',
+    description: 'Your order has been delivered and acknowledged. Thank you!'
   },
   rejected: {
     status: 'rejected',
@@ -412,8 +442,8 @@ export default function ClientOrderDetailPage(): JSX.Element {
             </div>
           )}
 
-          {/* Delivery Tracking — shown after approval */}
-          {(order.status === 'approved' || order.status === 'completed') && order.deliverySchedules && order.deliverySchedules.length > 0 && (
+          {/* Delivery Tracking — shown for all post-approval statuses */}
+          {['approved', 'in_production', 'ready_for_delivery', 'dispatched', 'delivered', 'fulfilled', 'completed'].includes(order.status) && order.deliverySchedules && order.deliverySchedules.length > 0 && (
             <Card>
               <CardHeader>
                 <span className="flex items-center gap-2">
@@ -423,24 +453,37 @@ export default function ClientOrderDetailPage(): JSX.Element {
               </CardHeader>
               <CardBody className="space-y-3">
                 <p className="text-xs text-neutral-500">
-                  Your order is being prepared for delivery. Track the status of each item below.
+                  {order.status === 'dispatched' ? 'Your order is on its way!' :
+                   order.status === 'delivered' ? 'Your order has been delivered. Please acknowledge receipt.' :
+                   order.status === 'fulfilled' || order.status === 'completed' ? 'Delivery complete.' :
+                   'Your order is being prepared for delivery.'}
                 </p>
                 {order.deliverySchedules.map((ds) => {
                   const sched = ds.deliverySchedule
                   if (!sched) return null
                   const schedStatusColors: Record<string, string> = {
                     open: 'bg-amber-100 text-amber-700',
+                    in_production: 'bg-indigo-100 text-indigo-700',
+                    partially_ready: 'bg-yellow-100 text-yellow-700',
                     ready: 'bg-emerald-100 text-emerald-700',
                     dispatched: 'bg-blue-100 text-blue-700',
-                    delivered: 'bg-teal-100 text-teal-700',
+                    delivered: 'bg-green-100 text-green-700',
                     closed: 'bg-neutral-100 text-neutral-500',
+                  }
+                  const schedStatusLabels: Record<string, string> = {
+                    open: 'Pending',
+                    in_production: 'In Production',
+                    partially_ready: 'Partially Ready',
+                    ready: 'Ready to Ship',
+                    dispatched: 'In Transit',
+                    delivered: 'Delivered',
                   }
                   return (
                     <div key={ds.id} className="p-3 bg-neutral-50 border border-neutral-100 rounded-lg">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-mono text-neutral-600">{sched.ds_reference}</span>
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${schedStatusColors[sched.status] ?? 'bg-neutral-100 text-neutral-600'}`}>
-                          {sched.status}
+                          {schedStatusLabels[sched.status] ?? sched.status}
                         </span>
                       </div>
                       <p className="text-xs text-neutral-500">
@@ -448,12 +491,28 @@ export default function ClientOrderDetailPage(): JSX.Element {
                           ? new Date(sched.target_delivery_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
                           : 'TBD'}
                       </p>
+                      {sched.actual_delivery_date && (
+                        <p className="text-xs text-green-600 mt-1">
+                          Delivered: {new Date(sched.actual_delivery_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      )}
                     </div>
                   )
                 })}
-                <p className="text-xs text-neutral-400 pt-1">
-                  You will be notified when your delivery is dispatched.
-                </p>
+
+                {/* Acknowledge delivery button for delivered orders */}
+                {order.status === 'delivered' && order.deliverySchedules.some(ds => ds.deliverySchedule?.ulid) && (
+                  <button
+                    onClick={() => {
+                      const dsUlid = order.deliverySchedules.find(ds => ds.deliverySchedule?.ulid)?.deliverySchedule?.ulid
+                      if (dsUlid) window.location.href = `/client-portal/deliveries/${dsUlid}`
+                    }}
+                    className="w-full py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Acknowledge Delivery
+                  </button>
+                )}
               </CardBody>
             </Card>
           )}

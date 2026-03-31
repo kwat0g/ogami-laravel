@@ -80,6 +80,7 @@ final class DeliverySchedule extends Model implements Auditable
         'created_by_id',
         'client_acknowledgment',
         'combined_delivery_schedule_id',
+        'delivery_receipt_id',
     ];
 
     protected $casts = [

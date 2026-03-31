@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusTimeline from '@/components/ui/StatusTimeline'
+import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { getClientOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import { toast } from 'sonner'
 import { NEGOTIATION_REASONS, REJECTION_REASONS } from '@/types/client-order'
@@ -548,7 +549,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
           <div className="p-4 space-y-3">
             <p className="text-sm text-neutral-500">
               {order.deliverySchedules.length} delivery schedule{order.deliverySchedules.length !== 1 ? 's' : ''} created for this order.
-              View details in <Link to="/production/combined-delivery-schedules" className="underline text-neutral-700 hover:text-neutral-900">Combined Delivery Schedules</Link> or <Link to="/production/orders" className="underline text-neutral-700 hover:text-neutral-900">Production Orders</Link>.
+              View details in <Link to="/production/delivery-schedules" className="underline text-neutral-700 hover:text-neutral-900">Delivery Schedules</Link> or <Link to="/production/orders" className="underline text-neutral-700 hover:text-neutral-900">Production Orders</Link>.
             </p>
             {order.status === 'approved' && (
               <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-lg">
@@ -617,7 +618,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
             <p className="text-sm font-medium text-emerald-900">Order approved</p>
             <p className="text-sm text-emerald-700 mt-1">
               Delivery schedules and production orders have been created. View them in{' '}
-              <Link to="/production/combined-delivery-schedules" className="underline font-medium">Combined Delivery Schedules</Link>{' '}
+              <Link to="/production/delivery-schedules" className="underline font-medium">Delivery Schedules</Link>{' '}
               or <Link to="/production/orders" className="underline font-medium">Production Orders</Link>.
             </p>
           </div>
@@ -898,6 +899,16 @@ export default function ClientOrderDetailPage(): JSX.Element {
           </div>
         </div>
       )}
+
+      {/* Document Chain */}
+      <div className="bg-white rounded border border-neutral-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-neutral-100">
+          <h2 className="text-sm font-semibold text-neutral-900">Document Chain</h2>
+        </div>
+        <div className="p-4">
+          <ChainRecordTimeline documentType="client_order" documentId={order.id} />
+        </div>
+      </div>
     </div>
   )
 }

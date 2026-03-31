@@ -29,7 +29,8 @@ final class ClientOrderStateMachine
         'vp_pending' => ['approved', 'rejected', 'cancelled'],
         'approved' => ['in_production', 'cancelled'],
         'in_production' => ['ready_for_delivery', 'cancelled'],
-        'ready_for_delivery' => ['delivered', 'cancelled'],
+        'ready_for_delivery' => ['dispatched', 'delivered', 'cancelled'],
+        'dispatched' => ['delivered', 'cancelled'],
         'delivered' => ['fulfilled'],
         'fulfilled' => [],   // terminal
         'rejected' => [],    // terminal

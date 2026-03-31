@@ -41,8 +41,16 @@ class UpdateSalesOrderOnProductionComplete
                 ->count();
 
             if ($completedOrders >= $totalOrders && $totalOrders > 0) {
-                $salesOrder->update(['status' => 'delivered']);
-                Log::info('[Sales] Sales order marked delivered - all production completed', [
+                // Transition to ready state -- actual 'delivered' should come from the delivery flow
+                $targetStatus = in_array($salesOrder->status, ['confirmed', 'in_production'], true)
+                    ? 'partially_delivered'
+                    : $salesOrder->status;
+                // If all production is done, mark ready for delivery (not delivered -- goods haven't shipped)
+                if ($salesOrder->status === 'in_production') {
+                    $targetStatus = 'partially_delivered';
+                }
+                $salesOrder->update(['status' => $targetStatus]);
+                Log::info('[Sales] Sales order production complete -- marked partially_delivered (awaiting physical delivery)', [
                     'sales_order_id' => $salesOrder->id,
                     'total_orders' => $totalOrders,
                 ]);
