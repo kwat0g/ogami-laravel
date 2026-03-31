@@ -18,10 +18,31 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     // ── Fleet / Vehicles CRUD ──────────────────────────────────────────────
     Route::get('/vehicles', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
         abort_unless($request->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
+
+        $activeDeliveryStatuses = ['confirmed', 'dispatched', 'in_transit', 'partially_delivered'];
+
         $vehicles = \App\Domains\Delivery\Models\Vehicle::query()
             ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
+            ->withCount([
+                'deliveryReceipts as active_deliveries_count' => fn ($q) => $q->whereIn('status', $activeDeliveryStatuses),
+                'deliveryReceipts as completed_deliveries_count' => fn ($q) => $q->where('status', 'delivered'),
+                'deliveryReceipts as total_deliveries_count',
+            ])
+            ->with(['deliveryReceipts' => fn ($q) => $q
+                ->whereIn('status', $activeDeliveryStatuses)
+                ->select('id', 'ulid', 'dr_reference', 'status', 'direction', 'vehicle_id', 'driver_name', 'receipt_date')
+                ->orderByDesc('receipt_date')
+                ->limit(5),
+            ])
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($vehicle) {
+                $v = $vehicle->toArray();
+                $v['availability'] = $vehicle->active_deliveries_count > 0 ? 'in_delivery' : 'available';
+                $v['current_delivery'] = $vehicle->deliveryReceipts->first();
+                return $v;
+            });
+
         return response()->json(['data' => $vehicles]);
     })->name('vehicles.index');
 
@@ -30,10 +51,10 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
         $data = $request->validate([
             'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:100'],
-            'type' => ['required', 'string', 'max:50'],
+            'type' => ['required', 'string', 'in:truck,van,pickup,motorcycle,trailer,other'],
             'make_model' => ['nullable', 'string', 'max:100'],
             'plate_number' => ['required', 'string', 'max:20'],
-            'status' => ['sometimes', 'string', 'in:active,maintenance,decommissioned'],
+            'status' => ['sometimes', 'string', 'in:active,inactive,maintenance,decommissioned'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
         $vehicle = \App\Domains\Delivery\Models\Vehicle::create(array_merge($data, ['status' => $data['status'] ?? 'active']));
@@ -44,10 +65,10 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
         abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:100'],
-            'type' => ['sometimes', 'string', 'max:50'],
+            'type' => ['sometimes', 'string', 'in:truck,van,pickup,motorcycle,trailer,other'],
             'make_model' => ['nullable', 'string', 'max:100'],
             'plate_number' => ['sometimes', 'string', 'max:20'],
-            'status' => ['sometimes', 'string', 'in:active,maintenance,decommissioned'],
+            'status' => ['sometimes', 'string', 'in:active,inactive,maintenance,decommissioned'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
         $vehicle->update($data);

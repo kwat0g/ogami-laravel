@@ -104,7 +104,10 @@ function PrepareShipmentModal({
               ))}
             </select>
             {vehicles.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1">No active vehicles found. Add vehicles in Fleet Management.</p>
+              <p className="text-xs text-amber-600 mt-1">
+                No active vehicles found.{' '}
+                <a href="/delivery/vehicles" className="underline hover:text-amber-700">Add vehicles in Delivery Vehicles</a>.
+              </p>
             )}
           </div>
 

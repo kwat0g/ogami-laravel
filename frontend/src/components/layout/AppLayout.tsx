@@ -244,7 +244,7 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Delivery' },
       { label: 'Delivery Receipts', href: '/delivery/receipts', permission: 'delivery.view' },
       { label: 'Shipments', href: '/delivery/shipments', permission: 'delivery.view' },
-      { label: 'Fleet', href: '/delivery/fleet', permission: 'delivery.view' },
+      { label: 'Delivery Vehicles', href: '/delivery/vehicles', permission: 'delivery.view' },
       { label: 'Route Planning', href: '/delivery/routes', permission: 'delivery.routes.view' },
     ],
   },
