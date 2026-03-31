@@ -74,8 +74,9 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
         return response()->json(['data' => $vehicle], 201);
     })->middleware('throttle:api-action')->name('vehicles.store');
 
-    Route::patch('/vehicles/{vehicle}', function (\Illuminate\Http\Request $request, \App\Domains\Delivery\Models\Vehicle $vehicle): \Illuminate\Http\JsonResponse {
+    Route::patch('/vehicles/{vehicleId}', function (\Illuminate\Http\Request $request, int $vehicleId): \Illuminate\Http\JsonResponse {
         abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
+        $vehicle = \App\Domains\Delivery\Models\Vehicle::findOrFail($vehicleId);
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:100'],
             'type' => ['sometimes', 'string', 'in:truck,van,pickup,motorcycle,trailer,other'],
@@ -84,12 +85,27 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
             'status' => ['sometimes', 'string', 'in:active,inactive,maintenance,decommissioned'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
+
+        // Prevent status changes on vehicles currently in delivery
+        if (isset($data['status']) && $data['status'] !== $vehicle->status) {
+            $activeDeliveryStatuses = ['confirmed', 'dispatched', 'in_transit', 'partially_delivered'];
+            $activeDeliveries = \App\Domains\Delivery\Models\DeliveryReceipt::where('vehicle_id', $vehicle->id)
+                ->whereIn('status', $activeDeliveryStatuses)
+                ->count();
+            if ($activeDeliveries > 0) {
+                return response()->json([
+                    'message' => "Cannot change status -- this vehicle has {$activeDeliveries} active delivery(ies). Complete or reassign them first.",
+                ], 422);
+            }
+        }
+
         $vehicle->update($data);
         return response()->json(['data' => $vehicle->fresh()]);
     })->middleware('throttle:api-action')->name('vehicles.update');
 
-    // Vehicle delivery history with client order links
-    Route::get('/vehicles/{vehicle}/history', function (\Illuminate\Http\Request $request, \App\Domains\Delivery\Models\Vehicle $vehicle): \Illuminate\Http\JsonResponse {
+    // Vehicle delivery history with client order links (uses integer ID, not model binding)
+    Route::get('/vehicles/{vehicleId}/history', function (\Illuminate\Http\Request $request, int $vehicleId): \Illuminate\Http\JsonResponse {
+        $vehicle = \App\Domains\Delivery\Models\Vehicle::findOrFail($vehicleId);
         abort_unless($request->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
 
         $history = \App\Domains\Delivery\Models\DeliveryReceipt::query()

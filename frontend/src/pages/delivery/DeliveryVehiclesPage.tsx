@@ -291,12 +291,13 @@ function VehicleRowActions({
     onError: (err) => toast.error(firstErrorMessage(err)),
   })
 
+  const isInDelivery = vehicle.availability === 'in_delivery'
   const quickActions = [
     { label: 'Edit', icon: Pencil, onClick: () => { onEdit(); setMenuOpen(false) } },
-    ...(vehicle.status !== 'active' ? [{ label: 'Mark Active', icon: Power, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'active' }); setMenuOpen(false) } }] : []),
-    ...(vehicle.status !== 'maintenance' ? [{ label: 'Mark Maintenance', icon: Wrench, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'maintenance' }); setMenuOpen(false) } }] : []),
-    ...(vehicle.status !== 'inactive' ? [{ label: 'Mark Inactive', icon: XCircle, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'inactive' }); setMenuOpen(false) } }] : []),
-    ...(vehicle.status !== 'decommissioned' ? [{ label: 'Decommission', icon: XCircle, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'decommissioned' }); setMenuOpen(false) } }] : []),
+    ...(!isInDelivery && vehicle.status !== 'active' ? [{ label: 'Mark Active', icon: Power, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'active' }); setMenuOpen(false) } }] : []),
+    ...(!isInDelivery && vehicle.status !== 'maintenance' ? [{ label: 'Mark Maintenance', icon: Wrench, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'maintenance' }); setMenuOpen(false) } }] : []),
+    ...(!isInDelivery && vehicle.status !== 'inactive' ? [{ label: 'Mark Inactive', icon: XCircle, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'inactive' }); setMenuOpen(false) } }] : []),
+    ...(!isInDelivery && vehicle.status !== 'decommissioned' ? [{ label: 'Decommission', icon: XCircle, onClick: () => { statusMutation.mutate({ id: vehicle.id, status: 'decommissioned' }); setMenuOpen(false) } }] : []),
   ]
 
   return (
