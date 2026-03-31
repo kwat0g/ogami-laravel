@@ -34,7 +34,11 @@ return new class extends Migration
         if (! $exists) {
             DB::table('system_settings')->insert([
                 'key' => 'require_pod_for_delivery',
+                'label' => 'Require Proof of Delivery',
                 'value' => json_encode(false),
+                'module' => 'delivery',
+                'category' => 'delivery',
+                'is_public' => false,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
