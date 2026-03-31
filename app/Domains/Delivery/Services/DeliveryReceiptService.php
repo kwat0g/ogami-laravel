@@ -70,6 +70,15 @@ final class DeliveryReceiptService implements ServiceContract
         });
     }
 
+    public function markDispatched(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
+    {
+        return DB::transaction(function () use ($receipt, $actor) {
+            $this->stateMachine->transition($receipt, 'dispatched');
+            $receipt->save();
+            return $receipt;
+        });
+    }
+
     public function confirm(DeliveryReceipt $receipt, User $actor): DeliveryReceipt
     {
         if ($receipt->status !== 'draft') {

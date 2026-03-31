@@ -11,13 +11,13 @@ use App\Shared\Exceptions\InvalidStateTransitionException;
  * Delivery Receipt state machine.
  *
  * M6 FIX: Added 'partially_delivered' state for partial shipments.
- * Previously, partial deliveries forced creation of multiple DRs.
- * Now a single DR can track partial delivery progress.
+ * Added 'dispatched' state to track when goods leave the warehouse.
  *
  * States:
  *   draft               → DR created but not confirmed
- *   confirmed           → DR confirmed and ready for delivery
- *   partially_delivered  → Some items delivered, others pending (M6 FIX)
+ *   confirmed           → DR confirmed and ready for dispatch
+ *   dispatched          → DR left warehouse
+ *   partially_delivered  → Some items delivered, others pending
  *   delivered            → All goods delivered to customer
  *   cancelled            → DR cancelled — terminal
  */
@@ -26,8 +26,9 @@ final class DeliveryReceiptStateMachine
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
         'draft' => ['confirmed', 'cancelled'],
-        'confirmed' => ['partially_delivered', 'delivered', 'cancelled'],
-        'partially_delivered' => ['delivered', 'cancelled'],  // M6: partial -> full delivery
+        'confirmed' => ['dispatched', 'cancelled'],
+        'dispatched' => ['partially_delivered', 'delivered', 'cancelled'],
+        'partially_delivered' => ['delivered', 'cancelled'],
         'delivered' => [],   // terminal
         'cancelled' => [],   // terminal
     ];

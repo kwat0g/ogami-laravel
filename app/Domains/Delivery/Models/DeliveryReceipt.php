@@ -7,6 +7,7 @@ namespace App\Domains\Delivery\Models;
 use App\Domains\AP\Models\Vendor;
 use App\Domains\AR\Models\Customer;
 use App\Domains\Production\Models\DeliverySchedule;
+use App\Domains\Sales\Models\SalesOrder;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -24,6 +25,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int $id
  * @property int|null $vendor_id
  * @property int|null $customer_id
+ * @property int|null $sales_order_id
  * @property string $direction
  * @property string $status
  * @property string|null $receipt_date
@@ -48,7 +50,8 @@ final class DeliveryReceipt extends Model implements AuditableContract
     protected $table = 'delivery_receipts';
 
     protected $fillable = [
-        'vendor_id', 'customer_id', 'delivery_schedule_id', 'direction', 'status',
+        'vendor_id', 'customer_id', 'delivery_schedule_id', 'sales_order_id',
+        'direction', 'status',
         'receipt_date', 'remarks', 'received_by_id', 'created_by_id',
         'vehicle_id', 'driver_name',
     ];
@@ -60,6 +63,11 @@ final class DeliveryReceipt extends Model implements AuditableContract
     public function deliverySchedule(): BelongsTo
     {
         return $this->belongsTo(DeliverySchedule::class);
+    }
+
+    public function salesOrder(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class);
     }
 
     public function vendor(): BelongsTo

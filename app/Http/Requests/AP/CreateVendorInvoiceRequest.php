@@ -7,6 +7,11 @@ namespace App\Http\Requests\AP;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * CHAIN-AP-001: purchase_order_id is required to maintain the PO → GR → AP Invoice chain.
+ * AP-001: due_date >= invoice_date.
+ * AP-003: OR number required when VAT > 0.
+ */
 final class CreateVendorInvoiceRequest extends FormRequest
 {
     public function authorize(): bool
@@ -19,6 +24,8 @@ final class CreateVendorInvoiceRequest extends FormRequest
     {
         return [
             'vendor_id' => ['required', 'integer', 'exists:vendors,id'],
+            // CHAIN-AP-001: PO link required for 3-way match chain integrity
+            'purchase_order_id' => ['required', 'integer', 'exists:purchase_orders,id'],
             'fiscal_period_id' => ['required', 'integer', 'exists:fiscal_periods,id'],
             'ap_account_id' => ['required', 'integer', 'exists:chart_of_accounts,id'],
             'expense_account_id' => ['required', 'integer', 'exists:chart_of_accounts,id'],
@@ -43,6 +50,7 @@ final class CreateVendorInvoiceRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'purchase_order_id.required' => 'A purchase order reference is required for vendor invoices. (CHAIN-AP-001)',
             'or_number.required' => 'Official receipt number is required when VAT amount is greater than zero. (AP-003)',
             'due_date.after_or_equal' => 'Due date must be on or after the invoice date. (AP-001)',
         ];

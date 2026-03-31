@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -7,6 +7,7 @@ import { useCreateDeliveryReceipt } from '@/hooks/useDelivery'
 import { useVendors } from '@/hooks/useAP'
 import { useCustomers } from '@/hooks/useAR'
 import { useItems } from '@/hooks/useInventory'
+import { useDeliverySchedule } from '@/hooks/useProduction'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import type { DrDirection } from '@/types/delivery'
@@ -24,7 +25,19 @@ interface LineItem {
 
 export default function CreateDeliveryReceiptPage(): React.ReactElement {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const createMut = useCreateDeliveryReceipt()
+
+  const linkedDeliveryScheduleId = Number(searchParams.get('delivery_schedule_id') ?? 0)
+  const linkedDeliveryScheduleUlid = searchParams.get('delivery_schedule_ulid')
+  const linkedCustomerId = Number(searchParams.get('customer_id') ?? 0)
+  const linkedSalesOrderId = Number(searchParams.get('sales_order_id') ?? 0)
+  const linkedProductItemId = Number(searchParams.get('product_item_id') ?? 0)
+  const linkedQtyOrdered = searchParams.get('qty_ordered') ?? ''
+  const linkedUnitOfMeasure = searchParams.get('unit_of_measure') ?? 'pcs'
+  const isLinkedOutboundFlow = linkedDeliveryScheduleId > 0
+
+  const { data: linkedSchedule } = useDeliverySchedule(isLinkedOutboundFlow && linkedDeliveryScheduleUlid ? linkedDeliveryScheduleUlid : null)
 
   const { data: vendorsData } = useVendors({ per_page: 500 })
   const vendors = vendorsData?.data ?? []
@@ -35,15 +48,45 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
   const { data: itemsData } = useItems({ per_page: 500 })
   const allItems = itemsData?.data ?? []
 
-  const [direction, setDirection] = useState<DrDirection>('inbound')
+  const [direction, setDirection] = useState<DrDirection>(isLinkedOutboundFlow ? 'outbound' : 'inbound')
   const [vendorId, setVendorId] = useState<number>(0)
-  const [customerId, setCustomerId] = useState<number>(0)
+  const [customerId, setCustomerId] = useState<number>(linkedCustomerId > 0 ? linkedCustomerId : 0)
   const [receiptDate, setReceiptDate] = useState(new Date().toISOString().split('T')[0])
   const [remarks, setRemarks] = useState('')
-  const [lineItems, setLineItems] = useState<LineItem[]>([
-    { item_master_id: 0, quantity_expected: '', quantity_received: '', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' },
-  ])
-  const [_showConfirm, setShowConfirm] = useState(false)
+  const [lineItems, setLineItems] = useState<LineItem[]>(
+    isLinkedOutboundFlow
+      ? [{
+          item_master_id: linkedProductItemId,
+          quantity_expected: linkedQtyOrdered,
+          quantity_received: linkedQtyOrdered,
+          unit_of_measure: linkedUnitOfMeasure,
+          lot_batch_number: '',
+          remarks: '',
+        }]
+      : [{ item_master_id: 0, quantity_expected: '', quantity_received: '', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' }],
+  )
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  useEffect(() => {
+    if (!isLinkedOutboundFlow || !linkedSchedule) {
+      return
+    }
+
+    const mappedItems = (linkedSchedule.items ?? [])
+      .filter(item => item.product_item_id !== null && Number(item.qty_ordered) > 0)
+      .map(item => ({
+        item_master_id: item.product_item_id ?? 0,
+        quantity_expected: String(item.qty_ordered ?? ''),
+        quantity_received: String(item.qty_ordered ?? ''),
+        unit_of_measure: item.product_item?.unit_of_measure ?? linkedUnitOfMeasure,
+        lot_batch_number: '',
+        remarks: '',
+      }))
+
+    if (mappedItems.length > 0) {
+      setLineItems(mappedItems)
+    }
+  }, [isLinkedOutboundFlow, linkedSchedule, linkedUnitOfMeasure])
 
   const items = direction === 'outbound'
     ? allItems.filter(i => i.type === 'finished_good' || i.type === 'semi_finished')
@@ -59,6 +102,9 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
   const validationErrors = useMemo(() => {
     const errors: string[] = []
     if (!receiptDate) errors.push('Receipt date is required')
+    if (direction === 'outbound' && !isLinkedOutboundFlow) {
+      errors.push('Outbound receipts must be created from a delivery schedule.')
+    }
     const validItems = lineItems.filter(it => it.item_master_id)
     if (validItems.length === 0) errors.push('At least one item is required')
     validItems.forEach((it, idx) => {
@@ -70,16 +116,26 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
       }
     })
     return errors
-  }, [receiptDate, lineItems])
+  }, [direction, isLinkedOutboundFlow, receiptDate, lineItems])
 
-  const addRow = () =>
+  const addRow = () => {
+    if (isLinkedOutboundFlow) {
+      return
+    }
+
     setLineItems(prev => [
       ...prev,
       { item_master_id: 0, quantity_expected: '', quantity_received: '', unit_of_measure: 'pcs', lot_batch_number: '', remarks: '' },
     ])
+  }
 
-  const removeRow = (idx: number) =>
+  const removeRow = (idx: number) => {
+    if (isLinkedOutboundFlow) {
+      return
+    }
+
     setLineItems(prev => prev.filter((_, i) => i !== idx))
+  }
 
   const updateRow = (idx: number, key: keyof LineItem, value: string | number) =>
     setLineItems(prev => prev.map((row, i) => (i === idx ? { ...row, [key]: value } : row)))
@@ -100,6 +156,8 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
         receipt_date: receiptDate,
         vendor_id: direction === 'inbound' && vendorId ? vendorId : null,
         customer_id: direction === 'outbound' && customerId ? customerId : null,
+        sales_order_id: direction === 'outbound' && linkedSalesOrderId > 0 ? linkedSalesOrderId : null,
+        delivery_schedule_id: direction === 'outbound' && linkedDeliveryScheduleId > 0 ? linkedDeliveryScheduleId : null,
         remarks: remarks || undefined,
         items: lineItems
           .filter(it => it.item_master_id)
@@ -136,10 +194,14 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
               className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none"
               value={direction}
               onChange={e => setDirection(e.target.value as DrDirection)}
+              disabled={isLinkedOutboundFlow}
             >
               <option value="inbound">Inbound (Receiving)</option>
               <option value="outbound">Outbound (Dispatch)</option>
             </select>
+            {isLinkedOutboundFlow && (
+              <p className="mt-1 text-xs text-neutral-500">Linked to delivery schedule #{linkedDeliveryScheduleId}. Outbound direction is locked.</p>
+            )}
           </div>
 
           {/* Vendor or Customer */}
@@ -164,12 +226,16 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                 className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none"
                 value={customerId || ''}
                 onChange={e => setCustomerId(Number(e.target.value))}
+                disabled={isLinkedOutboundFlow}
               >
                 <option value="">— Select Customer —</option>
                 {customers.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+              {isLinkedOutboundFlow && (
+                <p className="mt-1 text-xs text-neutral-500">Customer is fixed from delivery schedule linkage.</p>
+              )}
             </div>
           )}
 
@@ -203,9 +269,10 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
         <div className="bg-white border border-neutral-200 rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-neutral-700">Items</h2>
-            <button
+              <button
               type="button"
               onClick={addRow}
+              disabled={isLinkedOutboundFlow}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white font-medium rounded"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -223,9 +290,13 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none"
                     value={row.item_master_id || ''}
                     onChange={e => updateRow(idx, 'item_master_id', Number(e.target.value))}
+                    disabled={isLinkedOutboundFlow}
                     required
                   >
                     <option value="">— Select —</option>
+                    {isLinkedOutboundFlow && row.item_master_id > 0 && !items.some(i => i.id === row.item_master_id) && (
+                      <option value={row.item_master_id}>Loading linked item...</option>
+                    )}
                     {items.map(i => (
                       <option key={i.id} value={i.id}>{i.item_code} — {i.name}</option>
                     ))}
@@ -241,6 +312,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={row.quantity_expected}
                     onChange={e => updateRow(idx, 'quantity_expected', e.target.value)}
+                    disabled={isLinkedOutboundFlow}
                     required
                   />
                 </div>
@@ -254,6 +326,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={row.quantity_received}
                     onChange={e => updateRow(idx, 'quantity_received', e.target.value)}
+                    disabled={isLinkedOutboundFlow}
                     required
                   />
                 </div>
@@ -264,6 +337,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                     className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-neutral-400 focus:outline-none"
                     value={row.unit_of_measure}
                     onChange={e => updateRow(idx, 'unit_of_measure', e.target.value)}
+                    disabled={isLinkedOutboundFlow}
                   >
                     {UOM_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
                   </select>
@@ -293,7 +367,7 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
                 <div className="col-span-1 flex justify-center pt-2">
                   <button
                     type="button"
-                    disabled={lineItems.length === 1}
+                    disabled={lineItems.length === 1 || isLinkedOutboundFlow}
                     onClick={() => removeRow(idx)}
                     className="p-1 text-neutral-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
@@ -325,10 +399,13 @@ export default function CreateDeliveryReceiptPage(): React.ReactElement {
       </form>
 
       <ConfirmDialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
         title="Create delivery receipt?"
         description="This will create a new delivery receipt record. Please verify all quantities and details are correct before proceeding."
         confirmLabel="Create Receipt"
         onConfirm={handleConfirmCreate}
+        loading={createMut.isPending}
       >
         <span />
       </ConfirmDialog>

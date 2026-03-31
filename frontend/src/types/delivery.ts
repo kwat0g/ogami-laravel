@@ -1,5 +1,5 @@
 export type DrDirection = 'inbound' | 'outbound';
-export type DrStatus = 'draft' | 'confirmed' | 'partially_delivered' | 'delivered' | 'cancelled';
+export type DrStatus = 'draft' | 'confirmed' | 'dispatched' | 'partially_delivered' | 'delivered' | 'cancelled';
 export type ShipmentStatus = 'pending' | 'in_transit' | 'delivered' | 'returned';
 
 export interface DeliveryReceiptItem {
@@ -65,6 +65,8 @@ export interface UpdateShipmentStatusPayload {
 export interface CreateDeliveryReceiptPayload {
   vendor_id?: number | null;
   customer_id?: number | null;
+  sales_order_id?: number | null;
+  delivery_schedule_id?: number | null;
   direction: DrDirection;
   receipt_date: string;
   remarks?: string;

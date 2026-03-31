@@ -1,6 +1,6 @@
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, XCircle, MessageCircle, Calendar, Package, AlertCircle, RotateCcw, ShieldCheck, Truck } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ActionGuard } from '@/components/ui/ActionGuard'
@@ -548,8 +548,31 @@ export default function ClientOrderDetailPage(): JSX.Element {
           <div className="p-4 space-y-3">
             <p className="text-sm text-neutral-500">
               {order.deliverySchedules.length} delivery schedule{order.deliverySchedules.length !== 1 ? 's' : ''} created for this order.
-              View details in <a href="/production/combined-delivery-schedules" className="underline text-neutral-700 hover:text-neutral-900">Combined Delivery Schedules</a> or <a href="/production/orders" className="underline text-neutral-700 hover:text-neutral-900">Production Orders</a>.
+              View details in <Link to="/production/combined-delivery-schedules" className="underline text-neutral-700 hover:text-neutral-900">Combined Delivery Schedules</Link> or <Link to="/production/orders" className="underline text-neutral-700 hover:text-neutral-900">Production Orders</Link>.
             </p>
+            {order.status === 'approved' && (
+              <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-lg">
+                <p className="text-sm font-medium text-cyan-900">Delivery schedule records are ready.</p>
+                <p className="text-sm text-cyan-800 mt-1">
+                  Open a DS record directly:
+                  {' '}
+                  {order.deliverySchedules
+                    .filter(ds => ds.deliverySchedule?.ulid)
+                    .slice(0, 3)
+                    .map((ds, idx) => (
+                      <span key={ds.id}>
+                        {idx > 0 ? ', ' : ''}
+                        <Link
+                          to={`/production/delivery-schedules/${ds.deliverySchedule?.ulid}`}
+                          className="underline font-medium"
+                        >
+                          {ds.deliverySchedule?.ds_reference ?? 'Delivery Schedule'}
+                        </Link>
+                      </span>
+                    ))}
+                </p>
+              </div>
+            )}
             <div className="grid gap-2">
               {order.deliverySchedules.map((ds) => {
                 const sched = ds.deliverySchedule
@@ -594,8 +617,8 @@ export default function ClientOrderDetailPage(): JSX.Element {
             <p className="text-sm font-medium text-emerald-900">Order approved</p>
             <p className="text-sm text-emerald-700 mt-1">
               Delivery schedules and production orders have been created. View them in{' '}
-              <a href="/production/combined-delivery-schedules" className="underline font-medium">Combined Delivery Schedules</a>{' '}
-              or <a href="/production/orders" className="underline font-medium">Production Orders</a>.
+              <Link to="/production/combined-delivery-schedules" className="underline font-medium">Combined Delivery Schedules</Link>{' '}
+              or <Link to="/production/orders" className="underline font-medium">Production Orders</Link>.
             </p>
           </div>
         </div>

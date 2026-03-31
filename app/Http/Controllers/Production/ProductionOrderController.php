@@ -167,7 +167,7 @@ final class ProductionOrderController extends Controller
         ]);
 
         $defaults = $this->service->getSmartDefaults(
-            $validated['product_item_id'],
+            (int) $validated['product_item_id'],
             $validated['target_start_date'] ?? null
         );
 

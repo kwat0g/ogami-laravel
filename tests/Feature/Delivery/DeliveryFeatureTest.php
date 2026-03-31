@@ -12,27 +12,28 @@ uses()->group('feature', 'delivery');
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 
-    $this->manager = User::factory()->create();
-    $this->manager->assignRole('manager');
+    $this->deliveryUser = User::factory()->create();
+    $this->deliveryUser->assignRole('admin');
+    $this->deliveryUser->givePermissionTo('delivery.view');
 });
 
 it('lists delivery receipts', function () {
-    $this->actingAs($this->manager)
+    $this->actingAs($this->deliveryUser)
         ->getJson('/api/v1/delivery/receipts')
         ->assertOk()
         ->assertJsonStructure(['data']);
 });
 
 it('lists shipments', function () {
-    $this->actingAs($this->manager)
+    $this->actingAs($this->deliveryUser)
         ->getJson('/api/v1/delivery/shipments')
         ->assertOk()
         ->assertJsonStructure(['data']);
 });
 
-it('lists vehicles', function () {
-    $this->actingAs($this->manager)
-        ->getJson('/api/v1/delivery/vehicles')
+it('lists delivery routes', function () {
+    $this->actingAs($this->deliveryUser)
+        ->getJson('/api/v1/delivery/routes')
         ->assertOk()
         ->assertJsonStructure(['data']);
 });

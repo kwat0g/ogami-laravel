@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Validates customer invoice create / update payloads.
  *
+ * CHAIN-AR-001: delivery_receipt_id is required for product-type invoices.
+ *   Service invoices (invoice_type = 'service') may omit it.
  * VAT-001: or_number required when vat_amount > 0.
  * VAT-003: vat_exemption_reason must be from system_settings list when vat_amount = 0 and reason provided.
  */
@@ -41,6 +43,10 @@ class CreateCustomerInvoiceRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:500'],
             // AR-002: bypass credit check only with explicit permission
             'bypass_credit_check' => ['nullable', 'boolean'],
+            // CHAIN-AR-001: delivery receipt link — required for product invoices
+            'delivery_receipt_id' => ['nullable', 'integer', 'exists:delivery_receipts,id'],
+            // CHAIN-AR-001: invoice_type distinguishes product (needs DR) from service (no DR)
+            'invoice_type' => ['sometimes', 'string', 'in:product,service'],
         ];
     }
 
@@ -61,6 +67,15 @@ class CreateCustomerInvoiceRequest extends FormRequest
                 if (! empty($allowed) && ! in_array($reason, $allowed, true)) {
                     $v->errors()->add('vat_exemption_reason', 'The VAT exemption reason is not from the approved list. (VAT-003)');
                 }
+            }
+
+            // CHAIN-AR-001: Product invoices require a delivery receipt.
+            $invoiceType = $this->input('invoice_type', 'product');
+            if ($invoiceType === 'product' && empty($this->input('delivery_receipt_id'))) {
+                $v->errors()->add(
+                    'delivery_receipt_id',
+                    'A delivery receipt is required for product invoices. Use invoice_type=service for non-delivery invoices. (CHAIN-AR-001)'
+                );
             }
         });
     }

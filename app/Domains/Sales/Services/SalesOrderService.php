@@ -11,6 +11,7 @@ use App\Domains\Sales\Models\SalesOrderItem;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\CreditLimitExceededException;
+use App\Events\Sales\SalesOrderConfirmed;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Traits\HasArchiveOperations;
 use Illuminate\Database\Eloquent\Model;
@@ -199,7 +200,7 @@ final class SalesOrderService implements ServiceContract
             }
         }
 
-        return DB::transaction(function () use ($order, $approver): SalesOrder {
+        $confirmed = DB::transaction(function () use ($order, $approver): SalesOrder {
             $order->update([
                 'status' => 'confirmed',
                 'approved_by_id' => $approver->id,
@@ -217,6 +218,11 @@ final class SalesOrderService implements ServiceContract
 
             return $order->fresh(['items.item', 'customer']) ?? $order;
         });
+
+        // CHAIN-SO-DR-001: Fire event after commit so queued listener can auto-create DR
+        event(new SalesOrderConfirmed($confirmed));
+
+        return $confirmed;
     }
 
     /**

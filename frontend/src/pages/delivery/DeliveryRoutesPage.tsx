@@ -1,6 +1,7 @@
 import { MapPin } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { deliveryApiPaths } from '@/lib/deliveryApiPaths'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -10,7 +11,7 @@ import EmptyState from '@/components/ui/EmptyState'
 export default function DeliveryRoutesPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['delivery-routes'],
-    queryFn: async () => { const { data } = await api.get('/delivery/routes'); return data },
+    queryFn: async () => { const { data } = await api.get(deliveryApiPaths.routes); return data },
   })
   const routes = data?.data ?? []
 

@@ -98,10 +98,23 @@ final class JournalEntryService implements ServiceContract
 
     /**
      * Post a submitted JE. Enforces SoD (JE-010) and assigns JE number (JE-009).
+     *
+     * CHAIN-JE-001: Manual JEs must be submitted first (draft → submitted → posted).
+     * System-generated JEs (payroll, ap, ar, recurring, etc.) may post from draft.
      */
     public function post(JournalEntry $je): JournalEntry
     {
-        if (! in_array($je->status, ['submitted', 'draft'], true)) {
+        // CHAIN-JE-001: Manual JEs require submission (review step) before posting
+        if ($je->source_type === 'manual') {
+            if ($je->status !== 'submitted') {
+                throw new DomainException(
+                    message: "Manual journal entries must be submitted for review before posting. Current status: '{$je->status}'. (CHAIN-JE-001)",
+                    errorCode: 'JE_MANUAL_REQUIRES_SUBMISSION',
+                    httpStatus: 409,
+                    context: ['je_id' => $je->id, 'status' => $je->status],
+                );
+            }
+        } elseif (! in_array($je->status, ['submitted', 'draft'], true)) {
             throw new DomainException(
                 message: "Only submitted or draft journal entries can be posted. Current status: '{$je->status}'.",
                 errorCode: 'INVALID_JE_STATUS_FOR_POSTING',

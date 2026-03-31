@@ -1,20 +1,21 @@
 import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Truck } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore'
-import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
-import api from '@/lib/api';
 import { ExportButton } from '@/components/ui/ExportButton';
 import type { DrDirection, DrStatus } from '@/types/delivery';
 
 const STATUS_COLORS: Record<DrStatus, string> = {
   draft: 'bg-neutral-100 text-neutral-600',
   confirmed: 'bg-neutral-200 text-neutral-800',
+  dispatched: 'bg-blue-100 text-blue-700',
+  partially_delivered: 'bg-amber-100 text-amber-700',
+  delivered: 'bg-emerald-100 text-emerald-700',
   cancelled: 'bg-neutral-100 text-neutral-400',
 };
 
@@ -24,6 +25,7 @@ const DIRECTION_COLORS: Record<DrDirection, string> = {
 };
 
 export default function DeliveryReceiptListPage() {
+  const navigate = useNavigate();
   const [direction, setDirection] = useState('');
   const [status, setStatus] = useState('');
   const [isArchiveView, setIsArchiveView] = useState(false);
@@ -35,16 +37,10 @@ export default function DeliveryReceiptListPage() {
   const params: Record<string, string | number | boolean> = { page, per_page: 20 };
   if (direction) params.direction = direction;
   if (status) params.status = status;
-  // Archive view handled by separate query
+  if (isArchiveView) params.with_archived = true;
   if (debouncedSearch) params.search = debouncedSearch;
 
   const { data, isLoading } = useDeliveryReceipts(Object.keys(params).length ? params : undefined);
-
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
-    queryKey: ['delivery-receipts', 'archived'],
-    queryFn: () => api.get('/delivery/receipts-archived', { params: { per_page: 20 } }),
-    enabled: isArchiveView,
-  })
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);
@@ -97,6 +93,9 @@ export default function DeliveryReceiptListPage() {
           <option value="">All Statuses</option>
           <option value="draft">Draft</option>
           <option value="confirmed">Confirmed</option>
+          <option value="dispatched">Dispatched</option>
+          <option value="partially_delivered">Partially Delivered</option>
+          <option value="delivered">Delivered</option>
           <option value="cancelled">Cancelled</option>
         </select>
         <ArchiveToggleButton isArchiveView={isArchiveView} onToggle={() => setIsArchiveView(prev => !prev)} />
@@ -125,11 +124,21 @@ export default function DeliveryReceiptListPage() {
               </tr>
             ) : (
               (data?.data ?? []).map(dr => (
-                <tr key={dr.ulid} className="even:bg-neutral-100 hover:bg-neutral-50">
-                  <td className="px-4 py-3 font-mono text-xs">
-                    <Link to={`/delivery/receipts/${dr.ulid}`} className="text-neutral-900 hover:underline">
-                      {dr.dr_reference}
-                    </Link>
+                <tr
+                  key={dr.ulid}
+                  className="even:bg-neutral-100 hover:bg-neutral-50 cursor-pointer"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => navigate(`/delivery/receipts/${dr.ulid}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`/delivery/receipts/${dr.ulid}`);
+                    }
+                  }}
+                >
+                  <td className="px-4 py-3 font-mono text-xs text-neutral-900">
+                    {dr.dr_reference}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`rounded px-2 py-0.5 text-xs font-medium ${DIRECTION_COLORS[dr.direction]}`}>

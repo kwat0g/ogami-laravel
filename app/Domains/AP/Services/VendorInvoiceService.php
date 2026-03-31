@@ -66,6 +66,7 @@ final class VendorInvoiceService implements ServiceContract
      *   or_number?: string,
      *   vat_exemption_reason?: string,
      *   description?: string,
+     *   purchase_order_id?: int, CHAIN-AP-001: PO link for 3-way match chain
      * } $data
      */
     public function create(Vendor $vendor, array $data, int $userId): VendorInvoice
@@ -120,6 +121,7 @@ final class VendorInvoiceService implements ServiceContract
 
         return VendorInvoice::create([
             'vendor_id' => $vendor->id,
+            'purchase_order_id' => $data['purchase_order_id'] ?? null,
             'fiscal_period_id' => $data['fiscal_period_id'],
             'ap_account_id' => $data['ap_account_id'],
             'expense_account_id' => $data['expense_account_id'],

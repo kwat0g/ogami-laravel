@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Listeners\Delivery;
 
+use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Delivery\Services\DeliveryService;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Domains\QC\Models\Inspection;
@@ -57,6 +58,23 @@ final class CreateDeliveryReceiptOnOqcPass implements ShouldQueue
 
         $schedule = $order->deliverySchedule()->first();
         $customerId = $schedule?->customer_id;
+
+        if ($schedule !== null && in_array($schedule->status, ['open', 'in_production'], true)) {
+            $schedule->update(['status' => 'ready']);
+        }
+
+        if ($order->delivery_schedule_id !== null) {
+            $exists = DeliveryReceipt::query()
+                ->where('delivery_schedule_id', $order->delivery_schedule_id)
+                ->where('direction', 'outbound')
+                ->where('remarks', 'ilike', "%OQC inspection #{$inspection->id}%")
+                ->whereNotIn('status', ['cancelled'])
+                ->exists();
+
+            if ($exists) {
+                return;
+            }
+        }
 
         try {
             $this->deliveryService->storeReceipt(

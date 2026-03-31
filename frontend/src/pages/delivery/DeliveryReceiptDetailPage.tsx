@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { firstErrorMessage } from '@/lib/errorHandler'
-import { useDeliveryReceipt, useConfirmDeliveryReceipt } from '@/hooks/useDelivery';
+import { useDeliveryReceipt, useConfirmDeliveryReceipt, useMarkDispatched, useMarkDelivered } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -26,7 +26,11 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
   const { hasPermission } = useAuthStore();
   const { data, isLoading, isError } = useDeliveryReceipt(ulid ?? '');
   const confirmMut = useConfirmDeliveryReceipt();
+  const dispatchMut = useMarkDispatched();
+  const deliverMut = useMarkDelivered();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [dispatchOpen, setDispatchOpen] = useState(false);
+  const [deliverOpen, setDeliverOpen] = useState(false);
   const canManage = hasPermission('delivery.manage');
 
   if (isLoading) return <SkeletonLoader rows={6} />;
@@ -54,6 +58,10 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
     }
   };
 
+  const handleDispatch = async () => { try { await dispatchMut.mutateAsync(dr.ulid); toast.success('Delivery receipt dispatched.'); setDispatchOpen(false); } catch (err) { toast.error(firstErrorMessage(err, 'Failed to dispatch receipt.')); } };
+
+  const handleDeliver = async () => { try { await deliverMut.mutateAsync(dr.ulid); toast.success('Delivery receipt marked as delivered.'); setDeliverOpen(false); } catch (err) { toast.error(firstErrorMessage(err, 'Failed to mark as delivered.')); } };
+
   const statusBadges = (
     <div className="flex items-center gap-2">
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${DIRECTION_COLORS[dr.direction]}`}>
@@ -72,15 +80,17 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
         icon={<Truck className="w-5 h-5" />}
         status={statusBadges}
         actions={
-          dr.status === 'draft' && canManage && (
-            <button
-              type="button"
-              onClick={() => setConfirmOpen(true)}
-              className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800"
-            >
-              Confirm Receipt
-            </button>
-          )
+          <div className="flex items-center gap-2">
+            {dr.status === 'draft' && canManage && (
+              <button type="button" onClick={() => setConfirmOpen(true)} className="px-4 py-2 text-sm bg-neutral-900 text-white rounded hover:bg-neutral-800">Confirm Receipt</button>
+            )}
+            {dr.status === 'confirmed' && canManage && (
+              <button type="button" onClick={() => setDispatchOpen(true)} className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Dispatch Goods</button>
+            )}
+            {(dr.status === 'dispatched' || dr.status === 'partially_delivered') && canManage && (
+              <button type="button" onClick={() => setDeliverOpen(true)} className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700">Mark Delivered</button>
+            )}
+          </div>
         }
       />
 
@@ -152,6 +162,8 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
         variant="warning"
         loading={confirmMut.isPending}
       />
+      <ConfirmDialog open={dispatchOpen} onClose={() => setDispatchOpen(false)} onConfirm={handleDispatch} title="Dispatch goods?" description="Mark delivery as dispatched from warehouse?" confirmLabel="Dispatch" variant="warning" loading={dispatchMut.isPending} />
+      <ConfirmDialog open={deliverOpen} onClose={() => setDeliverOpen(false)} onConfirm={handleDeliver} title="Mark as Delivered?" description="Confirm goods received by customer?" confirmLabel="Mark Delivered" variant="warning" loading={deliverMut.isPending} />
     </div>
   );
 }

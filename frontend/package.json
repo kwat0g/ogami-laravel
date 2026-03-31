@@ -15,6 +15,7 @@
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report e2e/playwright-report",
     "test": "vitest run",
+    "test:delivery-contract": "vitest run src/lib/deliveryApiPaths.test.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write 'src/**/*.{ts,tsx,css}'",

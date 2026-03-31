@@ -215,7 +215,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
   const fulfillMutation = useFulfillFromStock(ulid || '')
 
   const canCreateWO = hasPermission('production.orders.create')
-  const _canManage = hasPermission('production.delivery-schedule.manage')
+  const canManage = hasPermission('production.delivery-schedule.manage')
   const canFulfill = hasPermission('production.delivery-schedule.manage')
 
   const handleFulfillFromStock = async () => {
@@ -273,6 +273,26 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {canManage && schedule.status === 'ready' && (
+            (schedule.delivery_receipts ?? []).length > 0 ? (
+              <Link
+                to={`/delivery/receipts/${schedule.delivery_receipts?.[0]?.ulid}`}
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Truck className="w-4 h-4" />
+                Open Delivery Receipt
+              </Link>
+            ) : (
+              <Link
+                to={`/delivery/receipts/new?delivery_schedule_id=${schedule.id}&delivery_schedule_ulid=${schedule.ulid}&customer_id=${schedule.customer?.id ?? ''}&product_item_id=${schedule.product_item_id ?? schedule.product_item?.id ?? ''}&qty_ordered=${schedule.qty_ordered ?? ''}&unit_of_measure=${schedule.product_item?.unit_of_measure ?? 'pcs'}`}
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+              >
+                <Truck className="w-4 h-4" />
+                Create Delivery Receipt
+              </Link>
+            )
+          )}
+
           {/* Show Fulfill from Stock button if: status is open AND no production orders exist AND user has permission */}
           {canFulfill && schedule.status === 'open' && (!schedule.production_orders || schedule.production_orders.length === 0) && (
             <button
@@ -505,9 +525,10 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
                 <div className="divide-y divide-neutral-100">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {schedule.delivery_receipts?.map((dr: any) => (
-                    <div
+                    <Link
                       key={dr.ulid}
-                      className="flex items-center justify-between p-3"
+                      to={`/delivery/receipts/${dr.ulid}`}
+                      className="flex items-center justify-between p-3 hover:bg-neutral-50 rounded-lg transition-colors"
                     >
                       <div>
                         <p className="font-mono text-sm text-neutral-900">{dr.dr_reference}</p>
@@ -525,7 +546,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
                           {dr.status?.replace('_', ' ')}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </CardBody>

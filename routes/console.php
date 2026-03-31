@@ -168,3 +168,11 @@ Schedule::command('inventory:expire-reservations')
     ->dailyAt('01:00')
     ->name('inventory.expire-reservations')
     ->withoutOverlapping();
+
+// ── Attendance: Mark absences ──────────────────────────────────────────────
+// Runs daily at 23:30 to mark active employees absent if they did not time in.
+Schedule::command('attendance:mark-absences')
+    ->dailyAt('23:30')
+    ->name('attendance.mark-absences')
+    ->withoutOverlapping();
+

@@ -55,6 +55,13 @@ final class DeliveryController extends Controller
         return new DeliveryReceiptResource($this->service->confirmReceipt($deliveryReceipt, $request->user()));
     }
 
+    public function markDispatched(Request $request, DeliveryReceipt $deliveryReceipt): DeliveryReceiptResource
+    {
+        $this->authorize('confirm', $deliveryReceipt);
+
+        return new DeliveryReceiptResource($this->service->markDispatched($deliveryReceipt, $request->user()));
+    }
+
     public function markPartiallyDelivered(Request $request, DeliveryReceipt $deliveryReceipt): DeliveryReceiptResource
     {
         $this->authorize('confirm', $deliveryReceipt);
