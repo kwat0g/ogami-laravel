@@ -67,4 +67,85 @@ final class DeliveryScheduleController extends Controller
 
         return new DeliveryScheduleResource($this->service->fulfillFromStock($deliverySchedule, $userId));
     }
+
+    // ── Workflow Actions (consolidated from CDS) ────────────────────────────
+
+    public function dispatch(Request $request, DeliverySchedule $deliverySchedule): DeliveryScheduleResource
+    {
+        $this->authorize('update', $deliverySchedule);
+
+        $validated = $request->validate([
+            'delivery_notes' => 'nullable|string|max:500',
+        ]);
+
+        $userId = $request->user()?->id ?? 1;
+
+        return new DeliveryScheduleResource(
+            $this->service->dispatchSchedule($deliverySchedule, $userId, $validated['delivery_notes'] ?? null)
+        );
+    }
+
+    public function markDelivered(Request $request, DeliverySchedule $deliverySchedule): DeliveryScheduleResource
+    {
+        $this->authorize('update', $deliverySchedule);
+
+        $validated = $request->validate([
+            'delivery_date' => 'required|date',
+        ]);
+
+        $userId = $request->user()?->id ?? 1;
+
+        return new DeliveryScheduleResource(
+            $this->service->markScheduleDelivered($deliverySchedule, $validated['delivery_date'], $userId)
+        );
+    }
+
+    public function acknowledgeReceipt(Request $request, DeliverySchedule $deliverySchedule): DeliveryScheduleResource
+    {
+        // Client portal users can acknowledge via respond policy
+        $validated = $request->validate([
+            'item_acknowledgments' => 'required|array',
+            'item_acknowledgments.*.item_id' => 'required|integer',
+            'item_acknowledgments.*.received_qty' => 'required|numeric|min:0',
+            'item_acknowledgments.*.condition' => 'required|string|in:good,damaged,missing',
+            'item_acknowledgments.*.notes' => 'nullable|string|max:500',
+            'general_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $userId = $request->user()?->id ?? 1;
+
+        return new DeliveryScheduleResource(
+            $this->service->acknowledgeReceipt(
+                $deliverySchedule,
+                $validated['item_acknowledgments'],
+                $validated['general_notes'] ?? null,
+                $userId
+            )
+        );
+    }
+
+    public function notifyMissingItems(Request $request, DeliverySchedule $deliverySchedule): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('update', $deliverySchedule);
+
+        $validated = $request->validate([
+            'missing_items' => 'required|array|min:1',
+            'missing_items.*.item_id' => 'required|integer',
+            'missing_items.*.reason' => 'required|string|max:255',
+            'expected_delivery_date' => 'nullable|date',
+            'message' => 'nullable|string|max:1000',
+        ]);
+
+        $userId = $request->user()?->id ?? 1;
+
+        $this->service->notifyMissingItems(
+            $deliverySchedule,
+            $validated['missing_items'],
+            $validated['expected_delivery_date'] ?? null,
+            $validated['message'] ?? null,
+            $userId
+        );
+
+        return response()->json(['message' => 'Customer notified about missing items.']);
+    }
 }

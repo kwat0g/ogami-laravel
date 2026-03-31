@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace App\Domains\Production\Services;
 
+use App\Domains\AR\Models\CustomerInvoice;
+use App\Domains\AR\Models\FiscalPeriod;
+use App\Domains\CRM\Models\ClientOrder;
+use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\DeliverySchedule;
+use App\Domains\Production\Models\DeliveryScheduleItem;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Models\User;
+use App\Notifications\Delivery\DeliveryDisputeNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -279,6 +285,219 @@ final class DeliveryScheduleService implements ServiceContract
 
             return $ds->fresh(['customer', 'productItem', 'productionOrders']);
         });
+    }
+
+    // ── Workflow Methods (migrated from CombinedDeliveryScheduleService) ────
+
+    /**
+     * Dispatch a delivery schedule: creates DR, transitions to dispatched.
+     */
+    public function dispatchSchedule(
+        DeliverySchedule $ds,
+        int $userId,
+        ?string $deliveryNotes = null
+    ): DeliverySchedule {
+        if (! in_array($ds->status, ['ready', 'partially_ready'], true)) {
+            throw new DomainException(
+                "Cannot dispatch schedule in status: {$ds->status}. Must be 'ready' or 'partially_ready'.",
+                'SCHEDULE_NOT_READY',
+                422
+            );
+        }
+
+        return DB::transaction(function () use ($ds, $userId, $deliveryNotes): DeliverySchedule {
+            $ds->update([
+                'status' => 'dispatched',
+                'dispatched_by_id' => $userId,
+                'dispatched_at' => now(),
+            ]);
+
+            // Update child item statuses
+            foreach ($ds->items as $item) {
+                if ($item->status === 'ready') {
+                    $item->update([
+                        'status' => 'dispatched',
+                        'notes' => ($item->notes ?? '')."\nDispatched: ".now()->toDateString().($deliveryNotes ? " - {$deliveryNotes}" : ''),
+                    ]);
+                }
+            }
+
+            // Create delivery receipt
+            $dr = DeliveryReceipt::create([
+                'customer_id' => $ds->customer_id,
+                'delivery_schedule_id' => $ds->id,
+                'direction' => 'outbound',
+                'status' => 'draft',
+                'remarks' => $deliveryNotes,
+                'created_by_id' => $userId,
+            ]);
+            $dr->update(['status' => 'confirmed']);
+
+            // Store DR link on the schedule
+            $ds->update(['delivery_receipt_id' => $dr->id]);
+
+            // Sync ClientOrder to dispatched
+            if ($ds->client_order_id) {
+                $co = ClientOrder::find($ds->client_order_id);
+                if ($co && $co->status === 'ready_for_delivery') {
+                    $co->update(['status' => 'dispatched']);
+                }
+            }
+
+            return $ds->fresh();
+        });
+    }
+
+    /**
+     * Mark schedule as physically delivered.
+     */
+    public function markScheduleDelivered(
+        DeliverySchedule $ds,
+        string $deliveryDate,
+        int $userId
+    ): DeliverySchedule {
+        if ($ds->status !== 'dispatched') {
+            throw new DomainException(
+                'Cannot mark as delivered. Schedule must be dispatched first.',
+                'SCHEDULE_NOT_DISPATCHED',
+                422
+            );
+        }
+
+        return DB::transaction(function () use ($ds, $deliveryDate): DeliverySchedule {
+            $ds->update([
+                'status' => 'delivered',
+                'actual_delivery_date' => $deliveryDate,
+            ]);
+
+            foreach ($ds->items as $item) {
+                $item->update(['status' => 'delivered']);
+            }
+
+            // Sync ClientOrder
+            if ($ds->client_order_id) {
+                $co = ClientOrder::find($ds->client_order_id);
+                if ($co && in_array($co->status, ['approved', 'in_production', 'ready_for_delivery', 'dispatched'], true)) {
+                    $co->update(['status' => 'delivered']);
+                }
+            }
+
+            return $ds->fresh();
+        });
+    }
+
+    /**
+     * Client acknowledges receipt -- per-item condition reporting + auto-invoice.
+     *
+     * @param  array<array{item_id: int, received_qty: float, condition: string, notes?: string}>  $itemAcknowledgments
+     */
+    public function acknowledgeReceipt(
+        DeliverySchedule $ds,
+        array $itemAcknowledgments,
+        ?string $generalNotes,
+        int $userId
+    ): DeliverySchedule {
+        if ($ds->status !== 'delivered') {
+            throw new DomainException(
+                'Cannot acknowledge. Delivery must be marked as delivered first.',
+                'SCHEDULE_NOT_DELIVERED',
+                422
+            );
+        }
+
+        $totalItems = $ds->items->count();
+        if (count($itemAcknowledgments) !== $totalItems) {
+            throw new DomainException(
+                'All items must be acknowledged.',
+                'INCOMPLETE_ACKNOWLEDGMENT',
+                422
+            );
+        }
+
+        return DB::transaction(function () use ($ds, $itemAcknowledgments, $userId): DeliverySchedule {
+            $hasIssues = false;
+            $disputeItems = [];
+
+            foreach ($itemAcknowledgments as $ack) {
+                $item = DeliveryScheduleItem::find($ack['item_id']);
+                if (! $item || $item->delivery_schedule_id !== $ds->id) {
+                    continue;
+                }
+
+                // Store on parent DS client_acknowledgment JSON
+                $existingAck = $ds->client_acknowledgment ?? [];
+                $existingAck[] = [
+                    'item_id' => $item->id,
+                    'received_qty' => $ack['received_qty'],
+                    'condition' => $ack['condition'],
+                    'notes' => $ack['notes'] ?? null,
+                    'acknowledged_at' => now()->toIso8601String(),
+                    'acknowledged_by' => $userId,
+                ];
+                $ds->update(['client_acknowledgment' => $existingAck]);
+
+                if ($ack['condition'] !== 'good') {
+                    $hasIssues = true;
+                    $disputeItems[] = [
+                        'delivery_schedule_item_id' => $item->id,
+                        'item_master_id' => $item->product_item_id,
+                        'condition' => $ack['condition'],
+                        'received_qty' => $ack['received_qty'],
+                        'notes' => $ack['notes'] ?? null,
+                    ];
+                }
+            }
+
+            if ($hasIssues) {
+                $ds->update([
+                    'has_dispute' => true,
+                    'dispute_summary' => $disputeItems,
+                ]);
+
+                DB::afterCommit(function () use ($ds): void {
+                    User::permission('sales.order_review')
+                        ->each(fn (User $u) => $u->notify(DeliveryDisputeNotification::fromModel($ds->combinedDeliverySchedule ?? $ds)));
+                });
+            }
+
+            // Transition ClientOrder to fulfilled
+            if ($ds->client_order_id) {
+                $co = ClientOrder::find($ds->client_order_id);
+                if ($co && in_array($co->status, ['delivered', 'dispatched', 'ready_for_delivery'], true)) {
+                    $co->update(['status' => 'fulfilled']);
+                }
+            }
+
+            return $ds->fresh();
+        });
+    }
+
+    /**
+     * Notify client about missing/delayed items.
+     */
+    public function notifyMissingItems(
+        DeliverySchedule $ds,
+        array $missingItems,
+        ?string $expectedDeliveryDate,
+        ?string $message,
+        int $userId
+    ): void {
+        $itemSummary = $ds->item_status_summary ?? [];
+
+        foreach ($missingItems as $missingItem) {
+            foreach ($itemSummary as &$item) {
+                if (($item['delivery_schedule_item_id'] ?? null) === $missingItem['item_id']) {
+                    $item['is_missing'] = true;
+                    $item['missing_reason'] = $missingItem['reason'];
+                    $item['expected_delivery'] = $expectedDeliveryDate;
+                }
+            }
+        }
+
+        $ds->update([
+            'item_status_summary' => $itemSummary,
+            'status' => 'partially_ready',
+        ]);
     }
 
     /**

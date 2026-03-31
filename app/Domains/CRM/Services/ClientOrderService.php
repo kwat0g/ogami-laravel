@@ -788,21 +788,9 @@ final class ClientOrderService implements ServiceContract
             ]
         );
 
-        // Create CombinedDeliverySchedule for backward compat
-        $combinedSchedule = CombinedDeliverySchedule::create([
-            'client_order_id' => $order->id,
-            'customer_id' => $order->customer_id,
-            'cds_reference' => $this->generateCombinedDeliveryReference(),
-            'status' => CombinedDeliverySchedule::STATUS_PLANNING,
-            'target_delivery_date' => $targetDate,
-            'delivery_address' => $order->customer->address ?? null,
-            'total_items' => $items->count(),
-            'ready_items' => 0,
-            'missing_items' => $items->count(),
-            'created_by_id' => $userId,
-        ]);
-
-        $schedule->update(['combined_delivery_schedule_id' => $combinedSchedule->id]);
+        // DEPRECATED: CDS creation removed. DeliverySchedule now handles all workflow.
+        // Existing CDS records remain readable for backward compat.
+        // See: plans/delivery-workflow-enhancement-and-client-portal-status-sync-fix.md
 
         return [$schedule];
     }
