@@ -58,6 +58,7 @@ function PrepareShipmentModal({
   const [estimatedArrival, setEstimatedArrival] = useState(defaultEstimatedDelivery ?? '')
   const [notes, setNotes] = useState('')
   const [dispatchPhoto, setDispatchPhoto] = useState<string | null>(null)
+  const [showPhotoPreview, setShowPhotoPreview] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const { data: vehiclesData } = useVehicles()
@@ -143,24 +144,27 @@ function PrepareShipmentModal({
             {/* Carrier */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Carrier</label>
-              <input
-                type="text"
+              <select
                 value={carrier}
                 onChange={e => setCarrier(e.target.value)}
-                placeholder="Company Fleet"
-                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value="Company Fleet">Company Fleet</option>
+                <option value="Third-Party Logistics">Third-Party Logistics</option>
+                <option value="Client Pickup">Client Pickup</option>
+              </select>
             </div>
 
-            {/* Estimated Delivery Date */}
+            {/* Estimated Delivery Date -- auto-filled from client order, read-only */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Estimated Delivery</label>
               <input
                 type="date"
                 value={estimatedArrival}
-                onChange={e => setEstimatedArrival(e.target.value)}
-                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled
+                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm bg-neutral-50 text-neutral-600"
               />
+              <p className="text-xs text-neutral-400 mt-0.5">Based on client requested delivery date</p>
             </div>
           </div>
 
@@ -190,7 +194,7 @@ function PrepareShipmentModal({
               <div className="mt-2 flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.open(dispatchPhoto, '_blank')}
+                  onClick={() => setShowPhotoPreview(true)}
                   className="text-xs text-blue-600 hover:text-blue-700 underline"
                 >View Photo</button>
                 <span className="text-xs text-green-600">Photo attached</span>
@@ -199,6 +203,20 @@ function PrepareShipmentModal({
                   onClick={() => setDispatchPhoto(null)}
                   className="text-xs text-red-500 hover:text-red-600"
                 >Remove</button>
+              </div>
+            )}
+
+            {/* Photo lightbox */}
+            {showPhotoPreview && dispatchPhoto && (
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4" onClick={() => setShowPhotoPreview(false)}>
+                <div className="relative max-w-2xl max-h-[80vh]">
+                  <img src={dispatchPhoto} alt="Dispatch photo" className="max-w-full max-h-[80vh] object-contain rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPhotoPreview(false)}
+                    className="absolute top-2 right-2 bg-white/90 text-neutral-800 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold hover:bg-white"
+                  >x</button>
+                </div>
               </div>
             )}
           </div>
