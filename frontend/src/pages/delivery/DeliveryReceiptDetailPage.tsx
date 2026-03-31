@@ -12,7 +12,8 @@ import {
   useRecordPod,
   useVehicles,
 } from '@/hooks/useDelivery';
-import { useEmployees } from '@/hooks/useEmployees';
+// Driver is a text input -- not linked to employee records because
+// drivers may be third-party contractors or temporary staff not in HR system
 import { useAuthStore } from '@/stores/authStore';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -50,7 +51,7 @@ function PrepareShipmentModal({
   isLoading: boolean
 }) {
   const [vehicleId, setVehicleId] = useState<number>(0)
-  const [driverEmployeeId, setDriverEmployeeId] = useState<number>(0)
+  const [driverName, setDriverName] = useState('')
   const [carrier, setCarrier] = useState('Company Fleet')
   const [estimatedArrival, setEstimatedArrival] = useState('')
   const [notes, setNotes] = useState('')
@@ -59,10 +60,6 @@ function PrepareShipmentModal({
 
   const { data: vehiclesData } = useVehicles()
   const vehicles = vehiclesData?.data ?? []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: employeesData } = useEmployees({ status: 'active', per_page: 500 } as any)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const employees: Array<{ id: number; full_name: string; employee_code: string; position_title?: string }> = (employeesData as any)?.data ?? []
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -111,24 +108,20 @@ function PrepareShipmentModal({
             )}
           </div>
 
-          {/* Driver (Employee) */}
+          {/* Driver Name */}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
               <User className="h-3.5 w-3.5 inline mr-1" />
-              Driver
+              Driver Name
             </label>
-            <select
-              value={driverEmployeeId || ''}
-              onChange={e => setDriverEmployeeId(Number(e.target.value))}
-              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-            >
-              <option value="">-- Select Driver --</option>
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.full_name} ({emp.employee_code}){emp.position_title ? ` -- ${emp.position_title}` : ''}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={driverName}
+              onChange={e => setDriverName(e.target.value)}
+              placeholder="e.g. Juan dela Cruz"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-xs text-neutral-400 mt-1">Can be an employee or third-party driver</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -212,15 +205,13 @@ function PrepareShipmentModal({
             Cancel
           </button>
           <button
-            onClick={() => {
-              const selectedDriver = employees.find(e => e.id === driverEmployeeId)
-              onSubmit({
+            onClick={() => onSubmit({
               vehicle_id: vehicleId || undefined,
-              driver_name: selectedDriver?.full_name || undefined,
+              driver_name: driverName || undefined,
               carrier: carrier || undefined,
               estimated_arrival: estimatedArrival || undefined,
               notes: notes || undefined,
-            })}}
+            })}
             disabled={isLoading || !vehicleId}
             className="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
           >
