@@ -312,16 +312,12 @@ const CrmDashboardPage    = lazyWithRetry(() => import('@/pages/crm/CrmDashboard
 
 
 // Sales Module (Phase 1)
-const QuotationListPage      = lazyWithRetry(() => import('@/pages/sales/QuotationListPage'))
-const QuotationMarginPage    = lazyWithRetry(() => import('@/pages/sales/QuotationMarginPage'))
-const SalesOrderListPage     = lazyWithRetry(() => import('@/pages/sales/SalesOrderListPage'))
 
 // Inventory Enhancements (Phase 1)
 const StockTransferPage   = lazyWithRetry(() => import('@/pages/inventory/StockTransferPage'))
 
 // Phase 2-4 pages
-const QuotationDetailPage = lazyWithRetry(() => import('@/pages/sales/QuotationDetailPage'))
-const SalesOrderDetailPage = lazyWithRetry(() => import('@/pages/sales/SalesOrderDetailPage'))
+
 const PaymentBatchListPage = lazyWithRetry(() => import('@/pages/procurement/PaymentBatchListPage'))
 const DunningNoticesPage = lazyWithRetry(() => import('@/pages/ar/DunningNoticesPage'))
 const MaintenanceAnalyticsPage = lazyWithRetry(() => import('@/pages/maintenance/MaintenanceAnalyticsPage'))
@@ -680,12 +676,7 @@ const router = createBrowserRouter([
     // ── Sales / Client Orders Review ───────────────────────────────────────
     { path: '/sales/client-orders', element: withSuspense(guard('sales.order_review', <ClientOrdersReviewPage />)) },
     { path: '/sales/client-orders/:ulid', element: withSuspense(guard('sales.order_review', <ClientOrderReviewDetailPage />)) },
-    { path: '/sales/quotations', element: withSuspense(guard('sales.quotations.view', <QuotationListPage />)) },
-    { path: '/sales/quotations/:ulid', element: withSuspense(guard('sales.quotations.view', <QuotationDetailPage />)) },
-    { path: '/sales/quotations/:ulid/margin', element: withSuspense(guard('sales.quotations.view', <QuotationMarginPage />)) },
-    { path: '/sales/orders', element: withSuspense(guard('sales.orders.view', <SalesOrderListPage />)) },
-    // Note: No /sales/orders/new route — sales orders are created by converting accepted quotations
-    { path: '/sales/orders/:ulid', element: withSuspense(guard('sales.orders.view', <SalesOrderDetailPage />)) },
+
     ],
   },
 

@@ -239,8 +239,6 @@ const SECTIONS: NavSection[] = [
       { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
       { divider: true, label: 'Sales' },
       { label: 'Client Orders', href: '/sales/client-orders', permission: 'sales.order_review' },
-      { label: 'Price Quotations', href: '/sales/quotations', permission: 'sales.quotations.view' },
-      { label: 'Order Processing', href: '/sales/orders', permission: 'sales.orders.view' },
       { divider: true, label: 'Delivery' },
       { label: 'Delivery Receipts', href: '/delivery/receipts', permission: 'delivery.view' },
       { label: 'Delivery Vehicles', href: '/delivery/vehicles', permission: 'delivery.view' },
