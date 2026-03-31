@@ -306,5 +306,67 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         })->name('reports.birthdays');
     });
 
+    // ── Employee Clearance (FS-027) ──────────────────────────────────────────
+    Route::prefix('clearance')->name('clearance.')->group(function () {
+        Route::get('/{employee}', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            return response()->json(['data' => $service->getClearanceSummary($employee->id)]);
+        })->name('summary');
+
+        Route::post('/{employee}/generate', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            $items = $service->generateClearanceChecklist($employee, $request->user());
+            return response()->json(['data' => $items, 'count' => $items->count()], 201);
+        })->middleware('throttle:api-action')->name('generate');
+
+        Route::patch('/items/{clearance}/clear', function (Request $request, \App\Domains\HR\Models\EmployeeClearance $clearance) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $data = $request->validate(['notes' => 'nullable|string']);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            return response()->json(['data' => $service->clearItem($clearance, $request->user(), $data['notes'] ?? null)]);
+        })->middleware('throttle:api-action')->name('clear');
+
+        Route::patch('/items/{clearance}/block', function (Request $request, \App\Domains\HR\Models\EmployeeClearance $clearance) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $data = $request->validate(['reason' => 'required|string']);
+            $service = app(\App\Domains\HR\Services\EmployeeClearanceService::class);
+            return response()->json(['data' => $service->blockItem($clearance, $data['reason'])]);
+        })->middleware('throttle:api-action')->name('block');
+    });
+
+    // ── Employee Onboarding Checklist (FS-028) ────────────────────────────────
+    Route::prefix('onboarding')->name('onboarding.')->group(function () {
+        Route::get('/{employee}', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            return response()->json([
+                'checklist' => $service->getChecklist($employee),
+                'progress' => $service->getProgress($employee),
+            ]);
+        })->name('show');
+
+        Route::post('/{employee}/initialize', function (Request $request, \App\Domains\HR\Models\Employee $employee) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            $count = $service->initializeChecklist($employee);
+            return response()->json(['message' => "Initialized {$count} checklist items.", 'count' => $count], 201);
+        })->middleware('throttle:api-action')->name('initialize');
+
+        Route::patch('/items/{itemId}/check', function (Request $request, int $itemId) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            $item = $service->checkItem($itemId, $request->user()->id, $request->input('notes'));
+            return response()->json(['data' => $item]);
+        })->middleware('throttle:api-action')->name('check');
+
+        Route::patch('/items/{itemId}/uncheck', function (Request $request, int $itemId) {
+            abort_unless($request->user()->can('hr.full_access'), 403);
+            $service = app(\App\Domains\HR\Services\OnboardingChecklistService::class);
+            $item = $service->uncheckItem($itemId);
+            return response()->json(['data' => $item]);
+        })->middleware('throttle:api-action')->name('uncheck');
+    });
 
 });

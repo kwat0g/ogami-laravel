@@ -161,9 +161,11 @@ const InterviewDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/I
 const OfferDetailPage = lazyWithRetry(() => import('@/pages/hr/recruitment/OfferDetailPage'))
 const CandidateProfilePage = lazyWithRetry(() => import('@/pages/hr/recruitment/CandidateProfilePage'))
 
-// HR — Org Chart + Performance Appraisals (Gap Fix)
+// HR — Org Chart + Performance Appraisals + Clearance (Gap Fix)
 const OrgChartPage = lazyWithRetry(() => import('@/pages/hr/OrgChartPage'))
 const PerformanceAppraisalListPage = lazyWithRetry(() => import('@/pages/hr/PerformanceAppraisalListPage'))
+const EmployeeClearancePage = lazyWithRetry(() => import('@/pages/hr/EmployeeClearancePage'))
+const OnboardingChecklistPage = lazyWithRetry(() => import('@/pages/hr/OnboardingChecklistPage'))
 
 // HR — Reference data
 const DepartmentsPage = lazyWithRetry(() => import('@/pages/hr/DepartmentsPage'))
@@ -217,6 +219,7 @@ const StockBalancePage                 = lazyWithRetry(() => import('@/pages/inv
 const StockLedgerPage                  = lazyWithRetry(() => import('@/pages/inventory/StockLedgerPage'))
 const StockAdjustmentsPage             = lazyWithRetry(() => import('@/pages/inventory/StockAdjustmentsPage'))
 const InventoryValuationPage           = lazyWithRetry(() => import('@/pages/inventory/InventoryValuationPage'))
+const InventoryAnalyticsPage           = lazyWithRetry(() => import('@/pages/inventory/InventoryAnalyticsPage'))
 const PhysicalCountPage                = lazyWithRetry(() => import('@/pages/inventory/PhysicalCountPage'))
 const MaterialRequisitionListPage      = lazyWithRetry(() => import('@/pages/inventory/MaterialRequisitionListPage'))
 const CreateMaterialRequisitionPage    = lazyWithRetry(() => import('@/pages/inventory/CreateMaterialRequisitionPage'))
@@ -327,9 +330,11 @@ const BirFormGeneratorPage = lazyWithRetry(() => import('@/pages/tax/BirFormGene
 const BirFilingListPage = lazyWithRetry(() => import('@/pages/tax/BirFilingListPage'))
 const DeliveryRoutesPage = lazyWithRetry(() => import('@/pages/delivery/DeliveryRoutesPage'))
 
-// Budget domain (reduced)
+// Budget domain
 const CostCentersPage = lazyWithRetry(() => import('@/pages/budget/CostCentersPage'))
 const DepartmentBudgetsPage = lazyWithRetry(() => import('@/pages/budget/DepartmentBudgetsPage'))
+const BudgetLinesPage = lazyWithRetry(() => import('@/pages/budget/BudgetLinesPage'))
+const BudgetVariancePage = lazyWithRetry(() => import('@/pages/budget/BudgetVariancePage'))
 
 // Enhancement pages
 const FinancialRatiosPage            = lazyWithRetry(() => import('@/pages/accounting/FinancialRatiosPage'))
@@ -439,6 +444,8 @@ const router = createBrowserRouter([
       { path: '/hr/departments', element: withSuspense(guard('hr.full_access', <DepartmentsPage />)) },
       { path: '/hr/positions', element: withSuspense(guard('hr.full_access', <PositionsPage />)) },
       { path: '/hr/shifts', element: withSuspense(guard('hr.full_access', <ShiftsPage />)) },
+      { path: '/hr/employees/:ulid/clearance', element: withSuspense(guard('hr.full_access', <EmployeeClearancePage />)) },
+      { path: '/hr/employees/:ulid/onboarding', element: withSuspense(guard('hr.full_access', <OnboardingChecklistPage />)) },
 
       // ── Team Management (department-scoped) ────────────────────────────────
       { path: '/team/employees', element: withSuspense(guard('employees.view_team', <TeamEmployeeListPage />)) },
@@ -569,6 +576,7 @@ const router = createBrowserRouter([
       { path: '/inventory/valuation', element: withSuspense(guard('inventory.stock.view', <InventoryValuationPage />)) },
       { path: '/inventory/physical-count', element: withSuspense(guard('inventory.adjustments.create', <PhysicalCountPage />)) },
       { path: '/inventory/transfers', element: withSuspense(guard('inventory.transfers.manage', <StockTransferPage />)) },
+      { path: '/inventory/analytics', element: withSuspense(guard('inventory.stock.view', <InventoryAnalyticsPage />)) },
 
       // ── Production / PPC ──────────────────────────────────────────────────
       { path: '/production/boms', element: withSuspense(guard('production.bom.view', <BomListPage />)) },
@@ -649,6 +657,8 @@ const router = createBrowserRouter([
       // ── Budget ────────────────────────────────────────────────────────────
       { path: '/budget/cost-centers',       element: withSuspense(guard('budget.view', <CostCentersPage />)) },
       { path: '/budget/department-budgets', element: withSuspense(guard('budget.view', <DepartmentBudgetsPage />)) },
+      { path: '/budget/lines',             element: withSuspense(guard('budget.view', <BudgetLinesPage />)) },
+      { path: '/budget/variance',          element: withSuspense(guard('budget.view', <BudgetVariancePage />)) },
 
       // ── Fixed Assets ──────────────────────────────────────────────────────
       { path: '/fixed-assets',             element: withSuspense(guard('fixed_assets.view', <FixedAssetsPage />)) },

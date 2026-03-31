@@ -227,9 +227,13 @@ final class SalesOrderService implements ServiceContract
      *   2. If sufficient: reserve stock, mark line as ready for delivery
      *   3. If insufficient: create a Production Order for the deficit
      *      (requires active BOM for the item)
+     *
+     * FS-030 FIX: Collects warnings on the order model attribute so the API
+     * response can surface non-fatal failures to the user.
      */
     private function triggerFulfillment(SalesOrder $order): void
     {
+        $warnings = [];
         $order->loadMissing('items.item');
         $hasProduction = false;
 
@@ -262,6 +266,7 @@ final class SalesOrderService implements ServiceContract
                         'item_id' => $item->id,
                         'error' => $e->getMessage(),
                     ]);
+                    $warnings[] = "Stock reservation failed for {$item->name}: {$e->getMessage()}";
                 }
             } else {
                 // Make-to-order: create production order for deficit
@@ -285,6 +290,7 @@ final class SalesOrderService implements ServiceContract
                             'item_id' => $item->id,
                             'error' => $e->getMessage(),
                         ]);
+                        $warnings[] = "Partial stock reservation failed for {$item->name}: {$e->getMessage()}";
                     }
                 }
 
@@ -317,6 +323,7 @@ final class SalesOrderService implements ServiceContract
                             'item_id' => $item->id,
                             'error' => $e->getMessage(),
                         ]);
+                        $warnings[] = "Auto production order creation failed for {$item->name}: {$e->getMessage()}. Create manually.";
                     }
                 } else {
                     \Illuminate\Support\Facades\Log::warning('[Sales] No active BOM for item, cannot auto-create production order', [
@@ -324,6 +331,7 @@ final class SalesOrderService implements ServiceContract
                         'item_id' => $item->id,
                         'item_name' => $item->name,
                     ]);
+                    $warnings[] = "No active BOM found for {$item->name} — cannot auto-create production order. Set up a BOM or create the production order manually.";
                 }
             }
         }
@@ -332,6 +340,65 @@ final class SalesOrderService implements ServiceContract
         if ($hasProduction) {
             $order->update(['status' => 'in_production']);
         }
+
+        // FS-030 FIX: Attach warnings to order so API response surfaces them
+        if (! empty($warnings)) {
+            $order->setAttribute('_confirm_warnings', $warnings);
+        }
+    }
+
+    /**
+     * FS-013 FIX: Mark a confirmed/in_production SO as partially delivered.
+     */
+    public function markPartiallyDelivered(SalesOrder $order): SalesOrder
+    {
+        if (! in_array($order->status, ['confirmed', 'in_production'], true)) {
+            throw new DomainException(
+                "Cannot mark as partially delivered from status '{$order->status}'.",
+                'SALES_INVALID_ORDER_STATUS',
+                422,
+            );
+        }
+
+        $order->update(['status' => 'partially_delivered']);
+
+        return $order->fresh() ?? $order;
+    }
+
+    /**
+     * FS-013 FIX: Mark a SO as fully delivered.
+     */
+    public function markDelivered(SalesOrder $order): SalesOrder
+    {
+        if (! in_array($order->status, ['confirmed', 'in_production', 'partially_delivered'], true)) {
+            throw new DomainException(
+                "Cannot mark as delivered from status '{$order->status}'.",
+                'SALES_INVALID_ORDER_STATUS',
+                422,
+            );
+        }
+
+        $order->update(['status' => 'delivered']);
+
+        return $order->fresh() ?? $order;
+    }
+
+    /**
+     * FS-013 FIX: Mark a delivered SO as invoiced (after AR invoice creation).
+     */
+    public function markInvoiced(SalesOrder $order): SalesOrder
+    {
+        if ($order->status !== 'delivered') {
+            throw new DomainException(
+                "Cannot mark as invoiced from status '{$order->status}'. Order must be delivered first.",
+                'SALES_INVALID_ORDER_STATUS',
+                422,
+            );
+        }
+
+        $order->update(['status' => 'invoiced']);
+
+        return $order->fresh() ?? $order;
     }
 
     public function cancel(SalesOrder $order): SalesOrder

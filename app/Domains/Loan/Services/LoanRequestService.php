@@ -44,12 +44,24 @@ use Illuminate\Support\Facades\Notification;
  */
 final class LoanRequestService implements ServiceContract
 {
-    // Chart of account codes for loan transactions
-    private const string ACCT_LOANS_RECEIVABLE = '1200';
+    // FS-022 FIX: Loan GL accounts — use AccountMapping with fallback to defaults.
+    // These defaults are only used if no AccountMapping row exists for the key.
+    private const string DEFAULT_ACCT_LOANS_RECEIVABLE = '1200';
 
-    private const string ACCT_LOANS_PAYABLE = '2104';
+    private const string DEFAULT_ACCT_LOANS_PAYABLE = '2104';
 
-    private const string ACCT_CASH_IN_BANK = '1001';
+    private const string DEFAULT_ACCT_CASH_IN_BANK = '1001';
+
+    /**
+     * Resolve a GL account code from AccountMapping, falling back to hardcoded default.
+     */
+    private function resolveGlAccountCode(string $mappingKey, string $default): string
+    {
+        $mapped = \App\Domains\Accounting\Models\AccountMapping::where('mapping_key', $mappingKey)
+            ->value('account_code');
+
+        return $mapped ?? $default;
+    }
 
     public function __construct(
         private readonly LoanAmortizationService $amortizationService,
@@ -491,8 +503,8 @@ final class LoanRequestService implements ServiceContract
         $fiscalPeriod = $this->fiscalPeriodService->resolveForDateOrFail(Carbon::parse($date));
 
         // Get account IDs from chart of accounts
-        $loansReceivableAcct = ChartOfAccount::where('code', self::ACCT_LOANS_RECEIVABLE)->first();
-        $loansPayableAcct = ChartOfAccount::where('code', self::ACCT_LOANS_PAYABLE)->first();
+        $loansReceivableAcct = ChartOfAccount::where('code', $this->resolveGlAccountCode('loan.loans_receivable', self::DEFAULT_ACCT_LOANS_RECEIVABLE))->first();
+        $loansPayableAcct = ChartOfAccount::where('code', $this->resolveGlAccountCode('loan.loans_payable', self::DEFAULT_ACCT_LOANS_PAYABLE))->first();
 
         if (! $loansReceivableAcct || ! $loansPayableAcct) {
             throw new DomainException(
@@ -560,8 +572,8 @@ final class LoanRequestService implements ServiceContract
         $fiscalPeriod = $this->fiscalPeriodService->resolveForDateOrFail(Carbon::parse($date));
 
         // Get account IDs
-        $loansPayableAcct = ChartOfAccount::where('code', self::ACCT_LOANS_PAYABLE)->first();
-        $cashAcct = ChartOfAccount::where('code', self::ACCT_CASH_IN_BANK)->first();
+        $loansPayableAcct = ChartOfAccount::where('code', $this->resolveGlAccountCode('loan.loans_payable', self::DEFAULT_ACCT_LOANS_PAYABLE))->first();
+        $cashAcct = ChartOfAccount::where('code', $this->resolveGlAccountCode('loan.cash_in_bank', self::DEFAULT_ACCT_CASH_IN_BANK))->first();
 
         if (! $loansPayableAcct || ! $cashAcct) {
             throw new DomainException(

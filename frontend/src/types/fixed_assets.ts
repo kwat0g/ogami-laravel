@@ -57,6 +57,7 @@ export interface AssetDepreciationEntry {
   fiscal_period?: { id: number; name: string }
 }
 
+/** FS-003: Asset Transfer — planned for Phase 4. Backend model/routes not yet implemented. */
 export interface AssetTransfer {
   id: number
   ulid: string

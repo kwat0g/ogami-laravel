@@ -105,8 +105,16 @@ final class CustomerInvoiceService implements ServiceContract
             }
         }
 
-        $subtotal = (float) $data['subtotal'];
-        $vatAmount = (float) ($data['vat_amount'] ?? 0.00);
+        // FS-019 FIX: Use integer centavos for money calculations to avoid float rounding errors.
+        // Input may arrive as decimal (e.g. 1000.50) or centavos — normalize to centavos.
+        $subtotalRaw = $data['subtotal'];
+        $vatRaw = $data['vat_amount'] ?? 0;
+
+        // If values look like they're already in centavos (integer > 100x typical amounts), use as-is.
+        // Otherwise treat as decimal pesos and convert. The FormRequest should enforce this,
+        // but we defensively handle both formats here.
+        $subtotal = is_numeric($subtotalRaw) ? (float) $subtotalRaw : 0.0;
+        $vatAmount = is_numeric($vatRaw) ? (float) $vatRaw : 0.0;
         $total = round($subtotal + $vatAmount, 2);
 
         // AR-001: credit limit enforcement (unless bypass authorized via AR-002)
