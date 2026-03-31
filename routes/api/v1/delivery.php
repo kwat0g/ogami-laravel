@@ -88,6 +88,51 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
         return response()->json(['data' => $vehicle->fresh()]);
     })->middleware('throttle:api-action')->name('vehicles.update');
 
+    // Vehicle delivery history with client order links
+    Route::get('/vehicles/{vehicle}/history', function (\Illuminate\Http\Request $request, \App\Domains\Delivery\Models\Vehicle $vehicle): \Illuminate\Http\JsonResponse {
+        abort_unless($request->user()?->hasPermissionTo('delivery.view'), 403, 'Unauthorized');
+
+        $history = \App\Domains\Delivery\Models\DeliveryReceipt::query()
+            ->where('vehicle_id', $vehicle->id)
+            ->with([
+                'customer:id,name',
+                'deliverySchedule:id,client_order_id',
+                'deliverySchedule.clientOrder:id,ulid,order_reference,status',
+                'salesOrder:id,ulid,so_reference',
+            ])
+            ->select('id', 'ulid', 'dr_reference', 'status', 'direction', 'driver_name',
+                     'receipt_date', 'customer_id', 'delivery_schedule_id', 'sales_order_id',
+                     'vehicle_id', 'created_at', 'updated_at')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get()
+            ->map(function ($dr) {
+                $clientOrder = $dr->deliverySchedule?->clientOrder;
+                return [
+                    'ulid' => $dr->ulid,
+                    'dr_reference' => $dr->dr_reference,
+                    'status' => $dr->status,
+                    'direction' => $dr->direction,
+                    'driver_name' => $dr->driver_name,
+                    'receipt_date' => $dr->receipt_date,
+                    'created_at' => $dr->created_at,
+                    'updated_at' => $dr->updated_at,
+                    'customer_name' => $dr->customer?->name,
+                    'sales_order' => $dr->salesOrder ? [
+                        'ulid' => $dr->salesOrder->ulid,
+                        'reference' => $dr->salesOrder->so_reference,
+                    ] : null,
+                    'client_order' => $clientOrder ? [
+                        'ulid' => $clientOrder->ulid,
+                        'reference' => $clientOrder->order_reference,
+                        'status' => $clientOrder->status,
+                    ] : null,
+                ];
+            });
+
+        return response()->json(['data' => $history]);
+    })->name('vehicles.history');
+
     Route::post('/receipts/{deliveryReceipt}/prepare-shipment', [DeliveryController::class, 'prepareShipment'])
         ->middleware('throttle:30,1');
     Route::patch('/receipts/{deliveryReceipt}/dispatch', [DeliveryController::class, 'markDispatched'])

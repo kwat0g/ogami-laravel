@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from 'react'
-import { Truck, Plus, Search, MoreHorizontal, Pencil, Power, Wrench, XCircle, MapPin, Package } from 'lucide-react'
+import { useState, useMemo, useEffect, Fragment } from 'react'
+import { Truck, Plus, Search, MoreHorizontal, Pencil, Power, Wrench, XCircle, MapPin, Package, ChevronDown, ChevronUp, History } from 'lucide-react'
 import { toast } from 'sonner'
-import { useVehicles } from '@/hooks/useDelivery'
+import { useVehicles, useVehicleHistory } from '@/hooks/useDelivery'
+import type { VehicleDeliveryHistory } from '@/hooks/useDelivery'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -328,6 +329,97 @@ function VehicleRowActions({
   )
 }
 
+// ── Vehicle Delivery History Row ────────────────────────────────────────────
+function VehicleHistoryRow({ vehicleId, colSpan }: { vehicleId: number; colSpan: number }) {
+  const { data, isLoading } = useVehicleHistory(vehicleId)
+  const history: VehicleDeliveryHistory[] = data?.data ?? []
+
+  if (isLoading) {
+    return (
+      <tr>
+        <td colSpan={colSpan} className="px-6 py-4 text-sm text-neutral-400">Loading delivery history...</td>
+      </tr>
+    )
+  }
+
+  if (history.length === 0) {
+    return (
+      <tr>
+        <td colSpan={colSpan} className="px-6 py-4 text-sm text-neutral-400">No delivery history for this vehicle.</td>
+      </tr>
+    )
+  }
+
+  return (
+    <tr>
+      <td colSpan={colSpan} className="p-0">
+        <div className="bg-neutral-50 border-t border-neutral-200 px-6 py-3">
+          <div className="flex items-center gap-2 mb-3">
+            <History className="h-4 w-4 text-neutral-500" />
+            <span className="text-xs font-semibold text-neutral-600 uppercase">Delivery History ({history.length})</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-neutral-500 border-b border-neutral-200">
+                  <th className="text-left py-1.5 pr-3 font-medium">DR Reference</th>
+                  <th className="text-left py-1.5 pr-3 font-medium">Status</th>
+                  <th className="text-left py-1.5 pr-3 font-medium">Direction</th>
+                  <th className="text-left py-1.5 pr-3 font-medium">Customer</th>
+                  <th className="text-left py-1.5 pr-3 font-medium">Client Order</th>
+                  <th className="text-left py-1.5 pr-3 font-medium">Driver</th>
+                  <th className="text-left py-1.5 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {history.map(h => (
+                  <tr key={h.ulid} className="hover:bg-white/60">
+                    <td className="py-2 pr-3">
+                      <Link to={`/delivery/receipts/${h.ulid}`} className="text-blue-600 hover:underline font-medium">
+                        {h.dr_reference}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                        h.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                        h.status === 'in_transit' ? 'bg-blue-100 text-blue-700' :
+                        h.status === 'dispatched' ? 'bg-indigo-100 text-indigo-700' :
+                        h.status === 'cancelled' ? 'bg-red-100 text-red-500' :
+                        'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {h.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 capitalize text-neutral-600">{h.direction}</td>
+                    <td className="py-2 pr-3 text-neutral-700">{h.customer_name ?? '-'}</td>
+                    <td className="py-2 pr-3">
+                      {h.client_order ? (
+                        <Link to={`/sales/client-orders/${h.client_order.ulid}`} className="text-blue-600 hover:underline">
+                          {h.client_order.reference}
+                        </Link>
+                      ) : h.sales_order ? (
+                        <Link to={`/sales/orders/${h.sales_order.ulid}`} className="text-neutral-600 hover:underline">
+                          {h.sales_order.reference}
+                        </Link>
+                      ) : (
+                        <span className="text-neutral-300">-</span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-neutral-600">{h.driver_name ?? '-'}</td>
+                    <td className="py-2 text-neutral-500">
+                      {h.receipt_date ? new Date(h.receipt_date).toLocaleDateString() : h.created_at ? new Date(h.created_at).toLocaleDateString() : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </td>
+    </tr>
+  )
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────
 export default function DeliveryVehiclesPage() {
   const { hasPermission } = useAuthStore()
@@ -338,6 +430,7 @@ export default function DeliveryVehiclesPage() {
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [expandedVehicleId, setExpandedVehicleId] = useState<number | null>(null)
 
   // Filter + search
   const filtered = useMemo(() => {
@@ -497,8 +590,10 @@ export default function DeliveryVehiclesPage() {
             <tbody className="divide-y divide-neutral-100">
               {filtered.map(v => {
                 const avail = AVAILABILITY_BADGE[v.availability] ?? AVAILABILITY_BADGE.available
+                const isExpanded = expandedVehicleId === v.id
                 return (
-                  <tr key={v.id} className="hover:bg-neutral-50">
+                  <Fragment key={v.id}>
+                  <tr className="hover:bg-neutral-50">
                     {/* Vehicle name + code + make/model */}
                     <td className="px-4 py-3">
                       <div className="font-medium text-neutral-900">{v.name}</div>
@@ -542,9 +637,13 @@ export default function DeliveryVehiclesPage() {
                         </Link>
                       )}
                     </td>
-                    {/* Delivery counts */}
+                    {/* Delivery counts -- clickable to expand history */}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3 text-xs">
+                      <button
+                        onClick={() => setExpandedVehicleId(expandedVehicleId === v.id ? null : v.id)}
+                        className="flex items-center gap-2 text-xs hover:text-blue-600 transition-colors group"
+                        title="Click to view delivery history"
+                      >
                         <span className="flex items-center gap-1" title="Active deliveries">
                           <Package className="h-3 w-3 text-blue-500" />
                           <span className="text-blue-700 font-medium">{v.active_deliveries_count ?? 0}</span>
@@ -553,9 +652,12 @@ export default function DeliveryVehiclesPage() {
                           {v.completed_deliveries_count ?? 0} done
                         </span>
                         <span className="text-neutral-300" title="Total deliveries">
-                          / {v.total_deliveries_count ?? 0} total
+                          / {v.total_deliveries_count ?? 0}
                         </span>
-                      </div>
+                        {expandedVehicleId === v.id
+                          ? <ChevronUp className="h-3 w-3 text-neutral-400 group-hover:text-blue-500" />
+                          : <ChevronDown className="h-3 w-3 text-neutral-400 group-hover:text-blue-500" />}
+                      </button>
                     </td>
                     {canManage && (
                       <td className="px-4 py-3 text-right">
@@ -566,6 +668,10 @@ export default function DeliveryVehiclesPage() {
                       </td>
                     )}
                   </tr>
+                  {isExpanded && (
+                    <VehicleHistoryRow vehicleId={v.id} colSpan={canManage ? 7 : 6} />
+                  )}
+                  </Fragment>
                 )
               })}
             </tbody>

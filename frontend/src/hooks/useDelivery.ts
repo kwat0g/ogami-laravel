@@ -107,6 +107,28 @@ export function useVehicles() {
   });
 }
 
+export interface VehicleDeliveryHistory {
+  ulid: string
+  dr_reference: string
+  status: string
+  direction: string
+  driver_name: string | null
+  receipt_date: string | null
+  created_at: string
+  updated_at: string
+  customer_name: string | null
+  sales_order: { ulid: string; reference: string } | null
+  client_order: { ulid: string; reference: string; status: string } | null
+}
+
+export function useVehicleHistory(vehicleId: number | null) {
+  return useQuery<{ data: VehicleDeliveryHistory[] }>({
+    queryKey: ['vehicle-history', vehicleId],
+    queryFn: () => api.get(deliveryApiPaths.vehicleHistory(vehicleId!)).then(r => r.data),
+    enabled: !!vehicleId,
+  });
+}
+
 export function useShipments(params?: Record<string, string | boolean>) {
   return useQuery<{ data: Shipment[]; meta: unknown }>({
     queryKey: ['shipments', params],
