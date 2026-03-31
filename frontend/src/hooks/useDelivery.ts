@@ -33,7 +33,10 @@ export function useConfirmDeliveryReceipt() {
   return useMutation({
     mutationFn: (ulid: string) =>
       api.patch(deliveryApiPaths.confirmReceipt(ulid)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+    onSuccess: (_data: unknown, ulid: string) => {
+      qc.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      qc.invalidateQueries({ queryKey: ['delivery-receipt', ulid] });
+    },
   });
 }
 
@@ -42,7 +45,10 @@ export function useMarkDispatched() {
   return useMutation({
     mutationFn: (ulid: string) =>
       api.patch(deliveryApiPaths.dispatchReceipt(ulid)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+    onSuccess: (_data: unknown, ulid: string) => {
+      qc.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      qc.invalidateQueries({ queryKey: ['delivery-receipt', ulid] });
+    },
   });
 }
 
@@ -51,7 +57,10 @@ export function useMarkPartiallyDelivered() {
   return useMutation({
     mutationFn: (ulid: string) =>
       api.patch(deliveryApiPaths.partialDeliverReceipt(ulid)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+    onSuccess: (_data: unknown, ulid: string) => {
+      qc.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      qc.invalidateQueries({ queryKey: ['delivery-receipt', ulid] });
+    },
   });
 }
 
@@ -60,7 +69,10 @@ export function useMarkDelivered() {
   return useMutation({
     mutationFn: (ulid: string) =>
       api.patch(deliveryApiPaths.deliverReceipt(ulid)).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+    onSuccess: (_data: unknown, ulid: string) => {
+      qc.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      qc.invalidateQueries({ queryKey: ['delivery-receipt', ulid] });
+    },
   });
 }
 
@@ -76,8 +88,9 @@ export function usePrepareShipment() {
       notes?: string;
     }}) =>
       api.post(deliveryApiPaths.prepareShipment(ulid), payload).then(r => r.data),
-    onSuccess: () => {
+    onSuccess: (_data: unknown, variables: { ulid: string }) => {
       qc.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      qc.invalidateQueries({ queryKey: ['delivery-receipt', variables.ulid] });
       qc.invalidateQueries({ queryKey: ['shipments'] });
     },
   });
