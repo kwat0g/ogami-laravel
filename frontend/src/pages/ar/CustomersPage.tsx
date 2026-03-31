@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState, useCallback } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { toast } from 'sonner'
 import { Plus, CheckCircle, CreditCard, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -36,8 +38,8 @@ function CreditMeter({ customer }: { customer: Customer }) {
   return (
     <div className="w-32">
       <div className="flex justify-between text-xs text-neutral-500 mb-0.5">
-        <span>₱{customer.current_outstanding.toLocaleString()}</span>
-        <span>₱{customer.credit_limit.toLocaleString()}</span>
+        <span>{formatPesoAmount(customer.current_outstanding)}</span>
+        <span>{formatPesoAmount(customer.credit_limit)}</span>
       </div>
       <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
         <div className={`h-full ${colour} rounded-full`} style={{ width: `${pct}%` }} />

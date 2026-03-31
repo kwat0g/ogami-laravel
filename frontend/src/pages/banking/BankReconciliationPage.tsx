@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -275,11 +277,11 @@ function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconcil
         </div>
         <div>
           <p className="text-xs text-neutral-500">Opening</p>
-          <p className="font-mono font-semibold">₱{recon.opening_balance.toLocaleString()}</p>
+          <p className="font-mono font-semibold">{formatPesoAmount(recon.opening_balance)}</p>
         </div>
         <div>
           <p className="text-xs text-neutral-500">Closing</p>
-          <p className="font-mono font-semibold">₱{recon.closing_balance.toLocaleString()}</p>
+          <p className="font-mono font-semibold">{formatPesoAmount(recon.closing_balance)}</p>
         </div>
         <div>
           <p className="text-xs text-neutral-500">Status</p>
@@ -465,8 +467,8 @@ export default function BankReconciliationPage() {
                     {rec.period_from} → {rec.period_to}
                   </td>
                   <td className="px-4 py-2 text-neutral-600">{rec.bank_account_id}</td>
-                  <td className="px-4 py-2 text-right font-mono">₱{rec.opening_balance.toLocaleString()}</td>
-                  <td className="px-4 py-2 text-right font-mono">₱{rec.closing_balance.toLocaleString()}</td>
+                  <td className="px-4 py-2 text-right font-mono">{formatPesoAmount(rec.opening_balance)}</td>
+                  <td className="px-4 py-2 text-right font-mono">{formatPesoAmount(rec.closing_balance)}</td>
                   <td className="px-4 py-2">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                       rec.status === 'certified'

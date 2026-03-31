@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { toast } from 'sonner'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FileText } from 'lucide-react'
@@ -139,7 +141,7 @@ function ReceivePaymentPanel({
           {fe('amount') && <p className="text-xs text-red-600 mt-0.5">{fe('amount')}</p>}
           {form.amount > balanceDue && (
             <p className="text-xs text-neutral-600 mt-0.5">
-              ₱{(form.amount - balanceDue).toLocaleString()} excess → advance payment (AR-005)
+              {formatPesoAmount((form.amount - balanceDue))} excess → advance payment (AR-005)
             </p>
           )}
         </label>
@@ -351,27 +353,27 @@ export default function CustomerInvoiceDetailPage() {
         </Card>
         <Card>
           <CardBody>
-            <InfoRow label="Subtotal" value={`₱${invoice.subtotal.toLocaleString()}`} />
+            <InfoRow label="Subtotal" value={`${formatPesoAmount(invoice.subtotal)}`} />
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <InfoRow label="VAT" value={`₱${invoice.vat_amount.toLocaleString()}`} />
+            <InfoRow label="VAT" value={`${formatPesoAmount(invoice.vat_amount)}`} />
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <InfoRow label="Total" value={`₱${invoice.total_amount.toLocaleString()}`} />
+            <InfoRow label="Total" value={`${formatPesoAmount(invoice.total_amount)}`} />
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <InfoRow label="Total Paid" value={`₱${invoice.total_paid.toLocaleString()}`} />
+            <InfoRow label="Total Paid" value={`${formatPesoAmount(invoice.total_paid)}`} />
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <InfoRow label="Balance Due" value={`₱${invoice.balance_due.toLocaleString()}`} />
+            <InfoRow label="Balance Due" value={`${formatPesoAmount(invoice.balance_due)}`} />
           </CardBody>
         </Card>
         <Card>
@@ -413,7 +415,7 @@ export default function CustomerInvoiceDetailPage() {
                 {invoice.payments.map((p) => (
                   <tr key={p.id}>
                     <td className="px-4 py-2 text-neutral-700">{p.payment_date}</td>
-                    <td className="px-4 py-2 font-medium text-neutral-900">₱{p.amount.toLocaleString()}</td>
+                    <td className="px-4 py-2 font-medium text-neutral-900">{formatPesoAmount(p.amount)}</td>
                     <td className="px-4 py-2 text-neutral-500 capitalize">{p.payment_method?.replace('_', ' ') ?? '—'}</td>
                     <td className="px-4 py-2 text-neutral-500">{p.reference_number ?? '—'}</td>
                   </tr>

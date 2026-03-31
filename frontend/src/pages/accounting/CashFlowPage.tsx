@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useCashFlow } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -19,7 +21,7 @@ function CFSectionTable({ title, lines, total }: {
       >
         <span>{title}</span>
         <span className={`font-mono ${total < 0 ? 'text-neutral-700' : 'text-neutral-800'}`}>
-          {total < 0 ? `(₱${Math.abs(total).toLocaleString()})` : `₱${total.toLocaleString()}`}
+          {total < 0 ? `(${formatPesoAmount(Math.abs(total))})` : `${formatPesoAmount(total)}`}
         </span>
       </button>
       {open && (
@@ -33,8 +35,8 @@ function CFSectionTable({ title, lines, total }: {
                 </td>
                 <td className="px-3 py-1.5 text-right font-mono text-neutral-700">
                   {line.amount < 0
-                    ? `(₱${Math.abs(line.amount).toLocaleString()})`
-                    : `₱${line.amount.toLocaleString()}`}
+                    ? `(${formatPesoAmount(Math.abs(line.amount))})`
+                    : `${formatPesoAmount(line.amount)}`}
                 </td>
               </tr>
             ))}
@@ -129,17 +131,17 @@ export default function CashFlowPage() {
               <span>Net Change in Cash</span>
               <span className={`font-mono font-semibold ${netChange < 0 ? 'text-neutral-700' : 'text-neutral-800'}`}>
                 {netChange < 0
-                  ? `(₱${Math.abs(netChange).toLocaleString()})`
-                  : `₱${netChange.toLocaleString()}`}
+                  ? `(${formatPesoAmount(Math.abs(netChange))})`
+                  : `${formatPesoAmount(netChange)}`}
               </span>
             </div>
             <div className="flex justify-between text-sm text-neutral-700 border-t border-neutral-100 pt-2">
               <span>Opening Cash Balance</span>
-              <span className="font-mono">₱{cf.opening_cash_balance.toLocaleString()}</span>
+              <span className="font-mono">{formatPesoAmount(cf.opening_cash_balance)}</span>
             </div>
             <div className="flex justify-between font-bold text-neutral-900 border-t-2 border-neutral-800 pt-2">
               <span>Closing Cash Balance</span>
-              <span className="font-mono">₱{cf.closing_cash_balance.toLocaleString()}</span>
+              <span className="font-mono">{formatPesoAmount(cf.closing_cash_balance)}</span>
             </div>
           </div>
 

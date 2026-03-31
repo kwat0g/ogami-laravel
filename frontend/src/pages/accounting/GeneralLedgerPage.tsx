@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useGeneralLedger } from '@/hooks/useReports'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -31,13 +33,13 @@ function GLRow({
         </span>
       </td>
       <td className="px-3 py-2 text-right font-mono text-neutral-700">
-        {debit != null ? `₱${debit.toLocaleString()}` : ''}
+        {debit != null ? `${formatPesoAmount(debit)}` : ''}
       </td>
       <td className="px-3 py-2 text-right font-mono text-neutral-700">
-        {credit != null ? `₱${credit.toLocaleString()}` : ''}
+        {credit != null ? `${formatPesoAmount(credit)}` : ''}
       </td>
       <td className="px-3 py-2 text-right font-mono font-semibold text-neutral-900">
-        ₱{runningBalance.toLocaleString()}
+        {formatPesoAmount(runningBalance)}
       </td>
     </tr>
   )
@@ -151,13 +153,13 @@ export default function GeneralLedgerPage() {
             <div>
               <p className="text-xs text-neutral-500">Opening Balance</p>
               <p className="font-mono font-semibold text-neutral-900">
-                ₱{report.data.opening_balance.toLocaleString()}
+                {formatPesoAmount(report.data.opening_balance)}
               </p>
             </div>
             <div>
               <p className="text-xs text-neutral-500">Closing Balance</p>
               <p className="font-mono font-semibold text-neutral-800">
-                ₱{report.data.closing_balance.toLocaleString()}
+                {formatPesoAmount(report.data.closing_balance)}
               </p>
             </div>
             <div>

@@ -133,3 +133,41 @@ export function formatDateTime(
     minute: '2-digit',
   })
 }
+
+// ============================================================================
+// Peso Convenience Functions
+// ============================================================================
+
+/**
+ * Format centavos as Philippine Peso (e.g. 150000 -> "₱1,500.00").
+ * Use for amounts stored as centavos (integer) in the database.
+ */
+export function formatPeso(centavos: number | string | undefined | null): string {
+  if (centavos === undefined || centavos === null) return '\u2014'
+  const num = typeof centavos === 'string' ? parseFloat(centavos) : centavos
+  if (isNaN(num)) return '\u2014'
+  return '\u20B1' + (num / 100).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/**
+ * Format a raw peso amount (not centavos) with proper decimal formatting.
+ * Use for amounts already in pesos (e.g. API responses returning decimal amounts).
+ */
+export function formatPesoAmount(amount: number | string | undefined | null): string {
+  if (amount === undefined || amount === null) return '\u2014'
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount
+  if (isNaN(num)) return '\u2014'
+  return '\u20B1' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/**
+ * Format a quantity value, trimming unnecessary trailing zeros.
+ * Shows up to 2 decimal places (e.g. 10.5 -> "10.5", 10 -> "10", 10.50 -> "10.5").
+ */
+export function formatQty(value: number | string | undefined | null): string {
+  if (value === undefined || value === null) return '\u2014'
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(num)) return '\u2014'
+  // Use maximumFractionDigits: 2 to avoid showing 10.0000
+  return num.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}

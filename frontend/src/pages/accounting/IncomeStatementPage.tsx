@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useIncomeStatement } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -13,7 +15,7 @@ function ISSection({ section, indent = false }: { section: ISSection; indent?: b
             <span className="font-mono text-xs text-neutral-400 mr-2">{acct.code}</span>
             {acct.name}
           </span>
-          <span className="font-mono">₱{acct.balance.toLocaleString()}</span>
+          <span className="font-mono">{formatPesoAmount(acct.balance)}</span>
         </div>
       ))}
     </div>
@@ -32,7 +34,7 @@ function SummaryRow({ label, amount, highlight = false }: {
     }`}>
       <span>{label}</span>
       <span className="font-mono">
-        {amount < 0 ? `(₱${Math.abs(amount).toLocaleString()})` : `₱${amount.toLocaleString()}`}
+        {amount < 0 ? `(${formatPesoAmount(Math.abs(amount))})` : `${formatPesoAmount(amount)}`}
       </span>
     </div>
   )

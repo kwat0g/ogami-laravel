@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useVatLedgerList } from '@/hooks/useTax'
+import { formatPesoAmount } from '@/lib/formatters'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 
@@ -50,16 +52,16 @@ export default function TaxPeriodSummaryPage() {
                 ledgers.map((l) => (
                   <tr key={l.id} className="hover:bg-neutral-50">
                     <td className="px-4 py-3 font-medium text-neutral-900">#{l.fiscal_period_id}</td>
-                    <td className="px-4 py-3 text-neutral-700">₱{l.input_vat.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-neutral-700">₱{l.output_vat.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-neutral-700">{formatPesoAmount(l.input_vat)}</td>
+                    <td className="px-4 py-3 text-neutral-700">{formatPesoAmount(l.output_vat)}</td>
                     <td className={`px-4 py-3 font-medium ${l.net_vat >= 0 ? 'text-neutral-800' : 'text-neutral-700'}`}>
-                      ₱{l.net_vat.toLocaleString()}
+                      {formatPesoAmount(l.net_vat)}
                     </td>
                     <td className="px-4 py-3 text-neutral-600">
-                      {l.carry_forward_from_prior > 0 ? `₱${l.carry_forward_from_prior.toLocaleString()}` : '—'}
+                      {l.carry_forward_from_prior > 0 ? `${formatPesoAmount(l.carry_forward_from_prior)}` : '—'}
                     </td>
                     <td className={`px-4 py-3 font-semibold ${l.vat_payable > 0 ? 'text-neutral-800' : 'text-neutral-700'}`}>
-                      ₱{l.vat_payable.toLocaleString()}
+                      {formatPesoAmount(l.vat_payable)}
                     </td>
                     <td className="px-4 py-3">
                       <span

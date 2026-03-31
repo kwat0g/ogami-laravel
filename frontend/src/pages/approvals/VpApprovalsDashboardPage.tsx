@@ -548,7 +548,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                         {canGaProcess && row.status === 'manager_checked' && (
                           <>
                             <button onClick={() => setProcessId(row.id)} disabled={gaProcess.isPending} className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">Process</button>
-                            <button onClick={() => rejectLeave.mutate({ id: row.id, remarks: '' }, { onSuccess: () => toast.success('Rejected.'), onError: (err) => toast.error(parseApiError(err).message) })} disabled={rejectLeave.isPending} className="px-2 py-1 text-xs bg-neutral-600 text-white rounded hover:bg-neutral-700 disabled:opacity-50">Reject</button>
+                            <button onClick={() => rejectLeave.mutate({ id: row.id, remarks: '' }, { onSuccess: () => toast.success('Rejected.'), onError: (err) => toast.error(parseApiError(err).message) })} disabled={rejectLeave.isPending} className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">Reject</button>
                           </>
                         )}
                         {canVpNote && row.status === 'ga_processed' && (
@@ -667,7 +667,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => setApprovingOtId(null)} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-              <button disabled={approveOt.isPending} onClick={submitApproveOt} className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+              <button disabled={approveOt.isPending} onClick={submitApproveOt} className="text-sm px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50">
                 {approveOt.isPending ? 'Approving…' : 'Approve'}
               </button>
             </div>
