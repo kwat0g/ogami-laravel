@@ -28,11 +28,12 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
                 'deliveryReceipts as completed_deliveries_count' => fn ($q) => $q->where('status', 'delivered'),
                 'deliveryReceipts as total_deliveries_count',
             ])
-            ->with(['deliveryReceipts' => fn ($q) => $q
-                ->whereIn('status', $activeDeliveryStatuses)
-                ->select('id', 'ulid', 'dr_reference', 'status', 'direction', 'vehicle_id', 'driver_name', 'receipt_date')
-                ->orderByDesc('receipt_date')
-                ->limit(5),
+            ->with([
+                'deliveryReceipts' => fn ($q) => $q
+                    ->whereIn('status', $activeDeliveryStatuses)
+                    ->select('id', 'ulid', 'dr_reference', 'status', 'direction', 'vehicle_id', 'driver_name', 'receipt_date')
+                    ->orderByDesc('receipt_date')
+                    ->limit(5),
             ])
             ->orderBy('name')
             ->get()
@@ -40,6 +41,18 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
                 $v = $vehicle->toArray();
                 $v['availability'] = $vehicle->active_deliveries_count > 0 ? 'in_delivery' : 'available';
                 $v['current_delivery'] = $vehicle->deliveryReceipts->first();
+
+                // Last completed delivery
+                $lastCompleted = \App\Domains\Delivery\Models\DeliveryReceipt::query()
+                    ->where('vehicle_id', $vehicle->id)
+                    ->where('status', 'delivered')
+                    ->orderByDesc('updated_at')
+                    ->select('ulid', 'dr_reference', 'updated_at')
+                    ->first();
+                $v['last_completed_delivery'] = $lastCompleted;
+
+                // Remove the eager-loaded relationship array to keep response clean
+                unset($v['delivery_receipts']);
                 return $v;
             });
 

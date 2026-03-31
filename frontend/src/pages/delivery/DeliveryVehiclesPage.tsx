@@ -19,6 +19,12 @@ interface CurrentDelivery {
   receipt_date: string | null
 }
 
+interface LastCompletedDelivery {
+  ulid: string
+  dr_reference: string
+  updated_at: string
+}
+
 interface Vehicle {
   id: number
   ulid: string
@@ -34,6 +40,7 @@ interface Vehicle {
   completed_deliveries_count: number
   total_deliveries_count: number
   current_delivery: CurrentDelivery | null
+  last_completed_delivery: LastCompletedDelivery | null
 }
 
 const VEHICLE_TYPES = [
@@ -411,6 +418,13 @@ export default function DeliveryVehiclesPage() {
         </div>
       )}
 
+      {/* Auto-availability explanation */}
+      {!isLoading && vehicles.length > 0 && (
+        <p className="text-xs text-neutral-400 -mt-3">
+          Availability updates automatically based on delivery receipt assignments. When a delivery is marked as delivered, the vehicle becomes available again.
+        </p>
+      )}
+
       {/* Filter tabs + Search */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex gap-1 flex-wrap">
@@ -500,7 +514,7 @@ export default function DeliveryVehiclesPage() {
                         {statusLabel(v.status)}
                       </span>
                     </td>
-                    {/* Availability + current delivery */}
+                    {/* Availability + current/last delivery */}
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${avail.color}`}>
                         {avail.label}
@@ -514,6 +528,17 @@ export default function DeliveryVehiclesPage() {
                           <span className={DR_STATUS_COLORS[v.current_delivery.status] ?? 'text-neutral-600'}>
                             {v.current_delivery.dr_reference} ({v.current_delivery.status.replace('_', ' ')})
                           </span>
+                        </Link>
+                      )}
+                      {!v.current_delivery && v.last_completed_delivery && (
+                        <Link
+                          to={`/delivery/receipts/${v.last_completed_delivery.ulid}`}
+                          className="flex items-center gap-1 mt-1 text-xs text-neutral-400 hover:underline hover:text-neutral-600"
+                        >
+                          Last: {v.last_completed_delivery.dr_reference}
+                          {v.last_completed_delivery.updated_at && (
+                            <span> ({new Date(v.last_completed_delivery.updated_at).toLocaleDateString()})</span>
+                          )}
                         </Link>
                       )}
                     </td>
