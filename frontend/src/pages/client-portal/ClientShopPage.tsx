@@ -147,7 +147,81 @@ export default function ClientShopPage(): JSX.Element {
       <div className="grid lg:grid-cols-[1fr_320px] gap-5">
         {/* Left Column - Order Form */}
         <div className="space-y-5">
-          {/* Add Items Section */}
+          {/* Product Catalog - Separate card for easy browsing */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between w-full gap-4">
+                <button
+                  onClick={() => setShowProductSelector(!showProductSelector)}
+                  className="flex items-center gap-2 text-sm font-medium text-neutral-700 hover:text-neutral-900"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{showProductSelector ? 'Hide Catalog' : 'Browse Product Catalog'}</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showProductSelector ? 'rotate-180' : ''}`} />
+                </button>
+                {orderItems.length > 0 && !showProductSelector && (
+                  <span className="text-xs text-neutral-400">
+                    {orderItems.length} item{orderItems.length !== 1 ? 's' : ''} in order
+                  </span>
+                )}
+              </div>
+            </CardHeader>
+            {showProductSelector && (
+              <>
+                <div className="px-5 pb-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                    <input
+                      type="text"
+                      placeholder="Search products by name or code..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 rounded-lg focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 outline-none text-sm"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <div className="max-h-[360px] overflow-y-auto border-t border-neutral-100">
+                  {productsLoading ? (
+                    <div className="p-6 text-center text-neutral-500 text-sm">Loading products...</div>
+                  ) : availableProducts.length === 0 ? (
+                    <div className="p-6 text-center text-neutral-500 text-sm">
+                      {searchQuery ? 'No products found' : 'All products have been added to your order'}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-neutral-100">
+                      {availableProducts.map((item: ItemMaster) => (
+                        <button
+                          key={item.id}
+                          onClick={() => addItem(item)}
+                          className="w-full flex items-center justify-between px-5 py-3 hover:bg-blue-50/50 text-left transition-colors group"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-neutral-900 text-sm">{item.name}</p>
+                            <p className="text-xs text-neutral-500">{item.item_code} &bull; {item.unit_of_measure}</p>
+                          </div>
+                          <div className="flex items-center gap-3 ml-4">
+                            {item.standard_price_centavos ? (
+                              <p className="font-semibold text-neutral-900 text-sm group-hover:text-blue-700">
+                                {formatPrice(item.standard_price_centavos)}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-neutral-400">Price on request</p>
+                            )}
+                            <span className="text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                              + Add
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </Card>
+
+          {/* Order Items Card */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between w-full gap-4">
@@ -156,90 +230,12 @@ export default function ClientShopPage(): JSX.Element {
                   <span>Order Items</span>
                 </span>
                 <span className="text-xs text-neutral-500 whitespace-nowrap">
-                  {orderItems.length} product{orderItems.length !== 1 ? 's' : ''} • {itemCount} total qty
+                  {orderItems.length} product{orderItems.length !== 1 ? 's' : ''} &bull; {itemCount} total qty
                 </span>
               </div>
             </CardHeader>
 
             <CardBody className="space-y-4">
-              {/* Product Selector */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowProductSelector(!showProductSelector)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
-                    showProductSelector 
-                      ? 'bg-neutral-900 text-white border-neutral-900' 
-                      : 'bg-white border-neutral-300 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    <span className="font-medium">{showProductSelector ? 'Close Products' : 'Add Product'}</span>
-                  </span>
-                  <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${showProductSelector ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Product Selector Dropdown */}
-                {showProductSelector && (
-                  <div className="absolute z-30 top-full left-0 right-0 mt-2 bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden max-h-80 flex flex-col">
-                    <div className="p-3 border-b border-neutral-100">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                        <input
-                          type="text"
-                          placeholder="Search products..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 outline-none text-sm"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    <div className="overflow-y-auto flex-1" style={{ maxHeight: '240px' }}>
-                      {productsLoading ? (
-                        <div className="p-4 text-center text-neutral-500 text-sm">
-                          Loading products...
-                        </div>
-                      ) : availableProducts.length === 0 ? (
-                        <div className="p-4 text-center text-neutral-500 text-sm">
-                          {searchQuery ? 'No products found' : 'All products have been added to your order'}
-                        </div>
-                      ) : (
-                        availableProducts.map((item: ItemMaster) => (
-                          <button
-                            key={item.id}
-                            onClick={() => addItem(item)}
-                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-blue-50 border-b border-neutral-100 last:border-b-0 text-left transition-colors group"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-neutral-900 text-sm">{item.name}</p>
-                              <p className="text-xs text-neutral-500">{item.item_code} • {item.unit_of_measure}</p>
-                            </div>
-                            <div className="text-right ml-4">
-                              {item.standard_price_centavos ? (
-                                <p className="font-semibold text-neutral-900 text-sm group-hover:text-blue-700">
-                                  {formatPrice(item.standard_price_centavos)}
-                                </p>
-                              ) : (
-                                <p className="text-xs text-neutral-400">Price on request</p>
-                              )}
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                    <div className="p-2 border-t border-neutral-100 bg-neutral-50 shrink-0">
-                      <button
-                        onClick={() => setShowProductSelector(false)}
-                        className="w-full py-2 text-xs text-neutral-600 hover:text-neutral-900 font-medium"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* Order Items Table */}
               {orderItems.length === 0 ? (
                 <div className="text-center py-10 border-2 border-dashed border-neutral-200 rounded-xl bg-neutral-50/30">
