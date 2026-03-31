@@ -4,6 +4,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { FileDown, ChevronDown, ChevronRight } from 'lucide-react'
+import { downloadFile } from '@/lib/api'
+import { toast } from 'sonner'
 
 function formatPeso(amount: number): string {
   return '₱' + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -57,7 +59,10 @@ export default function ArAgingReportPage(): JSX.Element {
   const { data, isLoading, isError } = useArAging(filters)
 
   function handleDownloadSoa(customerUlid: string) {
-    window.open(`/api/v1/ar/customers/${customerUlid}/statement/pdf${asOf ? `?as_of=${asOf}` : ''}`, '_blank')
+    const url = `/api/v1/ar/customers/${customerUlid}/statement/pdf${asOf ? `?as_of=${asOf}` : ''}`
+    downloadFile(url, `statement_${customerUlid}.pdf`).catch(() => {
+      toast.error('Failed to download statement of account.')
+    })
   }
 
   return (

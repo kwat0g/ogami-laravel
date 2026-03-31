@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 interface DeliveryModalProps {
   isOpen: boolean
@@ -317,8 +318,24 @@ export default function VendorOrderDetailPage(): React.ReactElement {
     }
   }, [markDelivered.isError, markDelivered.error])
 
-  if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading order…</p>
-  if (isError || !order) return <p className="text-sm text-red-500 mt-4">Order not found.</p>
+  if (isLoading) return <div className="py-8"><SkeletonLoader rows={6} /></div>
+  if (isError || !order) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="h-8 w-8 text-neutral-400" />
+        </div>
+        <h3 className="text-base font-medium text-neutral-900 mb-1">Order not found</h3>
+        <p className="text-sm text-neutral-500 mb-6">The order you are looking for does not exist or you do not have access.</p>
+        <button
+          onClick={() => navigate('/vendor-portal/orders')}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition-colors"
+        >
+          Back to Orders
+        </button>
+      </div>
+    )
+  }
 
   const canFulfill = ['sent', 'acknowledged', 'in_transit'].includes(order.status) && hasPermission('vendor_portal.update_fulfillment')
   const canAcknowledgeOrPropose = order.status === 'sent'
@@ -415,20 +432,18 @@ export default function VendorOrderDetailPage(): React.ReactElement {
   }
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center gap-2 mb-1">
-        <button
-          onClick={() => navigate('/vendor-portal/orders')}
-          className="text-xs text-neutral-400 hover:text-neutral-700"
-        >
-          ← Purchase Orders
-        </button>
-      </div>
-      <div className="flex items-start justify-between mb-4">
+    <div className="max-w-5xl mx-auto space-y-5">
+      <button
+        onClick={() => navigate('/vendor-portal/orders')}
+        className="inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 font-medium"
+      >
+        &larr; Back to Orders
+      </button>
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">{order.po_reference}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <span className="px-2 py-0.5 bg-neutral-100 rounded text-neutral-700 text-sm font-medium capitalize">
+            <span className="inline-flex items-center px-2.5 py-1 bg-neutral-100 border border-neutral-200 rounded-lg text-neutral-700 text-xs font-medium capitalize">
               {order.status.replace(/_/g, ' ')}
             </span>
             {order.po_type === 'split' && (

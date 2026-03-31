@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { Link } from 'react-router-dom'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useAuth } from '@/hooks/useAuth'
 import { useAccountingDashboardStats } from '@/hooks/useDashboard'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -265,7 +267,7 @@ export default function OfficerDashboard() {
                   <div key={m.month} className="flex items-center gap-3">
                     <span className="text-xs text-neutral-500 w-16 shrink-0">{m.month}</span>
                     <div className="flex-1 flex gap-1">
-                      <div className="h-4 bg-green-200 rounded-sm" style={{ width: `${Math.max(1, (m.revenue / Math.max(m.revenue, m.expenses, 1)) * 100)}%` }} title={`Revenue: ₱${(m.revenue / 100).toLocaleString()}`} />
+                      <div className="h-4 bg-green-200 rounded-sm" style={{ width: `${Math.max(1, (m.revenue / Math.max(m.revenue, m.expenses, 1)) * 100)}%` }} title={`Revenue: ${formatPesoAmount((m.revenue / 100))}`} />
                     </div>
                     <span className={`text-xs font-semibold ${m.net > 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {m.net > 0 ? '+' : ''}₱{(m.net / 100).toLocaleString('en-PH', { maximumFractionDigits: 0 })}

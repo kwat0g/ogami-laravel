@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useExecutiveDashboard } from '@/hooks/useAnalytics'
+import { formatPesoAmount } from '@/lib/formatters'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -112,7 +114,7 @@ export default function ExecutiveAnalyticsDashboard(): JSX.Element {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" fontSize={11} />
               <YAxis fontSize={11} tickFormatter={(v: number) => `₱${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => `₱${v.toLocaleString()}`} />
+              <Tooltip formatter={(v: number) => `${formatPesoAmount(v)}`} />
               <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
@@ -126,7 +128,7 @@ export default function ExecutiveAnalyticsDashboard(): JSX.Element {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" fontSize={11} />
               <YAxis fontSize={11} tickFormatter={(v: number) => `₱${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => `₱${v.toLocaleString()}`} />
+              <Tooltip formatter={(v: number) => `${formatPesoAmount(v)}`} />
               <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                 {agingData.map((_entry, i) => (
                   <Cell key={i} fill={AGING_COLORS[i]} />

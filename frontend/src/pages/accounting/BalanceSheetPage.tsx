@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useBalanceSheet } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -18,12 +20,12 @@ function SectionBlock({ section }: { section: BSSection }) {
             <span className="font-mono text-xs text-neutral-400 mr-2">{acct.code}</span>
             {acct.name}
           </span>
-          <span className="font-mono">₱{acct.balance.toLocaleString()}</span>
+          <span className="font-mono">{formatPesoAmount(acct.balance)}</span>
         </div>
       ))}
       <div className="flex justify-between items-center px-4 py-1.5 bg-neutral-50 text-sm font-semibold text-neutral-800 border-t border-neutral-200">
         <span>Subtotal — {section.label}</span>
-        <span className="font-mono">₱{section.total.toLocaleString()}</span>
+        <span className="font-mono">{formatPesoAmount(section.total)}</span>
       </div>
     </div>
   )
@@ -118,7 +120,7 @@ export default function BalanceSheetPage() {
               {assetSections.map((s, i) => <SectionBlock key={i} section={s} />)}
               <div className="flex justify-between items-center border-t-2 border-neutral-800 pt-2 font-bold text-neutral-900">
                 <span>Total Assets</span>
-                <span className="font-mono">₱{bs.totals.total_assets.toLocaleString()}</span>
+                <span className="font-mono">{formatPesoAmount(bs.totals.total_assets)}</span>
               </div>
             </div>
 
@@ -128,19 +130,19 @@ export default function BalanceSheetPage() {
               {liabilitySections.map((s, i) => <SectionBlock key={i} section={s} />)}
               <div className="flex justify-between items-center border-t border-neutral-200 pt-2 font-semibold text-neutral-700">
                 <span>Total Liabilities</span>
-                <span className="font-mono">₱{bs.totals.total_liabilities.toLocaleString()}</span>
+                <span className="font-mono">{formatPesoAmount(bs.totals.total_liabilities)}</span>
               </div>
 
               <h2 className="text-base font-bold text-neutral-800 pt-2">Equity</h2>
               {equitySections.map((s, i) => <SectionBlock key={i} section={s} />)}
               <div className="flex justify-between items-center border-t border-neutral-200 pt-2 font-semibold text-neutral-700">
                 <span>Total Equity</span>
-                <span className="font-mono">₱{bs.totals.total_equity.toLocaleString()}</span>
+                <span className="font-mono">{formatPesoAmount(bs.totals.total_equity)}</span>
               </div>
 
               <div className="flex justify-between items-center border-t-2 border-neutral-800 pt-2 font-bold text-neutral-900">
                 <span>Total Liabilities &amp; Equity</span>
-                <span className="font-mono">₱{bs.totals.total_liabilities_and_equity.toLocaleString()}</span>
+                <span className="font-mono">{formatPesoAmount(bs.totals.total_liabilities_and_equity)}</span>
               </div>
             </div>
           </div>

@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useEffect, useRef, forwardRef, useMemo } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useForm, Controller } from 'react-hook-form'
@@ -537,7 +539,7 @@ export default function EmployeeFormPage() {
               label="Salary Grade"
               hint={
                 selectedGrade
-                  ? `Range: ₱${(selectedGrade.min_monthly_rate / 100).toLocaleString()} – ₱${(selectedGrade.max_monthly_rate / 100).toLocaleString()} /mo — rate auto-filled to midpoint, adjust freely.`
+                  ? `Range: ${formatPesoAmount((selectedGrade.min_monthly_rate / 100))} – ${formatPesoAmount((selectedGrade.max_monthly_rate / 100))} /mo — rate auto-filled to midpoint, adjust freely.`
                   : 'Optional. Pick a grade to auto-fill the rate and set a valid range.'
               }
               error={errors.salary_grade_id?.message}
@@ -546,7 +548,7 @@ export default function EmployeeFormPage() {
                 <option value="">No grade (enter rate manually)</option>
                 {salaryGrades.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.code} — {g.name} (₱{(g.min_monthly_rate / 100).toLocaleString()}–₱
+                    {g.code} — {g.name} ({formatPesoAmount((g.min_monthly_rate / 100))}–₱
                     {(g.max_monthly_rate / 100).toLocaleString()})
                   </option>
                 ))}

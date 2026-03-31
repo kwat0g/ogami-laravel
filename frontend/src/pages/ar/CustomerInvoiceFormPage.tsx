@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState, useEffect, useMemo } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AlertTriangle } from 'lucide-react'
@@ -40,8 +42,8 @@ function CreditCheckBanner({
       <div>
         <span className="font-medium">{exceeded ? 'Credit limit will be exceeded' : 'Credit available'}</span>
         <span className="ml-2 text-xs opacity-80">
-          Outstanding: ₱{outstanding.toLocaleString()} · Limit: ₱{limit.toLocaleString()} ·
-          Projected: ₱{projected.toLocaleString()}
+          Outstanding: {formatPesoAmount(outstanding)} · Limit: {formatPesoAmount(limit)} ·
+          Projected: {formatPesoAmount(projected)}
         </span>
       </div>
     </div>
@@ -319,15 +321,15 @@ export default function CustomerInvoiceFormPage() {
         <div className="rounded bg-neutral-50 border border-neutral-200 px-4 py-3 text-sm">
           <div className="flex justify-between">
             <span className="text-neutral-600">Subtotal</span>
-            <span className="font-medium">₱{form.subtotal.toLocaleString()}</span>
+            <span className="font-medium">{formatPesoAmount(form.subtotal)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-neutral-600">VAT</span>
-            <span className="font-medium">₱{(form.vat_amount ?? 0).toLocaleString()}</span>
+            <span className="font-medium">{formatPesoAmount((form.vat_amount ?? 0))}</span>
           </div>
           <div className="flex justify-between border-t border-neutral-200 pt-1 mt-1 font-semibold">
             <span>Total</span>
-            <span>₱{total.toLocaleString()}</span>
+            <span>{formatPesoAmount(total)}</span>
           </div>
         </div>
 

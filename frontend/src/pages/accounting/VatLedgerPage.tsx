@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { toast } from 'sonner'
 import { FileText } from 'lucide-react'
 import { useVatLedgerList, useCloseVatPeriod } from '@/hooks/useTax'
@@ -18,7 +20,7 @@ function VatCard({ label, amount, highlight: _highlight }: { label: string; amou
   return (
     <div className="rounded border border-neutral-200 bg-neutral-50 p-4">
       <p className="text-xs font-medium opacity-70 text-neutral-600">{label}</p>
-      <p className="text-lg font-semibold mt-1 text-neutral-900">₱{amount.toLocaleString()}</p>
+      <p className="text-lg font-semibold mt-1 text-neutral-900">{formatPesoAmount(amount)}</p>
     </div>
   )
 }
@@ -36,8 +38,8 @@ function ClosePeriodButton({ ledger }: { ledger: VatLedger }) {
       title="Close VAT Period"
       description={`Close vat period for fiscal period #${ledger.fiscal_period_id}? ${
         ledger.vat_payable < 0
-          ? `Net VAT is negative (₱${ledger.vat_payable.toLocaleString()}). The surplus will be carried forward to the next period.`
-          : `VAT payable: ₱${ledger.vat_payable.toLocaleString()}.`
+          ? `Net VAT is negative (${formatPesoAmount(ledger.vat_payable)}). The surplus will be carried forward to the next period.`
+          : `VAT payable: ${formatPesoAmount(ledger.vat_payable)}.`
       }`}
       confirmWord="CLOSE"
       confirmLabel="Close Period"
@@ -158,13 +160,13 @@ export default function VatLedgerPage() {
               {/* Carry-forward indicator */}
               {ledger.carry_forward_from_prior > 0 && (
                 <div className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded px-3 py-2">
-                  Carry-forward from prior period: ₱{ledger.carry_forward_from_prior.toLocaleString()}
+                  Carry-forward from prior period: {formatPesoAmount(ledger.carry_forward_from_prior)}
                   (reduces this period's VAT payable)
                 </div>
               )}
               {ledger.vat_payable < 0 && !ledger.is_closed && (
                 <div className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded px-3 py-2">
-                  Negative VAT payable: ₱{Math.abs(ledger.vat_payable).toLocaleString()} will be carried forward
+                  Negative VAT payable: {formatPesoAmount(Math.abs(ledger.vat_payable))} will be carried forward
                   to the next period upon closing.
                 </div>
               )}

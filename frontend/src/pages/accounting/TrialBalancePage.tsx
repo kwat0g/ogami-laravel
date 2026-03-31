@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useTrialBalance } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -83,22 +85,22 @@ export default function TrialBalancePage() {
                     <td className="px-3 py-2 font-mono text-xs text-neutral-500">{line.code}</td>
                     <td className="px-3 py-2 text-neutral-700">{line.name}</td>
                     <td className="px-3 py-2 text-right font-mono text-neutral-600">
-                      {line.opening_debit ? `₱${line.opening_debit.toLocaleString()}` : '—'}
+                      {line.opening_debit ? `${formatPesoAmount(line.opening_debit)}` : '—'}
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-neutral-600">
-                      {line.opening_credit ? `₱${line.opening_credit.toLocaleString()}` : '—'}
+                      {line.opening_credit ? `${formatPesoAmount(line.opening_credit)}` : '—'}
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-neutral-700">
-                      {line.period_debit ? `₱${line.period_debit.toLocaleString()}` : '—'}
+                      {line.period_debit ? `${formatPesoAmount(line.period_debit)}` : '—'}
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-neutral-700">
-                      {line.period_credit ? `₱${line.period_credit.toLocaleString()}` : '—'}
+                      {line.period_credit ? `${formatPesoAmount(line.period_credit)}` : '—'}
                     </td>
                     <td className="px-3 py-2 text-right font-mono font-semibold text-neutral-900">
-                      {line.closing_debit ? `₱${line.closing_debit.toLocaleString()}` : '—'}
+                      {line.closing_debit ? `${formatPesoAmount(line.closing_debit)}` : '—'}
                     </td>
                     <td className="px-3 py-2 text-right font-mono font-semibold text-neutral-900">
-                      {line.closing_credit ? `₱${line.closing_credit.toLocaleString()}` : '—'}
+                      {line.closing_credit ? `${formatPesoAmount(line.closing_credit)}` : '—'}
                     </td>
                   </tr>
                 ))}
@@ -106,22 +108,22 @@ export default function TrialBalancePage() {
                 <tr className="bg-neutral-50 font-semibold text-sm border-t-2 border-neutral-200">
                   <td className="px-3 py-2" colSpan={2}>TOTAL</td>
                   <td className="px-3 py-2 text-right font-mono">
-                    ₱{report.data.totals.opening_debit.toLocaleString()}
+                    {formatPesoAmount(report.data.totals.opening_debit)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
-                    ₱{report.data.totals.opening_credit.toLocaleString()}
+                    {formatPesoAmount(report.data.totals.opening_credit)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
-                    ₱{report.data.totals.period_debit.toLocaleString()}
+                    {formatPesoAmount(report.data.totals.period_debit)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
-                    ₱{report.data.totals.period_credit.toLocaleString()}
+                    {formatPesoAmount(report.data.totals.period_credit)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
-                    ₱{report.data.totals.closing_debit.toLocaleString()}
+                    {formatPesoAmount(report.data.totals.closing_debit)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
-                    ₱{report.data.totals.closing_credit.toLocaleString()}
+                    {formatPesoAmount(report.data.totals.closing_credit)}
                   </td>
                 </tr>
               </tbody>

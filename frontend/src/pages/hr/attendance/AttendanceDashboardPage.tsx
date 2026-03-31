@@ -189,7 +189,7 @@ export default function AttendanceDashboardPage() {
             </label>
             <div className="flex justify-end gap-2">
               <button onClick={() => setApprovingId(null)} className="text-sm px-3 py-1.5 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-              <button onClick={() => void submitApprove()} disabled={approve.isPending} className="text-sm px-3 py-1.5 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => void submitApprove()} disabled={approve.isPending} className="text-sm px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 {approve.isPending ? 'Approving…' : 'Confirm'}
               </button>
             </div>

@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -460,7 +462,7 @@ export default function MyProfilePage() {
             <QuickStat
               icon={Banknote}
               label="Monthly Rate"
-              value={`₱${(employee.basic_monthly_rate / 100).toLocaleString()}`}
+              value={`${formatPesoAmount((employee.basic_monthly_rate / 100))}`}
             />
           </div>
         </div>

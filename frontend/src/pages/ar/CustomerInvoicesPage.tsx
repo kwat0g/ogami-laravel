@@ -1,4 +1,6 @@
+import { formatPesoAmount } from '@/lib/formatters'
 import { useState, useCallback } from 'react'
+import { formatPesoAmount } from '@/lib/formatters'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { Plus, RefreshCw } from 'lucide-react'
@@ -297,8 +299,8 @@ export default function CustomerInvoicesPage() {
                       {inv.due_date}
                       {inv.is_overdue && <span className="ml-1 text-xs">(overdue)</span>}
                     </td>
-                    <td className="px-3 py-2 text-neutral-900">₱{inv.total_amount.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-neutral-700">₱{inv.balance_due.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-neutral-900">{formatPesoAmount(inv.total_amount)}</td>
+                    <td className="px-3 py-2 text-neutral-700">{formatPesoAmount(inv.balance_due)}</td>
                     <td className="px-3 py-2">
                       <StatusBadge status={inv.status}>{inv.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge>
                     </td>

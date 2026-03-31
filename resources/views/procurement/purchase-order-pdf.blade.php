@@ -73,6 +73,13 @@
   <div class="company-header">
     <div class="company-name">{{ $settings['company_name'] ?? 'Ogami Manufacturing Corp.' }}</div>
     <div class="company-sub">{{ $settings['company_address'] ?? '' }}</div>
+    @if(!empty($settings['company_tin']) || !empty($settings['company_phone']))
+    <div class="company-sub">
+      @if(!empty($settings['company_tin']))TIN: {{ $settings['company_tin'] }}@endif
+      @if(!empty($settings['company_tin']) && !empty($settings['company_phone'])) | @endif
+      @if(!empty($settings['company_phone']))Tel: {{ $settings['company_phone'] }}@endif
+    </div>
+    @endif
   </div>
 
   <div class="doc-title">Purchase Order</div>
