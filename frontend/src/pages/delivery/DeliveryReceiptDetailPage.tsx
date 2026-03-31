@@ -95,9 +95,10 @@ function PrepareShipmentModal({
                 .filter((v: any) => !v.status || v.status === 'active')
                 .map((v: any) => {
                   const inDelivery = v.availability === 'in_delivery'
+                  const activeCount = v.active_deliveries_count ?? 0
                   return (
-                    <option key={v.id} value={v.id} disabled={inDelivery}>
-                      {v.name} ({v.plate_number}) -- {v.type}{inDelivery ? ' [IN DELIVERY]' : ''}
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.plate_number}) -- {v.type}{inDelivery ? ` [IN DELIVERY - ${activeCount} active]` : ''}
                     </option>
                   )
                 })}
@@ -108,9 +109,10 @@ function PrepareShipmentModal({
                 <a href="/delivery/vehicles" className="underline hover:text-amber-700">Add vehicles in Delivery Vehicles</a>.
               </p>
             )}
-            {vehicles.length > 0 && vehicles.filter((v: any) => v.status === 'active' && v.availability !== 'in_delivery').length === 0 && (
-              <p className="text-xs text-amber-600 mt-1">
-                All active vehicles are currently in delivery.
+            {vehicleId > 0 && vehicles.find((v: any) => v.id === vehicleId)?.availability === 'in_delivery' && (
+              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                This vehicle is currently on delivery. The new shipment will be queued until it returns.
               </p>
             )}
           </div>
