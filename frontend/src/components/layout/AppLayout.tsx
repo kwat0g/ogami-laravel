@@ -36,6 +36,7 @@ import {
   Factory,
   ClipboardCheck,
   Truck,
+  ShoppingBag,
   Search,
 } from 'lucide-react'
 
@@ -186,7 +187,7 @@ const SECTIONS: NavSection[] = [
     icon: Package,
     permission: 'procurement.purchase-request.view|inventory.items.view|production.orders.view',
     roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
-    departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH', 'SALES'],
+    departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH'],
     children: [
       // ── Procurement ─────────────────────────────────────────────────────────
       { divider: true, label: 'Procurement' },
@@ -214,7 +215,6 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Production' },
       { label: 'Production Orders', href: '/production/orders', permission: 'production.orders.view' },
       { label: 'Bill of Materials', href: '/production/boms', permission: 'production.bom.view' },
-      { label: 'Delivery Schedules', href: '/production/delivery-schedules', permission: 'production.delivery-schedule.view' },
       { label: 'Cost Analysis', href: '/production/cost-analysis', permission: 'production.orders.view' },
       // ── Quality Control ─────────────────────────────────────────────────────
       { divider: true, label: 'Quality Control' },
@@ -226,20 +226,34 @@ const SECTIONS: NavSection[] = [
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
-  // SECTION 5: CRM & DELIVERY
+  // SECTION 5: SALES & CRM
   // ═════════════════════════════════════════════════════════════════════════════
   {
-    label: 'CRM & Delivery',
-    icon: Truck,
-    permission: 'customers.view',
+    label: 'Sales & CRM',
+    icon: ShoppingBag,
+    permission: 'sales.order_review|crm.tickets.view',
     roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
-    departments: ['SALES', 'WH', 'PROD', 'PLANT'],
+    departments: ['SALES'],
     children: [
-      { divider: true, label: 'CRM' },
-      { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
       { divider: true, label: 'Sales' },
       { label: 'Client Orders', href: '/sales/client-orders', permission: 'sales.order_review' },
-      { divider: true, label: 'Delivery' },
+      { divider: true, label: 'Customer Support' },
+      { label: 'Support Tickets', href: '/crm/tickets', permission: 'crm.tickets.view' },
+    ],
+  },
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SECTION 6: DELIVERY & LOGISTICS
+  // ═════════════════════════════════════════════════════════════════════════════
+  {
+    label: 'Delivery & Logistics',
+    icon: Truck,
+    permission: 'delivery.view|production.delivery-schedule.view',
+    roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
+    departments: ['WH', 'SALES', 'PROD'],
+    children: [
+      { divider: true, label: 'Scheduling' },
+      { label: 'Delivery Schedules', href: '/production/delivery-schedules', permission: 'production.delivery-schedule.view' },
+      { divider: true, label: 'Operations' },
       { label: 'Delivery Receipts', href: '/delivery/receipts', permission: 'delivery.view' },
       { label: 'Delivery Vehicles', href: '/delivery/vehicles', permission: 'delivery.view' },
       { label: 'Delivery Disputes', href: '/delivery/disputes', permission: 'delivery.view' },
