@@ -130,6 +130,7 @@ Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
 
         // Parameterized routes (must be last)
         Route::get('/{order:ulid}', [ClientOrderController::class, 'show'])->name('show');
+        Route::put('/{order:ulid}', [ClientOrderController::class, 'update'])->name('update')->middleware('can:update,order');
 
         // Action routes with rate limiting (uses named limiter defined in AppServiceProvider)
         Route::middleware(['throttle:client-order-actions'])->group(function () {

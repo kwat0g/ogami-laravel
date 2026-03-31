@@ -1,6 +1,6 @@
 import { firstErrorMessage } from '@/lib/errorHandler'
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { 
   Search, 
   Package, 
@@ -15,12 +15,14 @@ import {
   AlertCircle,
   Minus,
   ArrowRight,
-  Tag
+  Tag,
+  Pencil
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-import { useAvailableProducts, useSubmitClientOrder } from '@/hooks/useClientOrders'
+import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import { useAvailableProducts, useSubmitClientOrder, useClientOrder, useUpdateClientOrder } from '@/hooks/useClientOrders'
 import type { ItemMaster } from '@/types/inventory'
 
 interface OrderLineItem {
@@ -31,15 +33,50 @@ interface OrderLineItem {
 }
 
 export default function ClientShopPage(): JSX.Element {
+  const { ulid } = useParams<{ ulid: string }>()
+  const isEditMode = !!ulid
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [showProductSelector, setShowProductSelector] = useState(false)
   const [orderItems, setOrderItems] = useState<OrderLineItem[]>([])
   const [requestedDate, setRequestedDate] = useState('')
   const [orderNotes, setOrderNotes] = useState('')
+  const [initialized, setInitialized] = useState(false)
   
   const { data: products, isLoading: productsLoading } = useAvailableProducts(searchQuery)
   const submitOrder = useSubmitClientOrder()
+  const updateOrder = useUpdateClientOrder()
+  const { data: existingOrder, isLoading: orderLoading } = useClientOrder(ulid || '')
+
+  // Prefill form when editing an existing order
+  useEffect(() => {
+    if (isEditMode && existingOrder && !initialized) {
+      // Only allow editing pending orders
+      if (existingOrder.status !== 'pending') {
+        toast.error('Only pending orders can be edited.')
+        navigate(`/client-portal/orders/${ulid}`)
+        return
+      }
+
+      setOrderItems(
+        existingOrder.items.map((item: any) => ({
+          item: {
+            id: item.item_master_id ?? item.itemMaster?.id,
+            name: item.itemMaster?.name ?? item.item_description,
+            item_code: item.itemMaster?.item_code ?? '',
+            unit_of_measure: item.unit_of_measure,
+            standard_price_centavos: item.unit_price_centavos,
+          } as ItemMaster,
+          quantity: parseFloat(item.quantity),
+          unitPrice: item.unit_price_centavos,
+          notes: item.line_notes || '',
+        }))
+      )
+      setRequestedDate(existingOrder.requested_delivery_date || '')
+      setOrderNotes(existingOrder.client_notes || '')
+      setInitialized(true)
+    }
+  }, [isEditMode, existingOrder, initialized, navigate, ulid])
 
   // Filter out already selected items from the selector
   const availableProducts = useMemo(() => {
@@ -110,25 +147,32 @@ export default function ClientShopPage(): JSX.Element {
       return
     }
 
+    const payload = {
+      items: orderItems.map(line => ({
+        item_master_id: line.item.id,
+        quantity: line.quantity,
+        unit_price_centavos: line.unitPrice,
+        notes: line.notes,
+      })),
+      requested_delivery_date: requestedDate || undefined,
+      notes: orderNotes,
+    }
+
     try {
-      await submitOrder.mutateAsync({
-        items: orderItems.map(line => ({
-          item_master_id: line.item.id,
-          quantity: line.quantity,
-          unit_price_centavos: line.unitPrice,
-          notes: line.notes,
-        })),
-        requested_delivery_date: requestedDate || undefined,
-        notes: orderNotes,
-      })
-      
-      toast.success('Order submitted successfully!')
-      setOrderItems([])
-      setRequestedDate('')
-      setOrderNotes('')
-      navigate('/client-portal/orders')
+      if (isEditMode && ulid) {
+        await updateOrder.mutateAsync({ orderUlid: ulid, payload })
+        toast.success('Order updated successfully!')
+        navigate(`/client-portal/orders/${ulid}`)
+      } else {
+        await submitOrder.mutateAsync(payload)
+        toast.success('Order submitted successfully!')
+        setOrderItems([])
+        setRequestedDate('')
+        setOrderNotes('')
+        navigate('/client-portal/orders')
+      }
     } catch (_error) {
-      toast.error(firstErrorMessage(_error, 'Failed to submit order. Please try again.'))
+      toast.error(firstErrorMessage(_error, isEditMode ? 'Failed to update order.' : 'Failed to submit order.'))
     }
   }
 
@@ -136,12 +180,18 @@ export default function ClientShopPage(): JSX.Element {
     return `₱${(centavos / 100).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
+  const isSaving = submitOrder.isPending || updateOrder.isPending
+
+  if (isEditMode && orderLoading) {
+    return <SkeletonLoader rows={6} />
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
-        title="New Order"
-        subtitle="Create a purchase order from our product catalog"
-        icon={<ShoppingBag className="h-5 w-5 text-neutral-700" />}
+        title={isEditMode ? `Edit Order ${existingOrder?.order_reference || ''}` : 'New Order'}
+        subtitle={isEditMode ? 'Modify your pending order items and details' : 'Create a purchase order from our product catalog'}
+        icon={isEditMode ? <Pencil className="h-5 w-5 text-neutral-700" /> : <ShoppingBag className="h-5 w-5 text-neutral-700" />}
       />
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-5">
@@ -413,18 +463,18 @@ export default function ClientShopPage(): JSX.Element {
 
               <button
                 onClick={handleSubmitOrder}
-                disabled={submitOrder.isPending || orderItems.length === 0}
+                disabled={isSaving || orderItems.length === 0}
                 className="w-full py-2.5 bg-neutral-900 text-white font-medium rounded-lg hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm"
               >
-                {submitOrder.isPending ? (
+                {isSaving ? (
                   <>
-                    <span className="animate-spin">⟳</span>
-                    Submitting...
+                    <span className="animate-spin">&#x27F3;</span>
+                    {isEditMode ? 'Saving...' : 'Submitting...'}
                   </>
                 ) : (
                   <>
                     <Check className="h-4 w-4" />
-                    Submit Order
+                    {isEditMode ? 'Save Changes' : 'Submit Order'}
                   </>
                 )}
               </button>

@@ -195,6 +195,21 @@ export function useCancelClientOrder() {
   })
 }
 
+export function useUpdateClientOrder() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ orderUlid, payload }: { orderUlid: string; payload: CreateClientOrderPayload }) => {
+      const { data } = await api.put(`${API_BASE}/${orderUlid}`, payload)
+      return data as ClientOrder
+    },
+    onSuccess: (_, { orderUlid }) => {
+      qc.invalidateQueries({ queryKey: ['my-client-orders'] })
+      qc.invalidateQueries({ queryKey: ['client-order', orderUlid] })
+    },
+  })
+}
+
 // Sales responds to client counter-proposal
 export function useSalesRespondToCounter() {
   const qc = useQueryClient()
