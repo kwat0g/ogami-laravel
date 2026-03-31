@@ -1,22 +1,39 @@
-import { LayoutDashboard, ShoppingCart, Package } from 'lucide-react'
-import { useVendorOrders, useVendorPortalItems } from '@/hooks/useVendorPortal'
+import { LayoutDashboard, ShoppingCart, Package, FileText, CheckCircle, AlertTriangle } from 'lucide-react'
+import { useVendorOrders, useVendorPortalItems, useVendorGoodsReceipts, useVendorInvoices, type VendorPortalGoodsReceipt, type VendorPortalInvoice } from '@/hooks/useVendorPortal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardBody } from '@/components/ui/Card'
 
 export default function VendorPortalDashboardPage(): React.ReactElement {
   const { data: ordersData, isLoading: ordersLoading } = useVendorOrders()
   const { data: items, isLoading: itemsLoading } = useVendorPortalItems()
+  const { data: grData, isLoading: grLoading } = useVendorGoodsReceipts()
+  const { data: invoiceData, isLoading: invoiceLoading } = useVendorInvoices()
 
-  const activeOrders = ordersData?.data?.filter((o) =>
-    ['sent', 'partially_received'].includes(o.status)
-  ) ?? []
+  const allOrders = ordersData?.data ?? []
+  const activeOrders = allOrders.filter((o) =>
+    ['sent', 'negotiating', 'acknowledged', 'in_transit', 'delivered', 'partially_received'].includes(o.status)
+  )
+  const awaitingConfirmation = allOrders.filter((o) =>
+    ['in_transit', 'delivered'].includes(o.status)
+  )
   const totalOrders = ordersData?.meta?.total ?? 0
   const totalItems = items?.length ?? 0
 
+  const goodsReceipts: VendorPortalGoodsReceipt[] = grData?.data ?? []
+  const pendingQcReceipts = goodsReceipts.filter((gr) => ['pending_qc', 'submitted'].includes(gr.status))
+  const confirmedGrWithoutInvoice = goodsReceipts.filter((gr) => gr.status === 'confirmed' && !gr.ap_invoice_created)
+
+  const invoices: VendorPortalInvoice[] = invoiceData?.data ?? []
+  const pendingInvoices = invoices.filter((inv) => ['draft', 'submitted'].includes(inv.status))
+  const approvedUnpaid = invoices.filter((inv) => inv.status === 'approved')
+
   const statCards = [
-    { label: 'Active Purchase Orders', value: ordersLoading ? '—' : String(activeOrders.length), sub: 'Awaiting delivery', icon: ShoppingCart },
-    { label: 'Total Purchase Orders', value: ordersLoading ? '—' : String(totalOrders), sub: 'All time', icon: ShoppingCart },
+    { label: 'Active Orders', value: ordersLoading ? '—' : String(activeOrders.length), sub: 'In progress', icon: ShoppingCart },
+    { label: 'Awaiting Receipt', value: ordersLoading ? '—' : String(awaitingConfirmation.length), sub: 'Delivered, pending GR', icon: CheckCircle },
+    { label: 'Ready to Invoice', value: grLoading ? '—' : String(confirmedGrWithoutInvoice.length), sub: 'GR confirmed, no invoice', icon: FileText },
+    { label: 'Pending Invoices', value: invoiceLoading ? '—' : String(pendingInvoices.length), sub: 'Awaiting approval', icon: FileText },
     { label: 'Catalog Items', value: itemsLoading ? '—' : String(totalItems), sub: 'Active listings', icon: Package },
+    { label: 'Total Orders', value: ordersLoading ? '—' : String(totalOrders), sub: 'All time', icon: ShoppingCart },
   ]
 
   return (

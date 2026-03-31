@@ -64,11 +64,27 @@ export default function VendorGoodsReceiptsPage(): React.ReactElement {
 function StatusBadge({ status }: { status: string }): React.ReactElement {
   const colors: Record<string, string> = {
     draft: 'bg-neutral-100 text-neutral-600',
+    submitted: 'bg-blue-100 text-blue-700',
+    pending_qc: 'bg-amber-100 text-amber-700',
+    qc_passed: 'bg-green-100 text-green-700',
+    qc_failed: 'bg-red-100 text-red-700',
     confirmed: 'bg-emerald-100 text-emerald-700',
+    returned: 'bg-red-100 text-red-600',
+    cancelled: 'bg-neutral-100 text-neutral-400',
+  }
+  const labels: Record<string, string> = {
+    draft: 'Draft',
+    submitted: 'Submitted',
+    pending_qc: 'QC Pending',
+    qc_passed: 'QC Passed',
+    qc_failed: 'QC Failed',
+    confirmed: 'Confirmed',
+    returned: 'Returned',
+    cancelled: 'Cancelled',
   }
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] ?? 'bg-neutral-100 text-neutral-600'}`}>
-      {status}
+      {labels[status] ?? status}
     </span>
   )
 }
