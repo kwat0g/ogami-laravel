@@ -36,9 +36,10 @@ return new class extends Migration
                 'key' => 'require_pod_for_delivery',
                 'label' => 'Require Proof of Delivery',
                 'value' => json_encode(false),
-                'module' => 'delivery',
-                'category' => 'delivery',
-                'is_public' => false,
+                'data_type' => 'boolean',
+                'is_sensitive' => false,
+                'editable_by_role' => 'admin',
+                'group' => 'delivery',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
