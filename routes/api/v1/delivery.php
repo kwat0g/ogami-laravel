@@ -62,7 +62,6 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     Route::post('/vehicles', function (\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse {
         abort_unless($request->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
         $data = $request->validate([
-            'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:truck,van,pickup,motorcycle,trailer,other'],
             'make_model' => ['nullable', 'string', 'max:100'],
@@ -70,7 +69,17 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
             'status' => ['sometimes', 'string', 'in:active,inactive,maintenance,decommissioned'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
-        $vehicle = \App\Domains\Delivery\Models\Vehicle::create(array_merge($data, ['status' => $data['status'] ?? 'active']));
+        // Auto-generate vehicle code: VEH-001, VEH-002, etc.
+        $lastCode = \App\Domains\Delivery\Models\Vehicle::withTrashed()
+            ->where('code', 'like', 'VEH-%')
+            ->orderByDesc('id')
+            ->value('code');
+        $nextSeq = $lastCode ? ((int) substr($lastCode, 4)) + 1 : 1;
+        $code = 'VEH-' . str_pad((string) $nextSeq, 3, '0', STR_PAD_LEFT);
+        $vehicle = \App\Domains\Delivery\Models\Vehicle::create(array_merge($data, [
+            'code' => $code,
+            'status' => $data['status'] ?? 'active',
+        ]));
         return response()->json(['data' => $vehicle], 201);
     })->middleware('throttle:api-action')->name('vehicles.store');
 
