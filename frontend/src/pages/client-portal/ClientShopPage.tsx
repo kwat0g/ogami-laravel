@@ -137,16 +137,16 @@ export default function ClientShopPage(): JSX.Element {
   }
 
   return (
-    <div className="space-y-5 max-w-5xl mx-auto">
+    <div className="space-y-5">
       <PageHeader
         title="New Order"
         subtitle="Create a purchase order from our product catalog"
         icon={<ShoppingBag className="h-5 w-5 text-neutral-700" />}
       />
 
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-[1fr_320px] gap-5">
         {/* Left Column - Order Form */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="space-y-5">
           {/* Add Items Section */}
           <Card>
             <CardHeader>
