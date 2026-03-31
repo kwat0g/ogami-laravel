@@ -249,9 +249,8 @@ const MrpResultsPage                 = lazyWithRetry(() => import('@/pages/produ
 // Delivery
 const DeliveryReceiptListPage         = lazyWithRetry(() => import('@/pages/delivery/DeliveryReceiptListPage'))
 const CreateDeliveryReceiptPage       = lazyWithRetry(() => import('@/pages/delivery/CreateDeliveryReceiptPage'))
-const FleetPage                       = lazyWithRetry(() => import('@/pages/delivery/FleetPage'))
+const DeliveryVehiclesPage             = lazyWithRetry(() => import('@/pages/delivery/DeliveryVehiclesPage'))
 const DeliveryReceiptDetailPage       = lazyWithRetry(() => import('@/pages/delivery/DeliveryReceiptDetailPage'))
-const ShipmentsPage                   = lazyWithRetry(() => import('@/pages/delivery/ShipmentsPage'))
 
 // Maintenance
 const EquipmentListPage              = lazyWithRetry(() => import('@/pages/maintenance/EquipmentListPage'))
@@ -636,8 +635,7 @@ const router = createBrowserRouter([
       { path: '/delivery/receipts', element: withSuspense(guard('delivery.view', <DeliveryReceiptListPage />)) },
       { path: '/delivery/receipts/new', element: withSuspense(guard('delivery.manage', <CreateDeliveryReceiptPage />)) },
       { path: '/delivery/receipts/:ulid', element: withSuspense(guard('delivery.view', <DeliveryReceiptDetailPage />)) },
-      { path: '/delivery/fleet', element: withSuspense(guard('delivery.view', <FleetPage />)) },
-      { path: '/delivery/shipments', element: withSuspense(guard('delivery.view', <ShipmentsPage />)) },
+      { path: '/delivery/vehicles', element: withSuspense(guard('delivery.view', <DeliveryVehiclesPage />)) },
       { path: '/delivery/routes', element: withSuspense(guard('delivery.routes.view', <DeliveryRoutesPage />)) },
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────

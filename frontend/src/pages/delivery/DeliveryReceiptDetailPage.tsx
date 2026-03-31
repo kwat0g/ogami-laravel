@@ -97,14 +97,27 @@ function PrepareShipmentModal({
               className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               <option value="">-- Select Vehicle --</option>
-              {vehicles.map(v => (
-                <option key={v.id} value={v.id}>
-                  {v.name} ({v.plate_number}) -- {v.type}
-                </option>
-              ))}
+              {vehicles
+                .filter((v: any) => !v.status || v.status === 'active')
+                .map((v: any) => {
+                  const inDelivery = v.availability === 'in_delivery'
+                  return (
+                    <option key={v.id} value={v.id} disabled={inDelivery}>
+                      {v.name} ({v.plate_number}) -- {v.type}{inDelivery ? ' [IN DELIVERY]' : ''}
+                    </option>
+                  )
+                })}
             </select>
             {vehicles.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1">No active vehicles found. Add vehicles in Fleet Management.</p>
+              <p className="text-xs text-amber-600 mt-1">
+                No active vehicles found.{' '}
+                <a href="/delivery/vehicles" className="underline hover:text-amber-700">Add vehicles in Delivery Vehicles</a>.
+              </p>
+            )}
+            {vehicles.length > 0 && vehicles.filter((v: any) => v.status === 'active' && v.availability !== 'in_delivery').length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                All active vehicles are currently in delivery.
+              </p>
             )}
           </div>
 
