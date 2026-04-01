@@ -13,7 +13,7 @@ export function useDeliveryReceipts(params?: Record<string, string | boolean>) {
 
 export function useDeliveryReceipt(ulid: string) {
   return useQuery<{ data: DeliveryReceipt }>({
-    queryKey: ['delivery-receipts', ulid],
+    queryKey: ['delivery-receipt', ulid],
     queryFn: () => api.get(deliveryApiPaths.receiptByUlid(ulid)).then(r => r.data),
     enabled: !!ulid,
   });
@@ -101,15 +101,18 @@ export function useRecordPod() {
   return useMutation({
     mutationFn: ({ ulid, payload }: { ulid: string; payload: {
       receiver_name: string;
-      receiver_designation?: string;
       signature_base64?: string;
       photo_base64?: string;
+      photos_base64?: string[];
       latitude?: number;
       longitude?: number;
       delivery_notes?: string;
     }}) =>
       api.post(deliveryApiPaths.recordPod(ulid), payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['delivery-receipts'] }),
+    onSuccess: (_data: unknown, variables: { ulid: string }) => {
+      qc.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      qc.invalidateQueries({ queryKey: ['delivery-receipt', variables.ulid] });
+    },
   });
 }
 

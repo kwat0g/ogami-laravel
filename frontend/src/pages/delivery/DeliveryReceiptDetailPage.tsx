@@ -1,8 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Truck, MapPin, Camera, PenTool, User, Package, Clock, CheckCircle } from 'lucide-react';
+import { Truck, PenTool, User, Package, Clock, CheckCircle, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import MultiPhotoUpload from '@/components/ui/MultiPhotoUpload';
+import { downloadFile } from '@/lib/api';
+import { deliveryApiPaths } from '@/lib/deliveryApiPaths';
 
 import {
   useDeliveryReceipt,
@@ -31,6 +33,15 @@ const DIRECTION_COLORS: Record<DrDirection, string> = {
   inbound: 'bg-neutral-100 text-neutral-700',
   outbound: 'bg-neutral-100 text-neutral-700',
 };
+
+function formatStatusLabel(status?: string): string {
+  if (!status) return '-'
+
+  return status
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
 
 // ── Prepare Shipment Modal ──────────────────────────────────────────────────
 function PrepareShipmentModal({
@@ -209,55 +220,114 @@ function PrepareShipmentModal({
   )
 }
 
-// ── Proof of Delivery Form ──────────────────────────────────────────────────
-function PodCaptureSection({
-  drUlid,
-  hasPod,
+// ── POD Summary ──────────────────────────────────────────────────────────────
+function PodSummaryCard({
   podData,
 }: {
+  podData?: {
+    pod_receiver_name?: string
+    pod_photo_urls?: string[]
+    pod_recorded_at?: string
+    pod_notes?: string
+  }
+}) {
+  return (
+    <Card className="mb-5 border-green-200 bg-green-50/30">
+      <CardHeader>
+        <span className="flex items-center gap-2 text-green-700">
+          <CheckCircle className="h-4 w-4" />
+          Proof of Delivery Recorded
+        </span>
+      </CardHeader>
+      <CardBody>
+        <InfoList columns={2}>
+          <InfoRow label="Receiver" value={podData?.pod_receiver_name ?? '-'} />
+          <InfoRow label="Recorded At" value={podData?.pod_recorded_at ? new Date(podData.pod_recorded_at).toLocaleString('en-PH') : '-'} />
+          {podData?.pod_notes && <InfoRow label="Notes" value={podData.pod_notes} />}
+        </InfoList>
+        {(podData?.pod_photo_urls ?? []).length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-medium text-neutral-600 mb-2">POD Photos</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {(podData?.pod_photo_urls ?? []).map((photoUrl, index) => (
+                <a
+                  key={`${photoUrl}-${index}`}
+                  href={photoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block"
+                >
+                  <img
+                    src={photoUrl}
+                    alt={`POD ${index + 1}`}
+                    className="h-28 w-full object-cover rounded border border-green-200"
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  )
+}
+
+// ── POD + Deliver Modal ─────────────────────────────────────────────────────
+function PodDeliverModal({
+  drUlid,
+  drStatus,
+  open,
+  onClose,
+  hasPod,
+  podData,
+  onMarkDelivered,
+  isMarkingDelivered,
+}: {
   drUlid: string
+  drStatus: string
+  open: boolean
+  onClose: () => void
   hasPod: boolean
   podData?: {
     pod_receiver_name?: string
-    pod_receiver_designation?: string
+    pod_photo_urls?: string[]
     pod_recorded_at?: string
     pod_notes?: string
-    pod_latitude?: number
-    pod_longitude?: number
   }
+  onMarkDelivered: () => Promise<void>
+  isMarkingDelivered: boolean
 }) {
   const recordPod = useRecordPod()
   const [receiverName, setReceiverName] = useState('')
-  const [receiverDesignation, setReceiverDesignation] = useState('')
   const [deliveryNotes, setDeliveryNotes] = useState('')
-  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [capturingGps, setCapturingGps] = useState(false)
   const [podPhotos, setPodPhotos] = useState<string[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const captureGps = () => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser')
-      return
-    }
-    setCapturingGps(true)
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setCapturingGps(false)
-        toast.success('Location captured')
-      },
-      () => {
-        setCapturingGps(false)
-        toast.error('Could not capture location')
-      },
-      { enableHighAccuracy: true }
-    )
-  }
+  if (!open) return null
 
   const handleSubmitPod = async () => {
+    if (hasPod) {
+      try {
+        await onMarkDelivered()
+        onClose()
+      } catch {
+        // Global mutation onError handler shows toast
+      }
+
+      return
+    }
+
     if (!receiverName.trim()) {
       toast.error('Receiver name is required')
+      return
+    }
+
+    if (podPhotos.length === 0) {
+      toast.error('At least one POD photo is required')
+      return
+    }
+
+    if (!['dispatched', 'in_transit'].includes(drStatus)) {
+      toast.error('POD recording is only available for dispatched/in-transit receipts')
       return
     }
 
@@ -266,128 +336,107 @@ function PodCaptureSection({
         ulid: drUlid,
         payload: {
           receiver_name: receiverName,
-          receiver_designation: receiverDesignation || undefined,
           photos_base64: podPhotos.length > 0 ? podPhotos : undefined,
-          latitude: gpsCoords?.lat,
-          longitude: gpsCoords?.lng,
           delivery_notes: deliveryNotes || undefined,
         },
       })
-      toast.success('Proof of Delivery recorded successfully')
+
+      await onMarkDelivered()
+
+      toast.success('Proof of Delivery recorded and marked as delivered')
+      onClose()
     } catch {
       // Global mutation onError handler shows toast
     }
   }
 
-  if (hasPod) {
-    return (
-      <Card className="mb-5 border-green-200 bg-green-50/30">
-        <CardHeader>
-          <span className="flex items-center gap-2 text-green-700">
-            <CheckCircle className="h-4 w-4" />
-            Proof of Delivery Recorded
-          </span>
-        </CardHeader>
-        <CardBody>
-          <InfoList columns={2}>
-            <InfoRow label="Receiver" value={podData?.pod_receiver_name ?? '-'} />
-            <InfoRow label="Designation" value={podData?.pod_receiver_designation ?? '-'} />
-            <InfoRow label="Recorded At" value={podData?.pod_recorded_at ? new Date(podData.pod_recorded_at).toLocaleString('en-PH') : '-'} />
-            <InfoRow label="GPS" value={podData?.pod_latitude && podData?.pod_longitude ? `${podData.pod_latitude.toFixed(6)}, ${podData.pod_longitude.toFixed(6)}` : 'Not captured'} />
-            {podData?.pod_notes && <InfoRow label="Notes" value={podData.pod_notes} />}
-          </InfoList>
-        </CardBody>
-      </Card>
-    )
-  }
-
   return (
-    <Card className="mb-5 border-amber-200">
-      <CardHeader>
-        <span className="flex items-center gap-2 text-amber-700">
-          <PenTool className="h-4 w-4" />
-          Record Proof of Delivery
-        </span>
-      </CardHeader>
-      <CardBody>
-        <p className="text-sm text-neutral-500 mb-4">
-          Capture delivery confirmation before marking as delivered. The receiver must acknowledge receipt of goods.
-        </p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-3xl shadow-xl border border-neutral-200 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-neutral-100">
+          <h2 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
+            <PenTool className="h-5 w-5 text-amber-600" />
+            Mark Delivery as Completed
+          </h2>
+          <p className="text-sm text-neutral-500 mt-1">
+            {hasPod
+              ? 'Proof of Delivery already exists. You can now finalize this delivery.'
+              : 'Record proof of delivery using receiver details and photo evidence.'}
+          </p>
+        </div>
 
-        <div className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
-                <User className="h-3.5 w-3.5 inline mr-1" />
-                Receiver Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={receiverName}
-                onChange={e => setReceiverName(e.target.value)}
-                placeholder="Who received the goods?"
-                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Designation</label>
-              <input
-                type="text"
-                value={receiverDesignation}
-                onChange={e => setReceiverDesignation(e.target.value)}
-                placeholder="e.g. Warehouse Manager"
-                className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
+        <div className="p-6 space-y-4">
+          {hasPod ? (
+            <InfoList columns={2}>
+              <InfoRow label="Receiver" value={podData?.pod_receiver_name ?? '-'} />
+              <InfoRow label="Recorded At" value={podData?.pod_recorded_at ? new Date(podData.pod_recorded_at).toLocaleString('en-PH') : '-'} />
+            </InfoList>
+          ) : (
+            <>
+              <div className="grid sm:grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    <User className="h-3.5 w-3.5 inline mr-1" />
+                    Receiver Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={receiverName}
+                    onChange={e => setReceiverName(e.target.value)}
+                    placeholder="Who received the goods?"
+                    className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
+              <p className="text-xs text-neutral-500">
+                Evidence policy: receiver name and at least one delivery photo are required.
+              </p>
+
               <MultiPhotoUpload
                 photos={podPhotos}
                 onChange={setPodPhotos}
                 maxPhotos={3}
                 label="Delivery Photos"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
-                <MapPin className="h-3.5 w-3.5 inline mr-1" />
-                GPS Location
-              </label>
-              <button
-                onClick={captureGps}
-                disabled={capturingGps}
-                className="w-full border border-dashed border-neutral-300 rounded-lg px-3 py-3 text-sm text-neutral-600 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <MapPin className="h-4 w-4" />
-                {capturingGps ? 'Capturing...' : gpsCoords ? `${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lng.toFixed(4)}` : 'Capture Location'}
-              </button>
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Delivery Notes</label>
-            <textarea
-              value={deliveryNotes}
-              onChange={e => setDeliveryNotes(e.target.value)}
-              rows={2}
-              placeholder="Any observations about the delivery..."
-              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Delivery Notes</label>
+                <textarea
+                  value={deliveryNotes}
+                  onChange={e => setDeliveryNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Any observations about the delivery..."
+                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </>
+          )}
+        </div>
 
+        <div className="p-4 border-t border-neutral-100 flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={recordPod.isPending || isMarkingDelivered}
+            className="flex-1 py-2.5 border border-neutral-200 text-neutral-700 font-medium rounded-lg hover:bg-neutral-50 transition-colors text-sm"
+          >
+            Cancel
+          </button>
           <button
             onClick={handleSubmitPod}
-            disabled={recordPod.isPending || !receiverName.trim()}
-            className="w-full py-2.5 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+            disabled={recordPod.isPending || isMarkingDelivered || (!hasPod && !receiverName.trim())}
+            className="flex-1 py-2.5 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <PenTool className="h-4 w-4" />
-            {recordPod.isPending ? 'Recording...' : 'Submit Proof of Delivery'}
+            {recordPod.isPending || isMarkingDelivered
+              ? 'Processing...'
+              : hasPod
+                ? 'Mark Delivered'
+                : 'Submit POD & Mark Delivered'}
           </button>
         </div>
-      </CardBody>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -403,7 +452,7 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
   const prepareShipmentMut = usePrepareShipment();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [dispatchOpen, setDispatchOpen] = useState(false);
-  const [deliverOpen, setDeliverOpen] = useState(false);
+  const [podDeliverOpen, setPodDeliverOpen] = useState(false);
   const [shipmentOpen, setShipmentOpen] = useState(false);
   const canManage = hasPermission('delivery.manage');
 
@@ -468,9 +517,18 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
     try {
       await deliverMut.mutateAsync(dr.ulid);
       toast.success('Delivery marked as delivered.');
-      setDeliverOpen(false);
+      setPodDeliverOpen(false);
     } catch {
       // Global mutation onError handler shows toast
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      await downloadFile(deliveryApiPaths.receiptPdf(dr.ulid), `DR-${dr.dr_reference}.pdf`, 'application/pdf');
+      toast.success('PDF exported successfully.');
+    } catch {
+      toast.error('Failed to export PDF. Please try again.');
     }
   };
 
@@ -515,13 +573,21 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
                 Dispatch
               </button>
             )}
+            {dr.status === 'dispatched' && (
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                className="px-4 py-2 text-sm bg-white text-neutral-800 border border-neutral-300 rounded hover:bg-neutral-50 flex items-center gap-1.5"
+              >
+                <FileDown className="h-4 w-4" />
+                Export PDF
+              </button>
+            )}
             {(dr.status === 'dispatched' || dr.status === 'in_transit' || dr.status === 'partially_delivered') && canManage && (
               <button
                 type="button"
-                onClick={() => setDeliverOpen(true)}
-                disabled={!hasPod}
-                title={!hasPod ? 'Record Proof of Delivery first' : 'Mark as delivered'}
-                className={`px-4 py-2 text-sm rounded flex items-center gap-1.5 ${hasPod ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'}`}
+                onClick={() => setPodDeliverOpen(true)}
+                className="px-4 py-2 text-sm rounded flex items-center gap-1.5 bg-green-600 text-white hover:bg-green-700"
               >
                 <CheckCircle className="h-4 w-4" />
                 Mark Delivered
@@ -541,119 +607,112 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
         />
       </div>
 
-      {/* Shipment Details Card (if shipment exists) */}
-      {activeShipment && (
-        <Card className="mb-5 border-blue-200 bg-blue-50/30">
-          <CardHeader>
-            <span className="flex items-center gap-2 text-blue-700">
-              <Truck className="h-4 w-4" />
-              Shipment Details
-            </span>
-          </CardHeader>
-          <CardBody>
-            <InfoList columns={2}>
-              <InfoRow label="Carrier" value={activeShipment.carrier ?? 'Company Fleet'} />
-              <InfoRow label="Tracking" value={activeShipment.tracking_number ?? '-'} />
-              <InfoRow label="Driver" value={drAny.driver_name ?? '-'} />
-              <InfoRow label="Vehicle" value={drAny.vehicle?.plate_number ?? drAny.vehicle?.name ?? '-'} />
-              <InfoRow label="Status" value={
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                  activeShipment.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                  activeShipment.status === 'in_transit' ? 'bg-blue-100 text-blue-700' :
-                  'bg-neutral-100 text-neutral-600'
-                }`}>
-                  {activeShipment.status === 'in_transit' && <Clock className="h-3 w-3" />}
-                  {activeShipment.status === 'delivered' && <CheckCircle className="h-3 w-3" />}
-                  {activeShipment.status?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+      <div className="grid lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-8 space-y-5">
+          {/* Shipment Details Card (if shipment exists) */}
+          {activeShipment && (
+            <Card className="border-blue-200 bg-blue-50/30">
+              <CardHeader>
+                <span className="flex items-center gap-2 text-blue-700">
+                  <Truck className="h-4 w-4" />
+                  Shipment Details
                 </span>
-              } />
-              <InfoRow label="ETA" value={activeShipment.estimated_arrival ? new Date(activeShipment.estimated_arrival).toLocaleDateString('en-PH') : '-'} />
-              {activeShipment.shipped_at && (
-                <InfoRow label="Dispatched At" value={new Date(activeShipment.shipped_at).toLocaleString('en-PH')} />
-              )}
-              {activeShipment.actual_arrival && (
-                <InfoRow label="Delivered At" value={new Date(activeShipment.actual_arrival).toLocaleDateString('en-PH')} />
-              )}
-            </InfoList>
-          </CardBody>
-        </Card>
-      )}
+              </CardHeader>
+              <CardBody>
+                <InfoList columns={2}>
+                  <InfoRow label="Carrier" value={activeShipment.carrier ?? 'Company Fleet'} />
+                  <InfoRow label="Tracking" value={activeShipment.tracking_number ?? '-'} />
+                  <InfoRow label="Driver" value={drAny.driver_name ?? '-'} />
+                  <InfoRow label="Vehicle" value={drAny.vehicle?.plate_number ?? drAny.vehicle?.name ?? '-'} />
+                  <InfoRow label="Status" value={
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                      activeShipment.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                      activeShipment.status === 'in_transit' ? 'bg-blue-100 text-blue-700' :
+                      'bg-neutral-100 text-neutral-600'
+                    }`}>
+                      {activeShipment.status === 'in_transit' && <Clock className="h-3 w-3" />}
+                      {activeShipment.status === 'delivered' && <CheckCircle className="h-3 w-3" />}
+                      {formatStatusLabel(activeShipment.status)}
+                    </span>
+                  } />
+                  <InfoRow label="ETA" value={activeShipment.estimated_arrival ? new Date(activeShipment.estimated_arrival).toLocaleDateString('en-PH') : '-'} />
+                  {activeShipment.shipped_at && (
+                    <InfoRow label="Dispatched At" value={new Date(activeShipment.shipped_at).toLocaleString('en-PH')} />
+                  )}
+                  {activeShipment.actual_arrival && (
+                    <InfoRow label="Delivered At" value={new Date(activeShipment.actual_arrival).toLocaleDateString('en-PH')} />
+                  )}
+                </InfoList>
+              </CardBody>
+            </Card>
+          )}
 
-      {/* POD Section (when dispatched/in_transit) */}
-      {(dr.status === 'dispatched' || dr.status === 'in_transit' || dr.status === 'partially_delivered') && canManage && (
-        <PodCaptureSection
-          drUlid={dr.ulid}
-          hasPod={hasPod}
-          podData={drAny}
-        />
-      )}
+          {/* POD Summary (when delivered) */}
+          {dr.status === 'delivered' && hasPod && (
+            <PodSummaryCard podData={drAny} />
+          )}
 
-      {/* POD Summary (when delivered) */}
-      {dr.status === 'delivered' && hasPod && (
-        <PodCaptureSection
-          drUlid={dr.ulid}
-          hasPod={true}
-          podData={drAny}
-        />
-      )}
-
-      {/* Receipt Details */}
-      <Card className="mb-5">
-        <CardHeader>Receipt Details</CardHeader>
-        <CardBody>
-          <InfoList columns={2}>
-            <InfoRow label="Vendor" value={dr.vendor?.name ?? '-'} />
-            <InfoRow label="Customer" value={dr.customer?.name ?? '-'} />
-            <InfoRow label="Received By" value={dr.received_by?.name ?? '-'} />
-            <InfoRow label="Receipt Date" value={dr.receipt_date ?? '-'} />
-            <InfoRow label="Remarks" value={dr.remarks ?? '-'} />
-          </InfoList>
-        </CardBody>
-      </Card>
-
-      {/* Line Items */}
-      <Card>
-        <CardHeader>Line Items</CardHeader>
-        <CardBody className="p-0">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase tracking-wide">
-              <tr>
-                <th className="px-4 py-3 text-left">Item</th>
-                <th className="px-4 py-3 text-right">Qty Expected</th>
-                <th className="px-4 py-3 text-right">Qty Received</th>
-                <th className="px-4 py-3 text-left">UoM</th>
-                <th className="px-4 py-3 text-left">Lot / Batch</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {(dr.items ?? []).length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-neutral-400">No line items.</td>
-                </tr>
-              ) : (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (dr.items ?? []).map((item: any) => (
-                  <tr key={item.id} className="hover:bg-neutral-50">
-                    <td className="px-4 py-3 text-neutral-900">{item.item_name ?? `Item #${item.item_master_id}`}</td>
-                    <td className="px-4 py-3 text-right text-neutral-700">{item.quantity_expected}</td>
-                    <td className="px-4 py-3 text-right font-medium text-neutral-900">{item.quantity_received}</td>
-                    <td className="px-4 py-3 text-neutral-500">{item.unit_of_measure ?? '-'}</td>
-                    <td className="px-4 py-3 text-neutral-500 font-mono text-xs">{item.lot_batch_number ?? '-'}</td>
+          {/* Line Items */}
+          <Card>
+            <CardHeader>Line Items</CardHeader>
+            <CardBody className="p-0">
+              <table className="w-full text-sm">
+                <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase tracking-wide">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Item</th>
+                    <th className="px-4 py-3 text-right">Qty Expected</th>
+                    <th className="px-4 py-3 text-right">Qty Received</th>
+                    <th className="px-4 py-3 text-left">UoM</th>
+                    <th className="px-4 py-3 text-left">Lot / Batch</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </CardBody>
-      </Card>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {(dr.items ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-neutral-400">No line items.</td>
+                    </tr>
+                  ) : (
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (dr.items ?? []).map((item: any) => (
+                      <tr key={item.id} className="hover:bg-neutral-50">
+                        <td className="px-4 py-3 text-neutral-900">{item.item_name ?? `Item #${item.item_master_id}`}</td>
+                        <td className="px-4 py-3 text-right text-neutral-700">{item.quantity_expected}</td>
+                        <td className="px-4 py-3 text-right font-medium text-neutral-900">{item.quantity_received}</td>
+                        <td className="px-4 py-3 text-neutral-500">{item.unit_of_measure ?? '-'}</td>
+                        <td className="px-4 py-3 text-neutral-500 font-mono text-xs">{item.lot_batch_number ?? '-'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </CardBody>
+          </Card>
+        </div>
 
-      {/* Document Chain */}
-      <Card className="mt-5">
-        <CardHeader>Document Chain</CardHeader>
-        <CardBody>
-          <ChainRecordTimeline documentType="delivery_receipt" documentId={dr.id} />
-        </CardBody>
-      </Card>
+        <div className="lg:col-span-4 space-y-4">
+          {/* Compact Receipt Details */}
+          <Card>
+            <CardHeader>Receipt Details</CardHeader>
+            <CardBody>
+              <InfoList columns={1}>
+                <InfoRow label="Vendor" value={dr.vendor?.name ?? '-'} />
+                <InfoRow label="Customer" value={dr.customer?.name ?? '-'} />
+                <InfoRow label="Received By" value={dr.received_by?.name ?? '-'} />
+                <InfoRow label="Receipt Date" value={dr.receipt_date ?? '-'} />
+                <InfoRow label="Remarks" value={dr.remarks ?? '-'} />
+              </InfoList>
+            </CardBody>
+          </Card>
+
+          {/* Compact Document Chain */}
+          <Card>
+            <CardHeader>Document Chain</CardHeader>
+            <CardBody className="text-sm">
+              <ChainRecordTimeline documentType="delivery_receipt" documentId={dr.id} />
+            </CardBody>
+          </Card>
+        </div>
+      </div>
 
       {/* Modals */}
       <ConfirmDialog
@@ -686,15 +745,15 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
         loading={dispatchMut.isPending}
       />
 
-      <ConfirmDialog
-        open={deliverOpen}
-        onClose={() => setDeliverOpen(false)}
-        onConfirm={handleDeliver}
-        title="Mark as Delivered?"
-        description="Confirm that the goods have been received by the customer. The linked client order will be updated and an invoice may be auto-generated."
-        confirmLabel="Mark Delivered"
-        variant="warning"
-        loading={deliverMut.isPending}
+      <PodDeliverModal
+        open={podDeliverOpen}
+        onClose={() => setPodDeliverOpen(false)}
+        drUlid={dr.ulid}
+        drStatus={dr.status}
+        hasPod={hasPod}
+        podData={drAny}
+        onMarkDelivered={handleDeliver}
+        isMarkingDelivered={deliverMut.isPending}
       />
     </div>
   );

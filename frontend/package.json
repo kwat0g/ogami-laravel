@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
+    "e2e:modules": "bash e2e/run-module-suite.sh",
+    "e2e:modules:lightpanda": "bash e2e/run-module-suite.sh --project lightpanda",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report e2e/playwright-report",
@@ -48,6 +50,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@lightpanda/browser": "^1.2.0",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

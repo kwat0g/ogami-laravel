@@ -336,116 +336,136 @@ export default function CustomerInvoiceDetailPage() {
         {canWriteOff && <WriteOffSection invoiceId={invoiceId ?? ''} />}
       </div>
 
-      {/* Details grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardBody>
-            <InfoRow label="Invoice Date" value={invoice.invoice_date} />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <InfoRow 
-              label="Due Date" 
-              value={invoice.due_date + (invoice.is_overdue ? ' ⚠️' : '')} 
-            />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <InfoRow label="Subtotal" value={`${formatPesoAmount(invoice.subtotal)}`} />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <InfoRow label="VAT" value={`${formatPesoAmount(invoice.vat_amount)}`} />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <InfoRow label="Total" value={`${formatPesoAmount(invoice.total_amount)}`} />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <InfoRow label="Total Paid" value={`${formatPesoAmount(invoice.total_paid)}`} />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <InfoRow label="Balance Due" value={`${formatPesoAmount(invoice.balance_due)}`} />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <InfoRow label="Fiscal Period" value={invoice.fiscal_period?.name ?? invoice.fiscal_period?.period_name ?? `Period #${invoice.fiscal_period_id}`} />
-          </CardBody>
-        </Card>
+      <div className="grid lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 space-y-6">
+          {/* Details grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardBody>
+                <InfoRow label="Invoice Date" value={invoice.invoice_date} />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <InfoRow
+                  label="Due Date"
+                  value={invoice.due_date + (invoice.is_overdue ? ' ⚠️' : '')}
+                />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <InfoRow label="Subtotal" value={`${formatPesoAmount(invoice.subtotal)}`} />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <InfoRow label="VAT" value={`${formatPesoAmount(invoice.vat_amount)}`} />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <InfoRow label="Total" value={`${formatPesoAmount(invoice.total_amount)}`} />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <InfoRow label="Total Paid" value={`${formatPesoAmount(invoice.total_paid)}`} />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <InfoRow label="Balance Due" value={`${formatPesoAmount(invoice.balance_due)}`} />
+              </CardBody>
+            </Card>
+            <Card>
+              <CardBody>
+                <InfoRow label="Fiscal Period" value={invoice.fiscal_period?.name ?? invoice.fiscal_period?.period_name ?? `Period #${invoice.fiscal_period_id}`} />
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Description */}
+          {invoice.description && (
+            <Card>
+              <CardHeader>Description</CardHeader>
+              <CardBody>
+                <p className="text-sm text-neutral-600">{invoice.description}</p>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Payment panel */}
+          {canReceivePayment && (
+            <ReceivePaymentPanel invoiceId={invoiceId ?? ''} balanceDue={invoice.balance_due} />
+          )}
+
+          {/* Payment history */}
+          {invoice.payments && invoice.payments.length > 0 && (
+            <Card>
+              <CardHeader>Payment History</CardHeader>
+              <CardBody className="p-0">
+                <table className="min-w-full divide-y divide-neutral-100 text-sm">
+                  <thead className="bg-neutral-50">
+                    <tr>
+                      {['Date', 'Amount', 'Method', 'Reference'].map((h) => (
+                        <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-neutral-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 bg-white">
+                    {invoice.payments.map((p) => (
+                      <tr key={p.id}>
+                        <td className="px-4 py-2 text-neutral-700">{p.payment_date}</td>
+                        <td className="px-4 py-2 font-medium text-neutral-900">{formatPesoAmount(p.amount)}</td>
+                        <td className="px-4 py-2 text-neutral-500 capitalize">{p.payment_method?.replace('_', ' ') ?? '—'}</td>
+                        <td className="px-4 py-2 text-neutral-500">{p.reference_number ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardBody>
+            </Card>
+          )}
+        </div>
+
+        <div className="lg:col-span-4 space-y-4">
+          {/* Compact Invoice Summary */}
+          <Card>
+            <CardHeader>Invoice Summary</CardHeader>
+            <CardBody>
+              <InfoList columns={1}>
+                <InfoRow label="Status" value={invoice.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
+                <InfoRow label="Customer" value={invoice.customer?.name ?? '-'} />
+                <InfoRow label="Invoice #" value={invoice.invoice_number ?? 'Draft'} />
+                <InfoRow label="Balance Due" value={formatPesoAmount(invoice.balance_due)} />
+                <InfoRow label="Overdue" value={invoice.is_overdue ? 'Yes' : 'No'} />
+              </InfoList>
+            </CardBody>
+          </Card>
+
+          {/* Write-off info */}
+          {invoice.status === 'written_off' && invoice.write_off_reason && (
+            <Card>
+              <CardHeader>Write-Off Information</CardHeader>
+              <CardBody>
+                <p className="text-sm text-neutral-700">{invoice.write_off_reason}</p>
+                {invoice.write_off_at && (
+                  <p className="text-xs text-neutral-500 mt-1">{new Date(invoice.write_off_at).toLocaleString()}</p>
+                )}
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Document Chain */}
+          <Card>
+            <CardHeader>Document Chain</CardHeader>
+            <CardBody className="text-sm">
+              <ChainRecordTimeline documentType="customer_invoice" documentId={invoice.id} />
+            </CardBody>
+          </Card>
+        </div>
       </div>
-
-      {/* Description */}
-      {invoice.description && (
-        <Card>
-          <CardHeader>Description</CardHeader>
-          <CardBody>
-            <p className="text-sm text-neutral-600">{invoice.description}</p>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Payment panel */}
-      {canReceivePayment && (
-        <ReceivePaymentPanel invoiceId={invoiceId ?? ''} balanceDue={invoice.balance_due} />
-      )}
-
-      {/* Payment history */}
-      {invoice.payments && invoice.payments.length > 0 && (
-        <Card>
-          <CardHeader>Payment History</CardHeader>
-          <CardBody className="p-0">
-            <table className="min-w-full divide-y divide-neutral-100 text-sm">
-              <thead className="bg-neutral-50">
-                <tr>
-                  {['Date', 'Amount', 'Method', 'Reference'].map((h) => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-neutral-500">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 bg-white">
-                {invoice.payments.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-4 py-2 text-neutral-700">{p.payment_date}</td>
-                    <td className="px-4 py-2 font-medium text-neutral-900">{formatPesoAmount(p.amount)}</td>
-                    <td className="px-4 py-2 text-neutral-500 capitalize">{p.payment_method?.replace('_', ' ') ?? '—'}</td>
-                    <td className="px-4 py-2 text-neutral-500">{p.reference_number ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Write-off info */}
-      {invoice.status === 'written_off' && invoice.write_off_reason && (
-        <Card>
-          <CardHeader>Write-Off Information</CardHeader>
-          <CardBody>
-            <p className="text-sm text-neutral-700">{invoice.write_off_reason}</p>
-            {invoice.write_off_at && (
-              <p className="text-xs text-neutral-500 mt-1">{new Date(invoice.write_off_at).toLocaleString()}</p>
-            )}
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Document Chain */}
-      <Card>
-        <CardHeader>Document Chain</CardHeader>
-        <CardBody>
-          <ChainRecordTimeline documentType="customer_invoice" documentId={invoice.id} />
-        </CardBody>
-      </Card>
     </div>
   )
 }

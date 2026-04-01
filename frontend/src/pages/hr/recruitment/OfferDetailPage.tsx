@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import { useOffer, useOfferAction } from '@/hooks/useRecruitment'
 import StatusBadge from '@/components/recruitment/StatusBadge'
 import OfferLetterPreview from '@/components/recruitment/OfferLetterPreview'
+import PermissionGuard from '@/components/ui/PermissionGuard'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -54,14 +55,18 @@ export default function OfferDetailPage() {
 
       {/* Actions */}
       <div className="flex gap-3">
-        {offer.status === 'draft' && (
-          <>
+        <PermissionGuard permission="recruitment.offers.create">
+          {offer.status === 'draft' && (
             <button
               onClick={() => setShowPreview(true)}
               className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
             >
               Preview Offer Letter
             </button>
+          )}
+        </PermissionGuard>
+        <PermissionGuard permission="recruitment.offers.send">
+          {offer.status === 'draft' && (
             <button
               onClick={() => { if (confirm('Send this offer to the candidate?')) handleAction('send') }}
               disabled={action.isPending}
@@ -69,49 +74,53 @@ export default function OfferDetailPage() {
             >
               {action.isPending ? 'Sending...' : 'Send Offer'}
             </button>
-          </>
-        )}
-        {offer.status === 'sent' && (
-          <>
-            <button
-              onClick={() => { if (confirm('Mark this offer as accepted?')) handleAction('accept') }}
-              disabled={action.isPending}
-              className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
-            >
-              {action.isPending ? 'Processing...' : 'Mark as Accepted'}
-            </button>
-            <button
-              onClick={() => {
-                if (rejectReason.trim() && confirm('Reject this offer?')) {
-                  handleAction('reject', { reason: rejectReason })
-                }
-              }}
-              disabled={action.isPending || !rejectReason.trim()}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
-            >
-              {action.isPending ? 'Processing...' : 'Mark as Rejected'}
-            </button>
-            <button
-              onClick={() => { if (confirm('Withdraw this offer? This cannot be undone.')) handleAction('withdraw') }}
-              disabled={action.isPending}
-              className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-            >
-              {action.isPending ? 'Processing...' : 'Withdraw Offer'}
-            </button>
-          </>
-        )}
+          )}
+        </PermissionGuard>
+        <PermissionGuard permission="recruitment.offers.send">
+          {offer.status === 'sent' && (
+            <>
+              <button
+                onClick={() => { if (confirm('Mark this offer as accepted?')) handleAction('accept') }}
+                disabled={action.isPending}
+                className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+              >
+                {action.isPending ? 'Processing...' : 'Mark as Accepted'}
+              </button>
+              <button
+                onClick={() => {
+                  if (rejectReason.trim() && confirm('Reject this offer?')) {
+                    handleAction('reject', { reason: rejectReason })
+                  }
+                }}
+                disabled={action.isPending || !rejectReason.trim()}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {action.isPending ? 'Processing...' : 'Mark as Rejected'}
+              </button>
+              <button
+                onClick={() => { if (confirm('Withdraw this offer? This cannot be undone.')) handleAction('withdraw') }}
+                disabled={action.isPending}
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+              >
+                {action.isPending ? 'Processing...' : 'Withdraw Offer'}
+              </button>
+            </>
+          )}
+        </PermissionGuard>
       </div>
 
       {/* Rejection reason input */}
-      {offer.status === 'sent' && (
-        <input
-          type="text"
-          placeholder="Rejection reason (required to reject)..."
-          value={rejectReason}
-          onChange={(e) => setRejectReason(e.target.value)}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
-        />
-      )}
+      <PermissionGuard permission="recruitment.offers.send">
+        {offer.status === 'sent' && (
+          <input
+            type="text"
+            placeholder="Rejection reason (required to reject)..."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          />
+        )}
+      </PermissionGuard>
 
       {/* Details */}
       <div className="grid grid-cols-2 gap-6 rounded-lg border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">

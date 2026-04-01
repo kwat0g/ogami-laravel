@@ -1,12 +1,13 @@
 export const deliveryApiPaths = {
   receipts: '/delivery/receipts',
   receiptByUlid: (ulid: string) => `/delivery/receipts/${ulid}`,
+  receiptPdf: (ulid: string) => `/delivery/receipts/${ulid}/pdf`,
   confirmReceipt: (ulid: string) => `/delivery/receipts/${ulid}/confirm`,
   prepareShipment: (ulid: string) => `/delivery/receipts/${ulid}/prepare-shipment`,
   dispatchReceipt: (ulid: string) => `/delivery/receipts/${ulid}/dispatch`,
   partialDeliverReceipt: (ulid: string) => `/delivery/receipts/${ulid}/partial-deliver`,
   deliverReceipt: (ulid: string) => `/delivery/receipts/${ulid}/deliver`,
-  recordPod: (ulid: string) => `/enhancements/delivery/receipts/${ulid}/pod`,
+  recordPod: (ulid: string) => `/delivery/receipts/${ulid}/pod`,
   vehicles: '/delivery/vehicles',
   vehicleHistory: (vehicleId: number) => `/delivery/vehicles/${vehicleId}/history`,
   disputes: '/delivery/disputes',
@@ -17,4 +18,5 @@ export const deliveryApiPaths = {
   disputeCheck: (clientOrderId: number) => `/delivery/disputes/check/${clientOrderId}`,
   shipments: '/delivery/shipments',
   shipmentStatus: (ulid: string) => `/delivery/shipments/${ulid}/status`,
+  routes: '/delivery/routes',
 } as const;

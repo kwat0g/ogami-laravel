@@ -128,7 +128,13 @@ final class GeoFenceService implements ServiceContract
         DB::table('system_settings')
             ->updateOrInsert(
                 ['key' => 'attendance.geofence_enabled'],
-                ['value' => json_encode($enabled)],
+                [
+                    'label' => 'Attendance Geofence Enabled',
+                    'value' => json_encode($enabled),
+                    'data_type' => 'boolean',
+                    'editable_by_role' => 'admin',
+                    'group' => 'general',
+                ],
             );
     }
 
@@ -140,7 +146,13 @@ final class GeoFenceService implements ServiceContract
         DB::table('system_settings')
             ->updateOrInsert(
                 ['key' => 'attendance.geofence_mode'],
-                ['value' => json_encode($mode)],
+                [
+                    'label' => 'Attendance Geofence Mode',
+                    'value' => json_encode($mode),
+                    'data_type' => 'string',
+                    'editable_by_role' => 'admin',
+                    'group' => 'general',
+                ],
             );
     }
 

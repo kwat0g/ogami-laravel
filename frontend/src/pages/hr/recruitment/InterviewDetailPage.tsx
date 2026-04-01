@@ -4,6 +4,8 @@ import api from '@/lib/api'
 import StatusBadge from '@/components/recruitment/StatusBadge'
 import InterviewScorecardForm from '@/components/recruitment/InterviewScorecardForm'
 import { useSubmitEvaluation, useInterviewAction } from '@/hooks/useRecruitment'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useState } from 'react'
 import { toast } from 'sonner'
 

@@ -10,6 +10,7 @@ use App\Domains\HR\StateMachines\EmployeeStateMachine;
 use App\Domains\Leave\Models\LeaveBalance;
 use App\Domains\Leave\Models\LeaveType;
 use App\Infrastructure\Scopes\DepartmentScope;
+use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\InvalidStateTransitionException;

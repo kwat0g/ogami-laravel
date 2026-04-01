@@ -596,7 +596,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
                       <p className="text-xs text-neutral-500">
                         Target: {sched.target_delivery_date
                           ? new Date(sched.target_delivery_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
-                          : 'TBD'}
+                          : 'Not set'}
                       </p>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${schedStatusColors[sched.status] ?? 'bg-neutral-100 text-neutral-600'}`}>

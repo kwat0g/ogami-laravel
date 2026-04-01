@@ -10,6 +10,16 @@
 | [**MANUAL_RBAC_TEST_GUIDE.md**](MANUAL_RBAC_TEST_GUIDE.md) | Complete manual testing by role | Manual testing (15 min) |
 | [**WORKFLOW_QUICK_REFERENCE.md**](WORKFLOW_QUICK_REFERENCE.md) | Workflow diagrams & approval steps | Testing workflows (10 min) |
 | [**RBAC_STEP_BY_STEP_TEST_GUIDE.md**](RBAC_STEP_BY_STEP_TEST_GUIDE.md) | Automated test commands | Running E2E tests (20 min) |
+| [**MODULE_SUITE_GUIDE.md**](MODULE_SUITE_GUIDE.md) | Canonical module-suite execution flow | Default automated workflow |
+| [**LEGACY_SPECS.md**](LEGACY_SPECS.md) | Legacy specs preserved for reference | Migration and cleanup planning |
+
+---
+
+## Canonical vs Legacy
+
+- Canonical module specs live in `frontend/e2e/specs/` and are executed by `frontend/e2e/run-module-suite.sh`.
+- Specs outside `frontend/e2e/specs/` are treated as legacy unless explicitly mapped in the module runner.
+- For day-to-day validation, use only the module runner flow described in `MODULE_SUITE_GUIDE.md`.
 
 ---
 
@@ -23,7 +33,7 @@ php artisan serve          # Terminal 1
 pnpm dev                   # Terminal 2
 
 # 2. Seed test accounts (one-time)
-cd /home/kwat0g/Desktop/ogamiPHP
+cd /home/kwat0g/ogamiPHP/ogami-laravel
 php artisan db:seed --class=ManufacturingEmployeeSeeder
 
 # 3. Open browser and test
@@ -37,7 +47,7 @@ Then follow: [**MANUAL_RBAC_TEST_GUIDE.md**](MANUAL_RBAC_TEST_GUIDE.md)
 ### Option B: Interactive Automated Tests
 
 ```bash
-cd /home/kwat0g/Desktop/ogamiPHP/frontend/e2e
+cd /home/kwat0g/ogamiPHP/ogami-laravel/frontend/e2e
 ./test-rbac-interactive.sh
 ```
 
@@ -48,7 +58,7 @@ Select test groups from the interactive menu.
 ### Option C: Full Automated Suite
 
 ```bash
-cd /home/kwat0g/Desktop/ogamiPHP/frontend/e2e
+cd /home/kwat0g/ogamiPHP/ogami-laravel/frontend/e2e
 ./run-rbac-tests.sh
 ```
 
@@ -137,7 +147,7 @@ Runs all 40 automated tests (~10-15 minutes).
 
 ### Account Locked
 ```bash
-cd /home/kwat0g/Desktop/ogamiPHP
+cd /home/kwat0g/ogamiPHP/ogami-laravel
 php artisan tinker --execute="
 App\Models\User::where('email', 'prod.manager@ogamierp.local')
   ->update(['failed_login_attempts' => 0, 'locked_until' => null]);
@@ -161,15 +171,15 @@ php artisan db:seed --class=ManufacturingEmployeeSeeder
 ```
 frontend/e2e/
 ├── README.md                          # This file - master index
+├── MODULE_SUITE_GUIDE.md              # Canonical module runner guide
+├── LEGACY_SPECS.md                    # Legacy/archived index
 ├── QUICK_START.md                     # Quick start guide
 ├── MANUAL_RBAC_TEST_GUIDE.md          # Manual testing by role
 ├── WORKFLOW_QUICK_REFERENCE.md        # Workflow diagrams
 ├── RBAC_STEP_BY_STEP_TEST_GUIDE.md    # Automated test commands
 │
-├── rbac-comprehensive-ui.spec.ts      # 40 automated RBAC tests
-├── workflows-comprehensive.spec.ts    # Workflow tests
-├── api-integration.spec.ts            # API tests
-├── module-detailed.spec.ts            # Module tests
+├── specs/                             # Canonical numbered module specs (active)
+├── legacy/                            # Archived low-value legacy specs
 │
 ├── test-rbac-interactive.sh           # Interactive test runner
 ├── run-rbac-tests.sh                  # Automated test runner

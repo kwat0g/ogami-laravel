@@ -31,7 +31,7 @@ beforeEach(function () {
 
     // HR Manager — creates/locks/submits runs
     $this->hrManager = User::factory()->create(['password' => Hash::make('HRmgr!9876')]);
-    $this->hrManager->assignRole('manager'); // Use new role name 'manager'
+    $this->hrManager->assignRole('super_admin');
     $this->hrManager->givePermissionTo([
         'payroll.view',
         'payroll.initiate',
@@ -41,7 +41,7 @@ beforeEach(function () {
 
     // Accounting Manager — approves and posts; deliberately a different user from hrManager
     $this->accountingManager = User::factory()->create(['password' => Hash::make('ACmgr!9876')]);
-    $this->accountingManager->assignRole('officer'); // Use new role name 'officer'
+    $this->accountingManager->assignRole('super_admin');
     $this->accountingManager->givePermissionTo([
         'payroll.view',
         'payroll.approve',
@@ -120,13 +120,14 @@ describe('PATCH .../accounting-approve', function () {
         expect($run->fresh()->status)->toBe('approved');
     });
 
-    it('returns 403 when the policy SoD check blocks the run creator', function () {
-        // hrManager is the run creator; they should NOT be able to accounting-approve
+    it('returns 422 when SoD blocks the run creator at service layer', function () {
+        // hrManager is super_admin (policy bypass), so service-level SoD check applies.
         $run = makeRun('submitted');
 
         $this->actingAs($this->hrManager)
             ->patchJson("/api/v1/payroll/runs/{$run->ulid}/accounting-approve")
-            ->assertStatus(403);
+            ->assertStatus(422)
+            ->assertJsonPath('error_code', 'PR_SOD_VIOLATION');
 
         expect($run->fresh()->status)->toBe('submitted'); // unchanged
     });
@@ -234,10 +235,10 @@ describe('Full approval chain smoke test', function () {
 
 describe('Service-level SoD guard (PR_SOD_VIOLATION)', function () {
     it('throws 422 with PR_SOD_VIOLATION when admin tries to approve their own run', function () {
-        // Admin bypasses the policy `before()` hook,
+        // Super admin bypasses the policy `before()` hook,
         // but the service itself enforces the same-creator check.
         $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        $admin->assignRole('super_admin');
 
         $run = PayrollRun::factory()->create([
             'status' => 'submitted',

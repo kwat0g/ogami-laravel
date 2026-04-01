@@ -24,6 +24,8 @@ final class ApplicationServiceTest extends TestCase
     {
         parent::setUp();
         $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
+        $this->artisan('db:seed', ['--class' => 'SalaryGradeSeeder']);
+        $this->artisan('db:seed', ['--class' => 'DepartmentPositionSeeder']);
         $this->service = app(ApplicationService::class);
     }
 

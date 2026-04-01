@@ -13,6 +13,7 @@ Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function ()
     Route::get('/receipts', [DeliveryController::class, 'indexReceipts']);
     Route::post('/receipts', [DeliveryController::class, 'storeReceipt']);
     Route::get('/receipts/{deliveryReceipt}', [DeliveryController::class, 'showReceipt']);
+    Route::get('/receipts/{deliveryReceipt}/pdf', [DeliveryController::class, 'pdfReceipt']);
     Route::patch('/receipts/{deliveryReceipt}/confirm', [DeliveryController::class, 'confirmReceipt'])
         ->middleware('throttle:30,1');
     // ── Fleet / Vehicles CRUD ──────────────────────────────────────────────

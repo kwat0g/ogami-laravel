@@ -748,10 +748,16 @@ final class ClientOrderService implements ServiceContract
      */
     public function getOrdersForCustomer(int $customerId, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        return ClientOrder::with(['items.itemMaster'])
+        $paginator = ClientOrder::with(['items.itemMaster', 'deliverySchedules.deliverySchedule'])
             ->where('customer_id', $customerId)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+
+        $paginator->getCollection()->transform(function (ClientOrder $order): ClientOrder {
+            return $this->refreshFulfillmentStatus($order);
+        });
+
+        return $paginator;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -767,18 +773,58 @@ final class ClientOrderService implements ServiceContract
     }
 
     /**
-     * Create delivery schedules for all items in the order
-     * Each item gets its own schedule for independent tracking
+     * Reconcile client-order status from linked delivery schedule statuses.
      *
-     * @return array<DeliverySchedule> Array of created schedules
+     * This self-heals orders that were dispatched/delivered operationally but
+     * remained in legacy statuses such as approved.
      */
-    /**
-     * Create delivery schedules for all items in the order
-     * Each item gets its own schedule for independent tracking
-     * Also creates a CombinedDeliverySchedule to group them for delivery
-     *
-     * @return array<DeliverySchedule> Array of created schedules
-     */
+    public function refreshFulfillmentStatus(ClientOrder $order): ClientOrder
+    {
+        $order->loadMissing(['deliverySchedules.deliverySchedule']);
+
+        $scheduleStatuses = $order->deliverySchedules
+            ->pluck('deliverySchedule.status')
+            ->filter(fn ($status) => is_string($status) && $status !== '')
+            ->values();
+
+        if ($scheduleStatuses->isEmpty()) {
+            return $order;
+        }
+
+        if (! in_array($order->status, ['approved', 'in_production', 'ready_for_delivery', 'dispatched', 'delivered'], true)) {
+            return $order;
+        }
+
+        $activeStatuses = $scheduleStatuses->reject(fn (string $status) => $status === 'cancelled')->values();
+
+        if ($activeStatuses->isEmpty()) {
+            return $order;
+        }
+
+        $allDelivered = $activeStatuses->every(fn (string $status) => $status === 'delivered');
+        if ($allDelivered && $order->status !== 'delivered' && $order->status !== 'fulfilled') {
+            $order->update(['status' => 'delivered']);
+
+            return $order->fresh(['deliverySchedules.deliverySchedule']);
+        }
+
+        $hasInTransit = $activeStatuses->contains(fn (string $status) => in_array($status, ['dispatched', 'delivered'], true));
+        if ($hasInTransit && in_array($order->status, ['approved', 'in_production', 'ready_for_delivery'], true)) {
+            $order->update(['status' => 'dispatched']);
+
+            return $order->fresh(['deliverySchedules.deliverySchedule']);
+        }
+
+        return $order;
+     }
+
+     /**
+      * Create delivery schedules for all items in the order
+      * Each item gets its own schedule for independent tracking
+      * Also creates a CombinedDeliverySchedule to group them for delivery
+      *
+      * @return array<DeliverySchedule> Array of created schedules
+      */
     private function createDeliverySchedulesFromOrder(ClientOrder $order, int $userId): array
     {
         $items = $order->items;

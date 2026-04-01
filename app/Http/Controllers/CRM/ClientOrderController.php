@@ -58,12 +58,15 @@ final class ClientOrderController extends Controller
     {
         $this->authorize('view', $order);
 
+        $order = $this->service->refreshFulfillmentStatus($order);
+
         return response()->json($order->load([
             'items.itemMaster',
             'customer',
             'activities.user',
             'deliverySchedule',
             'deliverySchedules.deliverySchedule',
+            'deliverySchedules.deliverySchedule.deliveryReceipts',
         ]));
     }
 

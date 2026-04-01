@@ -19,6 +19,7 @@ import {
   type StockCheckItem,
 } from '@/hooks/useProduction'
 import { usePermission } from '@/hooks/usePermission'
+import PermissionGuard from '@/components/ui/PermissionGuard'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { isHandledApiError } from '@/lib/api'
@@ -468,24 +469,26 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
       {/* Post to GL - shown only for completed orders */}
       {order.status === 'completed' && (
-        <div className="bg-green-50 border border-green-200 rounded p-4 mb-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-green-800">Cost Posting</h3>
-              <p className="text-xs text-green-600 mt-1">Post production cost variance to General Ledger</p>
+        <PermissionGuard permission="journal_entries.post">
+          <div className="bg-green-50 border border-green-200 rounded p-4 mb-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-green-800">Cost Posting</h3>
+                <p className="text-xs text-green-600 mt-1">Post production cost variance to General Ledger</p>
+              </div>
+              <button
+                onClick={() => postCostMut.mutate()}
+                disabled={postCostMut.isPending}
+                className="inline-flex items-center gap-1.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+              >
+                {postCostMut.isPending ? 'Posting...' : 'Post to GL'}
+              </button>
             </div>
-            <button
-              onClick={() => postCostMut.mutate()}
-              disabled={postCostMut.isPending}
-              className="inline-flex items-center gap-1.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
-            >
-              {postCostMut.isPending ? 'Posting...' : 'Post to GL'}
-            </button>
+            {postCostMut.isSuccess && (
+              <p className="text-xs text-green-700 mt-2">Cost variance posted successfully.</p>
+            )}
           </div>
-          {postCostMut.isSuccess && (
-            <p className="text-xs text-green-700 mt-2">Cost variance posted successfully.</p>
-          )}
-        </div>
+        </PermissionGuard>
       )}
 
       {/* On Hold Banner */}

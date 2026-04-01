@@ -30,9 +30,41 @@ const STATUS_CONFIG: Record<string, {
     color: 'text-blue-600 bg-blue-50',
     icon: <MessageCircle className="h-4 w-4" />
   },
+  client_responded: {
+    color: 'text-cyan-700 bg-cyan-50',
+    icon: <MessageCircle className="h-4 w-4" />,
+  },
+  vp_pending: {
+    color: 'text-indigo-700 bg-indigo-50',
+    icon: <Clock className="h-4 w-4" />,
+  },
   approved: { 
     color: 'text-green-600 bg-green-50',
     icon: <CheckCircle className="h-4 w-4" />
+  },
+  in_production: {
+    color: 'text-indigo-700 bg-indigo-50',
+    icon: <Package className="h-4 w-4" />,
+  },
+  ready_for_delivery: {
+    color: 'text-emerald-700 bg-emerald-50',
+    icon: <Package className="h-4 w-4" />,
+  },
+  dispatched: {
+    color: 'text-blue-700 bg-blue-50',
+    icon: <Package className="h-4 w-4" />,
+  },
+  delivered: {
+    color: 'text-green-700 bg-green-50',
+    icon: <CheckCircle className="h-4 w-4" />,
+  },
+  fulfilled: {
+    color: 'text-green-700 bg-green-50',
+    icon: <CheckCircle className="h-4 w-4" />,
+  },
+  completed: {
+    color: 'text-green-700 bg-green-50',
+    icon: <CheckCircle className="h-4 w-4" />,
   },
   rejected: { 
     color: 'text-red-600 bg-red-50',
@@ -42,6 +74,15 @@ const STATUS_CONFIG: Record<string, {
     color: 'text-neutral-600 bg-neutral-50',
     icon: <AlertCircle className="h-4 w-4" />
   },
+}
+
+const FALLBACK_STATUS = {
+  color: 'text-neutral-600 bg-neutral-50',
+  icon: <AlertCircle className="h-4 w-4" />,
+}
+
+function formatStatusLabel(status: string): string {
+  return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function QuickActionCard({ 
@@ -115,7 +156,7 @@ function StatCard({
 
 function RecentOrderRow({ order }: { order: ClientOrder }) {
   const navigate = useNavigate()
-    const status = STATUS_CONFIG[order.status]
+  const status = STATUS_CONFIG[order.status] ?? FALLBACK_STATUS
 
     return (
       <div
@@ -141,7 +182,7 @@ function RecentOrderRow({ order }: { order: ClientOrder }) {
         <p className="font-semibold text-neutral-900 text-sm">
           ₱{(order.total_amount_centavos / 100).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
         </p>
-        <p className="text-xs text-neutral-500 capitalize">{order.status}</p>
+        <p className="text-xs text-neutral-500">{formatStatusLabel(order.status)}</p>
       </div>
     </div>
   )

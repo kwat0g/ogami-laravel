@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { ClipboardCheck, AlertTriangle, Plus, Trash2 } from 'lucide-react'
 import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
-import { useInspectionTemplates, useDeleteInspectionTemplate } from '@/hooks/useQC'
+import { useInspectionTemplates, useDeleteInspectionTemplate, useCreateInspectionTemplate } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
@@ -31,6 +31,13 @@ export default function QcTemplateListPage(): React.ReactElement {
   const [stage, setStage] = useState('')
   const [isArchiveView, setIsArchiveView] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<InspectionTemplate | null>(null)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newStage, setNewStage] = useState<InspectionStage>('iqc')
+  const [newDescription, setNewDescription] = useState('')
+  const [newCriterion, setNewCriterion] = useState('')
+  const [newMethod, setNewMethod] = useState('')
+  const [newRange, setNewRange] = useState('')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -55,6 +62,44 @@ export default function QcTemplateListPage(): React.ReactElement {
   const _currentLoading = isArchiveView ? archivedLoading : isLoading
 
   const deleteMut = useDeleteInspectionTemplate()
+  const createMut = useCreateInspectionTemplate()
+
+  const handleCreateTemplate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const name = newName.trim()
+    const criterion = newCriterion.trim()
+
+    if (!name || !criterion) {
+      toast.error('Template name and at least one criterion are required.')
+      return
+    }
+
+    try {
+      await createMut.mutateAsync({
+        name,
+        stage: newStage,
+        description: newDescription.trim() || undefined,
+        is_active: true,
+        items: [{
+          criterion,
+          method: newMethod.trim() || undefined,
+          acceptable_range: newRange.trim() || undefined,
+          sort_order: 0,
+        }],
+      })
+      toast.success(`Template "${name}" created successfully.`)
+      setNewName('')
+      setNewDescription('')
+      setNewCriterion('')
+      setNewMethod('')
+      setNewRange('')
+      setNewStage('iqc')
+      setShowCreateForm(false)
+      await refetch()
+    } catch (err: unknown) {
+      toast.error(firstErrorMessage(err))
+    }
+  }
 
   const handleDelete = async () => {
     if (!templateToDelete) return
@@ -75,7 +120,7 @@ export default function QcTemplateListPage(): React.ReactElement {
           canManage ? (
             <button
               className="inline-flex items-center gap-1.5 rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-              onClick={() => {/* TODO: open create modal */}}
+              onClick={() => setShowCreateForm((prev) => !prev)}
             >
               <Plus size={16} /> New Template
             </button>
@@ -111,6 +156,88 @@ export default function QcTemplateListPage(): React.ReactElement {
         </div>
       )}
 
+      {showCreateForm && canManage && (
+        <form onSubmit={handleCreateTemplate} className="mb-5 rounded-xl border border-neutral-200 bg-white p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">Template Name</label>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full rounded border border-neutral-300 px-3 py-2 text-sm"
+                placeholder="e.g. Incoming Raw Material IQC"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">Stage</label>
+              <select
+                value={newStage}
+                onChange={(e) => setNewStage(e.target.value as InspectionStage)}
+                className="w-full rounded border border-neutral-300 px-3 py-2 text-sm"
+              >
+                <option value="iqc">Incoming (IQC)</option>
+                <option value="ipqc">In-Process (IPQC)</option>
+                <option value="oqc">Outgoing (OQC)</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-neutral-500 mb-1">Description (optional)</label>
+              <textarea
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="w-full rounded border border-neutral-300 px-3 py-2 text-sm"
+                rows={2}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">Criterion</label>
+              <input
+                value={newCriterion}
+                onChange={(e) => setNewCriterion(e.target.value)}
+                className="w-full rounded border border-neutral-300 px-3 py-2 text-sm"
+                placeholder="e.g. Packaging integrity"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">Method (optional)</label>
+              <input
+                value={newMethod}
+                onChange={(e) => setNewMethod(e.target.value)}
+                className="w-full rounded border border-neutral-300 px-3 py-2 text-sm"
+                placeholder="Visual inspection"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-neutral-500 mb-1">Acceptable Range (optional)</label>
+              <input
+                value={newRange}
+                onChange={(e) => setNewRange(e.target.value)}
+                className="w-full rounded border border-neutral-300 px-3 py-2 text-sm"
+                placeholder="No defects, no visible damage"
+              />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="submit"
+              disabled={createMut.isPending}
+              className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+            >
+              {createMut.isPending ? 'Creating…' : 'Create Template'}
+            </button>
+            <button
+              type="button"
+              className="rounded border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50"
+              onClick={() => setShowCreateForm(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
       {!isLoading && !isError && (
         <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           <table className="min-w-full text-sm">
@@ -122,7 +249,7 @@ export default function QcTemplateListPage(): React.ReactElement {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {data?.data?.length === 0 && (
+              {_currentData.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-neutral-400 text-sm">
                     <ClipboardCheck size={32} className="mx-auto mb-2 opacity-30" />
@@ -131,7 +258,7 @@ export default function QcTemplateListPage(): React.ReactElement {
                   </td>
                 </tr>
               )}
-              {data?.data?.map((template) => (
+              {_currentData.map((template) => (
                 <tr key={template.id} className="even:bg-neutral-100 hover:bg-neutral-50">
                   <td className="px-4 py-3 font-medium text-neutral-900">{template.name}</td>
                   <td className="px-4 py-3">

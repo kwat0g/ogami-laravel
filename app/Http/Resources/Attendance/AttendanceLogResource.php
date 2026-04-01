@@ -8,6 +8,7 @@ use App\Domains\Attendance\Models\AttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\Attendance\WorkLocationResource;
+use Carbon\CarbonInterface;
 
 /**
  * @mixin AttendanceLog
@@ -24,8 +25,8 @@ final class AttendanceLogResource extends JsonResource
             'id' => $log->id,
             'employee_id' => $log->employee_id,
             'work_date' => $log->work_date->toDateString(),
-            'time_in' => $log->time_in ? (str_contains($log->time_in, ' ') ? substr($log->time_in, 11, 8) : substr($log->time_in, 0, 8)) : null,
-            'time_out' => $log->time_out ? (str_contains($log->time_out, ' ') ? substr($log->time_out, 11, 8) : substr($log->time_out, 0, 8)) : null,
+            'time_in' => $this->formatTimeValue($log->time_in),
+            'time_out' => $this->formatTimeValue($log->time_out),
             'source' => $log->source,
             'worked_minutes' => $log->worked_minutes,
             'worked_hours' => $log->workedHours(),
@@ -64,5 +65,22 @@ final class AttendanceLogResource extends JsonResource
             'created_at' => $log->created_at->toIso8601String(),
             'updated_at' => $log->updated_at->toIso8601String(),
         ];
+    }
+
+    private function formatTimeValue(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof CarbonInterface) {
+            return $value->format('H:i:s');
+        }
+
+        $value = (string) $value;
+
+        return str_contains($value, ' ')
+            ? substr($value, 11, 8)
+            : substr($value, 0, 8);
     }
 }

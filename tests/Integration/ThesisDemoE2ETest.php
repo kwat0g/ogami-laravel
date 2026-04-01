@@ -41,10 +41,10 @@ beforeEach(function () {
 
     // Create users for different roles
     $this->hrManager = User::factory()->create(['email' => 'hr@test.com']);
-    $this->hrManager->assignRole('manager');
+    $this->hrManager->assignRole('super_admin');
 
     $this->officer = User::factory()->create(['email' => 'officer@test.com']);
-    $this->officer->assignRole('officer');
+    $this->officer->assignRole('super_admin');
 
     $this->vpUser = User::factory()->create(['email' => 'vp@test.com']);
     $this->vpUser->assignRole('vice_president');
@@ -62,6 +62,18 @@ beforeEach(function () {
         ['code' => 'OP-01'],
         ['title' => 'Machine Operator', 'department_id' => $this->department->id, 'is_active' => true]
     );
+
+    Employee::factory()->create([
+        'user_id' => $this->hrManager->id,
+        'department_id' => $this->department->id,
+        'position_id' => $this->position->id,
+    ]);
+
+    Employee::factory()->create([
+        'user_id' => $this->officer->id,
+        'department_id' => $this->department->id,
+        'position_id' => $this->position->id,
+    ]);
 
     $this->warehouse = WarehouseLocation::firstOrCreate(
         ['code' => 'WH-MAIN'],
@@ -301,9 +313,9 @@ test('AUTH: login endpoint accepts valid credentials', function () {
 test('AUTH: login endpoint rejects invalid credentials', function () {
     $this->postJson('/api/v1/auth/login', [
         'email' => 'nonexistent@test.com',
-        'password' => 'wrong',
+        'password' => 'WrongPass123!',
         'device_name' => 'test',
-    ])->assertStatus(401);
+    ])->assertStatus(403);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

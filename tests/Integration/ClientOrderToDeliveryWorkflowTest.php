@@ -95,9 +95,7 @@ function completeProductionOrder(ProductionOrder $po, float $qtyProduced): void
 
     $po->refresh();
     $event = new ProductionOrderCompleted($po);
-    event($event);
-
-    // Force listener execution for tests (bypassing ShouldQueue)
+    // Execute listener directly for deterministic tests (avoid queued duplicate runs).
     app(CreateOqcInspectionOnProductionComplete::class)->handle($event);
 }
 
@@ -160,7 +158,6 @@ it('executes perfect E2E flow: Client Order -> PO -> QC Pass -> Delivery', funct
         'inspector_id' => $this->employee->id,
     ]);
     $event = new InspectionPassed($oqc);
-    event($event);
     app(CreateDeliveryReceiptOnOqcPass::class)->handle($event);
 
     // 6. Verify Delivery Receipt was created
@@ -211,11 +208,9 @@ it('executes rework E2E flow: Client Order -> PO -> QC Fail -> Rework PO -> QC P
     // but in reality NcrService handles failed and InspectionService handles passed)
     // For test simulation, let's trigger both to test the handlers
     $passEvent = new InspectionPassed($oqc1);
-    event($passEvent);
     app(CreateDeliveryReceiptOnOqcPass::class)->handle($passEvent);
 
     $failEvent = new InspectionFailed($oqc1);
-    event($failEvent);
     app(CreateReworkOrderOnOqcFail::class)->handle($failEvent);
 
     // 4. Verify Delivery Receipt is created for the 40 passed units
@@ -247,7 +242,6 @@ it('executes rework E2E flow: Client Order -> PO -> QC Fail -> Rework PO -> QC P
         'inspector_id' => $this->employee->id,
     ]);
     $passEvent2 = new InspectionPassed($oqc2);
-    event($passEvent2);
     app(CreateDeliveryReceiptOnOqcPass::class)->handle($passEvent2);
 
     // 9. Verify second DR is created for the remaining 10 units
@@ -306,7 +300,6 @@ it('executes partial stock flow: Client Order -> PO (deficit) -> QC Pass', funct
         'inspector_id' => $this->employee->id,
     ]);
     $passEvent3 = new InspectionPassed($oqc);
-    event($passEvent3);
     app(CreateDeliveryReceiptOnOqcPass::class)->handle($passEvent3);
 
     // 5. DR is created for the 70 produced units

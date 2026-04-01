@@ -110,6 +110,13 @@ const STATUS_CONFIG: Record<string, {
   },
 }
 
+const FALLBACK_STATUS = {
+  status: 'in_progress',
+  icon: <Clock className="h-4 w-4" />,
+  label: 'Order Update',
+  description: 'Your order status was updated. Please check the latest activity below.',
+}
+
 export default function ClientOrderDetailPage(): JSX.Element {
   const { ulid } = useParams<{ ulid: string }>()
   const navigate = useNavigate()
@@ -176,7 +183,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
     )
   }
 
-  const status = STATUS_CONFIG[order.status]
+  const status = STATUS_CONFIG[order.status] ?? FALLBACK_STATUS
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
@@ -465,7 +472,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
               <CardBody className="space-y-3">
                 <p className="text-xs text-neutral-500">
                   {order.status === 'dispatched' ? 'Your order is on its way!' :
-                   order.status === 'delivered' ? 'Your order has been delivered. Please acknowledge receipt.' :
+                   order.status === 'delivered' ? 'Delivered by our team. Client confirmation is still required to complete this order.' :
                    order.status === 'fulfilled' || order.status === 'completed' ? 'Delivery complete.' :
                    'Your order is being prepared for delivery.'}
                 </p>
@@ -500,13 +507,42 @@ export default function ClientOrderDetailPage(): JSX.Element {
                       <p className="text-xs text-neutral-500">
                         Target: {sched.target_delivery_date
                           ? new Date(sched.target_delivery_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
-                          : 'TBD'}
+                          : 'Not set'}
                       </p>
                       {sched.actual_delivery_date && (
                         <p className="text-xs text-green-600 mt-1">
                           Delivered: {new Date(sched.actual_delivery_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </p>
                       )}
+                      {Array.isArray(sched.delivery_receipts) && sched.delivery_receipts.length > 0 && (() => {
+                        const deliveredPod = sched.delivery_receipts.find(dr => dr.pod_receiver_name)
+                        if (!deliveredPod) return null
+
+                        return (
+                          <div className="mt-3 p-2.5 rounded-md border border-green-100 bg-green-50/70">
+                            <p className="text-[11px] font-semibold text-green-700 uppercase tracking-wide mb-1">Proof of Delivery</p>
+                            <p className="text-xs text-neutral-700">Receiver: {deliveredPod.pod_receiver_name}</p>
+                            {deliveredPod.pod_recorded_at && (
+                              <p className="text-[11px] text-neutral-500 mt-0.5">
+                                Recorded: {new Date(deliveredPod.pod_recorded_at).toLocaleString('en-PH')}
+                              </p>
+                            )}
+                            {Array.isArray(deliveredPod.pod_photo_urls) && deliveredPod.pod_photo_urls.length > 0 && (
+                              <div className="grid grid-cols-3 gap-1.5 mt-2">
+                                {deliveredPod.pod_photo_urls.map((photoUrl, index) => (
+                                  <a key={`${photoUrl}-${index}`} href={photoUrl} target="_blank" rel="noreferrer" className="block">
+                                    <img
+                                      src={photoUrl}
+                                      alt={`POD ${index + 1}`}
+                                      className="h-16 w-full object-cover rounded border border-green-200"
+                                    />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </div>
                   )
                 })}

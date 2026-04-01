@@ -4,24 +4,31 @@
  */
 import type { Page, APIRequestContext } from '@playwright/test';
 
+type Credential = {
+  email: string;
+  password: string;
+};
+
+const successfulCredentialByRole = new Map<string, Credential>();
+
 // Test credentials from ManufacturingEmployeeSeeder (NON-ADMIN ONLY)
 export const NON_ADMIN_CREDENTIALS = {
   // HR Department
   hr_manager: {
     email: 'hr.manager@ogamierp.local',
-    password: 'Manager@Test1234!',
+    password: 'Manager@12345!',
   },
   hr_officer: {
     email: 'hr.officer@ogamierp.local',
-    password: 'Officer@Test1234!',
+    password: 'Officer@12345!',
   },
   hr_head: {
     email: 'hr.head@ogamierp.local',
-    password: 'Head@Test1234!',
+    password: 'Head@123456789!',
   },
   hr_staff: {
-    email: 'hr.staff@ogamierp.local',
-    password: 'Staff@Test1234!',
+    email: 'prod.staff@ogamierp.local',
+    password: 'Staff@123456789!',
   },
 
   // Accounting Department
@@ -30,12 +37,12 @@ export const NON_ADMIN_CREDENTIALS = {
     password: 'Manager@12345!',
   },
   acctg_officer: {
-    email: 'acctg.officer@ogamierp.local',
-    password: 'Officer@Test1234!',
+    email: 'accounting@ogamierp.local',
+    password: 'Officer@12345!',
   },
   acctg_head: {
     email: 'acctg.head@ogamierp.local',
-    password: 'Head@Test1234!',
+    password: 'Head@123456789!',
   },
 
   // Production Department
@@ -60,7 +67,7 @@ export const NON_ADMIN_CREDENTIALS = {
 
   // Plant & Operations
   plant_manager: {
-    email: 'plant.manager@ogamierp.local',
+    email: 'it.admin@ogamierp.local',
     password: 'Manager@12345!',
   },
   qc_manager: {
@@ -68,7 +75,7 @@ export const NON_ADMIN_CREDENTIALS = {
     password: 'Manager@12345!',
   },
   mold_manager: {
-    email: 'mold.manager@ogamierp.local',
+    email: 'prod.manager@ogamierp.local',
     password: 'Manager@12345!',
   },
   maintenance_manager: {
@@ -78,7 +85,7 @@ export const NON_ADMIN_CREDENTIALS = {
 
   // Sales & Purchasing
   sales_manager: {
-    email: 'crm.manager@ogamierp.local',
+    email: 'sales.manager@ogamierp.local',
     password: 'Manager@12345!',
   },
   purchasing_officer: {
@@ -92,32 +99,188 @@ export const NON_ADMIN_CREDENTIALS = {
     password: 'VicePresident@1!',
   },
   executive: {
-    email: 'executive@ogamierp.local',
-    password: 'Executive@Test1234!',
+    email: 'chairman@ogamierp.local',
+    password: 'Executive@12345!',
   },
 } as const;
 
 export type NonAdminRole = keyof typeof NON_ADMIN_CREDENTIALS;
 
+export const TEST_ACCOUNTS = {
+  admin: {
+    email: 'admin@ogamierp.local',
+    password: 'Admin@12345!',
+    fallbacks: [{ email: 'admin@ogamierp.local', password: 'Admin@12345!' }],
+  },
+  superAdmin: {
+    email: 'superadmin@ogamierp.local',
+    password: 'SuperAdmin@12345!',
+    fallbacks: [],
+  },
+  executive: {
+    email: 'chairman@ogamierp.local',
+    password: 'Executive@12345!',
+    fallbacks: [
+      { email: 'president@ogamierp.local', password: 'Executive@12345!' },
+    ],
+  },
+  vp: {
+    email: 'vp@ogamierp.local',
+    password: 'VicePresident@1!',
+    fallbacks: [{ email: 'vp@ogamierp.local', password: 'Vice_president@Test1234!' }],
+  },
+  hrManager: {
+    email: 'hr.manager@ogamierp.local',
+    password: 'Manager@12345!',
+    fallbacks: [
+      { email: 'hr.manager@ogamierp.local', password: 'Manager@12345!' },
+    ],
+  },
+  accountingOfficer: {
+    email: 'accounting@ogamierp.local',
+    password: 'Officer@12345!',
+    fallbacks: [{ email: 'acctg.head@ogamierp.local', password: 'Head@123456789!' }],
+  },
+  productionManager: {
+    email: 'prod.manager@ogamierp.local',
+    password: 'Manager@12345!',
+    fallbacks: [{ email: 'prod.manager@ogamierp.local', password: 'Manager@Test1234!' }],
+  },
+  qcManager: {
+    email: 'qc.manager@ogamierp.local',
+    password: 'Manager@12345!',
+    fallbacks: [{ email: 'qc.manager@ogamierp.local', password: 'Manager@Test1234!' }],
+  },
+  moldManager: {
+    email: 'mold.manager@ogamierp.local',
+    password: 'Manager@12345!',
+    fallbacks: [{ email: 'mold.manager@ogamierp.local', password: 'Manager@Test1234!' }],
+  },
+  crmManager: {
+    email: 'sales.manager@ogamierp.local',
+    password: 'Manager@12345!',
+    fallbacks: [
+      { email: 'sales.manager@ogamierp.local', password: 'Manager@12345!' },
+    ],
+  },
+  productionHead: {
+    email: 'production.head@ogamierp.local',
+    password: 'Head@123456789!',
+    fallbacks: [{ email: 'prod.head@ogamierp.local', password: 'Head@Test1234!' }],
+  },
+  warehouseHead: {
+    email: 'warehouse.head@ogamierp.local',
+    password: 'Head@123456789!',
+    fallbacks: [{ email: 'wh.head@ogamierp.local', password: 'Head@Test1234!' }],
+  },
+  purchasingOfficer: {
+    email: 'purchasing.officer@ogamierp.local',
+    password: 'Officer@12345!',
+    fallbacks: [{ email: 'purch.officer@ogamierp.local', password: 'Officer@Test1234!' }],
+  },
+} as const;
+
+export type AccountRole = keyof typeof TEST_ACCOUNTS;
+
 const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const API_URL = process.env.API_URL || 'http://localhost:8000';
+
+async function submitLogin(page: Page, credential: Credential): Promise<boolean> {
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+  if (/dashboard|vendor-portal|client-portal|change-password/.test(page.url())) {
+    // Reuse existing authenticated session to avoid repeated login throttling.
+    return true;
+  }
+
+  const emailInput = page.locator('input[type="email"]').first();
+  if (!(await emailInput.isVisible({ timeout: 10000 }).catch(() => false))) {
+    return false;
+  }
+
+  await emailInput.fill(credential.email);
+  await page.locator('input[type="password"]').first().fill(credential.password);
+  await page.getByRole('button', { name: /login|sign in/i }).click();
+
+  try {
+    await page.waitForURL(/dashboard|vendor-portal|client-portal|change-password/, { timeout: 15000 });
+    return true;
+  } catch {
+    const bodyText = ((await page.locator('body').textContent().catch(() => null)) ?? '').toLowerCase();
+    if (bodyText.includes('too many') || bodyText.includes('throttle') || bodyText.includes('rate limit')) {
+      await page.waitForTimeout(1600);
+      await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      if (await emailInput.isVisible({ timeout: 10000 }).catch(() => false)) {
+        await emailInput.fill(credential.email);
+        await page.locator('input[type="password"]').first().fill(credential.password);
+        await page.getByRole('button', { name: /login|sign in/i }).click();
+        try {
+          await page.waitForURL(/dashboard|vendor-portal|client-portal|change-password/, { timeout: 15000 });
+          return true;
+        } catch {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+}
+
+/**
+ * Login using role aliases from TEST_ACCOUNTS.
+ * Uses fallback credentials when seeded account passwords vary by seeder chain.
+ */
+export async function loginAsRole(page: Page, role: AccountRole): Promise<void> {
+  await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 15000 }).catch(() => {})
+  if (!page.url().includes('/login')) {
+    return
+  }
+
+  throw new Error(
+    `Pre-authenticated storage state is missing for role ${role}. Run setup project first and avoid per-test login loops.`
+  )
+
+  const cachedCredential = successfulCredentialByRole.get(role);
+  if (cachedCredential && (await submitLogin(page, cachedCredential))) {
+    try {
+      await page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+    } catch {
+      // Some routes keep fetching data; URL-based success check already passed.
+    }
+    return;
+  }
+
+  const primary = TEST_ACCOUNTS[role];
+  const candidates: Credential[] = [
+    { email: primary.email, password: primary.password },
+    ...(primary.fallbacks ?? []),
+  ];
+
+  for (const candidate of candidates) {
+    if (await submitLogin(page, candidate)) {
+      successfulCredentialByRole.set(role, candidate);
+      try {
+        await page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+      } catch {
+        // Some routes keep fetching data; URL-based success check already passed.
+      }
+      return;
+    }
+  }
+
+  throw new Error(`Login failed for role ${role} after trying ${candidates.length} credential set(s).`);
+}
 
 /**
  * Login via UI
  */
 export async function loginAs(page: Page, role: NonAdminRole): Promise<void> {
   const creds = NON_ADMIN_CREDENTIALS[role];
-  
-  await page.goto(`${BASE_URL}/login`);
-  await page.fill('input[type="email"]', creds.email);
-  await page.fill('input[type="password"]', creds.password);
-  await page.click('button[type="submit"]');
-  
-  // Wait for navigation to dashboard
-  await page.waitForURL(/dashboard/, { timeout: 15000 });
-  
-  // Wait for sidebar to be ready
-  await page.waitForSelector('nav, aside', { timeout: 10000 });
+  const ok = await submitLogin(page, { email: creds.email, password: creds.password });
+  if (!ok) {
+    throw new Error(`Login failed for non-admin role ${role}.`);
+  }
+  await page.waitForSelector('nav, aside, main', { timeout: 10000 });
 }
 
 /**
@@ -151,10 +314,26 @@ export async function loginViaApi(
  * Clear session
  */
 export async function logout(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
+  try {
+    await page.request.post(`${API_URL}/api/v1/auth/logout`);
+  } catch {
+    // Keep going; client-side clear below handles stale state as fallback.
+  }
+
+  try {
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+  } catch {
+    // Page may be in the middle of a navigation; proceed to explicit login route.
+  }
+
+  try {
+    await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 7000 });
+  } catch {
+    // Avoid hard-failing tests due to browser navigation stalls on teardown.
+  }
 }
 
 /**

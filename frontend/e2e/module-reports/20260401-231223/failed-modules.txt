@@ -1,0 +1,10 @@
+hr
+payroll
+accounting
+procurement
+inventory
+production
+qc
+mold
+crm
+delivery

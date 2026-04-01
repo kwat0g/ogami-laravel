@@ -36,6 +36,7 @@ final class ShiftSchedule extends Model implements Auditable
 
     /** @var list<string> */
     protected $fillable = [
+        'code',
         'name',
         'description',
         'start_time',

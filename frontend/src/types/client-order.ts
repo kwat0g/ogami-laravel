@@ -68,6 +68,16 @@ export interface ClientOrder {
       ds_reference: string
       status: string
       target_delivery_date: string
+      delivery_receipts?: Array<{
+        ulid: string
+        dr_reference: string
+        status: string
+        receipt_date: string | null
+        pod_receiver_name?: string | null
+        pod_photo_urls?: string[]
+        pod_recorded_at?: string | null
+        pod_notes?: string | null
+      }>
     }
   }>
 }

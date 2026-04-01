@@ -2,190 +2,222 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Delivery Receipt — {{ $dr->dr_reference }}</title>
+<title>Delivery Receipt - {{ $receipt->dr_reference }}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DejaVu Sans', sans-serif; font-size: 9pt; color: #1a1a1a; background: #fff; }
-  .page { width: 100%; max-width: 720px; margin: 0 auto; padding: 24px; }
+  body { font-family: 'DejaVu Sans', sans-serif; font-size: 9pt; color: #111827; background: #ffffff; }
+  .page { width: 100%; max-width: 760px; margin: 0 auto; padding: 20px; }
 
-  .company-header { text-align: center; border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 14px; }
-  .company-name { font-size: 15pt; font-weight: bold; color: #1e3a5f; letter-spacing: 0.5px; }
-  .company-sub { font-size: 8pt; color: #555; margin-top: 2px; }
-  .doc-title { font-size: 11pt; font-weight: bold; text-align: center; letter-spacing: 2px;
-               text-transform: uppercase; color: #fff; background: #1e3a5f; padding: 5px 0; margin-bottom: 14px; }
+  .header { border: 1px solid #c7d2fe; background: #eef2ff; padding: 14px 16px; border-radius: 8px; margin-bottom: 12px; }
+  .header-title { font-size: 17pt; font-weight: bold; color: #1e3a8a; letter-spacing: 0.6px; }
+  .header-sub { font-size: 8pt; color: #4b5563; margin-top: 2px; }
 
-  .two-col { display: table; width: 100%; margin-bottom: 14px; }
-  .col-left  { display: table-cell; vertical-align: top; width: 55%; padding-right: 20px; }
-  .col-right { display: table-cell; vertical-align: top; width: 45%; text-align: right; }
-  .info-label { font-size: 7.5pt; color: #666; text-transform: uppercase; letter-spacing: 0.4px; }
-  .info-value { font-size: 9pt; font-weight: bold; color: #111; margin-bottom: 4px; }
+  .doc-band { margin: 10px 0 12px; border-radius: 6px; background: #1e3a8a; color: #ffffff; text-transform: uppercase; letter-spacing: 1.4px; font-weight: bold; text-align: center; padding: 6px 0; }
 
-  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-  th { font-size: 7.5pt; font-weight: bold; text-align: left; padding: 4px 8px;
-       background: #f0f4f9; color: #333; border-bottom: 1px solid #c9d8e8; }
-  th.right, td.right { text-align: right; }
-  th.center, td.center { text-align: center; }
-  td { font-size: 8.5pt; padding: 4px 8px; border-bottom: 1px solid #e8ecf0; }
-  tr:last-child td { border-bottom: none; }
+  .meta-grid { display: table; width: 100%; margin-bottom: 14px; border: 1px solid #dbeafe; border-radius: 8px; overflow: hidden; }
+  .meta-col { display: table-cell; width: 50%; vertical-align: top; padding: 10px 12px; }
+  .meta-col:first-child { border-right: 1px solid #dbeafe; }
+  .meta-row { margin-bottom: 5px; }
+  .meta-row:last-child { margin-bottom: 0; }
+  .meta-label { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.4px; color: #6b7280; }
+  .meta-value { font-size: 9pt; font-weight: bold; color: #111827; }
 
-  .badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 7pt; font-weight: bold; }
-  .badge-draft { background: #f0f0f0; color: #666; }
-  .badge-confirmed { background: #d1fae5; color: #065f46; }
-  .badge-delivered { background: #dbeafe; color: #1e40af; }
-  .badge-inbound { background: #e0e7ff; color: #3730a3; }
-  .badge-outbound { background: #fef3c7; color: #92400e; }
+  .status-pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 8pt; font-weight: bold; }
+  .status-dispatched { background: #dbeafe; color: #1d4ed8; }
+  .status-partially_delivered { background: #fef3c7; color: #b45309; }
+  .status-delivered { background: #d1fae5; color: #065f46; }
 
-  .section-title { font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.8px;
-                   color: #fff; background: #2d6a9f; padding: 3px 8px; margin-bottom: 0; }
+  .section-title { margin-top: 12px; margin-bottom: 0; background: #1f2937; color: #ffffff; padding: 5px 10px; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.8px; }
 
-  .signature-row { display: table; width: 100%; margin-top: 40px; }
-  .signature-cell { display: table-cell; width: 33%; text-align: center; padding: 0 10px; }
-  .signature-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 4px; }
-  .signature-label { font-size: 7pt; color: #666; text-transform: uppercase; letter-spacing: 0.3px; }
-  .signature-name { font-size: 8pt; font-weight: bold; color: #111; }
+  .panel { border: 1px solid #e5e7eb; padding: 10px 12px; margin-bottom: 10px; }
+  .panel-grid { display: table; width: 100%; }
+  .panel-cell { display: table-cell; width: 50%; vertical-align: top; padding-right: 8px; }
+  .panel-cell:last-child { padding-right: 0; }
+  .line-label { font-size: 7.5pt; text-transform: uppercase; color: #6b7280; }
+  .line-value { font-size: 9pt; font-weight: bold; color: #111827; margin-bottom: 5px; }
 
-  .footer { font-size: 7pt; color: #999; text-align: center; border-top: 1px solid #e8ecf0; padding-top: 8px; margin-top: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #e5e7eb; }
+  thead th { background: #f9fafb; color: #374151; text-transform: uppercase; letter-spacing: 0.35px; font-size: 7.5pt; text-align: left; padding: 7px 8px; border-bottom: 1px solid #e5e7eb; }
+  tbody td { font-size: 8.5pt; color: #111827; padding: 7px 8px; border-bottom: 1px solid #f3f4f6; }
+  tbody tr:last-child td { border-bottom: none; }
+  .right { text-align: right; }
+  .mono { font-family: 'DejaVu Sans Mono', monospace; }
+
+  .signatures { display: table; width: 100%; margin-top: 28px; }
+  .sig-cell { display: table-cell; width: 33%; text-align: center; padding: 0 10px; }
+  .sig-line { border-top: 1px solid #6b7280; margin-top: 22px; padding-top: 4px; }
+  .sig-name { font-size: 8pt; font-weight: bold; }
+  .sig-role { font-size: 7.5pt; color: #6b7280; }
+
+  .footer { margin-top: 14px; border-top: 1px solid #e5e7eb; padding-top: 7px; font-size: 7.5pt; color: #9ca3af; text-align: center; }
+
+  @page { margin: 12mm; }
 </style>
 </head>
 <body>
 <div class="page">
-  {{-- Company Header --}}
-  <div class="company-header">
-    <div class="company-name">{{ $settings['company_name'] ?? 'Ogami Manufacturing Corp.' }}</div>
-    <div class="company-sub">{{ $settings['company_address'] ?? '' }}</div>
+
+  <div class="header">
+    <div class="header-title">{{ $settings['company_name'] ?? 'Ogami Manufacturing Corp.' }}</div>
+    <div class="header-sub">{{ $settings['company_address'] ?? '' }}</div>
     @if(!empty($settings['company_tin']) || !empty($settings['company_phone']))
-    <div class="company-sub">
-      @if(!empty($settings['company_tin']))TIN: {{ $settings['company_tin'] }}@endif
-      @if(!empty($settings['company_tin']) && !empty($settings['company_phone'])) | @endif
-      @if(!empty($settings['company_phone']))Tel: {{ $settings['company_phone'] }}@endif
-    </div>
+      <div class="header-sub">
+        @if(!empty($settings['company_tin']))TIN: {{ $settings['company_tin'] }}@endif
+        @if(!empty($settings['company_tin']) && !empty($settings['company_phone'])) | @endif
+        @if(!empty($settings['company_phone']))Phone: {{ $settings['company_phone'] }}@endif
+      </div>
     @endif
   </div>
 
-  <div class="doc-title">Delivery Receipt</div>
+  <div class="doc-band">Delivery Receipt</div>
 
-  {{-- Header Info --}}
-  <div class="two-col">
-    <div class="col-left">
-      <div class="info-label">DR Reference</div>
-      <div class="info-value">{{ $dr->dr_reference }}</div>
-
-      <div class="info-label" style="margin-top:6px">Direction</div>
-      <div class="info-value">
-        <span class="badge {{ $dr->direction === 'inbound' ? 'badge-inbound' : 'badge-outbound' }}">
-          {{ strtoupper($dr->direction) }}
-        </span>
+  <div class="meta-grid">
+    <div class="meta-col">
+      <div class="meta-row">
+        <div class="meta-label">DR Reference</div>
+        <div class="meta-value mono">{{ $receipt->dr_reference }}</div>
       </div>
-
-      @if($dr->vendor)
-      <div class="info-label" style="margin-top:6px">Vendor</div>
-      <div class="info-value">{{ $dr->vendor->name }}</div>
-      @endif
-
-      @if($dr->customer)
-      <div class="info-label" style="margin-top:6px">Customer</div>
-      <div class="info-value">{{ $dr->customer->name }}</div>
-      @if($dr->customer->address)
-      <div style="font-size:8pt;color:#555;">{{ $dr->customer->address }}</div>
-      @endif
-      @endif
+      <div class="meta-row">
+        <div class="meta-label">Receipt Date</div>
+        <div class="meta-value">{{ $receipt->receipt_date ? \Carbon\Carbon::parse((string) $receipt->receipt_date)->format('F j, Y') : '-' }}</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-label">Direction</div>
+        <div class="meta-value">{{ strtoupper($receipt->direction) }}</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-label">Handled By</div>
+        <div class="meta-value">{{ $receipt->receivedBy?->name ?? '-' }}</div>
+      </div>
     </div>
-
-    <div class="col-right">
-      <div class="info-label">Status</div>
-      <div class="info-value">
-        <span class="badge {{ $dr->status === 'confirmed' ? 'badge-confirmed' : ($dr->status === 'delivered' ? 'badge-delivered' : 'badge-draft') }}">
-          {{ strtoupper(str_replace('_', ' ', $dr->status)) }}
-        </span>
+    <div class="meta-col">
+      <div class="meta-row">
+        <div class="meta-label">Status</div>
+        <div class="meta-value">
+          <span class="status-pill status-{{ $receipt->status }}">{{ strtoupper(str_replace('_', ' ', $receipt->status)) }}</span>
+        </div>
       </div>
-
-      <div class="info-label" style="margin-top:6px">Receipt Date</div>
-      <div class="info-value">{{ \Carbon\Carbon::parse($dr->receipt_date)->format('M d, Y') }}</div>
-
-      @if($dr->delivery_note_number)
-      <div class="info-label" style="margin-top:6px">Delivery Note #</div>
-      <div class="info-value">{{ $dr->delivery_note_number }}</div>
-      @endif
-
-      @if($dr->purchaseOrder)
-      <div class="info-label" style="margin-top:6px">PO Reference</div>
-      <div class="info-value">{{ $dr->purchaseOrder->po_reference }}</div>
-      @endif
-
-      <div class="info-label" style="margin-top:6px">Printed On</div>
-      <div class="info-value">{{ now()->format('M d, Y h:i A') }}</div>
+      <div class="meta-row">
+        <div class="meta-label">Shipment Tracking</div>
+        <div class="meta-value mono">{{ $shipment?->tracking_number ?? '-' }}</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-label">Carrier</div>
+        <div class="meta-value">{{ $shipment?->carrier ?? 'Company Fleet' }}</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-label">Driver / Vehicle</div>
+        <div class="meta-value">{{ $receipt->driver_name ?? '-' }} @if($receipt->vehicle?->plate_number) / {{ $receipt->vehicle->plate_number }} @endif</div>
+      </div>
     </div>
   </div>
 
-  {{-- Line Items --}}
-  <div class="section-title">Items</div>
+  <div class="section-title">Client Information</div>
+  <div class="panel">
+    <div class="panel-grid">
+      <div class="panel-cell">
+        <div class="line-label">Client Name</div>
+        <div class="line-value">{{ $receipt->customer?->name ?? '-' }}</div>
+
+        <div class="line-label">Contact Person</div>
+        <div class="line-value">{{ $receipt->customer?->contact_person ?? '-' }}</div>
+
+        <div class="line-label">Email</div>
+        <div class="line-value">{{ $receipt->customer?->email ?? '-' }}</div>
+      </div>
+      <div class="panel-cell">
+        <div class="line-label">Phone Number</div>
+        <div class="line-value">{{ $receipt->customer?->phone ?? '-' }}</div>
+
+        <div class="line-label">Delivery Address</div>
+        <div class="line-value">{{ $receipt->deliverySchedule?->delivery_address ?? $receipt->customer?->address ?? '-' }}</div>
+
+        <div class="line-label">Billing Address</div>
+        <div class="line-value">{{ $receipt->customer?->billing_address ?? '-' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Order Details</div>
+  <div class="panel">
+    <div class="panel-grid">
+      <div class="panel-cell">
+        <div class="line-label">Sales Order</div>
+        <div class="line-value mono">{{ $receipt->salesOrder?->order_number ?? $receipt->salesOrder?->so_reference ?? '-' }}</div>
+
+        <div class="line-label">Client Order</div>
+        <div class="line-value mono">{{ $receipt->deliverySchedule?->clientOrder?->order_reference ?? '-' }}</div>
+      </div>
+      <div class="panel-cell">
+        <div class="line-label">Delivery Schedule</div>
+        <div class="line-value mono">{{ $receipt->deliverySchedule?->ds_reference ?? '-' }}</div>
+
+        <div class="line-label">Target Delivery Date</div>
+        <div class="line-value">{{ $receipt->deliverySchedule?->target_delivery_date ? \Carbon\Carbon::parse((string) $receipt->deliverySchedule->target_delivery_date)->format('F j, Y') : '-' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Delivered Items</div>
   <table>
     <thead>
       <tr>
-        <th style="width:5%">#</th>
-        <th style="width:15%">Item Code</th>
-        <th style="width:35%">Description</th>
-        <th class="center" style="width:10%">UOM</th>
-        <th class="right" style="width:12%">Qty</th>
-        <th class="center" style="width:10%">Condition</th>
-        <th style="width:13%">Remarks</th>
+        <th style="width:6%">#</th>
+        <th style="width:40%">Item Description</th>
+        <th style="width:14%" class="right">Qty Expected</th>
+        <th style="width:14%" class="right">Qty Received</th>
+        <th style="width:10%">UOM</th>
+        <th style="width:16%">Lot/Batch</th>
       </tr>
     </thead>
     <tbody>
-      @forelse($dr->items as $i => $item)
-      <tr>
-        <td>{{ $i + 1 }}</td>
-        <td>{{ $item->itemMaster?->item_code ?? '—' }}</td>
-        <td>{{ $item->itemMaster?->name ?? $item->poItem?->item_description ?? '—' }}</td>
-        <td class="center">{{ $item->unit_of_measure }}</td>
-        <td class="right">{{ number_format((float) $item->quantity_received, 2) }}</td>
-        <td class="center">
-          <span class="badge {{ $item->condition === 'good' ? 'badge-confirmed' : 'badge-draft' }}">
-            {{ strtoupper($item->condition ?? 'N/A') }}
-          </span>
-        </td>
-        <td style="font-size:7.5pt;">{{ $item->remarks ?? '' }}</td>
-      </tr>
+      @forelse($receipt->items as $item)
+        <tr>
+          <td>{{ $loop->iteration }}</td>
+          <td>{{ $item->itemMaster?->name ?? ('Item #'.$item->item_master_id) }}</td>
+          <td class="right">{{ number_format((float) $item->quantity_expected, 2) }}</td>
+          <td class="right">{{ number_format((float) $item->quantity_received, 2) }}</td>
+          <td>{{ $item->unit_of_measure ?? '-' }}</td>
+          <td class="mono">{{ $item->lot_batch_number ?? '-' }}</td>
+        </tr>
       @empty
-      <tr><td colspan="7" style="text-align:center;color:#999;">No items</td></tr>
+        <tr>
+          <td colspan="6" style="text-align:center;color:#9ca3af;">No line items recorded.</td>
+        </tr>
       @endforelse
     </tbody>
   </table>
 
-  {{-- Condition Notes --}}
-  @if($dr->condition_notes)
-  <div class="section-title">Condition Notes</div>
-  <div style="padding:8px;font-size:8.5pt;border:1px solid #e8ecf0;margin-bottom:14px;">
-    {{ $dr->condition_notes }}
-  </div>
+  @if(!empty($receipt->remarks))
+    <div class="section-title">Remarks</div>
+    <div class="panel">{{ $receipt->remarks }}</div>
   @endif
 
-  {{-- Signatures --}}
-  <div class="signature-row">
-    <div class="signature-cell">
-      <div class="signature-line">
-        <div class="signature-name">{{ $dr->receivedBy?->name ?? '________________' }}</div>
-        <div class="signature-label">Received By</div>
+  <div class="signatures">
+    <div class="sig-cell">
+      <div class="sig-line">
+        <div class="sig-name">{{ $receipt->receivedBy?->name ?? '________________' }}</div>
+        <div class="sig-role">Prepared By</div>
       </div>
     </div>
-    <div class="signature-cell">
-      <div class="signature-line">
-        <div class="signature-name">{{ $dr->confirmedBy?->name ?? '________________' }}</div>
-        <div class="signature-label">Confirmed By</div>
+    <div class="sig-cell">
+      <div class="sig-line">
+        <div class="sig-name">________________</div>
+        <div class="sig-role">Transport / Driver</div>
       </div>
     </div>
-    <div class="signature-cell">
-      <div class="signature-line">
-        <div class="signature-name">________________</div>
-        <div class="signature-label">Customer Signature</div>
+    <div class="sig-cell">
+      <div class="sig-line">
+        <div class="sig-name">________________</div>
+        <div class="sig-role">Client Receiver</div>
       </div>
     </div>
   </div>
 
-  {{-- Footer --}}
   <div class="footer">
-    Generated by Ogami ERP &mdash; {{ $dr->dr_reference }} &mdash; {{ now()->format('Y-m-d H:i:s') }}
+    Generated on {{ now()->format('F j, Y g:i A') }} | {{ $receipt->dr_reference }} | Ogami ERP Delivery
   </div>
+
 </div>
 </body>
 </html>

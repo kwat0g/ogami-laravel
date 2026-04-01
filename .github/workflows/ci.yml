@@ -5,6 +5,19 @@ on:
     branches: [main, full-changes]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      e2e_target:
+        description: 'Choose which Lightpanda E2E job(s) to run'
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - full
+          - both
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -117,11 +130,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.local/share/pnpm/store
-          key: pnpm-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-
 
       - name: Install frontend dependencies
-        run: cd frontend && pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # ── Lint ──────────────────────────────────────────────────────────────
       - name: ESLint
@@ -138,3 +151,262 @@ jobs:
       # ── Unit Tests ────────────────────────────────────────────────────────
       - name: Vitest
         run: cd frontend && pnpm test
+
+  # ── E2E PR Smoke: Lightpanda (auth + rbac) ───────────────────────────────
+  e2e-pr-smoke:
+    name: E2E PR Smoke (Lightpanda)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.e2e_target == 'smoke' || github.event.inputs.e2e_target == 'both'))
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ogami_erp_test
+          POSTGRES_USER: ogami
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ogami -d ogami_erp_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, pgsql, mbstring, zip, exif, pcntl, bcmath, gd, intl, xml, xsl, soap, sockets, redis
+          coverage: none
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10.30.1'
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --optimize-autoloader
+          pnpm install --frozen-lockfile
+
+      - name: App setup and seed
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: ogami_erp_test
+          DB_USERNAME: ogami
+          DB_PASSWORD: secret
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: file
+          MAIL_MAILER: array
+          BROADCAST_CONNECTION: log
+          PULSE_ENABLED: false
+          REDIS_CLIENT: phpredis
+          REDIS_HOST: 127.0.0.1
+          REDIS_PASSWORD: ''
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate:fresh --seed
+
+      - name: Start backend and frontend
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: ogami_erp_test
+          DB_USERNAME: ogami
+          DB_PASSWORD: secret
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: file
+          MAIL_MAILER: array
+          BROADCAST_CONNECTION: log
+          PULSE_ENABLED: false
+          REDIS_CLIENT: phpredis
+          REDIS_HOST: 127.0.0.1
+          REDIS_PASSWORD: ''
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel.log 2>&1 &
+          cd frontend
+          pnpm dev --host 127.0.0.1 --port 5173 > /tmp/vite.log 2>&1 &
+
+      - name: Wait for services
+        run: |
+          for i in {1..60}; do
+            curl -fsS http://127.0.0.1:8000 >/dev/null && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8000 >/dev/null
+          for i in {1..60}; do
+            curl -fsS http://127.0.0.1:5173 >/dev/null && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:5173 >/dev/null
+
+      - name: Run E2E smoke modules
+        run: |
+          cd frontend
+          bash e2e/run-module-suite.sh --module auth --project lightpanda
+          bash e2e/run-module-suite.sh --module rbac --project lightpanda
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-pr-smoke-artifacts
+          path: |
+            frontend/e2e/module-reports
+            frontend/e2e/playwright-report
+            /tmp/laravel.log
+            /tmp/vite.log
+
+  # ── E2E Nightly: Full module suite on Lightpanda ─────────────────────────
+  e2e-nightly-full:
+    name: E2E Nightly Full (Lightpanda)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.e2e_target == 'full' || github.event.inputs.e2e_target == 'both'))
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ogami_erp_test
+          POSTGRES_USER: ogami
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ogami -d ogami_erp_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, pgsql, mbstring, zip, exif, pcntl, bcmath, gd, intl, xml, xsl, soap, sockets, redis
+          coverage: none
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10.30.1'
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --optimize-autoloader
+          pnpm install --frozen-lockfile
+
+      - name: App setup and seed
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: ogami_erp_test
+          DB_USERNAME: ogami
+          DB_PASSWORD: secret
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: file
+          MAIL_MAILER: array
+          BROADCAST_CONNECTION: log
+          PULSE_ENABLED: false
+          REDIS_CLIENT: phpredis
+          REDIS_HOST: 127.0.0.1
+          REDIS_PASSWORD: ''
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate:fresh --seed
+
+      - name: Start backend and frontend
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: ogami_erp_test
+          DB_USERNAME: ogami
+          DB_PASSWORD: secret
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: file
+          MAIL_MAILER: array
+          BROADCAST_CONNECTION: log
+          PULSE_ENABLED: false
+          REDIS_CLIENT: phpredis
+          REDIS_HOST: 127.0.0.1
+          REDIS_PASSWORD: ''
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel.log 2>&1 &
+          cd frontend
+          pnpm dev --host 127.0.0.1 --port 5173 > /tmp/vite.log 2>&1 &
+
+      - name: Wait for services
+        run: |
+          for i in {1..60}; do
+            curl -fsS http://127.0.0.1:8000 >/dev/null && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8000 >/dev/null
+          for i in {1..60}; do
+            curl -fsS http://127.0.0.1:5173 >/dev/null && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:5173 >/dev/null
+
+      - name: Run E2E full suite
+        run: |
+          cd frontend
+          bash e2e/run-module-suite.sh --project lightpanda
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-nightly-full-artifacts
+          path: |
+            frontend/e2e/module-reports
+            frontend/e2e/playwright-report
+            /tmp/laravel.log
+            /tmp/vite.log

@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { PERMISSIONS } from '@/lib/permissions'
 
 export default function TicketDetailPage() {
   const { ulid = '' } = useParams<{ ulid: string }>()
@@ -175,34 +177,44 @@ export default function TicketDetailPage() {
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2">
-        {canReply && (
-          <button onClick={() => setActivePanel(activePanel === 'reply' ? null : 'reply')}
-            className="btn-primary">
-            Reply
-          </button>
-        )}
-        <button onClick={() => setActivePanel(activePanel === 'assign' ? null : 'assign')}
-          className="btn-secondary">
-          Assign
-        </button>
-        {canResolve && (
-          <button onClick={() => setActivePanel(activePanel === 'resolve' ? null : 'resolve')}
-            className="btn-primary">
-            Resolve
-          </button>
-        )}
-        {canClose && (
-          <button onClick={submitClose} disabled={closeMutation.isPending}
+        <PermissionGuard permission={PERMISSIONS.crm.tickets.reply}>
+          {canReply && (
+            <button onClick={() => setActivePanel(activePanel === 'reply' ? null : 'reply')}
+              className="btn-primary">
+              Reply
+            </button>
+          )}
+        </PermissionGuard>
+        <PermissionGuard permission={PERMISSIONS.crm.tickets.assign}>
+          <button onClick={() => setActivePanel(activePanel === 'assign' ? null : 'assign')}
             className="btn-secondary">
-            {closeMutation.isPending ? 'Closing…' : 'Close'}
+            Assign
           </button>
-        )}
-        {canReopen && (
-          <button onClick={() => setActivePanel(activePanel === 'reopen' ? null : 'reopen')}
-            className="btn-secondary">
-            Reopen
-          </button>
-        )}
+        </PermissionGuard>
+        <PermissionGuard permission={PERMISSIONS.crm.tickets.manage}>
+          {canResolve && (
+            <button onClick={() => setActivePanel(activePanel === 'resolve' ? null : 'resolve')}
+              className="btn-primary">
+              Resolve
+            </button>
+          )}
+        </PermissionGuard>
+        <PermissionGuard permission={PERMISSIONS.crm.tickets.close}>
+          {canClose && (
+            <button onClick={submitClose} disabled={closeMutation.isPending}
+              className="btn-secondary">
+              {closeMutation.isPending ? 'Closing…' : 'Close'}
+            </button>
+          )}
+        </PermissionGuard>
+        <PermissionGuard permission={PERMISSIONS.crm.tickets.manage}>
+          {canReopen && (
+            <button onClick={() => setActivePanel(activePanel === 'reopen' ? null : 'reopen')}
+              className="btn-secondary">
+              Reopen
+            </button>
+          )}
+        </PermissionGuard>
       </div>
 
       {/* Action Panels */}

@@ -24,7 +24,7 @@ beforeEach(function () {
     $this->hrManager = User::factory()->create([
         'password' => Hash::make('HRpass!123'),
     ]);
-    $this->hrManager->assignRole('manager');
+    $this->hrManager->assignRole('super_admin');
 });
 
 describe('POST /api/v1/hr/employees — create employee', function () {

@@ -11,6 +11,7 @@ describe('deliveryApiPaths', () => {
   it('builds DR action paths from ulid', () => {
     const ulid = '01HZY5ABCD1234EFGH5678JKLM'
     expect(deliveryApiPaths.receiptByUlid(ulid)).toBe(`/delivery/receipts/${ulid}`)
+    expect(deliveryApiPaths.receiptPdf(ulid)).toBe(`/delivery/receipts/${ulid}/pdf`)
     expect(deliveryApiPaths.confirmReceipt(ulid)).toBe(`/delivery/receipts/${ulid}/confirm`)
     expect(deliveryApiPaths.dispatchReceipt(ulid)).toBe(`/delivery/receipts/${ulid}/dispatch`)
     expect(deliveryApiPaths.partialDeliverReceipt(ulid)).toBe(`/delivery/receipts/${ulid}/partial-deliver`)

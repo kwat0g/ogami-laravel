@@ -19,7 +19,7 @@ beforeEach(function (): void {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
 
     $this->admin = User::factory()->create();
-    $this->admin->assignRole('admin');
+    $this->admin->assignRole('super_admin');
 });
 
 describe('employee delete action is not exposed', function () {
@@ -42,6 +42,8 @@ describe('employee termination lifecycle', function () {
         $this->actingAs($this->admin)
             ->postJson("/api/v1/hr/employees/{$employee->ulid}/transition", [
                 'to_state' => 'terminated',
+                'separation_date' => now()->toDateString(),
+                'separation_reason' => 'Policy violation',
             ])
             ->assertOk()
             ->assertJsonPath('data.id', $employee->id)

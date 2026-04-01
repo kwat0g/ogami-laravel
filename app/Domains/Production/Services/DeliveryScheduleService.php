@@ -405,10 +405,19 @@ final class DeliveryScheduleService implements ServiceContract
             );
         }
 
-        $totalItems = $ds->items->count();
-        if (count($itemAcknowledgments) !== $totalItems) {
+        $itemSummary = is_array($ds->item_status_summary) ? $ds->item_status_summary : [];
+        $missingItemIds = collect($itemSummary)
+            ->filter(fn ($item): bool => (bool) ($item['is_missing'] ?? false))
+            ->map(fn ($item): int => (int) ($item['delivery_schedule_item_id'] ?? $item['delivery_schedule_id'] ?? 0))
+            ->filter(fn (int $id): bool => $id > 0);
+
+        $requiredAcknowledgmentCount = $ds->items
+            ->reject(fn (DeliveryScheduleItem $item): bool => $missingItemIds->contains($item->id))
+            ->count();
+
+        if (count($itemAcknowledgments) !== $requiredAcknowledgmentCount) {
             throw new DomainException(
-                'All items must be acknowledged.',
+                'All delivered items must be acknowledged.',
                 'INCOMPLETE_ACKNOWLEDGMENT',
                 422
             );

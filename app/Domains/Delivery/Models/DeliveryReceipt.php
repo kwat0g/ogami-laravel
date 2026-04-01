@@ -58,6 +58,12 @@ final class DeliveryReceipt extends Model implements AuditableContract
 
     protected $casts = [
         'receipt_date' => 'date',
+        'pod_photo_paths' => 'array',
+        'pod_recorded_at' => 'datetime',
+    ];
+
+    protected $appends = [
+        'pod_photo_urls',
     ];
 
     public function deliverySchedule(): BelongsTo
@@ -103,5 +109,22 @@ final class DeliveryReceipt extends Model implements AuditableContract
     public function shipments(): HasMany
     {
         return $this->hasMany(Shipment::class);
+    }
+
+    /** @return array<int, string> */
+    public function getPodPhotoUrlsAttribute(): array
+    {
+        $paths = $this->pod_photo_paths;
+
+        if (! is_array($paths) || $paths === []) {
+            return [];
+        }
+
+        $ulid = $this->ulid ?? (string) $this->id;
+
+        return array_values(array_map(
+            static fn (int $index): string => "/api/v1/delivery/receipts/{$ulid}/pod-photos/{$index}",
+            array_keys($paths)
+        ));
     }
 }

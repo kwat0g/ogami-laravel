@@ -52,8 +52,8 @@ it('INT-PAY-GL-001 — locking a payroll run creates a balanced JE', function ()
 
     $this->computeSvc->computeForEmployee($employee, $run);
 
-    // Lock the run
-    $run->status = 'locked';
+    // Posting is only allowed from approved workflow states.
+    $run->status = 'ACCTG_APPROVED';
     $run->save();
 
     // Post to GL
@@ -82,7 +82,7 @@ it('INT-PAY-GL-002 — JE contains salaries expense debit and payables credits',
     PayrollTestHelper::makeAttendance($employee, '2025-11-16', '2025-11-30');
 
     $this->computeSvc->computeForEmployee($employee, $run);
-    $run->status = 'locked';
+    $run->status = 'ACCTG_APPROVED';
     $run->save();
     $this->postSvc->postPayrollRun($run);
 
@@ -111,7 +111,7 @@ it('INT-PAY-GL-003 — re-posting the same run does not create a duplicate JE', 
     PayrollTestHelper::makeAttendance($employee, '2025-09-16', '2025-09-30');
 
     $this->computeSvc->computeForEmployee($employee, $run);
-    $run->status = 'locked';
+    $run->status = 'ACCTG_APPROVED';
     $run->save();
 
     $this->postSvc->postPayrollRun($run);
@@ -141,7 +141,7 @@ it('INT-PAY-GL-004 — multi-employee run produces a single aggregated JE', func
         $this->computeSvc->computeForEmployee($emp, $run);
     }
 
-    $run->status = 'locked';
+    $run->status = 'ACCTG_APPROVED';
     $run->save();
     $this->postSvc->postPayrollRun($run);
 

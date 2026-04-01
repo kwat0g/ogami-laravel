@@ -1,4 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
+import { homedir } from 'node:os'
+import path from 'node:path'
+
+const lightpandaExecutablePath =
+    process.env.LIGHTPANDA_EXECUTABLE_PATH
+    ?? path.join(homedir(), '.cache', 'lightpanda-node', 'lightpanda')
 
 /**
  * Ogami ERP — Playwright E2E Configuration
@@ -39,7 +45,8 @@ export default defineConfig({
         {
             name:    'setup',
             testDir: './e2e/setup',
-            use:     { ...devices['Desktop Chrome'], storageState: undefined },
+            testMatch: '**/*.setup.ts',
+            use:     { ...devices['Desktop Chrome'], storageState: { cookies: [], origins: [] } },
         },
 
         // ── Main test suite ──────────────────────────────────────────────────
@@ -52,8 +59,9 @@ export default defineConfig({
             name:         'lightpanda',
             use:          {
                 ...devices['Desktop Chrome'],
-                executablePath: '/home/kwat0g/.local/bin/lightpanda',
+                executablePath: lightpandaExecutablePath,
             },
+            dependencies: ['setup'],
         },
     ],
 })

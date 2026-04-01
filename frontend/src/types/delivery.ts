@@ -24,6 +24,10 @@ export interface DeliveryReceipt {
   vendor: { id: number; name: string } | null;
   customer: { id: number; name: string } | null;
   received_by: { id: number; name: string } | null;
+  pod_receiver_name?: string | null;
+  pod_photo_urls?: string[];
+  pod_notes?: string | null;
+  pod_recorded_at?: string | null;
   items?: DeliveryReceiptItem[];
   shipments_count?: number;
   created_at: string;

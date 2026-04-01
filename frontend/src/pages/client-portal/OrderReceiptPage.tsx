@@ -45,9 +45,24 @@ export default function OrderReceiptPage(): JSX.Element {
     )
   }
 
-  // Only allow acknowledgment if status is dispatched or delivered
-  const canAcknowledge = schedule.status === 'dispatched' || schedule.status === 'delivered'
-  const isAlreadyAcknowledged = schedule.status === 'delivered'
+  const itemSummaries = schedule.item_status_summary ?? []
+  const missingItemIds = new Set(
+    itemSummaries
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((summary: any) => Boolean(summary?.is_missing))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((summary: any) => Number(summary?.delivery_schedule_item_id ?? summary?.delivery_schedule_id))
+      .filter((id): id is number => Number.isFinite(id))
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const actionableItemIds = (schedule.item_schedules?.map((i: any) => i.id) ?? []).filter(id => !missingItemIds.has(id))
+  const actionableSummaries = itemSummaries.filter(summary => !summary?.is_missing)
+  const hasAcknowledgment = actionableSummaries.length > 0
+    && actionableSummaries.every((summary: ItemStatusSummary & { client_acknowledgment?: unknown }) => Boolean(summary.client_acknowledgment))
+
+  // Acknowledgment is only allowed after delivery has been completed.
+  const canAcknowledge = schedule.status === 'delivered' && !hasAcknowledgment
+  const isAlreadyAcknowledged = hasAcknowledgment
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAcknowledgmentChange = (itemId: number, field: keyof AcknowledgmentForm, value: any) => {
@@ -66,10 +81,8 @@ export default function OrderReceiptPage(): JSX.Element {
   }
 
   const handleSubmit = async () => {
-    // Validate all items have acknowledgment
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const itemIds = schedule.item_schedules?.map((i: any) => i.id) || []
-    const missingItems = itemIds.filter(id => !acknowledgments[id])
+    // Validate all non-missing/delayed items have acknowledgment
+    const missingItems = actionableItemIds.filter(id => !acknowledgments[id])
 
     if (missingItems.length > 0) {
       toast.error('Please acknowledge receipt of all items')
@@ -77,13 +90,17 @@ export default function OrderReceiptPage(): JSX.Element {
     }
 
     const payload = {
-      item_acknowledgments: Object.entries(acknowledgments).map(([itemId, ack]) => ({
-        item_id: parseInt(itemId),
-        received_qty: (ack as AcknowledgmentForm).received_qty,
-        condition: (ack as AcknowledgmentForm).condition,
-        notes: (ack as AcknowledgmentForm).notes,
-        photo_urls: (ack as AcknowledgmentForm).photo_urls || [],
-      })),
+      item_acknowledgments: actionableItemIds.map((itemId) => {
+        const ack = acknowledgments[itemId] as AcknowledgmentForm
+
+        return {
+          item_id: itemId,
+          received_qty: ack.received_qty,
+          condition: ack.condition,
+          notes: ack.notes,
+          photo_urls: ack.photo_urls || [],
+        }
+      }),
       general_notes: generalNotes,
     }
 
@@ -145,9 +162,8 @@ export default function OrderReceiptPage(): JSX.Element {
           <div className="space-y-4">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {schedule.item_schedules?.map((item: any) => {
-              const summary = schedule.item_status_summary?.find(
-                (s: ItemStatusSummary) => s.delivery_schedule_id === item.id
-              )
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const summary = schedule.item_status_summary?.find((s: any) => (s.delivery_schedule_item_id ?? s.delivery_schedule_id) === item.id)
               const isMissing = summary?.is_missing
               const ack = acknowledgments[item.id]
 

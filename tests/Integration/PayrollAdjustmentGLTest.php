@@ -55,8 +55,8 @@ it('INT-PAY-GL-005 — custom deduction maps to specific GL account', function (
     $adjustment = PayrollAdjustment::where('payroll_run_id', $run->id)->first();
     expect($adjustment->status)->toBe('applied');
 
-    // Lock and Post
-    $run->status = 'locked';
+    // Post from an approved workflow status.
+    $run->status = 'ACCTG_APPROVED';
     $run->save();
     $this->postSvc->postPayrollRun($run);
 
@@ -114,7 +114,7 @@ it('INT-PAY-GL-006 — mixed deductions (custom GL and default)', function () {
 
     $this->computeSvc->computeForEmployee($employee, $run);
 
-    $run->status = 'locked';
+    $run->status = 'ACCTG_APPROVED';
     $run->save();
     $this->postSvc->postPayrollRun($run);
 

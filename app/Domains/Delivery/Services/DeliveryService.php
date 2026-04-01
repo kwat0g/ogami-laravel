@@ -462,7 +462,7 @@ final class DeliveryService implements ServiceContract
 
         $deliveryStatuses = ['approved', 'in_production', 'ready_for_delivery', 'dispatched'];
 
-        if ($targetStatus === 'dispatched' && in_array($clientOrder->status, ['ready_for_delivery'], true)) {
+        if ($targetStatus === 'dispatched' && in_array($clientOrder->status, ['approved', 'in_production', 'ready_for_delivery'], true)) {
             $clientOrder->update(['status' => 'dispatched']);
         }
 

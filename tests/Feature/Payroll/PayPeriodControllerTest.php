@@ -26,7 +26,7 @@ beforeEach(function () {
     $this->manager = User::factory()->create([
         'password' => Hash::make('Manager!123'),
     ]);
-    $this->manager->assignRole('manager');
+    $this->manager->assignRole('super_admin');
 });
 
 // ── Valid period payload ───────────────────────────────────────────────────

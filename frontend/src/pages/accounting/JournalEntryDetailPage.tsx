@@ -17,6 +17,8 @@ import { InfoRow, InfoList } from '@/components/ui/InfoRow'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ApprovalStepForm from '@/components/ui/ApprovalStepForm'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { PERMISSIONS } from '@/lib/permissions'
 import type { JournalEntryLine } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
@@ -180,63 +182,69 @@ export default function JournalEntryDetailPage() {
           !entry.is_auto_posted && (
             <div className="flex items-center gap-2">
               {entry.status === 'draft' && (
-                <ApprovalStepForm
-                  title="Submit for Approval"
-                  description="This will submit the journal entry for review. The reviewer will verify debits equal credits and GL codes are correct."
-                  confirmLabel="Submit"
-                  onConfirm={async (_comments) => {
-                    try {
-                      await submitMutation.mutateAsync()
-                      toast.success('Journal entry submitted for approval.')
-                    } catch (err) {
-                      toast.error(firstErrorMessage(err))
-                    }
-                  }}
-                  isLoading={submitMutation.isPending}
-                >
-                  <button
-                    disabled={busy}
-                    className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                <PermissionGuard permission={PERMISSIONS.journal_entries.submit}>
+                  <ApprovalStepForm
+                    title="Submit for Approval"
+                    description="This will submit the journal entry for review. The reviewer will verify debits equal credits and GL codes are correct."
+                    confirmLabel="Submit"
+                    onConfirm={async (_comments) => {
+                      try {
+                        await submitMutation.mutateAsync()
+                        toast.success('Journal entry submitted for approval.')
+                      } catch (err) {
+                        toast.error(firstErrorMessage(err))
+                      }
+                    }}
+                    isLoading={submitMutation.isPending}
                   >
-                    {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
-                  </button>
-                </ApprovalStepForm>
+                    <button
+                      disabled={busy}
+                      className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitMutation.isPending ? 'Submitting…' : 'Submit for Approval'}
+                    </button>
+                  </ApprovalStepForm>
+                </PermissionGuard>
               )}
               {entry.status === 'submitted' && (
-                <ApprovalStepForm
-                  title="Post Journal Entry"
-                  description="Posted entries cannot be edited. This will finalize the journal entry in the general ledger."
-                  confirmLabel="Post Entry"
-                  onConfirm={(_comments) => handlePost()}
-                  isLoading={postMutation.isPending}
-                  checklist={['Total debits equal total credits', 'GL account codes verified', 'Fiscal period is correct']}
-                >
-                  <SodActionButton
-                    initiatedById={entry.created_by}
-                    label="Post"
-                    onClick={() => {}}
+                <PermissionGuard permission={PERMISSIONS.journal_entries.post}>
+                  <ApprovalStepForm
+                    title="Post Journal Entry"
+                    description="Posted entries cannot be edited. This will finalize the journal entry in the general ledger."
+                    confirmLabel="Post Entry"
+                    onConfirm={(_comments) => handlePost()}
                     isLoading={postMutation.isPending}
-                    disabled={submitMutation.isPending || reverseMutation.isPending}
-                    variant="primary"
-                  />
-                </ApprovalStepForm>
+                    checklist={['Total debits equal total credits', 'GL account codes verified', 'Fiscal period is correct']}
+                  >
+                    <SodActionButton
+                      initiatedById={entry.created_by}
+                      label="Post"
+                      onClick={() => {}}
+                      isLoading={postMutation.isPending}
+                      disabled={submitMutation.isPending || reverseMutation.isPending}
+                      variant="primary"
+                    />
+                  </ApprovalStepForm>
+                </PermissionGuard>
               )}
               {entry.status === 'posted' && entry.reversal_of == null && (
-                <ConfirmDestructiveDialog
-                  title="Reverse Journal Entry?"
-                  description="This will create a reversing journal entry to cancel this transaction. The original entry will remain posted. Continue?"
-                  confirmWord="REVERSE"
-                  confirmLabel="Reverse Entry"
-                  onConfirm={handleReverse}
-                >
-                  <button
-                    disabled={busy}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                <PermissionGuard permission={PERMISSIONS.journal_entries.reverse}>
+                  <ConfirmDestructiveDialog
+                    title="Reverse Journal Entry?"
+                    description="This will create a reversing journal entry to cancel this transaction. The original entry will remain posted. Continue?"
+                    confirmWord="REVERSE"
+                    confirmLabel="Reverse Entry"
+                    onConfirm={handleReverse}
                   >
-                    <RotateCcw className="h-4 w-4" />
-                    {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
-                  </button>
-                </ConfirmDestructiveDialog>
+                    <button
+                      disabled={busy}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {reverseMutation.isPending ? 'Reversing…' : 'Reverse'}
+                    </button>
+                  </ConfirmDestructiveDialog>
+                </PermissionGuard>
               )}
             </div>
           )

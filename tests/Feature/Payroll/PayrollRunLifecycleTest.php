@@ -29,6 +29,7 @@ beforeEach(function () {
 
     // Test actor with explicit payroll permissions used in this file.
     $this->hrManager = User::factory()->create(['password' => Hash::make('HRmgr!9876')]);
+    $this->hrManager->assignRole('super_admin');
     $this->hrManager->givePermissionTo('payroll.initiate');
     $this->hrManager->givePermissionTo('payroll.view');
 });

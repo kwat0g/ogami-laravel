@@ -91,6 +91,17 @@ export function useCloseVatPeriod(vatLedgerId: number) {
   })
 }
 
+export function useGenerateVatReturn() {
+  return useMutation({
+    mutationFn: async (payload: { month: number; year: number }) => {
+      const res = await api.get<{ data: Record<string, unknown> }>('/tax/bir-forms/vat-return', {
+        params: payload,
+      })
+      return res.data.data
+    },
+  })
+}
+
 // ===========================================================================
 // BIR Filings
 // ===========================================================================

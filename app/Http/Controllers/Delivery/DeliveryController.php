@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Delivery;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Delivery\Models\Shipment;
 use App\Domains\Delivery\Services\DeliveryService;
@@ -15,6 +16,7 @@ use App\Http\Resources\Delivery\ShipmentResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\Response;
 
 final class DeliveryController extends Controller
 {
@@ -95,6 +97,43 @@ final class DeliveryController extends Controller
         $this->authorize('confirm', $deliveryReceipt);
 
         return new DeliveryReceiptResource($this->service->markDelivered($deliveryReceipt, $request->user()));
+    }
+
+    /** Export DR as PDF (available once dispatched). */
+    public function pdfReceipt(DeliveryReceipt $deliveryReceipt): Response
+    {
+        $this->authorize('view', $deliveryReceipt);
+
+        if ($deliveryReceipt->status !== 'dispatched') {
+            abort(422, 'PDF export is only available for dispatched receipts.');
+        }
+
+        $receipt = $deliveryReceipt->loadMissing([
+            'items.itemMaster',
+            'customer',
+            'vendor',
+            'receivedBy',
+            'vehicle',
+            'shipments',
+            'deliverySchedule.clientOrder',
+            'salesOrder',
+        ]);
+
+        $shipment = $receipt->shipments
+            ->sortByDesc('created_at')
+            ->first(static fn ($ship) => $ship->status !== 'cancelled');
+
+        $settings = [
+            'company_name' => config('app.company_name', 'Ogami Manufacturing Corp.'),
+            'company_address' => config('app.company_address', ''),
+            'company_phone' => config('app.company_phone', ''),
+            'company_tin' => config('app.company_tin', ''),
+        ];
+
+        $pdf = Pdf::loadView('delivery.delivery-receipt-pdf', compact('receipt', 'settings', 'shipment'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('DR-'.$receipt->dr_reference.'.pdf');
     }
 
     // ── Shipments ─────────────────────────────────────────────────────────

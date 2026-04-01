@@ -466,15 +466,46 @@ Route::middleware(['auth:sanctum'])->group(function () {
         abort_unless(auth()->user()?->hasPermissionTo('delivery.manage'), 403, 'Unauthorized');
         $data = $request->validate([
             'receiver_name' => 'required|string|max:200',
-            'receiver_designation' => 'nullable|string|max:100',
             'signature_base64' => 'nullable|string',
             'photo_base64' => 'nullable|string',
+            'photos_base64' => 'nullable|array|max:3',
+            'photos_base64.*' => 'string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'delivery_notes' => 'nullable|string',
         ]);
+
+        if (empty($data['photos_base64']) && empty($data['photo_base64'])) {
+            return response()->json([
+                'message' => 'At least one POD photo is required.',
+                'errors' => ['photos_base64' => ['At least one POD photo is required.']],
+            ], 422);
+        }
+
         $service = app(\App\Domains\Delivery\Services\ProofOfDeliveryService::class);
         return response()->json(['data' => $service->recordPod($deliveryReceipt, $data, $request->user())]);
+    })->middleware('throttle:api-action');
+
+    Route::get('delivery/receipts/{deliveryReceipt}/pod-photos/{photoIndex}', function (
+        Request $request,
+        \App\Domains\Delivery\Models\DeliveryReceipt $deliveryReceipt,
+        int $photoIndex
+    ) {
+        $user = $request->user();
+        abort_if($user === null, 401, 'Unauthenticated');
+
+        $canView = $user->hasPermissionTo('delivery.manage')
+            || ($user->client_id !== null && $deliveryReceipt->customer_id === $user->client_id);
+        abort_unless($canView, 403, 'Unauthorized');
+
+        $paths = is_array($deliveryReceipt->pod_photo_paths) ? $deliveryReceipt->pod_photo_paths : [];
+        abort_unless(isset($paths[$photoIndex]), 404, 'POD photo not found');
+
+        $path = $paths[$photoIndex];
+        abort_unless(is_string($path) && $path !== '', 404, 'POD photo not found');
+        abort_unless(\Illuminate\Support\Facades\Storage::disk('local')->exists($path), 404, 'POD photo not found');
+
+        return response()->file(\Illuminate\Support\Facades\Storage::disk('local')->path($path));
     })->middleware('throttle:api-action');
 
     // ── Leave Conflict Check ────────────────────────────────────────────

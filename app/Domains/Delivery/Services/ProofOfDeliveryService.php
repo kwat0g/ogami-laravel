@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
  * Captures delivery confirmation evidence:
  *   - Digital signature (base64 PNG)
  *   - Photo of delivered goods
- *   - Receiver name and designation
+ *   - Receiver name
  *   - GPS coordinates (optional)
  *   - Delivery timestamp
  *
@@ -31,7 +31,6 @@ final class ProofOfDeliveryService implements ServiceContract
      *
      * @param  array{
      *     receiver_name: string,
-     *     receiver_designation?: string,
      *     signature_base64?: string,
      *     photo_base64?: string,
      *     photos_base64?: string[],
@@ -78,9 +77,7 @@ final class ProofOfDeliveryService implements ServiceContract
             }
 
             $dr->update([
-                'status' => 'delivered',
                 'pod_receiver_name' => $podData['receiver_name'],
-                'pod_receiver_designation' => $podData['receiver_designation'] ?? null,
                 'pod_signature_path' => $signaturePath,
                 'pod_photo_paths' => $photoPaths,
                 'pod_latitude' => $podData['latitude'] ?? null,
@@ -88,8 +85,6 @@ final class ProofOfDeliveryService implements ServiceContract
                 'pod_notes' => $podData['delivery_notes'] ?? null,
                 'pod_recorded_at' => now(),
                 'pod_recorded_by_id' => $actor->id,
-                'receipt_date' => now()->toDateString(),
-                'received_by_id' => $actor->id,
             ]);
 
             return $dr->fresh() ?? $dr;
@@ -106,7 +101,6 @@ final class ProofOfDeliveryService implements ServiceContract
         return [
             'has_pod' => $dr->pod_receiver_name !== null,
             'receiver_name' => $dr->pod_receiver_name,
-            'receiver_designation' => $dr->pod_receiver_designation ?? null,
             'has_signature' => $dr->pod_signature_path !== null,
             'has_photo' => ! empty($dr->pod_photo_paths),
             'photo_count' => is_array($dr->pod_photo_paths) ? count($dr->pod_photo_paths) : 0,

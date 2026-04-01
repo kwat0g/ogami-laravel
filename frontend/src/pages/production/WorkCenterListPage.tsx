@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useWorkCenters, useCreateWorkCenter, useDeleteWorkCenter, type WorkCenter } from '@/hooks/useProduction'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 
 export default function WorkCenterListPage() {
   const { data: workCenters, isLoading } = useWorkCenters()
   const createMut = useCreateWorkCenter()
   const deleteMut = useDeleteWorkCenter()
+  const { hasPermission } = useAuthStore()
+  const canCreateWorkCenter = hasPermission('production.orders.create')
+  const canUpdateWorkCenter = hasPermission('production.orders.update')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', code: '', description: '', hourly_labor_rate: '', hourly_overhead_rate: '', capacity_hours_per_day: '' })
 
@@ -32,12 +37,14 @@ export default function WorkCenterListPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader title="Work Centers" />
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-          {showForm ? 'Cancel' : '+ Add Work Center'}
-        </button>
+        <PermissionGuard permission="production.orders.create">
+          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+            {showForm ? 'Cancel' : '+ Add Work Center'}
+          </button>
+        </PermissionGuard>
       </div>
 
-      {showForm && (
+      {showForm && canCreateWorkCenter && (
         <form onSubmit={handleCreate} className="bg-white dark:bg-neutral-800 rounded-lg border p-5 grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Code *</label>
@@ -84,7 +91,7 @@ export default function WorkCenterListPage() {
                 <th className="text-right px-4 py-3 font-medium">Overhead Rate/hr</th>
                 <th className="text-right px-4 py-3 font-medium">Capacity hrs/day</th>
                 <th className="text-center px-4 py-3 font-medium">Status</th>
-                <th className="text-center px-4 py-3 font-medium">Actions</th>
+                {canUpdateWorkCenter && <th className="text-center px-4 py-3 font-medium">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -100,13 +107,17 @@ export default function WorkCenterListPage() {
                       {wc.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <button onClick={() => { if (confirm('Delete this work center?')) deleteMut.mutate(wc.id) }} className="text-xs text-red-600 hover:underline">Delete</button>
-                  </td>
+                  {canUpdateWorkCenter && (
+                    <td className="px-4 py-3 text-center">
+                      <PermissionGuard permission="production.orders.update">
+                        <button onClick={() => { if (confirm('Delete this work center?')) deleteMut.mutate(wc.id) }} className="text-xs text-red-600 hover:underline">Delete</button>
+                      </PermissionGuard>
+                    </td>
+                  )}
                 </tr>
               ))}
               {(!workCenters || workCenters.length === 0) && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-500">No work centers configured. Add one to get started.</td></tr>
+                <tr><td colSpan={canUpdateWorkCenter ? 7 : 6} className="px-4 py-8 text-center text-neutral-500">No work centers configured. Add one to get started.</td></tr>
               )}
             </tbody>
           </table>

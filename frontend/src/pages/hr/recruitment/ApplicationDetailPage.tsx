@@ -12,6 +12,8 @@ import ApplicationTimeline from '@/components/recruitment/ApplicationTimeline'
 import HiringModal from '@/components/recruitment/HiringModal'
 import ScheduleInterviewModal from '@/components/recruitment/ScheduleInterviewModal'
 import PrepareOfferModal from '@/components/recruitment/PrepareOfferModal'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useState, useRef } from 'react'
 import { toast } from 'sonner'
 
@@ -66,56 +68,66 @@ export default function ApplicationDetailPage() {
           <StatusBadge status={app.status} label={app.status_label} />
 
           {/* GAP-08: Review button */}
-          {app.status === 'new' && (
-            <button
-              onClick={() => handleAction('review')}
-              disabled={action.isPending}
-              className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
-            >
-              Start Review
-            </button>
-          )}
+          <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+            {app.status === 'new' && (
+              <button
+                onClick={() => handleAction('review')}
+                disabled={action.isPending}
+                className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
+              >
+                Start Review
+              </button>
+            )}
+          </PermissionGuard>
 
           {/* Shortlist button */}
-          {(app.status === 'new' || app.status === 'under_review') && (
-            <button
-              onClick={() => handleAction('shortlist')}
-              disabled={action.isPending}
-              className="rounded-md bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
-            >
-              Shortlist
-            </button>
-          )}
+          <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+            {(app.status === 'new' || app.status === 'under_review') && (
+              <button
+                onClick={() => handleAction('shortlist')}
+                disabled={action.isPending}
+                className="rounded-md bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
+              >
+                Shortlist
+              </button>
+            )}
+          </PermissionGuard>
 
           {/* GAP-02: Schedule Interview button */}
-          {canScheduleInterview && (
-            <button
-              onClick={() => setShowInterviewModal(true)}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
-            >
-              Schedule Interview
-            </button>
-          )}
+          <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+            {canScheduleInterview && (
+              <button
+                onClick={() => setShowInterviewModal(true)}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
+              >
+                Schedule Interview
+              </button>
+            )}
+          </PermissionGuard>
 
           {/* GAP-03: Prepare Offer button */}
-          {canPrepareOffer && (
-            <button
-              onClick={() => setShowOfferModal(true)}
-              className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500"
-            >
-              Prepare Offer
-            </button>
-          )}
+          <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+            {canPrepareOffer && (
+              <button
+                onClick={() => setShowOfferModal(true)}
+                className="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500"
+              >
+                Prepare Offer
+              </button>
+            )}
+          </PermissionGuard>
 
           {/* Hire button */}
-          {canHire && (
-            <button
-              onClick={() => setShowHiringModal(true)}
-              className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500"
-            >
-              Hire Candidate
-            </button>
-          )}
+          <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+            {canHire && (
+              <button
+                onClick={() => setShowHiringModal(true)}
+                className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500"
+              >
+                Hire Candidate
+              </button>
+            )}
+          </PermissionGuard>
         </div>
       </div>
 
@@ -176,68 +188,74 @@ export default function ApplicationDetailPage() {
                 )}
 
                 {/* Reject action */}
-                {!isTerminal && (
-                  <div className="mt-4 border-t pt-4">
-                    <textarea
-                      placeholder="Rejection reason..."
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
-                      rows={2}
-                    />
-                    <button
-                      onClick={() => {
-                        if (rejectReason.trim()) {
-                          handleAction('reject', { reason: rejectReason })
-                        }
-                      }}
-                      disabled={action.isPending || !rejectReason.trim()}
-                      className="mt-2 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50"
-                    >
-                      Reject Application
-                    </button>
-                  </div>
-                )}
+                <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+                  {!isTerminal && (
+                    <div className="mt-4 border-t pt-4">
+                      <textarea
+                        placeholder="Rejection reason..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+                        rows={2}
+                      />
+                      <button
+                        onClick={() => {
+                          if (rejectReason.trim()) {
+                            handleAction('reject', { reason: rejectReason })
+                          }
+                        }}
+                        disabled={action.isPending || !rejectReason.trim()}
+                        className="mt-2 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+                      >
+                        Reject Application
+                      </button>
+                    </div>
+                  )}
+                </PermissionGuard>
 
                 {/* GAP-09: Withdraw action */}
-                {!isTerminal && (
-                  <div className="mt-4 border-t pt-4">
-                    <textarea
-                      placeholder="Withdrawal reason..."
-                      value={withdrawReason}
-                      onChange={(e) => setWithdrawReason(e.target.value)}
-                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
-                      rows={2}
-                    />
-                    <button
-                      onClick={() => {
-                        if (withdrawReason.trim()) {
-                          handleAction('withdraw', { reason: withdrawReason })
-                        }
-                      }}
-                      disabled={action.isPending || !withdrawReason.trim()}
-                      className="mt-2 rounded-md bg-neutral-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-neutral-500 disabled:opacity-50"
-                    >
-                      Withdraw Application
-                    </button>
-                  </div>
-                )}
+                <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+                  {!isTerminal && (
+                    <div className="mt-4 border-t pt-4">
+                      <textarea
+                        placeholder="Withdrawal reason..."
+                        value={withdrawReason}
+                        onChange={(e) => setWithdrawReason(e.target.value)}
+                        className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+                        rows={2}
+                      />
+                      <button
+                        onClick={() => {
+                          if (withdrawReason.trim()) {
+                            handleAction('withdraw', { reason: withdrawReason })
+                          }
+                        }}
+                        disabled={action.isPending || !withdrawReason.trim()}
+                        className="mt-2 rounded-md bg-neutral-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-neutral-500 disabled:opacity-50"
+                      >
+                        Withdraw Application
+                      </button>
+                    </div>
+                  )}
+                </PermissionGuard>
               </div>
             )}
 
             {tab === 'interviews' && (
               <div className="space-y-4">
                 {/* GAP-02: Schedule Interview button in tab */}
-                {canScheduleInterview && (
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => setShowInterviewModal(true)}
-                      className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
-                    >
-                      + Schedule Interview
-                    </button>
-                  </div>
-                )}
+                <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+                  {canScheduleInterview && (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => setShowInterviewModal(true)}
+                        className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500"
+                      >
+                        + Schedule Interview
+                      </button>
+                    </div>
+                  )}
+                </PermissionGuard>
                 {app.interviews.length === 0 ? (
                   <p className="text-sm text-neutral-400">No interviews scheduled.</p>
                 ) : (
@@ -313,14 +331,16 @@ export default function ApplicationDetailPage() {
                   <div className="space-y-3">
                     <p className="text-sm text-neutral-400">No offer created yet.</p>
                     {/* GAP-03: Create Offer button */}
-                    {canPrepareOffer && (
-                      <button
-                        onClick={() => setShowOfferModal(true)}
-                        className="rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
-                      >
-                        Prepare Offer
-                      </button>
-                    )}
+                    <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+                      {canPrepareOffer && (
+                        <button
+                          onClick={() => setShowOfferModal(true)}
+                          className="rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-500"
+                        >
+                          Prepare Offer
+                        </button>
+                      )}
+                    </PermissionGuard>
                   </div>
                 )}
               </div>
@@ -490,17 +510,19 @@ function PreEmploymentTab({
         </div>
 
         {/* Mark Complete button */}
-        {app.pre_employment.status !== 'completed' && app.pre_employment.status !== 'waived' && (
-          <div className="flex justify-end">
-            <button
-              onClick={() => handleComplete(app.pre_employment.id)}
-              disabled={completePreEmployment.isPending}
-              className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50"
-            >
-              Mark Checklist Complete
-            </button>
-          </div>
-        )}
+        <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+          {app.pre_employment.status !== 'completed' && app.pre_employment.status !== 'waived' && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => handleComplete(app.pre_employment.id)}
+                disabled={completePreEmployment.isPending}
+                className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+              >
+                Mark Checklist Complete
+              </button>
+            </div>
+          )}
+        </PermissionGuard>
 
         <div className="divide-y">
           {app.pre_employment.requirements.map((req: any) => (
@@ -514,72 +536,74 @@ function PreEmploymentTab({
               </div>
 
               {/* GAP-05: Action buttons per requirement */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Upload button - shown when pending or rejected */}
-                {(req.status === 'pending' || req.status === 'rejected') && (
-                  <>
-                    <input
-                      type="file"
-                      ref={(el) => { fileInputRefs.current[req.id] = el }}
-                      className="hidden"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) handleUpload(req.id, file)
-                      }}
-                    />
-                    <button
-                      onClick={() => fileInputRefs.current[req.id]?.click()}
-                      disabled={preEmploymentUpload.isPending}
-                      className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:opacity-50"
-                    >
-                      Upload Document
-                    </button>
-                  </>
-                )}
+              <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Upload button - shown when pending or rejected */}
+                  {(req.status === 'pending' || req.status === 'rejected') && (
+                    <>
+                      <input
+                        type="file"
+                        ref={(el) => { fileInputRefs.current[req.id] = el }}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleUpload(req.id, file)
+                        }}
+                      />
+                      <button
+                        onClick={() => fileInputRefs.current[req.id]?.click()}
+                        disabled={preEmploymentUpload.isPending}
+                        className="rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:opacity-50"
+                      >
+                        Upload Document
+                      </button>
+                    </>
+                  )}
 
-                {/* Verify button - shown when submitted */}
-                {req.status === 'submitted' && (
-                  <button
-                    onClick={() => handleVerify(req.id)}
-                    disabled={preEmploymentAction.isPending}
-                    className="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-200 disabled:opacity-50"
-                  >
-                    Verify
-                  </button>
-                )}
-
-                {/* Reject button with remarks - shown when submitted */}
-                {req.status === 'submitted' && (
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="text"
-                      placeholder="Remarks..."
-                      value={rejectRemarks[req.id] || ''}
-                      onChange={(e) => setRejectRemarks({ ...rejectRemarks, [req.id]: e.target.value })}
-                      className="rounded border border-neutral-300 px-2 py-1 text-xs dark:border-neutral-600 dark:bg-neutral-700"
-                    />
+                  {/* Verify button - shown when submitted */}
+                  {req.status === 'submitted' && (
                     <button
-                      onClick={() => handleReject(req.id)}
+                      onClick={() => handleVerify(req.id)}
                       disabled={preEmploymentAction.isPending}
-                      className="rounded bg-red-100 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-200 disabled:opacity-50"
+                      className="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-200 disabled:opacity-50"
                     >
-                      Reject
+                      Verify
                     </button>
-                  </div>
-                )}
+                  )}
 
-                {/* Waive button - shown when pending */}
-                {req.status === 'pending' && (
-                  <button
-                    onClick={() => handleWaive(req.id)}
-                    disabled={preEmploymentAction.isPending}
-                    className="rounded bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-200 disabled:opacity-50"
-                  >
-                    Waive
-                  </button>
-                )}
-              </div>
+                  {/* Reject button with remarks - shown when submitted */}
+                  {req.status === 'submitted' && (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        placeholder="Remarks..."
+                        value={rejectRemarks[req.id] || ''}
+                        onChange={(e) => setRejectRemarks({ ...rejectRemarks, [req.id]: e.target.value })}
+                        className="rounded border border-neutral-300 px-2 py-1 text-xs dark:border-neutral-600 dark:bg-neutral-700"
+                      />
+                      <button
+                        onClick={() => handleReject(req.id)}
+                        disabled={preEmploymentAction.isPending}
+                        className="rounded bg-red-100 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-200 disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Waive button - shown when pending */}
+                  {req.status === 'pending' && (
+                    <button
+                      onClick={() => handleWaive(req.id)}
+                      disabled={preEmploymentAction.isPending}
+                      className="rounded bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-200 disabled:opacity-50"
+                    >
+                      Waive
+                    </button>
+                  )}
+                </div>
+              </PermissionGuard>
             </div>
           ))}
         </div>

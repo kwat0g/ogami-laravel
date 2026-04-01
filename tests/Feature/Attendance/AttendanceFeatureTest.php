@@ -14,7 +14,7 @@ beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('manager');
+    $this->manager->assignRole('super_admin');
 });
 
 it('lists attendance logs', function () {
@@ -33,7 +33,7 @@ it('lists shift schedules', function () {
 
 it('lists overtime requests', function () {
     $this->actingAs($this->manager)
-        ->getJson('/api/v1/attendance/overtime')
+    ->getJson('/api/v1/attendance/overtime-requests')
         ->assertOk()
         ->assertJsonStructure(['data']);
 });

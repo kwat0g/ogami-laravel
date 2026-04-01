@@ -148,9 +148,22 @@ All test accounts are created by the `ConsolidatedEmployeeSeeder`.
 # Frontend tests
 cd frontend && pnpm test
 
-# E2E tests
+# E2E canonical module suite (recommended)
+cd frontend && bash e2e/run-module-suite.sh --project lightpanda
+
+# E2E single module
+cd frontend && bash e2e/run-module-suite.sh --module inventory --project lightpanda
+
+# Raw Playwright run (all discovered specs)
 cd frontend && pnpm exec playwright test
 ```
+
+CI includes Lightpanda E2E gates:
+- PR smoke: `auth` + `rbac`
+- Nightly full: all canonical modules
+- Manual dispatch: `e2e_target` = `smoke`, `full`, or `both`
+
+See [frontend/e2e/MODULE_SUITE_GUIDE.md](frontend/e2e/MODULE_SUITE_GUIDE.md) for workflow details.
 
 ---
 

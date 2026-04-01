@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useRoutings, useWorkCenters, useCreateRouting, useDeleteRouting, type Routing, type WorkCenter } from '@/hooks/useProduction'
 import { useBoms } from '@/hooks/useProduction'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 
 export default function RoutingListPage() {
@@ -11,6 +13,9 @@ export default function RoutingListPage() {
   const { data: workCenters } = useWorkCenters()
   const createMut = useCreateRouting()
   const deleteMut = useDeleteRouting()
+  const { hasPermission } = useAuthStore()
+  const canCreateRouting = hasPermission('production.orders.create')
+  const canUpdateRouting = hasPermission('production.orders.update')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     bom_id: '',
@@ -45,9 +50,11 @@ export default function RoutingListPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader title="Production Routings" />
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-          {showForm ? 'Cancel' : '+ Add Routing Step'}
-        </button>
+        <PermissionGuard permission="production.orders.create">
+          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+            {showForm ? 'Cancel' : '+ Add Routing Step'}
+          </button>
+        </PermissionGuard>
       </div>
 
       {/* BOM Filter */}
@@ -65,7 +72,7 @@ export default function RoutingListPage() {
         </select>
       </div>
 
-      {showForm && (
+      {showForm && canCreateRouting && (
         <form onSubmit={handleCreate} className="bg-white dark:bg-neutral-800 rounded-lg border p-5 grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">BOM *</label>
@@ -117,7 +124,7 @@ export default function RoutingListPage() {
                 <th className="text-left px-4 py-3 font-medium">Work Center</th>
                 <th className="text-right px-4 py-3 font-medium">Setup (min)</th>
                 <th className="text-right px-4 py-3 font-medium">Run (min/unit)</th>
-                <th className="text-center px-4 py-3 font-medium">Actions</th>
+                {canUpdateRouting && <th className="text-center px-4 py-3 font-medium">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -128,13 +135,17 @@ export default function RoutingListPage() {
                   <td className="px-4 py-3">{r.work_center?.name ?? `WC #${r.work_center_id}`}</td>
                   <td className="px-4 py-3 text-right">{r.setup_time_minutes ?? '-'}</td>
                   <td className="px-4 py-3 text-right">{r.run_time_minutes ?? '-'}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button onClick={() => { if (confirm('Delete this routing step?')) deleteMut.mutate(r.id) }} className="text-xs text-red-600 hover:underline">Delete</button>
-                  </td>
+                  {canUpdateRouting && (
+                    <td className="px-4 py-3 text-center">
+                      <PermissionGuard permission="production.orders.update">
+                        <button onClick={() => { if (confirm('Delete this routing step?')) deleteMut.mutate(r.id) }} className="text-xs text-red-600 hover:underline">Delete</button>
+                      </PermissionGuard>
+                    </td>
+                  )}
                 </tr>
               ))}
               {(!routings || routings.length === 0) && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500">No routing steps found. Add routing steps to define the production process.</td></tr>
+                <tr><td colSpan={canUpdateRouting ? 6 : 5} className="px-4 py-8 text-center text-neutral-500">No routing steps found. Add routing steps to define the production process.</td></tr>
               )}
             </tbody>
           </table>

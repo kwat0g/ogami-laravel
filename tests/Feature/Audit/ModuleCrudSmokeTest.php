@@ -23,7 +23,13 @@ beforeEach(function () {
 
 function superadmin(): User
 {
-    return User::where('email', 'superadmin@ogamierp.local')->firstOrFail();
+    return User::firstOrCreate(
+        ['email' => 'superadmin@ogamierp.local'],
+        [
+            'name' => 'Super Admin',
+            'password' => bcrypt('Admin@12345!'),
+        ]
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

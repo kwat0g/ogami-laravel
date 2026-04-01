@@ -1,15 +1,18 @@
-import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
 import { formatPesoAmount } from '@/lib/formatters'
 import { toast } from 'sonner'
 import { FileText } from 'lucide-react'
-import { useVatLedgerList, useCloseVatPeriod } from '@/hooks/useTax'
+import { useVatLedgerList, useCloseVatPeriod, useGenerateVatReturn } from '@/hooks/useTax'
+import { useFiscalPeriods } from '@/hooks/useAccounting'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
+import PermissionGuard from '@/components/ui/PermissionGuard'
+import { PERMISSIONS } from '@/lib/permissions'
 import type { VatLedger } from '@/types/tax'
+import type { FiscalPeriod } from '@/types/accounting'
 
 // ---------------------------------------------------------------------------
 // VAT Summary Card
@@ -34,41 +37,63 @@ function ClosePeriodButton({ ledger }: { ledger: VatLedger }) {
   const [nextPeriodId] = useState<string>('')
 
   return (
-    <ConfirmDestructiveDialog
-      title="Close VAT Period"
-      description={`Close vat period for fiscal period #${ledger.fiscal_period_id}? ${
-        ledger.vat_payable < 0
-          ? `Net VAT is negative (${formatPesoAmount(ledger.vat_payable)}). The surplus will be carried forward to the next period.`
-          : `VAT payable: ${formatPesoAmount(ledger.vat_payable)}.`
-      }`}
-      confirmWord="CLOSE"
-      confirmLabel="Close Period"
-      onConfirm={async () => {
-        try {
-          await closeMut.mutateAsync(
-            nextPeriodId ? { next_fiscal_period_id: parseInt(nextPeriodId) } : {}
-          )
-          toast.success('VAT period closed.')
-        } catch (err) {
-          toast.error(firstErrorMessage(err))
-        }
-      }}
-    >
-      <button className="px-3 py-1.5 rounded bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">
-        Close Period
-      </button>
-    </ConfirmDestructiveDialog>
+    <PermissionGuard permission={PERMISSIONS.fiscal_periods.manage}>
+      <ConfirmDestructiveDialog
+        title="Close VAT Period"
+        description={`Close vat period for fiscal period #${ledger.fiscal_period_id}? ${
+          ledger.vat_payable < 0
+            ? `Net VAT is negative (${formatPesoAmount(ledger.vat_payable)}). The surplus will be carried forward to the next period.`
+            : `VAT payable: ${formatPesoAmount(ledger.vat_payable)}.`
+        }`}
+        confirmWord="CLOSE"
+        confirmLabel="Close Period"
+        onConfirm={async () => {
+          try {
+            await closeMut.mutateAsync(
+              nextPeriodId ? { next_fiscal_period_id: parseInt(nextPeriodId) } : {}
+            )
+            toast.success('VAT period closed.')
+          } catch (err) {
+            toast.error(firstErrorMessage(err))
+          }
+        }}
+      >
+        <button className="px-3 py-1.5 rounded bg-neutral-900 text-white text-xs font-medium hover:bg-neutral-800">
+          Close Period
+        </button>
+      </ConfirmDestructiveDialog>
+    </PermissionGuard>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Generate Report Button (placeholder - hook needs to be implemented)
+// Generate VAT Return Button
 // ---------------------------------------------------------------------------
 
-function GenerateReportButton({ ledger }: { ledger: VatLedger }) {
-  const handleGenerate = () => {
-    // Placeholder: This would generate a VAT report when the hook is available
-    toast.info('VAT report generation coming soon.')
+function GenerateReportButton({ ledger, period }: { ledger: VatLedger; period?: FiscalPeriod }) {
+  const generateMut = useGenerateVatReturn()
+
+  const handleGenerate = async () => {
+    if (!period) {
+      toast.error('Cannot generate VAT report: fiscal period details not found.')
+      return
+    }
+
+    const dateFrom = new Date(period.date_from)
+    if (Number.isNaN(dateFrom.getTime())) {
+      toast.error('Cannot generate VAT report: invalid fiscal period start date.')
+      return
+    }
+
+    const month = dateFrom.getMonth() + 1
+    const year = dateFrom.getFullYear()
+
+    try {
+      await generateMut.mutateAsync({ month, year })
+      toast.success(`VAT report generated for ${period.name}.`)
+    } catch (err) {
+      toast.error(firstErrorMessage(err))
+    }
   }
 
   return (
@@ -76,13 +101,14 @@ function GenerateReportButton({ ledger }: { ledger: VatLedger }) {
       title="Generate VAT Report?"
       description={`Generate VAT report for fiscal period #${ledger.fiscal_period_id}? This will create a detailed breakdown of input/output VAT for filing purposes.`}
       confirmLabel="Generate"
-      onConfirm={handleGenerate}
+      onConfirm={async () => { await handleGenerate() }}
     >
-      <button 
+      <button
+        disabled={generateMut.isPending}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-neutral-300 text-neutral-700 text-xs font-medium hover:bg-neutral-50"
       >
         <FileText className="w-3.5 h-3.5" />
-        Generate Report
+        {generateMut.isPending ? 'Generating…' : 'Generate Report'}
       </button>
     </ConfirmDialog>
   )
@@ -96,7 +122,10 @@ function GenerateReportButton({ ledger }: { ledger: VatLedger }) {
 
 export default function VatLedgerPage() {
   const { data, isLoading } = useVatLedgerList({ per_page: 12 })
+  const { data: periodsData } = useFiscalPeriods()
   const ledgers = data?.data ?? []
+  const periods = periodsData?.data ?? []
+  const periodById = new Map(periods.map((period) => [period.id, period]))
 
   return (
     <div className="space-y-6">
@@ -136,7 +165,7 @@ export default function VatLedgerPage() {
                   ) : (
                     <>
                       <span className="px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">Open</span>
-                      <GenerateReportButton ledger={ledger} />
+                      <GenerateReportButton ledger={ledger} period={periodById.get(ledger.fiscal_period_id)} />
                       <ClosePeriodButton ledger={ledger} />
                     </>
                   )}
