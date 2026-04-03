@@ -6,16 +6,23 @@ use App\Domains\HR\Models\Department;
 use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Models\User;
 use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 uses()->group('feature', 'procurement');
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
     $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
 
     // Use existing departments from DepartmentPositionSeeder
     $this->purchDept = Department::where('code', 'PURCH')->first();
@@ -31,6 +38,7 @@ beforeEach(function () {
     $this->purchasingOfficer = User::factory()->create([
         'department_id' => $this->purchDept->id,
     ]);
+    $this->purchasingOfficer->departments()->attach($this->purchDept->id, ['is_primary' => true]);
     $this->purchasingOfficer->assignRole('officer');
     $this->purchasingOfficer->givePermissionTo('procurement.purchase-request.create');
 
@@ -38,6 +46,7 @@ beforeEach(function () {
     $this->prodHead = User::factory()->create([
         'department_id' => $this->prodDept->id,
     ]);
+    $this->prodHead->departments()->attach($this->prodDept->id, ['is_primary' => true]);
     $this->prodHead->assignRole('head');
     $this->prodHead->givePermissionTo('procurement.purchase-request.create-dept');
 
@@ -45,12 +54,16 @@ beforeEach(function () {
     $this->whHead = User::factory()->create([
         'department_id' => $this->whDept->id,
     ]);
+    $this->whHead->departments()->attach($this->whDept->id, ['is_primary' => true]);
     $this->whHead->assignRole('head');
     $this->whHead->givePermissionTo('procurement.purchase-request.create-dept');
 
     // VP (can create PRs for any department)
     $this->vp = User::factory()->create();
     $this->vp->assignRole('vice_president');
+    $this->vp->givePermissionTo('procurement.purchase-request.create');
+
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
     // Get a valid user ID for created_by references
     $firstUserId = $this->purchasingOfficer->id;
@@ -97,7 +110,7 @@ it('allows department head to create PR for their own department', function () {
             'notes' => 'Test notes',
             'items' => [
                 [
-                    'vendor_item_id' => null,
+                    'vendor_item_id' => $this->vendorItem->id,
                     'item_description' => 'Test Item',
                     'unit_of_measure' => 'pcs',
                     'quantity' => 10,
@@ -139,7 +152,7 @@ it('allows purchasing officer to create PR for any department', function () {
             'vendor_id' => $this->vendor->id,
             'department_id' => $this->prodDept->id, // Any department
             'urgency' => 'normal',
-            'justification' => 'Test justification',
+            'justification' => 'Test justification for purchasing officer flow',
             'notes' => 'Test notes',
             'items' => [
                 [
@@ -163,7 +176,7 @@ it('allows VP to create PR for any department', function () {
             'vendor_id' => $this->vendor->id,
             'department_id' => $this->whDept->id, // Any department
             'urgency' => 'normal',
-            'justification' => 'Test justification',
+            'justification' => 'Test justification for vice president purchase request',
             'notes' => 'Test notes',
             'items' => [
                 [
@@ -239,7 +252,7 @@ it('accumulates PR amounts against department budget', function () {
             'vendor_id' => $this->vendor->id,
             'department_id' => $this->prodDept->id,
             'urgency' => 'normal',
-            'justification' => 'First purchase',
+            'justification' => 'First purchase for production line ramp-up plan',
             'notes' => 'Test notes',
             'items' => [
                 [
@@ -266,7 +279,7 @@ it('accumulates PR amounts against department budget', function () {
             'vendor_id' => $this->vendor->id,
             'department_id' => $this->prodDept->id,
             'urgency' => 'normal',
-            'justification' => 'Second purchase',
+            'justification' => 'Second purchase request for production contingency stock',
             'notes' => 'Test notes',
             'items' => [
                 [

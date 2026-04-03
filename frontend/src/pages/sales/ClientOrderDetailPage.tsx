@@ -10,7 +10,9 @@ import {
   useRejectClientOrder,
   useNegotiateClientOrder,
   useSalesRespondToCounter,
-  useVpApproveClientOrder
+  useVpApproveClientOrder,
+  useForceProductionClientOrder,
+  type ForceProductionMode,
 } from '@/hooks/useClientOrders'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
@@ -153,6 +155,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
   const negotiateMutation = useNegotiateClientOrder()
   const salesRespondMutation = useSalesRespondToCounter()
   const vpApproveMutation = useVpApproveClientOrder()
+  const forceProductionMutation = useForceProductionClientOrder()
 
   // Stock preview: fetch stock balances for all items in this order
   const itemIds = order?.items?.map((i: { item_master_id: number }) => i.item_master_id).filter(Boolean) ?? []
@@ -162,7 +165,6 @@ export default function ClientOrderDetailPage(): JSX.Element {
       if (itemIds.length === 0) return {}
       const res = await api.get('/inventory/stock-balances', { params: { item_ids: itemIds.join(','), per_page: 100 } })
       const balances: Record<number, number> = {}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const b of (res.data?.data ?? [])) {
         const itemId = b.item_id ?? b.item_master_id
         if (itemId) balances[itemId] = (balances[itemId] ?? 0) + parseFloat(b.quantity_on_hand ?? b.balance ?? '0')
@@ -180,6 +182,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
   const [showNegotiateModal, setShowNegotiateModal] = useState(false)
   const [showSalesResponseModal, setShowSalesResponseModal] = useState(false)
   const [showVpApproveModal, setShowVpApproveModal] = useState(false)
+  const [showForceProductionModal, setShowForceProductionModal] = useState(false)
   const [vpApproveNotes, setVpApproveNotes] = useState('')
 
   // Form states
@@ -194,6 +197,9 @@ export default function ClientOrderDetailPage(): JSX.Element {
   const [salesResponse, setSalesResponse] = useState<'accept' | 'counter' | 'reject'>('accept')
   const [counterDeliveryDate, setCounterDeliveryDate] = useState('')
   const [counterNotes, setCounterNotes] = useState('')
+  const [forceMode, setForceMode] = useState<ForceProductionMode>('preserve_stock_produce_full')
+  const [forceReason, setForceReason] = useState('')
+  const [forceItemModes, setForceItemModes] = useState<Record<number, 'preserve_stock_produce_full' | 'consume_stock_then_replenish'>>({})
 
   const handleApprove = async () => {
     try {
@@ -257,6 +263,35 @@ export default function ClientOrderDetailPage(): JSX.Element {
     }
   }
 
+  const handleForceProduction = async () => {
+    if (!forceReason.trim()) {
+      toast.error('Please provide a reason for force production')
+      return
+    }
+
+    try {
+      await forceProductionMutation.mutateAsync({
+        orderUlid,
+        mode: forceMode,
+        reason: forceReason.trim(),
+        items: forceMode === 'per_item'
+          ? order.items.map(item => ({
+              item_master_id: item.item_master_id,
+              mode: forceItemModes[item.item_master_id] ?? 'preserve_stock_produce_full',
+            }))
+          : undefined,
+      })
+
+      toast.success('Force production request processed')
+      setShowForceProductionModal(false)
+      setForceReason('')
+      setForceMode('preserve_stock_produce_full')
+      setForceItemModes({})
+    } catch (_error) {
+      toast.error(firstErrorMessage(_error, 'Failed to force production'))
+    }
+  }
+
   if (isLoading) {
     return <SkeletonLoader rows={5} />
   }
@@ -291,6 +326,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
   const canNegotiate = order.status === 'pending'
   const canRespondToCounter = order.status === 'client_responded'
   const canVpApprove = order.status === 'vp_pending'
+  const canForceProduction = order.status === 'approved' || order.status === 'in_production' || order.status === 'ready_for_delivery'
 
   return (
     <div className="space-y-6">
@@ -361,6 +397,17 @@ export default function ClientOrderDetailPage(): JSX.Element {
               >
                 <ShieldCheck className="h-4 w-4" />
                 VP Approve
+              </button>
+            </ActionGuard>
+          )}
+          {canForceProduction && (
+            <ActionGuard permission="sales.order_approve">
+              <button
+                onClick={() => setShowForceProductionModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
+              >
+                <Package className="h-4 w-4" />
+                Force Production
               </button>
             </ActionGuard>
           )}
@@ -795,6 +842,84 @@ export default function ClientOrderDetailPage(): JSX.Element {
                 className="flex-1 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 disabled:opacity-50"
               >
                 {vpApproveMutation.isPending ? 'Approving...' : 'VP Approve Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Force Production Modal */}
+      {showForceProductionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded border border-neutral-200 w-full max-w-2xl p-6">
+            <h2 className="text-lg font-semibold text-neutral-900">Force Production</h2>
+            <p className="text-sm text-neutral-500 mt-2">
+              Create production orders even when stock exists, using your selected strategy.
+            </p>
+
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Mode</label>
+                <select
+                  value={forceMode}
+                  onChange={(e) => setForceMode(e.target.value as ForceProductionMode)}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
+                >
+                  <option value="preserve_stock_produce_full">Preserve stock and produce full quantity</option>
+                  <option value="consume_stock_then_replenish">Consume stock and create replenishment production</option>
+                  <option value="per_item">Per-item mixed mode</option>
+                </select>
+              </div>
+
+              {forceMode === 'per_item' && (
+                <div className="border border-neutral-200 rounded p-3 space-y-2">
+                  <p className="text-xs font-medium text-neutral-600 uppercase tracking-wide">Per-item mode</p>
+                  {order.items.map((item) => (
+                    <div key={item.id} className="grid grid-cols-[1fr_auto] gap-3 items-center">
+                      <div className="text-sm text-neutral-800">
+                        {item.item_description} ({item.quantity} {item.unit_of_measure})
+                      </div>
+                      <select
+                        value={forceItemModes[item.item_master_id] ?? 'preserve_stock_produce_full'}
+                        onChange={(e) => setForceItemModes(prev => ({
+                          ...prev,
+                          [item.item_master_id]: e.target.value as 'preserve_stock_produce_full' | 'consume_stock_then_replenish',
+                        }))}
+                        className="border border-neutral-300 rounded px-2 py-1 text-xs"
+                      >
+                        <option value="preserve_stock_produce_full">Preserve + Produce</option>
+                        <option value="consume_stock_then_replenish">Consume + Replenish</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Reason *</label>
+                <textarea
+                  value={forceReason}
+                  onChange={(e) => setForceReason(e.target.value)}
+                  placeholder="Explain why force production is needed"
+                  rows={3}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setShowForceProductionModal(false)}
+                className="flex-1 py-2 border border-neutral-300 rounded text-sm hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleForceProduction}
+                disabled={forceProductionMutation.isPending}
+                className="flex-1 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {forceProductionMutation.isPending ? 'Processing...' : 'Confirm Force Production'}
               </button>
             </div>
           </div>

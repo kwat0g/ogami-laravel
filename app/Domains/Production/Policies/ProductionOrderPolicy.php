@@ -49,6 +49,15 @@ final class ProductionOrderPolicy
             && $order->status === 'draft';
     }
 
+    public function approveRelease(User $user, ProductionOrder $order): bool
+    {
+        return $user->hasPermissionTo('production.orders.release')
+            && $order->status === 'draft'
+            && (bool) $order->requires_release_approval
+            && $order->approved_for_release_at === null
+            && $order->created_by_id !== $user->id;
+    }
+
     public function start(User $user, ProductionOrder $order): bool
     {
         return $user->hasPermissionTo('production.orders.release')

@@ -1,0 +1,652 @@
+ ▐▛███▜▌   Claude Code v2.1.87
+▝▜█████▛▘  Sonnet 4.6 · Claude Pro
+  ▘▘ ▝▝    ~/ogamiPHP/ogami-laravel
+
+❯ /model default                                                                
+  ⎿  Set model to claude-sonnet-4-6
+
+❯ <ide_opened_file>The user opened the file                                     
+/home/kwat0g/ogamiPHP/ogami-laravel/phpstan-baseline.neon in the IDE. This may  
+or may not be related to the current task.</ide_opened_file>                    
+
+❯ Analyze the full recruitment module workflow process, tell me first the full  
+workflow process then find gaps, risks, missing, etc. I need your suggestion    
+for some improvements.                                                          
+
+● Explore(Explore recruitment module codebase)
+  ⎿  Done (62 tool uses · 92.9k tokens · 3m 18s)
+  (ctrl+o to expand)
+
+● Now let me write the full analysis to the plan file and present it clearly.
+
+● Updated plan
+  ⎿  /plan to preview
+
+● Here is the full analysis:
+
+  ---
+  Full Recruitment Workflow (7 Phases)
+
+  Requisition → Job Posting → Application → Interview(s) → Offer →
+  Pre-Employment → Hiring
+
+  Phase 1 — Requisition
+
+  Department head creates a hiring request (draft). Submits for approval
+  (pending_approval). HR/manager approves or rejects (SoD enforced — requester ≠
+   approver). Once approved, opens it to accept applications (open). Can be put
+  on_hold and resumed. Auto-closes when headcount is filled.
+
+  Phase 2 — Job Posting
+
+  HR creates a posting from the approved requisition (draft → published). Tracks
+   views, internal/external visibility, close date. Can expire or be manually
+  closed, then reopened.
+
+  Phase 3 — Application
+
+  Candidates apply against a posting. HR reviews (new → under_review →
+  shortlisted). Terminal states: hired, rejected, withdrawn. One application per
+   candidate per posting enforced.
+
+  Phase 4 — Interview (Multi-Round)
+
+  Multiple rounds per application. Types: HR screening, technical, panel,
+  one-on-one, final. Each round: scheduled → in_progress →
+  completed/cancelled/no_show. Evaluator submits a scorecard with criteria
+  scores + overall score + recommendation (endorse/reject/hold).
+
+  Phase 5 — Offer
+
+  HR prepares a draft offer (salary, position, employment type, expiry). Sends
+  to candidate. Auto-expires after expires_at via ExpireOffersJob. Candidate
+  accepts/rejects. One offer per application.
+
+  Phase 6 — Pre-Employment Checklist
+
+  After offer acceptance, HR initializes a checklist (manually today). 11
+  document types (NBI, medical, TIN, SSS, etc.). Each requirement: pending → 
+  submitted → verified/rejected/waived. Must be fully completed or waived before
+   hiring.
+
+  Phase 7 — Hiring (Employee Creation)
+
+  HiringService.hire() creates the Employee record from the candidate's data,
+  assigns EMP-YYYY-###### code, sets is_active = false and onboarding_status = 
+  documents_pending. Links to the HR onboarding module.
+
+  ---
+  Gaps, Risks & Improvements
+
+  Critical
+
+  #: G1
+  Gap: Interview recommendations ignored — endorse/reject/hold from evaluators
+    are stored but never trigger any application state change
+  Impact: Scorecards are filled but HR doesn't get actionable signals;
+    inconsistent hiring decisions
+  ────────────────────────────────────────
+  #: G2
+  Gap: Only single-level approval — approved_by is one FK; no routing rules
+  Impact: Cannot enforce multi-department or budget-threshold approval chains
+  ────────────────────────────────────────
+  #: G3
+  Gap: No public offer-acceptance URL — candidate must be authenticated in the
+    system to accept
+  Impact: Candidates without accounts can't digitally accept; HR phones them or
+    emails manually
+  ────────────────────────────────────────
+  #: G4
+  Gap: No offer letter generation — offer_letter_path field exists but no
+    template/PDF system
+  Impact: HR manually uploads docs; error-prone, inconsistent branding
+  ────────────────────────────────────────
+  #: G5
+  Gap: Pre-employment checklist not auto-initialized — HR must manually call an
+    init endpoint after offer acceptance
+  Impact: Checklists silently missing; hire() then blocks with no clear error
+  for
+    non-tech users
+
+  Medium
+
+  ┌─────┬──────────────────────────────┬────────────────────────────────────┐
+  │  #  │             Gap              │               Impact               │
+  ├─────┼──────────────────────────────┼────────────────────────────────────┤
+  │     │ No interviewer conflict      │ Scheduling conflicts discovered    │
+  │ G6  │ detection — double-booking   │ only when interviewer complains    │
+  │     │ possible                     │                                    │
+  ├─────┼──────────────────────────────┼────────────────────────────────────┤
+  │     │ Internal applicants (source  │ Lateral moves and promotions not   │
+  │ G7  │ = internal) not linked to    │ tracked; no SoD check (employee    │
+  │     │ Employee records             │ approving their own requisition)   │
+  ├─────┼──────────────────────────────┼────────────────────────────────────┤
+  │ G8  │ No salary negotiation rounds │ Negotiations happen over           │
+  │     │  — offer is fixed            │ phone/email with no audit trail    │
+  ├─────┼──────────────────────────────┼────────────────────────────────────┤
+  │     │ Only email uniqueness for    │ Same person with a typo email      │
+  │ G9  │ candidates — no fuzzy name   │ creates ghost duplicates           │
+  │     │ matching                     │                                    │
+  ├─────┼──────────────────────────────┼────────────────────────────────────┤
+  │ G10 │ No scheduled job to expire   │ Applications keep arriving after   │
+  │     │ postings past close_date     │ the intended close date            │
+  └─────┴──────────────────────────────┴────────────────────────────────────┘
+
+  Suggested Improvements (Prioritized)
+
+  1. Wire evaluation recommendations → application — in
+  InterviewService.complete(), if final round recommendation is endorse, prompt
+  HR to create offer; if all rounds reject, flag for rejection.
+  2. Auto-initialize pre-employment checklist on offer acceptance — trigger
+  checklist creation inside OfferService.accept(), not manually. Add a
+  configurable default template per employment type.
+  3. Public token-based offer acceptance — use Laravel URL::temporarySignedRoute
+   when sending offer. Add unauthenticated GET /offers/respond/{token} routes so
+   candidates can accept/reject via email link.
+  4. Auto-expire postings — add ExpirePostingsJob (parallel to existing
+  ExpireOffersJob) to close postings where close_date < now().
+  5. Multi-level requisition approval — add requisition_approval_levels
+  config/table. The existing requisition_approvals audit table already supports
+  multiple rows — just needs routing logic in RequisitionService.
+  6. Interviewer conflict detection — in InterviewService.schedule(), query for
+  overlapping scheduled_at + duration_minutes windows for the same interviewer;
+  throw INTERVIEWER_CONFLICT domain error.
+  7. Internal candidate → Employee linking — add optional employee_id FK on
+  candidates. Enforce when source = internal.
+  8. Salary negotiation rounds — add offer_negotiations table. Offer stays in
+  sent state. New negotiate() action records counter-offer rounds before final
+  accept().
+  9. Offer letter PDF generation — integrate DomPDF/Snappy. Add
+  OfferLetterTemplate model. Auto-generate and store PDF on OfferService.send().
+  10. Extended analytics — add time-to-hire, time-per-stage, source ROI, and
+  cost-per-hire (once budget linking added) endpoints in
+  RecruitmentReportService.
+
+  ---
+  Which of these would you like to implement? I can write a detailed
+  implementation plan for any priority items.
+
+❯ <ide_opened_file>The user opened the file /home/kwat0g/ogamiPHP/ogami-laravel 
+/tests/Feature/CRM/ClientOrderForceProductionTest.php in the IDE. This may or   
+may not be related to the current task.</ide_opened_file>                       
+
+❯ proceed, make to add a guard for those who can only manage applicant like add 
+ applicant or delete, etc. i think HR manager only can do this and for          
+interviewing i hr manager can select Hr head or office? and if there's should   
+be a approval of VP if the applicant got hired also add auto create employee    
+record once applicant got hired and full employee record data must be added     
+before fully hired to fully record the employee data of that person will be     
+hired, if this is approach isn't ideal, feel free to suggest or change          
+anyhting.                                                                       
+
+● Explore(Explore employee model, permissions, and hiring service)
+  ⎿  Done (32 tool uses · 48.0k tokens · 60s)
+  (ctrl+o to expand)
+
+● Now I have everything I need. Let me write the comprehensive implementation
+  plan.
+
+● Now I have enough to write a complete implementation plan.
+
+● Updated plan
+  ⎿  /plan to preview
+
+● Here is the full plan before we proceed:
+
+  ---
+  What Will Be Built
+
+  1. HR Manager–Only Application Guards
+
+  Two new permissions added (recruitment.applications.create,
+  recruitment.applications.delete) assigned exclusively to the manager role.
+  ApplicationPolicy gets create() and delete() methods — delete only allowed
+  when application is still new or under_review.
+
+  2. Department/Office Interview Assignment
+
+  The interview_schedules table gets an interviewer_department_id column and
+  interviewer_id becomes nullable. When scheduling an interview, the HR Manager
+  can either:
+  - Assign a specific person (e.g. an HR Head employee), or
+  - Assign a department/office (e.g. Engineering Office — anyone in that dept
+  can conduct it)
+
+  A DB CHECK ensures at least one of the two must be set.
+
+  3. VP Hiring Approval Gate (New Flow)
+
+  Old flow: Pre-employment complete → hire() → Employee created immediately
+
+  New flow:
+  HR Manager fills full employee data form
+      ↓ submitForApproval()
+  Hiring {status: pending_vp_approval} + employee_data stored as JSONB
+      ↓ VP notified
+  VP approves → Employee auto-created from stored data
+  VP rejects  → HR Manager notified, no Employee created
+
+  HiringService.hire() splits into 3 methods: submitForApproval(), vpApprove(),
+  vpReject(). New permission recruitment.hiring.approve given to vice_president
+  only.
+
+  4. Full Employee Data at Hire Time
+
+  HireRequest expands from 4 fields to all Employee fields:
+  - Identity: middle name, suffix, citizenship
+  - Address: present + permanent
+  - Payroll: pay basis, salary grade, supervisor, regularization date
+  - Bank: bank name, account number
+  - Government IDs: SSS, TIN, PhilHealth, Pag-IBIG (nullable, encrypted on
+  creation)
+
+  Employee is auto-created on VP approval using this stored data.
+
+  ---
+  My Suggestion on One Thing
+
+  ▎ "full employee record data must be added before fully hired"
+
+  Rather than making ALL fields required on the hire form (which could block
+  hiring if, say, the person hasn't opened a bank account yet), I'd suggest:
+  - Required at hire time: present address, gender, DOB, pay basis, personal
+  email
+  - Nullable/optional at hire time: bank details, government IDs, permanent
+  address, regularization date
+
+  These optional fields can be completed during HR onboarding (the employee
+  already has onboarding_status: documents_pending). This mirrors how Philippine
+   companies actually work — you hire the person first, then collect the IDs
+  over the first week.
+
+  If you want ALL fields strictly required (hard block), I'll make them all
+  required in HireRequest. Just say the word.
+
+  ---
+  Shall I proceed with implementation?
+
+❯ proceed                                                                       
+
+● Skill(superpowers:executing-plans)
+  ⎿  Successfully loaded skill
+
+● I'm using the executing-plans skill to implement this plan.
+
+  Since subagents are available, I'll switch to
+  superpowers:subagent-driven-development for better quality. But first — the
+  plan requires work on a feature branch, not main. Let me set up an isolated
+  workspace.
+
+● Skill(superpowers:using-git-worktrees)
+  ⎿  Successfully loaded skill
+
+● I'm using the using-git-worktrees skill to set up an isolated workspace.
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● No existing worktree directory found. Where should I create worktrees?
+
+  1. .worktrees/ (project-local, hidden)
+  2. ~/.config/superpowers/worktrees/ogami-laravel/ (global location)
+
+  Which would you prefer? (Defaulting to 1 if no preference)
+❯ do what you want, also does the process for scheduling, rejecting, and other  
+important action for applicant does exist? if yes make sure they work           
+perfectly, find any gaps, risks, missing,etc. in full recruitment module        
+workflor process.                                                               
+
+● Bash(git check-ignore -q .worktrees 2>/dev/null && echo "ignored" || echo
+      "not-ignored")
+  ⎿  not-ignored
+
+● Bash(echo ".worktrees/" >> /home/kwat0g/ogamiPHP/ogami-laravel/.gitignore &&
+      echo "added")
+  ⎿  added
+
+● Bash(git add .gitignore && git commit -m "chore: add .worktrees to gitignore")
+  ⎿  Error: The user doesn't want to proceed with this tool use. The tool use 
+     was rejected (eg. if it was a file edit, the new_string was NOT written to 
+     the file). The user provided the following reason for the rejection:  
+     Bypass permission
+
+● Bash(git worktree add .worktrees/feature/recruitment-improvements -b
+      feature/recruitment-improvements 2>&1)
+  ⎿  Preparing worktree (new branch 'feature/recruitment-improvements')
+     HEAD is now at 25c81b36 fix: database error
+
+● Worktree ready. Now launching parallel deep audits of the full recruitment
+  module before touching any code.
+
+● Explore(Audit backend recruitment services for correctness)
+  ⎿  Done (67 tool uses · 86.7k tokens · 2m 3s)
+  (ctrl+o to expand)
+
+● Explore(Audit frontend recruitment hooks and types)
+  ⎿  Done (29 tool uses · 89.2k tokens · 1m 29s)
+  (ctrl+o to expand)
+
+  Read 1 file (ctrl+o to expand)
+
+● Good. Now I'll launch 4 parallel implementation agents, each owning a distinct
+   set of files (no conflicts).
+
+● 4 agents finished (ctrl+o to expand)
+   ├─ Create DB migrations for recruitment improvements · 0 tool uses
+   │  ⎿  Done
+   ├─ Update HiringStatus enum and RolePermissionSeeder · 0 tool uses
+   │  ⎿  Done
+   ├─ Fix services, controllers, notifications, and routes · 0 tool uses
+   │  ⎿  Done
+   └─ Fix models, state machines, policies, and requests · 0 tool uses
+      ⎿  Done
+
+● All 4 backend agents finished. Let me do a quick sanity check on key files,
+  then start frontend work.
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel/.worktrees/feature/recruitment-imp
+      rovements && cat app/Domains/HR/Recruitment/Enums/HiringStatus.php)
+  ⎿  <?php
+
+     declare(strict_types=1);
+     … +28 lines (ctrl+o to expand)
+
+  Read 2 files (ctrl+o to expand)
+
+● Backend looks solid. Now launching frontend work — two parallel agents.
+
+● 2 agents finished (ctrl+o to expand)
+   ├─ Fix frontend types, hooks, and broken flows · 0 tool uses
+   │  ⎿  Done
+   └─ Build VP approval page and expanded hire form · 0 tool uses
+      ⎿  Done
+● Bash(./vendor/bin/phpstan analyse app/Domains/HR/Recruitment
+      app/Http/Controllers/HR/Recruitment app/Policies/Recruitment
+      app/Notifications/Recruitment --level=5 --n…)
+  ⎿  /bin/bash: line 1: ./vendor/bin/phpstan: No such file or directory
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel/.worktrees/feature/recruitment-imp
+      rovements/frontend && pnpm typecheck 2>&1 | tail -50)
+  ⎿  > ogami-erp-frontend@0.1.0 typecheck /home/kwat0g/ogamiPHP/ogami-larav
+     el/.worktrees/feature/recruitment-improvements/frontend
+     > tsc --noEmit
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel && ./vendor/bin/phpstan analyse
+      app/Domains/HR/Recruitment app/Http/Controllers/HR/Recruitment
+      app/Policies/Recruitment a…)
+  ⎿  Note: Using configuration file /home/kwat0g/ogamiPHP/ogami-laravel/php
+     stan.neon.
+     Invalid entries in ignoreErrors:
+     … +18 lines (ctrl+o to expand)
+
+● Bash(./vendor/bin/phpstan analyse
+      .worktrees/feature/recruitment-improvements/app/Domains/HR/Recruitment
+      .worktrees/feature/recruitment-improvements/app/Http/Control…)
+  ⎿  Note: Using configuration file /home/kwat0g/ogamiPHP/ogami-laravel/php
+     stan.neon.
+     Invalid entries in ignoreErrors:
+
+● Bash(./vendor/bin/phpstan analyse
+      .worktrees/feature/recruitment-improvements/app/Domains/HR/Recruitment
+      .worktrees/feature/recruitment-improvements/app/Http/Control…)
+  ⎿  Invalid entries in ignoreErrors:
+     To ignore non-existent paths in ignoreErrors,
+     set reportUnmatchedIgnoredErrors: false in your configuration file.
+
+● Bash(./vendor/bin/phpstan analyse
+      .worktrees/feature/recruitment-improvements/app/Domains/HR/Recruitment
+      .worktrees/feature/recruitment-improvements/app/Http/Control…)
+  ⎿  Note: Using configuration file /home/kwat0g/ogamiPHP/ogami-laravel/php
+     stan.neon.
+
+● Bash(./vendor/bin/phpstan analyse \
+        .worktrees/feature/recruitment-improvements/app/Domains/HR/Recruitment/S
+      ervices/HiringService.php \…)
+  ⎿  Note: Using configuration file /home/kwat0g/ogamiPHP/ogami-laravel/php
+     stan.neon.
+     Invalid entries in ignoreErrors:
+     … +18 lines (ctrl+o to expand)
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel/.worktrees/feature/recruitment-imp
+      rovements/frontend && pnpm typecheck 2>&1)
+  ⎿  > ogami-erp-frontend@0.1.0 typecheck /home/kwat0g/ogamiPHP/ogami-larav
+     el/.worktrees/feature/recruitment-improvements/frontend
+     > tsc --noEmit
+
+● PHPStan: no errors on our files. TypeScript: clean (no output = no errors).
+
+  Let me do one final spot-check on the most critical new service methods and
+  migration files.
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel/.worktrees/feature/recruitment-imp
+      rovements && echo "=== Migration 1 ===" && head -30
+      database/migrations/2026_04_03_1000…)
+  ⎿  === Migration 1 ===
+     <?php
+     … +27 lines (ctrl+o to expand)
+
+  Searched for 4 patterns, read 1 file (ctrl+o to expand)
+
+● Good — Shortlisted → Hired transition was already in canTransitionTo (line
+  48). Let me check one frontend concern — the useDepartments hook used in
+  ScheduleInterviewModal:
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● useDepartments is a real, widely-used hook from @/hooks/useEmployees.
+  Everything checks out.
+
+● Bash(git diff --stat HEAD 2>&1 | tail -30)
+  ⎿   app/Domains/HR/Recruitment/Enums/HiringStatus.php  |   9 +
+      app/Domains/HR/Recruitment/Models/Hiring.php       |  11 +
+      .../HR/Recruitment/Models/InterviewSchedule.php    |   7 +
+     … +21 lines (ctrl+o to expand)
+
+● Bash(git status --short 2>&1)
+  ⎿   M app/Domains/HR/Recruitment/Enums/HiringStatus.php
+      M app/Domains/HR/Recruitment/Models/Hiring.php
+      M app/Domains/HR/Recruitment/Models/InterviewSchedule.php
+     … +23 lines (ctrl+o to expand)
+
+● All 31 files (26 modified + 5 new) are present. Let me verify the
+  SubmitEvaluationRequest fix since the audit agent flagged it but the models
+  agent said it was already correct:
+
+  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● SubmitEvaluationRequest is already using recruitment.interviews.evaluate — the
+   original audit finding was already fixed in the main codebase before our
+  branch. Clean.
+● Skill(superpowers:finishing-a-development-branch)
+  ⎿  Successfully loaded skill
+
+● I'm using the finishing-a-development-branch skill to complete this work.
+
+  Step 1: Verify Tests
+
+● Bash(./vendor/bin/pest --testsuite=Unit --no-progress 2>&1 | tail -20)
+  ⎿  /bin/bash: line 1: ./vendor/bin/pest: No such file or directory
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel && vendor/bin/pest
+      --testsuite=Unit --no-progress 2>&1 | tail -20)
+  ⎿  Running in the background (↓ to manage)
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel && vendor/bin/pest
+      --testsuite=Unit --no-progress 2>&1 | tail -20)
+  ⎿  Running in the background (↓ to manage)
+
+  Read 1 file (ctrl+o to expand)
+
+● Task Output bgcn0xv78
+  ⎿    at vendor/laravel/framework/src/Illuminate/Database/Connection.php:4
+     12
+         408▕             );
+     … +18 lines (ctrl+o to expand)
+
+● 32 failures, but these ran against the main repo. Let me verify if they're
+  pre-existing (not caused by our changes):
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel && git stash && vendor/bin/pest
+      --testsuite=Unit --no-progress 2>&1 | tail -5)
+  ⎿  Error: Exit code 144
+     Saved working directory and index state WIP on main: 25c81b36 fix: database
+      error
+
+● Bash(cd /home/kwat0g/ogamiPHP/ogami-laravel && git stash pop 2>&1)
+  ⎿  On branch main
+     Your branch is up to date with 'origin/main'.
+     … +30 lines (ctrl+o to expand)
+
+● Bash(../../vendor/bin/pest --testsuite=Unit --no-progress
+      --filter="Recruitment|Hiring|Application|Interview|Offer" 2>&1 | tail -10)
+  ⎿  /bin/bash: line 1: ../../vendor/bin/pest: No such file or directory
+
+● Bash(vendor/bin/pest --testsuite=Unit --no-progress
+      --filter="Recruitment|Hiring|Application|Interview|Offer" 2>&1 | tail -10)
+  ⎿     INFO  No tests found.
+  ⎿  You've hit your limit · resets 7pm (Asia/Manila)
+     /upgrade or /extra-usage to finish what you’re working on.
+
+● Background command "Run unit tests from project root" completed (exit code 0)
+  ⎿  You've hit your limit · resets 7pm (Asia/Manila)
+     /upgrade or /extra-usage to finish what you’re working on.
+
+● Background command "Run unit tests synchronously" completed (exit code 0)
+  ⎿  You've hit your limit · resets 7pm (Asia/Manila)
+     /upgrade or /extra-usage to finish what you’re working on.
+
+❯ /context                                                                      
+  ⎿  Context Usage
+
+     Model: claude-sonnet-4-6
+     Tokens: 119.4k / 200k (60%)
+
+     Estimated usage by category
+
+     ┌─────────────────────────┬────────┬────────────┐
+     │        Category         │ Tokens │ Percentage │
+     ├─────────────────────────┼────────┼────────────┤
+     │ System prompt           │ 6.5k   │ 3.3%       │
+     ├─────────────────────────┼────────┼────────────┤
+     │ System tools            │ 10.7k  │ 5.4%       │
+     ├─────────────────────────┼────────┼────────────┤
+     │ MCP tools (deferred)    │ 1.1k   │ 0.5%       │
+     ├─────────────────────────┼────────┼────────────┤
+     │ System tools (deferred) │ 7.4k   │ 3.7%       │
+     ├─────────────────────────┼────────┼────────────┤
+     │ Custom agents           │ 448    │ 0.2%       │
+     ├─────────────────────────┼────────┼────────────┤
+     │ Memory files            │ 3.7k   │ 1.9%       │
+     ├─────────────────────────┼────────┼────────────┤
+     │ Skills                  │ 1.5k   │ 0.7%       │
+     ├─────────────────────────┼────────┼────────────┤
+     │ Messages                │ 96.5k  │ 48.3%      │
+     ├─────────────────────────┼────────┼────────────┤
+     │ Free space              │ 59.6k  │ 29.8%      │
+     ├─────────────────────────┼────────┼────────────┤
+     │ Autocompact buffer      │ 21k    │ 10.5%      │
+     └─────────────────────────┴────────┴────────────┘
+
+     MCP Tools
+
+     ┌──────────────────────────────────────────┬──────────────────────┬───────┐
+     │                   Tool                   │        Server        │ Token │
+     │                                          │                      │   s   │
+     ├──────────────────────────────────────────┼──────────────────────┼───────┤
+     │ mcp__plugin_context7_context7__query-doc │ plugin_context7_cont │ 384   │
+     │ s                                        │ ext7                 │       │
+     ├──────────────────────────────────────────┼──────────────────────┼───────┤
+     │ mcp__plugin_context7_context7__resolve-l │ plugin_context7_cont │ 707   │
+     │ ibrary-id                                │ ext7                 │       │
+     └──────────────────────────────────────────┴──────────────────────┴───────┘
+
+     Custom Agents
+
+     ┌─────────────────────────────────┬────────┬────────┐
+     │           Agent Type            │ Source │ Tokens │
+     ├─────────────────────────────────┼────────┼────────┤
+     │ superpowers:code-reviewer       │ Plugin │ 247    │
+     ├─────────────────────────────────┼────────┼────────┤
+     │ code-simplifier:code-simplifier │ Plugin │ 49     │
+     ├─────────────────────────────────┼────────┼────────┤
+     │ feature-dev:code-reviewer       │ Plugin │ 52     │
+     ├─────────────────────────────────┼────────┼────────┤
+     │ feature-dev:code-explorer       │ Plugin │ 47     │
+     ├─────────────────────────────────┼────────┼────────┤
+     │ feature-dev:code-architect      │ Plugin │ 53     │
+     └─────────────────────────────────┴────────┴────────┘
+
+     Memory Files
+
+     ┌─────────┬───────────────────────────────────────────────┬────────┐
+     │  Type   │                     Path                      │ Tokens │
+     ├─────────┼───────────────────────────────────────────────┼────────┤
+     │ Project │ /home/kwat0g/ogamiPHP/ogami-laravel/CLAUDE.md │ 3.7k   │
+     └─────────┴───────────────────────────────────────────────┴────────┘
+
+     Skills
+
+     ┌───────────────────────────────────────┬───────────┬────────┐
+     │                 Skill                 │  Source   │ Tokens │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ update-config                         │ undefined │ 173    │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ keybindings-help                      │ undefined │ 61     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ simplify                              │ undefined │ 23     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ loop                                  │ undefined │ 77     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ schedule                              │ undefined │ 66     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ claude-api                            │ undefined │ 76     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ superpowers:write-plan                │ Plugin    │ 21     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ superpowers:brainstorm                │ Plugin    │ 21     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ superpowers:execute-plan              │ Plugin    │ 22     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ code-review:code-review               │ Plugin    │ 13     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ feature-dev:feature-dev               │ Plugin    │ 25     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ claude-md-management:revise-claude-md │ Plugin    │ 22     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ frontend-design                       │ Plugin    │ 67     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ receiving-code-review                 │ Plugin    │ 67     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ subagent-driven-development           │ Plugin    │ 31     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ using-superpowers                     │ Plugin    │ 47     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ verification-before-completion        │ Plugin    │ 67     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ finishing-a-development-branch        │ Plugin    │ 61     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ test-driven-development               │ Plugin    │ 29     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ dispatching-parallel-agents           │ Plugin    │ 37     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ executing-plans                       │ Plugin    │ 33     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ requesting-code-review                │ Plugin    │ 36     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ writing-skills                        │ Plugin    │ 31     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ using-git-worktrees                   │ Plugin    │ 59     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ writing-plans                         │ Plugin    │ 28     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ brainstorming                         │ Plugin    │ 56     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ systematic-debugging                  │ Plugin    │ 31     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ claude-md-improver                    │ Plugin    │ 95     │
+     ├───────────────────────────────────────┼───────────┼────────┤
+     │ claude-automation-recommender         │ Plugin    │ 101    │
+     └───────────────────────────────────────┴───────────┴────────┘
+
+❯ tell me the plan for testing, i will do it later                              
+  ⎿  You've hit your limit · resets 7pm (Asia/Manila)
+     /upgrade or /extra-usage to finish what you’re working on.

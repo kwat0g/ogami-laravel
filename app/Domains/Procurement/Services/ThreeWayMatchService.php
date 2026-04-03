@@ -105,10 +105,10 @@ final class ThreeWayMatchService implements ServiceContract
             $gr->update(['three_way_match_passed' => true]);
         });
 
-        // Fire event — listener will auto-create the AP invoice draft
-        // Removed DB::afterCommit to ensure it fires in tests (sync queue handles it fine)
+        // Fire event after commit so listener-side failures cannot poison the
+        // active transaction state used by the caller.
         $freshGr = $gr->fresh();
-        event(new ThreeWayMatchPassed($freshGr));
+        DB::afterCommit(fn () => event(new ThreeWayMatchPassed($freshGr)));
 
         // Notify purchasing officers when delivery is partial (items still pending)
         $po->refresh()->load('items');

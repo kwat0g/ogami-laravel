@@ -82,7 +82,7 @@ class UpdateStockOnThreeWayMatch
                 continue;
             }
 
-            DB::transaction(function () use ($poItem, $grItem, $vendor, $locationId, $gr, $actor): void {
+            DB::transaction(function () use ($poItem, $grItem, $vendor, $locationId, $gr, $actor, $effectiveQty): void {
                 // Resolve item_master_id if missing
                 if (! $poItem->item_master_id) {
                     $resolved = $this->resolveOrCreateItemMaster($poItem, $vendor);

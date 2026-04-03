@@ -140,6 +140,7 @@ Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
             Route::post('/{order:ulid}/respond', [ClientOrderController::class, 'respond'])->name('respond')->middleware('can:respond,order');
             Route::post('/{order:ulid}/sales-respond', [ClientOrderController::class, 'salesRespond'])->name('sales-respond')->middleware('can:salesRespond,order');
             Route::post('/{order:ulid}/vp-approve', [ClientOrderController::class, 'vpApprove'])->name('vp-approve')->middleware('can:vpApprove,order');
+            Route::post('/{order:ulid}/force-production', [ClientOrderController::class, 'forceProduction'])->name('force-production')->middleware('can:forceProduction,order');
             Route::post('/{order:ulid}/cancel', [ClientOrderController::class, 'cancel'])->name('cancel')->middleware('can:cancel,order');
 
             // Order tracking timeline (client-facing visibility)

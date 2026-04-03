@@ -10,6 +10,11 @@ use App\Domains\Budget\Models\AnnualBudget;
 use App\Domains\Budget\Models\CostCenter;
 use App\Domains\Budget\Services\BudgetVarianceService;
 use App\Models\User;
+use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -18,9 +23,14 @@ uses()->group('feature', 'budget', 'variance');
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
+    $this->seed(ChartOfAccountsSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('manager');
+    $this->manager->assignRole('super_admin');
 
     $this->costCenter = CostCenter::create([
         'name' => 'Admin Department',
@@ -29,11 +39,7 @@ beforeEach(function () {
         'created_by_id' => $this->manager->id,
     ]);
 
-    $this->account = ChartOfAccount::factory()->create([
-        'code' => '5100',
-        'name' => 'Office Supplies',
-        'type' => 'expense',
-    ]);
+    $this->account = ChartOfAccount::where('account_type', 'OPEX')->firstOrFail();
 
     $this->fiscalYear = (int) now()->format('Y');
 });
@@ -85,11 +91,9 @@ it('aggregates variance by cost center', function () {
         'created_by_id' => $this->manager->id,
     ]);
 
-    $account2 = ChartOfAccount::factory()->create([
-        'code' => '5200',
-        'name' => 'Travel Expenses',
-        'type' => 'expense',
-    ]);
+    $account2 = ChartOfAccount::where('account_type', 'REVENUE')
+        ->where('id', '!=', $this->account->id)
+        ->firstOrFail();
 
     AnnualBudget::create([
         'cost_center_id' => $this->costCenter->id,

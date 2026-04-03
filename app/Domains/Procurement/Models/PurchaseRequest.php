@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Procurement\Models;
 
 use App\Domains\HR\Models\Department;
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Models\User;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -196,6 +197,12 @@ final class PurchaseRequest extends Model implements Auditable
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    /** @return BelongsTo<MaterialRequisition, PurchaseRequest> */
+    public function sourceMrq(): BelongsTo
+    {
+        return $this->belongsTo(MaterialRequisition::class, 'material_requisition_id');
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

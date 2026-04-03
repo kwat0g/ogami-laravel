@@ -89,7 +89,8 @@ class PurchaseRequestSoDTest extends TestCase
     #[Test]
     public function vp_cannot_approve_own_pr()
     {
-        $otherUser = User::factory()->create();
+        $reviewer = User::factory()->create();
+        $budgetVerifier = User::factory()->create();
 
         // Create PR in budget_verified status (approved by Accounting, now at VP)
         $pr = PurchaseRequest::create([
@@ -98,8 +99,8 @@ class PurchaseRequestSoDTest extends TestCase
             'requested_by_id' => $this->user->id,
             'status' => 'budget_verified',
             'total_estimated_cost' => 100000,
-            'reviewed_by_id' => $otherUser->id,
-            'budget_checked_by_id' => $otherUser->id,
+            'reviewed_by_id' => $reviewer->id,
+            'budget_checked_by_id' => $budgetVerifier->id,
             'justification' => 'Test',
             'urgency' => 'normal',
         ]);

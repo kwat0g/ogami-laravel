@@ -37,14 +37,14 @@ export default function ProductionOrderListPage(): React.ReactElement {
     setPage(1)
   }, [])
 
-  const { data, isLoading, isError, refetch } = useProductionOrders({
+  const { data, isLoading, isError } = useProductionOrders({
     status: status || undefined,
     page,
     per_page: 20,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
   })
 
-  const { data: archivedData, isLoading: archivedLoading, refetch: refetchArchived } = useQuery({
+  const { data: archivedData, isLoading: archivedLoading } = useQuery({
     queryKey: ['production-orders', 'archived', debouncedSearch],
     queryFn: () => api.get('/production/orders-archived', { params: { search: debouncedSearch || undefined, per_page: 20 } }),
     enabled: isArchiveView,
@@ -163,6 +163,21 @@ export default function ProductionOrderListPage(): React.ReactElement {
                     <td className="px-4 py-3 text-neutral-500 text-xs">{order.target_start_date}</td>
                     <td className="px-4 py-3 text-neutral-500 text-xs">{order.target_end_date}</td>
                     <td className="px-4 py-3">
+                      {order.source_type === 'force_production' && (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 mr-1">
+                          Force
+                        </span>
+                      )}
+                      {order.source_type === 'replenishment' && (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-cyan-100 text-cyan-700 mr-1">
+                          Replenishment
+                        </span>
+                      )}
+                      {order.requires_release_approval && !order.approved_for_release_at && (
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 mr-1">
+                          Awaiting Approval
+                        </span>
+                      )}
                       {order.deleted_at && <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-500 mr-1">Archived</span>}
                       {order.status === 'released' && order.mrq_pending ? (
                         <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">

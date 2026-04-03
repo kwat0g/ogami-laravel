@@ -6,6 +6,8 @@ use App\Domains\Accounting\Models\ChartOfAccount;
 use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\AP\Models\Vendor;
 use App\Domains\HR\Models\Department;
+use App\Domains\Procurement\Models\PurchaseOrder;
+use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Models\User;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\DepartmentModuleAssignmentSeeder;
@@ -88,10 +90,30 @@ it('creates a vendor invoice', function () {
     $apco = ChartOfAccount::where('account_type', 'LIABILITY')->first();
     $exp = ChartOfAccount::where('account_type', 'OPEX')->first();
     $period = FiscalPeriod::query()->where('status', 'open')->orderBy('date_from')->firstOrFail();
+    $dept = Department::where('code', 'ACCTG')->firstOrFail();
+    $purchaseRequest = PurchaseRequest::create([
+        'pr_reference' => 'PR-TEST-'.(string) now()->timestamp,
+        'department_id' => $dept->id,
+        'requested_by_id' => $this->manager->id,
+        'urgency' => 'normal',
+        'justification' => 'AP invoice feature test setup',
+        'status' => 'draft',
+    ]);
+    $purchaseOrder = PurchaseOrder::create([
+        'po_reference' => 'PO-TEST-'.(string) (now()->timestamp + 1),
+        'purchase_request_id' => $purchaseRequest->id,
+        'vendor_id' => $this->vendor->id,
+        'po_date' => now()->toDateString(),
+        'delivery_date' => now()->addDays(7)->toDateString(),
+        'payment_terms' => '30 days',
+        'status' => 'draft',
+        'created_by_id' => $this->manager->id,
+    ]);
 
     $this->actingAs($this->manager)
         ->postJson('/api/v1/accounting/ap/invoices', [
             'vendor_id' => $this->vendor->id,
+            'purchase_order_id' => $purchaseOrder->id,
             'fiscal_period_id' => $period->id,
             'ap_account_id' => $apco->id,
             'expense_account_id' => $exp->id,

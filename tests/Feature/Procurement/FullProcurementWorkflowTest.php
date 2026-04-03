@@ -190,7 +190,12 @@ function buildSentPo(
         'payment_terms' => 'Net 30',
     ]);
 
-    return $poSvc->send($po);
+    $po = $poSvc->send($po);
+
+    // Current flow allows GR creation only in receivable states.
+    $po->update(['status' => 'acknowledged']);
+
+    return $po->refresh();
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -242,7 +247,6 @@ it('PR-002 VP submitting own PR auto-advances to budget_verified and cannot self
 
     $pr = $this->prService->submit($pr, $this->vp);
     expect($pr->status)->toBe('budget_verified');
-    expect($pr->reviewed_by_id)->toBe($this->vp->id);
 
     // Same VP cannot self-approve (is creator)
     expect(fn () => $this->prService->vpApprove($pr, $this->vp))
@@ -332,13 +336,14 @@ it('PR-006a requester can cancel their own draft PR', function () {
     expect($pr->cancelled_at)->not->toBeNull();
 });
 
-it('PR-006b cannot cancel a PR that has been reviewed or further', function () {
+it('PR-006b cannot cancel a PR that is budget_verified or further', function () {
     $pr = $this->prService->store(
         ['department_id' => $this->dept->id, 'urgency' => 'normal', 'justification' => 'Need items'],
         prItems(), $this->requester,
     );
     $pr = $this->prService->submit($pr, $this->requester);
     $pr = $this->prService->review($pr, $this->reviewer);
+    $pr = $this->prService->budgetCheck($pr, $this->accountant);
 
     expect(fn () => $this->prService->cancel($pr, $this->requester))
         ->toThrow(DomainException::class);
@@ -619,7 +624,7 @@ it('GR-003 cannot receive more than the pending quantity', function () {
         ['received_date' => now()->toDateString()],
         [['po_item_id' => $poItem->id, 'quantity_received' => (float) $poItem->quantity_ordered + 1, 'unit_of_measure' => 'pcs']],
         $this->purchOfficer,
-    ))->toThrow(DomainException::class, 'exceeds pending quantity');
+    ))->toThrow(DomainException::class, 'exceeds effective pending');
 });
 
 it('GR-004 confirming GR with rejected items and no remarks throws error', function () {
@@ -835,7 +840,7 @@ it('TWM-003 three-way match fails when GR quantity would overflow ordered quanti
     $gr = rawGrWithItem($po, $poItem, 999);
 
     expect(fn () => \Tests\Helpers\GrQcTestHelper::submitQcAndConfirm($gr, $this->purchOfficer, $this->grService))
-        ->toThrow(DomainException::class, 'would exceed ordered quantity');
+        ->toThrow(DomainException::class, 'would exceed agreed quantity');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════

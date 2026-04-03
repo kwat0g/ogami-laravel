@@ -308,29 +308,6 @@ parameters:
 			count: 2
 			path: app/Domains/HR/Services/EmployeeService.php
 
-		-
-			message: '#^Access to an undefined property App\\Domains\\ISO\\Models\\InternalAudit\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/ISO/Services/ISOService.php
-
-		-
-			message: '#^Class App\\Shared\\Exceptions\\DomainException constructor invoked with 1 parameter, 3\-5 required\.$#'
-			identifier: arguments.count
-			count: 2
-			path: app/Domains/ISO/Services/ISOService.php
-
-		-
-			message: '#^Method App\\Domains\\ISO\\Services\\ISOService\:\:storeFinding\(\) should return App\\Domains\\ISO\\Models\\AuditFinding but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/ISO/Services/ISOService.php
-
-		-
-			message: '#^Parameter \#1 \$finding of event class App\\Events\\ISO\\AuditFindingCreated constructor expects App\\Domains\\ISO\\Models\\AuditFinding in App\\Events\\ISO\\AuditFindingCreated\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domains/ISO/Services/ISOService.php
 
 		-
 			message: '#^Method App\\Domains\\Inventory\\Models\\ItemCategory\:\:items\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\ItemMaster, App\\Domains\\Inventory\\Models\\ItemCategory\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Domains\\Inventory\\Models\\ItemMaster, \$this\(App\\Domains\\Inventory\\Models\\ItemCategory\)\>\.$#'
@@ -2696,17 +2673,6 @@ parameters:
 			count: 1
 			path: app/Listeners/Delivery/CreateDeliveryReceiptOnProductionComplete.php
 
-		-
-			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Listeners/Inventory/LinkGoodsReceiptToInventory.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>item_description" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Listeners/Inventory/LinkGoodsReceiptToInventory.php
 
 		-
 			message: '#^Parameter \#2 \$amount of method App\\Domains\\Inventory\\Models\\StockBalance\:\:increment\(\) expects float\|int, string given\.$#'

@@ -75,7 +75,14 @@ export interface DeliverySchedule {
 
 export type ProductionOrderStatus = 'draft' | 'released' | 'in_progress' | 'on_hold' | 'completed' | 'closed' | 'cancelled'
 
-export type ProductionOrderSourceType = 'client_order' | 'sales_order' | 'delivery_schedule' | 'manual' | 'rework'
+export type ProductionOrderSourceType =
+  | 'client_order'
+  | 'sales_order'
+  | 'delivery_schedule'
+  | 'manual'
+  | 'rework'
+  | 'force_production'
+  | 'replenishment'
 
 export interface ProductionOrder {
   id: number
@@ -98,6 +105,10 @@ export interface ProductionOrder {
   target_end_date: string
   status: ProductionOrderStatus
   hold_reason?: string | null
+  requires_release_approval?: boolean
+  approved_for_release_by?: number | null
+  approved_for_release_at?: string | null
+  release_approval_notes?: string | null
   mrq_pending?: boolean
   notes: string | null
   created_by?: { id: number; name: string } | null

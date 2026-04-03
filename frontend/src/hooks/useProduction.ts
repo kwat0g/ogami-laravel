@@ -160,6 +160,22 @@ export function useCreateProductionOrder() {
   })
 }
 
+export function useCreateReplenishmentOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: {
+      product_item_id: number
+      target_stock_level: number
+      min_batch_size?: number
+      bom_id?: number
+      target_start_date?: string
+      target_end_date?: string
+      notes?: string
+    }) => api.post<{ data: ProductionOrder }>('/production/orders/replenishment', payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['production-orders'] }),
+  })
+}
+
 // ── Production Order Workflow ─────────────────────────────────────────────────
 
 /**
@@ -178,6 +194,17 @@ function orderAction(ulid: string, action: string, qc: ReturnType<typeof useQuer
 export function useReleaseOrder(ulid: string) {
   const qc = useQueryClient()
   return useMutation({ mutationFn: orderAction(ulid, 'release', qc) })
+}
+
+export function useApproveReleaseOrder(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload?: { notes?: string }) =>
+      api.patch(`/production/orders/${ulid}/approve-release`, payload ?? {}).then(() => {
+        qc.invalidateQueries({ queryKey: ['production-orders'] })
+        qc.invalidateQueries({ queryKey: ['production-order', ulid] })
+      }),
+  })
 }
 
 export function useStartOrder(ulid: string) {

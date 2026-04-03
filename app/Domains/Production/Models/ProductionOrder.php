@@ -28,6 +28,10 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $client_order_id
  * @property string|null $source_type
  * @property int|null $source_id
+ * @property bool $requires_release_approval
+ * @property int|null $approved_for_release_by
+ * @property Carbon|null $approved_for_release_at
+ * @property string|null $release_approval_notes
  * @property int|null $sales_order_id
  * @property int $product_item_id
  * @property int $bom_id
@@ -57,6 +61,10 @@ final class ProductionOrder extends Model implements Auditable
         'client_order_id',
         'source_type',
         'source_id',
+        'requires_release_approval',
+        'approved_for_release_by',
+        'approved_for_release_at',
+        'release_approval_notes',
         'sales_order_id',
         'product_item_id',
         'bom_id',
@@ -79,6 +87,8 @@ final class ProductionOrder extends Model implements Auditable
         'qty_rejected' => 'decimal:4',
         'standard_unit_cost_centavos' => 'integer',
         'estimated_total_cost_centavos' => 'integer',
+        'requires_release_approval' => 'boolean',
+        'approved_for_release_at' => 'datetime',
         'bom_snapshot' => 'array',
         'target_start_date' => 'date',
         'target_end_date' => 'date',

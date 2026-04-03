@@ -14,7 +14,6 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Shared\Contracts\ServiceContract;
 
 /**
  * InvoiceAutoDraftService (AR)

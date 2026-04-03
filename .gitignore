@@ -52,3 +52,4 @@ Thumbs.db
 /reports/
 skills-lock.json
 /pnpm-lock.yaml
+.worktrees/

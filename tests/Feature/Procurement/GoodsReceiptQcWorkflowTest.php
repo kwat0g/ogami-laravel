@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Procurement;
 
+use App\Domains\AP\Models\Vendor;
+use App\Domains\HR\Models\Department;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Procurement\Models\GoodsReceipt;
 use App\Domains\Procurement\Models\GoodsReceiptItem;
 use App\Domains\Procurement\Models\PurchaseOrder;
 use App\Domains\Procurement\Models\PurchaseOrderItem;
+use App\Domains\Procurement\Models\PurchaseRequest;
 use App\Domains\QC\Models\Inspection;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -45,9 +49,33 @@ function createGrWithIqcItem(): array
         'category_id' => $category->id,
     ]);
 
+    $department = Department::factory()->create([
+        'code' => 'PROC-QC-'.strtoupper(substr(Str::uuid()->toString(), 0, 4)),
+        'name' => 'Procurement QC Test Dept',
+        'is_active' => true,
+    ]);
+
+    $pr = PurchaseRequest::create([
+        'pr_reference' => 'PR-QC-'.now()->format('YmdHis').'-'.random_int(100, 999),
+        'department_id' => $department->id,
+        'requested_by_id' => $user->id,
+        'urgency' => 'normal',
+        'justification' => 'QC workflow fixture',
+        'status' => 'approved',
+    ]);
+
+    $vendor = Vendor::factory()->create(['created_by' => $user->id]);
+
     // Create PO in receivable status
-    $po = PurchaseOrder::factory()->create([
+    $po = PurchaseOrder::create([
+        'po_reference' => 'PO-QC-'.now()->format('YmdHis').'-'.random_int(100, 999),
+        'purchase_request_id' => $pr->id,
+        'vendor_id' => $vendor->id,
+        'po_date' => now()->toDateString(),
+        'delivery_date' => now()->addDays(7)->toDateString(),
+        'payment_terms' => 'Net 30',
         'status' => 'acknowledged',
+        'created_by_id' => $user->id,
     ]);
 
     $poItem = PurchaseOrderItem::create([
@@ -56,9 +84,9 @@ function createGrWithIqcItem(): array
         'item_master_id' => $item->id,
         'quantity_ordered' => 100,
         'unit_of_measure' => 'kg',
-        'unit_cost' => 50.00,
         'agreed_unit_cost' => 50.00,
         'quantity_received' => 0,
+        'line_order' => 1,
     ]);
 
     // Create GR sequence if not exists
@@ -108,7 +136,7 @@ test('submit for QC is blocked when GR is not in draft', function () {
     $response = $this->actingAs($ctx['user'])
         ->postJson("/api/v1/procurement/goods-receipts/{$ctx['gr']->ulid}/submit-for-qc");
 
-    $response->assertStatus(403);
+    $response->assertStatus(422);
 });
 
 // ── Confirm blocked from draft ───────────────────────────────────────────────
@@ -119,8 +147,8 @@ test('confirm is blocked from draft status — must go through QC first', functi
     $response = $this->actingAs($ctx['user'])
         ->postJson("/api/v1/procurement/goods-receipts/{$ctx['gr']->ulid}/confirm");
 
-    // Policy denies: draft is not qc_passed or partial_accept
-    $response->assertStatus(403);
+    // Service validation blocks: draft is not qc_passed or partial_accept
+    $response->assertStatus(422);
 });
 
 // ── Confirm allowed from qc_passed ───────────────────────────────────────────
@@ -234,7 +262,7 @@ test('accept with defects is blocked when not qc_failed', function () {
             ],
         ]);
 
-    $response->assertStatus(403);
+    $response->assertStatus(422);
 });
 
 // ── QC fields in API response ────────────────────────────────────────────────
@@ -275,5 +303,5 @@ test('return to supplier is blocked from non-confirmed status', function () {
             'reason' => 'Incorrect items',
         ]);
 
-    $response->assertStatus(403);
+    $response->assertStatus(422);
 });

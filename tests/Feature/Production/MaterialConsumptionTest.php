@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Domains\HR\Models\Department;
-use App\Domains\HR\Models\Employee;
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
@@ -16,6 +15,7 @@ use App\Domains\Production\Models\ProductionOrder;
 use App\Domains\QC\Models\Inspection;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -125,7 +125,7 @@ beforeEach(function () {
     ]);
 });
 
-it('deducts BOM components from stock when releasing a production order', function () {
+it('releases order and creates MRQ without direct stock deduction', function () {
     // Seed stock: 100kg steel, 50kg resin
     seedStock($this->rawMaterial1, $this->warehouse, 100.0);
     seedStock($this->rawMaterial2, $this->warehouse, 50.0);
@@ -137,29 +137,40 @@ it('deducts BOM components from stock when releasing a production order', functi
     $this->order->refresh();
     expect($this->order->status)->toBe('released');
 
+    // Release only plans materials via MRQ. It does not directly issue stock.
+    $mrq = MaterialRequisition::where('production_order_id', $this->order->id)->first();
+    expect($mrq)->not->toBeNull();
+    expect($mrq->status)->toBe('submitted');
+
     // Required: Steel = 2.0 × 10 × 1.05 = 21.0 kg
     // Required: Resin = 0.5 × 10 × 1.00 = 5.0 kg
     $steelBalance = StockBalance::where('item_id', $this->rawMaterial1->id)
         ->where('location_id', $this->warehouse->id)
         ->first();
-    expect((float) $steelBalance->quantity_on_hand)->toBe(79.0); // 100 - 21
+    expect((float) $steelBalance->quantity_on_hand)->toBe(100.0); // unchanged on release
 
     $resinBalance = StockBalance::where('item_id', $this->rawMaterial2->id)
         ->where('location_id', $this->warehouse->id)
         ->first();
-    expect((float) $resinBalance->quantity_on_hand)->toBe(45.0); // 50 - 5
+    expect((float) $resinBalance->quantity_on_hand)->toBe(50.0); // unchanged on release
 });
 
-it('fails to release with insufficient stock and deducts nothing', function () {
-    // Seed stock: only 10kg steel (need 21), 50kg resin
+it('allows release with low stock and blocks start until MRQ is fulfilled', function () {
+    // Seed low stock to force warehouse fulfillment path via MRQ.
     seedStock($this->rawMaterial1, $this->warehouse, 10.0);
     seedStock($this->rawMaterial2, $this->warehouse, 50.0);
 
-    $response = $this->actingAs($this->manager)
+    $this->actingAs($this->manager)
         ->patchJson("/api/v1/production/orders/{$this->order->ulid}/release");
 
+    $this->order->refresh();
+    expect($this->order->status)->toBe('released');
+
+    $response = $this->actingAs($this->manager)
+        ->patchJson("/api/v1/production/orders/{$this->order->ulid}/start");
+
     $response->assertStatus(422);
-    $response->assertJsonFragment(['error_code' => 'PROD_INSUFFICIENT_STOCK']);
+    $response->assertJsonFragment(['error_code' => 'PROD_MRQ_NOT_FULFILLED']);
 
     // Verify no stock was deducted (all-or-nothing)
     $steelBalance = StockBalance::where('item_id', $this->rawMaterial1->id)
@@ -167,9 +178,9 @@ it('fails to release with insufficient stock and deducts nothing', function () {
         ->first();
     expect((float) $steelBalance->quantity_on_hand)->toBe(10.0); // unchanged
 
-    // Order should still be draft
+    // Order remains released until MRQ fulfillment is completed.
     $this->order->refresh();
-    expect($this->order->status)->toBe('draft');
+    expect($this->order->status)->toBe('released');
 });
 
 it('adds finished goods to stock on production completion', function () {
@@ -190,21 +201,11 @@ it('adds finished goods to stock on production completion', function () {
         ->patchJson("/api/v1/production/orders/{$this->order->ulid}/start")
         ->assertOk();
 
-    // Create an employee for operator reference
-    $employee = Employee::factory()->create([
-        'user_id' => $this->manager->id,
+    // Simulate logged output totals required before completion.
+    DB::table('production_orders')->where('id', $this->order->id)->update([
+        'qty_produced' => 10,
+        'qty_rejected' => 1,
     ]);
-
-    // Log output
-    $this->actingAs($this->manager)
-        ->postJson("/api/v1/production/orders/{$this->order->ulid}/output", [
-            'shift' => 'A',
-            'log_date' => now()->toDateString(),
-            'qty_produced' => 10,
-            'qty_rejected' => 1,
-            'operator_id' => $employee->id,
-        ])
-        ->assertSuccessful();
 
     // Complete the order
     $this->actingAs($this->manager)
@@ -220,7 +221,7 @@ it('adds finished goods to stock on production completion', function () {
     expect((float) $fgBalance->quantity_on_hand)->toBe(9.0);
 });
 
-it('creates stock ledger entries that reference the production order', function () {
+it('does not create direct stock issue ledger entries on release', function () {
     seedStock($this->rawMaterial1, $this->warehouse, 100.0);
     seedStock($this->rawMaterial2, $this->warehouse, 50.0);
 
@@ -228,17 +229,12 @@ it('creates stock ledger entries that reference the production order', function 
         ->patchJson("/api/v1/production/orders/{$this->order->ulid}/release")
         ->assertOk();
 
-    // Verify stock ledger entries reference the production order
+    // Material issue occurs during MRQ fulfillment, not production release.
     $ledgerEntries = StockLedger::where('reference_type', 'production_orders')
         ->where('reference_id', $this->order->id)
         ->get();
 
-    expect($ledgerEntries)->toHaveCount(2); // one per BOM component
-
-    $steelEntry = $ledgerEntries->firstWhere('item_id', $this->rawMaterial1->id);
-    expect($steelEntry)->not->toBeNull();
-    expect((float) $steelEntry->quantity)->toBe(-21.0); // negative = issue
-    expect($steelEntry->transaction_type)->toBe('issue');
+    expect($ledgerEntries)->toHaveCount(0);
 });
 
 it('blocks release when QC inspection has failed status', function () {

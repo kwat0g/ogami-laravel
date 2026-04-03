@@ -15,6 +15,7 @@ use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\CombinedDeliverySchedule;
 use App\Domains\Production\Models\DeliverySchedule;
 use App\Domains\Production\Models\ProductionOrder;
+use App\Domains\Production\Services\ProductionOrderService;
 use App\Events\Production\ProductionOrderAutoCreated;
 use App\Models\User;
 use App\Notifications\CRM\ClientOrderApprovedNotification;
@@ -36,6 +37,7 @@ final class ClientOrderService implements ServiceContract
 {
     public function __construct(
         private readonly StockReservationService $stockReservationService,
+        private readonly ProductionOrderService $productionOrderService,
     ) {}
 
     /**
@@ -980,6 +982,202 @@ final class ClientOrderService implements ServiceContract
     }
 
     /**
+     * Explicit force-production path for approved client orders.
+     *
+     * mode values:
+     * - preserve_stock_produce_full: create force_production orders for full quantity
+     * - consume_stock_then_replenish: create replenishment orders for full quantity
+     * - per_item: use itemModes map with one of the two modes above
+     *
+     * @param  array<int, array{item_master_id:int, mode:string}>  $itemModes
+     */
+    public function forceProductionFromOrder(
+        ClientOrder $order,
+        int $userId,
+        string $mode,
+        string $reason,
+        array $itemModes = [],
+    ): ClientOrder {
+        $allowedStatuses = [
+            ClientOrder::STATUS_APPROVED,
+            ClientOrder::STATUS_IN_PRODUCTION,
+            ClientOrder::STATUS_READY_FOR_DELIVERY,
+        ];
+
+        if (! in_array($order->status, $allowedStatuses, true)) {
+            throw new DomainException(
+                "Cannot force production for order in status: {$order->status}",
+                'CLIENT_ORDER_FORCE_PROD_INVALID_STATUS',
+                422,
+            );
+        }
+
+        if (! in_array($mode, ['preserve_stock_produce_full', 'consume_stock_then_replenish', 'per_item'], true)) {
+            throw new DomainException(
+                'Invalid force production mode.',
+                'CLIENT_ORDER_FORCE_PROD_INVALID_MODE',
+                422,
+            );
+        }
+
+        /** @var User $actor */
+        $actor = User::findOrFail($userId);
+
+        return DB::transaction(function () use ($order, $actor, $mode, $reason, $itemModes): ClientOrder {
+            $order->loadMissing('items.itemMaster', 'deliverySchedules.clientOrderItem');
+
+            $modeByItemId = collect($itemModes)
+                ->filter(fn (array $entry) => isset($entry['item_master_id'], $entry['mode']))
+                ->mapWithKeys(fn (array $entry) => [(int) $entry['item_master_id'] => (string) $entry['mode']])
+                ->all();
+
+            $created = [];
+            $skipped = [];
+
+            foreach ($order->items as $item) {
+                $itemId = (int) $item->item_master_id;
+                $qtyRequired = (float) ($item->negotiated_quantity ?? $item->quantity);
+
+                if ($qtyRequired <= 0) {
+                    continue;
+                }
+
+                $effectiveMode = $mode === 'per_item'
+                    ? ($modeByItemId[$itemId] ?? 'preserve_stock_produce_full')
+                    : $mode;
+
+                $sourceType = $effectiveMode === 'consume_stock_then_replenish'
+                    ? 'replenishment'
+                    : 'force_production';
+
+                if (! in_array($effectiveMode, ['preserve_stock_produce_full', 'consume_stock_then_replenish'], true)) {
+                    $skipped[] = [
+                        'item_master_id' => $itemId,
+                        'reason' => 'INVALID_ITEM_MODE',
+                    ];
+
+                    continue;
+                }
+
+                $duplicateExists = ProductionOrder::query()
+                    ->where('client_order_id', $order->id)
+                    ->where('product_item_id', $itemId)
+                    ->where('source_type', $sourceType)
+                    ->whereNotIn('status', ['cancelled', 'closed'])
+                    ->exists();
+
+                if ($duplicateExists) {
+                    $skipped[] = [
+                        'item_master_id' => $itemId,
+                        'reason' => 'ALREADY_EXISTS',
+                        'source_type' => $sourceType,
+                    ];
+
+                    continue;
+                }
+
+                $bom = BillOfMaterials::query()
+                    ->where('product_item_id', $itemId)
+                    ->where('is_active', true)
+                    ->orderByDesc('version')
+                    ->first();
+
+                if ($bom === null) {
+                    $itemName = $item->itemMaster?->name ?? "Item #{$itemId}";
+
+                    $this->logActivity($order, 'bom_missing', $actor->id, 'staff', [
+                        'item_id' => $itemId,
+                        'item_name' => $itemName,
+                        'message' => "No active BOM found for {$itemName} — force production skipped.",
+                    ]);
+
+                    $skipped[] = [
+                        'item_master_id' => $itemId,
+                        'reason' => 'BOM_MISSING',
+                    ];
+
+                    continue;
+                }
+
+                [$targetStartDate, $targetEndDate] = $this->deriveProductionWindow($order, $bom);
+                $deliveryScheduleId = $this->resolveDeliveryScheduleId($order, (int) $item->id);
+
+                $productionOrder = $this->productionOrderService->store([
+                    'delivery_schedule_id' => $deliveryScheduleId,
+                    'client_order_id' => $order->id,
+                    'source_type' => $sourceType,
+                    'source_id' => $order->id,
+                    'product_item_id' => $itemId,
+                    'bom_id' => $bom->id,
+                    'qty_required' => $qtyRequired,
+                    'target_start_date' => $targetStartDate,
+                    'target_end_date' => $targetEndDate,
+                    'requires_release_approval' => true,
+                    'notes' => "Force production from Client Order {$order->order_reference}. Reason: {$reason}. Mode: {$effectiveMode}",
+                ], $actor);
+
+                $created[] = [
+                    'production_order_id' => $productionOrder->id,
+                    'production_order_reference' => $productionOrder->po_reference,
+                    'item_master_id' => $itemId,
+                    'source_type' => $sourceType,
+                    'qty_required' => $qtyRequired,
+                ];
+            }
+
+            if (! empty($created) && $order->status === ClientOrder::STATUS_APPROVED) {
+                $order->update(['status' => ClientOrder::STATUS_IN_PRODUCTION]);
+            }
+
+            $this->logActivity($order, 'force_production', $actor->id, 'staff', [
+                'mode' => $mode,
+                'reason' => $reason,
+                'created_count' => count($created),
+                'skipped_count' => count($skipped),
+                'created' => $created,
+                'skipped' => $skipped,
+            ]);
+
+            return $order->fresh([
+                'items.itemMaster',
+                'customer',
+                'activities.user',
+                'deliverySchedule',
+                'deliverySchedules.deliverySchedule',
+            ]) ?? $order;
+        });
+    }
+
+    /**
+     * @return array{0:string,1:string}
+     */
+    private function deriveProductionWindow(ClientOrder $order, BillOfMaterials $bom): array
+    {
+        $deliveryDate = $order->agreed_delivery_date
+            ? Carbon::parse((string) $order->agreed_delivery_date)
+            : ($order->requested_delivery_date ? Carbon::parse((string) $order->requested_delivery_date) : now()->addDays(14));
+
+        $productionDays = max(1, (int) ($bom->standard_production_days ?? 7));
+        $targetEndDate = $deliveryDate->copy()->subDay();
+        $targetStartDate = $targetEndDate->copy()->subDays($productionDays - 1);
+
+        if ($targetStartDate->lt(now())) {
+            $targetStartDate = now()->addDay();
+            $targetEndDate = $targetStartDate->copy()->addDays($productionDays - 1);
+        }
+
+        return [$targetStartDate->toDateString(), $targetEndDate->toDateString()];
+    }
+
+    private function resolveDeliveryScheduleId(ClientOrder $order, int $clientOrderItemId): ?int
+    {
+        $pivot = $order->deliverySchedules
+            ->first(fn (ClientOrderDeliverySchedule $link) => (int) $link->client_order_item_id === $clientOrderItemId);
+
+        return $pivot?->delivery_schedule_id;
+    }
+
+    /**
      * For each delivery schedule, handle stock fulfillment:
      *  - If stock is sufficient: reserve stock and mark schedule as ready (auto-fulfill).
      *  - If stock is partial: reserve available stock, create draft PO for deficit.
@@ -1101,8 +1299,7 @@ final class ClientOrderService implements ServiceContract
 
                 // ── Create Production Order ──────────────────────────────────────
                 $actor = User::findOrFail($userId);
-                $poService = app(\App\Domains\Production\Services\ProductionOrderService::class);
-                $productionOrder = $poService->store([
+                $productionOrder = $this->productionOrderService->store([
                     'delivery_schedule_id' => $schedule->id,
                     'delivery_schedule_item_id' => $dsiId,
                     'client_order_id' => $order->id,

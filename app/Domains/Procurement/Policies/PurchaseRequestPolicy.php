@@ -133,11 +133,6 @@ final class PurchaseRequestPolicy
      */
     public function createFromMrq(User $user, MaterialRequisition $mrq): bool
     {
-        // Must have PR create permission
-        if (! $user->hasPermissionTo('procurement.purchase-request.create')) {
-            return false;
-        }
-
         // MRQ must be approved and not yet converted
         if (! $mrq->isConvertibleToPr()) {
             return false;
@@ -148,7 +143,7 @@ final class PurchaseRequestPolicy
             return true;
         }
 
-        // Only Purchasing department can convert MRQs
+        // Only Purchasing department users can convert MRQs.
         return $this->isInPurchasingDepartment($user);
     }
 

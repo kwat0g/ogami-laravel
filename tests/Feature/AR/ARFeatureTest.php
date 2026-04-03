@@ -92,6 +92,7 @@ it('creates a customer invoice', function () {
             'revenue_account_id' => $rev->id,
             'invoice_date' => now()->toDateString(),
             'due_date' => now()->addDays(30)->toDateString(),
+            'invoice_type' => 'service',
             'subtotal' => 75000.00,
         ])
         ->assertCreated()

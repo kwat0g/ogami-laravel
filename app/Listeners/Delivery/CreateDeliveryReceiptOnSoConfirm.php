@@ -38,7 +38,7 @@ final class CreateDeliveryReceiptOnSoConfirm implements ShouldBeUnique, ShouldQu
 
     public function handle(SalesOrderConfirmed $event): void
     {
-        $order = $event->order->loadMissing(['items.itemMaster', 'customer']);
+        $order = $event->order->loadMissing(['items.item', 'customer']);
 
         // Skip if the SO is in production (DR will be created on production completion)
         if ($order->status === 'in_production') {
@@ -62,10 +62,10 @@ final class CreateDeliveryReceiptOnSoConfirm implements ShouldBeUnique, ShouldQu
             }
 
             $drItems[] = [
-                'item_master_id' => $soItem->item_master_id,
+                'item_master_id' => $soItem->item_id,
                 'quantity_expected' => $soItem->quantity,
                 'quantity_received' => 0,
-                'remarks' => "From SO #{$order->order_number}, item: {$soItem->itemMaster?->name}",
+                'remarks' => "From SO #{$order->order_number}, item: {$soItem->item?->name}",
             ];
         }
 

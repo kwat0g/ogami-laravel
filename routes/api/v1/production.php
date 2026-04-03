@@ -65,6 +65,7 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     // ── Production Orders ────────────────────────────────────────────────────
     Route::get('orders', [ProductionOrderController::class, 'index']);
     Route::get('orders-archived', [ProductionOrderController::class, 'archived']);
+    Route::post('orders/replenishment', [ProductionOrderController::class, 'createReplenishment'])->middleware('throttle:api-action');
     Route::post('orders', [ProductionOrderController::class, 'store']);
     Route::get('orders/smart-defaults', [ProductionOrderController::class, 'smartDefaults']);
     Route::get('orders/{productionOrder}', [ProductionOrderController::class, 'show']);
@@ -75,6 +76,7 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
 
     Route::middleware('throttle:api-action')->group(function (): void {
         Route::patch('orders/{productionOrder}/release', [ProductionOrderController::class, 'release']);
+        Route::patch('orders/{productionOrder}/approve-release', [ProductionOrderController::class, 'approveRelease']);
         Route::patch('orders/{productionOrder}/start', [ProductionOrderController::class, 'start']);
         Route::patch('orders/{productionOrder}/complete', [ProductionOrderController::class, 'complete']);
         Route::patch('orders/{productionOrder}/close', [ProductionOrderController::class, 'close']);

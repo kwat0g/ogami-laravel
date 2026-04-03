@@ -302,6 +302,35 @@ final class ClientOrderController extends Controller
     }
 
     /**
+     * Explicitly force production for an already approved order.
+     */
+    public function forceProduction(Request $request, ClientOrder $order): JsonResponse
+    {
+        $this->authorize('forceProduction', $order);
+
+        $validated = $request->validate([
+            'mode' => 'required|string|in:preserve_stock_produce_full,consume_stock_then_replenish,per_item',
+            'reason' => 'required|string|max:500',
+            'items' => 'nullable|array',
+            'items.*.item_master_id' => 'required_with:items|integer|exists:item_masters,id',
+            'items.*.mode' => 'required_with:items|string|in:preserve_stock_produce_full,consume_stock_then_replenish',
+        ]);
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $order = $this->service->forceProductionFromOrder(
+            order: $order,
+            userId: $user->id,
+            mode: $validated['mode'],
+            reason: $validated['reason'],
+            itemModes: $validated['items'] ?? [],
+        );
+
+        return response()->json($order);
+    }
+
+    /**
      * Get available products for client portal shop
      */
     public function availableProducts(Request $request): JsonResponse

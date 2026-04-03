@@ -128,6 +128,18 @@ final class ClientOrderPolicy
     }
 
     /**
+     * Force production decision uses the same SoD rule as approval.
+     */
+    public function forceProduction(User $user, ClientOrder $order): bool
+    {
+        if ($order->submitted_by === $user->id) {
+            return false;
+        }
+
+        return $user->hasPermissionTo('sales.order_approve');
+    }
+
+    /**
      * Determine whether the user can restore the model.
      */
     public function restore(\App\Models\User $user, $model): bool

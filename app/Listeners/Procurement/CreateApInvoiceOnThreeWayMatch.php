@@ -7,6 +7,7 @@ namespace App\Listeners\Procurement;
 use App\Domains\AP\Services\VendorInvoiceService;
 use App\Events\Procurement\ThreeWayMatchPassed;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -28,6 +29,17 @@ class CreateApInvoiceOnThreeWayMatch
     ) {}
 
     public function handle(ThreeWayMatchPassed $event): void
+    {
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit(fn () => $this->process($event));
+
+            return;
+        }
+
+        $this->process($event);
+    }
+
+    private function process(ThreeWayMatchPassed $event): void
     {
         $gr = $event->goodsReceipt;
 

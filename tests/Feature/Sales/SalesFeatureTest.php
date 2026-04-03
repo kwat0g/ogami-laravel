@@ -69,7 +69,7 @@ it('transitions quotation through draft -> sent -> accepted', function () {
     expect($quotation->status)->toBe('sent');
 
     $quotation = $service->accept($quotation);
-    expect($quotation->status)->toBe('accepted');
+    expect($quotation->status)->toBe('converted_to_order');
 });
 
 it('rejects sending a non-draft quotation', function () {

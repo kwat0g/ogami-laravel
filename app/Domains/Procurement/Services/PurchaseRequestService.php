@@ -152,20 +152,15 @@ final class PurchaseRequestService implements ServiceContract
                 'status' => $targetStatus,
                 'submitted_by_id' => $actor->id,
                 'submitted_at' => now(),
-                'reviewed_by_id' => $actor->id,
-                'reviewed_at' => now(),
-                'reviewed_comments' => 'Auto-reviewed (VP Authority)',
             ];
         } elseif ($this->isPurchasingManager($actor)) {
-            // Purchasing Manager self-reviews — jumps directly to Budget Verification
-            $targetStatus = 'reviewed';
+            // SoD/DB constraints require reviewer != submitter, so managers
+            // still submit to pending_review for a different reviewer to act.
+            $targetStatus = 'pending_review';
             $updateData = [
                 'status' => $targetStatus,
                 'submitted_by_id' => $actor->id,
                 'submitted_at' => now(),
-                'reviewed_by_id' => $actor->id,
-                'reviewed_at' => now(),
-                'reviewed_comments' => 'Auto-reviewed (Purchasing Manager)',
             ];
         } else {
             $targetStatus = 'pending_review';
@@ -522,15 +517,17 @@ final class PurchaseRequestService implements ServiceContract
             return; // No cost items to check
         }
 
-        // Look up the department's approved annual budget for the current fiscal year
+        // Look up the department's approved annual budget for the current fiscal year.
+        // annual_budgets are scoped by cost_center_id, so map via cost_centers.department_id.
         $currentYear = (int) date('Y');
-        $budget = DB::table('annual_budgets')
-            ->where('department_id', $pr->department_id)
-            ->where('fiscal_year', $currentYear)
-            ->where('status', 'approved')
-            ->first();
+        $budgetCentavos = (int) DB::table('annual_budgets')
+            ->join('cost_centers', 'annual_budgets.cost_center_id', '=', 'cost_centers.id')
+            ->where('cost_centers.department_id', $pr->department_id)
+            ->where('annual_budgets.fiscal_year', $currentYear)
+            ->where('annual_budgets.status', 'approved')
+            ->sum('annual_budgets.budgeted_amount_centavos');
 
-        if (! $budget) {
+        if ($budgetCentavos <= 0) {
             // No approved budget found — allow PR to proceed with a warning log
             \Illuminate\Support\Facades\Log::warning("H9-BUDGET: No approved annual budget for department {$pr->department_id} in FY{$currentYear}. PR {$pr->pr_reference} proceeding without budget check.");
             return;
@@ -545,7 +542,8 @@ final class PurchaseRequestService implements ServiceContract
             ->join('purchase_request_items', 'purchase_requests.id', '=', 'purchase_request_items.purchase_request_id')
             ->sum('purchase_request_items.estimated_total');
 
-        $budgetAmount = (float) ($budget->total_amount ?? $budget->amount ?? 0);
+        // Convert centavos to peso amount for comparison with PR totals (which are decimal peso values).
+        $budgetAmount = (float) ($budgetCentavos / 100);
         $remaining = $budgetAmount - $consumed;
 
         if ($prTotal > $remaining && $remaining >= 0) {
@@ -692,8 +690,12 @@ final class PurchaseRequestService implements ServiceContract
             $total = $pr->items()->sum(DB::raw('quantity * estimated_unit_cost'));
             $pr->update(['total_estimated_cost' => $total]);
 
-            // Mark MRQ as converted
-            $mrq->update(['converted_to_pr' => true]);
+            // Mark MRQ as converted and link the generated PR.
+            $mrq->update([
+                'converted_to_pr' => true,
+                'converted_pr_id' => $pr->id,
+                'status' => 'converted_to_pr',
+            ]);
 
             return $pr->refresh();
         });

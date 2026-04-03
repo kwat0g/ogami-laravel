@@ -270,3 +270,38 @@ export function useVpApproveClientOrder() {
     },
   })
 }
+
+export type ForceProductionMode =
+  | 'preserve_stock_produce_full'
+  | 'consume_stock_then_replenish'
+  | 'per_item'
+
+export interface ForceProductionPayload {
+  orderUlid: string
+  mode: ForceProductionMode
+  reason: string
+  items?: Array<{
+    item_master_id: number
+    mode: 'preserve_stock_produce_full' | 'consume_stock_then_replenish'
+  }>
+}
+
+export function useForceProductionClientOrder() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ orderUlid, mode, reason, items }: ForceProductionPayload) => {
+      const { data } = await api.post(`${API_BASE}/${orderUlid}/force-production`, {
+        mode,
+        reason,
+        items,
+      })
+      return data as ClientOrder
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['client-orders'] })
+      qc.invalidateQueries({ queryKey: ['client-order', variables.orderUlid] })
+      qc.invalidateQueries({ queryKey: ['production-orders'] })
+    },
+  })
+}

@@ -24,7 +24,7 @@ final class StoreProductionOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'source_type' => ['sometimes', 'string', 'in:manual,client_order,delivery_schedule'],
+            'source_type' => ['sometimes', 'string', 'in:manual,client_order,delivery_schedule,sales_order,rework,force_production,replenishment'],
             'client_order_id' => ['nullable', 'integer', 'exists:client_orders,id'],
             'delivery_schedule_id' => ['nullable', 'integer', 'exists:delivery_schedules,id'],
             'sales_order_id' => ['nullable', 'integer', 'exists:sales_orders,id'],
@@ -54,6 +54,13 @@ final class StoreProductionOrderRequest extends FormRequest
                 $v->errors()->add(
                     'delivery_schedule_id',
                     'delivery_schedule_id is required when source_type is delivery_schedule. (CHAIN-PO-001)'
+                );
+            }
+
+            if ($sourceType === 'sales_order' && empty($this->input('sales_order_id'))) {
+                $v->errors()->add(
+                    'sales_order_id',
+                    'sales_order_id is required when source_type is sales_order. (CHAIN-PO-001)'
                 );
             }
         });

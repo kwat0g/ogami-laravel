@@ -6,6 +6,7 @@ import {
   useBoms,
   useDeliverySchedules,
   useCreateProductionOrder,
+  useCreateReplenishmentOrder,
   useProductionSmartDefaults,
 } from '@/hooks/useProduction'
 import { useItems } from '@/hooks/useInventory'
@@ -14,12 +15,14 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 export default function CreateProductionOrderPage(): React.ReactElement {
   const navigate = useNavigate()
   const createMut = useCreateProductionOrder()
+  const createReplenishmentMut = useCreateReplenishmentOrder()
 
   const { data: itemsData } = useItems({ type: 'finished_good', per_page: 500 })
   const items = itemsData?.data ?? []
 
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [targetStartDate, setTargetStartDate] = useState<string>('')
+  const [creationMode, setCreationMode] = useState<'manual' | 'replenishment'>('manual')
 
   // Fetch smart defaults when product or start date changes
   const { data: smartDefaults } = useProductionSmartDefaults(
@@ -61,6 +64,8 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     bom_id: 0,
     delivery_schedule_id: '' as number | '',
     qty_required: '',
+    target_stock_level: '',
+    min_batch_size: '',
     target_start_date: '',
     target_end_date: '',
     notes: '',
@@ -86,9 +91,21 @@ export default function CreateProductionOrderPage(): React.ReactElement {
   const ve = useMemo(() => {
     const e: Record<string, string | undefined> = {}
     if (!form.product_item_id) e.product_item_id = 'Product item is required.'
-    if (!form.bom_id) e.bom_id = 'Bill of materials is required.'
-    const qty = Number(form.qty_required)
-    if (!form.qty_required || isNaN(qty) || qty <= 0) e.qty_required = 'Must be greater than 0.'
+    if (creationMode === 'manual') {
+      if (!form.bom_id) e.bom_id = 'Bill of materials is required.'
+      const qty = Number(form.qty_required)
+      if (!form.qty_required || isNaN(qty) || qty <= 0) e.qty_required = 'Must be greater than 0.'
+    }
+    if (creationMode === 'replenishment') {
+      const targetLevel = Number(form.target_stock_level)
+      if (!form.target_stock_level || isNaN(targetLevel) || targetLevel <= 0) {
+        e.target_stock_level = 'Target stock level must be greater than 0.'
+      }
+      const minBatch = Number(form.min_batch_size)
+      if (form.min_batch_size && (isNaN(minBatch) || minBatch <= 0)) {
+        e.min_batch_size = 'Minimum batch size must be greater than 0.'
+      }
+    }
     if (!form.target_start_date) e.target_start_date = 'Start date is required.'
     if (!form.target_end_date) e.target_end_date = 'End date is required.'
     // Validate date range
@@ -96,16 +113,28 @@ export default function CreateProductionOrderPage(): React.ReactElement {
       e.target_end_date = 'End date must be after start date.'
     }
     return e
-  }, [form])
+  }, [form, creationMode])
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
 
   const validateForm = (): boolean => {
     const errors: string[] = []
     
     if (!form.product_item_id) errors.push('Product item is required.')
-    if (!form.bom_id) errors.push('Bill of materials is required.')
-    const qty = Number(form.qty_required)
-    if (!form.qty_required || isNaN(qty) || qty <= 0) errors.push('Quantity required must be greater than 0.')
+    if (creationMode === 'manual') {
+      if (!form.bom_id) errors.push('Bill of materials is required.')
+      const qty = Number(form.qty_required)
+      if (!form.qty_required || isNaN(qty) || qty <= 0) errors.push('Quantity required must be greater than 0.')
+    }
+    if (creationMode === 'replenishment') {
+      const targetLevel = Number(form.target_stock_level)
+      if (!form.target_stock_level || isNaN(targetLevel) || targetLevel <= 0) {
+        errors.push('Target stock level must be greater than 0.')
+      }
+      const minBatch = Number(form.min_batch_size)
+      if (form.min_batch_size && (isNaN(minBatch) || minBatch <= 0)) {
+        errors.push('Minimum batch size must be greater than 0.')
+      }
+    }
     if (!form.target_start_date) errors.push('Target start date is required.')
     if (!form.target_end_date) errors.push('Target end date is required.')
     if (form.target_start_date && form.target_end_date && form.target_end_date < form.target_start_date) {
@@ -128,15 +157,25 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     if (!validateForm()) return
     
     try {
-      const order = await createMut.mutateAsync({
-        product_item_id: form.product_item_id,
-        bom_id: form.bom_id,
-        delivery_schedule_id: form.delivery_schedule_id !== '' ? Number(form.delivery_schedule_id) : undefined,
-        qty_required: Number(form.qty_required),
-        target_start_date: form.target_start_date,
-        target_end_date: form.target_end_date,
-        notes: form.notes || undefined,
-      })
+      const order = creationMode === 'manual'
+        ? await createMut.mutateAsync({
+            product_item_id: form.product_item_id,
+            bom_id: form.bom_id,
+            delivery_schedule_id: form.delivery_schedule_id !== '' ? Number(form.delivery_schedule_id) : undefined,
+            qty_required: Number(form.qty_required),
+            target_start_date: form.target_start_date,
+            target_end_date: form.target_end_date,
+            notes: form.notes || undefined,
+          })
+        : await createReplenishmentMut.mutateAsync({
+            product_item_id: form.product_item_id,
+            target_stock_level: Number(form.target_stock_level),
+            min_batch_size: form.min_batch_size ? Number(form.min_batch_size) : undefined,
+            bom_id: form.bom_id || undefined,
+            target_start_date: form.target_start_date,
+            target_end_date: form.target_end_date,
+            notes: form.notes || undefined,
+          })
       toast.success('Production order created successfully.')
       // @ts-expect-error mutation returns AxiosResponse wrapper
       const ulid: string | undefined = order?.data?.ulid
@@ -152,6 +191,18 @@ export default function CreateProductionOrderPage(): React.ReactElement {
       <PageHeader title="New Production Order" backTo="/production/orders" />
 
       <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded p-6 space-y-5">
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Creation Mode *</label>
+          <select
+            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
+            value={creationMode}
+            onChange={e => setCreationMode(e.target.value as 'manual' | 'replenishment')}
+          >
+            <option value="manual">Manual Work Order</option>
+            <option value="replenishment">Replenishment Work Order</option>
+          </select>
+        </div>
+
         {/* Product Item */}
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">Product Item *</label>
@@ -202,6 +253,7 @@ export default function CreateProductionOrderPage(): React.ReactElement {
         </div>
 
         {/* Delivery Schedule (optional) */}
+        {creationMode === 'manual' && (
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
             Delivery Schedule <span className="text-neutral-400 font-normal">(optional)</span>
@@ -226,8 +278,10 @@ export default function CreateProductionOrderPage(): React.ReactElement {
             ))}
           </select>
         </div>
+        )}
 
         {/* Qty */}
+        {creationMode === 'manual' && (
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">Qty Required *</label>
           <input
@@ -242,6 +296,39 @@ export default function CreateProductionOrderPage(): React.ReactElement {
           />
           {fe('qty_required') && <p className="mt-1 text-xs text-red-600">{fe('qty_required')}</p>}
         </div>
+        )}
+
+        {creationMode === 'replenishment' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Target Stock Level *</label>
+              <input
+                type="number"
+                min="0.001"
+                step="0.001"
+                className={`w-full border rounded px-3 py-2 text-sm ${fe('target_stock_level') ? 'border-red-400' : 'border-neutral-300'}`}
+                value={form.target_stock_level}
+                onChange={e => set('target_stock_level', e.target.value)}
+                onBlur={() => touch('target_stock_level')}
+                required
+              />
+              {fe('target_stock_level') && <p className="mt-1 text-xs text-red-600">{fe('target_stock_level')}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Minimum Batch Size</label>
+              <input
+                type="number"
+                min="0.001"
+                step="0.001"
+                className={`w-full border rounded px-3 py-2 text-sm ${fe('min_batch_size') ? 'border-red-400' : 'border-neutral-300'}`}
+                value={form.min_batch_size}
+                onChange={e => set('min_batch_size', e.target.value)}
+                onBlur={() => touch('min_batch_size')}
+              />
+              {fe('min_batch_size') && <p className="mt-1 text-xs text-red-600">{fe('min_batch_size')}</p>}
+            </div>
+          </div>
+        )}
 
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
@@ -301,10 +388,10 @@ export default function CreateProductionOrderPage(): React.ReactElement {
           </button>
           <button
             type="submit"
-            disabled={createMut.isPending}
+            disabled={createMut.isPending || createReplenishmentMut.isPending}
             className="px-6 py-2 text-sm rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {createMut.isPending ? 'Creating…' : 'Create Work Order'}
+            {(createMut.isPending || createReplenishmentMut.isPending) ? 'Creating…' : 'Create Work Order'}
           </button>
         </div>
       </form>

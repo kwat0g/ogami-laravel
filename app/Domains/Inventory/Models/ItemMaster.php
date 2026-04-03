@@ -25,6 +25,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $description
  * @property numeric-string $reorder_point
  * @property numeric-string $reorder_qty
+ * @property numeric-string $preferred_stock_level
+ * @property numeric-string $min_batch_size
  * @property string $type raw_material|semi_finished|finished_good|consumable|spare_part
  * @property string $costing_method standard|fifo|weighted_average
  * @property bool $requires_iqc
@@ -53,6 +55,8 @@ final class ItemMaster extends Model implements Auditable
         'costing_method',
         'reorder_point',
         'reorder_qty',
+        'preferred_stock_level',
+        'min_batch_size',
         'type',
         'requires_iqc',
         'is_active',
@@ -62,6 +66,8 @@ final class ItemMaster extends Model implements Auditable
     protected $casts = [
         'requires_iqc' => 'boolean',
         'is_active' => 'boolean',
+        'preferred_stock_level' => 'decimal:4',
+        'min_batch_size' => 'decimal:4',
     ];
 
     /** @return BelongsTo<ItemCategory, ItemMaster> */

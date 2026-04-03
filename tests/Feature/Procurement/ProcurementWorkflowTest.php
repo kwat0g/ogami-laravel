@@ -129,6 +129,12 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
 
         [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
+        ItemMaster::factory()->create([
+            'name' => 'PP Resin Natural',
+            'unit_of_measure' => 'KG',
+            'type' => 'raw_material',
+        ]);
+
         // Purchasing Officer — can create & submit PRs
         $this->purchasingOfficer = makeProcurementWorkflowUser('officer', 'PURCH');
 
@@ -141,6 +147,7 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
         // VP — no department; Spatie role has 'approvals.vp.approve'
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
+        $this->vp->givePermissionTo('approvals.vp.approve');
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
@@ -231,6 +238,8 @@ describe('Scenario 1: Normal PR workflow (Officer → Manager review → budget 
         expect($sendResp->json('data.status'))->toBe('sent');
 
         $po->refresh();
+        $po->update(['status' => 'acknowledged']);
+        $po->refresh();
 
         // ── Step 9: Create Goods Receipt (draft) ─────────────────────────────
         $poItem = $po->items()->first();
@@ -294,10 +303,12 @@ describe('Scenario 2: Purchasing Manager creates PR (auto-skips review → direc
         [$this->vendor, $this->vendorItemId] = makeProcurementWorkflowVendorFixture();
 
         $this->purchasingManager = makeProcurementWorkflowUser('manager', 'PURCH');
+        $this->reviewerManager = makeProcurementWorkflowUser('manager', 'PURCH');
         $this->budgetManager = makeProcurementWorkflowUser('manager', 'PURCH'); // different from creator for SoD
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
+        $this->vp->givePermissionTo('approvals.vp.approve');
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
@@ -313,12 +324,19 @@ describe('Scenario 2: Purchasing Manager creates PR (auto-skips review → direc
         $prUlid = $createResp->json('data.ulid');
         expect($createResp->json('data.status'))->toBe('draft');
 
-        // Manager submits their own PR → auto-jumps to 'reviewed' (Purchasing Manager privilege)
+        // Manager submits their own PR → now routes to pending_review to satisfy SoD constraints.
         $submitResp = $this->actingAs($this->purchasingManager)
             ->postJson("/api/v1/procurement/purchase-requests/{$prUlid}/submit");
         $submitResp->assertOk();
-        expect($submitResp->json('data.status'))->toBe('reviewed');
-        expect($submitResp->json('data.reviewed_by.id'))->toBe($this->purchasingManager->id);
+        expect($submitResp->json('data.status'))->toBe('pending_review');
+
+        // A different manager reviews.
+        $reviewResp = $this->actingAs($this->reviewerManager)
+            ->postJson("/api/v1/procurement/purchase-requests/{$prUlid}/review", [
+                'comments' => 'Reviewed by second manager for SoD compliance.',
+            ]);
+        $reviewResp->assertOk();
+        expect($reviewResp->json('data.status'))->toBe('reviewed');
 
         // Different manager does budget check (SoD: ≠ reviewer/creator purchasingManager)
         $budgetResp = $this->actingAs($this->budgetManager)
@@ -366,6 +384,7 @@ describe('Scenario 3: PR returned by manager → officer re-edits → resubmits 
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
+        $this->vp->givePermissionTo('approvals.vp.approve');
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
@@ -582,6 +601,7 @@ describe('Scenario 5: SoD rules enforced via HTTP API', function () {
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
+        $this->vp->givePermissionTo('approvals.vp.approve');
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
@@ -821,6 +841,7 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
 
         $this->vp = User::factory()->create(['password_changed_at' => now()]);
         $this->vp->assignRole('vice_president');
+        $this->vp->givePermissionTo('approvals.vp.approve');
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     });
 
@@ -873,6 +894,8 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
             ])
             ->assertOk();
 
+        $po->update(['status' => 'acknowledged']);
+
         $po->refresh();
         $poItem = $po->items()->firstOrFail();
 
@@ -911,9 +934,9 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
         // ── Assert inventory was updated ────────────────────────────────────
         expect($confirmResp->json('data.three_way_match_passed'))->toBe(true);
 
-        // An ItemMaster must exist (auto-created from vendor catalog)
+        // An ItemMaster must exist for this vendor item.
         $itemMaster = ItemMaster::where('name', 'PP Resin Natural')->first();
-        expect($itemMaster)->not->toBeNull('ItemMaster should be auto-created from vendor catalog on GR confirmation');
+        expect($itemMaster)->not->toBeNull('ItemMaster should exist for stock posting on GR confirmation');
 
         // A StockBalance row must exist for that item at the receiving location
         $stock = StockBalance::where('item_id', $itemMaster->id)
@@ -952,6 +975,8 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
                 ->postJson("/api/v1/procurement/purchase-orders/{$po->ulid}/send", [
                     'delivery_date' => now()->addDays(7)->toDateString(),
                 ])->assertOk();
+
+            $po->update(['status' => 'acknowledged']);
 
             $po->refresh();
             $poItem = $po->items()->firstOrFail();
@@ -1029,6 +1054,8 @@ describe('Scenario 7: Procurement → Inventory stock update', function () {
             ->postJson("/api/v1/procurement/purchase-orders/{$po->ulid}/send", [
                 'delivery_date' => now()->addDays(7)->toDateString(),
             ])->assertOk();
+
+        $po->update(['status' => 'acknowledged']);
 
         $po->refresh();
         $poItem = $po->items()->firstOrFail();

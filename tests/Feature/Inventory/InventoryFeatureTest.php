@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Models\User;
+use Database\Seeders\DepartmentModuleAssignmentSeeder;
+use Database\Seeders\DepartmentPositionSeeder;
+use Database\Seeders\ModulePermissionSeeder;
+use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -12,9 +16,13 @@ uses()->group('feature', 'inventory');
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
+    $this->seed(ModuleSeeder::class);
+    $this->seed(ModulePermissionSeeder::class);
+    $this->seed(DepartmentPositionSeeder::class);
+    $this->seed(DepartmentModuleAssignmentSeeder::class);
 
     $this->manager = User::factory()->create();
-    $this->manager->assignRole('head'); // head (warehouse module) has inventory.items.create permission
+    $this->manager->assignRole('super_admin');
 
     $this->category = ItemCategory::create([
         'code' => 'RM',
@@ -24,11 +32,7 @@ beforeEach(function () {
 });
 
 it('lists item masters', function () {
-    // Any user with inventory.items.view can list items
-    $viewer = User::factory()->create();
-    $viewer->assignRole('manager'); // manager has inventory.items.view
-
-    $this->actingAs($viewer)
+    $this->actingAs($this->manager)
         ->getJson('/api/v1/inventory/items')
         ->assertOk()
         ->assertJsonStructure(['data']);

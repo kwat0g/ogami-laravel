@@ -182,7 +182,7 @@ final class SalesOrderService implements ServiceContract
         if ($customer !== null) {
             try {
                 $totalAmount = ((float) $order->total_centavos) / 100;
-                $customer->enforceCredit($totalAmount);
+                $customer->assertCreditAvailable($totalAmount);
             } catch (\Throwable $e) {
                 // Check if soft limit mode — warn but allow
                 $softLimit = (bool) (DB::table('system_settings')

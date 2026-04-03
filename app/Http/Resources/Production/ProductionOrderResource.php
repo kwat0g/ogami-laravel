@@ -16,6 +16,8 @@ final class ProductionOrderResource extends JsonResource
             'id' => $this->id,
             'ulid' => $this->ulid,
             'po_reference' => $this->po_reference,
+            'source_type' => $this->source_type,
+            'source_id' => $this->source_id,
             'delivery_schedule' => $this->whenLoaded('deliverySchedule', fn () => [
                 'id' => $this->deliverySchedule->id,
                 'ds_reference' => $this->deliverySchedule->ds_reference,
@@ -30,6 +32,10 @@ final class ProductionOrderResource extends JsonResource
             'target_start_date' => $this->target_start_date?->toDateString(),
             'target_end_date' => $this->target_end_date?->toDateString(),
             'status' => $this->status,
+            'requires_release_approval' => (bool) $this->requires_release_approval,
+            'approved_for_release_by' => $this->approved_for_release_by,
+            'approved_for_release_at' => $this->approved_for_release_at?->toIso8601String(),
+            'release_approval_notes' => $this->release_approval_notes,
             'mrq_pending' => $this->status === 'released' && ($this->pending_mrq_count ?? 0) > 0,
             'notes' => $this->notes,
             'created_by' => $this->whenLoaded('createdBy', fn () => [

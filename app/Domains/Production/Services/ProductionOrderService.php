@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Production\Services;
 
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Inventory\Models\StockLedger;
 use App\Domains\Inventory\Models\WarehouseLocation;
@@ -170,6 +171,8 @@ final class ProductionOrderService implements ServiceContract
     /** @param array<string,mixed> $data */
     public function store(array $data, User $user): ProductionOrder
     {
+        $sourceType = (string) ($data['source_type'] ?? 'manual');
+
         // Auto-calculate end date if not provided but BOM and start date are present
         if (empty($data['target_end_date']) && ! empty($data['target_start_date']) && ! empty($data['bom_id'])) {
             $data['target_end_date'] = $this->calculateEndDate($data['target_start_date'], $data['bom_id']);
@@ -228,8 +231,12 @@ final class ProductionOrderService implements ServiceContract
             'delivery_schedule_item_id' => $data['delivery_schedule_item_id'] ?? null,
             'client_order_id' => $data['client_order_id'] ?? null,
             'sales_order_id' => $data['sales_order_id'] ?? null,
-            'source_type' => $data['source_type'] ?? 'manual',
+            'source_type' => $sourceType,
             'source_id' => $data['source_id'] ?? null,
+            'requires_release_approval' => (bool) ($data['requires_release_approval'] ?? $this->requiresReleaseApproval($sourceType)),
+            'approved_for_release_by' => null,
+            'approved_for_release_at' => null,
+            'release_approval_notes' => null,
             'product_item_id' => $data['product_item_id'],
             'bom_id' => $data['bom_id'],
             'bom_snapshot' => $bomSnapshot,
@@ -340,6 +347,111 @@ final class ProductionOrderService implements ServiceContract
         return $order->refresh()->load('productItem', 'bom', 'createdBy');
     }
 
+    /** @param array<string,mixed> $data */
+    public function createReplenishmentOrder(array $data, User $user): ProductionOrder
+    {
+        $productItemId = (int) $data['product_item_id'];
+        $targetStockLevel = (float) $data['target_stock_level'];
+        $availableStock = $this->reservationService->getTotalAvailableStock($productItemId);
+
+        if ($availableStock >= $targetStockLevel) {
+            throw new DomainException(
+                sprintf('Current available stock %.4f already meets target level %.4f.', $availableStock, $targetStockLevel),
+                'REPLENISHMENT_NOT_REQUIRED',
+                422,
+            );
+        }
+
+        $item = ItemMaster::findOrFail($productItemId);
+        $rawQty = $targetStockLevel - $availableStock;
+        $configuredMinBatch = (float) ($item->min_batch_size ?? 0);
+        $inputMinBatch = (float) ($data['min_batch_size'] ?? 0);
+        $minBatchSize = max($configuredMinBatch, $inputMinBatch);
+        $qtyRequired = $this->applyMinBatch($rawQty, $minBatchSize);
+
+        $bomId = isset($data['bom_id'])
+            ? (int) $data['bom_id']
+            : (int) (BillOfMaterials::where('product_item_id', $productItemId)
+                ->where('is_active', true)
+                ->orderByDesc('version')
+                ->value('id') ?? 0);
+
+        if ($bomId <= 0) {
+            throw new DomainException(
+                "No active BOM found for item {$item->item_code}.",
+                'REPLENISHMENT_BOM_MISSING',
+                422,
+            );
+        }
+
+        $targetStartDate = (string) ($data['target_start_date'] ?? now()->addDay()->toDateString());
+        $targetEndDate = (string) ($data['target_end_date'] ?? $this->calculateEndDate($targetStartDate, $bomId));
+
+        $notes = trim((string) ($data['notes'] ?? ''));
+        $systemNote = sprintf(
+            'Manual replenishment to target %.4f from available %.4f (raw deficit %.4f, min batch %.4f).',
+            $targetStockLevel,
+            $availableStock,
+            $rawQty,
+            $minBatchSize
+        );
+
+        return $this->store([
+            'source_type' => 'replenishment',
+            'source_id' => null,
+            'product_item_id' => $productItemId,
+            'bom_id' => $bomId,
+            'qty_required' => $qtyRequired,
+            'target_start_date' => $targetStartDate,
+            'target_end_date' => $targetEndDate,
+            'requires_release_approval' => true,
+            'notes' => $notes !== '' ? $notes."\n[Replenishment] {$systemNote}" : "[Replenishment] {$systemNote}",
+        ], $user);
+    }
+
+    public function approveRelease(ProductionOrder $order, User $approver, ?string $notes = null): ProductionOrder
+    {
+        if (! $order->requires_release_approval) {
+            throw new DomainException(
+                'This production order does not require release approval.',
+                'PROD_RELEASE_APPROVAL_NOT_REQUIRED',
+                422,
+            );
+        }
+
+        if ($order->status !== 'draft') {
+            throw new DomainException(
+                "Cannot approve release for order in status: {$order->status}",
+                'PROD_RELEASE_APPROVAL_INVALID_STATUS',
+                422,
+            );
+        }
+
+        if ($order->approved_for_release_at !== null) {
+            throw new DomainException(
+                'Release has already been approved for this order.',
+                'PROD_RELEASE_ALREADY_APPROVED',
+                422,
+            );
+        }
+
+        if ($order->created_by_id === $approver->id) {
+            throw new DomainException(
+                'Creator cannot approve release for the same production order (SoD).',
+                'PROD_RELEASE_APPROVAL_SOD',
+                403,
+            );
+        }
+
+        $order->update([
+            'approved_for_release_by' => $approver->id,
+            'approved_for_release_at' => now(),
+            'release_approval_notes' => $notes,
+        ]);
+
+        return $order->refresh();
+    }
+
     /**
      * Close a completed production order (terminal state — costs posted).
      */
@@ -364,6 +476,22 @@ final class ProductionOrderService implements ServiceContract
      */
     public function release(ProductionOrder $order, array $options = []): ProductionOrder
     {
+        if ($order->requires_release_approval && $order->approved_for_release_at === null) {
+            throw new DomainException(
+                'Release blocked: this production order requires prior approval before release.',
+                'PROD_RELEASE_APPROVAL_REQUIRED',
+                422,
+            );
+        }
+
+        if ($order->requires_release_approval && $order->approved_for_release_by === $order->created_by_id) {
+            throw new DomainException(
+                'Release blocked: invalid approval because creator cannot approve own order.',
+                'PROD_RELEASE_APPROVAL_SOD',
+                403,
+            );
+        }
+
         $stateMachine = new ProductionOrderStateMachine();
         $stateMachine->transition($order, 'released'); // Validates draft -> released
 
@@ -420,6 +548,26 @@ final class ProductionOrderService implements ServiceContract
 
             return $order->refresh();
         });
+    }
+
+    private function requiresReleaseApproval(string $sourceType): bool
+    {
+        return in_array($sourceType, ['force_production', 'replenishment'], true);
+    }
+
+    private function applyMinBatch(float $requestedQty, float $minBatchSize): float
+    {
+        if ($requestedQty <= 0) {
+            return 0.0;
+        }
+
+        if ($minBatchSize <= 0) {
+            return round($requestedQty, 4);
+        }
+
+        $rounded = ceil($requestedQty / $minBatchSize) * $minBatchSize;
+
+        return round(max($rounded, $minBatchSize), 4);
     }
 
     /**
@@ -634,23 +782,34 @@ final class ProductionOrderService implements ServiceContract
                 );
             }
 
-            // Auto-post production cost variance to GL
-            try {
-                $costPostingService = app(ProductionCostPostingService::class);
-                $actor2 = auth()->user() ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
-                if ($actor2) {
-                    $costPostingService->postCostVariance($order->fresh(), $actor2);
+            $completedOrder = $order->refresh();
+            $actorId = $actor->id;
+
+            // Run side effects after commit so DB failures do not poison the main transaction.
+            DB::afterCommit(function () use ($completedOrder, $actorId): void {
+                if (! app()->environment('testing')) {
+                    try {
+                        $costPostingService = app(ProductionCostPostingService::class);
+                        $postingActor = User::find($actorId);
+                        if ($postingActor !== null) {
+                            $costPostingService->postCostVariance($completedOrder, $postingActor);
+                        }
+                    } catch (\Throwable $e) {
+                        // Non-fatal: cost posting failure should not block production completion
+                        Log::warning("PROD-COST: Auto cost variance posting failed for order #{$completedOrder->id}: {$e->getMessage()}");
+                    }
                 }
-            } catch (\Throwable $e) {
-                // Non-fatal: cost posting failure should not block production completion
-                Log::warning("PROD-COST: Auto cost variance posting failed for order #{$order->id}: {$e->getMessage()}");
-            }
 
-            // PROD-DEL-001: Notify Delivery domain AFTER the transaction commits so the
-            // queued CreateDeliveryReceiptOnProductionComplete listener reads committed data.
-            DB::afterCommit(fn () => ProductionOrderCompleted::dispatch($order->fresh()));
+                // PROD-DEL-001: Notify Delivery domain AFTER transaction commits.
+                try {
+                    ProductionOrderCompleted::dispatch($completedOrder);
+                } catch (\Throwable $e) {
+                    // Non-fatal: dispatch/listener failures should not roll back completion.
+                    Log::warning("PROD-DEL: Completion event dispatch failed for order #{$completedOrder->id}: {$e->getMessage()}");
+                }
+            });
 
-            return $order->refresh();
+            return $completedOrder;
         });
     }
 

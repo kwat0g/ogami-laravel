@@ -34,6 +34,17 @@ class PostInventoryRecognitionJeOnGr
 
     public function handle(ThreeWayMatchPassed $event): void
     {
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit(fn () => $this->process($event));
+
+            return;
+        }
+
+        $this->process($event);
+    }
+
+    private function process(ThreeWayMatchPassed $event): void
+    {
         $gr = $event->goodsReceipt;
         $gr->loadMissing(['items.poItem', 'purchaseOrder']);
 

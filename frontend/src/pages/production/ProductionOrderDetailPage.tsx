@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import {
   useProductionOrder,
   useReleaseOrder,
+  useApproveReleaseOrder,
   useStartOrder,
   useCompleteOrder,
   useCancelOrder,
@@ -86,6 +87,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const canCreate     = usePermission('production.orders.create')
 
   const releaseMut    = useReleaseOrder(ulid ?? '')
+  const approveReleaseMut = useApproveReleaseOrder(ulid ?? '')
   const startMut      = useStartOrder(ulid ?? '')
   const completeMut   = useCompleteOrder(ulid ?? '')
   const cancelMut     = useCancelOrder(ulid ?? '')
@@ -351,6 +353,15 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           } />
           <InfoRow label="Target Start" value={order.target_start_date} />
           <InfoRow label="Target End"   value={order.target_end_date} />
+          <InfoRow label="Source Type" value={order.source_type ?? 'manual'} />
+          {order.requires_release_approval && (
+            <InfoRow
+              label="Release Approval"
+              value={order.approved_for_release_at
+                ? `Approved on ${new Date(order.approved_for_release_at).toLocaleString('en-PH')}`
+                : 'Pending approval'}
+            />
+          )}
           {order.delivery_schedule && (
             <InfoRow 
               label="Delivery Schedule" 
@@ -697,10 +708,27 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           {order.status === 'draft' && canRelease && (
             <button
               onClick={() => handleAction('release')}
-              disabled={anyPending || stockCheckQ.isFetching}
+              disabled={anyPending || stockCheckQ.isFetching || (order.requires_release_approval && !order.approved_for_release_at)}
               className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {stockCheckQ.isFetching ? 'Checking stock...' : 'Release'}
+            </button>
+          )}
+          {order.status === 'draft' && order.requires_release_approval && !order.approved_for_release_at && canRelease && (
+            <button
+              onClick={async () => {
+                try {
+                  await approveReleaseMut.mutateAsync()
+                  toast.success('Release approved successfully.')
+                } catch (err) {
+                  if (isHandledApiError(err)) return
+                  toast.error(firstErrorMessage(err))
+                }
+              }}
+              disabled={approveReleaseMut.isPending}
+              className="px-4 py-2 text-sm font-medium border border-indigo-300 text-indigo-700 hover:bg-indigo-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {approveReleaseMut.isPending ? 'Approving...' : 'Approve Release'}
             </button>
           )}
           {/* Start — released only (fixed race condition: use handleAction) */}

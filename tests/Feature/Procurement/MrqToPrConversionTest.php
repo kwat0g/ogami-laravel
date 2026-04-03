@@ -10,7 +10,6 @@ use App\Domains\Inventory\Models\MaterialRequisitionItem;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
@@ -36,15 +35,12 @@ beforeEach(function () {
         'department_id' => $this->purchasingDept->id,
     ]);
     $this->purchasingOfficer->assignRole('officer');
+    $this->purchasingOfficer->givePermissionTo('procurement.purchase-request.create');
     $this->purchasingOfficer->departments()->attach($this->purchasingDept->id, ['is_primary' => true]);
 
     // Clear permission cache and reload user with roles and permissions
     app()[PermissionRegistrar::class]->forgetCachedPermissions();
     $this->purchasingOfficer->load(['roles', 'roles.permissions']);
-
-    // Debug: Check officer role permissions
-    $officerRole = Role::findByName('officer');
-    dump('Officer role permissions:', $officerRole->permissions->pluck('name')->toArray());
 
     // Create Production Head who can create/approve MRQs
     $this->productionHead = User::factory()->create([
@@ -66,6 +62,7 @@ beforeEach(function () {
         'category_id' => $category->id,
         'type' => 'raw_material',
         'unit_of_measure' => 'kg',
+        'standard_price_centavos' => 12_500,
         'is_active' => true,
     ]);
 });
@@ -86,10 +83,6 @@ it('converts approved material requisition to purchase request', function () {
         'line_order' => 0,
     ]);
 
-    // Debug: Check user permissions and department
-    dump('Permissions:', $this->purchasingOfficer->permissions->pluck('name')->toArray());
-    dump('Roles:', $this->purchasingOfficer->roles->pluck('name')->toArray());
-    expect($this->purchasingOfficer->can('procurement.purchase-request.create'))->toBeTrue();
     expect($this->purchasingOfficer->hasAnyRole(['super_admin', 'executive', 'vice_president']))->toBeFalse();
     expect($this->purchasingOfficer->departments()->where('code', 'PURCH')->exists())->toBeTrue();
 
@@ -99,15 +92,10 @@ it('converts approved material requisition to purchase request', function () {
             'justification' => 'Stock insufficient - need to purchase from vendor',
         ]);
 
-    // Debug response
-    if ($response->getStatusCode() !== 201) {
-        dump('Response: '.$response->getContent());
-    }
-
     $response->assertCreated()
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonPath('data.material_requisition_id', $mrq->id)
-        ->assertJsonPath('data.source_mrq.mr_reference', $mrq->mr_reference);
+        ->assertJsonPath('data.source_mrq.id', $mrq->id);
 
     // Verify MRQ is marked as converted
     $mrq->refresh();

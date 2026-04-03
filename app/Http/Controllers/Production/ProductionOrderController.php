@@ -37,6 +37,25 @@ final class ProductionOrderController extends Controller
         );
     }
 
+    public function createReplenishment(Request $request): ProductionOrderResource
+    {
+        $this->authorize('create', ProductionOrder::class);
+
+        $validated = $request->validate([
+            'product_item_id' => ['required', 'integer', 'exists:item_masters,id'],
+            'target_stock_level' => ['required', 'numeric', 'min:0.0001'],
+            'min_batch_size' => ['nullable', 'numeric', 'min:0.0001'],
+            'bom_id' => ['nullable', 'integer', 'exists:bill_of_materials,id'],
+            'target_start_date' => ['nullable', 'date', 'date_format:Y-m-d'],
+            'target_end_date' => ['nullable', 'date', 'date_format:Y-m-d', 'after_or_equal:target_start_date'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        return new ProductionOrderResource(
+            $this->service->createReplenishmentOrder($validated, $request->user())
+        );
+    }
+
     public function update(Request $request, ProductionOrder $productionOrder): ProductionOrderResource
     {
         $this->authorize('update', $productionOrder);
@@ -85,6 +104,19 @@ final class ProductionOrderController extends Controller
         }
 
         return new ProductionOrderResource($this->service->release($productionOrder, $options));
+    }
+
+    public function approveRelease(Request $request, ProductionOrder $productionOrder): ProductionOrderResource
+    {
+        $this->authorize('approveRelease', $productionOrder);
+
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        return new ProductionOrderResource(
+            $this->service->approveRelease($productionOrder, $request->user(), $validated['notes'] ?? null)
+        );
     }
 
     public function stockCheck(ProductionOrder $productionOrder): JsonResponse
