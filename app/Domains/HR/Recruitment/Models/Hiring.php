@@ -22,10 +22,18 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $application_id
  * @property int $job_requisition_id
  * @property int|null $employee_id
+ * @property array<string, mixed>|null $employee_payload
  * @property string $status
  * @property \Illuminate\Support\Carbon|null $hired_at
  * @property string $start_date
  * @property int $hired_by
+ * @property int|null $submitted_by_id
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property int|null $vp_approved_by_id
+ * @property \Illuminate\Support\Carbon|null $vp_approved_at
+ * @property int|null $vp_rejected_by_id
+ * @property \Illuminate\Support\Carbon|null $vp_rejected_at
+ * @property string|null $vp_rejection_reason
  * @property string|null $notes
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
@@ -41,10 +49,18 @@ final class Hiring extends Model implements Auditable
         'application_id',
         'job_requisition_id',
         'employee_id',
+        'employee_payload',
         'status',
         'hired_at',
         'start_date',
         'hired_by',
+        'submitted_by_id',
+        'submitted_at',
+        'vp_approved_by_id',
+        'vp_approved_at',
+        'vp_rejected_by_id',
+        'vp_rejected_at',
+        'vp_rejection_reason',
         'notes',
     ];
 
@@ -54,6 +70,10 @@ final class Hiring extends Model implements Auditable
             'status' => HiringStatus::class,
             'hired_at' => 'datetime',
             'start_date' => 'date',
+            'employee_payload' => 'array',
+            'submitted_at' => 'datetime',
+            'vp_approved_at' => 'datetime',
+            'vp_rejected_at' => 'datetime',
         ];
     }
 

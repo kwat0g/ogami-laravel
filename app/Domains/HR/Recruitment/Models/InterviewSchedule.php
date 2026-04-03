@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\HR\Recruitment\Models;
 
+use App\Domains\HR\Models\Department;
 use App\Domains\HR\Recruitment\Enums\InterviewStatus;
 use App\Domains\HR\Recruitment\Enums\InterviewType;
 use App\Models\User;
@@ -25,7 +26,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property \Illuminate\Support\Carbon $scheduled_at
  * @property int $duration_minutes
  * @property string|null $location
- * @property int $interviewer_id
+ * @property int|null $interviewer_id
+ * @property int|null $interviewer_department_id
  * @property string $status
  * @property string|null $notes
  * @property \Illuminate\Support\Carbon $created_at
@@ -47,6 +49,7 @@ final class InterviewSchedule extends Model implements Auditable
         'duration_minutes',
         'location',
         'interviewer_id',
+        'interviewer_department_id',
         'status',
         'notes',
     ];
@@ -77,6 +80,11 @@ final class InterviewSchedule extends Model implements Auditable
     public function interviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'interviewer_id');
+    }
+
+    public function interviewerDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'interviewer_department_id');
     }
 
     public function evaluation(): HasOne

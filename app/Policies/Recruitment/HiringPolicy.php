@@ -25,4 +25,9 @@ final class HiringPolicy
     {
         return $user->hasPermissionTo('recruitment.hiring.execute');
     }
+
+    public function approve(User $user): bool
+    {
+        return $user->hasPermissionTo('recruitment.hiring.approve');
+    }
 }

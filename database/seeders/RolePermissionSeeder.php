@@ -264,6 +264,8 @@ class RolePermissionSeeder extends Seeder
         'recruitment.postings.publish',
         'recruitment.postings.close',
         'recruitment.applications.view',
+        'recruitment.applications.create',
+        'recruitment.applications.delete',
         'recruitment.applications.review',
         'recruitment.applications.shortlist',
         'recruitment.applications.reject',
@@ -276,6 +278,7 @@ class RolePermissionSeeder extends Seeder
         'recruitment.preemployment.view',
         'recruitment.preemployment.verify',
         'recruitment.hiring.execute',
+        'recruitment.hiring.approve',
         'recruitment.reports.view',
         'recruitment.candidates.view',
         'recruitment.candidates.manage',
@@ -530,6 +533,7 @@ class RolePermissionSeeder extends Seeder
             'loans.view_department', 'loans.vp_approve',
             // Recruitment VP
             'recruitment.requisitions.approve',
+            'recruitment.hiring.approve',
             // Inventory view (executive-level read access)
             'inventory.items.view', 'inventory.stock.view',
             // Procurement full view (includes goods receipts)
@@ -589,7 +593,7 @@ class RolePermissionSeeder extends Seeder
             'recruitment.requisitions.submit', 'recruitment.requisitions.reject', 'recruitment.requisitions.cancel',
             'recruitment.requisitions.approve',
             'recruitment.postings.view', 'recruitment.postings.create', 'recruitment.postings.publish', 'recruitment.postings.close',
-            'recruitment.applications.view', 'recruitment.applications.review', 'recruitment.applications.shortlist', 'recruitment.applications.reject',
+            'recruitment.applications.view', 'recruitment.applications.create', 'recruitment.applications.delete', 'recruitment.applications.review', 'recruitment.applications.shortlist', 'recruitment.applications.reject',
             'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
             'recruitment.offers.view', 'recruitment.offers.create', 'recruitment.offers.send',
             'recruitment.preemployment.view', 'recruitment.preemployment.verify',

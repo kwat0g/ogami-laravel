@@ -205,4 +205,11 @@ final class ApplicationService implements ServiceContract
             return $application;
         });
     }
+
+    public function delete(Application $application): void
+    {
+        DB::transaction(function () use ($application): void {
+            $application->delete();
+        });
+    }
 }

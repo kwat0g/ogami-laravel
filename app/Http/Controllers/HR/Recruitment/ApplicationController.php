@@ -93,4 +93,13 @@ final class ApplicationController extends Controller
             $this->service->withdraw($application, $request->input('reason')),
         );
     }
+
+    public function destroy(Request $request, Application $application): JsonResponse
+    {
+        $this->authorize('delete', $application);
+
+        $this->service->delete($application);
+
+        return response()->json([], 204);
+    }
 }

@@ -79,15 +79,39 @@ final class HiringServiceTest extends TestCase
         return $app;
     }
 
+    private function hirePayload(Application $app): array
+    {
+        return [
+            'start_date' => now()->addWeeks(2)->toDateString(),
+            'first_name' => $app->candidate->first_name,
+            'last_name' => $app->candidate->last_name,
+            'date_of_birth' => '1990-01-01',
+            'gender' => 'MALE',
+            'civil_status' => 'SINGLE',
+            'bir_status' => 'S',
+            'present_address' => '123 Test Street, Makati City',
+            'personal_email' => 'hire-test@example.com',
+            'department_id' => $app->posting->requisition->department_id,
+            'position_id' => $app->posting->requisition->position_id,
+            'employment_type' => 'regular',
+            'pay_frequency' => 'monthly',
+            'base_salary_monthly_centavos' => 3_000_000,
+        ];
+    }
+
     public function test_hire_creates_employee_record(): void
     {
-        $user = User::factory()->create();
+        $submitter = User::factory()->create();
+        $approver = User::factory()->create();
         $app = $this->createHireableApplication();
 
-        $hiring = $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'S',
-        ], $user);
+        $hiring = $this->service->hire($app, $this->hirePayload($app), $submitter);
 
+        $this->assertEquals(HiringStatus::PendingVpApproval, $hiring->status);
+        $this->assertNull($hiring->employee_id);
+        $this->assertNull($hiring->hired_at);
+
+        $hiring = $this->service->vpApprove($hiring->fresh(), $approver);
         $this->assertEquals(HiringStatus::Hired, $hiring->status);
         $this->assertNotNull($hiring->employee_id);
         $this->assertNotNull($hiring->hired_at);
@@ -95,12 +119,13 @@ final class HiringServiceTest extends TestCase
 
     public function test_hire_closes_requisition_when_headcount_fulfilled(): void
     {
-        $user = User::factory()->create();
+        $submitter = User::factory()->create();
+        $approver = User::factory()->create();
         $app = $this->createHireableApplication();
 
-        $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'S',
-        ], $user);
+        $hiring = $this->service->hire($app, $this->hirePayload($app), $submitter);
+
+        $this->service->vpApprove($hiring->fresh(), $approver);
 
         $requisition = $app->posting->requisition->fresh();
         $this->assertEquals(RequisitionStatus::Closed, $requisition->status);
@@ -114,9 +139,7 @@ final class HiringServiceTest extends TestCase
 
         $this->expectException(DomainException::class);
 
-        $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'S',
-        ], $user);
+        $this->service->hire($app, $this->hirePayload($app), $user);
     }
 
     public function test_cannot_hire_with_draft_offer(): void
@@ -135,9 +158,7 @@ final class HiringServiceTest extends TestCase
 
         $this->expectException(DomainException::class);
 
-        $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'S',
-        ], $user);
+        $this->service->hire($app, $this->hirePayload($app), $user);
     }
 
     public function test_cannot_hire_with_incomplete_preemployment(): void
@@ -161,8 +182,6 @@ final class HiringServiceTest extends TestCase
 
         $this->expectException(DomainException::class);
 
-        $this->service->hire($app, [
-            'start_date' => now()->addWeeks(2)->toDateString(), 'date_of_birth' => '1990-01-01', 'gender' => 'MALE', 'civil_status' => 'SINGLE', 'bir_status' => 'S',
-        ], $user);
+        $this->service->hire($app, $this->hirePayload($app), $user);
     }
 }

@@ -61,7 +61,7 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
 
     // ── Applications ─────────────────────────────────────────────────────
     Route::apiResource('applications', ApplicationController::class)
-        ->except(['update', 'destroy']);
+        ->except(['update']);
     Route::post('applications/{application}/review', [ApplicationController::class, 'review'])
         ->name('applications.review');
     Route::post('applications/{application}/shortlist', [ApplicationController::class, 'shortlist'])
@@ -114,6 +114,10 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
     // ── Hiring ───────────────────────────────────────────────────────────
     Route::post('hire/{application}', [HiringController::class, 'hire'])
         ->name('hire');
+    Route::post('hirings/{hiring}/vp-approve', [HiringController::class, 'vpApprove'])
+        ->name('hirings.vp-approve');
+    Route::post('hirings/{hiring}/vp-reject', [HiringController::class, 'vpReject'])
+        ->name('hirings.vp-reject');
 
     // ── Candidates ───────────────────────────────────────────────────────
     Route::get('candidates', [CandidateController::class, 'index'])

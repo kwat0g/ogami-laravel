@@ -24,7 +24,7 @@ final class InterviewController extends Controller
         $this->authorize('viewAny', InterviewSchedule::class);
 
         $result = $this->service->list(
-            $request->only(['application_id', 'interviewer_id', 'status', 'from_date', 'to_date']),
+            $request->only(['application_id', 'interviewer_id', 'interviewer_department_id', 'status', 'from_date', 'to_date']),
             (int) $request->query('per_page', '25'),
         );
 
@@ -38,7 +38,7 @@ final class InterviewController extends Controller
         $application = Application::findOrFail($request->validated('application_id'));
         $interview = $this->service->schedule($application, $request->validated(), $request->user());
 
-        return response()->json($interview->load(['interviewer', 'application.candidate']), 201);
+        return response()->json($interview->load(['interviewer', 'interviewerDepartment', 'application.candidate']), 201);
     }
 
     public function show(Request $request, InterviewSchedule $interview): JsonResponse
@@ -57,6 +57,7 @@ final class InterviewController extends Controller
             'duration_minutes' => ['sometimes', 'integer', 'min:15'],
             'location' => ['nullable', 'string', 'max:500'],
             'interviewer_id' => ['sometimes', 'integer', 'exists:users,id'],
+            'interviewer_department_id' => ['sometimes', 'integer', 'exists:departments,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 

@@ -12,7 +12,7 @@ final class StoreApplicationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('recruitment.applications.review');
+        return $this->user()->can('recruitment.applications.create');
     }
 
     /** @return array<string, mixed> */

@@ -33,6 +33,11 @@ final class InterviewPolicy
             return true;
         }
 
+        if ($interview->interviewer_department_id !== null
+            && $user->departments()->where('departments.id', $interview->interviewer_department_id)->exists()) {
+            return true;
+        }
+
         return $user->hasPermissionTo('recruitment.interviews.view');
     }
 
@@ -50,6 +55,11 @@ final class InterviewPolicy
     {
         // Only the assigned interviewer or HR can submit evaluations
         if ($interview->interviewer_id === $user->id) {
+            return true;
+        }
+
+        if ($interview->interviewer_department_id !== null
+            && $user->departments()->where('departments.id', $interview->interviewer_department_id)->exists()) {
             return true;
         }
 

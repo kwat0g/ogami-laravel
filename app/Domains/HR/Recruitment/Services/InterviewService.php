@@ -23,9 +23,10 @@ final class InterviewService implements ServiceContract
      */
     public function list(array $filters = [], int $perPage = 25): LengthAwarePaginator
     {
-        return InterviewSchedule::with(['application.candidate', 'application.posting.requisition.position', 'interviewer', 'evaluation'])
+        return InterviewSchedule::with(['application.candidate', 'application.posting.requisition.position', 'interviewer', 'interviewerDepartment', 'evaluation'])
             ->when(isset($filters['application_id']), fn ($q) => $q->where('application_id', $filters['application_id']))
             ->when(isset($filters['interviewer_id']), fn ($q) => $q->where('interviewer_id', $filters['interviewer_id']))
+            ->when(isset($filters['interviewer_department_id']), fn ($q) => $q->where('interviewer_department_id', $filters['interviewer_department_id']))
             ->when(isset($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['from_date']), fn ($q) => $q->where('scheduled_at', '>=', $filters['from_date']))
             ->when(isset($filters['to_date']), fn ($q) => $q->where('scheduled_at', '<=', $filters['to_date']))
@@ -64,7 +65,8 @@ final class InterviewService implements ServiceContract
                 'scheduled_at' => $data['scheduled_at'],
                 'duration_minutes' => $data['duration_minutes'] ?? 60,
                 'location' => $data['location'] ?? null,
-                'interviewer_id' => $data['interviewer_id'],
+                'interviewer_id' => $data['interviewer_id'] ?? null,
+                'interviewer_department_id' => $data['interviewer_department_id'] ?? null,
                 'status' => InterviewStatus::Scheduled->value,
                 'notes' => $data['notes'] ?? null,
             ]);
@@ -88,6 +90,7 @@ final class InterviewService implements ServiceContract
                 'duration_minutes' => $data['duration_minutes'] ?? $interview->duration_minutes,
                 'location' => $data['location'] ?? $interview->location,
                 'interviewer_id' => $data['interviewer_id'] ?? $interview->interviewer_id,
+                'interviewer_department_id' => $data['interviewer_department_id'] ?? $interview->interviewer_department_id,
                 'notes' => $data['notes'] ?? $interview->notes,
             ]);
 

@@ -33,7 +33,17 @@ final class ApplicationPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('recruitment.applications.review');
+        return $user->hasRole('manager')
+            && $user->hasPermissionTo('recruitment.applications.create');
+    }
+
+    public function delete(User $user, Application $application): bool
+    {
+        if (! $user->hasRole('manager') || ! $user->hasPermissionTo('recruitment.applications.delete')) {
+            return false;
+        }
+
+        return in_array($application->status->value, ['new', 'under_review'], true);
     }
 
     public function review(User $user, Application $application): bool

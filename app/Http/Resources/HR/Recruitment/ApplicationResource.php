@@ -50,7 +50,12 @@ final class ApplicationResource extends JsonResource
                 'scheduled_at' => $i->scheduled_at->toIso8601String(),
                 'duration_minutes' => $i->duration_minutes,
                 'location' => $i->location,
-                'interviewer' => ['id' => $i->interviewer->id, 'name' => $i->interviewer->name],
+                'interviewer' => $i->interviewer ? ['id' => $i->interviewer->id, 'name' => $i->interviewer->name] : null,
+                'interviewer_department' => $i->interviewerDepartment ? [
+                    'id' => $i->interviewerDepartment->id,
+                    'code' => $i->interviewerDepartment->code,
+                    'name' => $i->interviewerDepartment->name,
+                ] : null,
                 'status' => $i->status->value,
                 'status_label' => $i->status->label(),
                 'status_color' => $i->status->color(),

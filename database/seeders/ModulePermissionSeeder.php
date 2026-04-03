@@ -63,6 +63,7 @@ class ModulePermissionSeeder extends Seeder
                 'recruitment.requisitions.submit', 'recruitment.requisitions.approve', 'recruitment.requisitions.reject',
                 'recruitment.requisitions.cancel', 'recruitment.postings.view', 'recruitment.postings.create',
                 'recruitment.postings.publish', 'recruitment.postings.close', 'recruitment.applications.view',
+                'recruitment.applications.create', 'recruitment.applications.delete',
                 'recruitment.applications.review', 'recruitment.applications.shortlist', 'recruitment.applications.reject',
                 'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
                 'recruitment.offers.view', 'recruitment.offers.create', 'recruitment.offers.send',
