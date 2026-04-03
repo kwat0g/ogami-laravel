@@ -12,6 +12,7 @@ use App\Domains\Production\Models\ProductionOrder;
 use App\Domains\Production\Models\Routing;
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Product Costing Service — standard and actual cost computation.
@@ -339,15 +340,18 @@ final class CostingService implements ServiceContract
         }
 
         // Labor cost: sum of labor_hours from related work orders × labor rate
-        $laborHours = (float) MaintenanceWorkOrder::query()
-            ->where('reference_type', ProductionOrder::class)
-            ->where('reference_id', $order->id)
-            ->sum('labor_hours');
+        $laborHours = 0.0;
+        if (Schema::hasColumns('maintenance_work_orders', ['reference_type', 'reference_id'])) {
+            $laborHours = (float) MaintenanceWorkOrder::query()
+                ->where('reference_type', ProductionOrder::class)
+                ->where('reference_id', $order->id)
+                ->sum('labor_hours');
+        }
 
         // Also count production output log implicit labor (qty * standard production days)
         $bom = $order->bom;
         $standardDays = $bom ? $bom->standard_production_days : 0;
-        $qtyProduced = (float) $order->quantity_produced;
+        $qtyProduced = (float) ($order->qty_produced ?? $order->quantity_produced ?? 0);
 
         // If no explicit labor hours logged, estimate from standard production days
         if ($laborHours <= 0 && $standardDays > 0 && $qtyProduced > 0) {
