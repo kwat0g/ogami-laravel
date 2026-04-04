@@ -20,6 +20,7 @@ export default function RequisitionDetailPage() {
 
   const canSubmit = req.status === 'draft' || req.status === 'rejected'
   const canApprove = req.status === 'pending_approval'
+  const canOpen = req.status === 'approved'
   const canCreatePosting = req.status === 'approved' || req.status === 'open'
   const canHold = req.status === 'open'
   const canResume = req.status === 'on_hold'
@@ -46,6 +47,17 @@ export default function RequisitionDetailPage() {
                 <button onClick={() => handleAction('submit')} disabled={action.isPending}
                   className="px-4 py-2 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:opacity-50 transition-colors">
                   Submit for Approval
+                </button>
+              )}
+            </PermissionGuard>
+            <PermissionGuard permission={PERMISSIONS.hr.full_access}>
+              {canOpen && (
+                <button
+                  onClick={() => handleAction('open')}
+                  disabled={action.isPending}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  Open for Applications
                 </button>
               )}
             </PermissionGuard>
@@ -132,7 +144,7 @@ export default function RequisitionDetailPage() {
                   className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                   Approve
                 </button>
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">
+                  <button onClick={() => handleAction("reject", { remarks })} disabled={action.isPending} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">
                   Reject
                 </button>
               </div>
