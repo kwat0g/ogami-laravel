@@ -6,6 +6,8 @@ import {
   usePreEmploymentAction,
   usePreEmploymentUpload,
   useCompletePreEmployment,
+  useVpApproveHiring,
+  useVpRejectHiring,
 } from '@/hooks/useRecruitment'
 import StatusBadge from '@/components/recruitment/StatusBadge'
 import ApplicationTimeline from '@/components/recruitment/ApplicationTimeline'
@@ -34,12 +36,16 @@ export default function ApplicationDetailPage() {
   const preEmploymentUpload = usePreEmploymentUpload()
   const completePreEmployment = useCompletePreEmployment()
 
+  const vpApprove = useVpApproveHiring()
+  const vpReject = useVpRejectHiring()
+  const [vpRejectReason, setVpRejectReason] = useState('')
+
   if (isLoading || !app) return <div className="p-6">Loading...</div>
 
   const canScheduleInterview = app.status === 'shortlisted' || app.status === 'under_review'
   const canPrepareOffer = app.status === 'shortlisted' && !app.offer
   const canInitPreEmployment = app.offer?.status === 'accepted' && !app.pre_employment
-  const canHire = app.offer?.status === 'accepted' && app.status !== 'hired'
+  const canHire = app.offer?.status === 'accepted' && app.status !== 'hired' && app.hiring?.status !== 'pending_vp_approval'
   const isTerminal = app.status === 'rejected' || app.status === 'withdrawn' || app.status === 'hired'
 
   const handleAction = async (act: string, payload?: Record<string, unknown>) => {
@@ -129,6 +135,69 @@ export default function ApplicationDetailPage() {
           </PermissionGuard>
         </div>
       </div>
+
+      {/* VP Hiring Approval Banner */}
+      {app.hiring?.status === 'pending_vp_approval' && (
+        <PermissionGuard permission="recruitment.hiring.approve">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+            <p className="mb-1 text-sm font-semibold text-amber-800 dark:text-amber-400">
+              Hiring Request Pending VP Approval
+            </p>
+            <p className="mb-3 text-xs text-amber-700 dark:text-amber-500">
+              Candidate: {app.candidate?.full_name} — Awaiting your approval to create the employee record.
+            </p>
+            <textarea
+              placeholder="Notes (optional for approval, required for rejection)"
+              value={vpRejectReason}
+              onChange={(e) => setVpRejectReason(e.target.value)}
+              className="mb-3 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+              rows={2}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    await vpApprove.mutateAsync({ hiringUlid: app.hiring!.ulid, notes: vpRejectReason || undefined })
+                    toast.success('Hiring approved — employee record created')
+                    refetch()
+                  } catch {}
+                }}
+                disabled={vpApprove.isPending}
+                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {vpApprove.isPending ? 'Approving…' : 'Approve Hiring'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!vpRejectReason.trim()) {
+                    toast.error('Rejection reason is required')
+                    return
+                  }
+                  try {
+                    await vpReject.mutateAsync({ hiringUlid: app.hiring!.ulid, reason: vpRejectReason })
+                    toast.success('Hiring rejected')
+                    refetch()
+                  } catch {}
+                }}
+                disabled={vpReject.isPending}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {vpReject.isPending ? 'Rejecting…' : 'Reject Hiring'}
+              </button>
+            </div>
+          </div>
+        </PermissionGuard>
+      )}
+
+      {/* VP Rejection Banner */}
+      {app.hiring?.status === 'rejected_by_vp' && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+          <p className="text-sm font-semibold text-red-800 dark:text-red-400">Hiring Rejected by VP</p>
+          <p className="text-xs text-red-700 dark:text-red-500">
+            The hiring request for {app.candidate?.full_name} was rejected. A new hiring request can be submitted after reviewing the offer.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: Timeline */}
