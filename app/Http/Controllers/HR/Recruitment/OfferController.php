@@ -34,6 +34,8 @@ final class OfferController extends Controller
 
     public function store(PrepareOfferRequest $request): JsonResponse
     {
+        $this->authorize('create', JobOffer::class);
+
         $application = Application::findOrFail($request->validated('application_id'));
         $offer = $this->service->prepareOffer($application, $request->validated(), $request->user());
 
