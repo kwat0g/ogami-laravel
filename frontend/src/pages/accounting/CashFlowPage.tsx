@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
-import { formatPesoAmount } from '@/lib/formatters'
 import { useCashFlow } from '@/hooks/useReports'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'

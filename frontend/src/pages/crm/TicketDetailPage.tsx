@@ -48,7 +48,6 @@ export default function TicketDetailPage() {
   async function submitReply() {
     setTouched(prev => ({ ...prev, reply: true }))
     if (!replyBody.trim()) {
-      toast.error('Please enter a reply message.')
       return
     }
     try {
@@ -66,7 +65,6 @@ export default function TicketDetailPage() {
   async function submitAssign() {
     setTouched(prev => ({ ...prev, assign: true }))
     if (!assigneeId) {
-      toast.error('Please enter an assignee ID.')
       return
     }
     try {
@@ -103,7 +101,6 @@ export default function TicketDetailPage() {
   async function submitReopen() {
     setTouched(prev => ({ ...prev, reopen: true }))
     if (!reopenReason.trim()) {
-      toast.error('Please provide a reason for reopening.')
       return
     }
     try {

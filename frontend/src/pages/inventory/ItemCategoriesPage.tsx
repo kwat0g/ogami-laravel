@@ -26,11 +26,9 @@ function CategoryFormModal({ onClose }: { onClose: () => void }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.code.trim() || form.code.trim().length < 2) {
-      toast.error('Code is required (min 2 characters)')
       return
     }
     if (!form.name.trim() || form.name.trim().length < 2) {
-      toast.error('Name is required (min 2 characters)')
       return
     }
     create(

@@ -27,9 +27,7 @@ export default function CreateMoldPage(): React.ReactElement {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { toast.error('Name is required.'); return; }
     const cavityCount = parseInt(form.cavity_count, 10);
-    if (!cavityCount || cavityCount < 1) { toast.error('Cavity count must be at least 1.'); return; }
     try {
       await createMut.mutateAsync({
         name: form.name.trim(),

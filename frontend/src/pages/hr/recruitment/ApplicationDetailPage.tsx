@@ -47,7 +47,6 @@ export default function ApplicationDetailPage() {
       await action.mutateAsync({ action: act, payload })
       toast.success(`Application ${act} successfully`)
     } catch {
-      toast.error(`Failed to ${act} application`)
     }
   }
 
@@ -430,7 +429,6 @@ function PreEmploymentTab({
       toast.success('Pre-employment checklist initialized')
       onRefetch()
     } catch {
-      toast.error('Failed to initialize checklist')
     }
   }
 
@@ -440,7 +438,6 @@ function PreEmploymentTab({
       toast.success('Document uploaded')
       onRefetch()
     } catch {
-      toast.error('Failed to upload document')
     }
   }
 
@@ -450,14 +447,12 @@ function PreEmploymentTab({
       toast.success('Document verified')
       onRefetch()
     } catch {
-      toast.error('Failed to verify document')
     }
   }
 
   const handleReject = async (requirementId: number) => {
     const remarks = rejectRemarks[requirementId]
     if (!remarks?.trim()) {
-      toast.error('Remarks required to reject')
       return
     }
     try {
@@ -469,7 +464,6 @@ function PreEmploymentTab({
       toast.success('Document rejected')
       onRefetch()
     } catch {
-      toast.error('Failed to reject document')
     }
   }
 
@@ -479,7 +473,6 @@ function PreEmploymentTab({
       toast.success('Requirement waived')
       onRefetch()
     } catch {
-      toast.error('Failed to waive requirement')
     }
   }
 
@@ -489,7 +482,6 @@ function PreEmploymentTab({
       toast.success('Pre-employment checklist completed')
       onRefetch()
     } catch {
-      toast.error('Failed to complete checklist')
     }
   }
 

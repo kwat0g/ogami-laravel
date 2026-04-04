@@ -54,7 +54,6 @@ export default function VendorInvoicesPage(): React.ReactElement {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.goods_receipt_id) {
-      toast.error('Please select a Goods Receipt.')
       return
     }
     create.mutate(

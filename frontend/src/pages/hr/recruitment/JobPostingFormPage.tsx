@@ -43,7 +43,6 @@ export default function JobPostingFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.job_requisition_id) {
-      toast.error('Please select a requisition')
       return
     }
     try {
@@ -55,7 +54,6 @@ export default function JobPostingFormPage() {
       toast.success('Job posting created')
       navigate('/hr/recruitment?tab=postings')
     } catch {
-      toast.error('Failed to create posting')
     }
   }
 

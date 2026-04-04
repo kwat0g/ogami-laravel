@@ -65,7 +65,6 @@ export default function VendorItemsPage(): React.ReactElement {
         if (fileInputRef.current) fileInputRef.current.value = ''
       },
       onError: () => {
-        toast.error('Import failed. Check your file format.')
         if (fileInputRef.current) fileInputRef.current.value = ''
       },
     })
@@ -99,13 +98,11 @@ export default function VendorItemsPage(): React.ReactElement {
         { id: editing.id, ...payload },
         {
           onSuccess: () => { toast.success('Item updated.'); setShowForm(false) },
-          onError: () => toast.error('Failed to update item.'),
         }
       )
     } else {
       create.mutate(payload as Omit<VendorPortalItem, 'id' | 'ulid'>, {
         onSuccess: () => { toast.success('Item created.'); setShowForm(false) },
-        onError: () => toast.error('Failed to create item.'),
       })
     }
   }

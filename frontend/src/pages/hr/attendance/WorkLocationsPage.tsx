@@ -36,7 +36,6 @@ export default function WorkLocationsPage() {
 
   const useMyLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by this browser.')
       return
     }
     setGettingLocation(true)
@@ -59,7 +58,6 @@ export default function WorkLocationsPage() {
       },
       () => {
         setGettingLocation(false)
-        toast.error('Could not get your location. Please enter coordinates manually.')
       },
       { enableHighAccuracy: true, timeout: 10000 },
     )
@@ -111,7 +109,6 @@ export default function WorkLocationsPage() {
 
   const handleSave = async () => {
     if (!form.name || !form.latitude || !form.longitude) {
-      toast.error('Please enter a name and pin a location.')
       return
     }
 
@@ -166,7 +163,6 @@ export default function WorkLocationsPage() {
       await toggleGeofence.mutateAsync(newState)
       toast.success(newState ? 'Geofence enforcement enabled.' : 'Geofence enforcement disabled.')
     } catch {
-      toast.error('Failed to toggle geofence.')
     }
   }
 

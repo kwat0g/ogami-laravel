@@ -158,11 +158,9 @@ export default function PayrollRunAcctgReviewPage() {
   // ── Validation for approval ───────────────────────────────────────────────
   function validateApproval(): boolean {
     if (sodViolation) {
-      toast.error('SoD Violation: You cannot approve a payroll run you initiated.')
       return false
     }
     if (!allChecked) {
-      toast.error('Please check all items in the approval checklist.')
       return false
     }
     return true
@@ -172,11 +170,9 @@ export default function PayrollRunAcctgReviewPage() {
   function validateRejection(): boolean {
     const reason = rejectionReason.trim()
     if (!reason) {
-      toast.error('Rejection reason is required.')
       return false
     }
     if (reason.length < 10) {
-      toast.error('Rejection reason must be at least 10 characters.')
       return false
     }
     return true
@@ -203,7 +199,6 @@ export default function PayrollRunAcctgReviewPage() {
         action: 'REJECTED',
         rejection_reason: rejectionReason.trim(),
       })
-      toast.error('Payroll run rejected. The run must be restarted from Step 1.')
       navigate('/payroll/runs')
     } catch (err) {
       toast.error(firstErrorMessage(err))

@@ -44,7 +44,6 @@ function RestoreModal({ file, onClose }: RestoreModalProps): React.ReactElement 
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'Restore failed. Check server logs.'
-      toast.error(msg)
     }
   }
 
@@ -271,7 +270,6 @@ export default function BackupPage(): React.ReactElement {
       toast.dismiss(tid)
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? 'Backup failed. Check server logs.'
-      toast.error(msg)
     }
   }
 

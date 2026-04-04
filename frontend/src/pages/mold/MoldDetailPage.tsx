@@ -62,9 +62,7 @@ export default function MoldDetailPage() {
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editForm.name.trim()) { toast.error('Name is required.'); return; }
     const cavityCount = parseInt(editForm.cavity_count, 10);
-    if (!cavityCount || cavityCount < 1) { toast.error('Cavity count must be at least 1.'); return; }
     try {
       await updateMut.mutateAsync({
         name: editForm.name.trim(),

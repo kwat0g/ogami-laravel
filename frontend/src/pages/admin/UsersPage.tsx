@@ -328,7 +328,6 @@ export default function UsersPage() {
       },
       onError: (e: unknown) => {
         const msg = firstErrorMessage(e)
-        toast.error(msg)
         setWizardError(msg)
       },
     })

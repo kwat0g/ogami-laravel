@@ -153,15 +153,12 @@ export default function InspectionDetailPage(): React.ReactElement {
     const _failed = Number(qtyFailed)
 
     if (qtyPassed === '' || isNaN(passed) || passed < 0) {
-      toast.error('Qty Passed must be a valid number ≥ 0.')
       return
     }
     if (passed > qtyInspected) {
-      toast.error(`Qty Passed (${passed}) cannot exceed Qty Inspected (${qtyInspected}).`)
       return
     }
     if (rows.some(r => !r.criterion.trim())) {
-      toast.error('Every result row must have a criterion.')
       return
     }
 

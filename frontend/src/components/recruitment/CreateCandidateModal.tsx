@@ -37,7 +37,6 @@ export default function CreateCandidateModal({ onClose, onSuccess }: CreateCandi
           onClose()
         },
         onError: () => {
-          toast.error('Failed to create candidate')
         },
       },
     )

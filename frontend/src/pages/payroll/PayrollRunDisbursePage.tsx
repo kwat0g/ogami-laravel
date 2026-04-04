@@ -49,7 +49,6 @@ export default function PayrollRunDisbursePage() {
   // ── Validation for disburse ───────────────────────────────────────────────
   function validateDisburse(): boolean {
     if (run?.status !== 'VP_APPROVED' && run?.status !== 'ACCTG_APPROVED') {
-      toast.error('Payroll run must be approved before disbursement.')
       return false
     }
     return true
@@ -69,17 +68,14 @@ export default function PayrollRunDisbursePage() {
   // ── Validation for publish ────────────────────────────────────────────────
   function validatePublish(): boolean {
     if (!disburseDone && run?.status !== 'DISBURSED') {
-      toast.error('Disbursement must be completed before publishing payslips.')
       return false
     }
     if (publishAt) {
       const scheduledDate = new Date(publishAt)
       if (isNaN(scheduledDate.getTime())) {
-        toast.error('Please enter a valid publish date and time.')
         return false
       }
       if (scheduledDate < new Date()) {
-        toast.error('Publish date must be in the future.')
         return false
       }
     }

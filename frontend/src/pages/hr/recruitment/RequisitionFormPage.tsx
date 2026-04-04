@@ -89,7 +89,6 @@ export default function RequisitionFormPage() {
         navigate('/hr/recruitment?tab=requisitions')
       }
     } catch {
-      toast.error('Failed to save requisition')
     }
   }
 

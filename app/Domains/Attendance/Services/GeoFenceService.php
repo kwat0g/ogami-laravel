@@ -161,12 +161,21 @@ final class GeoFenceService implements ServiceContract
      */
     public function resolveWorkLocation(Employee $employee, Carbon $at): ?WorkLocation
     {
-        return EmployeeWorkLocation::where('employee_id', $employee->id)
+        $assigned = EmployeeWorkLocation::where('employee_id', $employee->id)
             ->activeOn($at->toDateString())
             ->where('is_primary', true)
             ->with('workLocation')
             ->orderByDesc('effective_date')
             ->first()
             ?->workLocation;
+
+        if ($assigned) {
+            return $assigned;
+        }
+
+        // Single-location company fallback:
+        // If an employee doesn't have an explicit location assignment,
+        // assume they work at the primary (oldest active) company location.
+        return WorkLocation::where('is_active', true)->orderBy('id')->first();
     }
 }

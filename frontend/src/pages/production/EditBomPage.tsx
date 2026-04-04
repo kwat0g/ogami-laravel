@@ -95,7 +95,6 @@ export default function EditBomPage(): React.ReactElement {
     }
     
     if (errors.length > 0) {
-      toast.error(errors[0])
       return false
     }
     

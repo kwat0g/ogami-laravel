@@ -40,7 +40,6 @@ export default function ClientTicketDetailPage() {
   async function submitReply() {
     setReplyTouched(true)
     if (!replyBody.trim()) {
-      toast.error('Please enter a reply message.')
       return
     }
     try {
@@ -56,7 +55,6 @@ export default function ClientTicketDetailPage() {
   async function submitReopen() {
     setReopenTouched(true)
     if (!reopenReason.trim()) {
-      toast.error('Please provide a reason for reopening.')
       return
     }
     try {

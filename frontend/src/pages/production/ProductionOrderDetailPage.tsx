@@ -256,7 +256,6 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     setLogErrors(errors)
     
     if (Object.keys(errors).length > 0) {
-      toast.error(Object.values(errors)[0])
       return false
     }
     

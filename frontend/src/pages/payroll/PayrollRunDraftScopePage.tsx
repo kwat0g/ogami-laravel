@@ -262,15 +262,12 @@ export default function PayrollRunDraftScopePage() {
 
   function handleAddExclusion() {
     if (!selectedEmployee || selectedEmployee.id <= 0) {
-      toast.error('Please search and select an employee.')
       return
     }
     if (!exclReason.trim()) {
-      toast.error('A reason for exclusion is required.')
       return
     }
     if (exclusions.some((e) => e.employee_id === selectedEmployee.id)) {
-      toast.error('Employee already excluded.')
       return
     }
     setExclusions((prev) => [
@@ -291,11 +288,9 @@ export default function PayrollRunDraftScopePage() {
 
   function handleNext() {
     if (!employmentTypes.length) {
-      toast.error('Select at least one employment type.')
       return
     }
     if (!preview || preview.net_in_scope === 0) {
-      toast.error('No employees match the current filters. Adjust your scope before proceeding.')
       return
     }
     // Warn if any in-scope employees still have no bank account

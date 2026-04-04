@@ -74,7 +74,7 @@ class Handler extends ExceptionHandler
         }
 
         // ── Laravel validation failure ────────────────────────────────────────
-        if ($e instanceof LaravelValidationException) {
+        if ($e instanceof LaravelValidationException) { \Log::error("Validation Data: " . json_encode($e->errors()));
             return $this->errorResponse(
                 'Validation failed.',
                 'VALIDATION_ERROR',

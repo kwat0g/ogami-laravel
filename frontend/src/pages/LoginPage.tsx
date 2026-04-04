@@ -58,7 +58,6 @@ export default function LoginPage() {
       // The interceptor returns the full ApiError shape, not just { message }.
       const apiErr = err as { message?: string; error_code?: string; errors?: Record<string, string[]> }
       const message = apiErr?.message ?? 'Login failed. Please try again.'
-      toast.error(message)
     } finally {
       setLoading(false)
     }

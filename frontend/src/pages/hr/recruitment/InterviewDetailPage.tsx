@@ -34,7 +34,6 @@ export default function InterviewDetailPage() {
       toast.success(`Interview ${action} successfully`)
       qc.invalidateQueries({ queryKey: ['recruitment', 'interviews', id] })
     } catch {
-      toast.error(`Failed to ${action} interview`)
     }
   }
 

@@ -97,7 +97,6 @@ export default function CreateGoodsReceiptPage(): React.ReactElement {
       navigate(`/procurement/goods-receipts/${gr.ulid}`)
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to record goods receipt.')
     }
   }
 

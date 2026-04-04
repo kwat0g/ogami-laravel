@@ -69,7 +69,6 @@ export default function TeamOvertimePage() {
   async function submitApprove() {
     setTouched(prev => ({ ...prev, approve: true }))
     if (!approvingId || !approvedMins || Number(approvedMins) < 1) {
-      toast.error('Please enter valid approved minutes.')
       return
     }
     try {
@@ -88,7 +87,6 @@ export default function TeamOvertimePage() {
   async function submitReject() {
     setTouched(prev => ({ ...prev, reject: true }))
     if (!rejectId || !rejectRemarks.trim()) {
-      toast.error('Please provide a rejection reason.')
       return
     }
     try {

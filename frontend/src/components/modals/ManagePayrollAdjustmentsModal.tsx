@@ -74,7 +74,6 @@ export default function ManagePayrollAdjustmentsModal({
       reset()
       setIsAdding(false)
     } catch {
-      toast.error('Failed to add adjustment')
     }
   }
 
@@ -83,7 +82,6 @@ export default function ManagePayrollAdjustmentsModal({
       await deleteMutation.mutateAsync(id)
       toast.success('Adjustment removed')
     } catch {
-      toast.error('Failed to remove adjustment')
     }
   }
 

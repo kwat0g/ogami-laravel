@@ -95,33 +95,27 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
     e.preventDefault()
 
     if (!employeeId) {
-      toast.error('No employee profile linked to your account')
       return
     }
 
     if (!principal || principal <= 0) {
-      toast.error('Please enter a valid loan amount')
       return
     }
 
     if (amountError) {
-      toast.error(amountError)
       return
     }
 
     if (!termMonths || termMonths <= 0) {
-      toast.error('Please select a repayment term')
       return
     }
 
     if (selectedType && termMonths > selectedType.max_term_months) {
-      toast.error(`Maximum term for ${selectedType.name} is ${selectedType.max_term_months} months`)
       return
     }
 
     const resolvedPurpose = purposePreset === 'Other' ? formData.purpose.trim() : purposePreset
     if (!resolvedPurpose) {
-      toast.error('Please select or enter a purpose')
       return
     }
 
@@ -148,7 +142,6 @@ export default function FileLoanModal({ isOpen, onClose, onSuccess }: FileLoanMo
       onClose()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || 'Failed to file loan application')
     }
   }
 

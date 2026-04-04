@@ -88,7 +88,6 @@ export default function APInvoiceDetailPage() {
 
   const handleReject = async () => {
     if (!rejectNote.trim()) {
-      toast.error('Rejection note is required.')
       return
     }
     try {
@@ -131,7 +130,6 @@ export default function APInvoiceDetailPage() {
   const handleRecordPayment = async () => {
     const amount = parseFloat(payAmount)
     if (!payAmount || isNaN(amount) || amount <= 0) {
-      toast.error('Enter a valid payment amount.')
       return
     }
     if (amount > invoice.balance_due) {
@@ -139,7 +137,6 @@ export default function APInvoiceDetailPage() {
       return
     }
     if (!payDate) {
-      toast.error('Payment date is required.')
       return
     }
     try {

@@ -317,17 +317,14 @@ function PodDeliverModal({
     }
 
     if (!receiverName.trim()) {
-      toast.error('Receiver name is required')
       return
     }
 
     if (podPhotos.length === 0) {
-      toast.error('At least one POD photo is required')
       return
     }
 
     if (!['dispatched', 'in_transit'].includes(drStatus)) {
-      toast.error('POD recording is only available for dispatched/in-transit receipts')
       return
     }
 
@@ -499,7 +496,6 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       setShipmentOpen(false);
     } catch {
       // Error toast is handled by the global mutation onError handler in main.tsx.
-      // No manual toast.error here to avoid duplicate notifications.
     }
   };
 
@@ -528,7 +524,6 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
       await downloadFile(deliveryApiPaths.receiptPdf(dr.ulid), `DR-${dr.dr_reference}.pdf`, 'application/pdf');
       toast.success('PDF exported successfully.');
     } catch {
-      toast.error('Failed to export PDF. Please try again.');
     }
   };
 

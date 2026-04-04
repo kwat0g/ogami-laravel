@@ -116,7 +116,6 @@ function NotifyMissingModal({ isOpen, onClose, schedule }: NotifyModalProps): JS
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (selectedItems.length === 0) {
-      toast.error('Please select at least one item')
       return
     }
 

@@ -138,7 +138,6 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
     } catch (err) {
       if (isHandledApiError(err)) return
       const msg = (err as { message?: string })?.message
-      toast.error(msg ?? `Failed to ${action} requisition.`)
     }
   }
 
@@ -446,7 +445,6 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
                   navigate(`/procurement/purchase-requests/${pr.ulid}`)
                 } catch (err) {
                   if (isHandledApiError(err)) return
-                  toast.error((err as { message?: string })?.message ?? 'Failed to convert to PR.')
                 }
               }}
             >

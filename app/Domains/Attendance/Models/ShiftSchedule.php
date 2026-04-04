@@ -46,6 +46,8 @@ final class ShiftSchedule extends Model implements Auditable
         'is_flexible',
         'grace_period_minutes',
         'is_active',
+        'crosses_midnight',
+        'is_night_shift',
     ];
 
     /** @return array<string, string> */

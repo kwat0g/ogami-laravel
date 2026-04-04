@@ -27,7 +27,6 @@ export default function ClientNewTicketPage() {
     e.preventDefault()
     setTouched(true)
     if (!isValid) {
-      toast.error('Please fill in all required fields.')
       return
     }
 

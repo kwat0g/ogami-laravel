@@ -60,7 +60,14 @@ export default function TimeClockWidget() {
       return
     }
     const update = () => {
-      const start = new Date(todayLog.time_in!).getTime()
+      let startStr = todayLog.time_in!
+      if (!startStr.includes('T') && !startStr.includes(' ')) {
+        const d = new Date()
+        const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        startStr = `${ymd}T${startStr}`
+      }
+      const start = new Date(startStr).getTime()
+      if (isNaN(start)) return
       const diff = Date.now() - start
       const hours = Math.floor(diff / 3600000)
       const mins = Math.floor((diff % 3600000) / 60000)
@@ -77,43 +84,54 @@ export default function TimeClockWidget() {
     timestamp: new Date().toISOString(),
   }), [])
 
-  const handleTimeIn = async () => {
-    if (!geo.latitude || !geo.longitude) {
-      toast.error('Location not available. Please enable GPS and try again.')
+  const [showOverride, setShowOverride] = useState<'in' | 'out' | null>(null)
+  const [overrideReason, setOverrideReason] = useState('')
+
+  const handleTimeIn = async (isOverride = false) => {
+    if (!isOverride && (!geo.latitude || !geo.longitude)) {
+      if (geo.error) setShowOverride('in')
       return
     }
     try {
       await timeInMutation.mutateAsync({
-        latitude: geo.latitude,
-        longitude: geo.longitude,
+        latitude: geo.latitude ?? 0,
+        longitude: geo.longitude ?? 0,
         accuracy_meters: geo.accuracy ?? 0,
         device_info: deviceInfo,
+        override_reason: isOverride ? overrideReason : undefined,
       })
       toast.success('Timed in successfully!')
+      setShowOverride(null)
+      setOverrideReason('')
     } catch (err) {
       const parsed = parseApiError(err)
-      const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
-      toast.error(mappedMsg || parsed.message || 'Failed to time in.')
+      if (parsed.errorCode && ['OUTSIDE_GEOFENCE', 'NO_WORK_LOCATION_OVERRIDE', 'LOCATION_INACCURATE'].includes(parsed.errorCode)) {
+        setShowOverride('in')
+      }
     }
   }
 
-  const handleTimeOut = async () => {
-    if (!geo.latitude || !geo.longitude) {
-      toast.error('Location not available. Please enable GPS and try again.')
+  const handleTimeOut = async (isOverride = false) => {
+    if (!isOverride && (!geo.latitude || !geo.longitude)) {
+      if (geo.error) setShowOverride('out')
       return
     }
     try {
       await timeOutMutation.mutateAsync({
-        latitude: geo.latitude,
-        longitude: geo.longitude,
+        latitude: geo.latitude ?? 0,
+        longitude: geo.longitude ?? 0,
         accuracy_meters: geo.accuracy ?? 0,
         device_info: deviceInfo,
+        override_reason: isOverride ? overrideReason : undefined,
       })
       toast.success('Timed out successfully!')
+      setShowOverride(null)
+      setOverrideReason('')
     } catch (err) {
       const parsed = parseApiError(err)
-      const mappedMsg = parsed.errorCode ? ERROR_MESSAGES[parsed.errorCode] : null
-      toast.error(mappedMsg || parsed.message || 'Failed to time out.')
+      if (parsed.errorCode && ['OUTSIDE_GEOFENCE', 'NO_WORK_LOCATION_OVERRIDE', 'LOCATION_INACCURATE'].includes(parsed.errorCode)) {
+        setShowOverride('out')
+      }
     }
   }
 
@@ -180,8 +198,11 @@ export default function TimeClockWidget() {
           <div className="flex items-center gap-3">
             {!hasTimedIn && (
               <button
-                onClick={handleTimeIn}
-                disabled={timeInMutation.isPending || geo.status !== 'granted'}
+                onClick={() => {
+                   if (geo.error || geo.status !== 'granted') setShowOverride('in')
+                   else handleTimeIn()
+                }}
+                disabled={timeInMutation.isPending}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 disabled:cursor-not-allowed text-white font-medium text-sm rounded transition-colors flex items-center gap-1.5"
               >
                 {timeInMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
@@ -190,8 +211,11 @@ export default function TimeClockWidget() {
             )}
             {hasTimedIn && !hasTimedOut && (
               <button
-                onClick={handleTimeOut}
-                disabled={timeOutMutation.isPending || geo.status !== 'granted'}
+                onClick={() => {
+                   if (geo.error || geo.status !== 'granted') setShowOverride('out')
+                   else handleTimeOut()
+                }}
+                disabled={timeOutMutation.isPending}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 disabled:cursor-not-allowed text-white font-medium text-sm rounded transition-colors flex items-center gap-1.5"
               >
                 {timeOutMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
@@ -208,6 +232,40 @@ export default function TimeClockWidget() {
               </div>
             )}
           </div>
+
+          {/* Override UI */}
+          {showOverride && (
+            <div className="mt-4 p-4 rounded bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
+              <label className="block text-sm font-medium text-amber-900 dark:text-amber-200 mb-2 font-inter">
+                Location unavailable. Please provide a reason to continue:
+              </label>
+              <textarea 
+                value={overrideReason}
+                onChange={(e) => setOverrideReason(e.target.value)}
+                className="w-full rounded border border-amber-300 dark:border-amber-700 bg-white dark:bg-neutral-800 py-1.5 px-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-amber-500 font-inter"
+                rows={2}
+                placeholder="E.g., device GPS is not working..."
+              />
+              <div className="mt-3 flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    setShowOverride(null)
+                    setOverrideReason('')
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={!overrideReason.trim()}
+                  onClick={() => showOverride === 'in' ? handleTimeIn(true) : handleTimeOut(true)}
+                  className="rounded bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                >
+                  Submit {showOverride === 'in' ? 'Time In' : 'Time Out'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

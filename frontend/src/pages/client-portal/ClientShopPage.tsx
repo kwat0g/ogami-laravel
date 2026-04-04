@@ -53,7 +53,6 @@ export default function ClientShopPage(): JSX.Element {
     if (isEditMode && existingOrder && !initialized) {
       // Only allow editing pending orders
       if (existingOrder.status !== 'pending') {
-        toast.error('Only pending orders can be edited.')
         navigate(`/client-portal/orders/${ulid}`)
         return
       }
@@ -138,12 +137,10 @@ export default function ClientShopPage(): JSX.Element {
 
   const handleSubmitOrder = async () => {
     if (orderItems.length === 0) {
-      toast.error('Please add at least one item to your order')
       return
     }
 
     if (!requestedDate) {
-      toast.error('Please select a requested delivery date')
       return
     }
 

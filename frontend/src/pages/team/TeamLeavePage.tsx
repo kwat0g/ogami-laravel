@@ -193,7 +193,6 @@ export default function TeamLeavePage() {
           if (!approveId) return
           headApprove.mutate({ id: approveId }, {
             onSuccess: () => { toast.success('Request approved by dept head.'); setApproveId(null) },
-            onError: (err) => toast.error(parseApiError(err).message),
           })
         }}
         title="Approve Leave Request"
@@ -210,7 +209,6 @@ export default function TeamLeavePage() {
           if (!checkId) return
           managerCheck.mutate({ id: checkId }, {
             onSuccess: () => { toast.success('Request checked by plant manager.'); setCheckId(null) },
-            onError: (err) => toast.error(parseApiError(err).message),
           })
         }}
         title="Check Leave Request"
@@ -249,7 +247,6 @@ export default function TeamLeavePage() {
                     { id: rejectId, remarks },
                     {
                       onSuccess: () => { toast.success('Leave request rejected.'); setRejectId(null); setRemarks('') },
-                      onError: (err) => toast.error(parseApiError(err).message),
                     }
                   )
                 }}

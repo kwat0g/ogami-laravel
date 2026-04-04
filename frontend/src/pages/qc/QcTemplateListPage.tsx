@@ -70,7 +70,6 @@ export default function QcTemplateListPage(): React.ReactElement {
     const criterion = newCriterion.trim()
 
     if (!name || !criterion) {
-      toast.error('Template name and at least one criterion are required.')
       return
     }
 

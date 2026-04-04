@@ -43,7 +43,6 @@ export default function LeaveFormPage() {
       navigate('/hr/leave')
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to submit leave request: ${message}`)
       
       // Set field errors if available from API response
       const errorObj = err as { response?: { data?: { errors?: Record<string, string[]> } } }

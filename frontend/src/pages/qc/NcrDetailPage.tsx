@@ -68,7 +68,6 @@ export default function NcrDetailPage(): React.ReactElement {
   const handleIssueCapaClick = () => {
     setCapaTouched(new Set(['description']))
     if (!isCapaValid) {
-      toast.error('Please provide a description of at least 10 characters.')
       return
     }
     setShowCapaConfirm(true)

@@ -295,7 +295,6 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
       navigate(backTo)
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Cancel failed. Please try again.')
     }
   }
 

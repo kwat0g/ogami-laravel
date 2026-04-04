@@ -127,7 +127,6 @@ function VehicleFormModal({
 
   const handleSubmit = () => {
     if (!name.trim() || !plateNumber.trim()) {
-      toast.error('Name and plate number are required')
       return
     }
     mutation.mutate({

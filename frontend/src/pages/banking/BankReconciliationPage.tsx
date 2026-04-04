@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
-import { formatPesoAmount } from '@/lib/formatters'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -87,7 +86,6 @@ function CreateReconciliationModal({ onClose }: { onClose: () => void }) {
     setTouched({ bank_account_id: true, period_from: true, period_to: true })
     
     if (!isValid) {
-      toast.error('Please fill in all required fields.')
       return
     }
 

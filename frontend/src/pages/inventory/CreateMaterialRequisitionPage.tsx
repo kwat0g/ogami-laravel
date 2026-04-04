@@ -48,7 +48,6 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
     // Additional validation for items
     const invalidItems = values.items.some(item => item.item_id <= 0 || item.qty_requested <= 0)
     if (invalidItems) {
-      toast.error('Please ensure all items are selected with valid quantities.')
       return
     }
 

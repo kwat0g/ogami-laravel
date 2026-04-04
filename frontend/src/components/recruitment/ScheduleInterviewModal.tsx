@@ -44,7 +44,6 @@ export default function ScheduleInterviewModal({
           onClose()
         },
         onError: () => {
-          toast.error('Failed to schedule interview')
         },
       },
     )

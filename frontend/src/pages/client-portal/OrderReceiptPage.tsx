@@ -85,7 +85,6 @@ export default function OrderReceiptPage(): JSX.Element {
     const missingItems = actionableItemIds.filter(id => !acknowledgments[id])
 
     if (missingItems.length > 0) {
-      toast.error('Please acknowledge receipt of all items')
       return
     }
 

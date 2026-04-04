@@ -10,7 +10,7 @@ import {
 } from '@/hooks/useAttendance'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
-import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ShiftSchedule } from '@/types/hr'
 
@@ -49,8 +49,8 @@ function shiftFromExisting(s: ShiftSchedule): ShiftForm {
     id: s.id,
     name: s.name,
     description: s.description ?? '',
-    start_time: s.start_time,
-    end_time: s.end_time,
+    start_time: s.start_time ? s.start_time.substring(0, 5) : '08:00',
+    end_time: s.end_time ? s.end_time.substring(0, 5) : '17:00',
     break_minutes: s.break_minutes,
     work_days_arr: s.work_days ? s.work_days.split(',').map(Number).filter(Boolean) : STD_WORK_DAYS,
     is_night_shift: s.is_night_shift,
@@ -78,8 +78,18 @@ export default function ShiftsPage() {
   const openEdit = (s: ShiftSchedule) => { setForm(shiftFromExisting(s)); setFormError(null) }
   const closeForm = () => setForm(null)
 
-  const set = <K extends keyof ShiftForm>(field: K, value: ShiftForm[K]) =>
-    setForm((f) => f ? { ...f, [field]: value } : f)
+  const set = <K extends keyof ShiftForm>(field: K, value: ShiftForm[K]) => {
+    setForm((f) => {
+      if (!f) return f
+      const next = { ...f, [field]: value }
+      if (field === 'start_time' || field === 'end_time') {
+        const sh = parseInt(next.start_time.split(':')[0] || '0', 10)
+        const eh = parseInt(next.end_time.split(':')[0] || '0', 10)
+        next.is_night_shift = (sh >= 22 || eh <= 6)
+      }
+      return next
+    })
+  }
 
   const toggleDay = (day: number) => {
     if (!form) return
@@ -95,8 +105,6 @@ export default function ShiftsPage() {
       toast.success('Shift deleted successfully')
       refetch()
     } catch (err: unknown) {
-      const message = firstErrorMessage(err)
-      toast.error(`Failed to delete shift: ${message}`)
       throw err
     }
   }
@@ -120,7 +128,6 @@ export default function ShiftsPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to ${form.id ? 'update' : 'create'} shift: ${message}`)
       setFormError(`${form.id ? 'Update' : 'Create'} failed: ${message}`)
     }
   }
@@ -194,15 +201,15 @@ export default function ShiftsPage() {
             {canManage && (
               <div className="flex gap-3">
                 <button onClick={() => openEdit(shift)} className="text-xs text-neutral-600 hover:underline">Edit</button>
-                <ConfirmDestructiveDialog
+                <ConfirmDialog
                   title="Delete Shift?"
                   description={`This will permanently delete "${shift.name}". Any employees assigned to this shift will need to be reassigned. This action cannot be undone.`}
-                  confirmWord="DELETE"
+                  variant="danger"
                   confirmLabel="Delete Shift"
                   onConfirm={() => handleDelete(shift.id)}
                 >
                   <button disabled={remove.isPending} className="text-xs text-red-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
-                </ConfirmDestructiveDialog>
+                </ConfirmDialog>
               </div>
             )}
           </div>
@@ -300,9 +307,9 @@ export default function ShiftsPage() {
               </div>
 
               <div className="flex gap-6">
-                <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
-                  <input type="checkbox" checked={form.is_night_shift} onChange={(e) => set('is_night_shift', e.target.checked)} className="rounded" />
-                  Night Shift
+                <label className="flex items-center gap-2 text-sm text-neutral-700">
+                  <input type="checkbox" checked={form.is_night_shift} disabled className="rounded opacity-50 cursor-not-allowed" />
+                  Night Shift (Auto)
                 </label>
                 <label className="flex items-center gap-2 text-sm text-neutral-700 cursor-pointer">
                   <input type="checkbox" checked={form.is_flexible} onChange={(e) => set('is_flexible', e.target.checked)} className="rounded" />

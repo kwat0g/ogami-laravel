@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useState, useEffect, useMemo } from 'react'
-import { formatPesoAmount } from '@/lib/formatters'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AlertTriangle } from 'lucide-react'
@@ -125,7 +124,6 @@ export default function CustomerInvoiceFormPage() {
     setTouched(new Set(['customer_id', 'fiscal_period_id', 'ar_account_id', 'revenue_account_id', 'invoice_date', 'due_date', 'subtotal', 'or_number']))
     
     if (!isFormValid) {
-      toast.error('Please fix the validation errors before submitting.')
       return
     }
 

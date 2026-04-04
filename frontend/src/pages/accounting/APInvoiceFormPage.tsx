@@ -95,7 +95,6 @@ export default function APInvoiceFormPage() {
     } catch (err: unknown) {
       const msg = firstErrorMessage(err)
       setError(msg)
-      toast.error(msg)
     }
   }
 

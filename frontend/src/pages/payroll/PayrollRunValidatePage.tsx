@@ -138,11 +138,9 @@ export default function PayrollRunValidatePage() {
   // ── Validation for acknowledgment ─────────────────────────────────────────
   function validateAcknowledge(): boolean {
     if (hasBlocker) {
-      toast.error('Please fix all blocking issues before proceeding.')
       return false
     }
     if (!allWarnsAck && warnChecks.length > 0) {
-      toast.error('Please acknowledge all warnings to continue.')
       return false
     }
     return true

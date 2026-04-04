@@ -16,7 +16,6 @@ export default function JobPostingDetailPage() {
       await action.mutateAsync({ action: act })
       toast.success(`Posting ${act} successfully`)
     } catch {
-      toast.error(`Failed to ${act} posting`)
     }
   }
 

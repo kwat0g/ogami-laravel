@@ -54,11 +54,9 @@ export default function PayrollRunHrReviewPage() {
   // ── Validation for approval ───────────────────────────────────────────────
   function validateApproval(): boolean {
     if (sodViolation) {
-      toast.error('SoD Violation: You cannot approve a payroll run you initiated.')
       return false
     }
     if (!allChecked) {
-      toast.error('Please check all items in the approval checklist.')
       return false
     }
     return true
@@ -67,11 +65,9 @@ export default function PayrollRunHrReviewPage() {
   // ── Validation for return ─────────────────────────────────────────────────
   function validateReturn(): boolean {
     if (!returnReason.trim()) {
-      toast.error('Please provide a return reason before confirming.')
       return false
     }
     if (returnReason.trim().length < 10) {
-      toast.error('Return reason must be at least 10 characters.')
       return false
     }
     return true

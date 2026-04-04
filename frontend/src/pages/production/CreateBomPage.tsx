@@ -83,7 +83,6 @@ export default function CreateBomPage(): React.ReactElement {
     }
     
     if (errors.length > 0) {
-      toast.error(errors[0])
       return false
     }
     

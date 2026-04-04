@@ -142,7 +142,6 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     }
     
     if (errors.length > 0) {
-      toast.error(errors[0])
       // Touch all fields to show validation state
       setTouched(new Set(['product_item_id', 'bom_id', 'qty_required', 'target_start_date', 'target_end_date']))
       return false

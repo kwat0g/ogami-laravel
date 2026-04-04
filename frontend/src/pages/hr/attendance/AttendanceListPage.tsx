@@ -282,15 +282,6 @@ export default function AttendanceListPage() {
               ]}
               filename="attendance"
             />
-            {canManageShifts && (
-              <button
-                onClick={openCreateModal}
-                className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                Manual Entry
-              </button>
-            )}
             <Link to="/hr/attendance/import"
               className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-4 py-2 rounded transition-colors">
               Import CSV

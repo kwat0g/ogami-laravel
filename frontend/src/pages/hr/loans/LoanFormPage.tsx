@@ -38,7 +38,6 @@ export default function LoanFormPage() {
       navigate(`/hr/loans/${data.ulid}`)
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to submit loan application: ${message}`)
       
       // Set field errors if available from API response
       const errorObj = err as { response?: { data?: { errors?: Record<string, string[]> } } }

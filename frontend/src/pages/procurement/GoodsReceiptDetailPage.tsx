@@ -69,7 +69,6 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
       },
       onError: (err) => {
         const message = firstErrorMessage(err)
-        toast.error(message ?? 'Failed to cancel Goods Receipt.')
       },
     })
   }
@@ -85,7 +84,6 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
       },
       onError: (err) => {
         const message = firstErrorMessage(err)
-        toast.error(message ?? 'Failed to confirm Goods Receipt.')
       },
     })
   }

@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useVatLedgerList } from '@/hooks/useTax'
-import { formatPesoAmount } from '@/lib/formatters'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 

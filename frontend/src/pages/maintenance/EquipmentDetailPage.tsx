@@ -104,7 +104,6 @@ export default function EquipmentDetailPage(): React.ReactElement {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateEditForm()) {
-      toast.error('Please fix the errors before saving.');
       return;
     }
     try {
@@ -162,20 +161,16 @@ export default function EquipmentDetailPage(): React.ReactElement {
 
   const validatePmForm = (): boolean => {
     if (!pmForm.task_name.trim()) {
-      toast.error('Task name is required.');
       return false;
     }
     if (pmForm.task_name.trim().length < 2) {
-      toast.error('Task name must be at least 2 characters.');
       return false;
     }
     const freqDays = parseInt(pmForm.frequency_days, 10);
     if (!freqDays || freqDays < 1) {
-      toast.error('Frequency must be at least 1 day.');
       return false;
     }
     if (freqDays > 3650) {
-      toast.error('Frequency cannot exceed 3650 days (10 years).');
       return false;
     }
     return true;

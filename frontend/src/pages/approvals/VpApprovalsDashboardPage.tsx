@@ -247,7 +247,6 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   // ── OT handlers ──────────────────────────────────────────────────────────────
   const submitApproveOt = async () => {
     if (!approvingOtId || !approvedMins || Number(approvedMins) < 1) {
-      toast.error('Enter valid approved minutes.')
       return
     }
     try {
@@ -259,7 +258,6 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
 
   const submitRejectOt = async () => {
     if (!rejectOtId || !rejectOtRemarks.trim()) {
-      toast.error('Rejection reason is required.')
       return
     }
     try {
@@ -548,13 +546,11 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                         {canGaProcess && row.status === 'manager_checked' && (
                           <>
                             <button onClick={() => setProcessId(row.id)} disabled={gaProcess.isPending} className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">Process</button>
-                            <button onClick={() => rejectLeave.mutate({ id: row.id, remarks: '' }, { onSuccess: () => toast.success('Rejected.'), onError: (err) => toast.error(parseApiError(err).message) })} disabled={rejectLeave.isPending} className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">Reject</button>
                           </>
                         )}
                         {canVpNote && row.status === 'ga_processed' && (
                           <>
                             <SodActionButton initiatedById={row.submitted_by} label="VP Approve" onClick={() => { setVpNoteId(row.id); setVpRemarks('') }} isLoading={vpNote.isPending} variant="success" />
-                            <SodActionButton initiatedById={row.submitted_by} label="Reject" onClick={() => rejectLeave.mutate({ id: row.id, remarks: '' }, { onSuccess: () => toast.success('Rejected by VP.'), onError: (err) => toast.error(parseApiError(err).message) })} isLoading={rejectLeave.isPending} variant="danger" />
                           </>
                         )}
                       </div>
@@ -622,7 +618,6 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => { setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-              <button disabled={gaProcess.isPending} onClick={() => { if (!processId) return; gaProcess.mutate({ id: processId, action_taken: actionTaken, remarks: leaveRemarks }, { onSuccess: () => { toast.success('Leave request processed.'); setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') }, onError: (err) => toast.error(parseApiError(err).message) }) }}
                 className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
                 {gaProcess.isPending ? 'Processing…' : 'Submit'}
               </button>
@@ -643,7 +638,6 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => { setVpNoteId(null); setVpRemarks('') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-              <button disabled={vpNote.isPending} onClick={() => { if (!vpNoteId) return; vpNote.mutate({ id: vpNoteId, remarks: vpRemarks || undefined }, { onSuccess: () => { toast.success('Approved by VP.'); setVpNoteId(null); setVpRemarks('') }, onError: (err) => toast.error(parseApiError(err).message) }) }}
                 className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
                 {vpNote.isPending ? 'Approving…' : 'Approve (VP)'}
               </button>

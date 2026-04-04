@@ -64,7 +64,6 @@ export default function LeaveDetailPage() {
       await headApprove.mutateAsync({ id: request.id, remarks })
       toast.success('Leave request approved (Head).')
     } catch {
-      toast.error('Failed to approve leave request.')
     }
   }
 
@@ -73,7 +72,6 @@ export default function LeaveDetailPage() {
       await managerCheck.mutateAsync({ id: request.id, remarks })
       toast.success('Leave request checked (Manager).')
     } catch {
-      toast.error('Failed to check leave request.')
     }
   }
 
@@ -83,7 +81,6 @@ export default function LeaveDetailPage() {
       toast.success('Leave request rejected.')
       setShowRejectModal(false)
     } catch {
-      toast.error('Failed to reject leave request.')
     }
   }
 

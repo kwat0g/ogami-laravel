@@ -86,7 +86,6 @@ export default function EmployeeDetailPage() {
       navigate('/hr/employees/all')
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to delete employee: ${message}`)
       throw err
     }
   }
@@ -99,7 +98,6 @@ export default function EmployeeDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to change status: ${message}`)
       throw err
     }
   }

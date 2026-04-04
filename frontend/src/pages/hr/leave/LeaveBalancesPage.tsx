@@ -139,21 +139,18 @@ export default function LeaveBalancesPage() {
   const handleGrantLeave = async () => {
     const selectedEmployee = employeesData?.data.find(e => e.id === Number(grantForm.employee_id))
     if (!selectedEmployee) {
-      toast.error('Please select an employee')
       return
     }
 
     // Find the leave type ID
     const leaveType = data?.leave_types.find(t => t.code === grantForm.leave_type)
     if (!leaveType) {
-      toast.error('Leave type not found')
       return
     }
 
     // Guard: prevent double-granting
     const existingGrant = selectedEmpBalanceMap[grantForm.leave_type]
     if (existingGrant?.granted) {
-      toast.error(`${grantForm.leave_type} has already been granted to this employee (${existingGrant.opening} days opening balance)`)
       return
     }
 
@@ -176,7 +173,6 @@ export default function LeaveBalancesPage() {
       refetchSelectedBalances()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to grant leave: ${message}`)
     }
   }
 
@@ -185,21 +181,18 @@ export default function LeaveBalancesPage() {
     
     const selectedEmployee = employeesData?.data.find(e => e.id === Number(grantForm.employee_id))
     if (!selectedEmployee) {
-      toast.error('Please select an employee')
       return
     }
 
     // Find the leave type ID
     const leaveType = data?.leave_types.find(t => t.code === grantForm.leave_type)
     if (!leaveType) {
-      toast.error('Leave type not found')
       return
     }
 
     // Guard: prevent double-granting
     const existingGrant = selectedEmpBalanceMap[grantForm.leave_type]
     if (existingGrant?.granted) {
-      toast.error(`${grantForm.leave_type} has already been granted to this employee`)
       return
     }
 

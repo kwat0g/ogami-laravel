@@ -31,16 +31,13 @@ export default function VendorRfqListPage(): React.ReactElement {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!form.title.trim()) {
-      toast.error('Title is required.')
       return
     }
     if (form.deadline && new Date(form.deadline) < new Date()) {
-      toast.error('Deadline cannot be in the past.')
       return
     }
     const vendorIds = form.vendor_ids.split(',').map(Number).filter(Boolean)
     if (vendorIds.length === 0) {
-      toast.error('At least one vendor ID is required.')
       return
     }
     try {
@@ -55,7 +52,6 @@ export default function VendorRfqListPage(): React.ReactElement {
       setForm({ title: '', description: '', deadline: '', vendor_ids: '' })
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to create RFQ.')
     }
   }
 
@@ -65,7 +61,6 @@ export default function VendorRfqListPage(): React.ReactElement {
       toast.success('RFQ sent to vendors.')
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to send RFQ.')
     }
   }
 

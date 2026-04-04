@@ -231,7 +231,6 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
         },
         onError: (err) => {
           const message = firstErrorMessage(err)
-          toast.error(message ?? 'Failed to send PO. Please try again.')
         },
       }
     )
@@ -256,7 +255,6 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
   function handleRejectChanges(remarks: string): void {
     if (!po) return
     if (!remarks.trim()) {
-      toast.error('Please provide a rejection reason.')
       return
     }
     rejectChangesMutation.mutate(

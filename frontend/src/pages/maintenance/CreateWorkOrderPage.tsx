@@ -58,7 +58,6 @@ export default function CreateWorkOrderPage(): React.ReactElement {
     e.preventDefault()
     setTouched(new Set(Object.keys(ve)))
     if (hasErrors) {
-      toast.error('Please fix the errors before submitting.')
       return
     }
     setShowConfirm(true)

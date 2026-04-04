@@ -213,7 +213,6 @@ export default function PayrollRunDraftValidatePage() {
       }
       setPhase({ kind: 'idle' })
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Failed to begin computation. Please try again.')
     }
   }
 
@@ -225,7 +224,6 @@ export default function PayrollRunDraftValidatePage() {
     const warnings = phase.checks.filter((c) => c.status === 'warn')
     const allAcked = warnings.every((c) => !!phase.acked[c.code])
     if (!allAcked) {
-      toast.error('Acknowledge all warnings before proceeding.')
       return
     }
 

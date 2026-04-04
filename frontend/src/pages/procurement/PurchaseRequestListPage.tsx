@@ -293,7 +293,6 @@ export default function PurchaseRequestListPage({ lockedStatus, pageTitle }: Pur
       setPrToConfirm(null)
       navigate(`/procurement/purchase-requests/${duplicatedPr.ulid}/edit`)
     } catch {
-      toast.error('Failed to duplicate purchase request. Please try again.')
     }
   }
 

@@ -151,7 +151,6 @@ export default function PayPeriodListPage() {
   // ── Validation helper for close ───────────────────────────────────────────
   function _validateClose(period: PayPeriod): boolean {
     if (period.status === 'closed') {
-      toast.error('This pay period is already closed.')
       return false
     }
     return true

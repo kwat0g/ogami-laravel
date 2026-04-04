@@ -61,7 +61,6 @@ export default function PrepareOfferModal({
           onClose()
         },
         onError: () => {
-          toast.error('Failed to prepare offer')
         },
       },
     )

@@ -213,7 +213,6 @@ export default function ClientOrderDetailPage(): JSX.Element {
 
   const handleReject = async () => {
     if (!rejectReason) {
-      toast.error('Please select a rejection reason')
       return
     }
     try {
@@ -227,7 +226,6 @@ export default function ClientOrderDetailPage(): JSX.Element {
 
   const handleNegotiate = async () => {
     if (!negotiateReason) {
-      toast.error('Please select a negotiation reason')
       return
     }
     try {
@@ -265,7 +263,6 @@ export default function ClientOrderDetailPage(): JSX.Element {
 
   const handleForceProduction = async () => {
     if (!forceReason.trim()) {
-      toast.error('Please provide a reason for force production')
       return
     }
 

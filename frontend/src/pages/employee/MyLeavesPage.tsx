@@ -177,7 +177,6 @@ export default function MyLeavesPage() {
           if (cancelTarget === null) return
           cancel.mutate(cancelTarget, {
             onSuccess: () => { toast.success('Leave request cancelled.'); setCancelTarget(null) },
-            onError: (err) => { toast.error(parseApiError(err).message); setCancelTarget(null) },
           })
         }}
         title="Cancel leave request?"

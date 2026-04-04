@@ -250,7 +250,6 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
       }
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? `Failed to ${isEditMode ? 'update' : 'create'} purchase request.`)
     }
   }
 

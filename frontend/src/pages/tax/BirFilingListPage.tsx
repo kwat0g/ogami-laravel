@@ -32,7 +32,6 @@ export default function BirFilingListPage() {
       })
       toast.success('BIR filing scheduled.')
       setShowSchedule(false)
-    } catch { toast.error('Failed to schedule filing.') }
   }
 
   return (
@@ -140,7 +139,6 @@ function MarkFiledButton({ id }: { id: number }) {
   const markFiled = useMarkBirFiled(id)
   return (
     <button
-      onClick={() => markFiled.mutateAsync({ filed_date: new Date().toISOString().slice(0, 10) }).then(() => toast.success('Marked as filed.')).catch(() => toast.error('Failed.'))}
       disabled={markFiled.isPending}
       className="text-xs text-green-600 hover:underline disabled:opacity-50"
     >
@@ -153,7 +151,6 @@ function MarkAmendedButton({ id }: { id: number }) {
   const markAmended = useMarkBirAmended(id)
   return (
     <button
-      onClick={() => markAmended.mutateAsync({ amendment_date: new Date().toISOString().slice(0, 10) }).then(() => toast.success('Marked as amended.')).catch(() => toast.error('Failed.'))}
       disabled={markAmended.isPending}
       className="text-xs text-blue-600 hover:underline disabled:opacity-50"
     >

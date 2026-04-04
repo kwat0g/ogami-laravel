@@ -29,7 +29,6 @@ export default function ApplicationFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.job_posting_id) {
-      toast.error('Please select a job posting')
       return
     }
 
@@ -51,7 +50,6 @@ export default function ApplicationFormPage() {
       toast.success('Application submitted successfully')
       navigate('/hr/recruitment?tab=applications')
     } catch {
-      toast.error('Failed to create application')
     }
   }
 

@@ -29,7 +29,6 @@ export default function RequisitionDetailPage() {
       await action.mutateAsync({ action: act, payload })
       toast.success(`Requisition ${act} successfully`)
     } catch {
-      toast.error(`Failed to ${act} requisition`)
     }
   }
 
@@ -72,7 +71,6 @@ export default function RequisitionDetailPage() {
                 <button
                   onClick={() => {
                     if (!remarks.trim()) {
-                      toast.error('Reason required to put on hold')
                       return
                     }
                     handleAction('hold', { reason: remarks })
@@ -101,7 +99,6 @@ export default function RequisitionDetailPage() {
                 <button
                   onClick={() => {
                     if (!remarks.trim()) {
-                      toast.error('Reason required to cancel')
                       return
                     }
                     handleAction('cancel', { reason: remarks })
@@ -135,7 +132,6 @@ export default function RequisitionDetailPage() {
                   className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                   Approve
                 </button>
-                <button onClick={() => { if (!remarks.trim()) { toast.error('Reason required for rejection'); return; } handleAction('reject', { reason: remarks }) }} disabled={action.isPending}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">
                   Reject
                 </button>

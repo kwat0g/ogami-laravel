@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useState, useCallback } from 'react'
-import { formatPesoAmount } from '@/lib/formatters'
 import { toast } from 'sonner'
 import { Plus, CheckCircle, CreditCard, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -72,7 +71,6 @@ function ArchiveCustomerButton({ customer, onSuccess }: { customer: Customer; on
       onSuccess?.()
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to archive customer: ${message}`)
       throw err
     }
   }
@@ -205,7 +203,6 @@ function CustomerFormModal({ initial, onClose, onSuccess }: CustomerFormModalPro
     
     // Validate before submission
     if (!validate()) {
-      toast.error('Please fix the validation errors before submitting')
       return
     }
     
@@ -222,7 +219,6 @@ function CustomerFormModal({ initial, onClose, onSuccess }: CustomerFormModalPro
       onClose()
     } catch (err) {
       const parsed = firstErrorMessage(err)
-      toast.error(`${initial ? 'Update' : 'Create'} failed: ${parsed}`)
       // Don't close modal on error so user can fix
     }
   }
@@ -394,7 +390,6 @@ export default function CustomersPage() {
       await refetch()
       toast.success('Customer list refreshed')
     } catch (err) {
-      toast.error('Failed to refresh customer list')
     }
   }
 

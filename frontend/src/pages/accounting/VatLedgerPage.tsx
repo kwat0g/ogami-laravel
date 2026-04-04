@@ -75,13 +75,11 @@ function GenerateReportButton({ ledger, period }: { ledger: VatLedger; period?: 
 
   const handleGenerate = async () => {
     if (!period) {
-      toast.error('Cannot generate VAT report: fiscal period details not found.')
       return
     }
 
     const dateFrom = new Date(period.date_from)
     if (Number.isNaN(dateFrom.getTime())) {
-      toast.error('Cannot generate VAT report: invalid fiscal period start date.')
       return
     }
 

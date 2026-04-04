@@ -157,7 +157,6 @@ export default function MyOTPage() {
           if (cancelTarget === null) return
           cancel.mutate(cancelTarget, {
             onSuccess: () => { toast.success('Overtime request cancelled.'); setCancelTarget(null) },
-            onError: (err) => { toast.error(parseApiError(err).message); setCancelTarget(null) },
           })
         }}
         title="Cancel overtime request?"

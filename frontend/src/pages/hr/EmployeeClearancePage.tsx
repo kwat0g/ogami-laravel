@@ -119,7 +119,6 @@ export default function EmployeeClearancePage(): React.ReactElement {
 
   const handleBlock = async (clearanceId: number) => {
     if (!blockReason.trim()) {
-      toast.error('Please provide a reason for blocking')
       return
     }
     try {

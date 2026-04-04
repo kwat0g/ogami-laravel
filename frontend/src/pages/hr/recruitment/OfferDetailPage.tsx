@@ -20,7 +20,6 @@ export default function OfferDetailPage() {
       await action.mutateAsync({ action: act, payload })
       toast.success(`Offer ${act} successfully`)
     } catch {
-      toast.error(`Failed to ${act} offer`)
     }
   }
 

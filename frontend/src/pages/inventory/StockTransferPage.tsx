@@ -48,24 +48,19 @@ export default function StockTransferPage() {
 
   const validateForm = (): boolean => {
     if (!form.item_id) {
-      toast.error('Please select an item.')
       return false
     }
     if (!form.from_location_id) {
-      toast.error('Please select a source warehouse.')
       return false
     }
     if (!form.to_location_id) {
-      toast.error('Please select a destination warehouse.')
       return false
     }
     if (form.from_location_id === form.to_location_id) {
-      toast.error('Source and destination warehouses must be different.')
       return false
     }
     const qty = parseFloat(form.quantity)
     if (isNaN(qty) || qty <= 0) {
-      toast.error('Please enter a quantity greater than zero.')
       return false
     }
     return true

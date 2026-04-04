@@ -61,7 +61,6 @@ export default function ArAgingReportPage(): JSX.Element {
   function handleDownloadSoa(customerUlid: string) {
     const url = `/api/v1/ar/customers/${customerUlid}/statement/pdf${asOf ? `?as_of=${asOf}` : ''}`
     downloadFile(url, `statement_${customerUlid}.pdf`).catch(() => {
-      toast.error('Failed to download statement of account.')
     })
   }
 

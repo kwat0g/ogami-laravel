@@ -277,15 +277,12 @@ export default function PayrollRunScopePage() {
   // ── Validation helpers ────────────────────────────────────────────────────
   function validateAddExclusion(): boolean {
     if (!selectedEmployee || selectedEmployee.id <= 0) {
-      toast.error('Please search and select an employee.')
       return false
     }
     if (!exclReason.trim()) {
-      toast.error('A reason for exclusion is required.')
       return false
     }
     if (exclReason.trim().length < 5) {
-      toast.error('Reason must be at least 5 characters.')
       return false
     }
     return true
@@ -318,11 +315,9 @@ export default function PayrollRunScopePage() {
   // ── Confirm scope ─────────────────────────────────────────────────────────
   function validateConfirmScope(): boolean {
     if (!employmentTypes.length) {
-      toast.error('Select at least one employment type.')
       return false
     }
     if (!preview || preview.net_in_scope === 0) {
-      toast.error('No employees match the current filters.')
       return false
     }
     return true

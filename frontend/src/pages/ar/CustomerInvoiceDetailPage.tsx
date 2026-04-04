@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
-import { formatPesoAmount } from '@/lib/formatters'
 import { toast } from 'sonner'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FileText } from 'lucide-react'
@@ -96,7 +95,6 @@ function ReceivePaymentPanel({
     setTouched(new Set(['amount', 'payment_date', 'cash_account_id', 'ar_account_id']))
     
     if (Object.keys(validationErrors).length > 0) {
-      toast.error('Please fix the validation errors before submitting.')
       return
     }
 

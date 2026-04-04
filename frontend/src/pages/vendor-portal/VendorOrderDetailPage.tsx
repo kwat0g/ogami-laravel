@@ -94,12 +94,10 @@ function DeliveryModal({ isOpen, onClose, onConfirm, items, isPending }: Deliver
     e.preventDefault()
     
     if (!hasAnyDelivery) {
-      toast.error('Please enter at least one delivery quantity.')
       return
     }
     
     if (hasErrors) {
-      toast.error('Please fix the validation errors before submitting.')
       return
     }
     
@@ -357,14 +355,12 @@ export default function VendorOrderDetailPage(): React.ReactElement {
   function handleProposeChanges() {
     if (!ulid || !order) return
     if (!proposeRemarks.trim()) {
-      toast.error('Please explain the reason for the proposed changes.')
       return
     }
     // Validate proposed quantities are strictly less than ordered
     for (const item of order.items) {
       const proposedQty = proposeQtys[item.id]
       if (proposedQty !== undefined && proposedQty >= Number(item.quantity_ordered)) {
-        toast.error(`Proposed quantity for "${item.item_description}" must be less than the ordered quantity (${item.quantity_ordered}).`)
         return
       }
     }
@@ -378,7 +374,6 @@ export default function VendorOrderDetailPage(): React.ReactElement {
       }))
     const hasPoLevelChanges = proposeDeliveryDate.trim() !== ''
     if (items.length === 0 && !hasPoLevelChanges) {
-      toast.error('Please enter at least one proposed change.')
       return
     }
     const payload: ProposeChangesPayload = {
@@ -424,7 +419,6 @@ export default function VendorOrderDetailPage(): React.ReactElement {
       .map((item) => ({ po_item_id: item.id, qty_delivered: qtys[item.id] }))
 
     if (items.length === 0) {
-      toast.error('Please enter at least one delivery quantity.')
       return
     }
 

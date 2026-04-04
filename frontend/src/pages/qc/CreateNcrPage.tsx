@@ -50,15 +50,12 @@ export default function CreateNcrPage(): React.ReactElement {
     setTouched(new Set(['inspection_id', 'title', 'description']))
 
     if (!form.inspection_id) {
-      toast.error('Please select a linked inspection.')
       return
     }
     if (!form.title.trim()) {
-      toast.error('Title is required.')
       return
     }
     if (!form.description.trim() || form.description.trim().length < 10) {
-      toast.error('Description must be at least 10 characters.')
       return
     }
 

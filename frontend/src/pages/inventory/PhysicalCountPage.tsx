@@ -34,7 +34,6 @@ export default function PhysicalCountPage(): React.ReactElement {
 
   const initializeCount = () => {
     if (!locationId) {
-      toast.error('Please select a warehouse location first.')
       return
     }
     const loc = (locations ?? []).find((l) => l.id === locationId)
@@ -73,13 +72,11 @@ export default function PhysicalCountPage(): React.ReactElement {
   const validateCounts = (): boolean => {
     const itemsWithCounts = countItems.filter((c) => c.counted_qty !== '')
     if (itemsWithCounts.length === 0) {
-      toast.error('Please enter at least one count.')
       return false
     }
     for (const item of itemsWithCounts) {
       const qty = Number(item.counted_qty)
       if (isNaN(qty) || qty < 0) {
-        toast.error(`Invalid count for ${item.item_code}. Must be 0 or greater.`)
         return false
       }
     }

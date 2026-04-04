@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
-import { formatPesoAmount } from '@/lib/formatters'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -344,7 +343,6 @@ export default function MyProfilePage() {
       toast.success('Profile updated successfully')
       setIsEditing(false)
     } catch (err) {
-      toast.error(parseApiError(err).message)
     }
   }
 

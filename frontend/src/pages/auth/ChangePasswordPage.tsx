@@ -55,7 +55,6 @@ export default function ChangePasswordPage() {
       }
 
       if (!fieldErrors.current_password && !fieldErrors.password) {
-        toast.error(message)
       }
     }
   }

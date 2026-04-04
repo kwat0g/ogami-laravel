@@ -53,11 +53,9 @@ export default function StockBalancePage(): React.ReactElement {
     if (!adjusting) return false
     const qty = parseFloat(adjusting.newQty)
     if (isNaN(qty) || qty < 0) {
-      toast.error('Enter a valid quantity (0 or more).')
       return false
     }
     if (adjusting.remarks.trim().length < 10) {
-      toast.error('Remarks must be at least 10 characters.')
       return false
     }
     return true
@@ -82,7 +80,6 @@ export default function StockBalancePage(): React.ReactElement {
       setShowConfirm(false)
     } catch (err) {
       if (isHandledApiError(err)) return
-      toast.error((err as { message?: string })?.message ?? 'Adjustment failed.')
     }
   }
 

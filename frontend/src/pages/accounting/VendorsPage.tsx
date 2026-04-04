@@ -252,7 +252,6 @@ function VendorFormModal({ initial, onClose }: VendorFormModalProps) {
       const errs = data?.errors ?? {}
       setError(msg)
       setFieldErrors(errs)
-      toast.error(msg)
     }
   }
 

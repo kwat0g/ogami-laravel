@@ -96,7 +96,6 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateCompletionForm()) {
-      toast.error('Please fix the errors before completing.');
       return;
     }
     try {

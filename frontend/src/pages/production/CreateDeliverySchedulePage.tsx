@@ -71,7 +71,6 @@ export default function CreateDeliverySchedulePage(): React.ReactElement {
     }
     
     if (errors.length > 0) {
-      toast.error(errors[0])
       // Touch all fields to show validation state
       setTouched(new Set(['customer_id', 'product_item_id', 'qty_ordered', 'target_delivery_date']))
       return false

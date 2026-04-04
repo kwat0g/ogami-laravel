@@ -40,20 +40,16 @@ export default function StockAdjustmentsPage(): React.ReactElement {
 
   const validateForm = (): boolean => {
     if (!itemId) {
-      toast.error('Please select an item.')
       return false
     }
     if (!locationId) {
-      toast.error('Please select a warehouse location.')
       return false
     }
     const qty = parseFloat(adjustedQty)
     if (isNaN(qty) || qty < 0) {
-      toast.error('Please enter a valid quantity (0 or more).')
       return false
     }
     if (remarks.trim().length < 10) {
-      toast.error('Remarks must be at least 10 characters.')
       return false
     }
     return true

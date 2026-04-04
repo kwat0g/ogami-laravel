@@ -51,11 +51,9 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
   // ── Validation for approval ───────────────────────────────────────────────
   function validateApproval(): boolean {
     if (sodViolation) {
-      toast.error('SoD Violation: You cannot approve a payroll run you initiated.')
       return false
     }
     if (!allChecked) {
-      toast.error('Please check all items in the VP approval checklist.')
       return false
     }
     return true

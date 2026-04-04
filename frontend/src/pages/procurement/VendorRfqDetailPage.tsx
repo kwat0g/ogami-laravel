@@ -30,7 +30,6 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       toast.success('RFQ closed.')
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to close RFQ.')
     }
   }
 
@@ -41,7 +40,6 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       navigate('/procurement/rfqs')
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to cancel RFQ.')
     }
   }
 
@@ -50,7 +48,6 @@ export default function VendorRfqDetailPage(): React.ReactElement {
     if (!quoteVendor) return
     const amount = Number(quoteAmount)
     if (!amount || amount <= 0) {
-      toast.error('Quote amount must be greater than 0.')
       return
     }
     try {
@@ -65,7 +62,6 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       setQuoteNotes('')
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to record quote.')
     }
   }
 
@@ -75,7 +71,6 @@ export default function VendorRfqDetailPage(): React.ReactElement {
       toast.success('Decline recorded.')
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to record decline.')
     }
   }
 

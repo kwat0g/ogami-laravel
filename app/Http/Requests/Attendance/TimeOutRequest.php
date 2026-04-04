@@ -21,7 +21,7 @@ final class TimeOutRequest extends FormRequest
         return [
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'accuracy_meters' => ['required', 'numeric', 'min:0', 'max:1000'],
+            'accuracy_meters' => ['required', 'numeric', 'min:0'],
             'device_info' => ['nullable', 'array'],
             'override_reason' => ['nullable', 'string', 'max:500'],
         ];

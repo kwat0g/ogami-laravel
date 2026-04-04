@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useExecutiveDashboard } from '@/hooks/useAnalytics'
-import { formatPesoAmount } from '@/lib/formatters'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'

@@ -583,11 +583,9 @@ export default function PayrollRunDetailPage() {
   // ── Validation helpers for void action ────────────────────────────────────
   function validateVoid(): boolean {
     if (!runId) {
-      toast.error('Invalid payroll run.')
       return false
     }
     if (run.status === 'DISBURSED' || run.status === 'PUBLISHED') {
-      toast.error('Cannot void a disbursed or published payroll run. Contact system admin.')
       return false
     }
     return true

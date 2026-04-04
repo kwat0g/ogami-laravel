@@ -270,21 +270,17 @@ export default function JournalEntryFormPage() {
       toast.success(`Template "${result.template_name}" applied`)
       setSelectedTemplate('')
     } catch (err) {
-      toast.error('Failed to apply template')
     }
   }
   
   async function handleSaveTemplate() {
     if (!templateName.trim()) {
-      toast.error('Template name is required')
       return
     }
     if (lines.length < 2) {
-      toast.error('Template must have at least 2 lines')
       return
     }
     if (lines.some(l => !l.account_id)) {
-      toast.error('All lines must have an account selected')
       return
     }
     try {
@@ -302,7 +298,6 @@ export default function JournalEntryFormPage() {
       setTemplateName('')
       setTemplateDescription('')
     } catch (err) {
-      toast.error('Failed to save template')
     }
   }
 
@@ -333,7 +328,6 @@ export default function JournalEntryFormPage() {
     } catch (err: unknown) {
       const msg = firstErrorMessage(err)
       setSubmitError(msg)
-      toast.error(msg)
     }
   }
 

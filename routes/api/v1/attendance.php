@@ -114,14 +114,21 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'description' => 'nullable|string',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i',
+            'start_time' => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/'],
+            'end_time' => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/'],
             'break_minutes' => 'required|integer|min:0|max:120',
             'work_days' => 'required|string',
             'is_flexible' => 'boolean',
             'grace_period_minutes' => 'required|integer|min:0|max:60',
             'is_active' => 'boolean',
         ]);
+
+        $validated['code'] = 'SH-' . strtoupper(\Illuminate\Support\Str::random(10));
+        
+        $st = substr($validated['start_time'], 0, 5);
+        $et = substr($validated['end_time'], 0, 5);
+        $validated['crosses_midnight'] = $et <= $st;
+        $validated['is_night_shift'] = (int)substr($st, 0, 2) >= 22 || (int)substr($et, 0, 2) <= 6;
 
         return response()->json(ShiftSchedule::create($validated), 201);
     })->name('shifts.store');
@@ -131,14 +138,24 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:100',
             'description' => 'nullable|string',
-            'start_time' => 'sometimes|date_format:H:i',
-            'end_time' => 'sometimes|date_format:H:i',
+            'start_time' => ['sometimes', 'regex:/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/'],
+            'end_time' => ['sometimes', 'regex:/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/'],
             'break_minutes' => 'sometimes|integer|min:0|max:120',
             'work_days' => 'sometimes|string',
-            'is_flexible' => 'boolean',
+            'is_flexible' => 'sometimes|boolean',
             'grace_period_minutes' => 'sometimes|integer|min:0|max:60',
-            'is_active' => 'boolean',
+            'is_active' => 'sometimes|boolean',
         ]);
+        
+        $st = $validated['start_time'] ?? $shift->start_time;
+        $et = $validated['end_time'] ?? $shift->end_time;
+        // ensure time format comparison works reliably even if time comes from database as H:i:s
+        $st = substr($st, 0, 5);
+        $et = substr($et, 0, 5);
+
+        $validated['crosses_midnight'] = $et <= $st;
+        $validated['is_night_shift'] = (int)substr($st, 0, 2) >= 22 || (int)substr($et, 0, 2) <= 6;
+
         $shift->update($validated);
 
         return response()->json($shift->fresh());
@@ -146,6 +163,21 @@ Route::middleware(['auth:sanctum', 'module_access:attendance'])->group(function 
 
     Route::delete('shifts/{shift}', function (Request $request, ShiftSchedule $shift) {
         abort_unless($request->user()->can('attendance.manage_shifts'), 403);
+
+        $hasActiveAssignments = $shift->assignments()
+            ->where(function ($query) {
+                $query->whereNull('effective_to')
+                      ->orWhere('effective_to', '>=', now()->toDateString());
+            })->exists();
+
+        if ($hasActiveAssignments) {
+            throw new \App\Shared\Exceptions\DomainException(
+                'Cannot delete shift schedule while it is currently assigned to active employees.',
+                'SHIFT_IN_USE',
+                422
+            );
+        }
+
         $shift->delete();
 
         return response()->noContent();

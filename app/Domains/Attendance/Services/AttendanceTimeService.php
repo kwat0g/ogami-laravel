@@ -80,29 +80,64 @@ final class AttendanceTimeService implements ServiceContract
             $geofenceMode = $this->geoFence->getGeofenceMode();
             $geo = $this->geoFence->validateLocation($employee, $latitude, $longitude, now());
 
-            if (! $geo['within'] && $geofenceMode !== 'disabled') {
-                if ($geofenceMode === 'strict') {
-                    // Strict mode: block entirely — no override possible
-                    throw new DomainException(
-                        "You are {$geo['distance_meters']}m from your assigned work location" .
-                        ($geo['location'] ? " ({$geo['location']->name})" : '') .
-                        '. Clock-in is only allowed within the geofence. Contact HR if this is an error.',
-                        'OUTSIDE_GEOFENCE_BLOCKED',
-                        422,
-                        ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']?->name],
-                    );
+            if ($geofenceMode !== 'disabled') {
+                if (! $geo['location']) {
+                    if ($geofenceMode === 'strict') {
+                        throw new DomainException(
+                            'No work location is assigned to your profile. Clock-in is blocked. Please contact HR.',
+                            'NO_WORK_LOCATION',
+                            422,
+                        );
+                    }
+                    if (! $overrideReason) {
+                        throw new DomainException(
+                            'No work location is assigned to your profile. Please provide a reason to clock in.',
+                            'NO_WORK_LOCATION_OVERRIDE',
+                            422,
+                        );
+                    }
+                } elseif (! $geo['within']) {
+                    if ($geofenceMode === 'strict') {
+                        // Strict mode: block entirely — no override possible
+                        throw new DomainException(
+                            "You are {$geo['distance_meters']}m from your assigned work location" .
+                            " ({$geo['location']->name})" .
+                            '. Clock-in is only allowed within the geofence. Contact HR if this is an error.',
+                            'OUTSIDE_GEOFENCE_BLOCKED',
+                            422,
+                            ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']->name],
+                        );
+                    }
+
+                    // Override mode: allow with reason, but flag for HR review
+                    if (! $overrideReason) {
+                        throw new DomainException(
+                            "You are {$geo['distance_meters']}m from your assigned work location" .
+                            " ({$geo['location']->name})" .
+                            '. Please provide a reason for working from this location.',
+                            'OUTSIDE_GEOFENCE',
+                            422,
+                            ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']->name],
+                        );
+                    }
                 }
 
-                // Override mode: allow with reason, but flag for HR review
-                if (! $overrideReason) {
-                    throw new DomainException(
-                        "You are {$geo['distance_meters']}m from your assigned work location" .
-                        ($geo['location'] ? " ({$geo['location']->name})" : '') .
-                        '. Please provide a reason for working from this location.',
-                        'OUTSIDE_GEOFENCE',
-                        422,
-                        ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']?->name],
-                    );
+                // Check GPS accuracy explicitly. If it's terrible, treat it as a warning or block
+                if ($accuracyMeters > 500) {
+                    if ($geofenceMode === 'strict') {
+                        throw new DomainException(
+                            "Location accuracy is too low (±" . round($accuracyMeters) . "m) to reliably verify geofence. Please ensure your GPS is stable to clock in.",
+                            'LOCATION_INACCURATE_BLOCKED',
+                            422,
+                        );
+                    }
+                    if (! $overrideReason) {
+                        throw new DomainException(
+                            "Location accuracy is too low (±" . round($accuracyMeters) . "m). Please provide a reason to continue.",
+                            'LOCATION_INACCURATE',
+                            422,
+                        );
+                    }
                 }
             }
 
@@ -120,10 +155,10 @@ final class AttendanceTimeService implements ServiceContract
                     'time_in_device_info' => $deviceInfo,
                     'time_in_override_reason' => $overrideReason,
                     'attendance_status' => AttendanceStatus::Pending->value,
-                    'is_flagged' => ! $geo['within'],
+                    'is_flagged' => ! $geo['within'] || (bool) $overrideReason,
                     'flag_reason' => ! $geo['within']
                         ? "Timed in {$geo['distance_meters']}m from work location."
-                        : null,
+                        : ($overrideReason ? "Clock-in override: {$overrideReason}" : null),
                 ],
             );
 

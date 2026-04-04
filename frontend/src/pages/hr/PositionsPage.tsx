@@ -62,7 +62,6 @@ export default function PositionsPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to delete position: ${message}`)
       throw err
     }
   }
@@ -89,7 +88,6 @@ export default function PositionsPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to ${form.id ? 'update' : 'create'} position: ${message}`)
       setFormError(`${form.id ? 'Update' : 'Create'} failed: ${message}`)
     }
   }

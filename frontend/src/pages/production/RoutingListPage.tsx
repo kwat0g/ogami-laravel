@@ -43,7 +43,6 @@ export default function RoutingListPage() {
       })
       toast.success('Routing step created.')
       setShowForm(false)
-    } catch { toast.error('Failed to create routing step.') }
   }
 
   return (

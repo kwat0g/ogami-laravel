@@ -99,7 +99,6 @@ export default function DepartmentBudgetsPage(): React.ReactElement {
   const saveEdit = async (id: number) => {
     const budgetValue = parseFloat(editForm.annual_budget.replace(/,/g, ''))
     if (isNaN(budgetValue) || budgetValue < 0) {
-      toast.error('Please enter a valid budget amount')
       return
     }
 

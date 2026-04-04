@@ -140,7 +140,6 @@ export default function CreatePurchaseOrderPage(): React.ReactElement {
       navigate(`/procurement/purchase-orders/${po.ulid}`)
     } catch (err) {
       const message = firstErrorMessage(err)
-      toast.error(message ?? 'Failed to create purchase order.')
     }
   }
 

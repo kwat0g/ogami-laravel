@@ -85,17 +85,14 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
     e.preventDefault()
 
     if (!employeeId) {
-      toast.error('No employee profile linked to your account')
       return
     }
 
     if (durationMinutes <= 0) {
-      toast.error('OT end time must be after the start time')
       return
     }
 
     if (durationMinutes > 480) {
-      toast.error('Overtime cannot exceed 8 hours (480 minutes) per day')
       return
     }
 
@@ -119,7 +116,6 @@ export default function FileOvertimeModal({ isOpen, onClose, onSuccess }: FileOv
       onClose()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || 'Failed to file overtime request')
     }
   }
 

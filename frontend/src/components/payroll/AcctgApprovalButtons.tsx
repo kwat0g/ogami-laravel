@@ -53,13 +53,11 @@ export default function AcctgApprovalButtons({ runId, initiatedById }: AcctgAppr
       navigate(`/payroll/runs/${runId}/vp-review`)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Approval failed.')
     }
   }
 
   async function handleReturn() {
     if (!returnReason.trim()) {
-      toast.error('Please provide a reason for returning.')
       return
     }
     try {
@@ -71,13 +69,11 @@ export default function AcctgApprovalButtons({ runId, initiatedById }: AcctgAppr
       navigate('/payroll/runs')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Return failed.')
     }
   }
 
   async function handleReject() {
     if (!rejectReason.trim()) {
-      toast.error('Please provide a reason for rejection.')
       return
     }
     try {
@@ -89,7 +85,6 @@ export default function AcctgApprovalButtons({ runId, initiatedById }: AcctgAppr
       navigate('/payroll/runs')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Rejection failed.')
     }
   }
 

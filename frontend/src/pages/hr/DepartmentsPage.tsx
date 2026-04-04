@@ -59,7 +59,6 @@ export default function DepartmentsPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to ${form.id ? 'update' : 'create'} department: ${message}`)
       setFormError(`${form.id ? 'Update' : 'Create'} failed: ${message}`)
     }
   }
@@ -71,7 +70,6 @@ export default function DepartmentsPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to delete department: ${message}`)
       throw err
     }
   }

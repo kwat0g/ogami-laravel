@@ -82,7 +82,6 @@ export default function VendorCreditNotesPage(): React.ReactElement {
 
   async function handleCreate() {
     if (!validateForm()) {
-      toast.error('Please fix the form errors.')
       return
     }
     try {

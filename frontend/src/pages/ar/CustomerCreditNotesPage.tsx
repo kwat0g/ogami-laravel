@@ -85,7 +85,6 @@ export default function CustomerCreditNotesPage(): React.ReactElement {
     setTouched(new Set(['customer_id', 'amount', 'reason']))
     
     if (!isFormValid) {
-      toast.error('Please fix the validation errors before submitting.')
       return
     }
 

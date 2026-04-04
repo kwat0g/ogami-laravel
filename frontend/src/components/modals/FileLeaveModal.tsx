@@ -54,18 +54,15 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
     e.preventDefault()
     
     if (!employeeId) {
-      toast.error('No employee profile linked to your account')
       return
     }
     
     if (!formData.leave_type_id) {
-      toast.error('Please select a leave type')
       return
     }
     
     const days = calculateDays()
     if (days <= 0) {
-      toast.error('End date must be on or after start date')
       return
     }
     
@@ -99,7 +96,6 @@ export default function FileLeaveModal({ isOpen, onClose, onSuccess, balances = 
       onClose()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || 'Failed to file leave request')
     }
   }
   

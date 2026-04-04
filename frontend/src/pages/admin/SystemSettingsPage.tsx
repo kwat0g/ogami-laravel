@@ -198,7 +198,6 @@ export default function SystemSettingsPage() {
         setEditedValues({})
         setIsEditMode(false)
       } else {
-        toast.error('Some settings failed to update', {
           description: result.data.errors.map((e: {key: string, error: string}) => `${e.key}: ${e.error}`).join(', '),
         })
       }

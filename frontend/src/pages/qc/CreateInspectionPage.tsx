@@ -95,12 +95,10 @@ export default function CreateInspectionPage(): React.ReactElement {
 
     const parsedQty = Number(form.qty_inspected)
     if (!form.qty_inspected || parsedQty <= 0) {
-      toast.error('Qty Inspected must be greater than 0.')
       return
     }
 
     if (!form.inspection_date) {
-      toast.error('Inspection date is required.')
       return
     }
 

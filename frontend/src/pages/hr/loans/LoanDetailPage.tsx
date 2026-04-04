@@ -90,7 +90,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to approve loan: ${message}`)
     }
   }
 
@@ -104,7 +103,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to reject loan: ${message}`)
     }
   }
 
@@ -117,7 +115,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to approve loan: ${message}`)
     }
   }
 
@@ -129,7 +126,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to disburse funds: ${message}`)
       throw err
     }
   }
@@ -143,7 +139,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to record head note: ${message}`)
     }
   }
 
@@ -156,7 +151,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to record manager check: ${message}`)
     }
   }
 
@@ -169,7 +163,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to complete accounting review: ${message}`)
     }
   }
 
@@ -182,7 +175,6 @@ export default function LoanDetailPage() {
       refetch()
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to approve loan: ${message}`)
     }
   }
 

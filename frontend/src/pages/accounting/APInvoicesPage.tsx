@@ -284,7 +284,6 @@ export default function APInvoicesPage() {
       navigate(`/accounting/ap/invoices/${result.invoice.ulid}`)
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error.response?.data?.message ?? 'Failed to create invoice from PO')
     }
   }
 
