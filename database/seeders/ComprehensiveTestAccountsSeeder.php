@@ -318,6 +318,25 @@ class ComprehensiveTestAccountsSeeder extends Seeder
             $govIds = \Database\Seeders\Helpers\GovernmentIdHelper::generateCompleteGovIds();
             $bankDetails = \Database\Seeders\Helpers\GovernmentIdHelper::generateBankDetails($emp['first_name'], $emp['last_name']);
 
+            $position = DB::table('positions')->where('code', $emp['position'])->first();
+            $positionId = $position->id ?? null;
+            if (!$positionId) {
+                $positionId = DB::table('positions')->insertGetId([
+                    'code' => $emp['position'],
+                    'title' => ucwords(str_replace('-', ' ', strtolower($emp['position']))),
+                    'department_id' => $deptId,
+                    'pay_grade' => 'SG-10',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+            $salaryGradeId = null;
+            $payGrade = $position ? $position->pay_grade : 'SG-10';
+            if ($payGrade) {
+                $salaryGradeId = DB::table('salary_grades')->where('code', $payGrade)->value('id');
+            }
+
             // Create or update employee with all required fields
             $employee = Employee::firstOrCreate(
                 ['employee_code' => $emp['code']],
@@ -326,6 +345,8 @@ class ComprehensiveTestAccountsSeeder extends Seeder
                     'middle_name' => $emp['middle_name'] ?? null,
                     'last_name' => $emp['last_name'],
                     'department_id' => $deptId,
+                    'position_id' => $positionId,
+                    'salary_grade_id' => $salaryGradeId,
                     'date_of_birth' => '1985-06-15',
                     'gender' => 'M',
                     'civil_status' => 'SINGLE',

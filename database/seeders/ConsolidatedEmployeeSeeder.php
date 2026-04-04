@@ -444,7 +444,20 @@ class ConsolidatedEmployeeSeeder extends Seeder
         // Get position ID if provided
         $positionId = null;
         if ($positionCode) {
-            $positionId = DB::table('positions')->where('code', $positionCode)->value('id');
+            $position = DB::table('positions')->where('code', $positionCode)->first();
+            if ($position) {
+                $positionId = $position->id;
+            } else {
+                $positionId = DB::table('positions')->insertGetId([
+                    'code' => $positionCode,
+                    'title' => $data['position'] ?? ucwords(str_replace('-', ' ', strtolower($positionCode))),
+                    'department_id' => $deptId,
+                    'pay_grade' => 'SG-10',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
 
         // Get salary grade (default to SG-01 for staff, higher for managers)

@@ -237,7 +237,7 @@ export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps
                   Status
                 </th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-                  Grade
+                  Salary Grade
                 </th>
                 <th className="px-3 py-2.5 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                   Monthly Rate
