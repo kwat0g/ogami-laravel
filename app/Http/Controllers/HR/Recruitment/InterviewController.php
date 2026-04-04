@@ -93,6 +93,8 @@ final class InterviewController extends Controller
 
     public function submitEvaluation(SubmitEvaluationRequest $request, InterviewSchedule $interview): JsonResponse
     {
+        $this->authorize('evaluate', $interview);
+
         $evaluation = $this->service->submitEvaluation($interview, $request->validated(), $request->user());
 
         return response()->json($evaluation, 201);
