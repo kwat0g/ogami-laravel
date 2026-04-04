@@ -22,20 +22,27 @@ export default function ScheduleInterviewModal({
     duration_minutes: '60',
     location: '',
     interviewer_id: '',
+    interviewer_department_id: '',
+    round: '1',
     notes: '',
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const interviewerId = form.interviewer_id ? Number(form.interviewer_id) : undefined
+    const departmentId = form.interviewer_department_id ? Number(form.interviewer_department_id) : undefined
+
     schedule.mutate(
       {
         application_id: applicationId,
         type: form.type,
         scheduled_at: form.scheduled_at,
         duration_minutes: Number(form.duration_minutes),
-        location: form.location || null,
-        interviewer_id: Number(form.interviewer_id),
-        notes: form.notes || null,
+        location: form.location || undefined,
+        interviewer_id: interviewerId,
+        interviewer_department_id: departmentId,
+        round: Number(form.round),
+        notes: form.notes || undefined,
       },
       {
         onSuccess: () => {
@@ -100,14 +107,36 @@ export default function ScheduleInterviewModal({
               />
             </div>
             <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Round</label>
+              <input
+                type="number"
+                min="1"
+                value={form.round}
+                onChange={(e) => setForm({ ...form, round: e.target.value })}
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-xs font-medium text-neutral-500 uppercase">Interviewer ID</label>
               <input
                 type="number"
-                required
                 value={form.interviewer_id}
                 onChange={(e) => setForm({ ...form, interviewer_id: e.target.value })}
                 className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
-                placeholder="User ID"
+                placeholder="User ID (optional)"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase">Interviewer Dept ID</label>
+              <input
+                type="number"
+                value={form.interviewer_department_id}
+                onChange={(e) => setForm({ ...form, interviewer_department_id: e.target.value })}
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+                placeholder="Department ID (optional)"
               />
             </div>
           </div>

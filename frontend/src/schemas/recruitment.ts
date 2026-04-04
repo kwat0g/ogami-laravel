@@ -5,7 +5,7 @@ import { z } from 'zod'
 export const jobRequisitionSchema = z.object({
   department_id: z.coerce.number({ required_error: 'Department is required' }).positive(),
   position_id: z.coerce.number({ required_error: 'Position is required' }).positive(),
-  employment_type: z.enum(['regular', 'contractual', 'probationary', 'project_based'], {
+  employment_type: z.enum(['regular', 'contractual', 'project_based', 'part_time'], {
     required_error: 'Employment type is required',
   }),
   number_of_positions: z.coerce.number().min(1, 'At least 1 position required').default(1),
@@ -44,7 +44,7 @@ export const applicationSchema = z.object({
   last_name: z.string().trim().min(1, 'Last name is required').max(100),
   email: z.string().trim().email('Valid email is required'),
   phone: z.string().trim().max(30).optional(),
-  source: z.enum(['website', 'referral', 'job_board', 'walk_in', 'social_media', 'other']).default('website'),
+  source: z.enum(['referral', 'walk_in', 'job_board', 'agency', 'internal']).default('job_board'),
   cover_letter: z.string().trim().max(5000).optional(),
   expected_salary: z.coerce.number().min(0).optional(),
 })
@@ -55,16 +55,20 @@ export type ApplicationFormValues = z.infer<typeof applicationSchema>
 
 export const interviewScheduleSchema = z.object({
   application_id: z.coerce.number({ required_error: 'Application is required' }).positive(),
-  interview_type: z.enum(['phone', 'video', 'in_person', 'panel', 'technical'], {
+  type: z.enum(['panel', 'one_on_one', 'technical', 'hr_screening', 'final'], {
     required_error: 'Interview type is required',
   }),
-  scheduled_date: z.string().trim().min(1, 'Date is required'),
-  scheduled_time: z.string().trim().min(1, 'Time is required'),
+  scheduled_at: z.string().trim().min(1, 'Date and time is required'),
   duration_minutes: z.coerce.number().min(15).max(480).default(60),
-  location: z.string().trim().max(300).optional(),
-  interviewer_ids: z.array(z.coerce.number().positive()).min(1, 'At least one interviewer required'),
+  location: z.string().trim().max(500).optional(),
+  interviewer_id: z.coerce.number().positive().optional(),
+  interviewer_department_id: z.coerce.number().positive().optional(),
+  round: z.coerce.number().min(1).default(1),
   notes: z.string().trim().max(2000).optional(),
-})
+}).refine(
+  (data) => data.interviewer_id !== undefined || data.interviewer_department_id !== undefined,
+  { message: 'Either an interviewer or an interviewer department is required', path: ['interviewer_id'] },
+)
 
 export type InterviewScheduleFormValues = z.infer<typeof interviewScheduleSchema>
 
@@ -76,7 +80,7 @@ export const jobOfferSchema = z.object({
   department_id: z.coerce.number({ required_error: 'Department is required' }).positive(),
   salary_grade_id: z.coerce.number().positive().optional(),
   basic_monthly_rate: z.coerce.number().positive('Salary must be positive'),
-  employment_type: z.enum(['regular', 'contractual', 'probationary', 'project_based']),
+  employment_type: z.enum(['regular', 'contractual', 'project_based', 'part_time']),
   start_date: z.string().trim().min(1, 'Start date is required'),
   probation_end_date: z.string().trim().optional(),
   remarks: z.string().trim().max(2000).optional(),
@@ -89,7 +93,7 @@ export type JobOfferFormValues = z.infer<typeof jobOfferSchema>
 export const interviewEvaluationSchema = z.object({
   interview_schedule_id: z.coerce.number({ required_error: 'Interview is required' }).positive(),
   overall_score: z.coerce.number().min(0).max(5),
-  recommendation: z.enum(['strong_hire', 'hire', 'consider', 'no_hire'], {
+  recommendation: z.enum(['endorse', 'reject', 'hold'], {
     required_error: 'Recommendation is required',
   }),
   strengths: z.string().trim().max(2000).optional(),
