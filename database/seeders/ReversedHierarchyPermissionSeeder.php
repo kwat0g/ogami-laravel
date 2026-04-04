@@ -77,7 +77,7 @@ class ReversedHierarchyPermissionSeeder extends Seeder
         ];
 
         $managerAdds = [
-            'employees.create', 'employees.edit',
+            'employees.create', 'employees.update',
             'employees.upload_documents', 'employees.download_documents',
             'payroll.initiate_run', 'payroll.compute', 'payroll.publish', 'payroll.download_reports',
         ];
