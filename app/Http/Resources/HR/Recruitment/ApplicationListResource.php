@@ -12,6 +12,9 @@ final class ApplicationListResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
+        $postingDepartment = $this->posting?->requisition?->department?->name ?? $this->posting?->department?->name;
+        $postingPosition = $this->posting?->requisition?->position?->title ?? $this->posting?->position?->title;
+
         return [
             'ulid' => $this->ulid,
             'application_number' => $this->application_number,
@@ -23,8 +26,8 @@ final class ApplicationListResource extends JsonResource
             'posting' => $this->whenLoaded('posting', fn () => [
                 'ulid' => $this->posting->ulid,
                 'title' => $this->posting->title,
-                'department' => $this->posting->requisition?->department?->name,
-                'position' => $this->posting->requisition?->position?->title,
+                'department' => $postingDepartment,
+                'position' => $postingPosition,
             ]),
             'source' => $this->source?->value,
             'source_label' => $this->source?->label(),

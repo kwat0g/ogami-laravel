@@ -1,56 +1,73 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useCreatePosting, useRequisitions, useRequisition } from '@/hooks/useRecruitment'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useCreatePosting } from '@/hooks/useRecruitment'
+import {
+  useDepartments,
+  usePositions,
+  useSalaryGrades as useHrSalaryGrades,
+} from '@/hooks/useEmployees'
 import { toast } from 'sonner'
 
 export default function JobPostingFormPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const requisitionUlid = searchParams.get('requisition') ?? ''
   const createMutation = useCreatePosting()
-
-  // Fetch approved requisitions for the dropdown
-  const { data: requisitionsData } = useRequisitions({ status: 'approved' })
-  const requisitions = requisitionsData?.data ?? []
-
-  // If coming from a specific requisition, fetch its details to auto-fill
-  const { data: preselected } = useRequisition(requisitionUlid)
+  const [requirementInput, setRequirementInput] = useState('')
+  const [requirementItems, setRequirementItems] = useState<string[]>([])
 
   const [form, setForm] = useState({
-    job_requisition_id: '',
+    department_id: '',
+    position_id: '',
+    salary_grade_id: '',
+    headcount: '1',
     title: '',
     description: '',
-    requirements: '',
-    location: '',
     employment_type: 'regular',
-    is_internal: false,
-    is_external: true,
-    closes_at: '',
   })
 
-  // Auto-fill when preselected requisition loads
-  useEffect(() => {
-    if (preselected && requisitionUlid) {
-      setForm((f) => ({
-        ...f,
-        job_requisition_id: String(preselected.id ?? ''),
-        title: preselected.position?.title ?? '',
-        employment_type: preselected.employment_type ?? 'regular',
-      }))
-    }
-  }, [preselected, requisitionUlid])
+  // Direct-posting references
+  const { data: departmentsData } = useDepartments(true)
+  const departments = departmentsData?.data ?? []
+  const selectedDepartmentId = form.department_id ? Number(form.department_id) : undefined
+  const { data: positionsData } = usePositions(selectedDepartmentId)
+  const positions = positionsData?.data ?? []
+  const { data: salaryGrades } = useHrSalaryGrades()
+
+  const addRequirementItem = () => {
+    const item = requirementInput.trim()
+    if (!item) return
+    setRequirementItems((prev) => (prev.includes(item) ? prev : [...prev, item]))
+    setRequirementInput('')
+  }
+
+  const removeRequirementItem = (item: string) => {
+    setRequirementItems((prev) => prev.filter((req) => req !== item))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.job_requisition_id) {
+
+    if (!form.department_id || !form.position_id || !form.salary_grade_id || !form.headcount) return
+
+    if (requirementItems.length === 0) {
+      toast.error('Add at least one requirement item.')
       return
     }
+
+    const payload: Record<string, unknown> = {
+      title: form.title,
+      description: form.description,
+      requirements: requirementItems.join('\n'),
+      employment_type: form.employment_type,
+      is_internal: false,
+      is_external: true,
+      department_id: Number(form.department_id),
+      position_id: Number(form.position_id),
+      salary_grade_id: Number(form.salary_grade_id),
+      headcount: Number(form.headcount),
+    }
+
     try {
-      await createMutation.mutateAsync({
-        ...form,
-        job_requisition_id: Number(form.job_requisition_id),
-        closes_at: form.closes_at || null,
-      })
+      await createMutation.mutateAsync(payload)
       toast.success('Job posting created')
       navigate('/hr/recruitment?tab=postings')
     } catch {
@@ -62,44 +79,68 @@ export default function JobPostingFormPage() {
       <h1 className="mb-6 text-lg font-semibold text-neutral-900 dark:text-white">Create Job Posting</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* GAP-07: Requisition dropdown instead of raw integer ID */}
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Requisition</label>
-          <select
-            value={form.job_requisition_id}
-            onChange={(e) => {
-              const reqId = e.target.value
-              setForm({ ...form, job_requisition_id: reqId })
-              // Auto-fill title from selected requisition
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const selected = requisitions.find((r: any) => String(r.id) === reqId)
-              if (selected) {
-                setForm((f) => ({
-                  ...f,
-                  job_requisition_id: reqId,
-                  title: selected.position?.title ?? f.title,
-                  employment_type: selected.employment_type ?? f.employment_type,
-                }))
-              }
-            }}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
-            required
-          >
-            <option value="">Select an approved requisition...</option>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {requisitions.map((r: any) => (
-              <option key={r.id} value={r.id}>
-                {r.requisition_number} - {r.position?.title} ({r.department?.name})
-              </option>
-            ))}
-          </select>
-          {requisitions.length === 0 && (
-            <p className="mt-1 text-xs text-amber-600">No approved requisitions found. Approve a requisition first.</p>
-          )}
-        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Department <span className="text-red-500">*</span></label>
+              <select
+                value={form.department_id}
+                onChange={(e) => setForm({ ...form, department_id: e.target.value, position_id: '' })}
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+                required
+              >
+                <option value="">Select department...</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>{department.code} - {department.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Position <span className="text-red-500">*</span></label>
+              <select
+                value={form.position_id}
+                onChange={(e) => setForm({ ...form, position_id: e.target.value })}
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+                required
+                disabled={!form.department_id}
+              >
+                <option value="">Select position...</option>
+                {positions.map((position) => (
+                  <option key={position.id} value={position.id}>{position.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Salary Grade <span className="text-red-500">*</span></label>
+              <select
+                value={form.salary_grade_id}
+                onChange={(e) => setForm({ ...form, salary_grade_id: e.target.value })}
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+                required
+              >
+                <option value="">Select salary grade...</option>
+                {(salaryGrades ?? []).map((grade) => (
+                  <option key={grade.id} value={grade.id}>{grade.code} - {grade.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Headcount <span className="text-red-500">*</span></label>
+              <input
+                type="number"
+                min={1}
+                value={form.headcount}
+                onChange={(e) => setForm({ ...form, headcount: e.target.value })}
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+                required
+              />
+            </div>
+          </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Job Title</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Job Title <span className="text-red-500">*</span></label>
           <input
             type="text"
             value={form.title}
@@ -110,69 +151,72 @@ export default function JobPostingFormPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Job Description</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Job Description <span className="text-red-500">*</span></label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={5}
             className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
             required
-            placeholder="Minimum 50 characters..."
+            placeholder="Minimum 10 characters..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Requirements</label>
-          <textarea
-            value={form.requirements}
-            onChange={(e) => setForm({ ...form, requirements: e.target.value })}
-            rows={4}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
-            required
-            placeholder="Minimum 20 characters..."
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Location</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Requirements <span className="text-red-500">*</span></label>
+          <div className="mt-1 flex gap-2">
             <input
               type="text"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+              value={requirementInput}
+              onChange={(e) => setRequirementInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addRequirementItem()
+                }
+              }}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+              placeholder="Add one requirement item"
             />
+            <button
+              type="button"
+              onClick={addRequirementItem}
+              className="rounded-md bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
+            >
+              Add
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Closing Date</label>
-            <input
-              type="date"
-              value={form.closes_at}
-              onChange={(e) => setForm({ ...form, closes_at: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
-            />
-          </div>
+          <p className="mt-1 text-xs text-neutral-500">These items will appear as requirement banners on the public Recruit page.</p>
+          {requirementItems.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {requirementItems.map((item) => (
+                <span key={item} className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">
+                  {item}
+                  <button
+                    type="button"
+                    onClick={() => removeRequirementItem(item)}
+                    className="text-blue-600 hover:text-blue-900"
+                  >
+                    x
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.is_internal}
-              onChange={(e) => setForm({ ...form, is_internal: e.target.checked })}
-              className="rounded border-neutral-300"
-            />
-            Internal posting
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.is_external}
-              onChange={(e) => setForm({ ...form, is_external: e.target.checked })}
-              className="rounded border-neutral-300"
-            />
-            External posting
-          </label>
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Employment Type</label>
+          <select
+            value={form.employment_type}
+            onChange={(e) => setForm({ ...form, employment_type: e.target.value })}
+            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+          >
+            <option value="regular">Regular</option>
+            <option value="contractual">Contractual</option>
+            <option value="project_based">Project Based</option>
+            <option value="part_time">Part Time</option>
+          </select>
         </div>
 
         <div className="flex justify-end gap-3 pt-4">

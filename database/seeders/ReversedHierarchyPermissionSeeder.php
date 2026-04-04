@@ -111,6 +111,7 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'attendance.view_own',
             'employees.view',
             'chart_of_accounts.view',
+            'fiscal_periods.view',
             'journal_entries.view',
             'bank_accounts.view',
             'vendors.view',
@@ -149,6 +150,7 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'reports.ap_aging', 'reports.ar_aging',
             'procurement.purchase-request.view',
             'procurement.purchase-request.budget-check',
+            'procurement.purchase-order.view',
         ];
 
         $managerAdds = [
@@ -164,6 +166,7 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'customer_invoices.create', 'customer_invoices.post',
             'customer_payments.create',
             'budget.create', 'budget.edit',
+            'fiscal_periods.manage',
             'accounting.full_access',
         ];
 
@@ -296,26 +299,28 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'vendors.approve',
             // Officers perform technical review of PRs (SoD: cannot review own submissions)
             'procurement.purchase-request.create',
+            'procurement.purchase-request.note',
+            'procurement.purchase-request.check',
             'procurement.purchase-request.review',
             'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
-            'procurement.goods-receipt.view', 'procurement.goods-receipt.create',
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
             'procurement.rfq.view', 'procurement.rfq.create',
+            'vendor_portal.view_orders',
             'reports.procurement',
         ];
 
         $managerAdds = [
             'employees.view_full_record', 'employees.view_masked_gov_ids',
             'vendors.create', 'vendors.edit', 'vendors.manage',
+            'vendors.archive', 'vendors.accredit', 'vendors.suspend',
             'vendor_items.view', 'vendor_items.manage',
             'vendor_invoices.view', 'vendor_invoices.create',
             'vendor_payments.view', 'vendor_payments.create',
-            'customers.view', 'customers.create', 'customers.edit',
-            'customer_invoices.view', 'customer_invoices.create',
-            'customer_payments.view',
             'procurement.purchase-request.budget-check',
             'procurement.purchase-order.create',
-            'procurement.goods-receipt.post',
+            'procurement.goods-receipt.confirm',
             'procurement.rfq.send',
+            'vendor_portal.update_fulfillment',
         ];
 
         $head = array_merge($staffBase, $headAdds);

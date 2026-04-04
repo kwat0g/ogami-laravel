@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\HR\Recruitment;
 
+use App\Domains\HR\Recruitment\Enums\ApplicationStatus;
+use App\Domains\HR\Recruitment\Enums\InterviewStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,28 +14,58 @@ final class ApplicationResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
+        $postingDepartment = $this->posting?->requisition?->department ?? $this->posting?->department;
+        $postingPosition = $this->posting?->requisition?->position ?? $this->posting?->position;
+        $hasCompletedInterview = $this->relationLoaded('interviews')
+            && $this->interviews->contains(fn ($interview) => $interview->status === InterviewStatus::Completed);
+
+        $displayStatus = $this->status->value;
+        $displayStatusLabel = $this->status->label();
+        $displayStatusColor = $this->status->color();
+
+        if ($this->status === ApplicationStatus::Shortlisted && $hasCompletedInterview) {
+            $displayStatus = 'interviewed';
+            $displayStatusLabel = 'Interviewed';
+            $displayStatusColor = 'blue';
+        }
+
         return [
             'id' => $this->id,
             'ulid' => $this->ulid,
             'application_number' => $this->application_number,
             'candidate' => $this->whenLoaded('candidate', fn () => new CandidateResource($this->candidate)),
             'posting' => $this->whenLoaded('posting', fn () => [
+                'id' => $this->posting->id,
                 'ulid' => $this->posting->ulid,
                 'posting_number' => $this->posting->posting_number,
                 'title' => $this->posting->title,
-                'requisition' => $this->posting->requisition ? [
-                    'ulid' => $this->posting->requisition->ulid,
-                    'requisition_number' => $this->posting->requisition->requisition_number,
-                    'department' => $this->posting->requisition->department?->name,
-                    'position' => $this->posting->requisition->position?->title,
+                'salary_grade_id' => $this->posting->salary_grade_id ?? $this->posting->requisition?->salary_grade_id,
+                'salary_grade' => ($this->posting->salaryGrade ?? $this->posting->requisition?->salaryGrade) ? [
+                    'id' => ($this->posting->salaryGrade ?? $this->posting->requisition?->salaryGrade)?->id,
+                    'code' => ($this->posting->salaryGrade ?? $this->posting->requisition?->salaryGrade)?->code,
+                    'name' => ($this->posting->salaryGrade ?? $this->posting->requisition?->salaryGrade)?->name,
+                    'level' => ($this->posting->salaryGrade ?? $this->posting->requisition?->salaryGrade)?->level,
+                    'min_monthly_rate' => ($this->posting->salaryGrade ?? $this->posting->requisition?->salaryGrade)?->min_monthly_rate,
+                    'max_monthly_rate' => ($this->posting->salaryGrade ?? $this->posting->requisition?->salaryGrade)?->max_monthly_rate,
                 ] : null,
+                'requisition' => [
+                    'ulid' => $this->posting->requisition?->ulid,
+                    'requisition_number' => $this->posting->requisition?->requisition_number,
+                    'department' => $postingDepartment?->name,
+                    'position' => $postingPosition?->title,
+                ],
+                'department' => $postingDepartment?->name,
+                'position' => $postingPosition?->title,
             ]),
             'cover_letter' => $this->cover_letter,
             'source' => $this->source?->value,
             'source_label' => $this->source?->label(),
-            'status' => $this->status->value,
-            'status_label' => $this->status->label(),
-            'status_color' => $this->status->color(),
+            'resume_download_url' => $this->candidate?->resume_path
+                ? route('v1.recruitment.applications.resume', ['application' => $this->ulid], false)
+                : null,
+            'status' => $displayStatus,
+            'status_label' => $displayStatusLabel,
+            'status_color' => $displayStatusColor,
             'application_date' => (string) $this->application_date,
             'reviewer' => $this->whenLoaded('reviewer', fn () => $this->reviewer ? [
                 'id' => $this->reviewer->id,
@@ -87,6 +119,7 @@ final class ApplicationResource extends JsonResource
                 'hired_at' => $this->hiring->hired_at?->toIso8601String(),
                 'start_date' => (string) $this->hiring->start_date,
                 'employee_id' => $this->hiring->employee_id,
+                'employee_ulid' => $this->hiring->employee?->ulid,
             ] : null),
             'audit_trail' => $this->whenLoaded('audits', fn () => $this->audits->map(fn ($audit) => [
                 'id' => $audit->id,

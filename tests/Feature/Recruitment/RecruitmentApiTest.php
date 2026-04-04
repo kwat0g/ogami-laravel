@@ -6,6 +6,7 @@ namespace Tests\Feature\Recruitment;
 
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Position;
+use App\Domains\HR\Models\SalaryGrade;
 use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\JobPosting;
 use App\Domains\HR\Recruitment\Models\JobRequisition;
@@ -39,6 +40,7 @@ final class RecruitmentApiTest extends TestCase
             'recruitment.postings.create',
             'recruitment.postings.publish',
             'recruitment.applications.view',
+            'recruitment.applications.create',
             'recruitment.applications.review',
             'recruitment.applications.shortlist',
             'recruitment.applications.reject',
@@ -119,6 +121,43 @@ final class RecruitmentApiTest extends TestCase
             ->assertOk();
     }
 
+    public function test_can_create_direct_posting_without_requisition(): void
+    {
+        $department = Department::query()->inRandomOrder()->firstOrFail();
+        $position = Position::query()->where('department_id', $department->id)->inRandomOrder()->firstOrFail();
+        $salaryGrade = SalaryGrade::query()->inRandomOrder()->firstOrFail();
+
+        $response = $this->actingAs($this->hrManager)
+            ->postJson('/api/v1/recruitment/postings', [
+                'department_id' => $department->id,
+                'position_id' => $position->id,
+                'salary_grade_id' => $salaryGrade->id,
+                'headcount' => 2,
+                'title' => 'Assembly Operator',
+                'description' => 'This posting is for direct recruitment to support increasing production demand this quarter.',
+                'requirements' => 'At least one year manufacturing experience and good attendance record.',
+                'employment_type' => 'regular',
+                'is_internal' => false,
+                'is_external' => true,
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.job_requisition_id', null)
+            ->assertJsonPath('data.department.id', $department->id)
+            ->assertJsonPath('data.position.id', $position->id)
+            ->assertJsonPath('data.salary_grade.id', $salaryGrade->id)
+            ->assertJsonPath('data.headcount', 2);
+
+        $postingUlid = (string) $response->json('data.ulid');
+
+        $this->actingAs($this->hrManager)
+            ->getJson("/api/v1/recruitment/postings/{$postingUlid}")
+            ->assertOk()
+            ->assertJsonPath('data.job_requisition_id', null)
+            ->assertJsonPath('data.department.id', $department->id)
+            ->assertJsonPath('data.position.id', $position->id);
+    }
+
     public function test_can_list_applications(): void
     {
         Application::factory()->count(3)->create();
@@ -126,6 +165,30 @@ final class RecruitmentApiTest extends TestCase
         $this->actingAs($this->hrManager)
             ->getJson('/api/v1/recruitment/applications')
             ->assertOk();
+    }
+
+    public function test_can_create_application_for_direct_posting(): void
+    {
+        $posting = JobPosting::factory()->direct()->published()->create();
+
+        $this->actingAs($this->hrManager)
+            ->postJson('/api/v1/recruitment/applications', [
+                'job_posting_id' => $posting->id,
+                'candidate' => [
+                    'first_name' => 'Jose',
+                    'last_name' => 'Dela Cruz',
+                    'email' => 'jose.delacruz.direct@example.test',
+                    'phone' => '09171234567',
+                    'source' => 'walk_in',
+                ],
+                'source' => 'walk_in',
+                'cover_letter' => 'Experienced in production line setup and machine operation.',
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.posting.ulid', $posting->ulid)
+            ->assertJsonPath('data.posting.requisition.ulid', null)
+            ->assertJsonPath('data.posting.requisition.department', $posting->department?->name)
+            ->assertJsonPath('data.posting.requisition.position', $posting->position?->title);
     }
 
     public function test_can_view_application_detail(): void
@@ -184,5 +247,29 @@ final class RecruitmentApiTest extends TestCase
         $this->actingAs($this->hrManager)
             ->getJson('/api/v1/recruitment/reports/pipeline')
             ->assertOk();
+    }
+
+    public function test_can_list_interviewer_options_for_scheduler_dropdown(): void
+    {
+        $hrDepartment = Department::query()->where('code', 'HR')->first();
+        if ($hrDepartment === null) {
+            $hrDepartment = Department::factory()->create(['code' => 'HR', 'name' => 'Human Resources']);
+        }
+
+        $eligibleInterviewer = User::factory()->create(['name' => 'HR Officer Interviewer']);
+        $eligibleInterviewer->assignRole('officer');
+        $eligibleInterviewer->departments()->attach($hrDepartment->id, ['is_primary' => true]);
+
+        $nonEligibleInterviewer = User::factory()->create(['name' => 'Production Manager']);
+        $nonEligibleInterviewer->assignRole('manager');
+
+        $response = $this->actingAs($this->hrManager)
+            ->getJson('/api/v1/recruitment/interviewers/options?search=HR')
+            ->assertOk();
+
+        $ids = collect($response->json('data'))->pluck('id')->all();
+
+        $this->assertContains($eligibleInterviewer->id, $ids);
+        $this->assertNotContains($nonEligibleInterviewer->id, $ids);
     }
 }

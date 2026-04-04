@@ -12,9 +12,30 @@ final class HiringPolicy
 {
     use HandlesAuthorization;
 
+    private function isInHrDepartment(User $user): bool
+    {
+        return $user->departments()->where('departments.code', 'HR')->exists()
+            || $user->primaryDepartment?->code === 'HR'
+            || $user->employee?->department?->code === 'HR';
+    }
+
+    private function isHrManager(User $user): bool
+    {
+        return $user->hasRole('manager')
+            && $this->isInHrDepartment($user);
+    }
+
+    private function hasHrHiringAccess(User $user): bool
+    {
+        return $user->hasPermissionTo('recruitment.hiring.execute')
+            || $user->hasPermissionTo('hr.full_access')
+            || $this->isHrManager($user)
+            || (($user->hasRole('officer') || $user->hasRole('head')) && $this->isInHrDepartment($user));
+    }
+
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('admin') || $user->hasRole('super_admin')) {
             return true;
         }
 
@@ -23,11 +44,11 @@ final class HiringPolicy
 
     public function execute(User $user): bool
     {
-        return $user->hasPermissionTo('recruitment.hiring.execute');
+        return $this->hasHrHiringAccess($user);
     }
 
     public function approve(User $user): bool
     {
-        return $user->hasPermissionTo('recruitment.hiring.approve');
+        return $this->hasHrHiringAccess($user);
     }
 }

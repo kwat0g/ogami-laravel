@@ -30,6 +30,7 @@ export default function WorkCenterListPage() {
       toast.success('Work center created.')
       setShowForm(false)
       setForm({ name: '', code: '', description: '', hourly_labor_rate: '', hourly_overhead_rate: '', capacity_hours_per_day: '' })
+    } catch (e) { console.error(e); }
   }
 
   return (

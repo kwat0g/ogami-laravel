@@ -72,12 +72,18 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         ->name('applications.reject');
     Route::post('applications/{application}/withdraw', [ApplicationController::class, 'withdraw'])
         ->name('applications.withdraw');
+    Route::get('applications/{application}/resume', [ApplicationController::class, 'downloadResume'])
+        ->name('applications.resume');
 
     // ── Interviews ───────────────────────────────────────────────────────
+    Route::get('interviewers/options', [InterviewController::class, 'interviewerOptions'])
+        ->name('interviewers.options');
     Route::apiResource('interviews', InterviewController::class)
         ->except(['destroy']);
     Route::post('interviews/{interview}/cancel', [InterviewController::class, 'cancel'])
         ->name('interviews.cancel');
+    Route::post('interviews/{interview}/start', [InterviewController::class, 'start'])
+        ->name('interviews.start');
     Route::post('interviews/{interview}/no-show', [InterviewController::class, 'markNoShow'])
         ->name('interviews.no-show');
     Route::post('interviews/{interview}/complete', [InterviewController::class, 'complete'])

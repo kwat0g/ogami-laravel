@@ -64,6 +64,8 @@ function lazyWithRetry<T extends React.ComponentType<any>>(importFunc: () => Pro
 
 // Lazy-loaded pages
 const LoginPage = lazyWithRetry(() => import('@/pages/LoginPage'))
+const LandingPage = lazyWithRetry(() => import('@/pages/public/LandingPage'))
+const RecruitPage = lazyWithRetry(() => import('@/pages/public/RecruitPage'))
 const Forbidden = lazyWithRetry(() => import('@/pages/Forbidden'))
 const NotFound = lazyWithRetry(() => import('@/pages/NotFound'))
 const Dashboard = lazyWithRetry(() => import('@/pages/Dashboard'))
@@ -217,8 +219,6 @@ const ItemMasterFormPage               = lazyWithRetry(() => import('@/pages/inv
 const WarehouseLocationsPage           = lazyWithRetry(() => import('@/pages/inventory/WarehouseLocationsPage'))
 const StockBalancePage                 = lazyWithRetry(() => import('@/pages/inventory/StockBalancePage'))
 const StockLedgerPage                  = lazyWithRetry(() => import('@/pages/inventory/StockLedgerPage'))
-const StockAdjustmentsPage             = lazyWithRetry(() => import('@/pages/inventory/StockAdjustmentsPage'))
-const InventoryValuationPage           = lazyWithRetry(() => import('@/pages/inventory/InventoryValuationPage'))
 const InventoryAnalyticsPage           = lazyWithRetry(() => import('@/pages/inventory/InventoryAnalyticsPage'))
 const PhysicalCountPage                = lazyWithRetry(() => import('@/pages/inventory/PhysicalCountPage'))
 const MaterialRequisitionListPage      = lazyWithRetry(() => import('@/pages/inventory/MaterialRequisitionListPage'))
@@ -380,6 +380,10 @@ const withSuspense = (node: React.ReactNode) => (
 )
 
 const router = createBrowserRouter([
+  // ── Public landing page ────────────────────────────────────────────────
+  { path: '/', element: withSuspense(<LandingPage />) },
+  { path: '/recruit', element: withSuspense(<RecruitPage />) },
+
   // ── Auth shell ───────────────────────────────────────────────────────────
   {
     element: <AuthLayout />,
@@ -392,7 +396,7 @@ const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { index: true, element: <RoleLandingRedirect /> },
+      { path: '/home', element: <RoleLandingRedirect /> },
       { path: '/dashboard', element: withSuspense(<Dashboard />) },
       { path: '/dashboard/executive-analytics', element: withSuspense(guard('reports.financial_statements', <ExecutiveAnalyticsDashboard />)) },
 
@@ -424,11 +428,11 @@ const router = createBrowserRouter([
       { path: '/hr/loans/:ulid', element: withSuspense(guard('hr.full_access', <LoanDetailPage />)) },
 
       // HR — Recruitment (consolidated tabbed page + detail/form pages)
-      { path: '/hr/recruitment', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view|recruitment.requisitions.create|recruitment.interviews.evaluate', <RecruitmentPage />)) },
+      { path: '/hr/recruitment', element: withSuspense(guard('hr.full_access|recruitment.postings.view|recruitment.applications.view|recruitment.interviews.evaluate|recruitment.offers.view|recruitment.candidates.view', <RecruitmentPage />)) },
       { path: '/hr/recruitment/requisitions/new', element: withSuspense(guard('hr.full_access|recruitment.requisitions.create', <RequisitionFormPage />)) },
       { path: '/hr/recruitment/requisitions/:ulid', element: withSuspense(guard('hr.full_access|recruitment.requisitions.view', <RequisitionDetailPage />)) },
       { path: '/hr/recruitment/requisitions/:ulid/edit', element: withSuspense(guard('hr.full_access|recruitment.requisitions.edit', <RequisitionFormPage />)) },
-      { path: '/hr/recruitment/applications/new', element: withSuspense(guard('hr.full_access|recruitment.applications.review', <ApplicationFormPage />)) },
+      { path: '/hr/recruitment/applications/new', element: withSuspense(guard('hr.full_access|recruitment.applications.create', <ApplicationFormPage />)) },
       { path: '/hr/recruitment/applications/:ulid', element: withSuspense(guard('hr.full_access|recruitment.applications.view', <ApplicationDetailPage />)) },
       { path: '/hr/recruitment/postings/new', element: withSuspense(guard('hr.full_access|recruitment.postings.create', <JobPostingFormPage />)) },
       { path: '/hr/recruitment/postings/:ulid', element: withSuspense(guard('hr.full_access|recruitment.postings.view', <JobPostingDetailPage />)) },
@@ -568,11 +572,9 @@ const router = createBrowserRouter([
       { path: '/inventory/locations', element: withSuspense(guard('inventory.locations.view', <WarehouseLocationsPage />)) },
       { path: '/inventory/stock', element: withSuspense(guard('inventory.stock.view', <StockBalancePage />)) },
       { path: '/inventory/ledger', element: withSuspense(guard('inventory.stock.view', <StockLedgerPage />)) },
-      { path: '/inventory/adjustments', element: withSuspense(guard('inventory.adjustments.create', <StockAdjustmentsPage />)) },
       { path: '/inventory/requisitions', element: withSuspense(guard('inventory.mrq.view', <MaterialRequisitionListPage />)) },
       { path: '/inventory/requisitions/new', element: withSuspense(guard('inventory.mrq.create', <CreateMaterialRequisitionPage />)) },
       { path: '/inventory/requisitions/:ulid', element: withSuspense(guard('inventory.mrq.view', <MaterialRequisitionDetailPage />)) },
-      { path: '/inventory/valuation', element: withSuspense(guard('inventory.stock.view', <InventoryValuationPage />)) },
       { path: '/inventory/physical-count', element: withSuspense(guard('inventory.adjustments.create', <PhysicalCountPage />)) },
       { path: '/inventory/transfers', element: withSuspense(guard('inventory.transfers.manage', <StockTransferPage />)) },
       { path: '/inventory/analytics', element: withSuspense(guard('inventory.stock.view', <InventoryAnalyticsPage />)) },

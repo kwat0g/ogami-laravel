@@ -48,7 +48,8 @@ export const useAuthStore = create<AuthState>()(
       // the Spatie permissions returned by the backend.
       // Admin's system.* permissions are seeded; they do NOT have HR/payroll
       // permissions (per ogami_role_permission_matrix.md).
-      return user.permissions.includes(permission)
+      // Supports pipe-separated OR syntax: 'perm.a|perm.b' means "has either"
+      return permission.split('|').some(p => user.permissions.includes(p.trim()))
     },
 
     hasRole: (role) =>

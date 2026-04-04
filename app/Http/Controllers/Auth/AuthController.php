@@ -41,6 +41,10 @@ class AuthController extends Controller
         // Token-based clients (tests, API, mobile) continue to use Bearer tokens.
         if (EnsureFrontendRequestsAreStateful::fromFrontend($request)) {
             Auth::guard('web')->login($result['user']);
+            // Ensure the authenticated session is persisted on a fresh session ID.
+            // Without regeneration, rapid logout/login cycles can intermittently
+            // keep the client on an invalidated session and produce immediate 401.
+            $request->session()->regenerate();
         }
 
         return $this->successResponse([

@@ -22,15 +22,34 @@ export type JobRequisitionFormValues = z.infer<typeof jobRequisitionSchema>
 // ── Job Posting Schemas ─────────────────────────────────────────────────────
 
 export const jobPostingSchema = z.object({
-  requisition_id: z.coerce.number({ required_error: 'Requisition is required' }).positive(),
+  job_requisition_id: z.coerce.number().positive().optional(),
+  department_id: z.coerce.number().positive().optional(),
+  position_id: z.coerce.number().positive().optional(),
+  salary_grade_id: z.coerce.number().positive().optional(),
+  headcount: z.coerce.number().min(1).optional(),
   title: z.string().trim().min(1, 'Title is required').max(200),
   description: z.string().trim().min(50, 'Description must be at least 50 characters').max(10000),
-  requirements: z.string().trim().max(5000).optional(),
+  requirements: z.string().trim().min(20, 'Requirements must be at least 20 characters').max(5000),
   salary_range_from: z.coerce.number().min(0).optional(),
   salary_range_to: z.coerce.number().min(0).optional(),
   posting_date: z.string().trim().min(1, 'Posting date is required'),
   closing_date: z.string().trim().min(1, 'Closing date is required'),
   is_internal: z.boolean().default(false),
+}).superRefine((data, ctx) => {
+  if (!data.job_requisition_id) {
+    if (!data.department_id) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['department_id'], message: 'Department is required for direct posting' })
+    }
+    if (!data.position_id) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['position_id'], message: 'Position is required for direct posting' })
+    }
+    if (!data.salary_grade_id) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['salary_grade_id'], message: 'Salary grade is required for direct posting' })
+    }
+    if (!data.headcount) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['headcount'], message: 'Headcount is required for direct posting' })
+    }
+  }
 })
 
 export type JobPostingFormValues = z.infer<typeof jobPostingSchema>

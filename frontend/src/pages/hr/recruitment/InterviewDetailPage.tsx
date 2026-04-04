@@ -4,8 +4,6 @@ import api from '@/lib/api'
 import StatusBadge from '@/components/recruitment/StatusBadge'
 import InterviewScorecardForm from '@/components/recruitment/InterviewScorecardForm'
 import { useSubmitEvaluation, useInterviewAction } from '@/hooks/useRecruitment'
-import PermissionGuard from '@/components/ui/PermissionGuard'
-import { PERMISSIONS } from '@/lib/permissions'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -38,6 +36,7 @@ export default function InterviewDetailPage() {
   }
 
   const isScheduled = interview.status === 'scheduled'
+  const isInProgress = interview.status === 'in_progress'
   const isCompleted = interview.status === 'completed'
   const isTerminal = interview.status === 'cancelled' || interview.status === 'no_show'
 
@@ -62,11 +61,11 @@ export default function InterviewDetailPage() {
           {isScheduled && (
             <>
               <button
-                onClick={() => handleAction('complete')}
+                onClick={() => handleAction('start')}
                 disabled={interviewAction.isPending}
-                className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
               >
-                Mark Completed
+                Start Interview
               </button>
               <button
                 onClick={() => handleAction('no-show')}
@@ -74,6 +73,18 @@ export default function InterviewDetailPage() {
                 className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
               >
                 Mark No-Show
+              </button>
+            </>
+          )}
+
+          {isInProgress && (
+            <>
+              <button
+                onClick={() => handleAction('complete')}
+                disabled={interviewAction.isPending}
+                className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+              >
+                Mark Completed
               </button>
               <div className="flex items-center gap-2">
                 <input
@@ -160,7 +171,7 @@ export default function InterviewDetailPage() {
             </div>
           )}
         </div>
-      ) : (isCompleted || isScheduled) ? (
+      ) : (isCompleted || isInProgress) ? (
         <InterviewScorecardForm
           interviewId={interview?.id}
           onSubmit={async (data) => {

@@ -27,6 +27,7 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     Route::post('boms/{bom}/restore', [BomController::class, 'restore'])->middleware('throttle:api-action');
     Route::delete('boms/{bom}/force', [BomController::class, 'forceDelete'])->middleware('throttle:api-action');
     Route::get('boms/{bom}/cost-breakdown', [BomController::class, 'costBreakdown']);
+    Route::get('boms/{bom}/cost-history', [BomController::class, 'costHistory']);
     Route::post('boms/{bom}/rollup-cost', [BomController::class, 'rollupCost'])->middleware('throttle:api-action');
     Route::get('boms/{bom}/cost-compare', [BomController::class, 'costCompare']);
 

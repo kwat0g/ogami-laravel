@@ -12,6 +12,22 @@ final class OfferPolicy
 {
     use HandlesAuthorization;
 
+    private function isHrManager(User $user): bool
+    {
+        return $user->hasRole('manager')
+            && $user->departments()->where('code', 'HR')->exists();
+    }
+
+    private function canAccessRecruitment(User $user): bool
+    {
+        $isHrOfficer = $user->hasRole('officer')
+            && $user->departments()->where('code', 'HR')->exists();
+        $isHrHead = $user->hasRole('head')
+            && $user->departments()->where('code', 'HR')->exists();
+
+        return $this->isHrManager($user) || $isHrOfficer || $isHrHead;
+    }
+
     public function before(User $user, string $ability): ?bool
     {
         if ($user->hasRole('admin')) {
@@ -23,26 +39,31 @@ final class OfferPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('recruitment.offers.view');
+        return $this->canAccessRecruitment($user)
+            || $user->hasPermissionTo('recruitment.offers.view');
     }
 
     public function view(User $user, JobOffer $offer): bool
     {
-        return $user->hasPermissionTo('recruitment.offers.view');
+        return $this->canAccessRecruitment($user)
+            || $user->hasPermissionTo('recruitment.offers.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('recruitment.offers.create');
+        return $this->isHrManager($user)
+            && $user->hasPermissionTo('recruitment.offers.create');
     }
 
     public function update(User $user, JobOffer $offer): bool
     {
-        return $user->hasPermissionTo('recruitment.offers.create');
+        return $this->isHrManager($user)
+            && $user->hasPermissionTo('recruitment.offers.create');
     }
 
     public function send(User $user, JobOffer $offer): bool
     {
-        return $user->hasPermissionTo('recruitment.offers.send');
+        return $this->isHrManager($user)
+            && $user->hasPermissionTo('recruitment.offers.send');
     }
 }

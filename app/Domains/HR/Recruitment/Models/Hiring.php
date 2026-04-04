@@ -20,7 +20,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $id
  * @property string $ulid
  * @property int $application_id
- * @property int $job_requisition_id
+ * @property int|null $job_requisition_id
  * @property int|null $employee_id
  * @property array<string, mixed>|null $employee_payload
  * @property string $status

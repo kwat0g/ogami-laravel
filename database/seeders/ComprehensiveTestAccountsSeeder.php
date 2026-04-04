@@ -8,522 +8,416 @@ use App\Domains\HR\Models\Employee;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 /**
- * Comprehensive Test Accounts Seeder
+ * ComprehensiveTestAccountsSeeder
  *
- * Creates employee records linked to user accounts for ALL departments.
- * Reversed Hierarchy: Officer (full) → Manager (oversight) → Head (team lead) → Staff (basic)
- *
- * Password Pattern: {Role}@Test1234! (first letter capitalized)
- *
- * Accounts created for ALL 13 departments with 4 roles each (Officer, Manager, Head, Staff)
+ * Purpose:
+ * - Keep a small, reliable set of employee-linked demo accounts for cross-module demos.
+ * - Preserve all employee records while pruning non-essential internal user logins.
+ * - Preserve vendor/client/admin accounts (including portal users).
  */
 class ComprehensiveTestAccountsSeeder extends Seeder
 {
+    /**
+     * Display order for grouped role output.
+     *
+     * @var array<int, string>
+     */
+    private const ROLE_OUTPUT_ORDER = [
+        'super_admin',
+        'admin',
+        'executive',
+        'vice_president',
+        'manager',
+        'head',
+        'officer',
+        'staff',
+        'vendor',
+        'client',
+        'unassigned',
+    ];
+
+    /**
+     * @var array<int, array{email: string, password: string, role: string, position: string}>
+     */
+    private array $newAccounts = [];
+
+    /**
+     * @var array<string, string>
+     */
+    private array $credentialMap = [];
+
+    /**
+     * Essential employee-linked demo accounts across major module owners.
+     *
+     * @var array<int, array{email: string, role: string, department_code: string, password: string, preferred_source_roles: array<int, string>, coverage_department_codes: array<int, string>}>
+     */
+    private const ESSENTIAL_EMPLOYEE_ACCOUNTS = [
+        ['email' => 'demo.hr@ogamierp.local', 'role' => 'manager', 'department_code' => 'HR', 'password' => 'DemoHr@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['HR']],
+        ['email' => 'demo.hr.head@ogamierp.local', 'role' => 'head', 'department_code' => 'HR', 'password' => 'DemoHrHead@1234!', 'preferred_source_roles' => ['head', 'manager', 'officer', 'staff'], 'coverage_department_codes' => ['HR']],
+        ['email' => 'demo.hr.staff@ogamierp.local', 'role' => 'staff', 'department_code' => 'HR', 'password' => 'DemoHrStaff@1234!', 'preferred_source_roles' => ['staff', 'officer', 'head', 'manager'], 'coverage_department_codes' => ['HR']],
+        ['email' => 'demo.acctg@ogamierp.local', 'role' => 'manager', 'department_code' => 'ACCTG', 'password' => 'DemoAcctg@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['ACCTG']],
+        ['email' => 'demo.prod@ogamierp.local', 'role' => 'manager', 'department_code' => 'PROD', 'password' => 'DemoProd@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['PROD', 'PPC', 'PLANT', 'MOLD', 'ISO']],
+        ['email' => 'demo.ops.officer@ogamierp.local', 'role' => 'officer', 'department_code' => 'PROD', 'password' => 'DemoOpsOfficer@1234!', 'preferred_source_roles' => ['officer', 'staff', 'head', 'manager'], 'coverage_department_codes' => ['PROD', 'WH', 'QC']],
+        ['email' => 'demo.qc@ogamierp.local', 'role' => 'manager', 'department_code' => 'QC', 'password' => 'DemoQc@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['QC']],
+        ['email' => 'demo.wh@ogamierp.local', 'role' => 'manager', 'department_code' => 'WH', 'password' => 'DemoWh@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['WH']],
+        ['email' => 'demo.purch@ogamierp.local', 'role' => 'manager', 'department_code' => 'PURCH', 'password' => 'DemoPurch@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['PURCH']],
+        ['email' => 'demo.proc.officer@ogamierp.local', 'role' => 'officer', 'department_code' => 'PURCH', 'password' => 'DemoProcOfficer@1234!', 'preferred_source_roles' => ['officer', 'staff', 'head', 'manager'], 'coverage_department_codes' => ['PURCH']],
+        ['email' => 'demo.sales@ogamierp.local', 'role' => 'manager', 'department_code' => 'SALES', 'password' => 'DemoSales@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['SALES']],
+        ['email' => 'demo.maint@ogamierp.local', 'role' => 'manager', 'department_code' => 'MAINT', 'password' => 'DemoMaint@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['MAINT']],
+        ['email' => 'demo.it@ogamierp.local', 'role' => 'manager', 'department_code' => 'IT', 'password' => 'DemoIt@1234!', 'preferred_source_roles' => ['manager', 'head', 'officer', 'staff'], 'coverage_department_codes' => ['IT']],
+        ['email' => 'demo.approver@ogamierp.local', 'role' => 'vice_president', 'department_code' => 'ACCTG', 'password' => 'DemoVP@1234!', 'preferred_source_roles' => ['head', 'manager', 'officer', 'staff'], 'coverage_department_codes' => ['EXEC', 'ACCTG']],
+    ];
+
+    /**
+     * Extra explicit keep-list emails not tied to employee personas.
+     *
+     * @var array<int, string>
+     */
+    private const EXPLICIT_KEEP_EMAILS = [
+        'admin@ogamierp.local',
+        'superadmin@ogamierp.local',
+        'it.admin@ogamierp.local',
+    ];
+
+    /**
+     * Known fixed credentials for non-employee demo/system accounts.
+     *
+     * @var array<string, string>
+     */
+    private const FIXED_ACCOUNT_PASSWORDS = [
+        'admin@ogamierp.local' => 'Admin@1234567890!',
+        'superadmin@ogamierp.local' => 'SuperAdmin@12345!',
+        'it.admin@ogamierp.local' => 'Manager@12345!',
+    ];
+
+    private const FALLBACK_PASSWORD = 'DemoUser@1234!';
+
     public function run(): void
     {
-        $this->command->info('═══════════════════════════════════════════════════════════════');
-        $this->command->info('  COMPREHENSIVE TEST ACCOUNTS SEEDER');
-        $this->command->info('  Hierarchy: Officer → Manager → Head → Staff');
-        $this->command->info('═══════════════════════════════════════════════════════════════');
+        $essentialUserIds = $this->ensureEssentialEmployeeAccounts();
+        $this->pruneNonEssentialInternalUsers($essentialUserIds);
 
-        $this->seedHREmployees();
-        $this->seedAccountingEmployees();
-        $this->seedProductionEmployees();
-        $this->seedQCEmployees();
-        $this->seedMoldEmployees();
-        $this->seedPlantEmployees();
-        $this->seedWarehouseEmployees();
-        $this->seedPPCEmployees();
-        $this->seedMaintenanceEmployees();
-        $this->seedISOEmployees();
-        $this->seedPurchasingEmployees();
-        $this->seedSalesEmployees();
-        $this->seedITEmployees();
-        $this->seedExecutiveEmployees();
+        $this->syncAndCaptureAllCredentials();
 
-        $this->command->info('');
-        $this->command->info('═══════════════════════════════════════════════════════════════');
-        $this->command->info('  ALL TEST ACCOUNTS SUMMARY (52 accounts)');
-        $this->command->info('═══════════════════════════════════════════════════════════════');
-        $this->printAccountSummary();
+        $this->printSummary();
+        $this->writeCredentialsReport();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // HR DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedHREmployees(): void
+    /**
+     * @return array<int, int>
+     */
+    private function ensureEssentialEmployeeAccounts(): array
     {
-        $this->command->info('');
-        $this->command->info('─ HR Department ───────────────────────────────────────────────');
+        $keptUserIds = [];
+        $usedEmployeeIds = [];
 
-        $employees = [
-            ['code' => 'EMP-COMP-HR-001', 'first_name' => 'Maria', 'middle_name' => 'Reyes', 'last_name' => 'Santos', 'email' => 'hr.officer@ogamierp.local', 'role' => 'officer', 'position' => 'HR-OFF', 'salary' => 4500000, 'user_name' => 'Maria Santos (HR Officer)'],
-            ['code' => 'EMP-COMP-HR-002', 'first_name' => 'Grace', 'middle_name' => 'Mendoza', 'last_name' => 'Torres', 'email' => 'hr.manager@ogamierp.local', 'role' => 'manager', 'position' => 'HR-MGR', 'salary' => 4000000, 'user_name' => 'Grace Torres (HR Manager)'],
-            ['code' => 'EMP-COMP-HR-003', 'first_name' => 'Ricardo', 'middle_name' => 'Bautista', 'last_name' => 'Cruz', 'email' => 'hr.head@ogamierp.local', 'role' => 'head', 'position' => 'HR-HEAD', 'salary' => 2800000, 'user_name' => 'Ricardo Cruz (HR Head)'],
-            ['code' => 'EMP-COMP-HR-004', 'first_name' => 'Juan', 'middle_name' => 'Dela', 'last_name' => 'Cruz', 'email' => 'hr.staff@ogamierp.local', 'role' => 'staff', 'position' => 'HR-STAFF', 'salary' => 1800000, 'user_name' => 'Juan Dela Cruz (HR Staff)'],
-        ];
+        foreach (self::ESSENTIAL_EMPLOYEE_ACCOUNTS as $account) {
+            $departmentId = (int) (DB::table('departments')->where('code', $account['department_code'])->value('id') ?? 0);
+            if ($departmentId === 0) {
+                continue;
+            }
 
-        $this->createEmployeesWithUsers($employees, 'HR');
+            $employee = $this->resolveSourceEmployee($departmentId, $account['preferred_source_roles'], $usedEmployeeIds);
+
+            if (! $employee) {
+                continue;
+            }
+
+            $existingWithTargetEmail = User::query()->where('email', $account['email'])->first();
+            $isNewAccount = $existingWithTargetEmail === null;
+            if ($existingWithTargetEmail && $existingWithTargetEmail->employee_id && $existingWithTargetEmail->employee_id !== $employee->id) {
+                Employee::query()->where('id', $existingWithTargetEmail->employee_id)->update(['user_id' => null]);
+            }
+
+            $user = User::updateOrCreate(
+                ['email' => $account['email']],
+                [
+                    'name' => trim($employee->first_name.' '.$employee->last_name),
+                    'password' => Hash::make($account['password']),
+                    'department_id' => $departmentId,
+                    'employee_id' => $employee->id,
+                    'email_verified_at' => now(),
+                    'password_changed_at' => now(),
+                ]
+            );
+
+            $this->credentialMap[$account['email']] = $account['password'];
+
+            $user->syncRoles([$account['role']]);
+
+            if ($employee->user_id !== $user->id) {
+                $employee->user_id = $user->id;
+                $employee->save();
+            }
+
+            foreach ($account['coverage_department_codes'] as $index => $coverageCode) {
+                $coverageDepartmentId = (int) (DB::table('departments')->where('code', $coverageCode)->value('id') ?? 0);
+                if ($coverageDepartmentId === 0) {
+                    continue;
+                }
+
+                DB::table('user_department_access')->updateOrInsert(
+                    [
+                        'user_id' => $user->id,
+                        'department_id' => $coverageDepartmentId,
+                    ],
+                    [
+                        'is_primary' => $index === 0,
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
+            }
+
+            $usedEmployeeIds[] = $employee->id;
+            $keptUserIds[] = $user->id;
+
+            if ($isNewAccount) {
+                $position = (string) (DB::table('positions')->where('id', $employee->position_id)->value('title') ?? 'N/A');
+
+                $this->newAccounts[] = [
+                    'email' => $account['email'],
+                    'password' => $account['password'],
+                    'role' => $account['role'],
+                    'position' => $position,
+                ];
+            }
+        }
+
+        return $keptUserIds;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // ACCOUNTING DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedAccountingEmployees(): void
+    private function syncAndCaptureAllCredentials(): void
     {
-        $this->command->info('');
-        $this->command->info('─ ACCTG Department ────────────────────────────────────────────');
+        /** @var \Illuminate\Support\Collection<int, User> $users */
+        $users = User::query()
+            ->with(['roles:id,name', 'employee:id,position_id'])
+            ->orderBy('email')
+            ->get();
 
-        $employees = [
-            ['code' => 'EMP-COMP-ACCT-001', 'first_name' => 'Amelia', 'middle_name' => 'Dela Cruz', 'last_name' => 'Cordero', 'email' => 'acctg.officer@ogamierp.local', 'role' => 'officer', 'position' => 'ACCT-OFF', 'salary' => 5500000, 'user_name' => 'Amelia Cordero (Accounting Officer)'],
-            ['code' => 'EMP-COMP-ACCT-002', 'first_name' => 'Anna Marie', 'middle_name' => 'Cruz', 'last_name' => 'Lim', 'email' => 'acctg.manager@ogamierp.local', 'role' => 'manager', 'position' => 'ACCT-MGR', 'salary' => 4800000, 'user_name' => 'Anna Marie Lim (Accounting Manager)'],
-            ['code' => 'EMP-COMP-ACCT-003', 'first_name' => 'Roberto', 'middle_name' => ' Santos', 'last_name' => 'Garcia', 'email' => 'acctg.head@ogamierp.local', 'role' => 'head', 'position' => 'ACCT-HEAD', 'salary' => 3200000, 'user_name' => 'Roberto Garcia (Accounting Head)'],
-            ['code' => 'EMP-COMP-ACCT-004', 'first_name' => 'Carmen', 'middle_name' => 'Reyes', 'last_name' => 'Diaz', 'email' => 'acctg.staff@ogamierp.local', 'role' => 'staff', 'position' => 'ACCT-STAFF', 'salary' => 2000000, 'user_name' => 'Carmen Diaz (Accounting Staff)'],
-        ];
+        foreach ($users as $user) {
+            $knownPassword = $this->credentialMap[$user->email]
+                ?? self::FIXED_ACCOUNT_PASSWORDS[$user->email]
+                ?? self::FALLBACK_PASSWORD;
 
-        $this->createEmployeesWithUsers($employees, 'ACCTG');
+            $user->password = Hash::make($knownPassword);
+            $user->password_changed_at = now();
+            $user->save();
+
+            $this->credentialMap[$user->email] = $knownPassword;
+        }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PRODUCTION DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedProductionEmployees(): void
+    /**
+     * @param array<int, string> $preferredRoles
+     * @param array<int, int> $usedEmployeeIds
+     */
+    private function resolveSourceEmployee(int $departmentId, array $preferredRoles, array $usedEmployeeIds): ?Employee
     {
-        $this->command->info('');
-        $this->command->info('─ PROD Department ─────────────────────────────────────────────');
+        /** @var \Illuminate\Support\Collection<int, Employee> $employees */
+        $employees = Employee::query()
+            ->where('department_id', $departmentId)
+            ->whereNotIn('id', $usedEmployeeIds)
+            ->get();
 
-        $employees = [
-            ['code' => 'EMP-COMP-PROD-001', 'first_name' => 'Elena', 'middle_name' => 'Diaz', 'last_name' => 'Rodriguez', 'email' => 'prod.officer@ogamierp.local', 'role' => 'officer', 'position' => 'PROD-OFF', 'salary' => 4500000, 'user_name' => 'Elena Rodriguez (Production Officer)'],
-            ['code' => 'EMP-COMP-PROD-002', 'first_name' => 'Miguel', 'middle_name' => 'Santos', 'last_name' => 'Fernandez', 'email' => 'prod.manager@ogamierp.local', 'role' => 'manager', 'position' => 'PROD-MGR', 'salary' => 4000000, 'user_name' => 'Miguel Fernandez (Production Manager)'],
-            ['code' => 'EMP-COMP-PROD-003', 'first_name' => 'Sofia', 'middle_name' => 'Cruz', 'last_name' => 'Reyes', 'email' => 'prod.head@ogamierp.local', 'role' => 'head', 'position' => 'PROD-HEAD', 'salary' => 3000000, 'user_name' => 'Sofia Reyes (Production Head)'],
-            ['code' => 'EMP-COMP-PROD-004', 'first_name' => 'Jose', 'middle_name' => 'Garcia', 'last_name' => 'Martinez', 'email' => 'prod.staff@ogamierp.local', 'role' => 'staff', 'position' => 'PROD-STAFF', 'salary' => 1900000, 'user_name' => 'Jose Martinez (Production Staff)'],
-        ];
+        if ($employees->isEmpty()) {
+            return null;
+        }
 
-        $this->createEmployeesWithUsers($employees, 'PROD');
+        foreach ($preferredRoles as $role) {
+            foreach ($employees as $employee) {
+                if (! $employee->user_id) {
+                    continue;
+                }
+
+                $sourceUser = User::query()->find($employee->user_id);
+                if ($sourceUser && $sourceUser->hasRole($role)) {
+                    return $employee;
+                }
+            }
+        }
+
+        return $employees->first();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // QC DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedQCEmployees(): void
+    /**
+     * @param array<int, int> $essentialUserIds
+     */
+    private function pruneNonEssentialInternalUsers(array $essentialUserIds): int
     {
-        $this->command->info('');
-        $this->command->info('─ QC Department ───────────────────────────────────────────────');
+        $explicitKeepIds = User::query()
+            ->whereIn('email', self::EXPLICIT_KEEP_EMAILS)
+            ->pluck('id')
+            ->all();
 
-        $employees = [
-            ['code' => 'EMP-COMP-QC-001', 'first_name' => 'Patricia', 'middle_name' => 'Lim', 'last_name' => 'Tan', 'email' => 'qc.officer@ogamierp.local', 'role' => 'officer', 'position' => 'QC-OFF', 'salary' => 4200000, 'user_name' => 'Patricia Tan (QC Officer)'],
-            ['code' => 'EMP-COMP-QC-002', 'first_name' => 'Antonio', 'middle_name' => 'Reyes', 'last_name' => 'Wong', 'email' => 'qc.manager@ogamierp.local', 'role' => 'manager', 'position' => 'QC-MGR', 'salary' => 3800000, 'user_name' => 'Antonio Wong (QC Manager)'],
-            ['code' => 'EMP-COMP-QC-003', 'first_name' => 'Diana', 'middle_name' => 'Cruz', 'last_name' => 'Liu', 'email' => 'qc.head@ogamierp.local', 'role' => 'head', 'position' => 'QC-HEAD', 'salary' => 2800000, 'user_name' => 'Diana Liu (QC Head)'],
-            ['code' => 'EMP-COMP-QC-004', 'first_name' => 'Kevin', 'middle_name' => 'Tan', 'last_name' => 'Zhang', 'email' => 'qc.staff@ogamierp.local', 'role' => 'staff', 'position' => 'QC-STAFF', 'salary' => 1800000, 'user_name' => 'Kevin Zhang (QC Staff)'],
-        ];
+        $protectedRoleIds = User::query()
+            ->whereHas('roles', fn ($q) => $q->whereIn('name', ['admin', 'super_admin', 'vendor', 'client']))
+            ->pluck('id')
+            ->all();
 
-        $this->createEmployeesWithUsers($employees, 'QC');
+        $portalLinkedIds = User::query()
+            ->whereNotNull('vendor_id')
+            ->orWhereNotNull('client_id')
+            ->pluck('id')
+            ->all();
+
+        $keepIds = array_values(array_unique(array_merge(
+            $essentialUserIds,
+            $explicitKeepIds,
+            $protectedRoleIds,
+            $portalLinkedIds
+        )));
+
+        $deleteIds = User::query()
+            ->when($keepIds !== [], fn ($q) => $q->whereNotIn('id', $keepIds))
+            ->pluck('id')
+            ->all();
+
+        if ($deleteIds === []) {
+            return 0;
+        }
+
+        Employee::query()->whereIn('user_id', $deleteIds)->update(['user_id' => null]);
+        User::query()->whereIn('id', $deleteIds)->delete();
+
+        return count($deleteIds);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // MOLD DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedMoldEmployees(): void
+    private function printSummary(): void
     {
-        $this->command->info('');
-        $this->command->info('─ MOLD Department ─────────────────────────────────────────────');
+        $users = User::query()
+            ->with(['roles:id,name', 'employee:id,position_id'])
+            ->orderBy('email')
+            ->get();
 
-        $employees = [
-            ['code' => 'EMP-COMP-MOLD-001', 'first_name' => 'Fernando', 'middle_name' => 'Cruz', 'last_name' => 'Silva', 'email' => 'mold.officer@ogamierp.local', 'role' => 'officer', 'position' => 'MOLD-OFF', 'salary' => 4500000, 'user_name' => 'Fernando Silva (Mold Officer)'],
-            ['code' => 'EMP-COMP-MOLD-002', 'first_name' => 'Isabella', 'middle_name' => 'Reyes', 'last_name' => 'Santos', 'email' => 'mold.manager@ogamierp.local', 'role' => 'manager', 'position' => 'MOLD-MGR', 'salary' => 4000000, 'user_name' => 'Isabella Santos (Mold Manager)'],
-            ['code' => 'EMP-COMP-MOLD-003', 'first_name' => 'Rafael', 'middle_name' => 'Diaz', 'last_name' => 'Cruz', 'email' => 'mold.head@ogamierp.local', 'role' => 'head', 'position' => 'MOLD-HEAD', 'salary' => 3000000, 'user_name' => 'Rafael Cruz (Mold Head)'],
-            ['code' => 'EMP-COMP-MOLD-004', 'first_name' => 'Monica', 'middle_name' => 'Garcia', 'last_name' => 'Lopez', 'email' => 'mold.staff@ogamierp.local', 'role' => 'staff', 'position' => 'MOLD-STAFF', 'salary' => 1900000, 'user_name' => 'Monica Lopez (Mold Staff)'],
-        ];
+        $groupedRows = [];
+        foreach ($users as $user) {
+            $primaryRole = (string) ($user->roles->pluck('name')->first() ?? 'unassigned');
+            $position = 'N/A';
+            if ($user->employee?->position_id) {
+                $position = (string) (DB::table('positions')->where('id', $user->employee->position_id)->value('title') ?? 'N/A');
+            }
 
-        $this->createEmployeesWithUsers($employees, 'MOLD');
-    }
+            $groupedRows[$primaryRole] ??= [];
+            $groupedRows[$primaryRole][] = [
+                $user->email,
+                $this->credentialMap[$user->email] ?? self::FALLBACK_PASSWORD,
+                $position,
+            ];
+        }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PLANT DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedPlantEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ PLANT Department ────────────────────────────────────────────');
+        $orderedRoleGroups = $this->sortRoleGroups($groupedRows);
 
-        $employees = [
-            ['code' => 'EMP-COMP-PLANT-001', 'first_name' => 'Gabriel', 'middle_name' => 'Santos', 'last_name' => 'Torres', 'email' => 'plant.officer@ogamierp.local', 'role' => 'officer', 'position' => 'PLANT-OFF', 'salary' => 5000000, 'user_name' => 'Gabriel Torres (Plant Officer)'],
-            ['code' => 'EMP-COMP-PLANT-002', 'first_name' => 'Lucia', 'middle_name' => 'Cruz', 'last_name' => 'Fernandez', 'email' => 'plant.manager@ogamierp.local', 'role' => 'manager', 'position' => 'PLANT-MGR', 'salary' => 4500000, 'user_name' => 'Lucia Fernandez (Plant Manager)'],
-            ['code' => 'EMP-COMP-PLANT-003', 'first_name' => 'Eduardo', 'middle_name' => 'Reyes', 'last_name' => 'Garcia', 'email' => 'plant.head@ogamierp.local', 'role' => 'head', 'position' => 'PLANT-HEAD', 'salary' => 3200000, 'user_name' => 'Eduardo Garcia (Plant Head)'],
-            ['code' => 'EMP-COMP-PLANT-004', 'first_name' => 'Mariana', 'middle_name' => 'Diaz', 'last_name' => 'Silva', 'email' => 'plant.staff@ogamierp.local', 'role' => 'staff', 'position' => 'PLANT-STAFF', 'salary' => 2000000, 'user_name' => 'Mariana Silva (Plant Staff)'],
-        ];
+        if ($this->command !== null) {
+            $this->command->info('');
+            $this->command->info('Active credential matrix (grouped by role)');
 
-        $this->createEmployeesWithUsers($employees, 'PLANT');
-    }
+            foreach ($orderedRoleGroups as $role => $rows) {
+                if ($rows === []) {
+                    continue;
+                }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // WAREHOUSE DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedWarehouseEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ WH Department ───────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-WH-001', 'first_name' => 'Hector', 'middle_name' => 'Cruz', 'last_name' => 'Reyes', 'email' => 'wh.officer@ogamierp.local', 'role' => 'officer', 'position' => 'WH-OFF', 'salary' => 4000000, 'user_name' => 'Hector Reyes (Warehouse Officer)'],
-            ['code' => 'EMP-COMP-WH-002', 'first_name' => 'Carmela', 'middle_name' => 'Santos', 'last_name' => 'Diaz', 'email' => 'wh.manager@ogamierp.local', 'role' => 'manager', 'position' => 'WH-MGR', 'salary' => 3500000, 'user_name' => 'Carmela Diaz (Warehouse Manager)'],
-            ['code' => 'EMP-COMP-WH-003', 'first_name' => 'Rodrigo', 'middle_name' => 'Garcia', 'last_name' => 'Cruz', 'email' => 'wh.head@ogamierp.local', 'role' => 'head', 'position' => 'WH-HEAD', 'salary' => 2600000, 'user_name' => 'Rodrigo Cruz (Warehouse Head)'],
-            ['code' => 'EMP-COMP-WH-004', 'first_name' => 'Nina', 'middle_name' => 'Reyes', 'last_name' => 'Torres', 'email' => 'wh.staff@ogamierp.local', 'role' => 'staff', 'position' => 'WH-STAFF', 'salary' => 1700000, 'user_name' => 'Nina Torres (Warehouse Staff)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'WH');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PPC DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedPPCEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ PPC Department ──────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-PPC-001', 'first_name' => 'Ignacio', 'middle_name' => 'Diaz', 'last_name' => 'Santos', 'email' => 'ppc.officer@ogamierp.local', 'role' => 'officer', 'position' => 'PPC-OFF', 'salary' => 4200000, 'user_name' => 'Ignacio Santos (PPC Officer)'],
-            ['code' => 'EMP-COMP-PPC-002', 'first_name' => 'Teresa', 'middle_name' => 'Cruz', 'last_name' => 'Fernandez', 'email' => 'ppc.manager@ogamierp.local', 'role' => 'manager', 'position' => 'PPC-MGR', 'salary' => 3800000, 'user_name' => 'Teresa Fernandez (PPC Manager)'],
-            ['code' => 'EMP-COMP-PPC-003', 'first_name' => 'Samuel', 'middle_name' => 'Reyes', 'last_name' => 'Garcia', 'email' => 'ppc.head@ogamierp.local', 'role' => 'head', 'position' => 'PPC-HEAD', 'salary' => 2800000, 'user_name' => 'Samuel Garcia (PPC Head)'],
-            ['code' => 'EMP-COMP-PPC-004', 'first_name' => 'Olivia', 'middle_name' => 'Santos', 'last_name' => 'Cruz', 'email' => 'ppc.staff@ogamierp.local', 'role' => 'staff', 'position' => 'PPC-STAFF', 'salary' => 1800000, 'user_name' => 'Olivia Cruz (PPC Staff)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'PPC');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // MAINTENANCE DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedMaintenanceEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ MAINT Department ────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-MAINT-001', 'first_name' => 'Julio', 'middle_name' => 'Garcia', 'last_name' => 'Reyes', 'email' => 'maint.officer@ogamierp.local', 'role' => 'officer', 'position' => 'MAINT-OFF', 'salary' => 4000000, 'user_name' => 'Julio Reyes (Maintenance Officer)'],
-            ['code' => 'EMP-COMP-MAINT-002', 'first_name' => 'Rosa', 'middle_name' => 'Diaz', 'last_name' => 'Santos', 'email' => 'maint.manager@ogamierp.local', 'role' => 'manager', 'position' => 'MAINT-MGR', 'salary' => 3600000, 'user_name' => 'Rosa Santos (Maintenance Manager)'],
-            ['code' => 'EMP-COMP-MAINT-003', 'first_name' => 'Victor', 'middle_name' => 'Cruz', 'last_name' => 'Fernandez', 'email' => 'maint.head@ogamierp.local', 'role' => 'head', 'position' => 'MAINT-HEAD', 'salary' => 2700000, 'user_name' => 'Victor Fernandez (Maintenance Head)'],
-            ['code' => 'EMP-COMP-MAINT-004', 'first_name' => 'Paola', 'middle_name' => 'Reyes', 'last_name' => 'Garcia', 'email' => 'maint.staff@ogamierp.local', 'role' => 'staff', 'position' => 'MAINT-STAFF', 'salary' => 1750000, 'user_name' => 'Paola Garcia (Maintenance Staff)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'MAINT');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // ISO DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedISOEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ ISO Department ──────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-ISO-001', 'first_name' => 'Xavier', 'middle_name' => 'Santos', 'last_name' => 'Cruz', 'email' => 'iso.officer@ogamierp.local', 'role' => 'officer', 'position' => 'ISO-OFF', 'salary' => 4200000, 'user_name' => 'Xavier Cruz (ISO Officer)'],
-            ['code' => 'EMP-COMP-ISO-002', 'first_name' => 'Andrea', 'middle_name' => 'Cruz', 'last_name' => 'Diaz', 'email' => 'iso.manager@ogamierp.local', 'role' => 'manager', 'position' => 'ISO-MGR', 'salary' => 3800000, 'user_name' => 'Andrea Diaz (ISO Manager)'],
-            ['code' => 'EMP-COMP-ISO-003', 'first_name' => 'Bruno', 'middle_name' => 'Reyes', 'last_name' => 'Santos', 'email' => 'iso.head@ogamierp.local', 'role' => 'head', 'position' => 'ISO-HEAD', 'salary' => 2800000, 'user_name' => 'Bruno Santos (ISO Head)'],
-            ['code' => 'EMP-COMP-ISO-004', 'first_name' => 'Clara', 'middle_name' => 'Garcia', 'last_name' => 'Fernandez', 'email' => 'iso.staff@ogamierp.local', 'role' => 'staff', 'position' => 'ISO-STAFF', 'salary' => 1800000, 'user_name' => 'Clara Fernandez (ISO Staff)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'ISO');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PURCHASING DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedPurchasingEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ PURCH Department ────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-PURCH-001', 'first_name' => 'Yolanda', 'middle_name' => 'Diaz', 'last_name' => 'Reyes', 'email' => 'purch.officer@ogamierp.local', 'role' => 'officer', 'position' => 'PURCH-OFF', 'salary' => 4200000, 'user_name' => 'Yolanda Reyes (Purchasing Officer)'],
-            ['code' => 'EMP-COMP-PURCH-002', 'first_name' => 'Diego', 'middle_name' => 'Santos', 'last_name' => 'Cruz', 'email' => 'purch.manager@ogamierp.local', 'role' => 'manager', 'position' => 'PURCH-MGR', 'salary' => 3800000, 'user_name' => 'Diego Cruz (Purchasing Manager)'],
-            ['code' => 'EMP-COMP-PURCH-003', 'first_name' => 'Felicia', 'middle_name' => 'Cruz', 'last_name' => 'Garcia', 'email' => 'purch.head@ogamierp.local', 'role' => 'head', 'position' => 'PURCH-HEAD', 'salary' => 2800000, 'user_name' => 'Felicia Garcia (Purchasing Head)'],
-            ['code' => 'EMP-COMP-PURCH-004', 'first_name' => 'Hugo', 'middle_name' => 'Reyes', 'last_name' => 'Santos', 'email' => 'purch.staff@ogamierp.local', 'role' => 'staff', 'position' => 'PURCH-STAFF', 'salary' => 1800000, 'user_name' => 'Hugo Santos (Purchasing Staff)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'PURCH');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // SALES DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedSalesEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ SALES Department ────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-SALES-001', 'first_name' => 'Zara', 'middle_name' => 'Garcia', 'last_name' => 'Cruz', 'email' => 'sales.officer@ogamierp.local', 'role' => 'officer', 'position' => 'SALES-OFF', 'salary' => 4000000, 'user_name' => 'Zara Cruz (Sales Officer)'],
-            ['code' => 'EMP-COMP-SALES-002', 'first_name' => 'Alejandro', 'middle_name' => 'Diaz', 'last_name' => 'Reyes', 'email' => 'sales.manager@ogamierp.local', 'role' => 'manager', 'position' => 'SALES-MGR', 'salary' => 3600000, 'user_name' => 'Alejandro Reyes (Sales Manager)'],
-            ['code' => 'EMP-COMP-SALES-003', 'first_name' => 'Bianca', 'middle_name' => 'Santos', 'last_name' => 'Fernandez', 'email' => 'sales.head@ogamierp.local', 'role' => 'head', 'position' => 'SALES-HEAD', 'salary' => 2700000, 'user_name' => 'Bianca Fernandez (Sales Head)'],
-            ['code' => 'EMP-COMP-SALES-004', 'first_name' => 'Carlos', 'middle_name' => 'Cruz', 'last_name' => 'Garcia', 'email' => 'sales.staff@ogamierp.local', 'role' => 'staff', 'position' => 'SALES-STAFF', 'salary' => 1700000, 'user_name' => 'Carlos Garcia (Sales Staff)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'SALES');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // IT DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedITEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ IT Department ───────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-IT-001', 'first_name' => 'Daniel', 'middle_name' => 'Reyes', 'last_name' => 'Santos', 'email' => 'it.officer@ogamierp.local', 'role' => 'officer', 'position' => 'IT-OFF', 'salary' => 5000000, 'user_name' => 'Daniel Santos (IT Officer)'],
-            ['code' => 'EMP-COMP-IT-002', 'first_name' => 'Elena', 'middle_name' => 'Garcia', 'last_name' => 'Cruz', 'email' => 'it.manager@ogamierp.local', 'role' => 'manager', 'position' => 'IT-MGR', 'salary' => 4500000, 'user_name' => 'Elena Cruz (IT Manager)'],
-            ['code' => 'EMP-COMP-IT-003', 'first_name' => 'Francisco', 'middle_name' => 'Diaz', 'last_name' => 'Reyes', 'email' => 'it.head@ogamierp.local', 'role' => 'head', 'position' => 'IT-HEAD', 'salary' => 3200000, 'user_name' => 'Francisco Reyes (IT Head)'],
-            ['code' => 'EMP-COMP-IT-004', 'first_name' => 'Gina', 'middle_name' => 'Santos', 'last_name' => 'Fernandez', 'email' => 'it.staff@ogamierp.local', 'role' => 'staff', 'position' => 'IT-STAFF', 'salary' => 2000000, 'user_name' => 'Gina Fernandez (IT Staff)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'IT');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // EXECUTIVE DEPARTMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-    private function seedExecutiveEmployees(): void
-    {
-        $this->command->info('');
-        $this->command->info('─ EXEC Department ─────────────────────────────────────────────');
-
-        $employees = [
-            ['code' => 'EMP-COMP-EXEC-001', 'first_name' => 'Antonio', 'middle_name' => 'Cruz', 'last_name' => 'Garcia', 'email' => 'executive@ogamierp.local', 'role' => 'executive', 'position' => 'PRES', 'salary' => 15000000, 'user_name' => 'Antonio Garcia (President)'],
-            ['code' => 'EMP-COMP-EXEC-002', 'first_name' => 'Victoria', 'middle_name' => 'Reyes', 'last_name' => 'Santos', 'email' => 'vp@ogamierp.local', 'role' => 'vice_president', 'position' => 'VP', 'salary' => 12000000, 'user_name' => 'Victoria Santos (VP)'],
-        ];
-
-        $this->createEmployeesWithUsers($employees, 'EXEC');
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // HELPER METHODS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    private function createEmployeesWithUsers(array $employees, string $deptCode): void
-    {
-        $deptId = \DB::table('departments')->where('code', $deptCode)->value('id');
-
-        if (! $deptId) {
-            $this->command->error("  ✗ Department {$deptCode} not found");
+                $this->command->info('');
+                $this->command->info(strtoupper($role).' ('.count($rows).' accounts)');
+                $this->command->table(
+                    ['Email', 'Password', 'Position'],
+                    $rows
+                );
+            }
 
             return;
         }
 
-        foreach ($employees as $emp) {
-            $govIds = \Database\Seeders\Helpers\GovernmentIdHelper::generateCompleteGovIds();
-            $bankDetails = \Database\Seeders\Helpers\GovernmentIdHelper::generateBankDetails($emp['first_name'], $emp['last_name']);
+        // Fallback for non-interactive seeding contexts.
+        logger()->info('Active credential matrix', ['grouped_rows' => $orderedRoleGroups]);
+    }
 
-            $position = DB::table('positions')->where('code', $emp['position'])->first();
-            $positionId = $position->id ?? null;
-            if (!$positionId) {
-                $positionId = DB::table('positions')->insertGetId([
-                    'code' => $emp['position'],
-                    'title' => ucwords(str_replace('-', ' ', strtolower($emp['position']))),
-                    'department_id' => $deptId,
-                    'pay_grade' => 'SG-10',
-                    'is_active' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+    private function writeCredentialsReport(): void
+    {
+        $users = User::query()
+            ->with(['roles:id,name'])
+            ->orderBy('email')
+            ->get();
+
+        $groupedUsers = [];
+        foreach ($users as $user) {
+            $primaryRole = (string) ($user->roles->pluck('name')->first() ?? 'unassigned');
+            $groupedUsers[$primaryRole] ??= [];
+            $groupedUsers[$primaryRole][] = $user;
+        }
+
+        $orderedGroups = $this->sortRoleGroups($groupedUsers);
+
+        $lines = [
+            '# Ogami ERP - Test Account Credentials',
+            '',
+            'Generated: '.now()->format('Y-m-d H:i:s'),
+            '',
+            '## Login URL',
+            'http://localhost:5173/login',
+            '',
+            '## Credentials by Role',
+        ];
+
+        foreach ($orderedGroups as $role => $roleUsers) {
+            if ($roleUsers === []) {
+                continue;
             }
-            $salaryGradeId = null;
-            $payGrade = $position ? $position->pay_grade : 'SG-10';
-            if ($payGrade) {
-                $salaryGradeId = DB::table('salary_grades')->where('code', $payGrade)->value('id');
+
+            $lines[] = '';
+            $lines[] = '### '.strtoupper($role).' ('.count($roleUsers).' accounts)';
+            $lines[] = '';
+            $lines[] = '| Email | Password |';
+            $lines[] = '|-------|----------|';
+
+            foreach ($roleUsers as $user) {
+                $password = $this->credentialMap[$user->email] ?? self::FALLBACK_PASSWORD;
+                $lines[] = sprintf('| %s | %s |', $user->email, $password);
             }
+        }
 
-            // Create or update employee with all required fields
-            $employee = Employee::firstOrCreate(
-                ['employee_code' => $emp['code']],
-                [
-                    'first_name' => $emp['first_name'],
-                    'middle_name' => $emp['middle_name'] ?? null,
-                    'last_name' => $emp['last_name'],
-                    'department_id' => $deptId,
-                    'position_id' => $positionId,
-                    'salary_grade_id' => $salaryGradeId,
-                    'date_of_birth' => '1985-06-15',
-                    'gender' => 'M',
-                    'civil_status' => 'SINGLE',
-                    'qualified_dependents' => 0,
-                    'bir_status' => 'S',
-                    'employment_type' => 'regular',
-                    'employment_status' => 'active',
-                    'date_hired' => now()->subYears(2),
-                    'pay_basis' => 'monthly',
-                    'basic_monthly_rate' => $emp['salary'] ?? 2000000,
-                    'is_minimum_wage_earner' => false,
-                    'is_active' => true,
-                    'onboarding_status' => 'active',
-                    // Government IDs
-                    'sss_no_encrypted' => $govIds['sss_no_encrypted'],
-                    'sss_no_hash' => $govIds['sss_no_hash'],
-                    'tin_encrypted' => $govIds['tin_encrypted'],
-                    'tin_hash' => $govIds['tin_hash'],
-                    'philhealth_no_encrypted' => $govIds['philhealth_no_encrypted'],
-                    'philhealth_no_hash' => $govIds['philhealth_no_hash'],
-                    'pagibig_no_encrypted' => $govIds['pagibig_no_encrypted'],
-                    'pagibig_no_hash' => $govIds['pagibig_no_hash'],
-                    // Bank details
-                    'bank_name' => $bankDetails['bank_name'],
-                    'bank_account_no' => $bankDetails['bank_account_number'],
-                    'bank_account_name' => $bankDetails['bank_account_name'],
-                ]
-            );
+        $lines[] = '';
+        $lines[] = '## Default Rule';
+        $lines[] = '';
+        $lines[] = 'If an account is reseeded and not explicitly listed, the fallback password is:';
+        $lines[] = '';
+        $lines[] = self::FALLBACK_PASSWORD;
+        $lines[] = '';
 
-            // Generate password
-            $password = $emp['password'] ?? $this->generatePassword($emp['role']);
+        file_put_contents(storage_path('app/test-credentials.md'), implode(PHP_EOL, $lines));
 
-            // Create or update user (always sync password so re-seeding doesn't break logins)
-            $user = User::updateOrCreate(
-                ['email' => $emp['email']],
-                [
-                    'name' => $emp['user_name'],
-                    'password' => $password,
-                    'email_verified_at' => now(),
-                    'password_changed_at' => now(),
-                    'department_id' => $deptId,
-                ]
-            );
-
-            $user->syncRoles([$emp['role']]);
-
-            // Link employee to user
-            $employee->user_id = $user->id;
-            $employee->save();
-
-            // Link user to employee
-            $user->employee_id = $employee->id;
-            $user->save();
-
-            // Add department access
-            DB::table('user_department_access')->insertOrIgnore([
-                'user_id' => $user->id,
-                'department_id' => $deptId,
-                'is_primary' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // Assign default shift and baseline leave balances
-            \Database\Seeders\Helpers\EmployeeContextHelper::assignDefaultShift($employee->id);
-            \Database\Seeders\Helpers\EmployeeContextHelper::allocateLeaveBalances($employee->id);
-
-            $this->command->info("  ✓ {$emp['code']}: {$emp['email']} / {$password}");
+        if ($this->command !== null) {
+            $this->command->info('Credentials report updated: storage/app/test-credentials.md');
         }
     }
 
-    private function generatePassword(string $role): string
+    /**
+     * @template T
+     *
+     * @param  array<string, array<int, T>>  $groups
+     * @return array<string, array<int, T>>
+     */
+    private function sortRoleGroups(array $groups): array
     {
-        $rolePasswords = [
-            'officer' => 'Officer@Test1234!',
-            'manager' => 'Manager@Test1234!',
-            'head' => 'Head@Test1234!',
-            'staff' => 'Staff@Test1234!',
-            'executive' => 'Executive@Test1234!',
-            'vice_president' => 'Vice_president@Test1234!',
-        ];
+        $ordered = [];
 
-        return $rolePasswords[$role] ?? ucfirst($role).'@Test1234!';
-    }
+        foreach (self::ROLE_OUTPUT_ORDER as $role) {
+            if (array_key_exists($role, $groups)) {
+                $ordered[$role] = $groups[$role];
+                unset($groups[$role]);
+            }
+        }
 
-    private function printAccountSummary(): void
-    {
-        // Admin and SuperAdmin accounts (system-level, not linked to employees)
-        $this->command->info('');
-        $this->command->info('─ SYSTEM ADMIN ACCOUNTS ───────────────────────────────────────');
-        $this->command->info('  ✓ admin@ogamierp.local / Admin@1234567890!');
-        $this->command->info('  ✓ superadmin@ogamierp.local / SuperAdmin@12345! (ALL ACCESS + SoD BYPASS)');
+        if ($groups !== []) {
+            ksort($groups);
+            foreach ($groups as $role => $rows) {
+                $ordered[$role] = $rows;
+            }
+        }
 
-        $accounts = [
-            ['**ADMIN**', 'admin@ogamierp.local', 'Admin@1234567890!', 'System Admin', 'N/A'],
-            ['**SUPER**', 'superadmin@ogamierp.local', 'SuperAdmin@12345!', 'Super Admin (ALL)', 'N/A'],
-            ['HR', 'hr.officer@ogamierp.local', 'Officer@Test1234!', 'HR Officer', 'EMP-COMP-HR-001'],
-            ['HR', 'hr.manager@ogamierp.local', 'Manager@Test1234!', 'HR Manager', 'EMP-COMP-HR-002'],
-            ['HR', 'hr.head@ogamierp.local', 'Head@Test1234!', 'HR Head', 'EMP-COMP-HR-003'],
-            ['HR', 'hr.staff@ogamierp.local', 'Staff@Test1234!', 'HR Staff', 'EMP-COMP-HR-004'],
-            ['ACCTG', 'acctg.officer@ogamierp.local', 'Officer@Test1234!', 'Accounting Officer', 'EMP-COMP-ACCT-001'],
-            ['ACCTG', 'acctg.manager@ogamierp.local', 'Manager@Test1234!', 'Accounting Manager', 'EMP-COMP-ACCT-002'],
-            ['ACCTG', 'acctg.head@ogamierp.local', 'Head@Test1234!', 'Accounting Head', 'EMP-COMP-ACCT-003'],
-            ['ACCTG', 'acctg.staff@ogamierp.local', 'Staff@Test1234!', 'Accounting Staff', 'EMP-COMP-ACCT-004'],
-            ['PROD', 'prod.officer@ogamierp.local', 'Officer@Test1234!', 'Production Officer', 'EMP-COMP-PROD-001'],
-            ['PROD', 'prod.manager@ogamierp.local', 'Manager@Test1234!', 'Production Manager', 'EMP-COMP-PROD-002'],
-            ['PROD', 'prod.head@ogamierp.local', 'Head@Test1234!', 'Production Head', 'EMP-COMP-PROD-003'],
-            ['PROD', 'prod.staff@ogamierp.local', 'Staff@Test1234!', 'Production Staff', 'EMP-COMP-PROD-004'],
-            ['QC', 'qc.officer@ogamierp.local', 'Officer@Test1234!', 'QC Officer', 'EMP-COMP-QC-001'],
-            ['QC', 'qc.manager@ogamierp.local', 'Manager@Test1234!', 'QC Manager', 'EMP-COMP-QC-002'],
-            ['QC', 'qc.head@ogamierp.local', 'Head@Test1234!', 'QC Head', 'EMP-COMP-QC-003'],
-            ['QC', 'qc.staff@ogamierp.local', 'Staff@Test1234!', 'QC Staff', 'EMP-COMP-QC-004'],
-            ['MOLD', 'mold.officer@ogamierp.local', 'Officer@Test1234!', 'Mold Officer', 'EMP-COMP-MOLD-001'],
-            ['MOLD', 'mold.manager@ogamierp.local', 'Manager@Test1234!', 'Mold Manager', 'EMP-COMP-MOLD-002'],
-            ['MOLD', 'mold.head@ogamierp.local', 'Head@Test1234!', 'Mold Head', 'EMP-COMP-MOLD-003'],
-            ['MOLD', 'mold.staff@ogamierp.local', 'Staff@Test1234!', 'Mold Staff', 'EMP-COMP-MOLD-004'],
-            ['PLANT', 'plant.officer@ogamierp.local', 'Officer@Test1234!', 'Plant Officer', 'EMP-COMP-PLANT-001'],
-            ['PLANT', 'plant.manager@ogamierp.local', 'Manager@Test1234!', 'Plant Manager', 'EMP-COMP-PLANT-002'],
-            ['PLANT', 'plant.head@ogamierp.local', 'Head@Test1234!', 'Plant Head', 'EMP-COMP-PLANT-003'],
-            ['PLANT', 'plant.staff@ogamierp.local', 'Staff@Test1234!', 'Plant Staff', 'EMP-COMP-PLANT-004'],
-            ['WH', 'wh.officer@ogamierp.local', 'Officer@Test1234!', 'Warehouse Officer', 'EMP-COMP-WH-001'],
-            ['WH', 'wh.manager@ogamierp.local', 'Manager@Test1234!', 'Warehouse Manager', 'EMP-COMP-WH-002'],
-            ['WH', 'wh.head@ogamierp.local', 'Head@Test1234!', 'Warehouse Head', 'EMP-COMP-WH-003'],
-            ['WH', 'wh.staff@ogamierp.local', 'Staff@Test1234!', 'Warehouse Staff', 'EMP-COMP-WH-004'],
-            ['PPC', 'ppc.officer@ogamierp.local', 'Officer@Test1234!', 'PPC Officer', 'EMP-COMP-PPC-001'],
-            ['PPC', 'ppc.manager@ogamierp.local', 'Manager@Test1234!', 'PPC Manager', 'EMP-COMP-PPC-002'],
-            ['PPC', 'ppc.head@ogamierp.local', 'Head@Test1234!', 'PPC Head', 'EMP-COMP-PPC-003'],
-            ['PPC', 'ppc.staff@ogamierp.local', 'Staff@Test1234!', 'PPC Staff', 'EMP-COMP-PPC-004'],
-            ['MAINT', 'maint.officer@ogamierp.local', 'Officer@Test1234!', 'Maintenance Officer', 'EMP-COMP-MAINT-001'],
-            ['MAINT', 'maint.manager@ogamierp.local', 'Manager@Test1234!', 'Maintenance Manager', 'EMP-COMP-MAINT-002'],
-            ['MAINT', 'maint.head@ogamierp.local', 'Head@Test1234!', 'Maintenance Head', 'EMP-COMP-MAINT-003'],
-            ['MAINT', 'maint.staff@ogamierp.local', 'Staff@Test1234!', 'Maintenance Staff', 'EMP-COMP-MAINT-004'],
-            ['ISO', 'iso.officer@ogamierp.local', 'Officer@Test1234!', 'ISO Officer', 'EMP-COMP-ISO-001'],
-            ['ISO', 'iso.manager@ogamierp.local', 'Manager@Test1234!', 'ISO Manager', 'EMP-COMP-ISO-002'],
-            ['ISO', 'iso.head@ogamierp.local', 'Head@Test1234!', 'ISO Head', 'EMP-COMP-ISO-003'],
-            ['ISO', 'iso.staff@ogamierp.local', 'Staff@Test1234!', 'ISO Staff', 'EMP-COMP-ISO-004'],
-            ['PURCH', 'purch.officer@ogamierp.local', 'Officer@Test1234!', 'Purchasing Officer', 'EMP-COMP-PURCH-001'],
-            ['PURCH', 'purch.manager@ogamierp.local', 'Manager@Test1234!', 'Purchasing Manager', 'EMP-COMP-PURCH-002'],
-            ['PURCH', 'purch.head@ogamierp.local', 'Head@Test1234!', 'Purchasing Head', 'EMP-COMP-PURCH-003'],
-            ['PURCH', 'purch.staff@ogamierp.local', 'Staff@Test1234!', 'Purchasing Staff', 'EMP-COMP-PURCH-004'],
-            ['SALES', 'sales.officer@ogamierp.local', 'Officer@Test1234!', 'Sales Officer', 'EMP-COMP-SALES-001'],
-            ['SALES', 'sales.manager@ogamierp.local', 'Manager@Test1234!', 'Sales Manager', 'EMP-COMP-SALES-002'],
-            ['SALES', 'sales.head@ogamierp.local', 'Head@Test1234!', 'Sales Head', 'EMP-COMP-SALES-003'],
-            ['SALES', 'sales.staff@ogamierp.local', 'Staff@Test1234!', 'Sales Staff', 'EMP-COMP-SALES-004'],
-            ['IT', 'it.officer@ogamierp.local', 'Officer@Test1234!', 'IT Officer', 'EMP-COMP-IT-001'],
-            ['IT', 'it.manager@ogamierp.local', 'Manager@Test1234!', 'IT Manager', 'EMP-COMP-IT-002'],
-            ['IT', 'it.head@ogamierp.local', 'Head@Test1234!', 'IT Head', 'EMP-COMP-IT-003'],
-            ['IT', 'it.staff@ogamierp.local', 'Staff@Test1234!', 'IT Staff', 'EMP-COMP-IT-004'],
-            ['EXEC', 'executive@ogamierp.local', 'Executive@Test1234!', 'Executive', 'EMP-COMP-EXEC-001'],
-            ['EXEC', 'vp@ogamierp.local', 'Vice_president@Test1234!', 'VP', 'EMP-COMP-EXEC-002'],
-        ];
-
-        $this->command->table(
-            ['Dept', 'Email', 'Password', 'Role', 'Code'],
-            $accounts
-        );
-
-        $this->command->info('');
-        $this->command->info('Total accounts: '.(count($accounts) + 2).' (54 department + 2 system admin)');
-        $this->command->info('');
-        $this->command->info('═══════════════════════════════════════════════════════════════');
-        $this->command->info('  SPECIAL ACCOUNTS');
-        $this->command->info('═══════════════════════════════════════════════════════════════');
-        $this->command->info('  admin@ogamierp.local');
-        $this->command->info('    Role: admin');
-        $this->command->info('    Pass: Admin@1234567890!');
-        $this->command->info('    Access: System settings, user management, reference tables');
-        $this->command->info('');
-        $this->command->info('  superadmin@ogamierp.local');
-        $this->command->info('    Role: super_admin');
-        $this->command->info('    Pass: SuperAdmin@12345!');
-        $this->command->info('    Access: ALL PERMISSIONS (all modules + features)');
-        $this->command->info('    Bypass: SoD checks, workflow approvals, department restrictions');
-        $this->command->info('    Use: Demo/testing - can do ANYTHING in the system');
-        $this->command->info('═══════════════════════════════════════════════════════════════');
-        $this->command->info('');
-        $this->command->info('Password Pattern: {Role}@Test1234! (first letter capitalized)');
-        $this->command->info('Hierarchy: Officer (full) → Manager (oversight) → Head (team lead) → Staff (basic)');
+        return $ordered;
     }
 }

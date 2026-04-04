@@ -13,7 +13,7 @@ export type RequisitionStatus =
 export type PostingStatus = 'draft' | 'published' | 'closed' | 'expired'
 
 export type ApplicationStatus =
-  | 'new' | 'under_review' | 'shortlisted' | 'hired' | 'rejected' | 'withdrawn'
+  | 'new' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'withdrawn'
 
 export type InterviewStatus =
   | 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
@@ -55,6 +55,7 @@ export const statusColors: Record<string, string> = {
   new: 'sky',
   under_review: 'amber',
   shortlisted: 'teal',
+  interviewed: 'blue',
   withdrawn: 'gray',
   scheduled: 'blue',
   in_progress: 'amber',
@@ -131,9 +132,23 @@ export interface RequisitionApproval {
 }
 
 export interface JobPostingListItem {
+  id?: number
   ulid: string
+  job_requisition_id?: number | null
+  department?: { id: number; code: string; name: string } | null
+  position?: { id: number; code: string; title: string } | null
+  salary_grade?: {
+    id: number
+    code: string
+    name: string
+    level: number
+    min_monthly_rate: number
+    max_monthly_rate: number
+  } | null
+  headcount?: number | null
   posting_number: string
   title: string
+  requirement_items?: string[]
   location: string | null
   employment_type: EmploymentType
   is_internal: boolean
@@ -146,10 +161,10 @@ export interface JobPostingListItem {
   views_count: number
   applications_count?: number
   requisition?: {
-    ulid: string
-    requisition_number: string
-    department: string
-    position: string
+    ulid: string | null
+    requisition_number: string | null
+    department: string | { id: number; code: string; name: string } | null
+    position: string | { id: number; code: string; title: string } | null
   }
   created_at: string
 }
@@ -157,6 +172,7 @@ export interface JobPostingListItem {
 export interface JobPosting extends JobPostingListItem {
   description: string
   requirements: string
+  requirement_items?: string[]
   employment_type_label: string
   updated_at: string
 }
@@ -166,8 +182,25 @@ export interface ApplicationListItem {
   application_number: string
   candidate: { id: number; full_name: string; email: string } | null
   posting: {
+    id?: number
     ulid: string
+    posting_number?: string
     title: string
+    salary_grade_id?: number | null
+    salary_grade?: {
+      id: number
+      code: string
+      name: string
+      level: number
+      min_monthly_rate: number
+      max_monthly_rate: number
+    } | null
+    requisition?: {
+      ulid?: string | null
+      requisition_number?: string | null
+      department?: string | null
+      position?: string | null
+    } | null
     department: string
     position: string
   } | null
@@ -200,6 +233,21 @@ export interface InterviewDetail {
     scorecard: ScorecardItem[]
     general_remarks: string | null
     submitted_at: string
+  } | null
+}
+
+export interface RecruitmentInterviewerOption {
+  id: number
+  name: string
+  position: {
+    id: number
+    code: string
+    title: string
+  } | null
+  department: {
+    id: number
+    code: string
+    name: string
   } | null
 }
 
@@ -265,6 +313,7 @@ export interface PreEmploymentRequirementItem {
 
 export interface Application extends ApplicationListItem {
   cover_letter: string | null
+  resume_download_url: string | null
   reviewer: { id: number; name: string } | null
   reviewed_at: string | null
   rejection_reason: string | null
@@ -279,6 +328,7 @@ export interface Application extends ApplicationListItem {
     hired_at: string | null
     start_date: string
     employee_id: number | null
+    employee_ulid: string | null
   } | null
   updated_at: string
 }
@@ -287,7 +337,7 @@ export interface Application extends ApplicationListItem {
 
 export interface RecruitmentDashboard {
   kpis: {
-    open_requisitions: number
+    active_postings: number
     active_applications: number
     interviews_this_week: number
     pending_offers: number

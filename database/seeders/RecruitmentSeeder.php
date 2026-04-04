@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Domains\HR\Models\Department;
 use App\Domains\HR\Models\Position;
+use App\Domains\HR\Models\SalaryGrade;
 use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\Candidate;
 use App\Domains\HR\Recruitment\Models\Hiring;
@@ -41,6 +42,7 @@ class RecruitmentSeeder extends Seeder
         // Get existing departments and positions, or skip if none exist
         $departments = Department::where('is_active', true)->limit(5)->get();
         $positions = Position::where('is_active', true)->limit(10)->get();
+        $salaryGradeIds = SalaryGrade::query()->where('is_active', true)->pluck('id')->all();
 
         if ($departments->isEmpty() || $positions->isEmpty()) {
             $this->command->warn('Skipping RecruitmentSeeder: no departments or positions found. Run DepartmentPositionSeeder first.');
@@ -100,8 +102,9 @@ class RecruitmentSeeder extends Seeder
                 'employment_type' => 'regular',
                 'headcount' => fake()->numberBetween(1, 3),
                 'reason' => 'Business expansion requires additional ' . $pos->title . ' for ' . $dept->name . ' department.',
-                'salary_range_min' => 2000000,
-                'salary_range_max' => 4000000,
+                'salary_grade_id' => ! empty($salaryGradeIds)
+                    ? $salaryGradeIds[$i % count($salaryGradeIds)]
+                    : null,
                 'target_start_date' => now()->addMonths(1)->toDateString(),
                 'status' => $statuses[$i],
                 'approved_at' => now()->subDays(10),

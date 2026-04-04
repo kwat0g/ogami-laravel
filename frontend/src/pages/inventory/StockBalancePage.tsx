@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, AlertCircle, RefreshCw, MapPin } from 'lucide-react'
+import { AlertTriangle, AlertCircle, RefreshCw, MapPin, List } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
 import { useStockBalances, useWarehouseLocations, useStockAdjust } from '@/hooks/useInventory'
@@ -10,11 +10,14 @@ import { toast } from 'sonner'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { ExportButton } from '@/components/ui/ExportButton'
+import { firstErrorMessage } from '@/lib/errorHandler'
 import type { StockBalance } from '@/types/inventory'
 
 interface AdjustState {
   bal: StockBalance
+  mode: 'set' | 'delta'
   newQty: string
+  deltaQty: string
   remarks: string
 }
 
@@ -49,37 +52,72 @@ export default function StockBalancePage(): React.ReactElement {
     toast.success('Stock balances refreshed.')
   }
 
-  const validateAdjust = (): boolean => {
-    if (!adjusting) return false
-    const qty = parseFloat(adjusting.newQty)
-    if (isNaN(qty) || qty < 0) {
-      return false
+  const resolveAdjustedQty = useCallback((state: AdjustState): number | null => {
+    const onHand = parseFloat(state.bal.quantity_on_hand)
+    if (state.mode === 'set') {
+      const qty = parseFloat(state.newQty)
+      if (isNaN(qty) || qty < 0) return null
+      return qty
     }
+
+    const delta = parseFloat(state.deltaQty)
+    if (isNaN(delta) || delta === 0) return null
+    const next = onHand + delta
+    if (next < 0) return null
+    return next
+  }, [])
+
+  const validateAdjust = (): { ok: boolean; reason?: string } => {
+    if (!adjusting) return { ok: false, reason: 'No selected stock record.' }
+
+    const adjustedQty = resolveAdjustedQty(adjusting)
+    if (adjustedQty === null) {
+      if (adjusting.mode === 'delta') {
+        return { ok: false, reason: 'Enter a valid +/- quantity and ensure resulting stock is not negative.' }
+      }
+      return { ok: false, reason: 'Enter a valid non-negative target quantity.' }
+    }
+
     if (adjusting.remarks.trim().length < 10) {
-      return false
+      return { ok: false, reason: 'Reason must be at least 10 characters.' }
     }
-    return true
+
+    return { ok: true }
   }
 
   const handleAdjustClick = () => {
-    if (!validateAdjust()) return
+    const validation = validateAdjust()
+    if (!validation.ok) {
+      toast.warning(validation.reason ?? 'Please fix adjustment inputs.')
+      return
+    }
     setShowConfirm(true)
   }
 
   const handleAdjust = async () => {
     if (!adjusting) return
+    const adjustedQty = resolveAdjustedQty(adjusting)
+    if (adjustedQty === null) {
+      toast.warning('Adjustment input is invalid.')
+      return
+    }
     try {
       await adjustMut.mutateAsync({
         item_id:      adjusting.bal.item_id,
         location_id:  adjusting.bal.location_id,
-        adjusted_qty: parseFloat(adjusting.newQty),
+        adjusted_qty: adjustedQty,
         remarks:      adjusting.remarks.trim(),
       })
       toast.success('Stock balance adjusted.')
       setAdjusting(null)
       setShowConfirm(false)
     } catch (err) {
-      if (isHandledApiError(err)) return
+      if (isHandledApiError(err)) {
+        const handledMsg = (err as { message?: string })?.message
+        if (handledMsg) toast.warning(handledMsg)
+        return
+      }
+      toast.error(firstErrorMessage(err, 'Stock adjustment failed.'))
     }
   }
 
@@ -101,17 +139,13 @@ export default function StockBalancePage(): React.ReactElement {
               ]}
               filename="stock-balances"
             />
-            {canAdjust && (
-              <Link to="/inventory/adjustments" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
-                Adjustment History
-              </Link>
-            )}
-            <Link to="/inventory/valuation" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
-              Valuation
-            </Link>
             <Link to="/inventory/locations" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
               <MapPin className="w-4 h-4" />
               Locations
+            </Link>
+            <Link to="/inventory/ledger" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
+              <List className="w-4 h-4" />
+              Item Movements
             </Link>
           </div>
         }
@@ -208,7 +242,7 @@ export default function StockBalancePage(): React.ReactElement {
                             <button
                               onClick={() => isActiveRow
                                 ? setAdjusting(null)
-                                : setAdjusting({ bal, newQty: onHand.toString(), remarks: '' })
+                                : setAdjusting({ bal, mode: 'delta', newQty: onHand.toString(), deltaQty: '', remarks: '' })
                               }
                               className="px-3 py-1 text-xs border border-neutral-300 rounded hover:bg-neutral-50 text-neutral-600"
                             >
@@ -224,6 +258,40 @@ export default function StockBalancePage(): React.ReactElement {
                           <td colSpan={8} className="px-4 py-4 bg-neutral-50 border-t border-neutral-200">
                             <div className="flex flex-wrap items-start gap-4">
                               <div>
+                                <label className="block text-xs font-medium text-neutral-600 mb-1">Adjustment Mode</label>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setAdjusting({ ...adjusting, mode: 'delta' })}
+                                    className={`px-3 py-1 text-xs rounded border ${adjusting.mode === 'delta' ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50'}`}
+                                  >
+                                    Add / Reduce
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setAdjusting({ ...adjusting, mode: 'set', newQty: parseFloat(bal.quantity_on_hand).toString() })}
+                                    className={`px-3 py-1 text-xs rounded border ${adjusting.mode === 'set' ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50'}`}
+                                  >
+                                    Set Exact Balance
+                                  </button>
+                                </div>
+
+                                {adjusting.mode === 'delta' ? (
+                                  <>
+                                    <label className="block text-xs font-medium text-neutral-600 mb-1">
+                                      Change Quantity <span className="text-neutral-400">(use + / -)</span>
+                                    </label>
+                                    <input
+                                      type="number"
+                                      step="any"
+                                      value={adjusting.deltaQty}
+                                      onChange={(e) => setAdjusting({ ...adjusting, deltaQty: e.target.value })}
+                                      placeholder="e.g. +5 or -2"
+                                      className="w-36 text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                                    />
+                                  </>
+                                ) : (
+                                  <>
                                 <label className="block text-xs font-medium text-neutral-600 mb-1">
                                   New Balance <span className="text-neutral-400">({bal.item?.unit_of_measure})</span>
                                 </label>
@@ -235,11 +303,14 @@ export default function StockBalancePage(): React.ReactElement {
                                   onChange={(e) => setAdjusting({ ...adjusting, newQty: e.target.value })}
                                   className="w-36 text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                                 />
-                                {adjusting.newQty !== '' && !isNaN(parseFloat(adjusting.newQty)) && (
+                                  </>
+                                )}
+
+                                {resolveAdjustedQty(adjusting) !== null && (
                                   <p className="text-xs text-neutral-500 mt-1">
-                                    {parseFloat(adjusting.newQty) >= onHand
-                                      ? <span className="text-green-600">+{(parseFloat(adjusting.newQty) - onHand).toLocaleString('en-PH', { maximumFractionDigits: 4 })} increase</span>
-                                      : <span className="text-red-600">−{(onHand - parseFloat(adjusting.newQty)).toLocaleString('en-PH', { maximumFractionDigits: 4 })} decrease</span>
+                                    {resolveAdjustedQty(adjusting)! >= onHand
+                                      ? <span className="text-green-600">+{(resolveAdjustedQty(adjusting)! - onHand).toLocaleString('en-PH', { maximumFractionDigits: 4 })} increase</span>
+                                      : <span className="text-red-600">−{(onHand - resolveAdjustedQty(adjusting)!).toLocaleString('en-PH', { maximumFractionDigits: 4 })} decrease</span>
                                     }
                                   </p>
                                 )}
@@ -316,7 +387,7 @@ export default function StockBalancePage(): React.ReactElement {
               <p>You are about to adjust stock for <strong>{adjusting.bal.item?.item_code}</strong>:</p>
               <ul className="text-sm text-neutral-700 list-disc pl-4 space-y-1">
                 <li><strong>Current:</strong> {parseFloat(adjusting.bal.quantity_on_hand).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</li>
-                <li><strong>New:</strong> {parseFloat(adjusting.newQty).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</li>
+                <li><strong>New:</strong> {(resolveAdjustedQty(adjusting) ?? 0).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</li>
                 <li><strong>Location:</strong> {adjusting.bal.location?.code ?? `#${adjusting.bal.location_id}`}</li>
               </ul>
               <p className="text-amber-600 text-xs">This action will affect inventory levels immediately.</p>

@@ -12,6 +12,38 @@ final class ApplicationPolicy
 {
     use HandlesAuthorization;
 
+    private function inHrDepartment(User $user): bool
+    {
+        return $user->departments()->where('departments.code', 'HR')->exists()
+            || $user->primaryDepartment?->code === 'HR'
+            || $user->employee?->department?->code === 'HR';
+    }
+
+    private function isHrManager(User $user): bool
+    {
+        return $user->hasRole('manager')
+            && $this->inHrDepartment($user);
+    }
+
+    private function isHrOfficer(User $user): bool
+    {
+        return $user->hasRole('officer')
+            && $this->inHrDepartment($user);
+    }
+
+    private function isHrHead(User $user): bool
+    {
+        return $user->hasRole('head')
+            && $this->inHrDepartment($user);
+    }
+
+    private function canAccessRecruitment(User $user): bool
+    {
+        return $this->isHrManager($user)
+            || $this->isHrOfficer($user)
+            || $this->isHrHead($user);
+    }
+
     public function before(User $user, string $ability): ?bool
     {
         if ($user->hasRole('admin')) {
@@ -23,23 +55,29 @@ final class ApplicationPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('recruitment.applications.view');
+        return $this->canAccessRecruitment($user)
+            || $user->hasPermissionTo('recruitment.applications.view');
     }
 
     public function view(User $user, Application $application): bool
     {
-        return $user->hasPermissionTo('recruitment.applications.view');
+        return $this->canAccessRecruitment($user)
+            || $user->hasPermissionTo('recruitment.applications.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasRole('manager')
+        if ($user->hasPermissionTo('hr.full_access')) {
+            return $this->isHrManager($user) || $this->isHrOfficer($user);
+        }
+
+        return ($this->isHrManager($user) || $this->isHrOfficer($user))
             && $user->hasPermissionTo('recruitment.applications.create');
     }
 
     public function delete(User $user, Application $application): bool
     {
-        if (! $user->hasRole('manager') || ! $user->hasPermissionTo('recruitment.applications.delete')) {
+        if (! $this->isHrManager($user) || ! $user->hasPermissionTo('recruitment.applications.delete')) {
             return false;
         }
 
@@ -48,16 +86,31 @@ final class ApplicationPolicy
 
     public function review(User $user, Application $application): bool
     {
-        return $user->hasPermissionTo('recruitment.applications.review');
+        if ($user->hasPermissionTo('hr.full_access')) {
+            return $this->isHrManager($user) || $this->isHrOfficer($user);
+        }
+
+        return $this->isHrManager($user)
+            && $user->hasPermissionTo('recruitment.applications.review');
     }
 
     public function shortlist(User $user, Application $application): bool
     {
-        return $user->hasPermissionTo('recruitment.applications.shortlist');
+        if ($user->hasPermissionTo('hr.full_access')) {
+            return $this->isHrManager($user) || $this->isHrOfficer($user);
+        }
+
+        return $this->isHrManager($user)
+            && $user->hasPermissionTo('recruitment.applications.shortlist');
     }
 
     public function reject(User $user, Application $application): bool
     {
-        return $user->hasPermissionTo('recruitment.applications.reject');
+        if ($user->hasPermissionTo('hr.full_access')) {
+            return $this->isHrManager($user) || $this->isHrOfficer($user);
+        }
+
+        return $this->isHrManager($user)
+            && $user->hasPermissionTo('recruitment.applications.reject');
     }
 }

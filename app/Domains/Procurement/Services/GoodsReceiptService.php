@@ -6,7 +6,6 @@ namespace App\Domains\Procurement\Services;
 
 use App\Domains\Inventory\Models\ItemCategory;
 use App\Domains\Inventory\Models\ItemMaster;
-use App\Events\Inventory\ItemPriceChanged;
 use App\Events\Procurement\GoodsReceiptQcCompleted;
 use App\Events\Procurement\GoodsReceiptSubmittedForQc;
 use App\Domains\Procurement\Models\GoodsReceipt;
@@ -22,6 +21,7 @@ final class GoodsReceiptService implements ServiceContract
 {
     public function __construct(
         private readonly ThreeWayMatchService $threeWayMatchService,
+        private readonly GoodsReceiptItemCostSyncService $itemCostSyncService,
     ) {}
 
     // ── Store (draft) ────────────────────────────────────────────────────────
@@ -432,10 +432,11 @@ final class GoodsReceiptService implements ServiceContract
             return $gr->refresh();
         });
 
-        // Keep price sync best-effort but skip in tests where the suite runs
-        // inside a long-lived transaction; swallowed SQL errors can poison it.
+        // Best-effort sync of material costs from procurement prices.
+        // Skip during feature-test transactions to avoid swallowing DB errors
+        // that would poison the wrapping transaction state.
         if (! app()->environment('testing')) {
-            $this->updateItemPricesFromPO($confirmed);
+            $this->itemCostSyncService->syncFromGoodsReceipt($confirmed);
         }
 
         return $confirmed;
@@ -651,83 +652,6 @@ final class GoodsReceiptService implements ServiceContract
 
             $grItem->update(['item_master_id' => $master->id]);
             $poItem->update(['item_master_id' => $master->id]);
-        }
-    }
-
-    /**
-     * Auto-update item standard prices from the PO's agreed unit costs.
-     *
-     * When a Goods Receipt is confirmed, the vendor's agreed price (from the
-     * Purchase Order line) becomes the item's standard_price_centavos. This
-     * ensures BOM cost calculations always reflect actual purchase prices.
-     *
-     * For items using weighted_average costing, delegates to CostingMethodService
-     * which computes the new weighted average. For standard costing items, directly
-     * updates the standard_price_centavos from the PO agreed cost.
-     */
-    private function updateItemPricesFromPO(GoodsReceipt $gr): void
-    {
-        try {
-            $gr->loadMissing(['items.poItem', 'purchaseOrder.items']);
-
-            foreach ($gr->items as $grItem) {
-                $itemId = $grItem->item_master_id;
-                if ($itemId === null) {
-                    continue;
-                }
-
-                // Get the PO line's agreed unit cost (in pesos, need to convert to centavos)
-                $poItem = $grItem->poItem;
-                if ($poItem === null) {
-                    continue;
-                }
-
-                $agreedCostPesos = (float) ($poItem->agreed_unit_cost ?? 0);
-                if ($agreedCostPesos <= 0) {
-                    continue;
-                }
-
-                $agreedCostCentavos = (int) round($agreedCostPesos * 100);
-
-                $item = ItemMaster::find($itemId);
-                if ($item === null) {
-                    continue;
-                }
-
-                // Use effective accepted quantity for weighted average (reflects QC splits)
-                $effectiveQty = $grItem->effectiveAcceptedQuantity();
-
-                // For weighted_average items, use CostingMethodService
-                if (($item->costing_method ?? 'standard') === 'weighted_average') {
-                    try {
-                        $costingService = app(\App\Domains\Inventory\Services\CostingMethodService::class);
-                        $costingService->recalculateOnReceipt(
-                            $itemId,
-                            $effectiveQty,
-                            $agreedCostCentavos,
-                        );
-                    } catch (\Throwable $e) {
-                        \Illuminate\Support\Facades\Log::warning('[GR] Weighted avg recalc failed', [
-                            'item_id' => $itemId,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                } else {
-                    // Standard costing: update directly from PO price
-                    $oldPrice = (int) ($item->standard_price_centavos ?? 0);
-                    if ($oldPrice !== $agreedCostCentavos) {
-                        $item->update(['standard_price_centavos' => $agreedCostCentavos]);
-                        // Fire event so BOM costs are auto-rolled up
-                        event(new ItemPriceChanged($itemId, $oldPrice, $agreedCostCentavos, 'goods_receipt'));
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            // Don't fail GR confirmation if price update fails
-            \Illuminate\Support\Facades\Log::warning('[GR] Item price auto-update failed', [
-                'gr_id' => $gr->id,
-                'error' => $e->getMessage(),
-            ]);
         }
     }
 

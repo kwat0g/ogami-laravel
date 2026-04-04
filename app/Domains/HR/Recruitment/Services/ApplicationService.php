@@ -17,9 +17,11 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ApplicationService implements ServiceContract
 {
@@ -33,8 +35,15 @@ final class ApplicationService implements ServiceContract
      */
     public function list(array $filters = [], int $perPage = 25): LengthAwarePaginator
     {
-        return Application::with(['candidate', 'posting.requisition.department', 'posting.requisition.position'])
+        return Application::with([
+            'candidate',
+            'posting.requisition.department',
+            'posting.requisition.position',
+            'posting.department',
+            'posting.position',
+        ])
             ->when(isset($filters['job_posting_id']), fn ($q) => $q->where('job_posting_id', $filters['job_posting_id']))
+            ->when(isset($filters['job_posting_ulid']), fn ($q) => $q->whereHas('posting', fn ($p) => $p->where('ulid', $filters['job_posting_ulid'])))
             ->when(isset($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when(isset($filters['candidate_id']), fn ($q) => $q->where('candidate_id', $filters['candidate_id']))
             ->when(isset($filters['search']), fn ($q) => $q->where(function ($s) use ($filters) {
@@ -54,13 +63,17 @@ final class ApplicationService implements ServiceContract
             'candidate',
             'posting.requisition.department',
             'posting.requisition.position',
+            'posting.requisition.salaryGrade',
+            'posting.department',
+            'posting.position',
+            'posting.salaryGrade',
             'interviews.evaluation',
             'interviews.interviewer',
             'documents',
             'offer.offeredPosition',
             'offer.offeredDepartment',
             'preEmploymentChecklist.requirements',
-            'hiring',
+            'hiring.employee',
             'reviewer',
             'audits',
         ]);
@@ -211,5 +224,28 @@ final class ApplicationService implements ServiceContract
         DB::transaction(function () use ($application): void {
             $application->delete();
         });
+    }
+
+    public function downloadResume(Application $application): StreamedResponse
+    {
+        $candidate = $application->candidate;
+        $resumePath = $candidate?->resume_path;
+
+        if ($resumePath === null || ! Storage::disk('local')->exists($resumePath)) {
+            throw new DomainException(
+                'Resume file was not found for this application.',
+                'APPLICATION_RESUME_NOT_FOUND',
+                404,
+                ['application_id' => $application->id],
+            );
+        }
+
+        $extension = pathinfo($resumePath, PATHINFO_EXTENSION);
+        $safeName = Str::of($candidate->full_name ?? 'candidate')
+            ->lower()
+            ->slug('-');
+        $downloadName = sprintf('%s-resume.%s', $safeName, $extension ?: 'pdf');
+
+        return Storage::disk('local')->download($resumePath, $downloadName);
     }
 }

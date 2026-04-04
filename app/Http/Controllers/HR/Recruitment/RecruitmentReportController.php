@@ -15,9 +15,25 @@ final class RecruitmentReportController extends Controller
         private readonly RecruitmentReportService $service,
     ) {}
 
+    private function canAccessRecruitmentReports(Request $request): bool
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('admin') || $user->can('hr.full_access')) {
+            return true;
+        }
+
+        $isHrRole = $user->hasRole('manager') || $user->hasRole('officer') || $user->hasRole('head');
+
+        return $isHrRole && $user->departments()->where('code', 'HR')->exists();
+    }
+
     public function pipeline(Request $request): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.reports.view'), 403);
+        abort_unless(
+            $this->canAccessRecruitmentReports($request) || $request->user()->can('recruitment.reports.view'),
+            403,
+        );
 
         return response()->json([
             'data' => $this->service->pipeline($request->only(['department_id'])),
@@ -26,7 +42,10 @@ final class RecruitmentReportController extends Controller
 
     public function timeToFill(Request $request): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.reports.view'), 403);
+        abort_unless(
+            $this->canAccessRecruitmentReports($request) || $request->user()->can('recruitment.reports.view'),
+            403,
+        );
 
         return response()->json([
             'data' => $this->service->timeToFill($request->only(['department_id'])),
@@ -35,7 +54,10 @@ final class RecruitmentReportController extends Controller
 
     public function sourceMix(Request $request): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.reports.view'), 403);
+        abort_unless(
+            $this->canAccessRecruitmentReports($request) || $request->user()->can('recruitment.reports.view'),
+            403,
+        );
 
         return response()->json([
             'data' => $this->service->sourceMix($request->only(['from_date', 'to_date'])),

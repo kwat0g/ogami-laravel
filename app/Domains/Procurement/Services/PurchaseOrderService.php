@@ -16,6 +16,7 @@ use App\Notifications\Procurement\PurchaseOrderSentToVendorNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class PurchaseOrderService implements ServiceContract
 {
@@ -51,6 +52,7 @@ final class PurchaseOrderService implements ServiceContract
             $paymentTerms = $vendor?->payment_terms ?? null;
 
             $po = PurchaseOrder::create([
+                'ulid' => (string) Str::ulid(),
                 'po_reference' => $reference,
                 'purchase_request_id' => $pr->id,
                 'vendor_id' => $pr->vendor_id,
@@ -61,7 +63,12 @@ final class PurchaseOrderService implements ServiceContract
                 'notes' => $pr->notes,
                 'status' => 'draft',
                 'total_po_amount' => 0, // Trigger will update
-                'created_by_id' => $pr->vp_approved_by_id ?? $pr->created_by_id ?? 1, // Fallback if needed
+                // Keep creator FK valid even when legacy created_by_id is null.
+                'created_by_id' => $pr->vp_approved_by_id
+                    ?? $pr->requested_by_id
+                    ?? $pr->created_by_id
+                    ?? User::query()->value('id')
+                    ?? 1,
             ]);
 
             // Pre-load vendor catalog for this vendor (centavos, keyed by normalised item_name)
@@ -147,6 +154,7 @@ final class PurchaseOrderService implements ServiceContract
             $reference = $this->generateReference();
 
             $po = PurchaseOrder::create([
+                'ulid' => (string) Str::ulid(),
                 'po_reference' => $reference,
                 'purchase_request_id' => $pr->id,
                 'vendor_id' => $data['vendor_id'],

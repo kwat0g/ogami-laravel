@@ -184,7 +184,14 @@ final class BomService implements ServiceContract
             'last_cost_rollup_at' => now(),
         ]);
 
+        app(BomMaterialCostSnapshotService::class)->record($bom, 'rollup');
+
         return $bom->fresh(['productItem', 'components.componentItem']) ?? $bom;
+    }
+
+    public function materialCostHistory(BillOfMaterials $bom, int $perPage = 20): LengthAwarePaginator
+    {
+        return $bom->materialCostSnapshots()->latest('id')->paginate($perPage);
     }
 
     /**
@@ -207,7 +214,7 @@ final class BomService implements ServiceContract
      *
      * @return array{material_cost_centavos: int, labor_cost_centavos: int, overhead_cost_centavos: int, total_standard_cost_centavos: int, components: array, routings: array}
      */
-    public function getCostBreakdown(BillOfMaterials $bom, string $costElements = 'material_labor_overhead'): array
+    public function getCostBreakdown(BillOfMaterials $bom, string $costElements = 'material_only'): array
     {
         $costingService = app(CostingService::class);
 
@@ -231,6 +238,8 @@ final class BomService implements ServiceContract
                 'standard_cost_centavos' => $result['total_standard_cost_centavos'],
                 'last_cost_rollup_at' => now(),
             ]);
+
+            app(BomMaterialCostSnapshotService::class)->record($bom, 'auto_rollup');
         } catch (\Throwable $e) {
             // Don't fail BOM creation/update if cost calculation has issues
             // (e.g., circular BOM, missing item prices). Cost will be 0 until
@@ -245,18 +254,25 @@ final class BomService implements ServiceContract
     /**
      * Compare cost between two BOM versions for the same product.
      *
+    * Uses total standard cost for the selected cost elements.
+     * so comparison reflects full manufacturing impact, not material-only delta.
+     *
      * @return array{version_a: array, version_b: array, variance_centavos: int, variance_pct: float}
      */
-    public function compareCost(BillOfMaterials $bomA, BillOfMaterials $bomB): array
+    public function compareCost(
+        BillOfMaterials $bomA,
+        BillOfMaterials $bomB,
+        string $costElements = 'material_only'
+    ): array
     {
         $costingService = app(CostingService::class);
 
-        $costA = $costingService->standardCost($bomA);
-        $costB = $costingService->standardCost($bomB);
+        $costA = $costingService->standardCost($bomA, $costElements);
+        $costB = $costingService->standardCost($bomB, $costElements);
 
-        $variance = $costB['material_cost_centavos'] - $costA['material_cost_centavos'];
-        $variancePct = $costA['material_cost_centavos'] > 0
-            ? round(($variance / $costA['material_cost_centavos']) * 100, 2)
+        $variance = $costB['total_standard_cost_centavos'] - $costA['total_standard_cost_centavos'];
+        $variancePct = $costA['total_standard_cost_centavos'] > 0
+            ? round(($variance / $costA['total_standard_cost_centavos']) * 100, 2)
             : 0.0;
 
         return [
@@ -264,11 +280,17 @@ final class BomService implements ServiceContract
                 'bom_id' => $bomA->id,
                 'version' => $bomA->version,
                 'material_cost_centavos' => $costA['material_cost_centavos'],
+                'labor_cost_centavos' => $costA['labor_cost_centavos'],
+                'overhead_cost_centavos' => $costA['overhead_cost_centavos'],
+                'total_standard_cost_centavos' => $costA['total_standard_cost_centavos'],
             ],
             'version_b' => [
                 'bom_id' => $bomB->id,
                 'version' => $bomB->version,
                 'material_cost_centavos' => $costB['material_cost_centavos'],
+                'labor_cost_centavos' => $costB['labor_cost_centavos'],
+                'overhead_cost_centavos' => $costB['overhead_cost_centavos'],
+                'total_standard_cost_centavos' => $costB['total_standard_cost_centavos'],
             ],
             'variance_centavos' => $variance,
             'variance_pct' => $variancePct,

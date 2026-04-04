@@ -10,6 +10,7 @@ import { useRealtimeEvents } from '@/hooks/useRealtimeEvents'
 import { disconnectEcho } from '@/lib/echo'
 import { bumpAuthEpoch } from '@/lib/authEpoch'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
+import BackButton from '@/components/ui/BackButton'
 import { getPasswordChangePath } from '@/lib/roleLanding'
 import NotificationBell from '@/components/layout/NotificationBell'
 import { ColorModeButton } from '@/components/ui/ColorModeToggle'
@@ -88,7 +89,7 @@ const SECTIONS: NavSection[] = [
   {
     label: 'HR & Payroll',
     icon: Users,
-    permission: 'hr.full_access',
+    permission: 'hr.full_access|payroll.view_runs',
     roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
     departments: ['HR', 'ACCTG', 'EXEC'],
     children: [
@@ -137,7 +138,7 @@ const SECTIONS: NavSection[] = [
   {
     label: 'Financial Management',
     icon: BookOpen,
-    permission: 'chart_of_accounts.view',
+    permission: 'chart_of_accounts.view|journal_entries.view|vendors.view|vendor_invoices.view|customers.view|customer_invoices.view|bank_accounts.view|budget.view|reports.financial_statements',
     roles: ['officer', 'manager', 'head', 'staff'],
     departments: ['ACCTG', 'SALES', 'PURCH'],
     children: [
@@ -629,6 +630,8 @@ export default function AppLayout() {
   const location = useLocation()
   const appNavigate = useNavigate()
   const { clearAuth, hasPermission, hasRole } = useAuthStore()
+  const showRecruitmentBackButton =
+    location.pathname.startsWith('/hr/recruitment/') && location.pathname !== '/hr/recruitment'
   
   // Get user's primary department code for SoD filtering
   const userDept = user?.primary_department_code ?? null
@@ -667,6 +670,7 @@ export default function AppLayout() {
   }, [appNavigate])
 
   const handleLogout = async () => {
+    bumpAuthEpoch()
     try {
       await api.post('/auth/logout')
     } catch {
@@ -675,7 +679,6 @@ export default function AppLayout() {
     disconnectEcho()
     queryClient.clear()
     clearAuth()
-    bumpAuthEpoch()
   }
 
   if (isLoading) {
@@ -714,9 +717,7 @@ export default function AppLayout() {
               O
             </span>
           ) : (
-            <span className="font-semibold text-neutral-900 dark:text-neutral-100 text-base whitespace-nowrap">
-              Ogami ERP
-            </span>
+            <img src="/logo.svg" alt="Ogami ERP" className="h-6 ml-2 w-auto dark:brightness-0 dark:invert mix-blend-multiply dark:mix-blend-normal" />
           )}
         </div>
 
@@ -835,8 +836,9 @@ export default function AppLayout() {
                   </button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[230px] p-0 bg-white border-r border-neutral-200/80">
-                  <SheetHeader className="border-b border-neutral-100 px-4 py-3">
-                    <SheetTitle className="text-neutral-900 font-semibold tracking-tight">Ogami ERP</SheetTitle>
+                  <SheetHeader className="border-b border-neutral-100 px-4 py-3 text-left flex justify-center">
+                    <img src="/logo.svg" alt="Ogami" className="h-6 w-auto mix-blend-multiply dark:mix-blend-normal dark:brightness-0 dark:invert" />
+                    <SheetTitle className="sr-only">Ogami ERP</SheetTitle>
                   </SheetHeader>
                   <nav className="p-2 space-y-0.5 overflow-y-auto h-[calc(100vh-60px)]">
                     {TOP_ITEMS.filter((i) => i.permission === null || hasPermission(i.permission)).map(({ label, href, icon: Icon }) => (
@@ -916,6 +918,15 @@ export default function AppLayout() {
 
         {/* Page content */}
         <div className="flex-1 w-full p-4 sm:p-6 dark:text-neutral-100">
+          {showRecruitmentBackButton && (
+            <div className="mb-4">
+              <BackButton
+                to="/hr/recruitment"
+                label="Back"
+                className="rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-1.5"
+              />
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

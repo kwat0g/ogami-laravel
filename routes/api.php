@@ -52,6 +52,11 @@ Route::get('v1/system/restore-status', function () {
 })->middleware('throttle:60,1')->name('system.restore-status');
 
 Route::prefix('v1')->name('v1.')->group(function () {
+    Route::prefix('public/recruitment')
+        ->name('public.recruitment.')
+        ->middleware(['throttle:api'])
+        ->group(base_path('routes/api/v1/public_recruitment.php'));
+
     // ── Auth ────────────────────────────────────────────────────────────────
     // Auth routes keep their own brute-force throttle (AuthService.php)
     Route::prefix('auth')->name('auth.')->group(

@@ -40,22 +40,24 @@ class TestAccountsSeeder extends Seeder
 
             // Managers - department determines their module access
             ['manager',           'hr.manager@ogamierp.local',         'Maria Santos (HR Manager)',      'HR'],
+            ['manager',           'acctg.manager@ogamierp.local',      'Patricia Dela Cruz (Acctg Mgr)', 'ACCTG'],
             ['manager',           'plant.manager@ogamierp.local',      'Carlos Rivera (Plant Manager)',  'PLANT'],
             ['manager',           'prod.manager@ogamierp.local',       'Jose Garcia (Prod Manager)',     'PROD'],
             ['manager',           'qc.manager@ogamierp.local',         'Linda Tan (QC Manager)',         'QC'],
             ['manager',           'mold.manager@ogamierp.local',       'Ramon Aquino (Mold Manager)',    'MOLD'],
+            ['manager',           'wh.manager@ogamierp.local',         'Ernesto Santos (WH Manager)',    'WH'],
             ['manager',           'sales.manager@ogamierp.local',      'Diana Cruz (Sales Manager)',     'SALES'],
 
             // Officers - department determines their module access
-            ['officer',           'acctg.officer@ogamierp.local',      'Anna Marie Lim (Acctg Officer)', 'ACCTG'],
-            ['officer',           'ga.officer@ogamierp.local',         'Grace Mendoza (GA Officer)',     'HR'],
+            ['officer',           'acctg.officer@ogamierp.local',      'Grace Mendoza (Acctg Officer)',  'ACCTG'],
             ['officer',           'purchasing.officer@ogamierp.local', 'Mark Villanueva (Purchasing)',   'PURCH'],
             ['officer',           'impex.officer@ogamierp.local',      'Diana Ramos (ImpEx Officer)',    'SALES'],
 
             // Heads - department determines their module access
             ['head',              'dept.head@ogamierp.local',          'Ricardo Bautista (Dept Head)',   'PROD'],
-            ['head',              'warehouse.head@ogamierp.local',     'Ernesto Bautista (WH Head)',     'WH'],
+            ['head',              'warehouse.head@ogamierp.local',     'Josefa Bautista (WH Head)',      'WH'],
             ['head',              'ppc.head@ogamierp.local',           'Jerome Florido (PPC Head)',      'PPC'],
+            ['head',              'sales.head@ogamierp.local',         'Lorna Reyes (Sales Head)',       'SALES'],
 
             // Staff
             ['staff',             'staff@ogamierp.local',              'Juan dela Cruz (Staff)',         'PROD'],

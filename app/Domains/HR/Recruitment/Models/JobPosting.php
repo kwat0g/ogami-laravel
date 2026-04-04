@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\HR\Recruitment\Models;
 
+use App\Domains\HR\Models\Department;
 use App\Domains\HR\Recruitment\Enums\EmploymentType;
 use App\Domains\HR\Recruitment\Enums\PostingStatus;
+use App\Domains\HR\Models\Position;
+use App\Domains\HR\Models\SalaryGrade;
 use App\Infrastructure\DocumentNumberService;
 use App\Shared\Traits\HasPublicUlid;
 use Database\Factories\Recruitment\JobPostingFactory;
@@ -22,7 +25,11 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $id
  * @property string $ulid
  * @property string $posting_number
- * @property int $job_requisition_id
+ * @property int|null $job_requisition_id
+ * @property int|null $department_id
+ * @property int|null $position_id
+ * @property int|null $salary_grade_id
+ * @property int|null $headcount
  * @property string $title
  * @property string $description
  * @property string $requirements
@@ -47,6 +54,10 @@ final class JobPosting extends Model implements Auditable
 
     protected $fillable = [
         'job_requisition_id',
+        'department_id',
+        'position_id',
+        'salary_grade_id',
+        'headcount',
         'title',
         'description',
         'requirements',
@@ -70,6 +81,7 @@ final class JobPosting extends Model implements Auditable
             'published_at' => 'datetime',
             'closes_at' => 'datetime',
             'views_count' => 'integer',
+            'headcount' => 'integer',
         ];
     }
 
@@ -97,6 +109,21 @@ final class JobPosting extends Model implements Auditable
     public function requisition(): BelongsTo
     {
         return $this->belongsTo(JobRequisition::class, 'job_requisition_id');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function salaryGrade(): BelongsTo
+    {
+        return $this->belongsTo(SalaryGrade::class, 'salary_grade_id');
     }
 
     public function applications(): HasMany

@@ -12,9 +12,25 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class CandidateController extends Controller
 {
+    private function canAccessRecruitment(Request $request): bool
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('admin') || $user->can('hr.full_access')) {
+            return true;
+        }
+
+        $isHrRole = $user->hasRole('manager') || $user->hasRole('officer') || $user->hasRole('head');
+
+        return $isHrRole && $user->departments()->where('code', 'HR')->exists();
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
-        abort_unless($request->user()->can('recruitment.candidates.view'), 403); // Candidate has no policy - keep inline
+        abort_unless(
+            $this->canAccessRecruitment($request) || $request->user()->can('recruitment.candidates.view'),
+            403,
+        );
 
         $candidates = Candidate::with([])
             ->when($request->input('search'), fn ($q, $s) => $q->whereRaw(
@@ -30,7 +46,10 @@ final class CandidateController extends Controller
 
     public function show(Request $request, Candidate $candidate): CandidateResource
     {
-        abort_unless($request->user()->can('recruitment.candidates.view'), 403); // Candidate has no policy - keep inline
+        abort_unless(
+            $this->canAccessRecruitment($request) || $request->user()->can('recruitment.candidates.view'),
+            403,
+        );
 
         return new CandidateResource($candidate->load('applications.posting.requisition.position'));
     }

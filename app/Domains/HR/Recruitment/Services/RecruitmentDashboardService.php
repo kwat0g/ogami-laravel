@@ -10,6 +10,7 @@ use App\Domains\HR\Recruitment\Enums\RequisitionStatus;
 use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\InterviewSchedule;
 use App\Domains\HR\Recruitment\Models\JobOffer;
+use App\Domains\HR\Recruitment\Models\JobPosting;
 use App\Domains\HR\Recruitment\Models\JobRequisition;
 use App\Shared\Contracts\ServiceContract;
 use Illuminate\Support\Facades\DB;
@@ -19,12 +20,10 @@ final class RecruitmentDashboardService implements ServiceContract
     public function getKpis(): array
     {
         return [
-            'open_requisitions' => JobRequisition::whereIn('status', [
-                RequisitionStatus::Open->value,
-                RequisitionStatus::Approved->value,
-            ])->count(),
+            'active_postings' => JobPosting::where('status', 'published')->count(),
 
             'active_applications' => Application::whereNotIn('status', [
+                ApplicationStatus::Hired->value,
                 ApplicationStatus::Rejected->value,
                 ApplicationStatus::Withdrawn->value,
             ])->count(),
@@ -98,11 +97,11 @@ final class RecruitmentDashboardService implements ServiceContract
             ->get()
             ->map(fn ($i) => [
                 'id' => $i->id,
-                'candidate_name' => $i->application->candidate->full_name,
-                'position' => $i->application->posting->requisition->position->title ?? 'N/A',
-                'interviewer' => $i->interviewer->name,
+                'candidate_name' => $i->application?->candidate?->full_name ?? 'Unknown Candidate',
+                'position' => $i->application?->posting?->requisition?->position?->title ?? 'N/A',
+                'interviewer' => $i->interviewer?->name ?? 'Unassigned',
                 'scheduled_at' => $i->scheduled_at->toIso8601String(),
-                'type' => $i->type->label(),
+                'type' => $i->type?->label() ?? 'Unknown',
                 'round' => $i->round,
             ])
             ->toArray();

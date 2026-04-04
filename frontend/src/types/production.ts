@@ -27,6 +27,19 @@ export interface Bom {
   deleted_at?: string | null
 }
 
+export interface BomMaterialCostSnapshot {
+  id: number
+  ulid: string
+  bom_id: number
+  bom_version: string
+  material_cost_centavos: number
+  component_lines: Array<Record<string, unknown>>
+  source: string
+  created_by_id: number | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 export type DeliveryScheduleStatus = 'open' | 'in_production' | 'ready' | 'dispatched' | 'delivered' | 'cancelled'
 export type DeliveryScheduleType   = 'local' | 'export'
 

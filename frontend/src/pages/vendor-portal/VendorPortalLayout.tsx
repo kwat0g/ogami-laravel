@@ -46,6 +46,7 @@ export default function VendorPortalLayout(): React.ReactElement {
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   const handleLogout = async () => {
+    bumpAuthEpoch()
     try {
       await api.post('/auth/logout')
     } catch {
@@ -54,7 +55,6 @@ export default function VendorPortalLayout(): React.ReactElement {
     disconnectEcho()
     queryClient.clear()
     clearAuth()
-    bumpAuthEpoch()
   }
 
   if (isLoading) {

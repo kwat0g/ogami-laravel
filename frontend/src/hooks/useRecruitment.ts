@@ -9,6 +9,7 @@ import type {
   JobPostingListItem,
   JobRequisition,
   Paginated,
+  RecruitmentInterviewerOption,
   RecruitmentDashboard,
 } from '@/types/recruitment'
 
@@ -129,8 +130,8 @@ export function useCreatePosting() {
 export function usePostingAction(ulid: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ action }: { action: string }) =>
-      api.post(`/recruitment/postings/${ulid}/${action}`),
+    mutationFn: ({ action, payload }: { action: string; payload?: Record<string, unknown> }) =>
+      api.post(`/recruitment/postings/${ulid}/${action}`, payload ?? {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.posting(ulid) })
       qc.invalidateQueries({ queryKey: KEYS.postings })
@@ -201,6 +202,18 @@ export function useScheduleInterview() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.interviews })
       qc.invalidateQueries({ queryKey: KEYS.applications })
+    },
+  })
+}
+
+export function useInterviewerOptions(search = '') {
+  return useQuery({
+    queryKey: ['recruitment', 'interviewers', search],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: RecruitmentInterviewerOption[] }>('/recruitment/interviewers/options', {
+        params: { search, limit: 100 },
+      })
+      return data.data
     },
   })
 }

@@ -18,12 +18,51 @@ use Illuminate\Support\Facades\DB;
 final class InterviewService implements ServiceContract
 {
     /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function listInterviewerOptions(string $search = '', int $limit = 50): array
+    {
+        $safeLimit = max(1, min($limit, 100));
+
+        return User::query()
+            ->select(['id', 'name', 'employee_id'])
+            ->whereHas('roles', fn ($q) => $q->whereIn('name', ['manager', 'officer', 'head']))
+            ->whereHas('departments', fn ($q) => $q->where('code', 'HR'))
+            ->with(['departments:id,code,name', 'employee:id,position_id', 'employee.position:id,code,title'])
+            ->when($search !== '', fn ($q) => $q->where('name', 'ILIKE', "%{$search}%"))
+            ->orderBy('name')
+            ->limit($safeLimit)
+            ->get()
+            ->map(function (User $user): array {
+                $hrDepartment = $user->departments->firstWhere('code', 'HR');
+                $position = $user->employee?->position;
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'position' => $position ? [
+                        'id' => $position->id,
+                        'code' => $position->code,
+                        'title' => $position->title,
+                    ] : null,
+                    'department' => $hrDepartment ? [
+                        'id' => $hrDepartment->id,
+                        'code' => $hrDepartment->code,
+                        'name' => $hrDepartment->name,
+                    ] : null,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<InterviewSchedule>
      */
     public function list(array $filters = [], int $perPage = 25): LengthAwarePaginator
     {
-        return InterviewSchedule::with(['application.candidate', 'application.posting.requisition.position', 'interviewer', 'interviewerDepartment', 'evaluation'])
+        return InterviewSchedule::with(['application.candidate', 'application.posting.requisition.position', 'application.posting.position', 'interviewer', 'interviewerDepartment', 'evaluation'])
             ->when(isset($filters['application_id']), fn ($q) => $q->where('application_id', $filters['application_id']))
             ->when(isset($filters['interviewer_id']), fn ($q) => $q->where('interviewer_id', $filters['interviewer_id']))
             ->when(isset($filters['interviewer_department_id']), fn ($q) => $q->where('interviewer_department_id', $filters['interviewer_department_id']))
@@ -39,6 +78,7 @@ final class InterviewService implements ServiceContract
         return $interview->load([
             'application.candidate',
             'application.posting.requisition.position',
+            'application.posting.position',
             'interviewer',
             'evaluation.submitter',
         ]);
@@ -52,6 +92,19 @@ final class InterviewService implements ServiceContract
                 'APPLICATION_NOT_SHORTLISTED',
                 422,
                 ['current_status' => $application->status->value],
+            );
+        }
+
+        $hasPendingInterview = $application->interviews()
+            ->whereIn('status', [InterviewStatus::Scheduled->value, InterviewStatus::InProgress->value])
+            ->exists();
+
+        if ($hasPendingInterview) {
+            throw new DomainException(
+                'Cannot schedule a new interview while another interview is still scheduled or in progress.',
+                'INTERVIEW_ALREADY_PENDING',
+                422,
+                ['application_id' => $application->id],
             );
         }
 
@@ -95,6 +148,25 @@ final class InterviewService implements ServiceContract
             ]);
 
             return $interview->fresh();
+        });
+    }
+
+    public function start(InterviewSchedule $interview, User $actor): InterviewSchedule
+    {
+        if (! $interview->status->canTransitionTo(InterviewStatus::InProgress)) {
+            throw new DomainException(
+                'Cannot start this interview.',
+                'INVALID_STATUS_TRANSITION',
+                422,
+                ['current_status' => $interview->status->value],
+            );
+        }
+
+        return DB::transaction(function () use ($interview): InterviewSchedule {
+            $interview->status = InterviewStatus::InProgress;
+            $interview->save();
+
+            return $interview;
         });
     }
 

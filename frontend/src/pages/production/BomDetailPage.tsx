@@ -8,6 +8,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
+import { useBomCostHistory } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
 import type { Bom } from '@/types/production'
 
@@ -42,6 +43,11 @@ function peso(centavos: number): string {
 
 function pct(part: number, total: number): string {
   return total > 0 ? `${((part / total) * 100).toFixed(1)}%` : '0%'
+}
+
+function timestamp(value: string | null): string {
+  if (!value) return '-'
+  return new Date(value).toLocaleString('en-PH')
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -87,6 +93,11 @@ export default function BomDetailPage() {
     },
     onError: (err) => toast.error(firstErrorMessage(err, 'Archive failed.')),
   })
+
+  const {
+    data: history,
+    isLoading: historyLoading,
+  } = useBomCostHistory(ulid ?? null, { per_page: 5 })
 
   if (bomLoading || costLoading) return <SkeletonLoader rows={12} />
 
@@ -311,6 +322,45 @@ export default function BomDetailPage() {
             <p className="font-medium">{b.notes ?? '-'}</p>
           </div>
         </div>
+      </Card>
+
+      {/* Material Cost History */}
+      <Card className="overflow-hidden">
+        <div className="p-4 border-b border-neutral-200 flex items-center justify-between">
+          <h3 className="font-semibold text-neutral-800">Material Cost History</h3>
+          <span className="text-xs text-neutral-500">Last {history?.meta.per_page ?? 5} snapshots</span>
+        </div>
+
+        {historyLoading ? (
+          <div className="p-4">
+            <SkeletonLoader rows={4} />
+          </div>
+        ) : (history?.data.length ?? 0) === 0 ? (
+          <div className="p-6 text-sm text-neutral-500">No cost history yet. Recalculate cost to create the first snapshot.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-neutral-50">
+              <tr>
+                <th className="text-left p-3 text-xs font-medium text-neutral-600">Timestamp</th>
+                <th className="text-left p-3 text-xs font-medium text-neutral-600">Source</th>
+                <th className="text-right p-3 text-xs font-medium text-neutral-600">Material Cost</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {(history?.data ?? []).map((snapshot) => (
+                <tr key={snapshot.id} className="hover:bg-neutral-50">
+                  <td className="p-3 text-neutral-700">{timestamp(snapshot.created_at)}</td>
+                  <td className="p-3">
+                    <span className="inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
+                      {snapshot.source.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right tabular-nums font-medium">{peso(snapshot.material_cost_centavos)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Card>
     </div>
   )

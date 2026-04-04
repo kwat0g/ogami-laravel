@@ -35,8 +35,14 @@ final class JobPostingController extends Controller
 
     public function store(StoreJobPostingRequest $request): JsonResponse
     {
-        $requisition = JobRequisition::findOrFail($request->validated('job_requisition_id'));
-        $posting = $this->service->createFromRequisition($requisition, $request->validated(), $request->user());
+        $data = $request->validated();
+
+        if (($data['job_requisition_id'] ?? null) !== null) {
+            $requisition = JobRequisition::findOrFail((int) $data['job_requisition_id']);
+            $posting = $this->service->createFromRequisition($requisition, $data, $request->user());
+        } else {
+            $posting = $this->service->createDirect($data, $request->user());
+        }
 
         return (new JobPostingResource($posting))
             ->response()
@@ -56,8 +62,8 @@ final class JobPostingController extends Controller
 
         $data = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
-            'description' => ['sometimes', 'string', 'min:50'],
-            'requirements' => ['sometimes', 'string', 'min:20'],
+            'description' => ['sometimes', 'string', 'min:10'],
+            'requirements' => ['sometimes', 'string', 'min:3'],
             'location' => ['nullable', 'string', 'max:255'],
             'is_internal' => ['sometimes', 'boolean'],
             'is_external' => ['sometimes', 'boolean'],
@@ -85,6 +91,10 @@ final class JobPostingController extends Controller
     {
         $this->authorize('publish', $posting);
 
-        return new JobPostingResource($this->service->reopen($posting, $request->user()));
+        $data = $request->validate([
+            'headcount' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        return new JobPostingResource($this->service->reopen($posting, $request->user(), $data['headcount'] ?? null));
     }
 }

@@ -22,7 +22,7 @@ final class PreEmploymentController extends Controller
 
     public function show(Request $request, Application $application): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.preemployment.view'), 403); // PreEmployment uses checklist-level policy
+        $this->authorize('view', PreEmploymentChecklist::class);
 
         $checklist = $this->service->show($application);
 
@@ -35,7 +35,7 @@ final class PreEmploymentController extends Controller
 
     public function init(Request $request, Application $application): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.preemployment.view'), 403); // PreEmployment uses checklist-level policy
+        $this->authorize('view', PreEmploymentChecklist::class);
 
         $checklist = $this->service->initChecklist($application);
 
@@ -51,7 +51,7 @@ final class PreEmploymentController extends Controller
 
     public function verify(Request $request, PreEmploymentRequirement $requirement): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.preemployment.verify'), 403); // PreEmployment verify permission
+        $this->authorize('verify', PreEmploymentChecklist::class);
 
         $this->service->verifyDocument($requirement, $request->user());
 
@@ -60,7 +60,7 @@ final class PreEmploymentController extends Controller
 
     public function rejectDocument(Request $request, PreEmploymentRequirement $requirement): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.preemployment.verify'), 403); // PreEmployment verify permission
+        $this->authorize('verify', PreEmploymentChecklist::class);
 
         $request->validate(['remarks' => ['required', 'string', 'max:2000']]);
 
@@ -71,7 +71,7 @@ final class PreEmploymentController extends Controller
 
     public function waive(Request $request, PreEmploymentRequirement $requirement): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.preemployment.verify'), 403); // PreEmployment verify permission
+        $this->authorize('verify', PreEmploymentChecklist::class);
 
         $this->service->waiveRequirement($requirement, $request->user());
 
@@ -80,7 +80,7 @@ final class PreEmploymentController extends Controller
 
     public function complete(Request $request, PreEmploymentChecklist $checklist): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.preemployment.verify'), 403); // PreEmployment verify permission
+        $this->authorize('complete', PreEmploymentChecklist::class);
 
         $this->service->markComplete($checklist, $request->user());
 

@@ -31,6 +31,7 @@ export default function ClientPortalLayout() {
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   const handleLogout = async () => {
+    bumpAuthEpoch()
     try {
       await api.post('/auth/logout')
     } catch {
@@ -39,7 +40,6 @@ export default function ClientPortalLayout() {
     disconnectEcho()
     queryClient.clear()
     clearAuth()
-    bumpAuthEpoch()
   }
 
   if (isLoading) {

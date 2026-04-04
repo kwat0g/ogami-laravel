@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom'
 import { usePostings } from '@/hooks/useRecruitment'
 import StatusBadge from '@/components/recruitment/StatusBadge'
 
+type DepartmentLike = string | { name?: string | null } | null | undefined
+
+function formatDepartmentName(department: DepartmentLike): string {
+  if (!department) return 'N/A'
+  return typeof department === 'string' ? department : (department.name ?? 'N/A')
+}
+
 export default function JobPostingListPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
@@ -69,7 +76,7 @@ export default function JobPostingListPage() {
                     </Link>
                   </td>
                   <td className="px-6 py-4 text-sm text-neutral-700 dark:text-neutral-300">{posting.title}</td>
-                  <td className="px-6 py-4 text-sm text-neutral-500">{posting.requisition?.department}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-500">{formatDepartmentName(posting.requisition?.department)}</td>
                   <td className="px-6 py-4 text-sm text-neutral-500">{posting.location ?? '-'}</td>
                   <td className="px-6 py-4">
                     <StatusBadge status={posting.status} label={posting.status_label} />
@@ -85,7 +92,7 @@ export default function JobPostingListPage() {
               {(!data?.data || data.data.length === 0) && (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-sm text-neutral-400">
-                    No job postings found. Create one from an approved requisition.
+                    No job postings found. Create a direct job posting to start recruitment.
                   </td>
                 </tr>
               )}

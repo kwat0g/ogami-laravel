@@ -597,6 +597,7 @@ class RolePermissionSeeder extends Seeder
             'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
             'recruitment.offers.view', 'recruitment.offers.create', 'recruitment.offers.send',
             'recruitment.preemployment.view', 'recruitment.preemployment.verify',
+            'recruitment.hiring.execute',
             'recruitment.reports.view', 'recruitment.candidates.view', 'recruitment.candidates.manage',
             // NOTE: loans.vp_approve is EXCLUSIVE to vice_president role (SoD-014)
             // Budget (view-only)
@@ -632,8 +633,12 @@ class RolePermissionSeeder extends Seeder
             'reports.ap_aging', 'reports.ar_aging', 'reports.bank_reconciliation',
             // Procurement (full access for Procurement/Warehouse managers)
             'procurement.purchase-request.view', 'procurement.purchase-request.create',
+            'procurement.purchase-request.note', 'procurement.purchase-request.check',
+            'procurement.purchase-request.review', 'procurement.purchase-request.budget-check',
             'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
             'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+            'vendor_portal.view_orders', 'vendor_portal.update_fulfillment',
+            'vendors.archive', 'vendors.accredit', 'vendors.suspend',
             // Production/QC/Maintenance view access
             'production.bom.view', 'production.delivery-schedule.view', 'production.orders.view',
             'production.orders.create', 'production.orders.release', 'production.orders.complete', 'production.orders.log_output',
@@ -756,6 +761,8 @@ class RolePermissionSeeder extends Seeder
             'inventory.adjustments.create',
             // Procurement full access (Purchasing Officer does technical review)
             'procurement.purchase-request.view', 'procurement.purchase-request.create',
+            'procurement.purchase-request.note',      // officer can add notes
+            'procurement.purchase-request.check',     // officer pre-checks
             'procurement.purchase-request.review',  // Technical review of PRs
             'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
             'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
@@ -862,44 +869,15 @@ class RolePermissionSeeder extends Seeder
 
         // ── Staff ────────────────────────────────────────────────────────────
         $staff->syncPermissions([
-            'payroll.view_own_payslip', 'payroll.download_own_payslip',
-            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
-            'loans.view_own', 'loans.apply',
-            'employees.view_masked_gov_ids',
+            // Strict self-service only
             'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
+            'employees.view_masked_gov_ids',
             'attendance.view_own', 'attendance.time_clock', 'attendance.corrections.submit',
             'overtime.view', 'overtime.submit',
-            // Inventory (Staff: view only — MRQ creation is Head/Manager responsibility)
-            'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
-            'inventory.mrq.view',
-            // Production (Staff: log output)
-            'production.bom.view', 'production.orders.view', 'production.orders.log_output',
-            'production.delivery-schedule.view',
-            // QC (Staff: incoming/in-process inspection)
-            'qc.inspections.view', 'qc.inspections.create',
-            'qc.ncr.view', 'qc.ncr.create',
-            // Maintenance (Staff: view equipment, create corrective WO)
-            'maintenance.view',
-            // Mold (Staff: view for navigation + log shots)
-            'mold.view', 'mold.log_shots',
-            // Recruitment
-            'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.edit',
-            'recruitment.requisitions.submit', 'recruitment.requisitions.reject',
-            'recruitment.applications.view', 'recruitment.candidates.view',
-            // Delivery (Staff: view for warehouse staff)
-            'delivery.view',
-            // New module permissions (Phase 1-4) — Staff: view only
-            'crm.leads.view', 'crm.opportunities.view',
-            'sales.quotations.view', 'sales.orders.view', 'sales.pricing.view',
-            'inventory.physical_count.view',
-            'ar.dunning.view',
-            'hr.training.view', 'hr.competency.view',
-            'delivery.routes.view',
-            // Legacy
-            'payslips.view', 'payslips.download', 'leaves.view', 'leaves.create',
-            'leave_balances.view', 'loans.view', 'attendance.view',
-            // Recruitment
-            'recruitment.postings.view', 'recruitment.candidates.view',
+            'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
+            'loans.view_own', 'loans.apply',
+            'payroll.view_own_payslip', 'payroll.download_own_payslip',
+            'payslips.view', 'payslips.download',
         ]);
 
         // ── Super Admin — ALL permissions (for full-system testing) ──────────

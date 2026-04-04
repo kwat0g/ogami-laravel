@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories\Recruitment;
 
+use App\Domains\HR\Models\Department;
+use App\Domains\HR\Models\Position;
+use App\Domains\HR\Models\SalaryGrade;
 use App\Domains\HR\Recruitment\Models\JobPosting;
 use App\Domains\HR\Recruitment\Models\JobRequisition;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -35,5 +38,26 @@ final class JobPostingFactory extends Factory
             'published_at' => now(),
             'closes_at' => now()->addDays(30),
         ]);
+    }
+
+    public function direct(): static
+    {
+        return $this->state(function () {
+            $department = Department::query()->inRandomOrder()->first() ?? Department::factory()->create();
+            $position = Position::query()
+                ->where('department_id', $department->id)
+                ->inRandomOrder()
+                ->first()
+                ?? Position::factory()->create(['department_id' => $department->id]);
+            $salaryGrade = SalaryGrade::query()->inRandomOrder()->first();
+
+            return [
+                'job_requisition_id' => null,
+                'department_id' => $department->id,
+                'position_id' => $position->id,
+                'salary_grade_id' => $salaryGrade?->id,
+                'headcount' => fake()->numberBetween(1, 3),
+            ];
+        });
     }
 }

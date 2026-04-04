@@ -49,6 +49,30 @@ function statusLabel(s: string | undefined | null) {
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+function getMissingOnboardingItems(employee: {
+  date_of_birth: string | null
+  present_address: string | null
+  personal_email: string | null
+  personal_phone: string | null
+  has_sss_no: boolean
+  has_tin: boolean
+  has_philhealth_no: boolean
+  has_pagibig_no: boolean
+}) {
+  const missing: string[] = []
+
+  if (!employee.date_of_birth) missing.push('Date of birth')
+  if (!employee.present_address) missing.push('Present address')
+  if (!employee.personal_email) missing.push('Personal email')
+  if (!employee.personal_phone) missing.push('Personal phone')
+  if (!employee.has_sss_no) missing.push('SSS number')
+  if (!employee.has_tin) missing.push('TIN')
+  if (!employee.has_philhealth_no) missing.push('PhilHealth number')
+  if (!employee.has_pagibig_no) missing.push('Pag-IBIG number')
+
+  return missing
+}
+
 export default function EmployeeDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
   const navigate = useNavigate()
@@ -109,6 +133,8 @@ export default function EmployeeDetailPage() {
   }
 
   const allowedNext = ALLOWED_TRANSITIONS[employee.employment_status] ?? []
+  const missingOnboardingItems = getMissingOnboardingItems(employee)
+  const showOnboardingBanner = !employee.is_active || employee.onboarding_status === 'documents_pending'
 
   // Build action buttons for HR view
   const actions = (
@@ -229,6 +255,16 @@ export default function EmployeeDetailPage() {
     <div className="max-w-7xl mx-auto">
       <PageHeader title="Employee Details" backTo="/hr/employees/all" />
       <ExecutiveReadOnlyBanner />
+      {showOnboardingBanner && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Employee is inactive until onboarding details are complete.</p>
+          {missingOnboardingItems.length > 0 ? (
+            <p className="mt-1">Missing: {missingOnboardingItems.join(', ')}</p>
+          ) : (
+            <p className="mt-1">Record is marked as pending activation.</p>
+          )}
+        </div>
+      )}
       <EmployeeProfileView employee={employee} viewContext="hr" actions={actions} />
     </div>
   )

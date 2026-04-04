@@ -32,6 +32,7 @@ export default function BirFilingListPage() {
       })
       toast.success('BIR filing scheduled.')
       setShowSchedule(false)
+    } catch (e) { console.error(e); }
   }
 
   return (

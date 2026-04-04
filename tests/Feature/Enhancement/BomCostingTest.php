@@ -5,14 +5,16 @@ declare(strict_types=1);
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Production\Models\BillOfMaterials;
 use App\Domains\Production\Models\BomComponent;
+use App\Domains\Production\Models\BomMaterialCostSnapshot;
 use App\Domains\Production\Models\Routing;
 use App\Domains\Production\Models\WorkCenter;
+use App\Domains\Production\Services\BomService;
 use App\Domains\Production\Services\CostingService;
 
 uses()->group('feature', 'enhancement', 'bom-costing');
 
 it('computes material-only standard cost from BOM components', function () {
-    $product = ItemMaster::factory()->create(['type' => 'finished_good', 'standard_price' => 0]);
+    $product = ItemMaster::factory()->create(['type' => 'finished_good', 'standard_price_centavos' => 0]);
     $rawA = ItemMaster::factory()->create(['type' => 'raw_material', 'standard_price_centavos' => 5000]); // 50.00
     $rawB = ItemMaster::factory()->create(['type' => 'raw_material', 'standard_price_centavos' => 3000]); // 30.00
 
@@ -112,4 +114,113 @@ it('returns where-used report for a component', function () {
     $result = $service->whereUsed($raw->id);
 
     expect($result)->toHaveCount(2);
+});
+
+it('records a material-cost snapshot when BOM cost is rolled up', function () {
+    $product = ItemMaster::factory()->create(['type' => 'finished_good']);
+    $raw = ItemMaster::factory()->create(['type' => 'raw_material', 'standard_price_centavos' => 5000]);
+
+    $bom = BillOfMaterials::create([
+        'product_item_id' => $product->id,
+        'version' => '1.0',
+        'is_active' => true,
+    ]);
+
+    BomComponent::create([
+        'bom_id' => $bom->id,
+        'component_item_id' => $raw->id,
+        'qty_per_unit' => 2,
+        'unit_of_measure' => 'pcs',
+        'scrap_factor_pct' => 0,
+    ]);
+
+    app(BomService::class)->rollupCost($bom);
+
+    $snapshot = BomMaterialCostSnapshot::query()
+        ->where('bom_id', $bom->id)
+        ->latest('id')
+        ->first();
+
+    expect($snapshot)->not->toBeNull();
+    expect($snapshot?->source)->toBe('rollup');
+    expect($snapshot?->material_cost_centavos)->toBe(10000);
+});
+
+it('compares BOM versions using total standard cost variance', function () {
+    $product = ItemMaster::factory()->create(['type' => 'finished_good']);
+    $raw = ItemMaster::factory()->create(['type' => 'raw_material', 'standard_price_centavos' => 1000]);
+
+    $bomA = BillOfMaterials::create([
+        'product_item_id' => $product->id,
+        'version' => '1.0',
+        'is_active' => true,
+    ]);
+
+    $bomB = BillOfMaterials::create([
+        'product_item_id' => $product->id,
+        'version' => '2.0',
+        'is_active' => true,
+    ]);
+
+    BomComponent::create([
+        'bom_id' => $bomA->id,
+        'component_item_id' => $raw->id,
+        'qty_per_unit' => 1,
+        'unit_of_measure' => 'pcs',
+        'scrap_factor_pct' => 0,
+    ]);
+
+    BomComponent::create([
+        'bom_id' => $bomB->id,
+        'component_item_id' => $raw->id,
+        'qty_per_unit' => 1,
+        'unit_of_measure' => 'pcs',
+        'scrap_factor_pct' => 0,
+    ]);
+
+    $wcA = WorkCenter::create([
+        'code' => 'WC-A',
+        'name' => 'Assembly A',
+        'hourly_rate_centavos' => 20000,
+        'overhead_rate_centavos' => 5000,
+        'capacity_hours_per_day' => 8,
+        'is_active' => true,
+    ]);
+
+    $wcB = WorkCenter::create([
+        'code' => 'WC-B',
+        'name' => 'Assembly B',
+        'hourly_rate_centavos' => 40000,
+        'overhead_rate_centavos' => 10000,
+        'capacity_hours_per_day' => 8,
+        'is_active' => true,
+    ]);
+
+    Routing::create([
+        'bom_id' => $bomA->id,
+        'work_center_id' => $wcA->id,
+        'sequence' => 1,
+        'operation_name' => 'Assemble A',
+        'setup_time_hours' => 0,
+        'run_time_hours_per_unit' => 1,
+    ]);
+
+    Routing::create([
+        'bom_id' => $bomB->id,
+        'work_center_id' => $wcB->id,
+        'sequence' => 1,
+        'operation_name' => 'Assemble B',
+        'setup_time_hours' => 0,
+        'run_time_hours_per_unit' => 1,
+    ]);
+
+    $comparison = app(BomService::class)->compareCost($bomA, $bomB, 'material_labor_overhead');
+
+    // Material is identical, variance should come from labor+overhead increase.
+    expect($comparison['version_a']['material_cost_centavos'])->toBe(1000);
+    expect($comparison['version_b']['material_cost_centavos'])->toBe(1000);
+    expect($comparison['version_a']['total_standard_cost_centavos'])->toBe(26000);
+    expect($comparison['version_b']['total_standard_cost_centavos'])->toBe(51000);
+    expect($comparison['variance_centavos'])->toBe(25000);
+    expect($comparison['variance_pct'])->toBe(96.15);
 });

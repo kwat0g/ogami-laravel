@@ -35,6 +35,9 @@ export default function PerformanceAppraisalListPage() {
       })
       toast.success('Performance appraisal created.')
       setShowForm(false)
+    } catch (error) {
+      toast.error("Failed to create appraisal.")
+    }
   }
 
   return (

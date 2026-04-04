@@ -144,7 +144,7 @@ export default function RequisitionDetailPage() {
                   className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                   Approve
                 </button>
-                  <button onClick={() => handleAction("reject", { remarks })} disabled={action.isPending} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">
+                  <button onClick={() => handleAction("reject", { reason: remarks })} disabled={action.isPending} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors">
                   Reject
                 </button>
               </div>

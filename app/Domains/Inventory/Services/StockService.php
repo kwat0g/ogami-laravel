@@ -13,6 +13,7 @@ use App\Events\Inventory\LowStockDetected;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 final class StockService implements ServiceContract
@@ -69,7 +70,7 @@ final class StockService implements ServiceContract
                 'location_id' => $locationId,
                 'lot_batch_id' => $lotBatchId,
                 'transaction_type' => $referenceType === 'production_orders' ? 'production_output' : 'goods_receipt',
-                'reference_type' => $referenceType,
+                'reference_type' => $this->normalizeReferenceType($referenceType),
                 'reference_id' => $referenceId,
                 'quantity' => $quantity,
                 'balance_after' => $newBalance,
@@ -122,7 +123,7 @@ final class StockService implements ServiceContract
                 'item_id' => $itemId,
                 'location_id' => $locationId,
                 'transaction_type' => 'issue',
-                'reference_type' => $referenceType,
+                'reference_type' => $this->normalizeReferenceType($referenceType),
                 'reference_id' => $referenceId,
                 'quantity' => -$quantity,
                 'balance_after' => $newBalance,
@@ -289,6 +290,18 @@ final class StockService implements ServiceContract
                 'receive_ledger' => $receiveLedger,
             ];
         });
+    }
+
+    /**
+     * Normalize stock ledger reference type values to prevent DB overflow.
+     */
+    private function normalizeReferenceType(string $referenceType): string
+    {
+        if (class_exists($referenceType) && is_subclass_of($referenceType, Model::class)) {
+            $referenceType = (new $referenceType())->getTable();
+        }
+
+        return substr($referenceType, 0, 50);
     }
 
     public function currentBalance(int $itemId, int $locationId): float

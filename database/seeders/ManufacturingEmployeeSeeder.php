@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Seeders\Helpers\EmployeeContextHelper;
+use Database\Seeders\Helpers\GovernmentIdHelper;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -49,6 +51,7 @@ class ManufacturingEmployeeSeeder extends Seeder
     public function run(): void
     {
         $this->seedEmployees();
+        $this->seedTestAccountEmployees();
         $this->seedUserAccounts();
         $this->seedUserEmployeeLinks();
         $this->seedMultiDepartmentAccess();
@@ -190,9 +193,147 @@ class ManufacturingEmployeeSeeder extends Seeder
                 continue;
             }
 
-            \Database\Seeders\Helpers\EmployeeContextHelper::assignDefaultShift($employee->id);
-            \Database\Seeders\Helpers\EmployeeContextHelper::allocateLeaveBalances($employee->id);
+            EmployeeContextHelper::assignDefaultShift($employee->id);
+            EmployeeContextHelper::allocateLeaveBalances($employee->id);
         }
+    }
+
+    // ── Test account employees (full records with gov IDs for thesis demo) ────
+
+    private function seedTestAccountEmployees(): void
+    {
+        $employees = [
+            [
+                'code'         => 'EMP-2026-0024',
+                'first_name'   => 'Patricia',
+                'middle_name'  => 'Gomez',
+                'last_name'    => 'Dela Cruz',
+                'dob'          => '1985-07-12',
+                'gender'       => 'female',
+                'civil_status' => 'MARRIED',
+                'dependents'   => 2,
+                'bir_status'   => 'ME2',
+                'personal_email' => 'patricia.delacruz@email.com',
+                'phone'        => '09181230001',
+                'address'      => '22 Katipunan Ave., Quezon City',
+                'dept'         => 'ACCTG',
+                'pos'          => 'ACCT-MGR',
+                'sg'           => 'SG-11',
+                'hired'        => '2017-03-01',
+                'reg_date'     => '2017-09-01',
+                'salary'       => 6500000, // ₱65,000
+                'bank_name'    => 'BDO',
+                'bank_account_no' => '3001000001',
+            ],
+            [
+                'code'         => 'EMP-2026-0025',
+                'first_name'   => 'Ernesto',
+                'middle_name'  => 'Bautista',
+                'last_name'    => 'Santos',
+                'dob'          => '1980-11-03',
+                'gender'       => 'male',
+                'civil_status' => 'MARRIED',
+                'dependents'   => 3,
+                'bir_status'   => 'ME3',
+                'personal_email' => 'ernesto.santos@email.com',
+                'phone'        => '09181230002',
+                'address'      => '7 Mahogany St., Cabuyao, Laguna',
+                'dept'         => 'WH',
+                'pos'          => 'WH-MGR',
+                'sg'           => 'SG-12',
+                'hired'        => '2016-06-01',
+                'reg_date'     => '2016-12-01',
+                'salary'       => 2200000, // ₱22,000
+                'bank_name'    => 'Metrobank',
+                'bank_account_no' => '3001000002',
+            ],
+            [
+                'code'         => 'EMP-2026-0026',
+                'first_name'   => 'Lorna',
+                'middle_name'  => 'Pascual',
+                'last_name'    => 'Reyes',
+                'dob'          => '1991-02-18',
+                'gender'       => 'female',
+                'civil_status' => 'SINGLE',
+                'dependents'   => 0,
+                'bir_status'   => 'S',
+                'personal_email' => 'lorna.reyes@email.com',
+                'phone'        => '09181230003',
+                'address'      => '55 Bulacan St., San Juan City',
+                'dept'         => 'SALES',
+                'pos'          => 'SALES-HEAD',
+                'sg'           => 'SG-09',
+                'hired'        => '2021-08-16',
+                'reg_date'     => '2022-02-16',
+                'salary'       => 1200000, // ₱12,000
+                'bank_name'    => 'BPI',
+                'bank_account_no' => '3001000003',
+            ],
+        ];
+
+        foreach ($employees as $emp) {
+            $deptId = DB::table('departments')->where('code', $emp['dept'])->value('id');
+            $posId  = DB::table('positions')->where('code', $emp['pos'])->value('id');
+            $sgId   = DB::table('salary_grades')->where('code', $emp['sg'])->value('id');
+
+            if (! $deptId || ! $posId) {
+                $this->command->warn("  Skipping {$emp['code']} — dept '{$emp['dept']}' or pos '{$emp['pos']}' not found.");
+                continue;
+            }
+
+            $govIds = GovernmentIdHelper::generateCompleteGovIds();
+
+            DB::table('employees')->insertOrIgnore([
+                'employee_code'          => $emp['code'],
+                'ulid'                   => (string) Str::ulid(),
+                'first_name'             => $emp['first_name'],
+                'middle_name'            => $emp['middle_name'] ?? null,
+                'last_name'              => $emp['last_name'],
+                'date_of_birth'          => $emp['dob'],
+                'gender'                 => $emp['gender'],
+                'civil_status'           => $emp['civil_status'],
+                'citizenship'            => 'Filipino',
+                'present_address'        => $emp['address'],
+                'permanent_address'      => $emp['address'],
+                'qualified_dependents'   => $emp['dependents'],
+                'bir_status'             => $emp['bir_status'],
+                'personal_email'         => $emp['personal_email'],
+                'personal_phone'         => $emp['phone'],
+                'bank_name'              => $emp['bank_name'],
+                'bank_account_no'        => $emp['bank_account_no'],
+                'bank_account_name'      => $emp['first_name'].' '.$emp['last_name'],
+                // Government IDs (encrypted + SHA-256 hash for uniqueness)
+                'sss_no_encrypted'       => $govIds['sss_no_encrypted'],
+                'sss_no_hash'            => $govIds['sss_no_hash'],
+                'tin_encrypted'          => $govIds['tin_encrypted'],
+                'tin_hash'               => $govIds['tin_hash'],
+                'philhealth_no_encrypted' => $govIds['philhealth_no_encrypted'],
+                'philhealth_no_hash'     => $govIds['philhealth_no_hash'],
+                'pagibig_no_encrypted'   => $govIds['pagibig_no_encrypted'],
+                'pagibig_no_hash'        => $govIds['pagibig_no_hash'],
+                'department_id'          => $deptId,
+                'position_id'            => $posId,
+                'salary_grade_id'        => $sgId,
+                'employment_type'        => 'regular',
+                'employment_status'      => 'active',
+                'date_hired'             => $emp['hired'],
+                'regularization_date'    => $emp['reg_date'] ?? null,
+                'basic_monthly_rate'     => $emp['salary'],
+                'onboarding_status'      => 'active',
+                'is_active'              => true,
+                'pay_basis'              => 'monthly',
+                'created_at'             => now(),
+                'updated_at'             => now(),
+            ]);
+
+            $employee = DB::table('employees')->where('employee_code', $emp['code'])->first();
+            if ($employee) {
+                EmployeeContextHelper::assignDefaultShift($employee->id);
+                EmployeeContextHelper::allocateLeaveBalances($employee->id);
+            }
+        }
+
+        $this->command->info('✓ Test account employees seeded (Acctg Manager, WH Manager, Sales Head) with gov IDs, shifts, and leave balances.');
     }
 
     // ── Multi-department access ──────────────────────────────────────────
@@ -444,6 +585,9 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['email' => 'prod.manager@ogamierp.local',    'name' => 'Renaldo Mendoza',      'password' => 'Manager@12345!',   'role' => 'manager'],
             ['email' => 'qc.manager@ogamierp.local',      'name' => 'Josephine Villanueva', 'password' => 'Manager@12345!',   'role' => 'manager'],
             ['email' => 'mold.manager@ogamierp.local',    'name' => 'Victor Castillo',      'password' => 'Manager@12345!',   'role' => 'manager'],
+            ['email' => 'acctg.manager@ogamierp.local',   'name' => 'Patricia Dela Cruz',   'password' => 'Manager@12345!',   'role' => 'manager'],
+            ['email' => 'wh.manager@ogamierp.local',      'name' => 'Ernesto Santos',       'password' => 'Manager@12345!',   'role' => 'manager'],
+            ['email' => 'sales.head@ogamierp.local',      'name' => 'Lorna Reyes',          'password' => 'Head@123456789!',  'role' => 'head'],
             ['email' => 'ga.officer@ogamierp.local',      'name' => 'Rachel Garcia',        'password' => 'Officer@12345!',   'role' => 'officer'],
             ['email' => 'purchasing.officer@ogamierp.local', 'name' => 'Marlon Torres',     'password' => 'Officer@12345!',   'role' => 'officer'],
             ['email' => 'impex.officer@ogamierp.local',   'name' => 'Cristina Aquino',      'password' => 'Officer@12345!',   'role' => 'officer'],
@@ -469,6 +613,9 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['email' => 'prod.manager@ogamierp.local',       'code' => 'EMP-2026-0010'],
             ['email' => 'qc.manager@ogamierp.local',         'code' => 'EMP-2026-0011'],
             ['email' => 'mold.manager@ogamierp.local',       'code' => 'EMP-2026-0012'],
+            ['email' => 'acctg.manager@ogamierp.local',      'code' => 'EMP-2026-0024'],
+            ['email' => 'wh.manager@ogamierp.local',          'code' => 'EMP-2026-0025'],
+            ['email' => 'sales.head@ogamierp.local',          'code' => 'EMP-2026-0026'],
             ['email' => 'ga.officer@ogamierp.local',         'code' => 'EMP-2026-0013'],
             ['email' => 'purchasing.officer@ogamierp.local', 'code' => 'EMP-2026-0014'],
             ['email' => 'impex.officer@ogamierp.local',      'code' => 'EMP-2026-0015'],
@@ -494,6 +641,9 @@ class ManufacturingEmployeeSeeder extends Seeder
             ['prod.manager@ogamierp.local',       'Manager@12345!',   'manager', 'Production Manager'],
             ['qc.manager@ogamierp.local',         'Manager@12345!',   'manager',         'QC/QA Manager'],
             ['mold.manager@ogamierp.local',       'Manager@12345!',   'manager',       'Mold Manager'],
+            ['acctg.manager@ogamierp.local',      'Manager@12345!',   'manager',         'Accounting Manager'],
+            ['wh.manager@ogamierp.local',         'Manager@12345!',   'manager',         'Warehouse Manager'],
+            ['sales.head@ogamierp.local',         'Head@123456789!',  'head',            'Sales Supervisor'],
             ['ga.officer@ogamierp.local',         'Officer@12345!',   'officer',         'GA Officer'],
             ['purchasing.officer@ogamierp.local', 'Officer@12345!',   'officer', 'Purchasing Officer'],
             ['impex.officer@ogamierp.local',      'Officer@12345!',   'officer',      'ImpEx Officer'],

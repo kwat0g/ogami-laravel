@@ -14,6 +14,7 @@ use App\Http\Resources\HR\Recruitment\ApplicationResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ApplicationController extends Controller
 {
@@ -26,7 +27,7 @@ final class ApplicationController extends Controller
         $this->authorize('viewAny', Application::class);
 
         $result = $this->service->list(
-            $request->only(['job_posting_id', 'status', 'candidate_id', 'search']),
+            $request->only(['job_posting_id', 'job_posting_ulid', 'status', 'candidate_id', 'search']),
             (int) $request->query('per_page', '25'),
         );
 
@@ -101,5 +102,12 @@ final class ApplicationController extends Controller
         $this->service->delete($application);
 
         return response()->json([], 204);
+    }
+
+    public function downloadResume(Request $request, Application $application): StreamedResponse
+    {
+        $this->authorize('view', $application);
+
+        return $this->service->downloadResume($application);
     }
 }

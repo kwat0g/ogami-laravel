@@ -618,7 +618,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => { setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-                className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+                <button onClick={() => gaProcess.mutate({ id: processId!, action_taken: actionTaken, remarks: leaveRemarks }, { onSuccess: () => { setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') } })} disabled={gaProcess.isPending} className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
                 {gaProcess.isPending ? 'Processing…' : 'Submit'}
               </button>
             </div>
@@ -638,7 +638,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => { setVpNoteId(null); setVpRemarks('') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-                className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+                <button onClick={() => gaProcess.mutate({ id: processId!, action_taken: actionTaken, remarks: leaveRemarks }, { onSuccess: () => { setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') } })} disabled={gaProcess.isPending} className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
                 {vpNote.isPending ? 'Approving…' : 'Approve (VP)'}
               </button>
             </div>

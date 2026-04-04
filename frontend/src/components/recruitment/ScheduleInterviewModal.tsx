@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useScheduleInterview } from '@/hooks/useRecruitment'
+import { useInterviewerOptions, useScheduleInterview } from '@/hooks/useRecruitment'
 import { toast } from 'sonner'
 
 interface ScheduleInterviewModalProps {
@@ -16,32 +16,29 @@ export default function ScheduleInterviewModal({
   onSuccess,
 }: ScheduleInterviewModalProps) {
   const schedule = useScheduleInterview()
+  const { data: interviewerOptions = [], isLoading: isInterviewerLoading } = useInterviewerOptions()
   const [form, setForm] = useState({
     type: 'hr_screening',
     scheduled_at: '',
-    duration_minutes: '60',
-    location: '',
     interviewer_id: '',
-    interviewer_department_id: '',
-    round: '1',
     notes: '',
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const interviewerId = form.interviewer_id ? Number(form.interviewer_id) : undefined
-    const departmentId = form.interviewer_department_id ? Number(form.interviewer_department_id) : undefined
+
+    if (!interviewerId) {
+      toast.error('Please select an interviewer')
+      return
+    }
 
     schedule.mutate(
       {
         application_id: applicationId,
         type: form.type,
         scheduled_at: form.scheduled_at,
-        duration_minutes: Number(form.duration_minutes),
-        location: form.location || undefined,
         interviewer_id: interviewerId,
-        interviewer_department_id: departmentId,
-        round: Number(form.round),
         notes: form.notes || undefined,
       },
       {
@@ -94,62 +91,29 @@ export default function ScheduleInterviewModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase">Duration (min)</label>
-              <input
-                type="number"
-                min="15"
-                max="480"
-                value={form.duration_minutes}
-                onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
-                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase">Round</label>
-              <input
-                type="number"
-                min="1"
-                value={form.round}
-                onChange={(e) => setForm({ ...form, round: e.target.value })}
-                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase">Interviewer ID</label>
-              <input
-                type="number"
-                value={form.interviewer_id}
-                onChange={(e) => setForm({ ...form, interviewer_id: e.target.value })}
-                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
-                placeholder="User ID (optional)"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 uppercase">Interviewer Dept ID</label>
-              <input
-                type="number"
-                value={form.interviewer_department_id}
-                onChange={(e) => setForm({ ...form, interviewer_department_id: e.target.value })}
-                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
-                placeholder="Department ID (optional)"
-              />
-            </div>
-          </div>
-
           <div>
-            <label className="block text-xs font-medium text-neutral-500 uppercase">Location</label>
-            <input
-              type="text"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
+            <label className="block text-xs font-medium text-neutral-500 uppercase">Interviewer</label>
+            <select
+              value={form.interviewer_id}
+              onChange={(e) => setForm({ ...form, interviewer_id: e.target.value })}
               className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
-              placeholder="e.g. Conference Room A, Zoom link..."
-            />
+              required
+            >
+              <option value="">Select interviewer...</option>
+              {interviewerOptions.map((interviewer) => (
+                <option key={interviewer.id} value={interviewer.id}>
+                  {interviewer.name}
+                  {interviewer.position ? ` - ${interviewer.position.title}` : ''}
+                  {interviewer.department ? ` (${interviewer.department.code})` : ''}
+                </option>
+              ))}
+            </select>
+            {isInterviewerLoading && (
+              <p className="mt-1 text-xs text-neutral-500">Loading interviewer list...</p>
+            )}
+            {!isInterviewerLoading && interviewerOptions.length === 0 && (
+              <p className="mt-1 text-xs text-amber-600">No available interviewer found.</p>
+            )}
           </div>
 
           <div>

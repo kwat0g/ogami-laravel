@@ -47,22 +47,6 @@ function buildTimeline(app: Application): TimelineStep[] {
     steps.push({ label: 'Interview', status: 'pending' })
   }
 
-  // Offer
-  const hasOffer = app.offer != null
-  steps.push({
-    label: 'Offer',
-    status: hasOffer && app.offer!.status === 'accepted' ? 'done' : hasOffer ? 'current' : 'pending',
-    detail: hasOffer ? app.offer!.status_label : undefined,
-  })
-
-  // Pre-Employment
-  const hasPE = app.pre_employment != null
-  steps.push({
-    label: 'Pre-Employment',
-    status: hasPE && app.pre_employment!.status === 'completed' ? 'done' : hasPE ? 'current' : 'pending',
-    detail: hasPE ? `${app.pre_employment!.progress.percentage}% complete` : undefined,
-  })
-
   // Hired
   steps.push({
     label: 'Hired',

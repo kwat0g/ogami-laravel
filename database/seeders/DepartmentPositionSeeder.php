@@ -195,6 +195,10 @@ class DepartmentPositionSeeder extends Seeder
             // Purchasing
             ['PURCH-MGR', 'Purchasing Manager',       'PURCH', 'SG-12'],
             ['PURCH-OFF-2', 'Purchasing Officer',     'PURCH', 'SG-09'],
+            // Warehouse Manager (new — needed for MRQ fulfill and full inventory ops)
+            ['WH-MGR',   'Warehouse Manager',         'WH',    'SG-12'],
+            // Sales Supervisor/Head (new — needed for CRM ticket management)
+            ['SALES-HEAD', 'Sales Supervisor',        'SALES', 'SG-09'],
         ];
 
         foreach ($positions as [$code, $title, $deptCode, $payGrade]) {

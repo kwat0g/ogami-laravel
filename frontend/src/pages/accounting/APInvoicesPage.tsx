@@ -74,10 +74,11 @@ interface CreateFromPOModalProps {
 
 function CreateFromPOModal({ isOpen, onClose, onSelect, isLoading }: CreateFromPOModalProps) {
   const [selectedPoId, setSelectedPoId] = useState<number | null>(null)
+  const canViewPurchaseOrders = useAuthStore(s => s.hasPermission('procurement.purchase-order.view'))
   
-  // Fetch eligible POs only when modal is open (avoids 403 for non-procurement roles)
+  // Fetch eligible POs only when modal is open and user can view purchase orders.
   const { data: poData, isLoading: isLoadingPOs } = usePurchaseOrders(
-    isOpen ? { per_page: 100 } : undefined,
+    isOpen && canViewPurchaseOrders ? { per_page: 100 } : undefined,
   )
   
   const purchaseOrders = poData?.data ?? []

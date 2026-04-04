@@ -17,7 +17,21 @@ final class RecruitmentDashboardController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        abort_unless($request->user()->can('recruitment.requisitions.view'), 403);
+        $user = $request->user();
+
+        $isHrRole = $user->hasRole('manager') || $user->hasRole('officer') || $user->hasRole('head');
+        $isHrRecruiter = $isHrRole && $user->departments()->where('code', 'HR')->exists();
+
+        $canViewDashboard = $user->can('hr.full_access')
+            || $isHrRecruiter
+            || $user->can('recruitment.requisitions.view')
+            || $user->can('recruitment.postings.view')
+            || $user->can('recruitment.applications.view')
+            || $user->can('recruitment.interviews.evaluate')
+            || $user->can('recruitment.offers.view')
+            || $user->can('recruitment.candidates.view');
+
+        abort_unless($canViewDashboard, 403);
 
         return response()->json([
             'data' => [

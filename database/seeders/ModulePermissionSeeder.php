@@ -18,6 +18,23 @@ use Spatie\Permission\Models\Role;
 class ModulePermissionSeeder extends Seeder
 {
     /**
+     * Staff is intentionally restricted to self-service only, regardless of
+     * module-level definitions below.
+     *
+     * @var array<int, string>
+     */
+    private const STAFF_SELF_SERVICE_PERMISSIONS = [
+        'self.view_profile', 'self.submit_profile_update', 'self.view_attendance',
+        'employees.view_masked_gov_ids',
+        'attendance.view_own', 'attendance.time_clock', 'attendance.corrections.submit',
+        'overtime.view', 'overtime.submit',
+        'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
+        'loans.view_own', 'loans.apply',
+        'payroll.view_own_payslip', 'payroll.download_own_payslip',
+        'payslips.view', 'payslips.download',
+    ];
+
+    /**
      * Permission definitions for each module and role.
      */
     private const PERMISSIONS = [
@@ -770,6 +787,9 @@ class ModulePermissionSeeder extends Seeder
                 $rolePermissions[$roleName] = array_unique(array_merge($rolePermissions[$roleName], $permissions));
             }
         }
+
+        // Hard override: staff must remain self-service only.
+        $rolePermissions['staff'] = self::STAFF_SELF_SERVICE_PERMISSIONS;
 
         // Now sync the merged permissions to each role
         $now = now();

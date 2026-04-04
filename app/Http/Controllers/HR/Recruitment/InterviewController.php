@@ -31,6 +31,18 @@ final class InterviewController extends Controller
         return response()->json($result);
     }
 
+    public function interviewerOptions(Request $request): JsonResponse
+    {
+        $this->authorize('create', InterviewSchedule::class);
+
+        $options = $this->service->listInterviewerOptions(
+            (string) $request->query('search', ''),
+            (int) $request->query('limit', '50'),
+        );
+
+        return response()->json(['data' => $options]);
+    }
+
     public function store(ScheduleInterviewRequest $request): JsonResponse
     {
         $this->authorize('create', InterviewSchedule::class);
@@ -75,6 +87,13 @@ final class InterviewController extends Controller
         $interview = $this->service->cancel($interview, $request->user(), $request->input('reason'));
 
         return response()->json($interview);
+    }
+
+    public function start(Request $request, InterviewSchedule $interview): JsonResponse
+    {
+        $this->authorize('update', $interview);
+
+        return response()->json($this->service->start($interview, $request->user()));
     }
 
     public function markNoShow(Request $request, InterviewSchedule $interview): JsonResponse

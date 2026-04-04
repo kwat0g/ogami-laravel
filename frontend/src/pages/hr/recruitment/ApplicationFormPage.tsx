@@ -6,6 +6,13 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import FormField from '@/components/ui/FormField'
 import { toast } from 'sonner'
 
+type DepartmentLike = string | { name?: string | null } | null | undefined
+
+function formatDepartmentName(department: DepartmentLike): string {
+  if (!department) return 'N/A'
+  return typeof department === 'string' ? department : (department.name ?? 'N/A')
+}
+
 export default function ApplicationFormPage() {
   const navigate = useNavigate()
   const createMutation = useCreateApplication()
@@ -78,7 +85,7 @@ export default function ApplicationFormPage() {
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {postings.map((p: any) => (
                     <option key={p.ulid} value={p.id}>
-                      {p.posting_number ?? p.title} - {p.title} ({p.requisition?.department ?? 'N/A'})
+                      {p.posting_number ?? p.title} - {p.title} ({formatDepartmentName(p.requisition?.department)})
                     </option>
                   ))}
                 </select>

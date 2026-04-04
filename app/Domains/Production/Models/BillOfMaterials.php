@@ -68,4 +68,9 @@ final class BillOfMaterials extends Model implements Auditable
     {
         return $this->hasMany(ProductionOrder::class, 'bom_id');
     }
+
+    public function materialCostSnapshots(): HasMany
+    {
+        return $this->hasMany(BomMaterialCostSnapshot::class, 'bom_id')->latest('id');
+    }
 }

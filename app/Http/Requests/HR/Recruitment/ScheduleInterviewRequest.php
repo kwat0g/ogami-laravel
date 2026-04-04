@@ -12,7 +12,22 @@ final class ScheduleInterviewRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('recruitment.interviews.schedule');
+        $user = $this->user();
+
+        $inHrDepartment = $user !== null
+            && (
+                $user->departments()->where('departments.code', 'HR')->exists()
+                || $user->primaryDepartment?->code === 'HR'
+                || $user->employee?->department?->code === 'HR'
+            );
+
+        return $user !== null
+            && (
+                $user->can('recruitment.interviews.schedule')
+                || $user->can('recruitment.hiring.execute')
+                || $user->can('hr.full_access')
+                || (($user->hasRole('manager') || $user->hasRole('officer')) && $inHrDepartment)
+            );
     }
 
     /** @return array<string, mixed> */

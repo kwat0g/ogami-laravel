@@ -26,6 +26,7 @@ final class ItemMasterResource extends JsonResource
             'name' => $this->name,
             'unit_of_measure' => $this->unit_of_measure,
             'description' => $this->description,
+            'standard_price_centavos' => $this->standard_price_centavos,
             'reorder_point' => $this->reorder_point,
             'reorder_qty' => $this->reorder_qty,
             'type' => $this->type,

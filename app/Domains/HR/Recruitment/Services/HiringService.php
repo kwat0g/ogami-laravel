@@ -7,8 +7,7 @@ namespace App\Domains\HR\Recruitment\Services;
 use App\Domains\HR\Models\Employee;
 use App\Domains\HR\Recruitment\Enums\ApplicationStatus;
 use App\Domains\HR\Recruitment\Enums\HiringStatus;
-use App\Domains\HR\Recruitment\Enums\OfferStatus;
-use App\Domains\HR\Recruitment\Enums\PreEmploymentStatus;
+use App\Domains\HR\Recruitment\Enums\PostingStatus;
 use App\Domains\HR\Recruitment\Enums\RequisitionStatus;
 use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\Hiring;
@@ -16,33 +15,29 @@ use App\Models\User;
 use App\Notifications\Recruitment\HiredNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 final class HiringService implements ServiceContract
 {
     public function submitForApproval(Application $application, array $data, User $actor): Hiring
     {
-        // Validate offer is accepted
-        $offer = $application->offer;
-        if (! $offer || $offer->status !== OfferStatus::Accepted) {
-            throw new DomainException(
-                'Cannot hire without an accepted offer.',
-                'NO_ACCEPTED_OFFER',
-                422,
-                ['application_id' => $application->id],
-            );
-        }
+        $application->loadMissing([
+            'candidate',
+            'posting.requisition',
+            'posting.requisition.salaryGrade',
+            'posting.salaryGrade',
+            'posting.department',
+            'posting.position',
+            'offer',
+            'preEmploymentChecklist',
+            'hiring',
+        ]);
 
-        // Validate pre-employment is complete or waived
-        $checklist = $application->preEmploymentChecklist;
-        if ($checklist && ! in_array($checklist->status, [PreEmploymentStatus::Completed, PreEmploymentStatus::Waived])) {
-            throw new DomainException(
-                'Pre-employment requirements are not yet completed.',
-                'PREEMPLOYMENT_INCOMPLETE',
-                422,
-                ['checklist_status' => $checklist->status->value],
-            );
-        }
+        $this->assertCanProceedWithHiring($application);
+
+        // Offer is optional in the current flow; hiring may proceed with posting/data defaults.
+        $offer = $application->offer;
 
         if ($application->hiring !== null) {
             throw new DomainException(
@@ -53,21 +48,156 @@ final class HiringService implements ServiceContract
             );
         }
 
-        $hiring = DB::transaction(function () use ($application, $data, $actor, $offer): Hiring {
+        $candidate = $application->candidate;
+        if ($candidate === null) {
+            throw new DomainException(
+                'Cannot create hiring request without candidate profile data.',
+                'CANDIDATE_PROFILE_MISSING',
+                422,
+                ['application_id' => $application->id],
+            );
+        }
+
+        $candidateFirstName = trim((string) ($data['first_name'] ?? $candidate->first_name ?? ''));
+        $candidateLastName = trim((string) ($data['last_name'] ?? $candidate->last_name ?? ''));
+        if (($candidateFirstName === '' || $candidateLastName === '') && is_string($candidate->full_name)) {
+            $nameParts = preg_split('/\s+/', trim($candidate->full_name)) ?: [];
+            if ($candidateFirstName === '' && $nameParts !== []) {
+                $candidateFirstName = (string) array_shift($nameParts);
+            }
+            if ($candidateLastName === '' && $nameParts !== []) {
+                $candidateLastName = (string) array_pop($nameParts);
+            }
+        }
+
+        $posting = $application->posting;
+        $departmentId = $data['department_id']
+            ?? $offer?->offered_department_id
+            ?? $posting?->department_id
+            ?? $posting?->requisition?->department_id
+            ?? null;
+        $positionId = $data['position_id']
+            ?? $offer?->offered_position_id
+            ?? $posting?->position_id
+            ?? $posting?->requisition?->position_id
+            ?? null;
+        $employmentType = $data['employment_type']
+            ?? $offer?->employment_type?->value
+            ?? $posting?->employment_type?->value
+            ?? null;
+        $basicMonthlyRate = $data['basic_monthly_rate']
+            ?? $offer?->offered_salary
+            ?? null;
+        $salaryGradeId = $data['salary_grade_id']
+            ?? $posting?->salary_grade_id
+            ?? $posting?->requisition?->salary_grade_id
+            ?? null;
+        $resolvedSalaryGrade = $posting?->salaryGrade ?? $posting?->requisition?->salaryGrade;
+
+        if ($basicMonthlyRate === null && $resolvedSalaryGrade !== null) {
+            $basicMonthlyRate = (int) $resolvedSalaryGrade->min_monthly_rate;
+        }
+
+        if ($departmentId === null || $positionId === null || $employmentType === null || $basicMonthlyRate === null) {
+            throw new DomainException(
+                'Hiring requires resolved department, position, employment type, and monthly rate.',
+                'HIRING_DEFAULTS_NOT_RESOLVED',
+                422,
+                [
+                    'department_id' => $departmentId,
+                    'position_id' => $positionId,
+                    'employment_type' => $employmentType,
+                    'basic_monthly_rate' => $basicMonthlyRate,
+                ],
+            );
+        }
+
+        $normalizedPayload = [
+            'start_date' => $data['start_date'],
+            'first_name' => $candidateFirstName,
+            'last_name' => $candidateLastName,
+            'middle_name' => $data['middle_name'] ?? null,
+            'suffix' => $data['suffix'] ?? null,
+            'date_of_birth' => $data['date_of_birth'],
+            'gender' => $data['gender'],
+            'civil_status' => $data['civil_status'] ?? 'SINGLE',
+            'citizenship' => $data['citizenship'] ?? null,
+            'present_address' => $data['present_address'] ?? $candidate->address ?? 'N/A',
+            'permanent_address' => $data['permanent_address'] ?? null,
+            'personal_email' => $data['personal_email'] ?? $candidate->email,
+            'personal_phone' => $data['personal_phone'] ?? $candidate->phone,
+            'department_id' => (int) $departmentId,
+            'position_id' => (int) $positionId,
+            'salary_grade_id' => $salaryGradeId !== null ? (int) $salaryGradeId : null,
+            'reports_to' => $data['reports_to'] ?? null,
+            'employment_type' => (string) $employmentType,
+            'pay_basis' => $data['pay_basis'] ?? 'monthly',
+            'basic_monthly_rate' => (int) $basicMonthlyRate,
+            'regularization_date' => $data['regularization_date'] ?? null,
+            'bank_name' => $data['bank_name'] ?? null,
+            'bank_account_no' => $data['bank_account_no'] ?? null,
+            'sss_no' => $data['sss_no'] ?? null,
+            'tin' => $data['tin'] ?? null,
+            'philhealth_no' => $data['philhealth_no'] ?? null,
+            'pagibig_no' => $data['pagibig_no'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'application_ulid' => $application->ulid,
+            'application_number' => $application->application_number,
+            'candidate_id' => $candidate->id,
+            'candidate_full_name' => $candidate->full_name,
+            'posting_ulid' => $posting?->ulid,
+            'posting_number' => $posting?->posting_number,
+            'posting_title' => $posting?->title,
+        ];
+
+        $requiredEmployeeFields = [
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'gender',
+            'civil_status',
+            'present_address',
+            'personal_email',
+            'department_id',
+            'position_id',
+            'employment_type',
+            'pay_basis',
+            'basic_monthly_rate',
+        ];
+
+        $missingFields = [];
+        foreach ($requiredEmployeeFields as $field) {
+            $value = $normalizedPayload[$field] ?? null;
+
+            if ($value === null || (is_string($value) && trim($value) === '')) {
+                $missingFields[] = $field;
+            }
+        }
+
+        if ($missingFields !== []) {
+            throw new DomainException(
+                'Cannot execute hire with incomplete employee data.',
+                'HIRING_EMPLOYEE_DATA_INCOMPLETE',
+                422,
+                ['missing_fields' => $missingFields],
+            );
+        }
+
+        $hiring = DB::transaction(function () use ($application, $normalizedPayload, $actor): Hiring {
             $requisition = $application->posting->requisition;
 
             return Hiring::create([
                 'application_id' => $application->id,
-                'job_requisition_id' => $requisition->id,
+                'job_requisition_id' => $requisition?->id,
                 'employee_id' => null,
-                'employee_payload' => $data,
+                'employee_payload' => $normalizedPayload,
                 'status' => HiringStatus::PendingVpApproval->value,
                 'hired_at' => null,
-                'start_date' => $data['start_date'],
+                'start_date' => $normalizedPayload['start_date'],
                 'hired_by' => $actor->id,
                 'submitted_by_id' => $actor->id,
                 'submitted_at' => now(),
-                'notes' => $data['notes'] ?? null,
+                'notes' => $normalizedPayload['notes'],
             ]);
         });
 
@@ -97,44 +227,69 @@ final class HiringService implements ServiceContract
         $approved = DB::transaction(function () use ($hiring, $payload, $actor, $notes): Hiring {
             $application = $hiring->application()->with(['candidate', 'posting.requisition'])->firstOrFail();
 
-            $year = date('Y');
-            $last = Employee::where('employee_code', 'LIKE', "EMP-{$year}-%")
-                ->orderByDesc('employee_code')
-                ->value('employee_code');
-            $next = $last ? (int) substr($last, -6) + 1 : 1;
-            $employeeCode = sprintf('EMP-%s-%06d', $year, $next);
+            $this->assertCanProceedWithHiring($application, $hiring->id);
 
-            $employee = Employee::create([
-                'employee_code' => $employeeCode,
-                'first_name' => $payload['first_name'],
-                'last_name' => $payload['last_name'],
-                'middle_name' => $payload['middle_name'] ?? null,
-                'suffix' => $payload['suffix'] ?? null,
-                'date_of_birth' => $payload['date_of_birth'],
-                'gender' => $payload['gender'],
-                'civil_status' => $payload['civil_status'] ?? 'SINGLE',
-                'citizenship' => $payload['citizenship'] ?? null,
-                'present_address' => $payload['present_address'],
-                'permanent_address' => $payload['permanent_address'] ?? null,
-                'personal_email' => $payload['personal_email'],
-                'personal_phone' => $payload['personal_phone'] ?? null,
-                'department_id' => $payload['department_id'],
-                'position_id' => $payload['position_id'],
-                'salary_grade_id' => $payload['salary_grade_id'] ?? null,
-                'reports_to' => $payload['reports_to'] ?? null,
-                'employment_type' => $payload['employment_type'],
-                'employment_status' => 'active',
-                'pay_basis' => $payload['pay_basis'] ?? ($payload['pay_frequency'] ?? 'monthly'),
-                'basic_monthly_rate' => (int) ($payload['basic_monthly_rate'] ?? $payload['base_salary_monthly_centavos']),
-                'date_hired' => $payload['start_date'],
-                'regularization_date' => $payload['regularization_date'] ?? null,
-                'onboarding_status' => 'documents_pending',
-                'is_active' => false,
-                'bir_status' => $payload['bir_status'] ?? 'S',
-                'bank_name' => $payload['bank_name'] ?? null,
-                'bank_account_no' => $payload['bank_account_no'] ?? null,
-                'notes' => $payload['notes'] ?? null,
-            ]);
+            $this->acquireEmployeeCodeLock();
+
+            $employee = null;
+            for ($attempt = 0; $attempt < 10; $attempt++) {
+                $employeeCode = $this->nextEmployeeCode();
+
+                try {
+                    // Keep each create attempt isolated so a unique conflict does not poison
+                    // the parent transaction state.
+                    $employee = DB::transaction(function () use ($payload, $employeeCode): Employee {
+                        return Employee::create([
+                            'employee_code' => $employeeCode,
+                            'first_name' => $payload['first_name'],
+                            'last_name' => $payload['last_name'],
+                            'middle_name' => $payload['middle_name'] ?? null,
+                            'suffix' => $payload['suffix'] ?? null,
+                            'date_of_birth' => $payload['date_of_birth'],
+                            'gender' => $payload['gender'],
+                            'civil_status' => $payload['civil_status'] ?? 'SINGLE',
+                            'citizenship' => $payload['citizenship'] ?? null,
+                            'present_address' => $payload['present_address'],
+                            'permanent_address' => $payload['permanent_address'] ?? null,
+                            'personal_email' => $payload['personal_email'],
+                            'personal_phone' => $payload['personal_phone'] ?? null,
+                            'department_id' => $payload['department_id'],
+                            'position_id' => $payload['position_id'],
+                            'salary_grade_id' => $payload['salary_grade_id'] ?? null,
+                            'reports_to' => $payload['reports_to'] ?? null,
+                            'employment_type' => $payload['employment_type'],
+                            'employment_status' => 'active',
+                            'pay_basis' => $payload['pay_basis'] ?? ($payload['pay_frequency'] ?? 'monthly'),
+                            'basic_monthly_rate' => (int) ($payload['basic_monthly_rate'] ?? $payload['base_salary_monthly_centavos']),
+                            'date_hired' => $payload['start_date'],
+                            'regularization_date' => $payload['regularization_date'] ?? null,
+                            'onboarding_status' => 'documents_pending',
+                            'is_active' => false,
+                            'bir_status' => $payload['bir_status'] ?? 'S',
+                            'bank_name' => $payload['bank_name'] ?? null,
+                            'bank_account_no' => $payload['bank_account_no'] ?? null,
+                            'notes' => $payload['notes'] ?? null,
+                        ]);
+                    });
+
+                    break;
+                } catch (QueryException $e) {
+                    $isEmployeeCodeConflict = (string) $e->getCode() === '23505'
+                        && str_contains($e->getMessage(), 'employees_employee_code_unique');
+
+                    if (! $isEmployeeCodeConflict) {
+                        throw $e;
+                    }
+                }
+            }
+
+            if ($employee === null) {
+                throw new DomainException(
+                    'Unable to generate a unique employee code. Please retry.',
+                    'EMPLOYEE_CODE_GENERATION_FAILED',
+                    500,
+                );
+            }
 
             $employee
                 ->setSssNo($payload['sss_no'] ?? null)
@@ -161,6 +316,12 @@ final class HiringService implements ServiceContract
                 $requisition->status = RequisitionStatus::Closed;
                 $requisition->save();
                 $requisition->logApproval('closed', 'processed', $actor, 'Headcount fulfilled');
+
+                $posting = $application->posting;
+                if ($posting->status === PostingStatus::Published) {
+                    $posting->status = PostingStatus::Closed;
+                    $posting->save();
+                }
             }
 
             return $hiring->fresh(['application.candidate', 'application.offer.offeredPosition', 'application.offer.offeredDepartment']);
@@ -200,5 +361,82 @@ final class HiringService implements ServiceContract
     public function hire(Application $application, array $data, User $actor): Hiring
     {
         return $this->submitForApproval($application, $data, $actor);
+    }
+
+    private function nextEmployeeCode(): string
+    {
+        $year = date('Y');
+        $last = Employee::query()
+            ->whereRaw("employee_code ~ ?", ["^EMP-{$year}-[0-9]{6}$"])
+            ->orderByDesc('employee_code')
+            ->value('employee_code');
+        $next = $last ? (int) substr($last, -6) + 1 : 1;
+
+        return sprintf('EMP-%s-%06d', $year, $next);
+    }
+
+    private function acquireEmployeeCodeLock(): void
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::select("SELECT pg_advisory_xact_lock(hashtext('employees_employee_code'))");
+    }
+
+    private function assertCanProceedWithHiring(Application $application, ?int $excludingHiringId = null): void
+    {
+        $posting = $application->posting;
+        if ($posting === null) {
+            throw new DomainException(
+                'Cannot hire because no job posting is linked to this application.',
+                'HIRING_POSTING_MISSING',
+                422,
+                ['application_id' => $application->id],
+            );
+        }
+
+        $postingStatus = $posting->status instanceof PostingStatus
+            ? $posting->status->value
+            : (string) $posting->status;
+
+        if ($postingStatus !== PostingStatus::Published->value) {
+            throw new DomainException(
+                'Cannot proceed with hiring because the job posting is no longer open.',
+                'HIRING_POSTING_NOT_OPEN',
+                422,
+                [
+                    'posting_id' => $posting->id,
+                    'posting_status' => $postingStatus,
+                ],
+            );
+        }
+
+        $postingHeadcount = (int) ($posting->headcount ?? $posting->requisition?->headcount ?? 0);
+        if ($postingHeadcount <= 0) {
+            return;
+        }
+
+        $hiredCountForPosting = Hiring::query()
+            ->where('status', HiringStatus::Hired->value)
+            ->when(
+                $excludingHiringId !== null,
+                fn ($query) => $query->where('id', '!=', $excludingHiringId),
+            )
+            ->whereHas('application', fn ($query) => $query->where('job_posting_id', $posting->id))
+            ->count();
+
+        if ($hiredCountForPosting >= $postingHeadcount) {
+            throw new DomainException(
+                'Cannot proceed with hiring because posting headcount is already fulfilled.',
+                'HIRING_POSTING_HEADCOUNT_FULFILLED',
+                422,
+                [
+                    'posting_id' => $posting->id,
+                    'posting_headcount' => $postingHeadcount,
+                    'hired_count' => $hiredCountForPosting,
+                ],
+            );
+        }
     }
 }

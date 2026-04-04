@@ -22,10 +22,8 @@ export const api = axios.create({
 const WRITE_COOLDOWN_MS = 1500
 const lastWriteCallAt = new Map<string, number>()
 
-const AUTH_RECHECK_WINDOW_MS = 5000
 let authRecheckPromise: Promise<boolean> | null = null
-let lastAuthRecheckAt = 0
-let authRecheckEpoch = 0
+let authRecheckEpoch: number | null = null
 
 /**
  * C9 FIX: Singleton recheck promise.
@@ -36,21 +34,32 @@ let authRecheckEpoch = 0
  * if one exists, regardless of epoch/timing.
  */
 function recheckAuth(epoch: number): Promise<boolean> {
-  // If a recheck is already in-flight, always return it (true singleton)
-  if (authRecheckPromise) {
+  // Share only within the same auth epoch. A stale recheck from a prior
+  // session must never leak into the next login/logout cycle.
+  if (authRecheckPromise && authRecheckEpoch === epoch) {
     return authRecheckPromise
   }
 
-  lastAuthRecheckAt = Date.now()
   authRecheckEpoch = epoch
   authRecheckPromise = api
     .get('/auth/me', { __skipAuthRedirect: true, __authRecheck: true } as AxiosRequestConfig)
     .then(() => true)
-    .catch(() => false)
+    .catch((err: unknown) => {
+      // Only a definitive 401 means the session is truly gone.
+      // Transient errors (network hiccup, cancel, 5xx) should not
+      // force logout, otherwise users get random "Session expired" loops.
+      if (axios.isCancel(err)) return true
+      const status = (err as { status?: number; response?: { status?: number } })?.status
+        ?? (err as { response?: { status?: number } })?.response?.status
+      return status === 401 ? false : true
+    })
     .finally(() => {
-      // Clear the singleton after a small delay to prevent immediate re-trigger
+      // Clear only for the same epoch so newer sessions keep their own recheck.
       setTimeout(() => {
-        authRecheckPromise = null
+        if (authRecheckEpoch === epoch) {
+          authRecheckPromise = null
+          authRecheckEpoch = null
+        }
       }, 1000)
     })
 

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import api from '@/lib/api'
 import type {
   Bom,
+  BomMaterialCostSnapshot,
   DeliverySchedule,
   ProductionOrder,
   CreateBomPayload,
@@ -52,6 +53,18 @@ export function useUpdateBom(ulid: string) {
     mutationFn: (payload: Partial<CreateBomPayload>) =>
       api.put(`/production/boms/${ulid}`, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['boms'] }),
+  })
+}
+
+export function useBomCostHistory(ulid: string | null, params: { per_page?: number; page?: number } = {}) {
+  return useQuery({
+    queryKey: ['bom-cost-history', ulid, params],
+    queryFn: async () => {
+      const res = await api.get<Paginated<BomMaterialCostSnapshot>>(`/production/boms/${ulid}/cost-history`, { params })
+      return res.data
+    },
+    enabled: ulid !== null,
+    placeholderData: keepPreviousData,
   })
 }
 

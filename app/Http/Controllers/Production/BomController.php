@@ -110,8 +110,14 @@ final class BomController extends Controller
     {
         $this->authorize('view', $bom);
 
+        request()->validate([
+            'cost_elements' => ['sometimes', 'in:material_only,material_labor,material_labor_overhead'],
+        ]);
+
+        $costElements = request()->input('cost_elements', 'material_only');
+
         return response()->json([
-            'data' => $this->service->getCostBreakdown($bom),
+            'data' => $this->service->getCostBreakdown($bom, $costElements),
         ]);
     }
 
@@ -125,6 +131,27 @@ final class BomController extends Controller
         return new BomResource($this->service->rollupCost($bom));
     }
 
+    public function costHistory(Request $request, BillOfMaterials $bom): JsonResponse
+    {
+        $this->authorize('view', $bom);
+
+        $request->validate([
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $history = $this->service->materialCostHistory($bom, (int) $request->input('per_page', 20));
+
+        return response()->json([
+            'data' => $history->items(),
+            'meta' => [
+                'current_page' => $history->currentPage(),
+                'last_page' => $history->lastPage(),
+                'per_page' => $history->perPage(),
+                'total' => $history->total(),
+            ],
+        ]);
+    }
+
     /**
      * Compare cost between two BOM versions.
      */
@@ -134,12 +161,14 @@ final class BomController extends Controller
 
         $request->validate([
             'compare_bom_id' => ['required', 'integer', 'exists:bill_of_materials,id'],
+            'cost_elements' => ['sometimes', 'in:material_only,material_labor,material_labor_overhead'],
         ]);
 
         $compareBom = BillOfMaterials::findOrFail($request->integer('compare_bom_id'));
+        $costElements = $request->input('cost_elements', 'material_only');
 
         return response()->json([
-            'data' => $this->service->compareCost($bom, $compareBom),
+            'data' => $this->service->compareCost($bom, $compareBom, $costElements),
         ]);
     }
 }

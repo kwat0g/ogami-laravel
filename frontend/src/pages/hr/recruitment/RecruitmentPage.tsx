@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Briefcase, Users, Calendar, FileText, UserCheck, BarChart3 } from 'lucide-react'
+import { Plus, Briefcase, Users, Calendar, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import api from '@/lib/api'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -9,7 +9,6 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import Pagination from '@/components/ui/Pagination'
 import RecruitmentKpiCards from '@/components/recruitment/RecruitmentKpiCards'
-import CreateCandidateModal from '@/components/recruitment/CreateCandidateModal'
 import PipelineFunnelChart from '@/components/recruitment/PipelineFunnelChart'
 import {
   useRecruitmentDashboard,
@@ -17,35 +16,48 @@ import {
   usePostings,
   useApplications,
   useInterviews,
-  useOffers,
-  useCandidates,
   useTimeToFillReport,
   useSourceMixReport,
 } from '@/hooks/useRecruitment'
 
-type Tab = 'dashboard' | 'requisitions' | 'postings' | 'applications' | 'interviews' | 'offers' | 'candidates' | 'reports'
+type Tab = 'dashboard' | 'requisitions' | 'postings' | 'applications' | 'interviews' | 'reports'
 
 const TABS: { key: Tab; label: string; icon: typeof Briefcase; permission?: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { key: 'requisitions', label: 'Requisitions', icon: FileText, permission: 'recruitment.requisitions.view' },
   { key: 'postings', label: 'Postings', icon: Briefcase, permission: 'recruitment.postings.view' },
-  { key: 'applications', label: 'Applications', icon: Users, permission: 'recruitment.applications.view' },
+  { key: 'applications', label: 'Applicants', icon: Users, permission: 'recruitment.applications.view' },
   { key: 'interviews', label: 'Interviews', icon: Calendar, permission: 'recruitment.interviews.view' },
-  { key: 'offers', label: 'Offers', icon: FileText, permission: 'recruitment.offers.view' },
-  { key: 'candidates', label: 'Candidates', icon: UserCheck, permission: 'recruitment.candidates.view' },
   { key: 'reports', label: 'Reports', icon: BarChart3, permission: 'recruitment.reports.view' },
 ]
+
+type DepartmentLike = string | { name?: string | null } | null | undefined
+
+function formatDepartmentName(department: DepartmentLike): string {
+  if (!department) return 'N/A'
+  return typeof department === 'string' ? department : (department.name ?? 'N/A')
+}
 
 export default function RecruitmentPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = (searchParams.get('tab') as Tab) || 'dashboard'
+  const postingUlidFilter = searchParams.get('posting_ulid') ?? ''
   const { hasPermission } = useAuthStore()
 
-  const setTab = (tab: Tab) => setSearchParams({ tab })
+  const setTab = (tab: Tab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('tab', tab)
+      if (tab !== 'applications') {
+        next.delete('posting_ulid')
+      }
+      return next
+    })
+  }
 
   const visibleTabs = TABS.filter(
     (t) => !t.permission || hasPermission(t.permission) || hasPermission('hr.full_access')
   )
+  const safeActiveTab = visibleTabs.some((tab) => tab.key === activeTab) ? activeTab : 'dashboard'
 
   return (
     <div>
@@ -53,13 +65,13 @@ export default function RecruitmentPage() {
         title="Recruitment"
         subtitle="Manage the full hiring lifecycle"
         actions={
-          hasPermission('recruitment.requisitions.create') || hasPermission('hr.full_access') ? (
+          hasPermission('recruitment.postings.create') || hasPermission('hr.full_access') ? (
             <Link
-              to="/hr/recruitment/requisitions/new"
+              to="/hr/recruitment/postings/new"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              New Requisition
+              New Job Posting
             </Link>
           ) : undefined
         }
@@ -70,7 +82,7 @@ export default function RecruitmentPage() {
         <nav className="flex gap-0 overflow-x-auto" aria-label="Recruitment tabs">
           {visibleTabs.map((tab) => {
             const Icon = tab.icon
-            const isActive = activeTab === tab.key
+            const isActive = safeActiveTab === tab.key
             return (
               <button
                 key={tab.key}
@@ -90,14 +102,11 @@ export default function RecruitmentPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'dashboard' && <DashboardTab />}
-      {activeTab === 'requisitions' && <RequisitionsTab />}
-      {activeTab === 'postings' && <PostingsTab />}
-      {activeTab === 'applications' && <ApplicationsTab />}
-      {activeTab === 'interviews' && <InterviewsTab />}
-      {activeTab === 'offers' && <OffersTab />}
-      {activeTab === 'candidates' && <CandidatesTab />}
-      {activeTab === 'reports' && <ReportsTab />}
+      {safeActiveTab === 'dashboard' && <DashboardTab />}
+      {safeActiveTab === 'postings' && <PostingsTab />}
+      {safeActiveTab === 'applications' && <ApplicationsTab postingUlidFilter={postingUlidFilter} />}
+      {safeActiveTab === 'interviews' && <InterviewsTab />}
+      {safeActiveTab === 'reports' && <ReportsTab />}
     </div>
   )
 }
@@ -141,31 +150,7 @@ function DashboardTab() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>Recent Requisitions</CardHeader>
-          <CardBody className="p-0">
-            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {data.recent_requisitions.map((r: any) => (
-                <Link key={r.ulid} to={`/hr/recruitment/requisitions/${r.ulid}`} className="flex items-center justify-between px-5 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{r.position}</p>
-                    <p className="text-xs text-neutral-500">{r.department} - {r.requisition_number}</p>
-                  </div>
-                  <div className="text-right">
-                    <StatusBadge status={r.status}>{r.status_label}</StatusBadge>
-                    <p className="mt-1 text-xs text-neutral-400">{r.days_open}d open</p>
-                  </div>
-                </Link>
-              ))}
-              {data.recent_requisitions.length === 0 && (
-                <p className="px-5 py-4 text-sm text-neutral-400">No requisitions yet.</p>
-              )}
-            </div>
-          </CardBody>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>Upcoming Interviews</CardHeader>
           <CardBody className="p-0">
@@ -316,6 +301,7 @@ function PostingsTab() {
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Posting #</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Title</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Department</th>
+              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Salary Grade</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Location</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Status</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Published</th>
@@ -328,7 +314,12 @@ function PostingsTab() {
               <tr key={p.ulid} onClick={() => navigate(`/hr/recruitment/postings/${p.ulid}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{p.posting_number}</td>
                 <td className="px-5 py-3 text-neutral-700 dark:text-neutral-300">{p.title}</td>
-                <td className="px-5 py-3 text-neutral-500">{p.requisition?.department}</td>
+                <td className="px-5 py-3 text-neutral-500">{formatDepartmentName(p.requisition?.department ?? p.department)}</td>
+                <td className="px-5 py-3 text-neutral-500">
+                  {p.salary_grade
+                    ? `SG ${p.salary_grade.level ?? '*'} - ${p.salary_grade.name ?? p.salary_grade.code}`
+                    : '-'}
+                </td>
                 <td className="px-5 py-3 text-neutral-500">{p.location ?? '-'}</td>
                 <td className="px-5 py-3"><StatusBadge status={p.status}>{p.status_label}</StatusBadge></td>
                 <td className="px-5 py-3 text-neutral-400">{p.published_at ? new Date(p.published_at).toLocaleDateString() : '-'}</td>
@@ -347,13 +338,14 @@ function PostingsTab() {
 
 // ── Applications Tab ─────────────────────────────────────────────────────────
 
-function ApplicationsTab() {
+function ApplicationsTab({ postingUlidFilter }: { postingUlidFilter: string }) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<string[]>([])
   const { data, isLoading } = useApplications({
+    ...(postingUlidFilter && { job_posting_ulid: postingUlidFilter }),
     ...(search && { search }),
     ...(status && { status }),
     page: String(page),
@@ -469,6 +461,7 @@ function ApplicationsTab() {
 // ── Interviews Tab ───────────────────────────────────────────────────────────
 
 function InterviewsTab() {
+  const navigate = useNavigate()
   const [status, setStatus] = useState('')
   const { data, isLoading } = useInterviews({
     ...(status && { status }),
@@ -503,24 +496,38 @@ function InterviewsTab() {
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Interviewer</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Status</th>
               <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Score</th>
+              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {interviews.map((i: any) => (
-              <tr key={i.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+              <tr
+                key={i.id}
+                onClick={() => navigate(`/hr/recruitment/interviews/${i.id}`)}
+                className="cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+              >
                 <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">
                   <Link to={`/hr/recruitment/interviews/${i.id}`} className="hover:underline">
                     {i.application?.candidate?.full_name ?? 'N/A'}
                   </Link>
                 </td>
-                <td className="px-5 py-3 text-neutral-500">{i.application?.posting?.requisition?.position?.title ?? '-'}</td>
+                <td className="px-5 py-3 text-neutral-500">{i.application?.posting?.requisition?.position?.title ?? i.application?.posting?.position?.title ?? '-'}</td>
                 <td className="px-5 py-3 text-neutral-500">R{i.round}</td>
                 <td className="px-5 py-3 text-neutral-500">{i.type?.replace(/_/g, ' ')}</td>
                 <td className="px-5 py-3 text-neutral-400">{i.scheduled_at ? new Date(i.scheduled_at).toLocaleString() : '-'}</td>
                 <td className="px-5 py-3 text-neutral-500">{i.interviewer?.name ?? '-'}</td>
                 <td className="px-5 py-3"><StatusBadge status={i.status}>{i.status?.replace(/_/g, ' ')}</StatusBadge></td>
                 <td className="px-5 py-3 text-neutral-500">{i.evaluation?.overall_score ? `${i.evaluation.overall_score}/5` : '-'}</td>
+                <td className="px-5 py-3">
+                  <Link
+                    to={`/hr/recruitment/interviews/${i.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex rounded-md border border-neutral-300 px-3 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300"
+                  >
+                    Open
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -530,152 +537,6 @@ function InterviewsTab() {
         )}
       </div>
     </Card>
-  )
-}
-
-// ── Offers Tab ───────────────────────────────────────────────────────────────
-
-function OffersTab() {
-  const navigate = useNavigate()
-  const [status, setStatus] = useState('')
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useOffers({
-    ...(status && { status }),
-    page: String(page),
-  })
-
-  if (isLoading) return <SkeletonLoader rows={6} />
-
-  return (
-    <Card>
-      <CardHeader action={
-        <select value={status} onChange={(e) => setStatus(e.target.value)}
-          className="px-3 py-1.5 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
-          <option value="">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="sent">Sent</option>
-          <option value="accepted">Accepted</option>
-          <option value="rejected">Rejected</option>
-          <option value="expired">Expired</option>
-          <option value="withdrawn">Withdrawn</option>
-        </select>
-      }>
-        Job Offers
-      </CardHeader>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-neutral-100 dark:border-neutral-800">
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Offer #</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Candidate</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Position</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Salary</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Start Date</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Status</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Expires</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {data?.data?.map((offer: any) => (
-              <tr key={offer.ulid} onClick={() => navigate(`/hr/recruitment/offers/${offer.ulid}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
-                <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{offer.offer_number}</td>
-                <td className="px-5 py-3 text-neutral-700 dark:text-neutral-300">{offer.application?.candidate?.full_name ?? '-'}</td>
-                <td className="px-5 py-3 text-neutral-500">{offer.offered_position?.title ?? '-'}</td>
-                <td className="px-5 py-3 text-neutral-500">{(offer.offered_salary / 100).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</td>
-                <td className="px-5 py-3 text-neutral-400">{offer.start_date}</td>
-                <td className="px-5 py-3"><StatusBadge status={offer.status}>{offer.status_label}</StatusBadge></td>
-                <td className="px-5 py-3 text-neutral-400">{offer.expires_at ? new Date(offer.expires_at).toLocaleDateString() : '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {(!data?.data || data.data.length === 0) && (
-          <div className="px-5 py-12 text-center text-sm text-neutral-400">No offers found.</div>
-        )}
-      </div>
-      {data?.meta && data.meta.last_page > 1 && (
-        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
-          <Pagination meta={data.meta} onPageChange={setPage} />
-        </div>
-      )}
-    </Card>
-  )
-}
-
-// ── Candidates Tab ───────────────────────────────────────────────────────────
-
-function CandidatesTab() {
-  const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const { data, isLoading, refetch } = useCandidates({
-    ...(search && { search }),
-    page: String(page),
-  })
-
-  if (isLoading) return <SkeletonLoader rows={6} />
-
-  return (
-    <>
-    <Card>
-      <CardHeader action={
-        <div className="flex items-center gap-3">
-          <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400 w-64" />
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Candidate
-          </button>
-        </div>
-      }>
-        Candidate Pool
-      </CardHeader>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-neutral-100 dark:border-neutral-800">
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Name</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Email</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Phone</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Source</th>
-              <th className="px-5 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Added</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {data?.data?.map((c: any) => (
-              <tr key={c.id} onClick={() => navigate(`/hr/recruitment/candidates/${c.id}`)} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors">
-                <td className="px-5 py-3 font-medium text-neutral-900 dark:text-neutral-100">{c.full_name}</td>
-                <td className="px-5 py-3 text-neutral-500">{c.email}</td>
-                <td className="px-5 py-3 text-neutral-500">{c.phone ?? '-'}</td>
-                <td className="px-5 py-3 text-neutral-500">{c.source_label}</td>
-                <td className="px-5 py-3 text-neutral-400">{new Date(c.created_at).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {(!data?.data || data.data.length === 0) && (
-          <div className="px-5 py-12 text-center text-sm text-neutral-400">No candidates found.</div>
-        )}
-      </div>
-      {data?.meta && data.meta.last_page > 1 && (
-        <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-800">
-          <Pagination meta={data.meta} onPageChange={setPage} />
-        </div>
-      )}
-    </Card>
-    {showCreateModal && (
-      <CreateCandidateModal
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={() => refetch()}
-      />
-    )}
-    </>
   )
 }
 
