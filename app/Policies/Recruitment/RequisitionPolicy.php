@@ -52,7 +52,13 @@ final class RequisitionPolicy
             return false;
         }
 
-        // SoD: cannot approve own requisition
+        // HR Manager exception: may approve their own requisitions.
+        // HR department managers are organizational headcount authorities.
+        if ($user->hasRole('manager') && $user->employee?->department?->code === 'HR') {
+            return true;
+        }
+
+        // Standard SoD: cannot approve own requisition
         return $user->id !== $requisition->requested_by;
     }
 
@@ -60,6 +66,11 @@ final class RequisitionPolicy
     {
         if (! $user->hasPermissionTo('recruitment.requisitions.reject')) {
             return false;
+        }
+
+        // HR Manager exception (mirrors approve)
+        if ($user->hasRole('manager') && $user->employee?->department?->code === 'HR') {
+            return true;
         }
 
         return $user->id !== $requisition->requested_by;

@@ -111,8 +111,11 @@ final class RequisitionService implements ServiceContract
 
     public function approve(JobRequisition $requisition, User $actor, ?string $remarks = null): JobRequisition
     {
-        // SoD: approver cannot be the requester
-        if ($actor->id === $requisition->requested_by) {
+        // SoD exception: HR Managers may approve their own requisitions
+        $isHrManager = $actor->hasRole('manager')
+            && $actor->employee?->department?->code === 'HR';
+
+        if (! $isHrManager && $actor->id === $requisition->requested_by) {
             throw new DomainException(
                 'You cannot approve your own requisition.',
                 'SOD_SELF_APPROVAL',
