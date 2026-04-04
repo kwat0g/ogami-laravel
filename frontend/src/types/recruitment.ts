@@ -28,7 +28,12 @@ export type PreEmploymentStatus = 'pending' | 'in_progress' | 'completed' | 'wai
 
 export type RequirementStatus = 'pending' | 'submitted' | 'verified' | 'rejected' | 'waived'
 
-export type HiringStatus = 'pending' | 'hired' | 'failed_preemployment'
+export type HiringStatus =
+  | 'pending'
+  | 'pending_vp_approval'
+  | 'hired'
+  | 'rejected_by_vp'
+  | 'failed_preemployment'
 
 export type CandidateSource = 'referral' | 'walk_in' | 'job_board' | 'agency' | 'internal'
 
@@ -64,6 +69,8 @@ export const statusColors: Record<string, string> = {
   waived: 'blue',
   hired: 'emerald',
   failed_preemployment: 'red',
+  pending_vp_approval: 'amber',
+  rejected_by_vp: 'red',
   endorse: 'green',
   hold: 'amber',
 }
