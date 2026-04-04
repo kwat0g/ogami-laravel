@@ -152,6 +152,19 @@ final class RequisitionService implements ServiceContract
 
     public function reject(JobRequisition $requisition, User $actor, string $reason): JobRequisition
     {
+        // SoD exception: HR Managers may reject their own requisitions
+        $isHrManager = $actor->hasRole('manager')
+            && $actor->employee?->department?->code === 'HR';
+
+        if (! $isHrManager && $actor->id === $requisition->requested_by) {
+            throw new DomainException(
+                'You cannot reject your own requisition.',
+                'SOD_SELF_REJECTION',
+                403,
+                ['user_id' => $actor->id, 'requested_by' => $requisition->requested_by],
+            );
+        }
+
         $result = DB::transaction(function () use ($requisition, $actor, $reason): JobRequisition {
             $this->stateMachine->transition($requisition, RequisitionStatus::Rejected);
             $requisition->rejected_at = now();
