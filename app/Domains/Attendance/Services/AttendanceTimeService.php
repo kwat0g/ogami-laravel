@@ -89,13 +89,6 @@ final class AttendanceTimeService implements ServiceContract
                             422,
                         );
                     }
-                    if (! $overrideReason) {
-                        throw new DomainException(
-                            'No work location is assigned to your profile. Please provide a reason to clock in.',
-                            'NO_WORK_LOCATION_OVERRIDE',
-                            422,
-                        );
-                    }
                 } elseif (! $geo['within']) {
                     if ($geofenceMode === 'strict') {
                         // Strict mode: block entirely — no override possible
@@ -109,17 +102,6 @@ final class AttendanceTimeService implements ServiceContract
                         );
                     }
 
-                    // Override mode: allow with reason, but flag for HR review
-                    if (! $overrideReason) {
-                        throw new DomainException(
-                            "You are {$geo['distance_meters']}m from your assigned work location" .
-                            " ({$geo['location']->name})" .
-                            '. Please provide a reason for working from this location.',
-                            'OUTSIDE_GEOFENCE',
-                            422,
-                            ['distance_meters' => $geo['distance_meters'], 'location' => $geo['location']->name],
-                        );
-                    }
                 }
 
                 // Check GPS accuracy explicitly. If it's terrible, treat it as a warning or block
@@ -128,13 +110,6 @@ final class AttendanceTimeService implements ServiceContract
                         throw new DomainException(
                             "Location accuracy is too low (±" . round($accuracyMeters) . "m) to reliably verify geofence. Please ensure your GPS is stable to clock in.",
                             'LOCATION_INACCURATE_BLOCKED',
-                            422,
-                        );
-                    }
-                    if (! $overrideReason) {
-                        throw new DomainException(
-                            "Location accuracy is too low (±" . round($accuracyMeters) . "m). Please provide a reason to continue.",
-                            'LOCATION_INACCURATE',
                             422,
                         );
                     }

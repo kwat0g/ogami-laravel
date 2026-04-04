@@ -106,8 +106,6 @@ export default function TimeInOutPage() {
   const hasTimedIn = !!todayLog?.time_in
   const hasTimedOut = !!todayLog?.time_out
 
-  const [showOverride, setShowOverride] = useState<'in' | 'out' | null>(null)
-  const [overrideReason, setOverrideReason] = useState('')
 
   const deviceInfo = useMemo(() => ({
     userAgent: navigator.userAgent,
@@ -129,8 +127,6 @@ export default function TimeInOutPage() {
         override_reason: isOverride ? overrideReason : undefined,
       })
       toast.success('Timed in successfully!')
-      setShowOverride(null)
-      setOverrideReason('')
     } catch (err) {
       const parsed = parseApiError(err)
       if (parsed.errorCode && ['OUTSIDE_GEOFENCE', 'NO_WORK_LOCATION_OVERRIDE', 'LOCATION_INACCURATE'].includes(parsed.errorCode)) {
@@ -155,8 +151,6 @@ export default function TimeInOutPage() {
         override_reason: isOverride ? overrideReason : undefined,
       })
       toast.success('Timed out successfully!')
-      setShowOverride(null)
-      setOverrideReason('')
     } catch (err) {
       const parsed = parseApiError(err)
       if (parsed.errorCode && ['OUTSIDE_GEOFENCE', 'NO_WORK_LOCATION_OVERRIDE', 'LOCATION_INACCURATE'].includes(parsed.errorCode)) {
@@ -250,7 +244,10 @@ export default function TimeInOutPage() {
             {!hasTimedIn && (
               <button
                 onClick={() => {
-                   if (geo.error || geo.status !== 'granted') setShowOverride('in')
+                   if (geo.error || geo.status !== 'granted') {
+                     toast.error('Location is mandatory to clock in.')
+                     return
+                   }
                    else handleTimeIn()
                 }}
                 disabled={timeInMutation.isPending}
@@ -263,7 +260,10 @@ export default function TimeInOutPage() {
             {hasTimedIn && !hasTimedOut && (
               <button
                 onClick={() => {
-                   if (geo.error || geo.status !== 'granted') setShowOverride('out')
+                   if (geo.error || geo.status !== 'granted') {
+                     toast.error('Location is mandatory to clock out.')
+                     return
+                   }
                    else handleTimeOut()
                 }}
                 disabled={timeOutMutation.isPending}

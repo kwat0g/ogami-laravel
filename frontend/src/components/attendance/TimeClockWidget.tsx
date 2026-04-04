@@ -84,8 +84,6 @@ export default function TimeClockWidget() {
     timestamp: new Date().toISOString(),
   }), [])
 
-  const [showOverride, setShowOverride] = useState<'in' | 'out' | null>(null)
-  const [overrideReason, setOverrideReason] = useState('')
 
   const handleTimeIn = async (isOverride = false) => {
     if (!isOverride && (!geo.latitude || !geo.longitude)) {
@@ -101,8 +99,6 @@ export default function TimeClockWidget() {
         override_reason: isOverride ? overrideReason : undefined,
       })
       toast.success('Timed in successfully!')
-      setShowOverride(null)
-      setOverrideReason('')
     } catch (err) {
       const parsed = parseApiError(err)
       if (parsed.errorCode && ['OUTSIDE_GEOFENCE', 'NO_WORK_LOCATION_OVERRIDE', 'LOCATION_INACCURATE'].includes(parsed.errorCode)) {
@@ -125,8 +121,6 @@ export default function TimeClockWidget() {
         override_reason: isOverride ? overrideReason : undefined,
       })
       toast.success('Timed out successfully!')
-      setShowOverride(null)
-      setOverrideReason('')
     } catch (err) {
       const parsed = parseApiError(err)
       if (parsed.errorCode && ['OUTSIDE_GEOFENCE', 'NO_WORK_LOCATION_OVERRIDE', 'LOCATION_INACCURATE'].includes(parsed.errorCode)) {
@@ -199,7 +193,10 @@ export default function TimeClockWidget() {
             {!hasTimedIn && (
               <button
                 onClick={() => {
-                   if (geo.error || geo.status !== 'granted') setShowOverride('in')
+                   if (geo.error || geo.status !== 'granted') {
+                     toast.error('Location is mandatory to clock in.')
+                     return
+                   }
                    else handleTimeIn()
                 }}
                 disabled={timeInMutation.isPending}
@@ -212,7 +209,10 @@ export default function TimeClockWidget() {
             {hasTimedIn && !hasTimedOut && (
               <button
                 onClick={() => {
-                   if (geo.error || geo.status !== 'granted') setShowOverride('out')
+                   if (geo.error || geo.status !== 'granted') {
+                     toast.error('Location is mandatory to clock out.')
+                     return
+                   }
                    else handleTimeOut()
                 }}
                 disabled={timeOutMutation.isPending}
@@ -233,39 +233,6 @@ export default function TimeClockWidget() {
             )}
           </div>
 
-          {/* Override UI */}
-          {showOverride && (
-            <div className="mt-4 p-4 rounded bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
-              <label className="block text-sm font-medium text-amber-900 dark:text-amber-200 mb-2 font-inter">
-                Location unavailable. Please provide a reason to continue:
-              </label>
-              <textarea 
-                value={overrideReason}
-                onChange={(e) => setOverrideReason(e.target.value)}
-                className="w-full rounded border border-amber-300 dark:border-amber-700 bg-white dark:bg-neutral-800 py-1.5 px-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-amber-500 font-inter"
-                rows={2}
-                placeholder="E.g., device GPS is not working..."
-              />
-              <div className="mt-3 flex gap-2 justify-end">
-                <button
-                  onClick={() => {
-                    setShowOverride(null)
-                    setOverrideReason('')
-                  }}
-                  className="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={!overrideReason.trim()}
-                  onClick={() => showOverride === 'in' ? handleTimeIn(true) : handleTimeOut(true)}
-                  className="rounded bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors"
-                >
-                  Submit {showOverride === 'in' ? 'Time In' : 'Time Out'}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
