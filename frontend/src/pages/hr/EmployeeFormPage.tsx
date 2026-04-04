@@ -1,6 +1,5 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useEffect, useRef, forwardRef, useMemo } from 'react'
-import { formatPesoAmount } from '@/lib/formatters'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useForm, Controller } from 'react-hook-form'
@@ -398,7 +397,6 @@ export default function EmployeeFormPage() {
       navigate('/hr/employees/all')
     } catch (err: unknown) {
       const message = firstErrorMessage(err)
-      toast.error(`Failed to ${isEditing ? 'update' : 'create'} employee: ${message}`)
       
       // Set field errors if available
       const errorObj = err as { response?: { data?: { errors?: Record<string, string[]> } } }
