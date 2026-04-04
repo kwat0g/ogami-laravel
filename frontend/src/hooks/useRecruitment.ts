@@ -25,6 +25,7 @@ const KEYS = {
   offer: (ulid: string) => ['recruitment', 'offers', ulid] as const,
   candidates: ['recruitment', 'candidates'] as const,
   reports: ['recruitment', 'reports'] as const,
+  hirings: ['recruitment', 'hirings'] as const,
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -269,6 +270,30 @@ export function useHire(applicationUlid: string) {
       api.post(`/recruitment/hire/${applicationUlid}`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.application(applicationUlid) })
+      qc.invalidateQueries({ queryKey: KEYS.dashboard })
+    },
+  })
+}
+
+export function useVpApproveHiring() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ hiringUlid, notes }: { hiringUlid: string; notes?: string }) =>
+      api.post(`/recruitment/hirings/${hiringUlid}/vp-approve`, { notes }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.applications })
+      qc.invalidateQueries({ queryKey: KEYS.dashboard })
+    },
+  })
+}
+
+export function useVpRejectHiring() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ hiringUlid, reason }: { hiringUlid: string; reason: string }) =>
+      api.post(`/recruitment/hirings/${hiringUlid}/vp-reject`, { reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.applications })
       qc.invalidateQueries({ queryKey: KEYS.dashboard })
     },
   })
