@@ -50,10 +50,11 @@ export function useAutoSave<T>(
       return false
     }
   })
+  const [pendingDraftResolution, setPendingDraftResolution] = useState(hasDraft)
 
   // Auto-save on interval
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || pendingDraftResolution) return
 
     const timer = setInterval(() => {
       try {
@@ -66,11 +67,11 @@ export function useAutoSave<T>(
     }, interval)
 
     return () => clearInterval(timer)
-  }, [storageKey, interval, enabled])
+  }, [storageKey, interval, enabled, pendingDraftResolution])
 
   // Save on page unload
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || pendingDraftResolution) return
 
     const handleBeforeUnload = () => {
       try {
@@ -83,13 +84,18 @@ export function useAutoSave<T>(
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [storageKey, enabled])
+  }, [storageKey, enabled, pendingDraftResolution])
 
   const restore = useCallback((): T | null => {
     try {
       const raw = localStorage.getItem(storageKey)
       if (!raw) return null
       const parsed = JSON.parse(raw) as T
+      // Consume existing draft so subsequent autosave starts fresh from restored state.
+      localStorage.removeItem(storageKey)
+      localStorage.removeItem(`${storageKey}_ts`)
+      setHasDraft(false)
+      setPendingDraftResolution(false)
       return parsed
     } catch {
       return null
@@ -101,6 +107,7 @@ export function useAutoSave<T>(
       localStorage.removeItem(storageKey)
       localStorage.removeItem(`${storageKey}_ts`)
       setHasDraft(false)
+      setPendingDraftResolution(false)
     } catch {
       // ignore
     }
@@ -111,6 +118,7 @@ export function useAutoSave<T>(
       localStorage.setItem(storageKey, JSON.stringify(dataRef.current))
       localStorage.setItem(`${storageKey}_ts`, new Date().toISOString())
       setHasDraft(true)
+      setPendingDraftResolution(false)
     } catch {
       // ignore
     }

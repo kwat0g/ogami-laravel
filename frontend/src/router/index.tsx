@@ -504,7 +504,7 @@ const router = createBrowserRouter([
       { path: '/accounting/ap/aging-report', element: withSuspense(guard('vendor_invoices.view', <ApAgingReportPage />)) },
 
       // ── AR domain ─────────────────────────────────────────────────────────
-      { path: '/ar/customers', element: withSuspense(guard('customers.view', <CustomersPage />)) },
+      { path: '/ar/customers', element: withSuspense(guard('customers.view|customers.manage', <CustomersPage />)) },
       { path: '/ar/invoices', element: withSuspense(guard('customer_invoices.view', <CustomerInvoicesPage />)) },
       { path: '/ar/invoices/new', element: withSuspense(guard('customer_invoices.create', <CustomerInvoiceFormPage />)) },
       { path: '/ar/invoices/:ulid', element: withSuspense(guard('customer_invoices.view', <CustomerInvoiceDetailPage />)) },

@@ -36,7 +36,7 @@ export interface VpPayrollFilters {
 
 // ── Pending counts (always fixed to the approval-stage status) ────────────────
 
-export function useVpPendingCounts() {
+export function useVpPendingCounts(enabled: { pr?: boolean; loan?: boolean; mrq?: boolean; payroll?: boolean } = {}) {
   const pr = useQuery({
     queryKey: ['vp-approvals', 'purchase-requests', { status: 'budget_verified', page: 1, per_page: 1 }],
     queryFn: async () => {
@@ -45,6 +45,7 @@ export function useVpPendingCounts() {
       })
       return res.data.meta?.total ?? 0
     },
+    enabled: enabled.pr ?? false,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -56,6 +57,7 @@ export function useVpPendingCounts() {
       })
       return res.data.meta?.total ?? 0
     },
+    enabled: enabled.loan ?? false,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -67,6 +69,7 @@ export function useVpPendingCounts() {
       })
       return res.data.meta?.total ?? 0
     },
+    enabled: enabled.mrq ?? false,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -78,6 +81,7 @@ export function useVpPendingCounts() {
       })
       return res.data.meta?.total ?? 0
     },
+    enabled: enabled.payroll ?? false,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -91,7 +95,7 @@ export function useVpPendingCounts() {
 
 // ── Purchase Requests ─────────────────────────────────────────────────────────
 
-export function useVpPurchaseRequests(filters: VpPrFilters = {}) {
+export function useVpPurchaseRequests(filters: VpPrFilters = {}, enabled = true) {
   const params = {
     status: filters.status !== undefined ? (filters.status || undefined) : 'budget_verified',
     search: filters.search || undefined,
@@ -108,6 +112,7 @@ export function useVpPurchaseRequests(filters: VpPrFilters = {}) {
       )
       return res.data
     },
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -115,7 +120,7 @@ export function useVpPurchaseRequests(filters: VpPrFilters = {}) {
 
 // ── Loans ─────────────────────────────────────────────────────────────────────
 
-export function useVpLoans(filters: VpLoanFilters = {}) {
+export function useVpLoans(filters: VpLoanFilters = {}, enabled = true) {
   const params = {
     status: filters.status !== undefined ? (filters.status || undefined) : 'officer_reviewed',
     search: filters.search || undefined,
@@ -128,6 +133,7 @@ export function useVpLoans(filters: VpLoanFilters = {}) {
       const res = await api.get<Paginated<Loan>>('/loans', { params })
       return res.data
     },
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -135,7 +141,7 @@ export function useVpLoans(filters: VpLoanFilters = {}) {
 
 // ── Material Requisitions ─────────────────────────────────────────────────────
 
-export function useVpMrqs(filters: VpMrqFilters = {}) {
+export function useVpMrqs(filters: VpMrqFilters = {}, enabled = true) {
   const params = {
     status: filters.status !== undefined ? (filters.status || undefined) : 'reviewed',
     search: filters.search || undefined,
@@ -151,6 +157,7 @@ export function useVpMrqs(filters: VpMrqFilters = {}) {
       )
       return res.data
     },
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -158,7 +165,7 @@ export function useVpMrqs(filters: VpMrqFilters = {}) {
 
 // ── Payroll Runs ──────────────────────────────────────────────────────────────
 
-export function useVpPayrollRuns(filters: VpPayrollFilters = {}) {
+export function useVpPayrollRuns(filters: VpPayrollFilters = {}, enabled = true) {
   const params = {
     status: filters.status !== undefined ? (filters.status || undefined) : 'ACCTG_APPROVED',
     search: filters.search || undefined,
@@ -174,6 +181,7 @@ export function useVpPayrollRuns(filters: VpPayrollFilters = {}) {
       )
       return res.data
     },
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })

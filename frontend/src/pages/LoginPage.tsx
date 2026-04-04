@@ -53,6 +53,8 @@ export default function LoginPage() {
         queryClient.clear()
         queryClient.setQueryData(['auth', 'me'], result.user)
         setAuth(result.user)
+        // Fence off any 401 handlers spawned during login transition.
+        bumpAuthEpoch()
         navigate(getLandingPath(result.user))
       }
     } catch (err: unknown) {

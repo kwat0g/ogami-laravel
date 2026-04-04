@@ -520,7 +520,7 @@ export interface GeofenceSettings {
   mode: 'strict' | 'override' | 'disabled'
 }
 
-export function useGeofenceSettings() {
+export function useGeofenceSettings(enabled = false) {
   return useQuery({
     queryKey: ['geofence-settings'],
     queryFn: async () => {
@@ -544,7 +544,7 @@ export function useToggleGeofence() {
   })
 }
 
-export function useWorkLocations() {
+export function useWorkLocations(enabled = false) {
   return useQuery({
     queryKey: ['work-locations'],
     queryFn: async () => {

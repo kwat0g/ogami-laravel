@@ -54,9 +54,10 @@ export interface EmployeeFilters {
   page?: number
 }
 
-export function useEmployees(filters: EmployeeFilters = {}) {
+export function useEmployees(filters: EmployeeFilters = {}, enabled: boolean = true) {
   return useQuery({
     queryKey: ['employees', filters],
+    enabled,
     queryFn: async () => {
       const res = await api.get<Paginated<EmployeeListItem>>('/hr/employees', { params: filters })
       return res.data
@@ -76,7 +77,7 @@ export function useTeamEmployees(filters: EmployeeFilters = {}) {
   })
 }
 
-export function useEmployee(id: string | number | undefined) {
+export function useEmployee(id: string | number | undefined, enabled: boolean = true) {
   return useQuery({
     queryKey: ['employees', id],
     queryFn: async () => {

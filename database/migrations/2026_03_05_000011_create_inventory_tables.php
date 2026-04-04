@@ -36,7 +36,7 @@ return new class extends Migration
             $table->decimal('reorder_qty', 15, 4)->default(0);
             $table->string('type', 30)->default('raw_material')
                 ->comment('raw_material|semi_finished|finished_good|consumable|spare_part');
-            $table->boolean('requires_iqc')->default(false);
+            $table->boolean('requires_iqc')->default(true);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 

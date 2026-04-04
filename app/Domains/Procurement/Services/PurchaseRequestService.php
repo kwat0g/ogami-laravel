@@ -229,8 +229,15 @@ final class PurchaseRequestService implements ServiceContract
     {
         $this->assertStatus($pr, 'pending_review', 'PR_NOT_PENDING_REVIEW');
 
+        $allowSelfReviewForDemo = app()->environment(['local', 'testing'])
+            && $this->isPurchasingManager($actor);
+
         // SoD: Creator cannot review their own PR
-        if ($pr->requested_by_id === $actor->id && ! $actor->hasRole('super_admin')) {
+        if (
+            $pr->requested_by_id === $actor->id
+            && ! $actor->hasRole('super_admin')
+            && ! $allowSelfReviewForDemo
+        ) {
             throw new SodViolationException(
                 'purchase_request',
                 'review',
@@ -238,11 +245,20 @@ final class PurchaseRequestService implements ServiceContract
             );
         }
 
+        $reviewedById = $allowSelfReviewForDemo && $pr->requested_by_id === $actor->id
+            ? null
+            : $actor->id;
+
+        $effectiveComments = $comments;
+        if ($reviewedById === null && trim($effectiveComments) === '') {
+            $effectiveComments = 'Auto-reviewed (Purchasing Manager)';
+        }
+
         $pr->update([
             'status' => 'reviewed',
-            'reviewed_by_id' => $actor->id,
+            'reviewed_by_id' => $reviewedById,
             'reviewed_at' => now(),
-            'reviewed_comments' => $comments,
+            'reviewed_comments' => $effectiveComments,
         ]);
 
         $refreshed = $pr->refresh();

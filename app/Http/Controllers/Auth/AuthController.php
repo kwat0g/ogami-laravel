@@ -37,15 +37,15 @@ class AuthController extends Controller
             $request->deviceName()
         );
 
-        // Establish a session for SPA (browser) clients.
-        // Token-based clients (tests, API, mobile) continue to use Bearer tokens.
-        if (EnsureFrontendRequestsAreStateful::fromFrontend($request)) {
-            Auth::guard('web')->login($result['user']);
-            // Ensure the authenticated session is persisted on a fresh session ID.
-            // Without regeneration, rapid logout/login cycles can intermittently
-            // keep the client on an invalidated session and produce immediate 401.
-            $request->session()->regenerate();
-        }
+        // Always establish a web session on successful login.
+        // Some proxy/header combinations can cause fromFrontend() to return false,
+        // which logs in via token only and then immediately fails /auth/me for SPA users.
+        // Creating the session here keeps Sanctum cookie auth stable after login.
+        Auth::guard('web')->login($result['user']);
+        // Ensure the authenticated session is persisted on a fresh session ID.
+        // Without regeneration, rapid logout/login cycles can intermittently
+        // keep the client on an invalidated session and produce immediate 401.
+        $request->session()->regenerate();
 
         return $this->successResponse([
             'token' => $result['token'],

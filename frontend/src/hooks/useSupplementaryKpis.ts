@@ -8,7 +8,7 @@ export interface SupplementaryKpis {
   payroll_trend: Array<{ month: string; total_gross: number; total_net: number; run_count: number }>
 }
 
-export function useSupplementaryKpis() {
+export function useSupplementaryKpis(enabled = false) {
   return useQuery({
     queryKey: ['dashboard-kpis-supplementary'],
     queryFn: async () => { const { data } = await api.get('/dashboard/kpis/supplementary'); return data.data as SupplementaryKpis },

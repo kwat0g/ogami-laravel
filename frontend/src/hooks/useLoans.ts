@@ -11,9 +11,10 @@ import type {
 
 // ── Paginated loan list ───────────────────────────────────────────────────────
 
-export function useLoans(filters: LoanFilters = {}) {
+export function useLoans(filters: LoanFilters = {}, enabled: boolean = true) {
   return useQuery({
     queryKey: ['loans', filters],
+    enabled,
     queryFn: async () => {
       const res = await api.get<Paginated<Loan>>('/loans', { params: filters })
       return res.data
@@ -39,7 +40,7 @@ export function useTeamLoans(filters: LoanFilters = {}) {
 
 // ── Single loan ───────────────────────────────────────────────────────────────
 
-export function useLoan(id: string | null) {
+export function useLoan(id: string | null, enabled: boolean = true) {
   return useQuery({
     queryKey: ['loans', id],
     queryFn: async () => {
@@ -52,7 +53,7 @@ export function useLoan(id: string | null) {
 
 // ── Amortization schedule ─────────────────────────────────────────────────────
 
-export function useLoanSchedule(loanId: string | null) {
+export function useLoanSchedule(loanId: string | null, enabled: boolean = true) {
   return useQuery({
     queryKey: ['loans', loanId, 'schedule'],
     queryFn: async () => {
@@ -82,7 +83,7 @@ export function useCreateLoan() {
 
 // ── Employee Loan History ─────────────────────────────────────────────────────
 
-export function useEmployeeLoanHistory(loanId: string | null) {
+export function useEmployeeLoanHistory(loanId: string | null, enabled: boolean = true) {
   return useQuery({
     queryKey: ['loans', loanId, 'employee-history'],
     queryFn: async () => {

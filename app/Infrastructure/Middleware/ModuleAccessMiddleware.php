@@ -56,7 +56,9 @@ class ModuleAccessMiddleware
         'overtime' => ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
 
         'payroll' => ['HR', 'ACCTG'],
-        'loans' => ['HR', 'ACCTG'],
+        // Loan team views are used in My Team across operational departments,
+        // while action-level permissions (e.g., loans.manager_check) remain policy-gated.
+        'loans' => ['HR', 'ACCTG', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'IT'],
 
         'ap' => ['ACCTG', 'PURCH'],
         'vendors' => ['ACCTG', 'PURCH'],

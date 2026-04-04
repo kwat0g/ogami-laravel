@@ -158,7 +158,7 @@ export interface AbcItem {
 // Executive Dashboard
 // ============================================================================
 
-export function useExecutiveDashboard() {
+export function useExecutiveDashboard(enabled = false) {
   return useQuery({
     queryKey: ['dashboard', 'executive-analytics'],
     queryFn: async () => {

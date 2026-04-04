@@ -30,7 +30,7 @@ final class ItemMasterFactory extends Factory
             'reorder_point' => 10,
             'reorder_qty' => 50,
             'type' => 'raw_material',
-            'requires_iqc' => false,
+            'requires_iqc' => true,
             'is_active' => true,
         ];
     }

@@ -23,7 +23,15 @@ const itemSchema = z.object({
   vendor_item_id: z.coerce.number().positive('Vendor item is required'),
   item_description: z.string(),
   unit_of_measure: z.string(),
-  quantity: z.coerce.number().gt(0, 'Must be > 0'),
+  quantity: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return null
+      return Number(value)
+    },
+    z.number().gt(0, 'Must be > 0').nullable().refine((v) => v !== null, {
+      message: 'Quantity is required',
+    }),
+  ),
   estimated_unit_cost: z.coerce.number().gt(0, 'Must be > 0'),
   specifications: z.string().optional(),
 })
@@ -32,9 +40,25 @@ const schema = z.object({
   vendor_id: z.coerce.number().int().positive('Vendor is required'),
   department_id: z.coerce.number().int().positive('Department is required'),
   urgency: z.enum(['normal', 'urgent', 'critical']).default('normal'),
-  justification: z.string().min(20, 'Justification must be at least 20 characters'),
+  justification: z.string().min(5, 'Justification must be at least 5 characters'),
   notes: z.string().optional(),
   items: z.array(itemSchema).min(1, 'At least one line item is required'),
+}).superRefine((data, ctx) => {
+  const seen = new Set<number>()
+
+  data.items.forEach((item, index) => {
+    if (item.vendor_item_id > 0) {
+      if (seen.has(item.vendor_item_id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['items', index, 'vendor_item_id'],
+          message: 'Duplicate item selected. Increase quantity on the existing row instead.',
+        })
+      } else {
+        seen.add(item.vendor_item_id)
+      }
+    }
+  })
 })
 
 type FormValues = z.infer<typeof schema>
@@ -78,7 +102,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
           vendor_item_id: 0,
           item_description: '',
           unit_of_measure: '',
-          quantity: 1,
+          quantity: null,
           estimated_unit_cost: 0,
         },
       ],
@@ -116,11 +140,13 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     undefined,
     { enabled: !isEditMode },
   )
+  const [hideDraftBanner, setHideDraftBanner] = useState(false)
 
   const handleRestoreDraft = () => {
     const saved = restore()
     if (saved) {
       reset(saved)
+      setHideDraftBanner(true)
       toast.success('Draft restored')
     }
   }
@@ -148,7 +174,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
   const confirmVendorChange = (fieldOnChange: (val: number) => void): void => {
     if (pendingVendorId === null) return
     fieldOnChange(pendingVendorId)
-    replace([{ vendor_item_id: 0, item_description: '', unit_of_measure: '', quantity: 1, estimated_unit_cost: 0, specifications: '' }])
+    replace([{ vendor_item_id: 0, item_description: '', unit_of_measure: '', quantity: null, estimated_unit_cost: 0, specifications: '' }])
     setBudgetStatus(null)
     setPendingVendorId(null)
   }
@@ -214,6 +240,28 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     const vendorItem = vendorItems?.find((vi) => vi.id === vendorItemId)
     if (!vendorItem) return
 
+    const duplicateIndex = items.findIndex(
+      (it, i) => i !== index && Number(it.vendor_item_id) === vendorItemId,
+    )
+
+    // If the item already exists in another row, merge quantity into that row
+    // and remove the duplicate row to keep one line per vendor item.
+    if (duplicateIndex >= 0) {
+      const currentQty = Number(items[index]?.quantity) || 1
+      const existingQty = Number(items[duplicateIndex]?.quantity) || 0
+      setValue(`items.${duplicateIndex}.quantity`, existingQty + currentQty)
+
+      if (fields.length > 1) {
+        remove(index)
+      } else {
+        setValue('items.0.quantity', existingQty + currentQty)
+      }
+
+      toast.info('Item already added. Quantity has been increased on the existing line.')
+
+      return
+    }
+
     setValue(`items.${index}.vendor_item_id`, vendorItem.id)
     setValue(`items.${index}.item_description`, vendorItem.item_name)
     setValue(`items.${index}.unit_of_measure`, vendorItem.unit_of_measure)
@@ -263,10 +311,13 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
       />
 
       {/* Draft restoration banner */}
-      {!isEditMode && hasDraft && (
+      {!isEditMode && hasDraft && !hideDraftBanner && (
         <DraftRestorationBanner
           onRestore={handleRestoreDraft}
-          onDiscard={clearDraft}
+          onDiscard={() => {
+            clearDraft()
+            setHideDraftBanner(true)
+          }}
           timestamp={getDraftTimestamp('pr-create')}
         />
       )}
@@ -446,7 +497,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                 <textarea
                   {...register('justification')}
                   rows={3}
-                  placeholder="Explain why this purchase is needed (min. 20 characters)"
+                  placeholder="Explain why this purchase is needed (min. 5 characters)"
                   className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
                 />
                 {errors.justification && (
@@ -534,7 +585,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                     vendor_item_id: 0,
                     item_description: '',
                     unit_of_measure: '',
-                    quantity: 1,
+                    quantity: null,
                     estimated_unit_cost: 0,
                   })
                 }
@@ -619,6 +670,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                             <input
                               type="number"
                               step="0.001"
+                              placeholder="0"
                               {...register(`items.${index}.quantity`)}
                               className="w-full text-sm border border-neutral-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />

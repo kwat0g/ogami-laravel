@@ -117,7 +117,7 @@ final class PayrollRunPolicy
     /** Step 1–2: create + set scope — HR Manager only */
     public function create(User $user): bool
     {
-        return $user->hasAnyPermission(['payroll.initiate', 'payroll.initiate']);
+        return $user->hasAnyPermission(['payroll.initiate']);
     }
 
     /** Step 2: confirm scope — HR Manager */

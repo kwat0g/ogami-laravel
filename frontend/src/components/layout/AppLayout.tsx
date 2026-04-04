@@ -45,6 +45,8 @@ interface NavChild {
   label: string
   href?: string
   permission?: string
+  /** Optional department allowlist for this child link. */
+  departments?: string[]
   end?: boolean
   /** When true, renders as a non-clickable section header instead of a link. */
   divider?: boolean
@@ -149,11 +151,11 @@ const SECTIONS: NavSection[] = [
       // ── Accounts Payable ────────────────────────────────────────────────────
       { divider: true, label: 'Accounts Payable' },
       { label: 'Vendors', href: '/accounting/vendors', permission: 'vendors.view' },
-      { label: 'Vendor Invoices', href: '/accounting/ap/invoices', permission: 'vendor_invoices.view' },
+      { label: 'Vendor Invoices', href: '/accounting/ap/invoices', permission: 'vendor_invoices.view', departments: ['ACCTG'] },
       // ── Accounts Receivable ─────────────────────────────────────────────────
       { divider: true, label: 'Accounts Receivable' },
-      { label: 'Customers', href: '/ar/customers', permission: 'customers.view' },
-      { label: 'Customer Invoices', href: '/ar/invoices', permission: 'customer_invoices.view' },
+      { label: 'Customers', href: '/ar/customers', permission: 'customers.view|customers.manage' },
+      { label: 'Customer Invoices', href: '/ar/invoices', permission: 'customer_invoices.view', departments: ['ACCTG', 'SALES'] },
       // ── Banking ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Banking' },
       { label: 'Bank Accounts', href: '/banking/accounts', permission: 'bank_accounts.view' },
@@ -327,7 +329,20 @@ function SectionNav({ section, hasPermission, hasRole, userDept }: { section: Na
   const isInitialMount = useRef(true)
 
   const withPermission = section.children.filter(
-    (c) => c.divider || !c.permission || hasPermission(c.permission),
+    (c) => {
+      if (c.divider) return true
+
+      const allowedByPermission = !c.permission || hasPermission(c.permission)
+      if (!allowedByPermission) return false
+
+      // Optional child-level department gate (fail-closed if configured but department is unknown).
+      if (c.departments) {
+        if (!userDept) return false
+        return c.departments.includes(userDept)
+      }
+
+      return true
+    },
   )
   // Remove dividers that have no visible link items before the next divider (orphaned headers)
   const visibleChildren = withPermission.filter((child, index) => {
@@ -463,7 +478,19 @@ function CompactSectionNav({ section, hasPermission, hasRole, userDept }: { sect
   }
 
   const withPermission2 = section.children.filter(
-    (c) => c.divider || !c.permission || hasPermission(c.permission),
+    (c) => {
+      if (c.divider) return true
+
+      const allowedByPermission = !c.permission || hasPermission(c.permission)
+      if (!allowedByPermission) return false
+
+      if (c.departments) {
+        if (!userDept) return false
+        return c.departments.includes(userDept)
+      }
+
+      return true
+    },
   )
   const visibleChildren = withPermission2.filter((child, index) => {
     if (!child.divider) return true

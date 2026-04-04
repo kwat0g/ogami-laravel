@@ -29,13 +29,14 @@ export function useLeaveRequests(filters: LeaveFilters = {}) {
 
 // ── Team Leave requests (department-scoped) ───────────────────────────────────
 
-export function useTeamLeaveRequests(filters: LeaveFilters = {}) {
+export function useTeamLeaveRequests(filters: LeaveFilters = {}, enabled = true) {
   return useQuery({
     queryKey: ['team-leave-requests', filters],
     queryFn: async () => {
       const res = await api.get<Paginated<LeaveRequest>>('/leave/requests/team', { params: filters })
       return res.data
     },
+    enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   })
@@ -360,7 +361,7 @@ export interface LeaveType {
   deducts_absent_on_lwop: boolean
 }
 
-export function useLeaveTypes() {
+export function useLeaveTypes(enabled = false) {
   return useQuery({
     queryKey: ['leave-types'],
     queryFn: async () => {

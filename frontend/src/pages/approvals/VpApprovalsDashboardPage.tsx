@@ -155,6 +155,10 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
 
   const canLeaveApprove   = hasPermission('leaves.executive_approve') || hasPermission('leaves.ga_process') || hasPermission('leaves.vp_note')
   const canOvertimeApprove = hasPermission('overtime.executive_approve')
+  const canPrApprove = hasPermission('procurement.purchase-request.view')
+  const canLoanApprove = hasPermission('loans.vp_approve')
+  const canMrqApprove = hasPermission('inventory.mrq.vp_approve')
+  const canPayrollApprove = hasPermission('payroll.vp_approve')
   const canVpNote  = hasPermission('leaves.vp_note')
   const canGaProcess = hasPermission('leaves.ga_process')
 
@@ -209,28 +213,28 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
     search:  debouncedSearch || undefined,
     urgency: tabFilters['purchase-requests'].urgency || undefined,
     page:    tabFilters['purchase-requests'].page,
-  })
+  }, canPrApprove)
   const loanQuery = useVpLoans({
     status: tabFilters['loans'].status,
     search: debouncedSearch || undefined,
     page:   tabFilters['loans'].page,
-  })
+  }, canLoanApprove)
   const mrqQuery = useVpMrqs({
     status: tabFilters['mrq'].status,
     search: debouncedSearch || undefined,
     page:   tabFilters['mrq'].page,
-  })
+  }, canMrqApprove)
   const payrollQuery = useVpPayrollRuns({
     status: tabFilters['payroll'].status,
     search: debouncedSearch || undefined,
     page:   tabFilters['payroll'].page,
-  })
+  }, canPayrollApprove)
   const leaveQuery = useTeamLeaveRequests({
     status:   tabFilters['leave'].status as string | undefined,
     search:   debouncedSearch || undefined,
     per_page: 25,
     page:     tabFilters['leave'].page,
-  } as Parameters<typeof useTeamLeaveRequests>[0])
+  } as Parameters<typeof useTeamLeaveRequests>[0], canLeaveApprove)
   const otQuery = usePendingExecutiveOvertimeRequests(overtimeFilters, canOvertimeApprove)
 
   // ── Mutations ────────────────────────────────────────────────────────────────
@@ -241,7 +245,12 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const rejectOt    = useExecutiveRejectOvertimeRequest()
 
   // ── Counts (always pending-approval status, independent of filter selection) ──
-  const pendingCounts = useVpPendingCounts()
+  const pendingCounts = useVpPendingCounts({
+    pr: canPrApprove,
+    loan: canLoanApprove,
+    mrq: canMrqApprove,
+    payroll: canPayrollApprove,
+  })
   const otCount = otQuery.data?.meta?.total ?? 0
 
   // ── OT handlers ──────────────────────────────────────────────────────────────
@@ -269,10 +278,10 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
 
   // ── Tab definitions ──────────────────────────────────────────────────────────
   const tabs: { id: TabId; label: string; count?: number; show: boolean }[] = [
-    { id: 'purchase-requests', label: 'Purchase Requests', count: pendingCounts.pr,      show: hasPermission('procurement.purchase-request.view') },
-    { id: 'loans',             label: 'Loans',             count: pendingCounts.loan,    show: hasPermission('loans.vp_approve') },
-    { id: 'mrq',               label: 'Requisitions',      count: pendingCounts.mrq,     show: hasPermission('inventory.mrq.vp_approve') },
-    { id: 'payroll',           label: 'Payroll',           count: pendingCounts.payroll, show: hasPermission('payroll.vp_approve') },
+    { id: 'purchase-requests', label: 'Purchase Requests', count: pendingCounts.pr,      show: canPrApprove },
+    { id: 'loans',             label: 'Loans',             count: pendingCounts.loan,    show: canLoanApprove },
+    { id: 'mrq',               label: 'Requisitions',      count: pendingCounts.mrq,     show: canMrqApprove },
+    { id: 'payroll',           label: 'Payroll',           count: pendingCounts.payroll, show: canPayrollApprove },
     { id: 'leave',             label: 'Leave',                                           show: canLeaveApprove },
     { id: 'overtime',          label: 'Overtime',          count: otCount,               show: canOvertimeApprove },
   ].filter((t) => t.show)

@@ -275,7 +275,7 @@ export function useManagerDashboardStats(departmentId: number | null) {
   })
 }
 
-export function useHrDashboardStats() {
+export function useHrDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['hr-dashboard'],
     queryFn: async () => {
@@ -286,7 +286,7 @@ export function useHrDashboardStats() {
   })
 }
 
-export function useAccountingDashboardStats() {
+export function useAccountingDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['accounting-dashboard'],
     queryFn: async () => {
@@ -297,7 +297,7 @@ export function useAccountingDashboardStats() {
   })
 }
 
-export function useAdminDashboardStats() {
+export function useAdminDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
@@ -310,7 +310,7 @@ export function useAdminDashboardStats() {
   })
 }
 
-export function useStaffDashboardStats() {
+export function useStaffDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['staff-dashboard'],
     queryFn: async () => {
@@ -321,7 +321,7 @@ export function useStaffDashboardStats() {
   })
 }
 
-export function useExecutiveDashboardStats() {
+export function useExecutiveDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['executive-dashboard'],
     queryFn: async () => {
@@ -332,7 +332,7 @@ export function useExecutiveDashboardStats() {
   })
 }
 
-export function useHeadDashboardStats() {
+export function useHeadDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['head-dashboard'],
     queryFn: async () => {
@@ -374,7 +374,7 @@ export interface VicePresidentDashboardStats {
   }>
 }
 
-export function useVicePresidentDashboardStats() {
+export function useVicePresidentDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['vp-dashboard'],
     queryFn: async () => {
@@ -412,7 +412,7 @@ export interface OfficerDashboardStats {
   }
 }
 
-export function useOfficerDashboardStats() {
+export function useOfficerDashboardStats(enabled = false) {
   return useQuery({
     queryKey: ['officer-dashboard'],
     queryFn: async () => {

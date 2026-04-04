@@ -32,6 +32,7 @@ class ModulePermissionSeeder extends Seeder
         'loans.view_own', 'loans.apply',
         'payroll.view_own_payslip', 'payroll.download_own_payslip',
         'payslips.view', 'payslips.download',
+        'procurement.purchase-request.create', 'vendors.view', // General staff PR creation
     ];
 
     /**
@@ -66,7 +67,7 @@ class ModulePermissionSeeder extends Seeder
                 'attendance.import_csv', 'attendance.resolve_anomalies',
                 'attendance.manage_shifts', 'attendance.delete', 'attendance.lock', 'attendance.unlock',
                 'leaves.adjust_balance', 'leaves.configure_types', 'leaves.trigger_sil_monetization',
-                'leave_balances.adjust', 'loans.hr_approve', 'loans.vp_approve', 'loans.view_ln007_log',
+                'leave_balances.adjust', 'leaves.manager_check', 'leaves.ga_process', 'loans.hr_approve', 'loans.view_ln007_log',
                 'loans.configure_types', 'loans.create', 'loans.update', 'loans.approve', 'loans.reject',
                 'loans.supervisor_review', 'loans.manager_check', 'loan_types.view',
                 'payroll.manage_pay_periods', 'payroll.initiate', 'payroll.pre_run_validate',
@@ -107,7 +108,7 @@ class ModulePermissionSeeder extends Seeder
                 'loans.view_department',
                 'payroll.view_runs',
                 // Loan workflow
-                'loans.manager_check', 'loans.officer_review', 'loans.accounting_approve', 'loans.disburse',
+                'loans.manager_check', 'loans.officer_review', 'loans.accounting_approve',
                 // Recruitment (HR Officer: Operational only)
                 'recruitment.requisitions.view', 'recruitment.requisitions.create', 'recruitment.requisitions.submit',
                 'recruitment.postings.view', 'recruitment.postings.create', 'recruitment.postings.publish',
@@ -143,15 +144,6 @@ class ModulePermissionSeeder extends Seeder
                 'recruitment.applications.view', 'recruitment.applications.review', 'recruitment.applications.shortlist',
                 'recruitment.interviews.view', 'recruitment.interviews.schedule', 'recruitment.interviews.evaluate',
                 'recruitment.candidates.view',
-                'overtime.approve', 'overtime.reject',
-                'employees.upload_documents', 'employees.download_documents',
-                'attendance.import_csv', 'attendance.view_anomalies', 'attendance.resolve_anomalies',
-                'attendance.manage_shifts',
-                // Loan workflow (head actions)
-                'loans.head_note', 'loans.view_department',
-                // HR module access (view only for heads)
-                'hr.full_access',
-                'payroll.view_runs',
                 // Procurement: all dept heads can raise PRs for their own department
                 'procurement.purchase-request.view', 'procurement.purchase-request.create-dept',
             ],
@@ -188,8 +180,7 @@ class ModulePermissionSeeder extends Seeder
                 'leaves.view_team', 'leaves.file_on_behalf', 'leaves.approve', 'leaves.reject',
                 'loans.view_department', 'payroll.view_runs',
                 // Cross-module access for managers
-                'hr.full_access',
-                'procurement.purchase-request.view',
+                'procurement.purchase-request.view', 'procurement.purchase-request.budget-check',
                 'inventory.items.view',
                 // Accounting-specific
                 'journal_entries.view', 'journal_entries.create', 'journal_entries.update',
@@ -482,7 +473,7 @@ class ModulePermissionSeeder extends Seeder
                 'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
                 'loans.view_own', 'loans.apply', 'attendance.view_own',
                 // Team management
-                'employees.view', 'employees.view_full_record', 'employees.view_masked_gov_ids',
+                'employees.view', 'employees.view_team', 'employees.view_full_record', 'employees.view_masked_gov_ids',
                 'employees.upload_documents', 'employees.download_documents',
                 'attendance.view_team', 'attendance.view_anomalies',
                 'overtime.view', 'overtime.submit', 'overtime.approve', 'overtime.reject',
@@ -492,7 +483,7 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.items.view', 'inventory.items.create', 'inventory.items.edit',
                 'inventory.locations.view', 'inventory.locations.manage',
                 'inventory.stock.view', 'inventory.adjustments.create',
-                'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.fulfill',
+                'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.check', 'inventory.mrq.review', 'inventory.mrq.fulfill',
                 'delivery.view', 'delivery.manage',
             ],
             'officer' => [
@@ -566,7 +557,7 @@ class ModulePermissionSeeder extends Seeder
                 'leaves.view_own', 'leaves.file_own', 'leaves.cancel',
                 'loans.view_own', 'loans.apply', 'attendance.view_own',
                 // Team management
-                'employees.view', 'employees.view_full_record', 'employees.view_masked_gov_ids',
+                'employees.view', 'employees.view_team', 'employees.view_full_record', 'employees.view_masked_gov_ids',
                 'employees.upload_documents', 'employees.download_documents',
                 'attendance.view_team', 'attendance.view_anomalies',
                 'overtime.view', 'overtime.submit', 'overtime.approve', 'overtime.reject',
@@ -575,10 +566,11 @@ class ModulePermissionSeeder extends Seeder
                 // Procurement
                 'procurement.purchase-request.view', 'procurement.purchase-request.create',
                 'procurement.purchase-request.note', 'procurement.purchase-request.check',
-                'procurement.purchase-request.review', 'procurement.purchase-request.budget-check',
+                'procurement.purchase-request.review',
                 'procurement.purchase-order.view', 'procurement.purchase-order.create', 'procurement.purchase-order.manage',
                 'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
-                'vendors.view', 'vendors.manage',
+                'vendors.view', 'vendors.create', 'vendors.manage', 'vendors.archive', 'vendors.accredit', 'vendors.suspend',
+                'customers.view', 'customers.manage', 'customers.archive',
                 'vendor_portal.view_orders', 'vendor_portal.update_fulfillment',
             ],
             'officer' => [
@@ -600,10 +592,10 @@ class ModulePermissionSeeder extends Seeder
                 'procurement.purchase-order.view', 'procurement.purchase-order.create',
                 'procurement.purchase-order.manage',      // officer accepts/rejects vendor changes
                 'procurement.goods-receipt.view', 'procurement.goods-receipt.create',
-                'vendors.view', 'vendors.manage', 'vendors.archive', 'vendors.accredit', 'vendors.suspend',
+                'vendors.view',
                 'vendor_portal.view_orders',
-                // AR/Receivable - Purchasing Officers manage customers for their vendors
-                'customers.view', 'customers.manage', 'customers.archive',
+                // AR/Receivable - Purchasing Officers have preview-only customer access
+                'customers.view',
                 // Inventory: purchasing officers view items and can create/view MRQs for their dept
                 'inventory.items.view',
                 'inventory.mrq.view', 'inventory.mrq.create',
@@ -726,7 +718,15 @@ class ModulePermissionSeeder extends Seeder
             ],
             'vice_president' => [
                 'self.view_profile', 'self.view_attendance',
-                'hr.full_access', 'employees.view', 'reports.view',
+                'employees.view', 'reports.view', 'reports.financial_statements',
+                'approvals.vp.approve',
+                // VP approval queues + dashboard guards
+                'loans.vp_approve',
+                'procurement.purchase-request.view',
+                'inventory.mrq.vp_approve',
+                'payroll.vp_approve',
+                'leaves.vp_note',
+                'overtime.executive_approve',
                 // Recruitment Approval & Final Offers
                 'recruitment.requisitions.view', 'recruitment.requisitions.approve', 'recruitment.requisitions.reject',
                 'recruitment.offers.view', 'recruitment.offers.send',

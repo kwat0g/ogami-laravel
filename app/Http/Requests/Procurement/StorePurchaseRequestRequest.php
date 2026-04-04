@@ -20,11 +20,11 @@ final class StorePurchaseRequestRequest extends FormRequest
             'department_id' => ['required', 'integer', 'exists:departments,id'],
             'vendor_id' => ['required', 'integer', 'exists:vendors,id'],
             'urgency' => ['sometimes', 'string', 'in:normal,urgent,critical'],
-            'justification' => ['required', 'string', 'min:20'],
+            'justification' => ['required', 'string', 'min:5'],
             'notes' => ['nullable', 'string'],
 
             'items' => ['required', 'array', 'min:1'],
-            'items.*.vendor_item_id' => ['required', 'integer', 'exists:vendor_items,id'],
+            'items.*.vendor_item_id' => ['required', 'integer', 'distinct', 'exists:vendor_items,id'],
             'items.*.item_description' => ['required', 'string', 'max:255'],
             'items.*.unit_of_measure' => ['required', 'string', 'max:30'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],

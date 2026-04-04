@@ -98,7 +98,7 @@ export interface QuarantineEntry {
 
 // ── Performance Appraisals ────────────────────────────────────────────────────
 
-export function usePerformanceAppraisals(filters: Record<string, unknown> = {}) {
+export function usePerformanceAppraisals(filters: Record<string, unknown> = {}, enabled = false) {
   return useQuery({
     queryKey: ['performance-appraisals', filters],
     queryFn: async () => {
@@ -144,7 +144,7 @@ export function useAppraisalAction() {
   })
 }
 
-export function useDepartmentPerformanceSummary(year?: number) {
+export function useDepartmentPerformanceSummary(year?: number, enabled = false) {
   return useQuery({
     queryKey: ['department-performance-summary', year],
     queryFn: async () => {
@@ -156,7 +156,7 @@ export function useDepartmentPerformanceSummary(year?: number) {
 
 // ── Budget Amendments ─────────────────────────────────────────────────────────
 
-export function useBudgetAmendments(filters: Record<string, unknown> = {}) {
+export function useBudgetAmendments(filters: Record<string, unknown> = {}, enabled = false) {
   return useQuery({
     queryKey: ['budget-amendments', filters],
     queryFn: async () => {
@@ -190,7 +190,7 @@ export function useBudgetAmendmentAction() {
 
 // ── Lead Scoring ──────────────────────────────────────────────────────────────
 
-export function useLeadScores() {
+export function useLeadScores(enabled = false) {
   return useQuery({
     queryKey: ['lead-scores'],
     queryFn: async () => {
@@ -216,7 +216,7 @@ export function useAutoQualifyLeads() {
 
 // ── Financial Ratios ──────────────────────────────────────────────────────────
 
-export function useFinancialRatios(year?: number) {
+export function useFinancialRatios(year?: number, enabled = false) {
   return useQuery({
     queryKey: ['financial-ratios', year],
     queryFn: async () => {
@@ -228,7 +228,7 @@ export function useFinancialRatios(year?: number) {
 
 // ── Capacity Planning ─────────────────────────────────────────────────────────
 
-export function useCapacityUtilization(from?: string, to?: string) {
+export function useCapacityUtilization(from?: string, to?: string, enabled = false) {
   return useQuery({
     queryKey: ['capacity-utilization', from, to],
     queryFn: async () => {
@@ -238,7 +238,7 @@ export function useCapacityUtilization(from?: string, to?: string) {
   })
 }
 
-export function useTimePhasedMrp() {
+export function useTimePhasedMrp(enabled = false) {
   return useQuery({
     queryKey: ['time-phased-mrp'],
     queryFn: async () => {
@@ -250,7 +250,7 @@ export function useTimePhasedMrp() {
 
 // ── AP Early Payment Discounts ────────────────────────────────────────────────
 
-export function usePaymentOptimization(days: number = 7) {
+export function usePaymentOptimization(days: number = 7, enabled = false) {
   return useQuery({
     queryKey: ['payment-optimization', days],
     queryFn: async () => {
@@ -260,7 +260,7 @@ export function usePaymentOptimization(days: number = 7) {
   })
 }
 
-export function useDiscountSummary() {
+export function useDiscountSummary(enabled = false) {
   return useQuery({
     queryKey: ['discount-summary'],
     queryFn: async () => {
@@ -272,7 +272,7 @@ export function useDiscountSummary() {
 
 // ── QC Quarantine ─────────────────────────────────────────────────────────────
 
-export function useQuarantine() {
+export function useQuarantine(enabled = false) {
   return useQuery({
     queryKey: ['quarantine'],
     queryFn: async () => {
@@ -332,7 +332,7 @@ export function useExecuteLoanPayoff() {
 
 // ── Blanket POs ───────────────────────────────────────────────────────────────
 
-export function useBlanketPOs(filters: Record<string, unknown> = {}) {
+export function useBlanketPOs(filters: Record<string, unknown> = {}, enabled = false) {
   return useQuery({
     queryKey: ['blanket-pos', filters],
     queryFn: async () => {
@@ -403,7 +403,7 @@ export function useLeaveConflicts(requestId: number) {
 
 // ── ISO Acknowledgments ───────────────────────────────────────────────────────
 
-export function usePendingAcknowledgments() {
+export function usePendingAcknowledgments(enabled = false) {
   return useQuery({
     queryKey: ['pending-acknowledgments'],
     queryFn: async () => {
@@ -426,7 +426,7 @@ export function useAcknowledgeDocument() {
 
 // ── Inventory Valuation by Method ─────────────────────────────────────────────
 
-export function useValuationByMethod() {
+export function useValuationByMethod(enabled = false) {
   return useQuery({
     queryKey: ['valuation-by-method'],
     queryFn: async () => {

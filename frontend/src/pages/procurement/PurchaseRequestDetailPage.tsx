@@ -216,6 +216,12 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
 
   // ── Permission checks ──────────────────────────────────────────────────────
   const isSuperAdmin = user?.roles?.includes('super_admin') ?? false
+  const canSelfReviewInDemo = Boolean(
+    import.meta.env.DEV
+    && user?.roles?.includes('manager')
+    && user?.primary_department_code === 'PURCH'
+    && user?.id === pr.submitted_by_id,
+  )
 
   // New simplified workflow permissions
   const isOwner        = user?.id === pr.requested_by_id
@@ -346,7 +352,7 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
 
             {canReview && (
               <SodActionButton
-                initiatedById={pr.submitted_by_id}
+                initiatedById={canSelfReviewInDemo ? null : pr.submitted_by_id}
                 label="Review & Approve"
                 onClick={() => setPendingAction('review')}
                 isLoading={reviewMutation.isPending}
@@ -592,7 +598,9 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
                 {pr.status === 'draft' && 'This PR is in draft. Submit it to start the approval workflow.'}
                 {pr.status === 'pending_review' && (
                   user?.id === pr.submitted_by_id
-                    ? 'You submitted this PR. Due to Segregation of Duties, a different Purchasing Officer must perform the review. Ask a colleague with the Purchasing Officer role to review and approve it.'
+                    ? canSelfReviewInDemo
+                      ? 'You submitted this PR. Demo mode allows Purchasing Manager self-review in local development. Click "Review & Approve" to continue.'
+                      : 'You submitted this PR. Due to Segregation of Duties, a different Purchasing Officer must perform the review. Ask a colleague with the Purchasing Officer role to review and approve it.'
                     : 'This PR is awaiting review by the Purchasing Department. Click "Review & Approve" to proceed.'
                 )}
                 {pr.status === 'reviewed' && (
