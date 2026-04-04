@@ -122,4 +122,13 @@ final class RequisitionController extends Controller
 
         return new RequisitionResource($requisition);
     }
+
+    public function open(Request $request, JobRequisition $requisition): RequisitionResource
+    {
+        $this->authorize('open', $requisition);
+
+        $requisition = $this->service->open($requisition, $request->user());
+
+        return new RequisitionResource($requisition);
+    }
 }

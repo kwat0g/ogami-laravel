@@ -48,6 +48,8 @@ Route::middleware(['auth:sanctum', 'module_access:hr'])->group(function () {
         ->name('requisitions.hold');
     Route::post('requisitions/{requisition}/resume', [RequisitionController::class, 'resume'])
         ->name('requisitions.resume');
+    Route::post('requisitions/{requisition}/open', [RequisitionController::class, 'open'])
+        ->name('requisitions.open');
 
     // ── Job Postings ─────────────────────────────────────────────────────
     Route::apiResource('postings', JobPostingController::class)

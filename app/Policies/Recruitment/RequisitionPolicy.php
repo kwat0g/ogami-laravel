@@ -69,4 +69,9 @@ final class RequisitionPolicy
     {
         return $user->hasPermissionTo('recruitment.requisitions.cancel');
     }
+
+    public function open(User $user, JobRequisition $requisition): bool
+    {
+        return $user->hasPermissionTo('recruitment.requisitions.approve');
+    }
 }
