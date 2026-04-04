@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Master seeder — runs all application seeders in dependency order.
@@ -20,6 +21,13 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $output = $this->command?->getOutput();
+        $previousVerbosity = $output?->getVerbosity();
+
+        if ($output !== null) {
+            $output->setVerbosity(OutputInterface::VERBOSITY_QUIET);
+        }
+
         $this->call([
             // ── Configuration tables (zero dependencies) ─────────────────────
             SystemSettingsSeeder::class,
@@ -66,10 +74,6 @@ class DatabaseSeeder extends Seeder
             // Creates Executive/Manager/Officer/Head/Staff for each department
             // with properly linked user accounts and employee records
             ConsolidatedEmployeeSeeder::class,
-            // ── Comprehensive test accounts ────────────────────────────────────
-            // Creates standardized {dept}.{role}@ogamierp.local accounts
-            // for consistent testing across all departments
-            ComprehensiveTestAccountsSeeder::class,
             // ── Transactional sample data ─────────────────────────────────────
             // Must come last — depends on employees, leave_types, COA, fiscal_periods
             SampleDataSeeder::class,
@@ -98,6 +102,19 @@ class DatabaseSeeder extends Seeder
             // customers, FG standard prices, FG stock, extra vendor catalog items.
             // Safe to re-run independently: php artisan db:seed --class=ManualTestingSeeder
             ManualTestingSeeder::class,
+
+            // ── Recruitment module test data ──────────────────────────────────
+            // Job postings, requisitions, applicants, interview schedules
+            RecruitmentSeeder::class,
         ]);
+
+        if ($output !== null && $previousVerbosity !== null) {
+            $output->setVerbosity($previousVerbosity);
+        }
+
+        // Keep this visible: compact account summary for manual demo login use.
+        // Invoke directly to avoid extra RUNNING/DONE wrapper lines.
+        $summarySeeder = $this->resolve(ComprehensiveTestAccountsSeeder::class);
+        $summarySeeder->__invoke([]);
     }
 }
