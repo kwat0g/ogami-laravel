@@ -4,7 +4,6 @@ use App\Jobs\Accounting\FlagStaleJournalEntriesJob;
 use App\Jobs\AP\SendApDailyDigestJob;
 use App\Jobs\AP\SendApDueDateAlertJob;
 use App\Jobs\Leave\RunLeaveAccrualJob;
-use App\Jobs\Recruitment\ExpireOffersJob;
 use App\Jobs\Recruitment\ExpirePostingsJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
@@ -46,7 +45,7 @@ Schedule::call(function () {
 
 // ── Recruitment: Expire offers (daily at midnight) ────────────────────────────
 // Finds sent offers past their expires_at date and transitions them to expired.
-Schedule::job(new ExpireOffersJob)->dailyAt('00:00')->name('recruitment.expire-offers')->withoutOverlapping();
+Schedule::command('recruitment:expire-offers')->dailyAt('00:00')->name('recruitment.expire-offers')->withoutOverlapping();
 
 // ── Accounting: Recurring Journal Entry auto-generation (FS-012) ──────────────
 // Runs daily at 03:00 AM. Generates journal entries from active recurring templates
