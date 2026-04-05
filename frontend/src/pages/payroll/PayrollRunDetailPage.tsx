@@ -28,6 +28,7 @@ import {
   useExportPayrollBreakdown,
 } from '@/hooks/usePayroll'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
@@ -485,35 +486,35 @@ export default function PayrollRunDetailPage() {
 
     switch (status) {
       case 'DRAFT':
-        return hasPermission('payroll.initiate') ? `/payroll/runs/${runId}/scope` : undefined
+        return hasPermission(PERMISSIONS.payroll.initiate) ? `/payroll/runs/${runId}/scope` : undefined
       case 'SCOPE_SET':
-        return hasPermission('payroll.initiate') ? `/payroll/runs/${runId}/validate` : undefined
+        return hasPermission(PERMISSIONS.payroll.initiate) ? `/payroll/runs/${runId}/validate` : undefined
       case 'PRE_RUN_CHECKED':
       case 'PROCESSING':
       case 'FAILED':
-        return hasPermission('payroll.initiate') ? `/payroll/runs/${runId}/compute` : undefined
+        return hasPermission(PERMISSIONS.payroll.initiate) ? `/payroll/runs/${runId}/compute` : undefined
       case 'COMPUTED':
       case 'REVIEW':
       case 'RETURNED':
       case 'REJECTED':
         // Review page is viewable by anyone with payroll.view_runs
-        return hasPermission('payroll.view_runs') ? `/payroll/runs/${runId}/review` : undefined
+        return hasPermission(PERMISSIONS.payroll.view_runs) ? `/payroll/runs/${runId}/review` : undefined
       case 'SUBMITTED':
         // HR Manager sees hr-review, Accounting sees detail page (read-only)
-        return hasPermission('payroll.hr_approve') ? `/payroll/runs/${runId}/hr-review` : undefined
+        return hasPermission(PERMISSIONS.payroll.hr_approve) ? `/payroll/runs/${runId}/hr-review` : undefined
       case 'HR_APPROVED':
         // Accounting Manager sees acctg-review, others see detail page
-        return hasPermission('payroll.acctg_approve')
+        return hasPermission(PERMISSIONS.payroll.acctg_approve)
           ? `/payroll/runs/${runId}/acctg-review`
           : undefined
       case 'ACCTG_APPROVED':
         // VP sees vp-review, others see detail page
-        return hasPermission('payroll.vp_approve') ? `/payroll/runs/${runId}/vp-review` : undefined
+        return hasPermission(PERMISSIONS.payroll.vp_approve) ? `/payroll/runs/${runId}/vp-review` : undefined
       case 'VP_APPROVED':
       case 'DISBURSED':
       case 'PUBLISHED':
         // Disburse page is viewable by anyone with payroll.view_runs
-        return hasPermission('payroll.view_runs') ? `/payroll/runs/${runId}/disburse` : undefined
+        return hasPermission(PERMISSIONS.payroll.view_runs) ? `/payroll/runs/${runId}/disburse` : undefined
       default:
         return undefined
     }
@@ -641,7 +642,7 @@ export default function PayrollRunDetailPage() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2">
-            {isDraft && hasPermission('payroll.initiate') && (
+            {isDraft && hasPermission(PERMISSIONS.payroll.initiate) && (
               <ConfirmDestructiveDialog
                 title="Lock payroll run?"
                 description={`Locking will queue computation for all active employees in the system. The cutoff period will be reserved. This cannot be undone easily.`}
@@ -659,7 +660,7 @@ export default function PayrollRunDetailPage() {
               </ConfirmDestructiveDialog>
             )}
 
-            {isDraft && hasPermission('payroll.initiate') && (
+            {isDraft && hasPermission(PERMISSIONS.payroll.initiate) && (
               <button
                 onClick={() => setIsAdjustmentsModalOpen(true)}
                 className="flex items-center gap-2 border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors"
@@ -670,7 +671,7 @@ export default function PayrollRunDetailPage() {
             )}
 
             {/* Accounting Manager Approval for SUBMITTED status */}
-            {run.status === 'SUBMITTED' && hasPermission('payroll.acctg_approve') && (
+            {run.status === 'SUBMITTED' && hasPermission(PERMISSIONS.payroll.acctg_approve) && (
               <AcctgApprovalButtons runId={runId!} initiatedById={run.initiated_by_id} />
             )}
 
@@ -709,7 +710,7 @@ export default function PayrollRunDetailPage() {
               </>
             )}
 
-            {canCancel && hasPermission('payroll.initiate') && (
+            {canCancel && hasPermission(PERMISSIONS.payroll.initiate) && (
               <ConfirmDestructiveDialog
                 title="Cancel payroll run?"
                 description="Cancelling will mark this run as cancelled. Employees will not be paid from this run. You can create a new run with the same period."
@@ -727,7 +728,7 @@ export default function PayrollRunDetailPage() {
               </ConfirmDestructiveDialog>
             )}
 
-            {canArchive && hasPermission('payroll.initiate') && (
+            {canArchive && hasPermission(PERMISSIONS.payroll.initiate) && (
               <ConfirmDestructiveDialog
                 title="Archive payroll run?"
                 description="Archiving removes this run from active payroll lists while keeping it available in archived records."
@@ -747,7 +748,7 @@ export default function PayrollRunDetailPage() {
 
             {/* Void action for approved runs */}
             {(run.status === 'VP_APPROVED' || run.status === 'ACCTG_APPROVED' || run.status === 'HR_APPROVED') && 
-              hasPermission('payroll.approve') && (
+              hasPermission(PERMISSIONS.payroll.approve) && (
               <ConfirmDestructiveDialog
                 title="VOID payroll run?"
                 description="VOIDING is a destructive action that will reverse all payments and GL entries. This run will be permanently marked as voided. Only use this for emergency corrections."
