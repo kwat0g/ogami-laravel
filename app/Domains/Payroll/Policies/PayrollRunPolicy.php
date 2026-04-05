@@ -28,6 +28,11 @@ final class PayrollRunPolicy
 {
     use HandlesAuthorization;
 
+    private function canInitiateWorkflow(User $user): bool
+    {
+        return $user->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve', 'hr.full_access']);
+    }
+
     /**
      * Admin/super_admin bypass for view-only abilities.
      *
@@ -117,42 +122,46 @@ final class PayrollRunPolicy
     /** Step 1–2: create + set scope — HR Manager only */
     public function create(User $user): bool
     {
-        return $user->hasAnyPermission(['payroll.initiate']);
+        return $this->canInitiateWorkflow($user);
     }
 
     /** Step 2: confirm scope — HR Manager */
     public function confirmScope(User $user, PayrollRun $run): bool
     {
-        return $user->hasPermissionTo('payroll.initiate')
+        return $this->canInitiateWorkflow($user)
             && $this->isInitiator($user, $run);
     }
 
     /** Step 3: trigger pre-run validation — HR Manager */
     public function preRunValidate(User $user, PayrollRun $run): bool
     {
-        // payroll.pre_run_validate was removed from seeder (SoD); fall back to initiate
-        return $user->hasAnyPermission(['payroll.pre_run_validate', 'payroll.initiate']);
+        // payroll.pre_run_validate was removed from seeder (SoD); HR initiators still own this step.
+        return $user->hasAnyPermission(['payroll.pre_run_validate', 'payroll.initiate', 'payroll.hr_approve', 'hr.full_access']);
     }
 
     /** Step 4: trigger computation — HR Manager */
     public function compute(User $user, PayrollRun $run): bool
     {
-        // payroll.compute was removed from seeder (SoD); fall back to initiate
-        return $user->hasAnyPermission(['payroll.compute', 'payroll.initiate']);
+        // payroll.compute was removed from seeder (SoD); HR initiators still own this step.
+        return $user->hasAnyPermission(['payroll.compute', 'payroll.initiate', 'payroll.hr_approve', 'hr.full_access']);
     }
 
     /** Step 5: review breakdown — HR Manager (edit) + Finance Manager (read) */
     public function reviewBreakdown(User $user, PayrollRun $run): bool
     {
-        // payroll.review_breakdown was removed from seeder; fall back to initiate + acctg_approve
-        return $user->hasAnyPermission(['payroll.review_breakdown', 'payroll.initiate', 'payroll.acctg_approve']);
+        return $user->hasAnyPermission([
+            'payroll.review_breakdown',
+            'payroll.initiate',
+            'payroll.hr_approve',
+            'hr.full_access',
+            'payroll.acctg_approve',
+        ]);
     }
 
     /** Step 5: flag an employee detail — HR Manager only */
     public function flagEmployee(User $user, PayrollRun $run): bool
     {
-        // payroll.flag_employee was removed from seeder; fall back to initiate
-        return $user->hasAnyPermission(['payroll.flag_employee', 'payroll.initiate']);
+        return $user->hasAnyPermission(['payroll.flag_employee', 'payroll.initiate', 'payroll.hr_approve', 'hr.full_access']);
     }
 
     /** Step 5→6: submit run for HR approval — HR Manager */
@@ -261,14 +270,14 @@ final class PayrollRunPolicy
     /** Cancel / recall a run */
     public function cancel(User $user, PayrollRun $run): bool
     {
-        return $user->hasAnyPermission(['payroll.recall', 'payroll.initiate'])
+        return $user->hasAnyPermission(['payroll.recall', 'payroll.initiate', 'payroll.hr_approve', 'hr.full_access'])
             && $this->isInitiator($user, $run);
     }
 
     /** Archive a terminal run (soft delete). */
     public function delete(User $user, PayrollRun $run): bool
     {
-        return $user->hasAnyPermission(['payroll.recall', 'payroll.initiate'])
+        return $user->hasAnyPermission(['payroll.recall', 'payroll.initiate', 'payroll.hr_approve', 'hr.full_access'])
             && $this->isInitiator($user, $run);
     }
 

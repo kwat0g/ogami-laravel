@@ -486,13 +486,13 @@ export default function PayrollRunDetailPage() {
 
     switch (status) {
       case 'DRAFT':
-        return hasPermission(PERMISSIONS.payroll.initiate) ? `/payroll/runs/${runId}/scope` : undefined
+        return canInitiateWorkflow ? `/payroll/runs/${runId}/scope` : undefined
       case 'SCOPE_SET':
-        return hasPermission(PERMISSIONS.payroll.initiate) ? `/payroll/runs/${runId}/validate` : undefined
+        return canInitiateWorkflow ? `/payroll/runs/${runId}/validate` : undefined
       case 'PRE_RUN_CHECKED':
       case 'PROCESSING':
       case 'FAILED':
-        return hasPermission(PERMISSIONS.payroll.initiate) ? `/payroll/runs/${runId}/compute` : undefined
+        return canInitiateWorkflow ? `/payroll/runs/${runId}/compute` : undefined
       case 'COMPUTED':
       case 'REVIEW':
       case 'RETURNED':
@@ -642,7 +642,7 @@ export default function PayrollRunDetailPage() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2">
-            {isDraft && hasPermission(PERMISSIONS.payroll.initiate) && (
+            {isDraft && canInitiateWorkflow && (
               <ConfirmDestructiveDialog
                 title="Lock payroll run?"
                 description={`Locking will queue computation for all active employees in the system. The cutoff period will be reserved. This cannot be undone easily.`}
@@ -660,7 +660,7 @@ export default function PayrollRunDetailPage() {
               </ConfirmDestructiveDialog>
             )}
 
-            {isDraft && hasPermission(PERMISSIONS.payroll.initiate) && (
+            {isDraft && canInitiateWorkflow && (
               <button
                 onClick={() => setIsAdjustmentsModalOpen(true)}
                 className="flex items-center gap-2 border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 text-sm font-medium px-4 py-2 rounded transition-colors"
@@ -710,7 +710,7 @@ export default function PayrollRunDetailPage() {
               </>
             )}
 
-            {canCancel && hasPermission(PERMISSIONS.payroll.initiate) && (
+            {canCancel && canInitiateWorkflow && (
               <ConfirmDestructiveDialog
                 title="Cancel payroll run?"
                 description="Cancelling will mark this run as cancelled. Employees will not be paid from this run. You can create a new run with the same period."
@@ -728,7 +728,7 @@ export default function PayrollRunDetailPage() {
               </ConfirmDestructiveDialog>
             )}
 
-            {canArchive && hasPermission(PERMISSIONS.payroll.initiate) && (
+            {canArchive && canInitiateWorkflow && (
               <ConfirmDestructiveDialog
                 title="Archive payroll run?"
                 description="Archiving removes this run from active payroll lists while keeping it available in archived records."
@@ -1012,3 +1012,6 @@ export default function PayrollRunDetailPage() {
     </>
   )
 }
+  const canInitiateWorkflow = hasPermission(PERMISSIONS.payroll.initiate)
+    || hasPermission(PERMISSIONS.payroll.hr_approve)
+    || hasPermission(PERMISSIONS.hr.full_access)

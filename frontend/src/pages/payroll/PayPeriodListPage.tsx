@@ -165,7 +165,7 @@ export default function PayPeriodListPage() {
         title="Pay Periods"
         subtitle="Manage payroll cutoff windows and release dates."
         actions={
-          <PermissionGuard permission={PERMISSIONS.payroll.initiate}>
+          <PermissionGuard permission={`${PERMISSIONS.payroll.initiate}|${PERMISSIONS.payroll.hr_approve}|${PERMISSIONS.hr.full_access}`}>
             <button
               type="button"
               onClick={() => setShowCreate(!showCreate)}

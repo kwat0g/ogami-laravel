@@ -17,6 +17,8 @@ import {
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
+import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 
 function formatCentavos(c: number | null | undefined): string {
   if (c == null) return '—'
@@ -36,6 +38,7 @@ export default function PayrollRunDisbursePage() {
   const publish = usePublish(runId)
   const { download: downloadBreakdown, isLoading: breakdownLoading } =
     useExportPayrollBreakdown(runId)
+  const hasPermission = useAuthStore((s) => s.hasPermission)
 
   const [publishAt, setPublishAt] = useState<string>('')
   const [notifyEmail, setNotifyEmail] = useState(true)
@@ -45,9 +48,25 @@ export default function PayrollRunDisbursePage() {
   // Determine current stage from run status
   const stage: Stage =
     run?.status === 'PUBLISHED' ? 'done' : run?.status === 'DISBURSED' ? 'publish' : 'disburse'
+  const canDisburse = hasPermission(PERMISSIONS.payroll.disburse)
+  const canPublish = hasPermission(PERMISSIONS.payroll.publish)
+    || hasPermission(PERMISSIONS.payroll.hr_approve)
+    || hasPermission(PERMISSIONS.payroll.acctg_approve)
+    || hasPermission(PERMISSIONS.hr.full_access)
+  const canExportBreakdown = hasPermission(PERMISSIONS.payroll.review_breakdown)
+    || hasPermission(PERMISSIONS.payroll.hr_approve)
+    || hasPermission(PERMISSIONS.payroll.acctg_approve)
+    || hasPermission(PERMISSIONS.payroll.approve)
+    || hasPermission(PERMISSIONS.payroll.post)
+    || hasPermission(PERMISSIONS.hr.full_access)
+  const canMutateStage = (stage === 'disburse' && canDisburse) || (stage !== 'disburse' && canPublish)
+  const isReadOnly = !canMutateStage
 
   // ── Validation for disburse ───────────────────────────────────────────────
   function validateDisburse(): boolean {
+    if (!canDisburse) {
+      return false
+    }
     if (run?.status !== 'VP_APPROVED' && run?.status !== 'ACCTG_APPROVED') {
       return false
     }
@@ -67,6 +86,9 @@ export default function PayrollRunDisbursePage() {
 
   // ── Validation for publish ────────────────────────────────────────────────
   function validatePublish(): boolean {
+    if (!canPublish) {
+      return false
+    }
     if (!disburseDone && run?.status !== 'DISBURSED') {
       return false
     }
@@ -121,14 +143,16 @@ export default function PayrollRunDisbursePage() {
             Net Pay Total: <strong>{formatCentavos(run.net_pay_total_centavos)}</strong>
           </p>
           <div className="flex justify-center gap-3 mt-6">
-            <button
-              type="button"
-              onClick={() => void downloadBreakdown()}
-              disabled={breakdownLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
-            >
-              <Download className="h-4 w-4" /> Download Full Breakdown (Excel)
-            </button>
+            {canExportBreakdown && (
+              <button
+                type="button"
+                onClick={() => void downloadBreakdown()}
+                disabled={breakdownLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm rounded hover:bg-neutral-800"
+              >
+                <Download className="h-4 w-4" /> Download Full Breakdown (Excel)
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate('/payroll/runs')}
@@ -146,9 +170,18 @@ export default function PayrollRunDisbursePage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <WizardStepHeader
         step={7}
-        title="Disburse & Publish"
-        description={`Run #${run.reference_no} — Post to GL, generate bank file, and publish payslips.`}
+        title={isReadOnly ? 'Disburse & Publish (View Only)' : 'Disburse & Publish'}
+        description={`Run #${run.reference_no} — ${isReadOnly ? 'Track disbursement and publication status.' : 'Post to GL, generate bank file, and publish payslips.'}`}
       />
+
+      {isReadOnly && (
+        <div className="rounded border border-neutral-200 bg-neutral-50 p-4">
+          <p className="text-sm font-semibold text-neutral-800">View Only Mode</p>
+          <p className="mt-1 text-xs text-neutral-600">
+            Your account can view the run status here, but the available action for this step belongs to a different payroll role.
+          </p>
+        </div>
+      )}
 
       {/* ── 7a: Disburse ── */}
       <div
@@ -191,7 +224,7 @@ export default function PayrollRunDisbursePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {stage === 'disburse' && !disburseDone ? (
+            {stage === 'disburse' && !disburseDone && canDisburse ? (
               <ConfirmDialog
                 title="Post to GL & Disburse?"
                 description={`This will post the GL journal entry and generate the bank disbursement file for ${run.total_employees} employees. This action cannot be undone.`}
@@ -216,11 +249,14 @@ export default function PayrollRunDisbursePage() {
               </ConfirmDialog>
             ) : (
               <span className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                <CheckCircle className="h-4 w-4" /> GL posted. Disbursement complete.
+                <CheckCircle className="h-4 w-4" />
+                {stage === 'disburse'
+                  ? 'Awaiting a user with disbursement permission.'
+                  : 'GL posted. Disbursement complete.'}
               </span>
             )}
 
-            {(stage === 'publish' || disburseDone) && (
+            {(stage === 'publish' || disburseDone) && canExportBreakdown && (
               <button
                 type="button"
                 onClick={() => void downloadBreakdown()}
@@ -270,6 +306,7 @@ export default function PayrollRunDisbursePage() {
               value={publishAt}
               onChange={(e) => setPublishAt(e.target.value)}
               min={new Date().toISOString().slice(0, 16)}
+              disabled={!canPublish}
               className="border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-neutral-500 outline-none"
             />
             {publishAt && new Date(publishAt) < new Date() && (
@@ -288,6 +325,7 @@ export default function PayrollRunDisbursePage() {
                 type="checkbox"
                 checked={notifyEmail}
                 onChange={(e) => setNotifyEmail(e.target.checked)}
+                disabled={!canPublish}
                 className="accent-neutral-900"
               />
               <span className="text-sm text-neutral-700">Email notification</span>
@@ -297,38 +335,45 @@ export default function PayrollRunDisbursePage() {
                 type="checkbox"
                 checked={notifyInApp}
                 onChange={(e) => setNotifyInApp(e.target.checked)}
+                disabled={!canPublish}
                 className="accent-neutral-900"
               />
               <span className="text-sm text-neutral-700">In-app notification</span>
             </label>
           </div>
 
-          <ConfirmDialog
-            title={publishAt ? 'Schedule Payslip Publication?' : 'Publish Payslips Now?'}
-            description={
-              publishAt
-                ? `Payslips will be published on ${new Date(publishAt).toLocaleString('en-PH')} and employees will be notified.`
-                : `Payslips will be published immediately and ${run.total_employees} employees will be notified.`
-            }
-            confirmLabel={publishAt ? 'Schedule Publication' : 'Publish Now'}
-            onConfirm={handlePublish}
-          >
-            <button
-              type="button"
-              disabled={publish.isPending || (!disburseDone && run?.status !== 'DISBURSED')}
-              className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+          {canPublish ? (
+            <ConfirmDialog
+              title={publishAt ? 'Schedule Payslip Publication?' : 'Publish Payslips Now?'}
+              description={
+                publishAt
+                  ? `Payslips will be published on ${new Date(publishAt).toLocaleString('en-PH')} and employees will be notified.`
+                  : `Payslips will be published immediately and ${run.total_employees} employees will be notified.`
+              }
+              confirmLabel={publishAt ? 'Schedule Publication' : 'Publish Now'}
+              onConfirm={handlePublish}
             >
-              {publish.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Publishing…
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" /> {publishAt ? 'Schedule Publication' : 'Publish Now'}
-                </>
-              )}
-            </button>
-          </ConfirmDialog>
+              <button
+                type="button"
+                disabled={publish.isPending || (!disburseDone && run?.status !== 'DISBURSED')}
+                className="flex items-center gap-2 px-5 py-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded transition-colors"
+              >
+                {publish.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Publishing…
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" /> {publishAt ? 'Schedule Publication' : 'Publish Now'}
+                  </>
+                )}
+              </button>
+            </ConfirmDialog>
+          ) : (
+            <p className="text-sm text-neutral-500">
+              A user with payroll publication permission must complete this step.
+            </p>
+          )}
         </div>
       </div>
     </div>

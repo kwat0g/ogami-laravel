@@ -469,7 +469,7 @@ const router = createBrowserRouter([
       // New run wizard (Steps 1-3 are local — no DB write until Step 3 commit)
       {
         path: '/payroll/runs/new',
-        element: <RequirePermission permission="payroll.initiate"><PayrollNewRunLayout /></RequirePermission>,
+        element: <RequirePermission permission="payroll.initiate|payroll.hr_approve|hr.full_access"><PayrollNewRunLayout /></RequirePermission>,
         children: [
           { index: true, element: withSuspense(<CreatePayrollRunPage />) },
           { path: 'scope', element: withSuspense(<PayrollRunDraftScopePage />) },
@@ -478,14 +478,14 @@ const router = createBrowserRouter([
       },
       { path: '/payroll/runs/:ulid', element: withSuspense(guard('payroll.view_runs', <PayrollRunDetailPage />)) },
       // Wizard steps (existing runs — resume after DB record exists)
-      { path: '/payroll/runs/:ulid/scope', element: withSuspense(guard('payroll.initiate', <PayrollRunScopePage />)) },
-      { path: '/payroll/runs/:ulid/validate', element: withSuspense(guard('payroll.initiate', <PayrollRunValidatePage />)) },
-      { path: '/payroll/runs/:ulid/compute', element: withSuspense(guard('payroll.initiate', <PayrollRunComputingPage />)) },
+      { path: '/payroll/runs/:ulid/scope', element: withSuspense(guard('payroll.initiate|payroll.hr_approve|hr.full_access', <PayrollRunScopePage />)) },
+      { path: '/payroll/runs/:ulid/validate', element: withSuspense(guard('payroll.initiate|payroll.hr_approve|hr.full_access', <PayrollRunValidatePage />)) },
+      { path: '/payroll/runs/:ulid/compute', element: withSuspense(guard('payroll.initiate|payroll.hr_approve|hr.full_access', <PayrollRunComputingPage />)) },
       { path: '/payroll/runs/:ulid/review', element: withSuspense(guard('payroll.view_runs', <PayrollRunReviewPage />)) },
       { path: '/payroll/runs/:ulid/hr-review', element: withSuspense(guard('payroll.hr_approve', <PayrollRunHrReviewPage />)) },
-      { path: '/payroll/runs/:ulid/acctg-review', element: withSuspense(guard('payroll.acctg_approve', <PayrollRunAcctgReviewPage />)) },
-      { path: '/payroll/runs/:ulid/vp-review', element: withSuspense(guard('payroll.vp_approve', <PayrollRunVpReviewPage />)) },
-      { path: '/payroll/runs/:ulid/disburse', element: withSuspense(guard('payroll.view_runs', <PayrollRunDisbursePage />)) },
+      { path: '/payroll/runs/:ulid/acctg-review', element: withSuspense(guard('payroll.acctg_approve|payroll.hr_approve|hr.full_access', <PayrollRunAcctgReviewPage />)) },
+      { path: '/payroll/runs/:ulid/vp-review', element: withSuspense(guard('payroll.vp_approve|payroll.hr_approve|payroll.acctg_approve|hr.full_access', <PayrollRunVpReviewPage />)) },
+      { path: '/payroll/runs/:ulid/disburse', element: withSuspense(guard('payroll.disburse|payroll.publish|payroll.hr_approve|payroll.acctg_approve|hr.full_access', <PayrollRunDisbursePage />)) },
       { path: '/payroll/periods', element: withSuspense(guard('payroll.manage_pay_periods', <PayPeriodListPage />)) },
       { path: '/payroll/final-pay', element: withSuspense(guard('payroll.view_runs', <FinalPayPage />)) },
 

@@ -10,7 +10,9 @@ final class StorePayrollRunRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('payroll.initiate') ?? false;
+        $user = $this->user();
+
+        return $user?->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve', 'hr.full_access']) ?? false;
     }
 
     /** @return array<string, mixed> */

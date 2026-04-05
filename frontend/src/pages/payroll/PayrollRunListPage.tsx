@@ -32,12 +32,15 @@ export default function PayrollRunListPage() {
   const navigate = useNavigate()
   const hasPermission = useAuthStore((s) => s.hasPermission)
   const canInitiate = hasPermission(PERMISSIONS.payroll.initiate)
+    || hasPermission(PERMISSIONS.payroll.hr_approve)
+    || hasPermission(PERMISSIONS.hr.full_access)
 
   // Accounting Managers see only runs pending their action / already published.
   const isAcctgOnly =
     hasPermission(PERMISSIONS.payroll.acctg_approve) &&
     !hasPermission(PERMISSIONS.payroll.initiate) &&
-    !hasPermission(PERMISSIONS.payroll.hr_approve)
+    !hasPermission(PERMISSIONS.payroll.hr_approve) &&
+    !hasPermission(PERMISSIONS.hr.full_access)
 
   const STATUSES = isAcctgOnly ? ACCTG_STATUSES : ALL_STATUSES
 
