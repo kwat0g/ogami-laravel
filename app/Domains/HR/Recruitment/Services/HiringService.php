@@ -11,12 +11,14 @@ use App\Domains\HR\Recruitment\Enums\PostingStatus;
 use App\Domains\HR\Recruitment\Enums\RequisitionStatus;
 use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\Hiring;
+use App\Mail\Recruitment\HiredCongratulationsMail;
 use App\Models\User;
 use App\Notifications\Recruitment\HiredNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 final class HiringService implements ServiceContract
 {
@@ -332,6 +334,11 @@ final class HiringService implements ServiceContract
             ->get();
         foreach ($hrManagers as $mgr) {
             $mgr->notify(HiredNotification::fromModel($approved));
+        }
+
+        $candidateEmail = $approved->application?->candidate?->email;
+        if ($candidateEmail !== null && $candidateEmail !== '') {
+            Mail::to($candidateEmail)->queue(HiredCongratulationsMail::fromModel($approved));
         }
 
         return $approved;

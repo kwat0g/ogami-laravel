@@ -9,11 +9,13 @@ use App\Domains\HR\Recruitment\Enums\InterviewStatus;
 use App\Domains\HR\Recruitment\Models\Application;
 use App\Domains\HR\Recruitment\Models\InterviewEvaluation;
 use App\Domains\HR\Recruitment\Models\InterviewSchedule;
+use App\Mail\Recruitment\InterviewScheduledMail;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 final class InterviewService implements ServiceContract
 {
@@ -108,7 +110,7 @@ final class InterviewService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($application, $data): InterviewSchedule {
+        $interview = DB::transaction(function () use ($application, $data): InterviewSchedule {
             $round = $data['round'] ?? ($application->interviews()->max('round') ?? 0) + 1;
 
             return InterviewSchedule::create([
@@ -124,6 +126,13 @@ final class InterviewService implements ServiceContract
                 'notes' => $data['notes'] ?? null,
             ]);
         });
+
+        $candidateEmail = $application->candidate?->email;
+        if ($candidateEmail !== null && $candidateEmail !== '') {
+            Mail::to($candidateEmail)->queue(InterviewScheduledMail::fromModel($interview));
+        }
+
+        return $interview;
     }
 
     public function reschedule(InterviewSchedule $interview, array $data, User $actor): InterviewSchedule
