@@ -309,11 +309,11 @@ final class ClientOrderController extends Controller
         $this->authorize('forceProduction', $order);
 
         $validated = $request->validate([
-            'mode' => 'required|string|in:preserve_stock_produce_full,consume_stock_then_replenish,per_item',
+            'mode' => 'required|string|in:preserve_stock_produce_full,consume_stock_then_replenish,stock_aware_produce_deficit,per_item',
             'reason' => 'required|string|max:500',
             'items' => 'nullable|array',
             'items.*.item_master_id' => 'required_with:items|integer|exists:item_masters,id',
-            'items.*.mode' => 'required_with:items|string|in:preserve_stock_produce_full,consume_stock_then_replenish',
+            'items.*.mode' => 'required_with:items|string|in:preserve_stock_produce_full,consume_stock_then_replenish,stock_aware_produce_deficit',
         ]);
 
         /** @var User $user */
@@ -328,6 +328,22 @@ final class ClientOrderController extends Controller
         );
 
         return response()->json($order);
+    }
+
+    /**
+     * Get stock availability for each item in a client order.
+     * Used by the frontend to show stock info before force production.
+     */
+    public function stockAvailability(ClientOrder $order): JsonResponse
+    {
+        $this->authorize('view', $order);
+
+        $availability = $this->service->getStockAvailability($order);
+
+        return response()->json([
+            'success' => true,
+            'data' => $availability,
+        ]);
     }
 
     /**
