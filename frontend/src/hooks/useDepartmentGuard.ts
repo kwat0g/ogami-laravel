@@ -1,22 +1,24 @@
 import { useAuthStore } from '@/stores/authStore'
 
 /**
- * Role hierarchy levels for reversed hierarchy access control.
+ * Role hierarchy levels for access control.
  * Higher number = higher access level (can see more).
- * 
- * Reversed hierarchy: Officer (highest) → Manager → Head → Staff (lowest)
- * In this model, access LESSENS as you go down the hierarchy.
- * Staff see the most items (operational), Officers see the fewest (oversight).
+ *
+ * Standard hierarchy: Manager (highest operational) → Officer → Head → Staff (lowest)
+ *
+ * NOTE: In the module permission system (ModulePermissionSeeder), the hierarchy
+ * within each module is: Manager > Officer > Head > Staff.
+ * Manager has the broadest permissions, Staff has self-service only.
  */
 export const ROLE_HIERARCHY: Record<string, number> = {
   'super_admin': 100,
   'admin': 90,
   'executive': 80,
   'vice_president': 70,
-  'officer': 60,      // Department head / C-level
-  'manager': 50,      // Department manager
-  'head': 40,         // Team lead
-  'staff': 30,        // Regular employee
+  'manager': 60,      // Department manager — broadest module access
+  'officer': 50,      // Department operations — broad but narrower than manager
+  'head': 40,         // Team lead / supervisor — first-level approvals
+  'staff': 30,        // Regular employee — self-service only
 }
 
 /**
